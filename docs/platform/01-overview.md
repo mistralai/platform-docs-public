@@ -1,4 +1,4 @@
-[platform_button]: ../../static/img/platform_button.svg
+[platform_button]: /img/platform_button.svg
 [platform_url]: https://console.mistral.ai/
 
 

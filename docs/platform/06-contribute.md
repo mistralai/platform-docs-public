@@ -6,11 +6,11 @@ Thank you for your interest in contributing to Mistral AI. We appreciate your ti
 
 If you are interested in contributing to our [official docs](docs.mistral.ai), please submit a PR at [https://github.com/mistralai/platform-docs-public](https://github.com/mistralai/platform-docs-public). 
 
-Note: Please follow the following steps to make sure your changes can be deployed successfully.
+Note: Please follow the following steps to ensure your changes can be deployed successfully.
 
 ### Set up 
 
-You will need to install `pnpm` and `node` first. For example, if you are using Mac. You can install [Homebrew](brew.sh) and then install `pnpm` and `node`:
+You will need to install `pnpm` and `node` first. For example, if you are using Mac, You can install [Homebrew](brew.sh) and then install `pnpm` and `node`:
 ```
 brew install pnpm
 brew install node

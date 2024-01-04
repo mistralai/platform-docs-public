@@ -17,10 +17,8 @@ Mistral AI currently provides two types of access to Large Language Models:
 
 Our API is currently in beta to ramp up the load and provide good quality of service. Access the [platform](https://console.mistral.ai/) to join the waitlist: 
 
-<div align = center>
-
 [![platform_button]][platform_url]
-</div>
+
 
 Once your subscription is active, you can create an API key and immediately use our `chat` endpoint: 
 

@@ -13,8 +13,6 @@ our endpoints in [guardrailing](../guardrailing), and their [prices](../pricing)
 
 Visit the platform:
 
-<div align = center>
-
 [![platform_button]][platform_url]
-</div>
+
  

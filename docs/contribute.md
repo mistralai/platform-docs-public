@@ -30,7 +30,7 @@ The easiest way to get started is to take a look at the [issue list](https://git
 
 ## Contributing to the community 
 
-### Community codebook
+### Community/partner examples
 Coming soon 
 
 ### Discord

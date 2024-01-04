@@ -65,4 +65,4 @@ Join our [Discord community](https://discord.gg/mistralai) to discuss our models
 
 ## Contributing
 
-Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our **[contribution guideline](./platform/06-contribute.md)**.
+Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our **[contribution guideline](./contribute.md)**.

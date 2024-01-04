@@ -30,7 +30,7 @@ The easiest way to get started is to take a look at the [issue list](https://git
 
 ## Contributing to the community 
 
-## Community codebook
+### Community codebook
 Coming soon 
 
 ### Discord
@@ -39,3 +39,4 @@ We are grateful to anyone who shares resources and assists us in addressing ques
 
 ### Community outreach
 A valuable way to support Mistral AI is by engaging in active communication in the community. This can include activities like sharing on social media, writing blog articles, creating tutorial videos demonstrating your work using Mistral AI API or models. Feel free to tag us on social media, and we'll be there to support you!
+

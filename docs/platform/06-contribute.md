@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Mistral AI. We appreciate your ti
 
 ## Official docs
 
-If you are interested in contributing to our [official docs](docs.mistral.ai), please submit a PR at [https://github.com/mistralai/platform-docs-public](https://github.com/mistralai/platform-docs-public). 
+If you are interested in contributing to our [official docs](https://docs.mistral.ai/), please submit a PR at [https://github.com/mistralai/platform-docs-public](https://github.com/mistralai/platform-docs-public). 
 
 Note: Please follow the following steps to ensure your changes can be deployed successfully.
 

@@ -43,8 +43,10 @@ This command generates static content into the `build` directory and can be serv
 - Images can be saved in the [img](https://github.com/mistralai/platform-docs-public/tree/main/static/img) folder. Please reference the images with `/img/your_added_image.svg`. 
 
 ## Codebooks
+Coming soon 
 
 ## Awesome List
+Coming soon
 
 ## Discord
 

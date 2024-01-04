@@ -10,7 +10,7 @@ Note: Please follow the following steps to ensure your changes can be deployed s
 
 ### Set up 
 
-You will need to install `pnpm` and `node` first. For example, if you are using Mac, You can install [Homebrew](brew.sh) and then install `pnpm` and `node`:
+You will need to install `pnpm` and `node` first. For example, if you are using Mac, You can install [Homebrew](https://brew.sh/) and then install `pnpm` and `node`:
 ```
 brew install pnpm
 brew install node

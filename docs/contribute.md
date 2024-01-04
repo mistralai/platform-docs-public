@@ -1,54 +1,41 @@
 # How to contribute
 
-Thank you for your interest in contributing to Mistral AI. We appreciate your time and effort!
+Thank you for your interest in contributing to Mistral AI. We welcome everyone who wishes to contribute and we appreciate your time and effort!
 
-## Official docs
+
+## Contributing to the official documentation
 
 If you are interested in contributing to our [official docs](https://docs.mistral.ai/), please submit a PR at [https://github.com/mistralai/platform-docs-public](https://github.com/mistralai/platform-docs-public). 
 
-Note: Please follow the following steps to ensure your changes can be deployed successfully.
+You can easily help by:
+- fix a typo
+- clarify a section
+- document an underdocumented feature
+- update a section that should have been updated
+- ... 
 
-### Set up 
+## Contributing to the code clients
 
-You will need to install `pnpm` and `node` first. For example, if you are using Mac, You can install [Homebrew](https://brew.sh/) and then install `pnpm` and `node`:
-```
-brew install pnpm
-brew install node
-```
+### Python client
+Submit a PR to improve our Python client: [https://github.com/mistralai/client-python](https://github.com/mistralai/client-python). 
 
-### Install project dependencies 
+The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-python/issues) and see which one you might be interested in helping.  
 
-```bash
-pnpm install
-```
 
-### Local Development
+### JavaScript client
+Submit a PR to improve our JavaScript client: [https://github.com/mistralai/client-js](https://github.com/mistralai/client-js)
 
-```bash
-pnpm start
-```
+The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-js/issues) and see which one you might be interested in helping.  
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server. Make sure the local browser accurately reflects your intended changes. 
 
-### Build
+## Contributing to the community 
 
-```bash
-pnpm build
-```
-
-This command generates static content into the `build` directory and can be served using any static contents hosting service. Make sure everything compiles successfully in this step. This will be exactly how we build in production. 
-
-### Troubleshoot 
-- Make sure URLs starts with `https://` or `http://`, otherwise it will look for the relative paths in the repo. 
-- Images can be saved in the [img](https://github.com/mistralai/platform-docs-public/tree/main/static/img) folder. Please reference the images with `/img/your_added_image.svg`. 
-
-## Codebooks
+## Community codebook
 Coming soon 
 
-## Awesome List
-Coming soon
-
-## Discord
+### Discord
 
 We are grateful to anyone who shares resources and assists us in addressing questions on our [Discord](https://discord.gg/mistralai) community.
 
+### Community outreach
+A valuable way to support Mistral AI is by engaging in active communication in the community. This can include activities like sharing on social media, writing blog articles, creating tutorial videos demonstrating your work using Mistral AI API or models. Feel free to tag us on social media, and we'll be there to support you!

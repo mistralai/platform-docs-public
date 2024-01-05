@@ -31,7 +31,7 @@ The easiest way to get started is to take a look at the [issue list](https://git
 ## Contributing to the community 
 
 ### Community/partner examples
-Coming soon 
+If you have cool examples showcasing Mistral models, whether you are using Mistral API or open-weight models, feel free to share them by submitting a PR to our [community examples repo](https://github.com/mistralai/community-examples). 
 
 ### Discord
 

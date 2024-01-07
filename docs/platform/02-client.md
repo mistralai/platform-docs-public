@@ -41,7 +41,6 @@ print(chat_response.choices[0].message.content)
 
 ### With streaming 
 ```python
-
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
 
@@ -63,7 +62,6 @@ for chunk in stream_response:
 
 ### With async 
 ```python
-
 from mistralai.async_client import MistralAsyncClient
 from mistralai.models.chat_completion import ChatMessage
 

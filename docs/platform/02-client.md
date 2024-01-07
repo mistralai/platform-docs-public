@@ -59,8 +59,6 @@ stream_response = client.chat_stream(model=model, messages=messages)
 
 for chunk in stream_response:
     print(chunk.choices[0].delta.content)
-
-
 ```
 
 ### With async 
@@ -78,7 +76,6 @@ async_response = client.chat_stream(model=model, messages=messages)
 
 async for chunk in async_response: 
     print(chunk.choices[0].delta.content)
-
 ```
 
 

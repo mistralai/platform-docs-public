@@ -70,6 +70,11 @@ model = "mistral-tiny"
 
 client = MistralAsyncClient(api_key=api_key)
 
+messages = [
+    ChatMessage(role="user", content="What is the best French cheese?")
+]
+
+# With async
 async_response = client.chat_stream(model=model, messages=messages)
 
 async for chunk in async_response: 

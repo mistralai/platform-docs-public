@@ -41,3 +41,7 @@ This command generates static content into the `build` directory and can be serv
 
 
 This documentation is built using [Docusaurus](https://docusaurus.io/).
+
+# How to contribute? 
+
+Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our [contribution guideline](https://docs.mistral.ai/contribute/).

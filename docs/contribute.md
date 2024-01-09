@@ -30,8 +30,8 @@ The easiest way to get started is to take a look at the [issue list](https://git
 
 ## Contributing to the community 
 
-### Community/partner examples
-If you have cool examples showcasing Mistral models, whether you are using Mistral API or open-weight models, feel free to share them by submitting a PR to our [community examples repo](https://github.com/mistralai/community-examples). 
+### Mistral Cookbook
+If you have cool examples showcasing Mistral models, whether you are using Mistral API or open-weight models, feel free to share them by submitting a PR to our [cookbook repo](https://github.com/mistralai/cookbook). 
 
 ### Discord
 

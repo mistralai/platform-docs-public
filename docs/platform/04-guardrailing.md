@@ -40,13 +40,13 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
         "content": "What is the best French cheese?"
       }
     ],
-    "safe_mode": true
+    "safe_prompt": true
   }'
 ```
   </TabItem>
 </Tabs>
 
-Toggling `safe_mode` will prepend your messages with the following system prompt:
+Toggling `safe_prompt` will prepend your messages with the following system prompt:
 ```
 Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.
 ```

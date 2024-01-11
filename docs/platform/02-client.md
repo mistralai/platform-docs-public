@@ -74,7 +74,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-We allow users to provide a custom system prompt (see [API reference](../../api)). A convenient `safe_mode` flag allow to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
+We allow users to provide a custom system prompt (see [API reference](../../api)). A convenient `safe_prompt` flag allow to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
 
 ## Embeddings
 

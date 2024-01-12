@@ -5,7 +5,7 @@ import TabItem from '@theme/TabItem';
 
 ## System prompt to enforce guardrails
 
-The ability to enforce guardrails in chat generations is crucial for front-facing applications. We introduce an optional system prompt to enforce guardrails on top of our models. You can activate this prompt through a `safe_mode` binary flag in API calls as follows:
+The ability to enforce guardrails in chat generations is crucial for front-facing applications. We introduce an optional system prompt to enforce guardrails on top of our models. You can activate this prompt through a `safe_prompt` boolean flag in API calls as follows (this parameter is currently named `safe_mode` in the client libraries):
 
 <Tabs>
   <TabItem value="python" label="python" default>
@@ -46,10 +46,19 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-Toggling `safe_prompt` will prepend your messages with the following system prompt:
+Toggling the safe prompt will prepend your messages with the following system prompt:
+
 ```
 Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.
 ```
+
+
+:::warning
+
+A previous version of this documentation incorrectly referred to the API parameter as `safe_mode` instead of `safe_prompt`. The API now strictly enforces the validity of all parameters, so you may need to update your code accordingly.
+
+:::
+
 <!-- 
 ## Safety and utility trade-off
 

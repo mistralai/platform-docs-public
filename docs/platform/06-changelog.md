@@ -1,6 +1,6 @@
 # Changelog
 
-This is the list of changes to Mistral API. 
+This is the list of changes to the Mistral API. 
 
 Jan. 11, 2024
 - We have enhanced the API's strictness. Previously the API would silently ignores unsupported parameters in the requests, but it now strictly enforces the validity of all parameters. If you have unsupported parameters in your request, you will see the error message "Extra inputs are not permitted".

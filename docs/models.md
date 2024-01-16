@@ -17,10 +17,10 @@ Mixtral 8X7B is a sparse mixture of experts model. As such, it leverages up to 4
 
 ## Downloading
 
-- Mistral-7B-v0.1: [Hugging Face](https://huggingface.co/mistralai/Mistral-7B-v0.1) // [raw_weights](https://files.mistral-7b-v0-1.mistral.ai/mistral-7B-v0.1.tar) (md5sum: `37dab53973db2d56b2da0a033a15307f`).
-- Mistral-7B-Instruct-v0.2: [Hugging Face](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2) // [raw_weights](https://files.mistral-7b-v0-2.mistral.ai/Mistral-7B-v0.2-Instruct.tar) (md5sum: `fbae55bc038f12f010b4251326e73d39`).
+- Mistral-7B-v0.1: [Hugging Face](https://huggingface.co/mistralai/Mistral-7B-v0.1) // [raw_weights](https://models.mistralcdn.com/mistral-7b-v0-1/mistral-7B-v0.1.tar) (md5sum: `37dab53973db2d56b2da0a033a15307f`).
+- Mistral-7B-Instruct-v0.2: [Hugging Face](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2) // [raw_weights](https://models.mistralcdn.com/mistral-7b-v0-2/Mistral-7B-v0.2-Instruct.tar) (md5sum: `fbae55bc038f12f010b4251326e73d39`).
 - Mixtral-8x7B-v0.1: [Hugging Face](https://huggingface.co/mistralai/Mixtral-8x7B-v0.1).
-- Mixtral-8x7B-Instruct-v0.1: [Hugging Face](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1) // [raw_weights](https://files.mixtral-8x7b-v0-1.mistral.ai/Mixtral-8x7B-v0.1-Instruct.tar) (md5sum: `8e2d3930145dc43d3084396f49d38a3f`).
+- Mixtral-8x7B-Instruct-v0.1: [Hugging Face](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1) // [raw_weights](https://models.mistralcdn.com/mixtral-8x7b-v0-1/Mixtral-8x7B-v0.1-Instruct.tar) (md5sum: `8e2d3930145dc43d3084396f49d38a3f`).
 
 ## Sizes
 

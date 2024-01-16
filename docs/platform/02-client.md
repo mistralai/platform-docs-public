@@ -136,6 +136,9 @@ curl --location "https://api.mistral.ai/v1/embeddings" \
 
 Here are some clients built by the community for various other languages:
 
+## CLI
+[icebaker/nano-bots](https://github.com/icebaker/ruby-nano-bots)
+
 ## Go
 [Gage-Technologies](https://github.com/Gage-Technologies/mistral-go)
 

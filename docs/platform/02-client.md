@@ -138,3 +138,6 @@ Here are some clients built by the community for various other languages:
 
 ## Go
 [Gage-Technologies](https://github.com/Gage-Technologies/mistral-go)
+
+## Ruby
+[gbaptista/mistral-ai](https://github.com/gbaptista/mistral-ai)

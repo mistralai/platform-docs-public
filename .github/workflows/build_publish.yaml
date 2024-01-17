@@ -1,0 +1,41 @@
+# If we tag the docs here we automatically create a PR to the public repo
+
+name: Build and Publish
+
+on:
+  push:
+    branches: ["main"]
+
+    # We only deploy on tags and main branch
+    tags:
+      # Only run on tags that match the following regex
+      # This will match tags like v1.0.0, v1.0.1, etc.
+      - v[0-9]+.[0-9]+.[0-9]+
+  
+jobs:
+  create_pr_on_public:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # We need to fetch the tags to be able to checkout the tag
+          fetch-depth: 0
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          push-to-fork: mistralai/platform-docs-public
+          # The branch to create the PR against
+          base: main
+          # The branch to create the PR from
+          branch: ${{ github.ref }}
+          # The title of the PR
+          title: Update docs
+          # The body of the PR
+          body: |
+            This PR was automatically created by a GitHub Action.
+            Please review the changes and merge if you are happy with them.
+          # The commit message
+          commit-message: Update docs
+          
+          committer: MayoMag <mayo_bot@mistral.ai>

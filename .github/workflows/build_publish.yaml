@@ -17,24 +17,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          # We need to fetch the tags to be able to checkout the tag
-          fetch-depth: 0
-      - name: Create PR
-        uses: peter-evans/create-pull-request@v5
-        with:
-          push-to-fork: mistralai/platform-docs-public
-          # The branch to create the PR against
-          base: main
-          # The branch to create the PR from
-          branch: ${{ github.ref }}
-          # The title of the PR
-          title: Update docs
-          # The body of the PR
-          body: |
-            This PR was automatically created by a GitHub Action.
-            Please review the changes and merge if you are happy with them.
-          # The commit message
-          commit-message: Update docs
-          
-          committer: MayoMag <mayo_bot@mistral.ai>
+
+
+      - name: Pull public updates
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "mayo@mistral.ai"
+
+          git remote add public git@github.com:mistralai/platform-docs-public.git
+          git remote update
+
+          # Create a diff of the changes, ignoring the ci workflow
+          git diff ${{github.ref}} remotes/public/main -- .github/workflows/ > changes.diff
+
+          # If there are changes we want to apply them to this repo and push them
+          # if there are merge conflicts we will need to resolve them manually, so we should fail the build
+          if [ -s changes.diff ]
+          then
+            git apply changes.diff
+            git add .
+            git commit -m "Update from public repo"
+            git push origin HEAD:${{github.ref}}
+          else
+            echo "No changes to apply"
+          fi
+
+      - name: Push to public repo
+        run: |
+          git checkout -b doc/${{github.ref}}
+          git push public doc/${{github.ref}}
+
+          # Create a PR from this branch to the public repo
+          gh pr create --title "Update docs from private repo" --body "This PR was automatically created by a GitHub Action" --base main --head doc/${{github.ref}} --repo mistralai/platform-docs-public
+        

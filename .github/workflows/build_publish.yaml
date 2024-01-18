@@ -46,9 +46,31 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PUBLIC_DOCS_WRITE_TOKEN }}
         run: |
+          git checkout public/main
           git checkout -b doc/${{github.ref_name}}
-          git push public doc/${{github.ref_name}}
+          
+          # write version number to version file
+          echo ${{github.ref_name}} > version.txt
+
+          # add and commit the version bump
+          git add version.txt
+          git commit -m "Update version to ${{github.ref_name}}"
+
+          # create a diff of this ref and the public repo
+          git diff ${{github.ref_name}} doc/${{github.ref_name}} -- . ':!.github' > changes.diff
+
+          cat changes.diff
+
+          # apply the diff to the current branch
+          git apply changes.diff
+
+          # commit the changes
+          git add .
+          git commit -m "Update docs from private repo"
+
+          # push the changes
+          git push origin doc/${{github.ref_name}}
 
           # Create a PR from this branch to the public repo
-          gh pr create --title "Update docs from private repo" --body "This PR was automatically created by a GitHub Action" --base main --head doc/${{github.ref_name}} --repo mistralai/platform-docs-public
+          # gh pr create --title "Update docs from private repo" --body "This PR was automatically created by a GitHub Action" --base main --head doc/${{github.ref_name}} --repo mistralai/platform-docs-public
         

@@ -12,7 +12,8 @@ Mistral AI currently provides two types of access to Large Language Models:
 ## Where to start?
 
 ### API Access
-Our API is currently in beta to ramp up the load and provide good quality of service. Access the [platform](https://console.mistral.ai/) to join the waitlist. Once your subscription is active, you can immediately use our `chat` endpoint: 
+
+Our API is currently available through our [platform](https://console.mistral.ai/). You need to subscribe and enter your payment details to enable your API keys. After a few moments, you will be able to use our `chat` endpoint:
 
 ```bash
 curl --location "https://api.mistral.ai/v1/chat/completions" \
@@ -38,9 +39,9 @@ curl --location "https://api.mistral.ai/v1/embeddings" \
   }'
 ```
 
-For a full description of the models offered on the API, head on to the **[model docs](./models)**.
+For a full description of the models offered on the API, head on to the **[model documentation](./models)**.
 
-For more examples on how to use our platform, head on to our **[platform docs](./platform/01-overview.md)**.
+For more examples on how to use our platform, head on to our **[platform documentation](./platform/01-overview.md)**.
 
 ### Raw model weights
 

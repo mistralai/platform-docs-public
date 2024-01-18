@@ -139,6 +139,9 @@ Here are some clients built by the community for various other languages:
 ## CLI
 [icebaker/nano-bots](https://github.com/icebaker/ruby-nano-bots)
 
+## Elixir
+[axonzeta/mistral_elixir](https://github.com/axonzeta/mistral_elixir)
+
 ## Go
 [Gage-Technologies](https://github.com/Gage-Technologies/mistral-go)
 

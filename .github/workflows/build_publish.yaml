@@ -32,6 +32,14 @@ jobs:
           # Create a diff of the changes, ignoring the ci workflow
           git merge public/main --no-commit --no-ff --no-edit --allow-unrelated-histories --strategy-option ours
 
+          # If there are changes, commit them
+          if ! git diff --quiet; then
+            git commit -m "Update from public repo"
+            git push origin HEAD:${{github.ref}}
+          else
+            echo "No changes to apply"
+          fi
+
       - name: Push to public repo
         env: # We cannot use the github bot token to push to the public repo, we have to use one with more permissions
           GITHUB_TOKEN: ${{ secrets.PUBLIC_DOCS_WRITE_TOKEN }}

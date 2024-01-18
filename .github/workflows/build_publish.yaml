@@ -1,0 +1,52 @@
+# If we tag the docs here we automatically create a PR to the public repo
+
+name: Build and Publish
+
+on:
+  push:
+    branches: ["bam4d/deploy-pr-on-tag"]
+    # We only deploy on tags and main branch
+    tags:
+      # Only run on tags that match the following regex
+      # This will match tags like v1.0.0, v1.0.1, etc.
+      - v[0-9]+.[0-9]+.[0-9]+
+  
+jobs:
+  create_pr_on_public:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+
+      - name: Pull public updates
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "mayo@mistral.ai"
+
+          git remote add public https://github.com/mistralai/platform-docs-public.git
+          git remote update
+
+          # Create a diff of the changes, ignoring the ci workflow
+          git diff ${{github.ref}} remotes/public/main -- .github/workflows/ > changes.diff
+
+          # If there are changes we want to apply them to this repo and push them
+          # if there are merge conflicts we will need to resolve them manually, so we should fail the build
+          if [ -s changes.diff ]
+          then
+            git apply changes.diff --exclude=".github/workflows/*"
+            git add .
+            git commit -m "Update from public repo"
+            git push origin HEAD:${{github.ref}}
+          else
+            echo "No changes to apply"
+          fi
+
+      - name: Push to public repo
+        run: |
+          git checkout -b doc/${{github.ref_name}}
+          git push public doc/${{github.ref_name}}
+
+          # Create a PR from this branch to the public repo
+          gh pr create --title "Update docs from private repo" --body "This PR was automatically created by a GitHub Action" --base main --head doc/${{github.ref_name}} --repo mistralai/platform-docs-public
+        

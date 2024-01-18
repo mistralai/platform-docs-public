@@ -30,22 +30,7 @@ jobs:
           git remote update
 
           # Create a diff of the changes, ignoring the ci workflow
-          git diff remotes/public/main ${{github.ref}} -- . ':!.github' > changes.diff
-
-          # just print the changes
-          cat changes.diff
-
-          # If there are changes we want to apply them to this repo and push them
-          # if there are merge conflicts we will need to resolve them manually, so we should fail the build
-          if [ -s changes.diff ]
-          then
-            git apply --3way changes.diff --exclude=".github/workflows/*"
-            git add .
-            git commit -m "Update from public repo"
-            git push origin HEAD:${{github.ref}}
-          else
-            echo "No changes to apply"
-          fi
+          git merge public/main --no-commit --no-ff --no-edit --allow-unrelated-histories --strategy-option ours
 
       - name: Push to public repo
         env: # We cannot use the github bot token to push to the public repo, we have to use one with more permissions

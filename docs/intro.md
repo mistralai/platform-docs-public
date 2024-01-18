@@ -2,8 +2,6 @@
 sidebar_position: 1
 slug: /
 ---
-[platform_button]: /img/platform_button.svg
-[platform_url]: https://console.mistral.ai/
 
 # Introduction
 
@@ -14,13 +12,7 @@ Mistral AI currently provides two types of access to Large Language Models:
 ## Where to start?
 
 ### API Access
-
-Our API is currently in beta to ramp up the load and provide good quality of service. Access the [platform](https://console.mistral.ai/) to join the waitlist: 
-
-[![platform_button]][platform_url]
-
-
-Once your subscription is active, you can create an API key and immediately use our `chat` endpoint: 
+Our API is currently in beta to ramp up the load and provide good quality of service. Access the [platform](https://console.mistral.ai/) to join the waitlist. Once your subscription is active, you can immediately use our `chat` endpoint: 
 
 ```bash
 curl --location "https://api.mistral.ai/v1/chat/completions" \
@@ -65,4 +57,4 @@ Join our [Discord community](https://discord.gg/mistralai) to discuss our models
 
 ## Contributing
 
-Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our **[contribution guideline](./contribute.md)**.
+Mistral AI is committed to open source software development and welcomes external contributions. Please open a PR!

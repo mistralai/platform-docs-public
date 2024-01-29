@@ -1,6 +1,5 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
 # Guardrailing
 
 ## System prompt to enforce guardrails
@@ -17,6 +16,17 @@ chat_response = client.chat(
 )
 ```
   </TabItem>
+
+    
+        
+          
+    
+
+        
+        Expand All
+    
+    @@ -22,7 +22,7 @@ chat_response = client.chat(
+  
   <TabItem value="javascript" label="javascript">
 ```javascript
 const chatResponse = await client.chat(
@@ -26,6 +36,17 @@ const chatResponse = await client.chat(
 );
 ```
   </TabItem>
+
+    
+        
+          
+    
+
+        
+        Expand All
+    
+    @@ -46,19 +46,10 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
+  
   <TabItem value="curl" label="curl">
 ```bash
 curl --location "https://api.mistral.ai/v1/chat/completions" \
@@ -62,4 +83,14 @@ A previous version of this documentation incorrectly referred to the API paramet
 <!-- 
 ## Safety and utility trade-off
 
+    
+          
+            
+    
+
+          
+          Expand Down
+    
+    
+  
 TODO Safety and utility benchmarks with and without safe mode -->

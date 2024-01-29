@@ -15,6 +15,8 @@ The chat completion API allows you to chat with a model fine-tuned to follow ins
 
 <Tabs>
   <TabItem value="python" label="python" default>
+
+### No streaming
 ```python
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
@@ -34,10 +36,52 @@ chat_response = client.chat(
     messages=messages,
 )
 
-# With streaming
-for chunk in client.chat_stream(model=model, messages=messages):
-    print(chunk)
+print(chat_response.choices[0].message.content)
 ```
+
+### With streaming 
+```python
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-tiny"
+
+client = MistralClient(api_key=api_key)
+
+messages = [
+    ChatMessage(role="user", content="What is the best French cheese?")
+]
+
+# With streaming
+stream_response = client.chat_stream(model=model, messages=messages)
+
+for chunk in stream_response:
+    print(chunk.choices[0].delta.content)
+```
+
+### With async 
+```python
+from mistralai.async_client import MistralAsyncClient
+from mistralai.models.chat_completion import ChatMessage
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-tiny"
+
+client = MistralAsyncClient(api_key=api_key)
+
+messages = [
+    ChatMessage(role="user", content="What is the best French cheese?")
+]
+
+# With async
+async_response = client.chat_stream(model=model, messages=messages)
+
+async for chunk in async_response: 
+    print(chunk.choices[0].delta.content)
+```
+
+
   </TabItem>
   <TabItem value="javascript" label="javascript">
 ```javascript
@@ -74,7 +118,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-We allow users to provide a custom system prompt (see [API reference](../../api)). A convenient `safe_prompt` flag allow to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
+We allow users to provide a custom system prompt (see [API reference](../../api)). A convenient `safe_mode` flag allow to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
 
 ## Embeddings
 
@@ -136,11 +180,5 @@ curl --location "https://api.mistral.ai/v1/embeddings" \
 
 Here are some clients built by the community for various other languages:
 
-## CLI
-[icebaker/nano-bots](https://github.com/icebaker/ruby-nano-bots)
-
 ## Go
 [Gage-Technologies](https://github.com/Gage-Technologies/mistral-go)
-
-## Ruby
-[gbaptista/mistral-ai](https://github.com/gbaptista/mistral-ai)

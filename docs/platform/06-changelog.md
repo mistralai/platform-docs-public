@@ -7,4 +7,4 @@ Jan. 11, 2024
 - A previous version of the [guardrailing documentation](../guardrailing) incorrectly referred to the API parameter as `safe_mode` instead of `safe_prompt`. We corrected this in the documentation. 
 
 Jan. 16, 2024
-- We added token usage information in streaming requests. You can find it in the last chunk returned. 
+- We added token usage information in streaming requests. You can find it in the last chunk returned.

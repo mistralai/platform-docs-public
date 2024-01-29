@@ -1,11 +1,10 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
 # Guardrailing
 
 ## System prompt to enforce guardrails
 
-The ability to enforce guardrails in chat generations is crucial for front-facing applications. We introduce an optional system prompt to enforce guardrails on top of our models. You can activate this prompt through a `safe_prompt` binary flag in API calls as follows:
+The ability to enforce guardrails in chat generations is crucial for front-facing applications. We introduce an optional system prompt to enforce guardrails on top of our models. You can activate this prompt through a `safe_prompt` boolean flag in API calls as follows (this parameter is currently named `safe_mode` in the client libraries):
 
 <Tabs>
   <TabItem value="python" label="python" default>
@@ -13,19 +12,41 @@ The ability to enforce guardrails in chat generations is crucial for front-facin
 chat_response = client.chat(
     model="mistral-tiny", 
     messages=ChatMessage(role="user", content="What is the best French cheese?"),
-    safe_prompt=True
+    safe_mode=True
 )
 ```
   </TabItem>
+
+    
+        
+          
+    
+
+        
+        Expand All
+    
+    @@ -22,7 +22,7 @@ chat_response = client.chat(
+  
   <TabItem value="javascript" label="javascript">
 ```javascript
 const chatResponse = await client.chat(
     model: 'mistral-tiny',
     messages: [{role: 'user', content: 'What is the best French cheese?'}],
-    safe_prompt: true
+    safe_mode: true
 );
 ```
   </TabItem>
+
+    
+        
+          
+    
+
+        
+        Expand All
+    
+    @@ -46,19 +46,10 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
+  
   <TabItem value="curl" label="curl">
 ```bash
 curl --location "https://api.mistral.ai/v1/chat/completions" \
@@ -46,11 +67,30 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-Toggling `safe_prompt` will prepend your messages with the following system prompt:
+Toggling the safe prompt will prepend your messages with the following system prompt:
+
 ```
 Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.
 ```
+
+
+:::warning
+
+A previous version of this documentation incorrectly referred to the API parameter as `safe_mode` instead of `safe_prompt`. The API now strictly enforces the validity of all parameters, so you may need to update your code accordingly.
+
+:::
+
 <!-- 
 ## Safety and utility trade-off
 
+    
+          
+            
+    
+
+          
+          Expand Down
+    
+    
+  
 TODO Safety and utility benchmarks with and without safe mode -->

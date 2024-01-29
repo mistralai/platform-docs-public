@@ -118,7 +118,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-We allow users to provide a custom system prompt (see [API reference](../../api)). A convenient `safe_mode` flag allow to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
+We allow users to provide a custom system prompt (see [API reference](../../api)). We also allow a convenient `safe_prompt` flag to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
 
 ## Embeddings
 
@@ -180,5 +180,11 @@ curl --location "https://api.mistral.ai/v1/embeddings" \
 
 Here are some clients built by the community for various other languages:
 
+## CLI
+[icebaker/nano-bots](https://github.com/icebaker/ruby-nano-bots)
+
 ## Go
 [Gage-Technologies](https://github.com/Gage-Technologies/mistral-go)
+
+## Ruby
+[gbaptista/mistral-ai](https://github.com/gbaptista/mistral-ai)

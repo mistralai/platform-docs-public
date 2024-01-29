@@ -109,6 +109,11 @@ const config = {
             label: "GitHub",
             position: "right",
           },
+          {
+            href: "https://discord.gg/mistralai",
+            label: "Discord",
+            position: "right",
+          },
         ],
       },
       footer: {

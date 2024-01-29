@@ -11,9 +11,57 @@ We provide different endpoints with different price/performance tradeoffs. Our e
 All our generative endpoints can reason on contexts up to 32k tokens and follow fine-grained instructions.
 The following table gathers benchmarks for each endpoint.
 
-<!-- <div style="text-align: center;"> -->
-<img src={Benchmark} alt="Benchmark" width="500px" class="center"/>
-<!-- </div> -->
+
+<table>
+  <tr>
+    <th></th>
+    <th>Mistral-tiny</th>
+    <th>Mistral-small</th>
+    <th>Mistral-medium</th>
+  </tr>
+  <tr>
+    <td><b>MMLU</b> <br/>(MCQ in 57 subjects)</td>
+    <td>63.0%</td>
+    <td>70.6%</td>
+    <td><b>75.3%</b></td>
+  </tr>
+  <tr>
+    <td><b>HellaSwag</b> <br/> (10-shot)</td>
+    <td>83.1%</td>
+    <td>86.7%</td>
+    <td><b>88.0%</b></td>
+  </tr>
+  <tr>
+    <td><b>ARC Challenge</b> <br/> (25-shot)</td>
+    <td>78.1%</td>
+    <td>85.8%</td>
+    <td><b>89.9%</b></td>
+  </tr>
+  <tr>
+    <td><b>WinoGrande</b> <br/> (5-shot)</td>
+    <td>78.0%</td>
+    <td>81.2%</td>
+    <td><b>88.0%</b></td>
+  </tr>
+  <tr>
+    <td><b>MBPP</b> <br/> (pass@1)</td>
+    <td>30.5%</td>
+    <td>60.7%</td>
+    <td><b>62.3%</b></td>
+  </tr>
+  <tr>
+    <td><b>GSM-8K</b> <br/> (5-shot)</td>
+    <td>36.5%</td>
+    <td>58.4%</td>
+    <td><b>66.7%</b></td>
+  </tr>
+  <tr>
+    <td><b>MT Bench</b> <br/> (for Instruct models)</td>
+    <td>7.61</td>
+    <td>8.30</td>
+    <td><b>8.61</b></td>
+  </tr>
+</table>
 
 We only provide chat access through our API. Users can access underlying base models for endpoints relying on 
 [open-weight models](../../models).

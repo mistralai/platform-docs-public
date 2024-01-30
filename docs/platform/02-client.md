@@ -144,3 +144,6 @@ Here are some clients built by the community for various other languages:
 
 ## Ruby
 [gbaptista/mistral-ai](https://github.com/gbaptista/mistral-ai)
+
+## PHP
+[partITech/php-mistral](https://github.com/partITech/php-mistral)

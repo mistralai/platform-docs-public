@@ -2,8 +2,6 @@
 sidebar_position: 1
 slug: /
 ---
-[platform_button]: /img/platform_button.svg
-[platform_url]: https://console.mistral.ai/
 
 # Introduction
 
@@ -12,6 +10,9 @@ Mistral AI currently provides two types of access to Large Language Models:
 - Open source models available under the [Apache 2.0](https://github.com/apache/.github/blob/main/LICENSE) License, available on [Hugging Face](https://huggingface.co/mistralai) or directly from [the documentation](/models).
 
 ## Where to start?
+
+[platform_button]: /img/platform_button.svg
+[platform_url]: https://console.mistral.ai/
 
 ### API Access
 

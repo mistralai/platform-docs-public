@@ -87,15 +87,16 @@ Another potential use case is paraphrase detection. In this simple example, we h
 Result suggests that the first two sentences are semantically similar and could be potential paraphrases, whereas the third sentence is more different. This is just a super simple example. But this approach can be extended to more complex situations in real-world applications, such as detecting paraphrases in social media posts, news articles, or customer reviews.
 
 ```python
+import itertools
+
 sentences = [
-    'Have a safe happy Memorial Day weekend everyone',
-    'To all our friends at Whatsit Productions Films enjoy a safe happy Memorial Day weekend',
-    'Where can I find the best cheese?'
+    "Have a safe happy Memorial Day weekend everyone",
+    "To all our friends at Whatsit Productions Films enjoy a safe happy Memorial Day weekend",
+    "Where can I find the best cheese?",
 ]
 
 sentence_embeddings = [get_text_embedding(t) for t in sentences]
 
-import itertools
 sentence_embeddings_pairs = list(itertools.combinations(sentence_embeddings, 2))
 sentence_pairs = list(itertools.combinations(sentences, 2))
 for s, e in zip(sentence_pairs, sentence_embeddings_pairs):
@@ -143,7 +144,6 @@ In this example, we transform our embeddings to 2 dimensions and create a 2D sca
 import seaborn as sns
 from sklearn.manifold import TSNE
 import numpy as np
-
 
 tsne = TSNE(n_components=2, random_state=0).fit_transform(np.array(df['embeddings'].to_list()))
 ax = sns.scatterplot(x=tsne[:, 0], y=tsne[:, 1], hue=np.array(df['label'].to_list()))

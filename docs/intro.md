@@ -11,6 +11,9 @@ Mistral AI currently provides two types of access to Large Language Models:
 
 ## Where to start?
 
+[platform_button]: /img/platform_button.svg
+[platform_url]: https://console.mistral.ai/
+
 ### API Access
 
 Our API is currently available through our [platform](https://console.mistral.ai/). You need to subscribe and enter your payment details to enable your API keys. After a few moments, you will be able to use our `chat` endpoint:
@@ -58,4 +61,4 @@ Join our [Discord community](https://discord.gg/mistralai) to discuss our models
 
 ## Contributing
 
-Mistral AI is committed to open source software development and welcomes external contributions. Please open a PR!
+Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our **[contribution guideline](./contribute.md)**.

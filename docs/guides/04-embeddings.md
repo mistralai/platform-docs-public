@@ -180,7 +180,7 @@ from sklearn.linear_model import LogisticRegression
 
 # Create a train / test split
 train_x, test_x, train_y, test_y = train_test_split(
-    df["fasttext_embeddings"], df["label"], test_size=0.2
+    df["embeddings"], df["label"], test_size=0.2
 )
 
 # Normalize features

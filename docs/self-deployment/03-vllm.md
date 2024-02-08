@@ -28,7 +28,7 @@ docker run --gpus all \
     ghcr.io/mistralai/mistral-src/vllm:latest \
     --host 0.0.0.0 \
     --model mistralai/Mixtral-8x7B-Instruct-v0.1 \
-    --tensor-parallel-size 2 \ # adapt to your GPUs 
+    --tensor-parallel-size 2 # adapt to your GPUs \
     --load-format pt # needed since both `pt` and `safetensors` are available
 ```
 
@@ -84,7 +84,7 @@ python -u -m vllm.entrypoints.openai.api_server \
 python -u -m vllm.entrypoints.openai.api_server \
        --host 0.0.0.0 \
        --model mistralai/Mixtral-8X7B-Instruct-v0.1 \
-       --tensor-parallel-size 2 \ # adapt to your GPUs 
+       --tensor-parallel-size 2 # adapt to your GPUs \
       --load-format pt # needed since both `pt` and `safetensors` are available
 ```
 

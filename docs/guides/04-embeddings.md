@@ -7,7 +7,7 @@ Embeddings are vectorial representations of text that capture the semantic meani
 </a>
 
 ## Mistral Embeddings API
-To generate text embeddings using Mistral AI's embeddings API, we can make a request to the API endpoint and specify the embedding model `mistral-embed`, along with providing a list of input text. The API will then return the corresponding embeddings as numerical vectors, which can be used for further analysis or processing in NLP applications.
+To generate text embeddings using Mistral AI's embeddings API, we can make a request to the API endpoint and specify the embedding model `mistral-embed`, along with providing a list of input texts. The API will then return the corresponding embeddings as numerical vectors, which can be used for further analysis or processing in NLP applications.
 
 ```python
 from mistralai.client import MistralClient

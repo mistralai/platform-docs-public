@@ -218,7 +218,7 @@ You will only respond with a JSON object with the key Summary and Confidence. Do
 - **JSON output**: For facilitating downstream tasks, JSON format output is frequently preferred. We can specify in the prompt that "You will only respond with a JSON object with the key Summary and Confidence." Specifying these keys within the JSON object is beneficial for clarity and consistency.
 - **Higher Temperature**: In this example, we increase the temperature score to encourage the model to be more creative and output three generated summaries that are different from each other.
 
-### Introduce a evaluation step
+### Introduce an evaluation step
 We can also add a second step in the prompt for evaluation. We ask the LLM to generate three summaries and evaluate these three summaries. 
 
 <table class="prompt-example">

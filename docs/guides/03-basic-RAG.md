@@ -61,6 +61,7 @@ For each text chunk, we then need to create text embeddings, which are numeric r
 To create an embedding, use Mistral AI's embeddings API endpoint and the embedding model `mistral-embed`. We create a `get_text_embedding` to get the embedding from a single text chunk and then we use list comprehension to get text embeddings for all text chunks.
 
 ```python
+client = MistralClient(api_key=os.environ["MISTRAL_API_KEY"])
 def get_text_embedding(input):
     embeddings_batch_response = client.embeddings(
           model="mistral-embed",

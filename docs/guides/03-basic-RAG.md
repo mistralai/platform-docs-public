@@ -2,6 +2,7 @@
 Retrieval-augmented generation (RAG) is an AI framework that synergizes the capabilities of LLMs and information retrieval systems. It's useful to answer questions or generate content leveraging external knowledge. There are two main steps in RAG: 1) retrieval: retrieve relevant information from a knowledge base with text embeddings stored in a vector store; 2) generation: insert the relevant information to the prompt for the LLM to generate information. In this guide, we will walk through a very basic example of RAG with two implementations:
 
 - RAG from scratch with Mistral
+- RAG with Mistral and LangChain
 - RAG with Mistral and LlamaIndex
 
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/basic_RAG.ipynb">
@@ -155,7 +156,57 @@ run_mistral(prompt)
 #### Considerations:
 - **Prompting techniques**: Most of the prompting techniques can be used in developing a RAG system as well. For example, we can use few-shot learning to guide the model's answers by providing a few examples. Additionally, we can explicitly instruct the model to format answers in a certain way.
 
-In the next section, we are going to show you how to do a similar basic RAG with some of the popular RAG frameworks. We will start with LlamaIndex and add other frameworks in the future.
+In the next section, we are going to show you how to do a similar basic RAG with some of the popular RAG frameworks such as LangChain and LlamaIndex.
+
+## RAG with LangChain
+
+**Code:**
+```python
+from langchain_community.document_loaders import TextLoader
+from langchain_mistralai.chat_models import ChatMistralAI
+from langchain_mistralai.embeddings import MistralAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain
+
+# Load data
+loader = TextLoader("essay.txt")
+docs = loader.load()
+# Split text into chunks 
+text_splitter = RecursiveCharacterTextSplitter()
+documents = text_splitter.split_documents(docs)
+# Define the embedding model
+embeddings = MistralAIEmbeddings(model="mistral-embed", mistral_api_key=api_key)
+# Create the vector store 
+vector = FAISS.from_documents(documents, embeddings)
+# Define a retriever interface
+retriever = vector.as_retriever()
+# Define LLM
+model = ChatMistralAI(mistral_api_key=api_key)
+# Define prompt template
+prompt = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
+
+<context>
+{context}
+</context>
+
+Question: {input}""")
+
+# Create a retrieval chain to answer questions
+document_chain = create_stuff_documents_chain(model, prompt)
+retrieval_chain = create_retrieval_chain(retriever, document_chain)
+response = retrieval_chain.invoke({"input": "What were the two main things the author worked on before college?"})
+print(response["answer"])
+```
+
+**Output:**
+```
+The two main things the author worked on before college were writing and programming. He wrote short stories and tried programming on an IBM 1401 using Fortran, but he found it difficult to figure out what to do with the machine due to the limited input options. His interest in programming grew with the advent of microcomputers, leading him to write simple games, a program to predict rocket trajectories, and a word processor.
+```
+
+Visit our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/langgraph_crag_mistral.ipynb) to discover how to use LangChain's LangGraph with the Mistral API to perform Corrective RAG, which enables correction of poor quality retrieval or generations.
 
 ## RAG with LlamaIndex
 
@@ -193,4 +244,4 @@ print(str(response))
 The two main things the author worked on before college, outside of school, were writing and programming. They wrote short stories and attempted to write programs using an early version of Fortran on an IBM 1401.
 ```
 
-Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
+Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.

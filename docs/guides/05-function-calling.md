@@ -82,7 +82,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "retrieve_payment_date",
-            "description": "Get payment date of a transaction id",
+            "description": "Get payment date of a transaction",
             "parameters": {
                 "type": "object",
                 "properties": {

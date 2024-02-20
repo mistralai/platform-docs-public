@@ -65,7 +65,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "retrieve_payment_status",
-            "description": "Get payment status of a transaction id",
+            "description": "Get payment status of a transaction",
             "parameters": {
                 "type": "object",
                 "properties": {

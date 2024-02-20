@@ -4,11 +4,11 @@
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-Function calling allows Mistral models to connect to external tools. Large language models (LLMs) mainly focus on generating subsequent tokens in the text and are not inherently built for addressing real-world problems. Connecting Mistral models with external tools such as user defined functions or APIs empowers Mistral models to build applications catering to specific use cases and practical problems. In this guide, for instance, we wrote two functions for tracking payment status and payment date. We can use these two tools to provide answers for payment-related queries. 
+Function calling allows Mistral models to connect to external tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. In this guide, for instance, we wrote two functions for tracking payment status and payment date. We can use these two tools to provide answers for payment-related queries. 
 
 At a glance, there are four steps with function calling:
 - User: specify tools and query
-- Model: Generate function arguments 
+- Model: Generate function arguments if applicable
 - User: Execute function to obtain tool results
 - Model: Generate final answer
 

@@ -17,7 +17,7 @@ At a glance, there are four steps with function calling:
 
 In this guide, we will walk through a simple example to demonstrate how function calling works with Mistral models in these four steps. 
 
-Before we get started, let’s assume we have a dataframe consisting of payment transactions. When users ask questions about this dataframe, they can use certain tools to answer questions about this data. 
+Before we get started, let’s assume we have a dataframe consisting of payment transactions. When users ask questions about this dataframe, they can use certain tools to answer questions about this data. This is just an example to emulate an external database that the LLM cannot directly access.
 
 ```python
 import pandas as pd

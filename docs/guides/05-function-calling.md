@@ -98,7 +98,7 @@ tools = [
 ]
 ```
 
-- Then we organize the two functions into a dictionary where keys represent the function name, and values are the function with the df defined. This allows us to call each function based on its function name. 
+- Then we organize the two functions into a dictionary where keys represent the function name, and values are the function with the `df` defined. This allows us to call each function based on its function name. 
 
 ```python
 import functools

@@ -176,7 +176,7 @@ messages.append(response.choices[0].message)
 How do we execute the function? Currently, it is the user’s responsibility to execute these functions and the function execution lies on the user side. In the future, we may introduce some helpful functions that can be executed server-side. 
 
 
-Let’s extract some useful function information from model response including `function_name` and `function_params`. It’s clear here that our Mistral model has chosen to use the function retrieve_payment_status with the parameter `transaction_id` set to T1001. 
+Let’s extract some useful function information from model response including `function_name` and `function_params`. It’s clear here that our Mistral model has chosen to use the function `retrieve_payment_status` with the parameter `transaction_id` set to T1001. 
 ```python
 import json
 

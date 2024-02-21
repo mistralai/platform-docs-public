@@ -6,6 +6,8 @@
 
 Function calling allows Mistral models to connect to external tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. In this guide, for instance, we wrote two functions for tracking payment status and payment date. We can use these two tools to provide answers for payment-related queries. 
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eOo4GfHj3ZE?si=-l0j8Qpi9qLNy1BA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
 At a glance, there are four steps with function calling:
 - User: specify tools and query
 - Model: Generate function arguments if applicable

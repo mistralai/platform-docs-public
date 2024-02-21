@@ -4,6 +4,7 @@ Retrieval-augmented generation (RAG) is an AI framework that synergizes the capa
 - RAG from scratch with Mistral
 - RAG with Mistral and LangChain
 - RAG with Mistral and LlamaIndex
+- RAG with Mistral and Haystack
 
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/basic_RAG.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
@@ -245,3 +246,72 @@ The two main things the author worked on before college, outside of school, were
 ```
 
 Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
+
+## RAG with Haystack
+
+**Code:**
+```python
+from haystack import Pipeline
+from haystack.document_stores.in_memory import InMemoryDocumentStore
+from haystack.dataclasses import ChatMessage
+from haystack.utils.auth import Secret
+
+from haystack.components.builders import DynamicChatPromptBuilder
+from haystack.components.converters import TextFileToDocument
+from haystack.components.preprocessors import DocumentSplitter
+from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever
+from haystack.components.writers import DocumentWriter
+from haystack_integrations.components.embedders.mistral import MistralDocumentEmbedder, MistralTextEmbedder
+from haystack_integrations.components.generators.mistral import MistralChatGenerator
+
+document_store = InMemoryDocumentStore()
+
+docs = TextFileToDocument().run(sources=["essay.txt"])
+split_docs = DocumentSplitter(split_by="passage", split_length=2).run(documents=docs["documents"])
+embeddings = MistralDocumentEmbedder(api_key=Secret.from_token(api_key)).run(documents=split_docs["documents"])
+DocumentWriter(document_store=document_store).run(documents=embeddings["documents"])
+
+
+text_embedder = MistralTextEmbedder(api_key=Secret.from_token(api_key))
+retriever = InMemoryEmbeddingRetriever(document_store=document_store)
+prompt_builder = DynamicChatPromptBuilder(runtime_variables=["documents"])
+llm = MistralChatGenerator(api_key=Secret.from_token(api_key), 
+                           model='mistral-small')
+
+chat_template = """Answer the following question based on the contents of the documents.\n
+                Question: {{query}}\n
+                Documents: 
+                {% for document in documents %}
+                    {{document.content}}
+                {% endfor%}
+                """
+messages = [ChatMessage.from_user(chat_template)]
+
+rag_pipeline = Pipeline()
+rag_pipeline.add_component("text_embedder", text_embedder)
+rag_pipeline.add_component("retriever", retriever)
+rag_pipeline.add_component("prompt_builder", prompt_builder)
+rag_pipeline.add_component("llm", llm)
+
+
+rag_pipeline.connect("text_embedder.embedding", "retriever.query_embedding")
+rag_pipeline.connect("retriever.documents", "prompt_builder.documents")
+rag_pipeline.connect("prompt_builder.prompt", "llm.messages")
+
+question = "What were the two main things the author worked on before college?"
+
+result = rag_pipeline.run(
+    {
+        "text_embedder": {"text": question},
+        "prompt_builder": {"template_variables": {"query": question}, "prompt_source": messages},
+        "llm": {"generation_kwargs": {"max_tokens": 225}},
+    }
+)
+
+print(result["llm"]["replies"][0].content)
+```
+
+**Output:**
+```
+The two main things the author worked on before college were writing and programming. He wrote short stories, which he admitted were awful, and essays about various topics. He also worked on spam filters and painted. Additionally, he started having dinners for a group of friends every Thursday night, which taught him how to cook for groups. He also bought a building in Cambridge to use as an office. The author was drawn to writing essays, which he started publishing online, and this helped him figure out what to work on. He also experimented with painting and studied AI in college.
+```

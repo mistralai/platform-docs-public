@@ -133,7 +133,7 @@ How do Mistral models know about these functions and know which function to use?
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
 
-model = "mistral-large"
+model = "mistral-large-latest"
 api_key="TYPE YOUR API KEY"
 
 client = MistralClient(api_key=api_key)

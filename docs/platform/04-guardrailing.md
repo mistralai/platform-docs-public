@@ -86,7 +86,7 @@ Reversely, Mistral 7B can be used in an adversarial way to stress test content m
 
 We also provide our self-reflection prompt, strongly inspired by many initiatives from the AI community.
 
-```jsx
+```
 You're given a list of moderation categories as below:
 
 - illegal: Illegal activity.

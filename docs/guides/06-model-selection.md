@@ -22,7 +22,7 @@ When selecting a model, it is essential to evaluate the performance, speed, and 
 In general, the larger the model, the better the performance. For instance, when looking at the popular benchmark MMLU (Massive Multitask Language Understanding), the performance ranking of Mistral’s models is as follows: Mistral-large > Mistral-medium > Mistral-small > Mixtral 8x7B > Mistral 7B. Notably, Mistral-Large is currently outperforming all other four models across almost all benchmarks.
 
 (placeholder for img)
-<img src="/img/guides/embeddings2.png" alt="drawing" width="600"/>
+<img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
 
 For many applications, speed is a crucial factor, especially for the time to next tokens for LLMs. It’s not surprising that our smallest model Mistral 7B provides the fastest time to next token speed. Mistral-large also manages to deliver impressive speed, thanks to the substantial resources we dedicated to enhancing its performance.
 

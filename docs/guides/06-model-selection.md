@@ -92,11 +92,11 @@ Mistral-large outperforms our other four models in commonsense and reasoning ben
 
 | Model | MMLU | hellaswag (10 shot) | winograde (5 shot) | arc challenges (25 shot) |
 | --- | ---- | ---|---|---|
-| Open-Mistral-7B | 62.5% | 83.1% | 78.0% | 78.1% |
-| OpenMixtral-8x7B | 70.6% | 86.7% | 81.2% | 85.8% |
-| Mistral-Small | 72.2% | 86.9% | 84.7% | 86.9% |
-| Mistral-Medium | 75.3% | 88.0% | 88% | 89.9% |
-| Mistral-Large | 80.3% | 88.8% | 86.7% | 93.1% |
+| Mistral 7B | 62.5% | 83.1% | 78.0% | 78.1% |
+| Mixtral 8x7B | 70.6% | 86.7% | 81.2% | 85.8% |
+| Mistral-small | 72.2% | 86.9% | 84.7% | 86.9% |
+| Mistral-medium | 75.3% | 88.0% | 88% | 89.9% |
+| Mistral-large | 80.3% | 88.8% | 86.7% | 93.1% |
 
 
 
@@ -157,11 +157,11 @@ This table shows our latest coding benchmark results for all our five end points
 
 | Model | HumanE | MBPP | CODE | 
 | --- | ---- | ---|---|
-| Open-Mistral-7B | 26.2% | 50.2% | 38.2% |
-| Open-Mistral-8x7B | 40.2% | 60.7% | 50.5% |
-| Mistral-Small | 44.5% | 61.5% | 53.0% |
-| Mistral-Medium | 38.4% | 62.3% | 50.3% | 
-| Mistral-Large | 47.6% | 74.3% | 60.9% |
+| Mistral 7B | 26.2% | 50.2% | 38.2% |
+| Mistral 8x7B | 40.2% | 60.7% | 50.5% |
+| Mistral-small | 44.5% | 61.5% | 53.0% |
+| Mistral-medium | 38.4% | 62.3% | 50.3% | 
+| Mistral-large | 47.6% | 74.3% | 60.9% |
 
 Here is an example of Mistral-large giving the correct code following the prompt. 
 
@@ -222,11 +222,11 @@ In addition to its exceptional performance in complex reasoning tasks and coding
 
 | Model | Fr Arc-C | Fr HellaS | Fr MMLU | De Arc-C | De HellaS | De MMLU | Es Arc-C | Es HellaS | Es MMLU | It Arc-C | It HellaS | It MMLU | 
 | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- |
-| Open-Mistral-7b | 44.2% | 63.9% | 50.6% | 39.9% | 58.4% | 49.6% | 43.9% | 64.8% | 51.4% | 41.2% | 60.8% | 51.3% | 
-| Open-Mistral-8x7B | 54.3% | 76.0% | 66.1% | 52.7% | 71.0% | 64.9% | 53.7% | 76.3% | 67.5% | 51.1% | 72.9% | 65.9% |
-| Mistral-Small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
-| Mistral-Medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
-| Mistral-Large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
+| Mistral 7B | 44.2% | 63.9% | 50.6% | 39.9% | 58.4% | 49.6% | 43.9% | 64.8% | 51.4% | 41.2% | 60.8% | 51.3% | 
+| Mistral 8x7B | 54.3% | 76.0% | 66.1% | 52.7% | 71.0% | 64.9% | 53.7% | 76.3% | 67.5% | 51.1% | 72.9% | 65.9% |
+| Mistral-small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
+| Mistral-medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
+| Mistral-large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
 
 
 Prompt

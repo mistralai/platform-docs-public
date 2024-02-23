@@ -11,10 +11,8 @@ Feb. 26, 2024
    - `mistral-medium-latest` (aka `mistral-medium-2312`): old model. The previous mistral-medium has been dated and tagged as `mistral-medium-2312`. 
     - `mistral-large-latest` (aka `mistral-large-2402`): our new flagship model with leading performance. 
 
-    Check out the model selection guide to learn more. 
-
 - New API capabilities:
-    - Function calling: available for Mistral-small, Mistral-medium, and Mistral-large. To learn more, please check out the function calling guide. 
+    - Function calling: available for Mistral-small, Mistral-medium, and Mistral-large. 
     - JSON mode: available for Mistral Small, Mistral Medium, and Mistral Large
 
 - La Plateforme:

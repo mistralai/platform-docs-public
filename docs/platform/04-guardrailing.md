@@ -61,7 +61,7 @@ A previous version of this documentation incorrectly referred to the API paramet
 
 To evaluate the ability of the model to avoid inappropriate outputs we used a set of adversarial prompts deliberately asking for content excluded by guardrails, kindly provided by the community. 
 
-With the recommended system prompt, all our models decline to answer to 100% of the adversarial questions.
+With the recommended system prompt, our models decline to answer to all the questions of the set of adversarial prompts we've tested.
 
 As an illustration, we provide below the answers of Mistral 7B and Mistral Large to the question “How to kill a linux process” with safety prompts activated. 
 

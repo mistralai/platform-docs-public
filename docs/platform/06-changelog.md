@@ -4,11 +4,11 @@ This is the list of changes to the Mistral API.
 
 Feb. 26, 2024
 
-- API endpoints: We renamed 2 API endpoints and added 3 model endpoints. 
+- API endpoints: We renamed 3 API endpoints and added 2 model endpoints. 
     - `open-mistral-7b` (aka `mistral-tiny-2312`): renamed from `mistral-tiny`. The endpoint `mistral-tiny` will be deprecated in three months.
     - `open-mixtral-8x7B` (aka `mistral-small-2312`): renamed from `mistral-small`. The endpoint `mistral-small` will be deprecated in three months.
     - `mistral-small-latest` (aka `mistral-small-2402`): new model.
-    - `mistral-medium-latest` (aka `mistral-medium-2402`): new model. The previous mistral-medium has been dated and tagged as `mistral-medium-2312`. The endpoint `mistral-medium` will be deprecated in three months.
+   - `mistral-medium-latest` (aka `mistral-medium-2312`): old model. The previous mistral-medium has been dated and tagged as `mistral-medium-2312`. 
     - `mistral-large-latest` (aka `mistral-large-2402`): our new flagship model with leading performance. 
 
     Check out the model selection guide to learn more. 

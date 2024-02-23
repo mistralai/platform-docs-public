@@ -6,11 +6,13 @@ The prices listed below are exclusive of VAT.
 
 ### Chat Completions API
 
-| Model  | Input | Output |
-|-----------|-----------|-----------|
-| `mistral-tiny` | 0.14€ / 1M tokens | 0.42€ / 1M tokens |
-| `mistral-small` | 0.6€ / 1M tokens | 1.8€ / 1M tokens |
-| `mistral-medium` | 2.5€ / 1M tokens | 7.5€ / 1M tokens |
+| Model  | Endpoint  | Input | Output |
+|-----------|-----------|-----------|-----------|
+| Mistral 7B | `open-mistral-7b` | 0.25€ / 1M tokens | 0.25€ / 1M tokens |
+| Mixtral 8x7B | `open-mixtral-8x7b` | 0.7€ / 1M tokens | 0.7€ / 1M tokens |
+| Mistral-small | `mistral-small-latest` | 2€ / 1M tokens | 6€ / 1M tokens |
+| Mistral-medium | `mistral-medium-latest` | 2.5€ / 1M tokens | 7.5€ / 1M tokens |
+| Mistral-large | `mistral-large-latest` | 8€ / 1M tokens | 24€ / 1M tokens |
 
 ### Embeddings API
 

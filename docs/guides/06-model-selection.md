@@ -185,10 +185,9 @@ def max_segments(n, a, b, c):
                     max_num_segments = max(max_num_segments, i + j + k)
 
     return max_num_segments
-```
-
 
 This function uses nested loops to generate all possible combinations of segments of lengths `a`, `b`, and `c`, respectively. For each combination, it checks if the total length of the segments is equal to `n`, and if so, it updates the maximum number of segments found so far. The function returns the maximum number of segments that can be formed from `n`.
+```
 
 Here is another example of Mistral-large writing a function for computing square roots using the babylonian method. 
 

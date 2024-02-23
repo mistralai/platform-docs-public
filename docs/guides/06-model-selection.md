@@ -20,20 +20,19 @@ Today, Mistral models are behind many LLM applications at scale. Here is a brief
 When selecting a model, it is essential to evaluate the performance, speed, and cost trade-offs. Depending on what’s most important for your application, your choice may differ significantly. Note that the models will be updated over time, the information we share below only reflect the current state of the models.
 
 In general, the larger the model, the better the performance. For instance, when looking at the popular benchmark MMLU (Massive Multitask Language Understanding), the performance ranking of Mistral’s models is as follows: Mistral-large > Mistral-medium > Mistral-small > Mixtral 8x7B > Mistral 7B. Notably, Mistral-Large is currently outperforming all other four models across almost all benchmarks.
-
-(placeholder for img)
+ 
 <img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
 
 For many applications, speed is a crucial factor, especially for the time to next tokens for LLMs. It’s not surprising that our smallest model Mistral 7B provides the fastest time to next token speed. Mistral-large also manages to deliver impressive speed, thanks to the substantial resources we dedicated to enhancing its performance.
 
 (placeholder for img)
-<img src="/img/guides/embeddings2.png" alt="drawing" width="600"/>
+<img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
 
 
 Pricing could also be a significant consideration for many applications. Here are two scatter plots showing the relationship between MMLU and input token price, as well as the relationship between MMLU and the output token price.
 
 (placeholder for img)
-<img src="/img/guides/embeddings2.png" alt="drawing" width="600"/>
+<img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
 
 In addition to the benchmarks mentioned above, you can also refer to various other independent benchmarks, such as https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard and https://artificialanalysis.ai/, to gain more insight into the performance and speed of different large language models.  By considering the performance, speed, and cost details, hopefully you can find the best model that suits your application's needs.
 

@@ -8,11 +8,11 @@ Feb. 26, 2024
     - `open-mistral-7b` (aka `mistral-tiny-2312`): renamed from `mistral-tiny`. The endpoint `mistral-tiny` will be deprecated in three months.
     - `open-mixtral-8x7B` (aka `mistral-small-2312`): renamed from `mistral-small`. The endpoint `mistral-small` will be deprecated in three months.
     - `mistral-small-latest` (aka `mistral-small-2402`): new model.
-   - `mistral-medium-latest` (aka `mistral-medium-2312`): old model. The previous mistral-medium has been dated and tagged as `mistral-medium-2312`. 
+   - `mistral-medium-latest` (aka `mistral-medium-2312`): old model. The previous `mistral-medium` has been dated and tagged as `mistral-medium-2312`. The endpoint `mistral-medium` will be deprecated in three months.
     - `mistral-large-latest` (aka `mistral-large-2402`): our new flagship model with leading performance. 
 
 - New API capabilities:
-    - Function calling: available for Mistral-small, Mistral-medium, and Mistral-large. 
+    - Function calling: available for Mistral Small, Mistral Medium, and Mistral Large. 
     - JSON mode: available for Mistral Small, Mistral Medium, and Mistral Large
 
 - La Plateforme:
@@ -21,7 +21,7 @@ Feb. 26, 2024
 
 - Le Chat: 
     - We introduced the brand new chat interface Le Chat to easily interact with Mistral models. 
-    - You can currently interact with four models: Mistral-large, Mistral-next, Mistral-medium, and Mistral-small. 
+    - You can currently interact with four models: Mistral Large, Mistral Next, Mistral Medium, and Mistral Small. 
 
 Jan. 11, 2024
 - We have enhanced the API's strictness. Previously the API would silently ignores unsupported parameters in the requests, but it now strictly enforces the validity of all parameters. If you have unsupported parameters in your request, you will see the error message "Extra inputs are not permitted".

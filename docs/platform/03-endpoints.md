@@ -1,105 +1,57 @@
-import Benchmark from '@site/static/img/mistral_family.png';
+# Endpoints and Benchmarks
 
-# Endpoints
+We provide five different API endpoints to serve our generative models with different price/performance tradeoffs and one embedding endpoint for our embedding model. 
 
-We provide different endpoints with different price/performance tradeoffs. Our endpoints depend on internal models.
- Some of them are [open-weight](../../models), which allow users to deploy them on their own, on arbitrary infrastructure.
- See [Self-deployment](../../self-deployment/overview) for details.
+## Mistral AI generative models
 
-## Generative endpoints
+Mistral AI provides five API endpoints for its five Large Language Models:
+- `open-mistral-7b` (aka `mistral-tiny-2312`)
+- `open-mixtral-8x7b` (aka `mistral-small-2312`)
+- `mistral-small-latest` (aka `mistral-small-2402`)
+- `mistral-medium-latest` (aka `mistral-medium-2312`)
+- `mistral-large-latest` (aka `mistral-large-2402`)
 
-All our generative endpoints can reason on contexts up to 32k tokens and follow fine-grained instructions.
-The following table gathers benchmarks for each endpoint.
-
-
-<table>
-  <tr>
-    <th></th>
-    <th>Mistral-tiny</th>
-    <th>Mistral-small</th>
-    <th>Mistral-medium</th>
-  </tr>
-  <tr>
-    <td><b>MMLU</b> <br/>(MCQ in 57 subjects)</td>
-    <td>63.0%</td>
-    <td>70.6%</td>
-    <td><b>75.3%</b></td>
-  </tr>
-  <tr>
-    <td><b>HellaSwag</b> <br/> (10-shot)</td>
-    <td>83.1%</td>
-    <td>86.7%</td>
-    <td><b>88.0%</b></td>
-  </tr>
-  <tr>
-    <td><b>ARC Challenge</b> <br/> (25-shot)</td>
-    <td>78.1%</td>
-    <td>85.8%</td>
-    <td><b>89.9%</b></td>
-  </tr>
-  <tr>
-    <td><b>WinoGrande</b> <br/> (5-shot)</td>
-    <td>78.0%</td>
-    <td>81.2%</td>
-    <td><b>88.0%</b></td>
-  </tr>
-  <tr>
-    <td><b>MBPP</b> <br/> (pass@1)</td>
-    <td>30.5%</td>
-    <td>60.7%</td>
-    <td><b>62.3%</b></td>
-  </tr>
-  <tr>
-    <td><b>GSM-8K</b> <br/> (5-shot)</td>
-    <td>36.5%</td>
-    <td>58.4%</td>
-    <td><b>66.7%</b></td>
-  </tr>
-  <tr>
-    <td><b>MT Bench</b> <br/> (for Instruct models)</td>
-    <td>7.61</td>
-    <td>8.30</td>
-    <td><b>8.61</b></td>
-  </tr>
-</table>
-
-We only provide chat access through our API. Users can access underlying base models for endpoints relying on 
-[open-weight models](../../models).
-
-### Tiny
-
-This generative endpoint is best used for large batch processing tasks where cost is a significant factor 
-but reasoning capabilities are not crucial.
-
-Currently powered by Mistral-7B-v0.2, a better fine-tuning of the initial Mistral-7B released,
-inspired by the fantastic work of the community.
-
-
-API name: `mistral-tiny`
-
-### Small
-
-Higher reasoning capabilities and more capabilities.
-
-The endpoint supports English, French, German, Italian, and Spanish and can produce and reason about code.
-
-Currently powered Mixtral-8X7B-v0.1, a sparse mixture of experts model with 12B active parameters.
-
-
-API name: `mistral-small`
-
-### Medium
-
-This endpoint currently relies on an internal prototype model.
-
-API name: `mistral-medium`
-
-## Embedding models
-
+## Mistral AI embedding model
 Embedding models enable retrieval and retrieval-augmented generation applications.
 
-Our endpoint outputs vectors in `1024` dimensions. It achieves a retrieval score of 55.26 on MTEB.
+Mistral AI embedding endpoint outputs vectors in `1024` dimensions. It achieves a retrieval score of 55.26 on MTEB.
 
 API name: `mistral-embed`
 
+## Benchmarks results
+The following tables gather results on a suite of  commonly used benchmarks for each of our model.
+<!-- See our [Model selection] (../guides
+/06-model-selection) guide to explore further the performance, speed, and cost trade-offs, and discuss how to select the appropriate model for different use cases. -->
+
+### General knowledge, common sense and reasoning
+
+| Model | MMLU | hellaswag (10-shot) | winograde (5-shot) | arc challenge (25-shot) | TriviaQA (5-shot) | TruthfulQA |
+| --- | ---- | ---|---|---|---|---|
+| Open-Mistral-7B | 62.5% | 83.1% | 78.0% | 78.1% | 68.8% | 42.35% |
+| OpenMixtral-8x7B | 70.6% | 86.7% | 81.2% | 85.8% | 78.38% | 47.5% |
+| Mistral-Small | 72.2% | 86.9% | 84.7% | 86.9% | 79.5% | 51.7% |
+| Mistral-Medium | 75.3% | 88.0% | 88% | 89.9% | 81.1% | 47% |
+| Mistral-Large | 80.3% | 88.8% | 86.7% | 93.1% | 82.3% | 53.7% |
+
+
+### Coding
+
+| Model | HumanE pass@1 | MBPP pass@1 |
+| --- | ---- | ---|
+| Open-Mistral-7B | 26.2% | 50.2% |
+| Open-Mistral-8x7B | 40.2% | 60.7% |
+| Mistral-Small | 44.5% | 61.5% |
+| Mistral-Medium | 38.4% | 62.3% | 
+| Mistral-Large | 47.6% | 74.3% |
+
+
+### Multi-lingual
+
+| Model | FR Arc-C | FR HellaS | FR MMLU | DE Arc-C | DE HellaS | DE MMLU | ES Arc-C | ES HellaS | ES MMLU | IT Arc-C | IT HellaS | IT MMLU | 
+| --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- |
+| Open-Mistral-7b | 44.2% | 63.9% | 50.6% | 39.9% | 58.4% | 49.6% | 43.9% | 64.8% | 51.4% | 41.2% | 60.8% | 51.3% | 
+| Open-Mistral-8x7B | 54.3% | 76.0% | 66.1% | 52.7% | 71.0% | 64.9% | 53.7% | 76.3% | 67.5% | 51.1% | 72.9% | 65.9% |
+| Mistral-Small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
+| Mistral-Medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
+| Mistral-Large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
 

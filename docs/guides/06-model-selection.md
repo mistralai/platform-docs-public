@@ -7,40 +7,35 @@ Mistral AI provides five API endpoints featuring five leading Large Language Mod
 - `mistral-medium-latest` (aka `mistral-medium-2312`)
 - `mistral-large-latest` (aka `mistral-large-2402`)
 
-This guide will explore the performance, speed, and cost trade-offs, and discuss how to select the appropriate model for different use cases. We will delve into various factors to consider, offering guidance on choosing the right model for your specific needs.
+This guide will explore the performance and cost trade-offs, and discuss how to select the appropriate model for different use cases. We will delve into various factors to consider, offering guidance on choosing the right model for your specific needs.
 
 Today, Mistral models are behind many LLM applications at scale. Here is a brief overview on the types of use cases we see along with their respective Mistral model:
 
-1) Simple tasks that one can do in bulk (Classification, Customer Support, or Text Generation) are powered by Mistral-small.
-2) Intermediate tasks that require moderate reasoning (Data extraction, Summarizing a Document, Writing emails, Writing a Job Description, or Writing Product Descriptions) are powered by Mistral-medium.
-3) Complex tasks that require large reasoning capabilities or are highly specialized (Synthetic Text Generation, Code Generation, RAG, or Agents) are powered by Mistral-large.
+1) Simple tasks that one can do in bulk (Classification, Customer Support, or Text Generation) are powered by Mistral Small.
+2) Intermediate tasks that require moderate reasoning (Data extraction, Summarizing a Document, Writing emails, Writing a Job Description, or Writing Product Descriptions) are powered by Mistral Medium.
+3) Complex tasks that require large reasoning capabilities or are highly specialized (Synthetic Text Generation, Code Generation, RAG, or Agents) are powered by Mistral Large.
 
-## Performance, Speed, and Cost Trade-offs 
+## Performance and Cost Trade-offs 
 
-When selecting a model, it is essential to evaluate the performance, speed, and cost trade-offs. Depending on what’s most important for your application, your choice may differ significantly. Note that the models will be updated over time, the information we share below only reflect the current state of the models.
+When selecting a model, it is essential to evaluate the performance, and cost trade-offs. Depending on what’s most important for your application, your choice may differ significantly. Note that the models will be updated over time, the information we share below only reflect the current state of the models.
 
-In general, the larger the model, the better the performance. For instance, when looking at the popular benchmark MMLU (Massive Multitask Language Understanding), the performance ranking of Mistral’s models is as follows: Mistral-large > Mistral-medium > Mistral-small > Mixtral 8x7B > Mistral 7B. Notably, Mistral-Large is currently outperforming all other four models across almost all benchmarks.
+In general, the larger the model, the better the performance. For instance, when looking at the popular benchmark MMLU (Massive Multitask Language Understanding), the performance ranking of Mistral’s models is as follows: Mistral Large > Mistral Medium > Mistral Small > Mixtral 8x7B > Mistral 7B. Notably, Mistral Large is currently outperforming all other four models across almost all benchmarks.
  
-<img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
-
-For many applications, speed is a crucial factor, especially for the time to next tokens for LLMs. It’s not surprising that our smallest model Mistral 7B provides the fastest time to next token speed. Mistral-large also manages to deliver impressive speed, thanks to the substantial resources we dedicated to enhancing its performance.
-
-(placeholder for img)
 <img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
 
 
 Pricing could also be a significant consideration for many applications. Here are two scatter plots showing the relationship between MMLU and input token price, as well as the relationship between MMLU and the output token price.
 
 (placeholder for img)
-<img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
+<img src="/img/guides/modelselection2.png" alt="drawing" width="600"/>
 
 In addition to the benchmarks mentioned above, you can also refer to various other independent benchmarks, such as https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard and https://artificialanalysis.ai/, to gain more insight into the performance and speed of different large language models.  By considering the performance, speed, and cost details, hopefully you can find the best model that suits your application's needs.
 
-As a general rule, if you are new to using Large Language Models, you can always start with Mistral-large first. This will allow you to evaluate its cost and performance and determine whether you need to downgrade to Mistral-medium or even Mistral-small. If you are already using another large language model and are looking to replace a particularly powerful one, then Mistral-large may be the best choice for you. 
+As a general rule, if you are new to using Large Language Models, you can always start with Mistral Large first. This will allow you to evaluate its cost and performance and determine whether you need to downgrade to Mistral Medium or even Mistral Small. If you are already using another large language model and are looking to replace a particularly powerful one, then Mistral Large may be the best choice for you. 
 
 ## Use Cases 
-### Mistral-small: Simple tasks that one can do in bulk
-Mistral-small is the ideal choice for simpe tasks that one can do in builk - like Classification, Customer Support, or Text Generation. It offers excellent performance at an affordable price point. For instance, it can be effectively used for a classification task to classify if an email is spam or not: 
+### Mistral Small: Simple tasks that one can do in bulk
+Mistral Small is the ideal choice for simpe tasks that one can do in builk - like Classification, Customer Support, or Text Generation. It offers excellent performance at an affordable price point. For instance, it can be effectively used for a classification task to classify if an email is spam or not: 
 
 Prompt
 ```
@@ -49,10 +44,10 @@ Classify the following email to determine if it is spam or not. Only respond wit
 🎉 Urgent! You've Won a $1,000,000 Cash Prize! 💰 To claim your prize, please click on the link below: https://bit.ly/claim-your-prize
 ```
 
-Mistral-small, Mistral-medium, and Mistral-large all can accurately classify this email correctly as “Spam”. Mistral-small is capable to provide the correct classification as the larger models. So it is the most efficient and affordable choice for this kind of tasks. 
+Mistral Small, Mistral Medium, and Mistral Large all can accurately classify this email correctly as “Spam”. Mistral Small is capable to provide the correct classification as the larger models. So it is the most efficient and affordable choice for this kind of tasks. 
 
-### Mistral-medium: Intermediate tasks that require language transformation
-Mistral-medium is the ideal for intermediate tasks that require moderate reasoning - like Data extraction, Summarizing a Document, Writing a Job Description, or Writing Product Descriptions. Mistral-medium strikes a balance between performance and capability, making it suitable for a wide range of tasks that only require language transformaion. For example, Mistral-medium can write an email:
+### Mistral Medium: Intermediate tasks that require language transformation
+Mistral Medium is the ideal for intermediate tasks that require moderate reasoning - like Data extraction, Summarizing a Document, Writing a Job Description, or Writing Product Descriptions. Mistral Medium strikes a balance between performance and capability, making it suitable for a wide range of tasks that only require language transformaion. For example, Mistral Medium can write an email:
 
 Prompt
 ```
@@ -84,22 +79,23 @@ Best Regards,
 The Fun Shop Team
 ```
 
-### Mistral-large: Complex tasks that require large reasoning capabilities or are highly specialized 
-Mistral-large is ideal for complex tasks that require large reasoning capabilities or are highly specialized - like Synthetic Text Generation, Code Generation, RAG, or Agents.
+### Mistral Large: Complex tasks that require large reasoning capabilities or are highly specialized 
+Mistral Large is ideal for complex tasks that require large reasoning capabilities or are highly specialized - like Synthetic Text Generation, Code Generation, RAG, or Agents.
+
 #### Complex reasoning
-Mistral-large outperforms our other four models in commonsense and reasoning benchmarks, making it the best choice for complex reasoning tasks. 
+Mistral Large outperforms our other four models in commonsense and reasoning benchmarks, making it the best choice for complex reasoning tasks. 
 
 | Model | MMLU | hellaswag (10 shot) | winograde (5 shot) | arc challenges (25 shot) |
 | --- | ---- | ---|---|---|
 | Mistral 7B | 62.5% | 83.1% | 78.0% | 78.1% |
 | Mixtral 8x7B | 70.6% | 86.7% | 81.2% | 85.8% |
-| Mistral-small | 72.2% | 86.9% | 84.7% | 86.9% |
-| Mistral-medium | 75.3% | 88.0% | 88% | 89.9% |
-| Mistral-large | 80.3% | 88.8% | 86.7% | 93.1% |
+| Mistral Small | 72.2% | 86.9% | 84.7% | 86.9% |
+| Mistral Medium | 75.3% | 88.0% | 88% | 89.9% |
+| Mistral Large | 80.3% | 88.8% | 86.7% | 93.1% |
 
 
 
-In this example, we ask Mistral-large to calculate the difference in payment dates between the two customers whose payment amounts are closest to each other in the given dataset. Mistral-large can easily and automatically break down the problem into smaller steps: identify the two closest payment amounts, find their respective payment dates, and calculate the date difference. Mistral-large is an excellent choice for tasks that require complex reasoning and problem-solving skills.
+In this example, we ask Mistral Large to calculate the difference in payment dates between the two customers whose payment amounts are closest to each other in the given dataset. Mistral Large can easily and automatically break down the problem into smaller steps: identify the two closest payment amounts, find their respective payment dates, and calculate the date difference. Mistral Large is an excellent choice for tasks that require complex reasoning and problem-solving skills.
 
 Prompt
 ```
@@ -129,7 +125,7 @@ Date difference = |'2021-10-07' - '2021-10-05'| = 2 days
 So, the difference in payment dates between the two customers whose payment amounts are closest to each other is 2 days.
 ```
 
-Let’s try another prompt we found online that requires reasoning and logic understanding. Mistral-Large is able to answer it correctly, while other models can’t. 
+Let’s try another prompt we found online that requires reasoning and logic understanding. Mistral Large is able to answer it correctly. 
 ```
 There's an apple inside a blue box. There's also a red box inside the blue box. The red box has a lid on it. How can I get the apple?
 ```
@@ -138,7 +134,7 @@ Output
 You can get the apple by opening the blue box. The apple is not inside the red box, so you don't need to open the red box. Simply reach into the blue box and take the apple.
 ```
 
-Here is another example. Mistral-large is able to answer it correctly, while other models can’t. 
+Here is another example. Mistral Large is able to answer it correctly. 
 ```
 Which one is heavier a pound of iron or a kilogram of feather
 ```
@@ -151,18 +147,18 @@ A pound is a unit of weight that is equivalent to approximately 0.453592 kilogra
 It may seem counterintuitive because we often think of iron as being a heavy material and feathers as being light, but the weight of an object depends on its mass and the force of gravity acting upon it, not on its material or composition.
 
 #### Coding
-This table shows our latest coding benchmark results for all our five end points. Mistral-large, the top performer in coding tasks, is the ideal choice for users who priortize coding capabilities in their model selection. 
+This table shows our latest coding benchmark results for all our five end points. Mistral Large, the top performer in coding tasks, is the ideal choice for users who priortize coding capabilities in their model selection. 
 
 
 | Model | HumanE | MBPP | CODE | 
 | --- | ---- | ---|---|
 | Mistral 7B | 26.2% | 50.2% | 38.2% |
 | Mistral 8x7B | 40.2% | 60.7% | 50.5% |
-| Mistral-small | 44.5% | 61.5% | 53.0% |
-| Mistral-medium | 38.4% | 62.3% | 50.3% | 
-| Mistral-large | 47.6% | 74.3% | 60.9% |
+| Mistral Small | 44.5% | 61.5% | 53.0% |
+| Mistral Medium | 38.4% | 62.3% | 50.3% | 
+| Mistral Large | 47.6% | 74.3% | 60.9% |
 
-Here is an example of Mistral-large giving the correct code following the prompt. 
+Here is an example of Mistral Large giving the correct code following the prompt. 
 
 Prompt
 ```
@@ -189,7 +185,7 @@ def max_segments(n, a, b, c):
 This function uses nested loops to generate all possible combinations of segments of lengths `a`, `b`, and `c`, respectively. For each combination, it checks if the total length of the segments is equal to `n`, and if so, it updates the maximum number of segments found so far. The function returns the maximum number of segments that can be formed from `n`.
 ```
 
-Here is another example of Mistral-large writing a function for computing square roots using the babylonian method. 
+Here is another example of Mistral Large writing a function for computing square roots using the babylonian method. 
 
 Prompt
 ```
@@ -214,7 +210,7 @@ def babylonian_squareroot(number):
 ```
 
 #### Multi-lingual tasks 
-In addition to its exceptional performance in complex reasoning tasks and coding tasks, Mistral-large also demonstrates superior capabilities in handling multi-lingual tasks. Mistral-large has been specifically trained to understand and generate text in multiple languages, especially in French, German, Spanish and Italian. Mistral-large can be especially valuable for businesses and users that need to communicate in multiple languages.
+In addition to its exceptional performance in complex reasoning tasks and coding tasks, Mistral Large also demonstrates superior capabilities in handling multi-lingual tasks. Mistral-large has been specifically trained to understand and generate text in multiple languages, especially in French, German, Spanish and Italian. Mistral Large can be especially valuable for businesses and users that need to communicate in multiple languages.
 
 
 
@@ -222,9 +218,9 @@ In addition to its exceptional performance in complex reasoning tasks and coding
 | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- |
 | Mistral 7B | 44.2% | 63.9% | 50.6% | 39.9% | 58.4% | 49.6% | 43.9% | 64.8% | 51.4% | 41.2% | 60.8% | 51.3% | 
 | Mistral 8x7B | 54.3% | 76.0% | 66.1% | 52.7% | 71.0% | 64.9% | 53.7% | 76.3% | 67.5% | 51.1% | 72.9% | 65.9% |
-| Mistral-small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
-| Mistral-medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
-| Mistral-large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
+| Mistral Small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
+| Mistral Medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
+| Mistral Large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
 
 
 Prompt

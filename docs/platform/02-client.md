@@ -22,7 +22,7 @@ from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "mistral-tiny"
+model = "mistral-large-latest"
 
 client = MistralClient(api_key=api_key)
 
@@ -45,7 +45,7 @@ from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "mistral-tiny"
+model = "mistral-large-latest"
 
 client = MistralClient(api_key=api_key)
 
@@ -66,7 +66,7 @@ from mistralai.async_client import MistralAsyncClient
 from mistralai.models.chat_completion import ChatMessage
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "mistral-tiny"
+model = "mistral-large-latest"
 
 client = MistralAsyncClient(api_key=api_key)
 
@@ -92,7 +92,7 @@ const apiKey = process.env.MISTRAL_API_KEY;
 const client = new MistralClient(apiKey);
 
 const chatResponse = await client.chat({
-  model: 'mistral-tiny',
+  model: 'mistral-large-latest',
   messages: [{role: 'user', content: 'What is the best French cheese?'}],
 });
 
@@ -106,7 +106,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
-    "model": "mistral-tiny",
+    "model": "mistral-large-latest",
     "messages": [
      {
         "role": "user",

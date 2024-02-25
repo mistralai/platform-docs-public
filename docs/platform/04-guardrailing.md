@@ -11,7 +11,7 @@ The ability to enforce guardrails in chat generations is crucial for front-facin
   <TabItem value="python" label="python" default>
 ```python
 chat_response = client.chat(
-    model="mistral-tiny", 
+    model="mistral-large-latest", 
     messages=ChatMessage(role="user", content="What is the best French cheese?"),
     safe_mode=True
 )
@@ -20,7 +20,7 @@ chat_response = client.chat(
   <TabItem value="javascript" label="javascript">
 ```javascript
 const chatResponse = await client.chat(
-    model: 'mistral-tiny',
+    model: 'mistral-large-latest',
     messages: [{role: 'user', content: 'What is the best French cheese?'}],
     safe_mode: true
 );
@@ -33,7 +33,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
-    "model": "mistral-tiny",
+    "model": "mistral-large-latest",
     "messages": [
      {
         "role": "user",

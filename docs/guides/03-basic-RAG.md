@@ -133,10 +133,10 @@ Answer:
 """
 ```
 
-Then we can use the Mistral chat completion API to chat with a Mistral model (e.g., Mistral-medium) and generate answers based on the user question and the context of the question.
+Then we can use the Mistral chat completion API to chat with a Mistral model (e.g., mistral-medium-latest) and generate answers based on the user question and the context of the question.
 
 ```python
-def run_mistral(user_message, model="mistral-medium"):
+def run_mistral(user_message, model="mistral-medium-latest"):
     messages = [
         ChatMessage(role="user", content=user_message)
     ]

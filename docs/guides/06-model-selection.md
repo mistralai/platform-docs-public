@@ -26,7 +26,6 @@ In general, the larger the model, the better the performance. For instance, when
 
 Pricing could also be a significant consideration for many applications. Here are two scatter plots showing the relationship between MMLU and input token price, as well as the relationship between MMLU and the output token price.
 
-(placeholder for img)
 <img src="/img/guides/modelselection2.png" alt="drawing" width="600"/>
 
 In addition to the benchmarks mentioned above, you can also refer to various other independent benchmarks, such as https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard and https://artificialanalysis.ai/, to gain more insight into the performance and speed of different large language models.  By considering the performance, speed, and cost details, hopefully you can find the best model that suits your application's needs.
@@ -85,15 +84,13 @@ Mistral Large is ideal for complex tasks that require large reasoning capabiliti
 #### Complex reasoning
 Mistral Large outperforms our other four models in commonsense and reasoning benchmarks, making it the best choice for complex reasoning tasks. 
 
-| Model | MMLU | hellaswag (10 shot) | winograde (5 shot) | arc challenges (25 shot) |
-| --- | ---- | ---|---|---|
-| Mistral 7B | 62.5% | 83.1% | 78.0% | 78.1% |
-| Mixtral 8x7B | 70.6% | 86.7% | 81.2% | 85.8% |
-| Mistral Small | 72.2% | 86.9% | 84.7% | 86.9% |
-| Mistral Medium | 75.3% | 88.0% | 88% | 89.9% |
-| Mistral Large | 80.3% | 88.8% | 86.7% | 93.1% |
-
-
+| Model | MMLU | hellaswag (10-shot) | winograde (5-shot) | arc challenge (25-shot) | TriviaQA (5-shot) | TruthfulQA |
+| --- | ---- | ---|---|---|---|---|
+| Mistral 7B | 62.5% | 83.1% | 78.0% | 78.1% | 68.8% | 42.35% |
+| Mixtral 8x7B | 70.6% | 86.7% | 81.2% | 85.8% | 78.38% | 47.5% |
+| Mistral Small | 72.2% | 86.9% | 84.7% | 86.9% | 79.5% | 51.7% |
+| Mistral Medium | 75.3% | 88.0% | 88% | 89.9% | 81.1% | 47% |
+| Mistral Large | 80.3% | 88.8% | 86.7% | 93.1% | 82.3% | 53.7% |
 
 In this example, we ask Mistral Large to calculate the difference in payment dates between the two customers whose payment amounts are closest to each other in the given dataset. Mistral Large can easily and automatically break down the problem into smaller steps: identify the two closest payment amounts, find their respective payment dates, and calculate the date difference. Mistral Large is an excellent choice for tasks that require complex reasoning and problem-solving skills.
 
@@ -149,14 +146,13 @@ It may seem counterintuitive because we often think of iron as being a heavy mat
 #### Coding
 This table shows our latest coding benchmark results for all our five end points. Mistral Large, the top performer in coding tasks, is the ideal choice for users who priortize coding capabilities in their model selection. 
 
-
-| Model | HumanE | MBPP | CODE | 
-| --- | ---- | ---|---|
-| Mistral 7B | 26.2% | 50.2% | 38.2% |
-| Mistral 8x7B | 40.2% | 60.7% | 50.5% |
-| Mistral Small | 44.5% | 61.5% | 53.0% |
-| Mistral Medium | 38.4% | 62.3% | 50.3% | 
-| Mistral Large | 47.6% | 74.3% | 60.9% |
+| Model | HumanE pass@1 | MBPP pass@1 |
+| --- | ---- | ---|
+| Mistral 7B | 26.2% | 50.2% |
+| Mistral 8x7B | 40.2% | 60.7% |
+| Mistral Small | 44.5% | 61.5% |
+| Mistral Medium | 38.4% | 62.3% | 
+| Mistral Large | 47.6% | 74.3% |
 
 Here is an example of Mistral Large giving the correct code following the prompt. 
 

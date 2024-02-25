@@ -1,4 +1,4 @@
-# Endpoints and Benchmarks
+# Endpoints and benchmarks
 
 We provide five different API endpoints to serve our generative models with different price/performance tradeoffs and one embedding endpoint for our embedding model. 
 

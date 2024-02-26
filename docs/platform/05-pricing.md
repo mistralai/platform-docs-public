@@ -16,9 +16,9 @@ The prices listed below are exclusive of VAT.
 
 ### Embeddings API
 
-| Model  | Endpoint | Input |
-|-----------|-----------|-----------|
-| Mistral Embed | `mistral-embed` | 0.1€ / 1M tokens |
+| Model  | Endpoint | Input (USD) | Input (EUR) |
+|-----------|-----------|-----------|-----------|
+| Mistral Embed | `mistral-embed` | 0.1$ / 1M tokens | 0.1€ / 1M tokens |
 
 ## Rate limits
 

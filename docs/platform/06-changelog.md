@@ -12,8 +12,8 @@ Feb. 26, 2024
     - `mistral-large-latest` (aka `mistral-large-2402`): our new flagship model with leading performance. 
 
 - New API capabilities:
-    - Function calling: available for Mistral Small, Mistral Medium, and Mistral Large. 
-    - JSON mode: available for Mistral Small, Mistral Medium, and Mistral Large
+    - Function calling: available for Mistral Small and Mistral Large. 
+    - JSON mode: available for Mistral Small and Mistral Large
 
 - La Plateforme:
     - We added multiple currency support to the payment system, including the option to pay in US dollars. 

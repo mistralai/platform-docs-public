@@ -19,9 +19,7 @@ Mistral AI embedding endpoint outputs vectors in `1024` dimensions. It achieves 
 API name: `mistral-embed`
 
 ## Benchmarks results
-The following tables gather results on a suite of  commonly used benchmarks for each of our model.
-<!-- See our [Model selection] (../guides
-/06-model-selection) guide to explore further the performance, speed, and cost trade-offs, and discuss how to select the appropriate model for different use cases. -->
+The following tables gather results on a suite of  commonly used benchmarks for each of our model. Check out our [model selection](../guides/06-model-selection.md) guide to explore further the performance, speed, and cost trade-offs, and discuss how to select the appropriate model for different use cases.
 
 ### General knowledge, common sense and reasoning
 

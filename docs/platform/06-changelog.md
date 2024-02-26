@@ -12,14 +12,14 @@ Feb. 26, 2024
     - `mistral-large-latest` (aka `mistral-large-2402`): our new flagship model with leading performance. 
 
 - New API capabilities:
-    - Function calling: available for Mistral Small and Mistral Large. 
+    - [Function calling](../guides/05-function-calling.md): available for Mistral Small and Mistral Large. 
     - JSON mode: available for Mistral Small and Mistral Large
 
-- La Plateforme:
+- [La Plateforme](https://console.mistral.ai/):
     - We added multiple currency support to the payment system, including the option to pay in US dollars. 
     - We introduced enterprise platform features including admin management, which allows users to manage individuals from your organization.
 
-- Le Chat: 
+- [Le Chat](https://chat.mistral.ai/): 
     - We introduced the brand new chat interface Le Chat to easily interact with Mistral models. 
     - You can currently interact with three models: Mistral Large, Mistral Next, and Mistral Small. 
 

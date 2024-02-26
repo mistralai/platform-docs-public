@@ -90,7 +90,7 @@ Mistral Large outperforms our other four models in commonsense and reasoning ben
 | Mixtral 8x7B | 70.6% | 86.7% | 81.2% | 85.8% | 78.38% | 47.5% |
 | Mistral Small | 72.2% | 86.9% | 84.7% | 86.9% | 79.5% | 51.7% |
 | Mistral Medium | 75.3% | 88.0% | 88% | 89.9% | 81.1% | 47% |
-| Mistral Large | 80.3% | 88.8% | 86.7% | 93.1% | 82.3% | 53.7% |
+| Mistral Large | 81.2% | 89.2% | 86.7% | 94.0% | 82.7% | 50.6% |
 
 In this example, we ask Mistral Large to calculate the difference in payment dates between the two customers whose payment amounts are closest to each other in the given dataset. Mistral Large can easily and automatically break down the problem into smaller steps: identify the two closest payment amounts, find their respective payment dates, and calculate the date difference. Mistral Large is an excellent choice for tasks that require complex reasoning and problem-solving skills.
 
@@ -152,7 +152,7 @@ This table shows our latest coding benchmark results for all our five end points
 | Mistral 8x7B | 40.2% | 60.7% |
 | Mistral Small | 44.5% | 61.5% |
 | Mistral Medium | 38.4% | 62.3% | 
-| Mistral Large | 47.6% | 74.3% |
+| Mistral Large | 45.1% | 73.2% |
 
 Here is an example of Mistral Large giving the correct code following the prompt. 
 
@@ -208,15 +208,13 @@ def babylonian_squareroot(number):
 #### Multi-lingual tasks 
 In addition to its exceptional performance in complex reasoning tasks and coding tasks, Mistral Large also demonstrates superior capabilities in handling multi-lingual tasks. Mistral-large has been specifically trained to understand and generate text in multiple languages, especially in French, German, Spanish and Italian. Mistral Large can be especially valuable for businesses and users that need to communicate in multiple languages.
 
-
-
-| Model | Fr Arc-C | Fr HellaS | Fr MMLU | De Arc-C | De HellaS | De MMLU | Es Arc-C | Es HellaS | Es MMLU | It Arc-C | It HellaS | It MMLU | 
+| Model | FR Arc-C | FR HellaS | FR MMLU | DE Arc-C | DE HellaS | DE MMLU | ES Arc-C | ES HellaS | ES MMLU | IT Arc-C | IT HellaS | IT MMLU | 
 | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- | ---- | --- | --- |
 | Mistral 7B | 44.2% | 63.9% | 50.6% | 39.9% | 58.4% | 49.6% | 43.9% | 64.8% | 51.4% | 41.2% | 60.8% | 51.3% | 
 | Mistral 8x7B | 54.3% | 76.0% | 66.1% | 52.7% | 71.0% | 64.9% | 53.7% | 76.3% | 67.5% | 51.1% | 72.9% | 65.9% |
 | Mistral Small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
 | Mistral Medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
-| Mistral Large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
+| Mistral Large | 62.3% | 80.3% | 79.3% | 57.6% | 77.2% | 78.2% | 61.7% | 81.9% | 79.7% | 60.3% | 77.8% | 78.9% | 
 
 
 Prompt

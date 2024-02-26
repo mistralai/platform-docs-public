@@ -12,7 +12,7 @@ Feb. 26, 2024
     - `mistral-large-latest` (aka `mistral-large-2402`): our new flagship model with leading performance. 
 
 - New API capabilities:
-    - Function calling: available for Mistral Small and Mistral Large. 
+    - [Function calling](../guides/05-function-calling.md): available for Mistral Small and Mistral Large. 
     - JSON mode: available for Mistral Small and Mistral Large
 
 - [La Plateforme](https://console.mistral.ai/):

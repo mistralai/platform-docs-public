@@ -120,6 +120,74 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 
 We allow users to provide a custom system prompt (see [API reference](../../api)). We also allow a convenient `safe_prompt` flag to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
 
+## JSON mode
+
+Uers have the option to set `response_format` to `{"type": "json_object"}` to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message.
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-large-latest"
+
+client = MistralClient(api_key=api_key)
+
+messages = [
+    ChatMessage(role="user", content="What is the best French cheese? Return the product and produce location in JSON format")
+]
+
+chat_response = client.chat(
+    model=model,
+    response_format={"type": "json_object"},
+    messages=messages,
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+
+  </TabItem>
+  <TabItem value="javascript" label="javascript">
+```javascript
+import MistralClient from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new MistralClient(apiKey);
+
+const chatResponse = await client.chat({
+  model: 'mistral-large-latest',
+  response_format: {'type': 'json_object'},
+  messages: [{role: 'user', content: 'What is the best French cheese? Return the product and produce location in JSON format'}],
+});
+
+console.log('Chat:', chatResponse.choices[0].message.content);
+```
+  </TabItem>
+  <TabItem value="curl" label="curl">
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "mistral-large-latest",
+    "messages": [
+     {
+        "role": "user",
+        "response_format": {"type": "json_object"},
+        "content": "What is the best French cheese? Return the product and produce location in JSON format"
+      }
+    ]
+  }'
+```
+  </TabItem>
+</Tabs>
+
 ## Embeddings
 
 The embeddings API allows you to embed sentences.

@@ -31,7 +31,7 @@ The following tables gather results on a suite of  commonly used benchmarks for 
 | Mixtral 8x7B | 70.6% | 86.7% | 81.2% | 85.8% | 78.38% | 47.5% |
 | Mistral Small | 72.2% | 86.9% | 84.7% | 86.9% | 79.5% | 51.7% |
 | Mistral Medium | 75.3% | 88.0% | 88% | 89.9% | 81.1% | 47% |
-| Mistral Large | 80.3% | 88.8% | 86.7% | 93.1% | 82.3% | 53.7% |
+| Mistral Large | 81.2% | 89.2% | 86.7% | 94.0% | 82.7% | 50.6% |
 
 
 ### Coding
@@ -42,7 +42,7 @@ The following tables gather results on a suite of  commonly used benchmarks for 
 | Mistral 8x7B | 40.2% | 60.7% |
 | Mistral Small | 44.5% | 61.5% |
 | Mistral Medium | 38.4% | 62.3% | 
-| Mistral Large | 47.6% | 74.3% |
+| Mistral Large | 45.1% | 73.2% |
 
 
 ### Multi-lingual
@@ -53,5 +53,5 @@ The following tables gather results on a suite of  commonly used benchmarks for 
 | Mistral 8x7B | 54.3% | 76.0% | 66.1% | 52.7% | 71.0% | 64.9% | 53.7% | 76.3% | 67.5% | 51.1% | 72.9% | 65.9% |
 | Mistral Small | 58.8% | 77.4% | 68.4% | 53.0% | 72.9% | 70.1% | 55.9% | 78.2% | 69.7% | 53.7% | 75.1% | 69.5% | 
 | Mistral Medium | 58.2% | 77.4% | 70.9% | 54.3% | 73.0% | 71.5% | 55.4% | 77.6% | 72.5% | 52.8% | 75.1% | 70.9% | 
-| Mistral Large | 62.1% | 79.8% | 78.4% | 56.4% | 76.6% | 76.7% | 58.6% | 81.1% | 79.3% | 57.5% | 77.6% | 78.1% | 
+| Mistral Large | 62.3% | 80.3% | 79.3% | 57.6% | 77.2% | 78.2% | 61.7% | 81.9% | 79.7% | 60.3% | 77.8% | 78.9% | 
 

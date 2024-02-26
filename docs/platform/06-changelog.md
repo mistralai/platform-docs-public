@@ -21,7 +21,7 @@ Feb. 26, 2024
 
 - Le Chat: 
     - We introduced the brand new chat interface Le Chat to easily interact with Mistral models. 
-    - You can currently interact with four models: Mistral Large, Mistral Next, Mistral Medium, and Mistral Small. 
+    - You can currently interact with three models: Mistral Large, Mistral Next, and Mistral Small. 
 
 Jan. 11, 2024
 - We have enhanced the API's strictness. Previously the API would silently ignores unsupported parameters in the requests, but it now strictly enforces the validity of all parameters. If you have unsupported parameters in your request, you will see the error message "Extra inputs are not permitted".

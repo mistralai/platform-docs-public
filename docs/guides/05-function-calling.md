@@ -129,6 +129,13 @@ messages = [
 How do Mistral models know about these functions and know which function to use? We provide both the user query and the tools specifications to Mistral models. The goal in this step is not for the Mistral model to run the function directly. It’s to 1) determine the appropriate function to use , 2) identify if there is any essential information missing for a function, and 3) generate necessary arguments for the chosen function. 
 
 
+### tool_choice
+Users can use `tool_choice` to speficy how tools are used:
+- "auto": default mode. Model decides if it uses the tool or not.
+- "any": forces tool use.
+- "none": prevents tool use.
+
+
 ```python
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
@@ -137,7 +144,7 @@ model = "mistral-large-latest"
 api_key="TYPE YOUR API KEY"
 
 client = MistralClient(api_key=api_key)
-response = client.chat(model=model, messages=messages, tools=tools)
+response = client.chat(model=model, messages=messages, tools=tools, tool_choice="auto")
 response
 ```
 
@@ -157,7 +164,7 @@ messages.append(ChatMessage(role="user", content="My transaction ID is T1001."))
 Running the Mistral model again, we get the response including tool_calls with the chosen function name `retrieve_payment_status` and the arguments for this function. 
 
 ```python
-response = client.chat(model=model, messages=messages, tools=tools)
+response = client.chat(model=model, messages=messages, tools=tools, tool_choice="auto")
 response
 ```
 

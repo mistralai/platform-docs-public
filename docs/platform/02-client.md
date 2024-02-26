@@ -122,8 +122,6 @@ We allow users to provide a custom system prompt (see [API reference](../../api)
 
 ## JSON mode
 
-The chat completion API allows you to chat with a model fine-tuned to follow instructions.
-
 <Tabs>
   <TabItem value="python" label="python" default>
 

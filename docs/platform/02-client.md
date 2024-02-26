@@ -122,6 +122,8 @@ We allow users to provide a custom system prompt (see [API reference](../../api)
 
 ## JSON mode
 
+Uers have the option to set `response_format` to `{"type": "json_object"}` to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message.
+
 <Tabs>
   <TabItem value="python" label="python" default>
 

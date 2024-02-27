@@ -56,7 +56,7 @@ Inquiry: I am planning an international trip to Paris and would like to inquire 
 Category: exchange rate
 Inquiry: What countries are getting support? I will be traveling and living abroad for an extended period of time, specifically in France and Germany, and would appreciate any information regarding compatibility and functionality in these regions.
 Category: country support
-Inquiry: Can I get help starting my computer? I am having difficulty starting my computer,and would appreciate your expertise in helping me troubleshoot the issue.
+Inquiry: Can I get help starting my computer? I am having difficulty starting my computer, and would appreciate your expertise in helping me troubleshoot the issue.
 Category: customer service
 ###
 
@@ -71,19 +71,19 @@ Inquiry: {insert inquiry text here}
 #### Strategies we used:
 
 - **Few shot learning**: Few-shot learning or in-context learning is when we give a few examples in the prompts, and the LLM can generate corresponding output based on the example demonstrations. Few-shot learning can often improve model performance especially when the task is difficult or when we want the model to respond in a specific manner.
-- **Delimiter**: Delimiters like `###`, `<<< >>>` specify the boundary between different sections of the text. In our example, we used `###` to indicate examples and `<<<>>>` to indicate customer inquiry.
+- **Delimiter**: Delimiters like `###` and `<<<>>>` specify the boundary between different sections of the text. In the preceding example, `###` is used to indicate examples and `<<<>>>` to indicate customer inquiry.
 - **Role playing**: Providing LLM a role (e.g., "You are a bank customer service bot.") adds personal context to the model and often leads to better performance.
 
 ## Summarization
-Summarization is a common task for LLMs due to their natural language understanding and generation capabilities. Here is an example prompt we can use to generate interesting questions about an essay and summarize the essay.
+Summarization is a common task for LLMs due to their natural language understanding and generation capabilities. The following is an example prompt we can use to generate interesting questions about an essay and summarize the essay.
 
 <details>
 <summary><b>Prompt</b></summary>
 
 ```
 You are a commentator. Your task is to write a report on an essay.
-When presented with the essay, come up with interesting questions to ask, and answer each question.
-Afterward, combine all the information and write a report in the markdown format.
+When presented with the essay, come up with interesting questions to ask and answer each question.
+Afterward, combine all the information and write a report in the Markdown format.
 
 # Essay:
 {essay}
@@ -106,7 +106,7 @@ Using the essay summary and the answers to the interesting questions, create a c
 
 #### Strategies we used:
 
-- **Step-by-step instructions**: This strategy is inspired by the chain-of-thought prompting that enables LLMs to use a series of intermediate reasoning steps to tackle complex tasks. It's often easier to solve complex problems when we decompose them into simpler and small steps and it's easier for us to debug and inspect the model behavior. In our example, we break down the task into three steps: summarize, generate interesting questions, and write a report. This helps the language to think in each step and generate a more comprehensive final report.
+- **Step-by-step instructions**: This strategy is inspired by the chain-of-thought prompting that enables LLMs to use a series of intermediate reasoning steps to tackle complex tasks. It's often easier to solve complex problems when we decompose them into simpler and small steps and it's easier for us to debug and inspect the model behavior. In the preceding example, we break down the task into three steps: summarize, generate interesting questions, and write a report. This helps the language model to think through each step and generate a more comprehensive final report.
 - **Example generation**: We can ask LLMs to automatically guide the reasoning and understanding process by generating examples with the explanations and steps. In this example, we ask the LLM to generate three questions and provide detailed explanations for each question.
 - **Output formatting**: We can ask LLMs to output in a certain format by directly asking "write a report in the Markdown format".
 

@@ -137,7 +137,7 @@ curl --location "https://api.mistral.ai/v1/embeddings" \
 Here are some clients built by the community for various other languages:
 
 ## Java
-[langchain4j/lanchain4j-mistral-ai](https://github.com/langchain4j/langchain4j)
+Mistral AI integration via [langchain4j](https://github.com/langchain4j/langchain4j)
 
 ## CLI
 [icebaker/nano-bots](https://github.com/icebaker/ruby-nano-bots)

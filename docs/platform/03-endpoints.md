@@ -11,6 +11,8 @@ Mistral AI provides five API endpoints for its five Large Language Models:
 - `mistral-medium-latest` (aka `mistral-medium-2312`)
 - `mistral-large-latest` (aka `mistral-large-2402`)
 
+All models have a 32K token context window size.
+
 ## Mistral AI embedding model
 Embedding models enable retrieval and retrieval-augmented generation applications.
 

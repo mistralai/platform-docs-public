@@ -5,8 +5,9 @@ slug: /
 
 # Introduction
 
-Mistral AI currently provides two types of access to Large Language Models: 
+Mistral AI currently provides three types of access to Large Language Models: 
 - An API providing pay-as-you-go access to our latest models,
+- Cloud-based deployments,
 - Open source models available under the [Apache 2.0](https://github.com/apache/.github/blob/main/LICENSE) License, available on [Hugging Face](https://huggingface.co/mistralai) or directly from [the documentation](/models).
 
 ## Where to start?
@@ -14,7 +15,7 @@ Mistral AI currently provides two types of access to Large Language Models:
 [platform_button]: /img/platform_button.svg
 [platform_url]: https://console.mistral.ai/
 
-### API Access
+### API Access with the Mistral AI Platform
 
 Our API is currently available through our [platform](https://console.mistral.ai/). You need to subscribe and enter your payment details to enable your API keys. After a few moments, you will be able to use our `chat` endpoint:
 
@@ -45,6 +46,10 @@ curl --location "https://api.mistral.ai/v1/embeddings" \
 For a full description of the models offered on the API, head on to the **[model documentation](./models)**.
 
 For more examples on how to use our platform, head on to our **[platform documentation](./platform/01-overview.md)**.
+
+### Cloud-based deployments
+
+For a comprehensive list of options to deploy and consume Mistral AI models on the cloud, head on to the **[cloud deployment section](./cloud-deployment/overview)**.
 
 ### Raw model weights
 

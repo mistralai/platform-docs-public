@@ -256,3 +256,6 @@ Here are some clients built by the community for various other languages:
 
 ## Ruby
 [gbaptista/mistral-ai](https://github.com/gbaptista/mistral-ai)
+
+## Rust
+[ivangabriele/mistralai-client-rs](https://github.com/ivangabriele/mistralai-client-rs)

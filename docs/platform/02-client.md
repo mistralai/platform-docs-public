@@ -118,14 +118,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-- We allow users to provide a custom system prompt (see [API reference](../../api)). 
-  The message list sent to the model must either start either with:
-    - A `user` message,
-    - A `system` message then a `user` message.
-
-  In particular, `system`-then-`assistant` and `assistant`-first initial message sequences are not supported.
-
-- We also allow a convenient `safe_prompt` flag to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
+We allow users to provide a custom system prompt (see [API reference](../../api)). We also allow a convenient `safe_prompt` flag to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
 
 ## JSON mode
 

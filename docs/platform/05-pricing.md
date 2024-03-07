@@ -22,6 +22,6 @@ The prices listed below are exclusive of VAT.
 
 ## Rate limits
 
-All endpoints have a rate limit of 2 requests per second, 2 million tokens per minute, and 200 million tokens per month. You can check your current rate limits on the platform. If you need to increase them, please contact support with your estimated consumption and use case.
+All endpoints have a rate limit of 5 requests per second, 2 million tokens per minute, and 10,000 million tokens per month. You can check your current rate limits on the platform. If you need to increase them, please contact support with your estimated consumption and use case.
 
 We will raise the limits for embedding models in the future.

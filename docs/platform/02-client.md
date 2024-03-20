@@ -119,20 +119,32 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 </Tabs>
 
 ## Chat messages
+
 Chat messages (`messages`) are a collection of prompts or messages, with each message having a specific role assigned to it, such as "system," "user," "assistant," or "tool." 
 
-- A system prompt is an *optional* message that sets the behavior and context for an AI assistant in a conversation, such as modifying its personality or providing specific instructions. System prompts can include task instructions, personality traits, contextual information, creativity constraints, and other relevant guidelines to help the AI better understand and respond to the user's input.
-- A user prompt is a message sent from the perspective of the human in a conversation with an AI assistant. It typically provides a request, question, or comment that the AI assistant should respond to. User prompts allow the human to initiate and guide the conversation, and they can be used to request information, ask for help, provide feedback, or engage in other types of interaction with the AI.
+- A _system message_ is an *optional* message that sets the behavior and context for an AI assistant in a 
+  conversation, such as modifying its personality or providing specific instructions. A system message can 
+  include task instructions, personality traits, contextual information, creativity constraints, and other 
+  relevant guidelines to help the AI better understand and respond to the user's input. See the 
+  [API reference](../../api) for explanations on how to set up a custom system prompt.
+- A _user message_ is a message sent from the perspective of the human in a conversation with an AI assistant. 
+  It typically provides a request, question, or comment that the AI assistant should respond to. User prompts 
+  allow the human to initiate and guide the conversation, and they can be used to request information, ask for 
+  help, provide feedback, or engage in other types of interaction with the AI.
+- An _assistant message_ is a message sent by the AI assistant back to the user. It is usually meant to reply to a 
+  previous user message by following its instructions, but you can also find it at the beginning of a conversation,
+  for example to greet the user.
+- A _tool message_ only appears in the context of _function calling_, it is used at the final response formulation
+  step when the model has to format the tool call's output for the user. To learn more about function calling, see
+  the [guide](../../guides/function-calling).
 
-We allow users to provide a custom system prompt (see [API reference](../../api)). The message list sent to the model must either start either with:
-- A `user` message,
-- A `system` message then a `user` message.
 
-In particular, `system`-then-`assistant` and `assistant`-first initial message sequences are not supported.
+:::tip[When to use `user` prompt vs. `system` message then `user` message?]
 
-When to use `user` prompt vs. `system` message then `user` message?
 - You can either combine your `system` message and `user` message into a single `user` message or separate them into two distinct messages. 
 - We recommend you experiment with both ways to determine which one works better for your specific use case. 
+
+:::
 
 We also allow a convenient `safe_prompt` flag to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
 

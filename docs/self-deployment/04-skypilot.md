@@ -68,17 +68,38 @@ sky status --ip mistral-7b
 
 You can then use curl to send a completion request:
 
-```
+<Tabs>
+  <TabItem value="mistral7b" label="Mistral-7B" default>
+
+```bash
 IP=$(sky status --ip cluster-name)
 
 curl http://$IP:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-      "model": "mistralai/Mistral-7B-v0.1",
+      "model": "mistralai/Mistral-7B-Instruct-v0.2",
       "prompt": "My favourite condiment is",
       "max_tokens": 25
   }'
 ```
+
+  </TabItem>
+  <TabItem value="mixtral8x7b" label="Mixtral-8X7B">
+
+```bash
+IP=$(sky status --ip cluster-name)
+
+curl http://$IP:8000/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+      "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+      "prompt": "My favourite condiment is",
+      "max_tokens": 25
+  }'
+```
+
+  </TabItem>
+</Tabs>
 
 
 ## Usage Quotas

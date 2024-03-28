@@ -4,7 +4,7 @@
 
 Follow the official TensorRT-LLM documentation to [build the engine](https://github.com/NVIDIA/TensorRT-LLM/tree/main#quick-start).
 - For Mistral-7B, you can use the [LLaMA example](https://github.com/NVIDIA/TensorRT-LLM/tree/main/examples/llama#mistral-v01)
-- For Mixtral-8X7B, official documentation coming soon...
+- For Mixtral-8X7B, official documentation at [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM/blob/main/examples/mixtral/README.md)
 
 
 # Deploying the engine

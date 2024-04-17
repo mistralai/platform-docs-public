@@ -2,8 +2,8 @@
 // Note: type annotations allow type checking and IDEs autocompletion
 
 const {themes} = require('prism-react-renderer');
-const lightCodeTheme = themes.github;
-const darkCodeTheme = themes.dracula;
+const lightCodeTheme = themes.okaidia;
+const darkCodeTheme = themes.okaidia;
 
 const redocusaurus = [
   "redocusaurus",
@@ -39,7 +39,7 @@ const config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "mistralai", // Usually your GitHub org/user name.
-  projectName: "harmattan", // Usually your repo name.
+  projectName: "platform-docs", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -79,6 +79,11 @@ const config = {
     ({
       // Replace with your project's social card
       image: "img/mistral-social-banner.jpg",
+      docs: {
+      sidebar: {
+        autoCollapseCategories: false,
+      },
+    },
       navbar: {
         title: undefined,
         logo: {
@@ -90,20 +95,22 @@ const config = {
         },
         items: [
           {
-            to: "https://console.mistral.ai/",
-            label: "Platform",
+            to: "https://chat.mistral.ai/",
+            label: "Le Chat",
             position: "left",
           },
           {
-            type: "docSidebar",
-            sidebarId: "mainDocSidebar",
+            to: "https://console.mistral.ai/",
+            label: "La Plateforme",
             position: "left",
-            label: "Docs",
           },
-          /*
-          { to: "/blog", label: "Blog", position: "left" },
-          */
-          { to: "/api", label: "API", position: "left" },
+          {
+            to: "/",
+            label: "Docs",
+            position: "left",
+            activeBaseRegex: "^/(?!api)",
+          },
+          { to: "/api/", label: "API", position: "left" },
           {
             href: "https://github.com/mistralai/",
             label: "GitHub",
@@ -125,6 +132,10 @@ const config = {
               {
                 label: "Documentation",
                 to: "/",
+              },
+              {
+                label: "Contributing",
+                to: "guides/contribute",
               },
             ],
           },

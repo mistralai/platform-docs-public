@@ -1,0 +1,81 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# AWS Bedrock
+
+You can deploy Mistral AI's open and commercial models on your AWS account using 
+the AWS Bedrock service. This page provides a straightforward guide on how to get started
+on using Mistral Large as an AWS Bedrock foundational model.
+
+## Pre-requisites
+
+In order to query the model you will need:
+
+- Access to an **AWS account** within a region that supports the AWS Bedrock service and 
+  offers access to Mistral Large: see 
+  [the AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/models-regions.html) 
+  for model availability per region.
+- An AWS **IAM principal** (user, role) with sufficient permissions, see
+  [the AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html)
+  for more details.
+- **Access to the Mistral AI models enabled** from the AWS Bedrock home page, see
+  [the AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html)
+  for more details.
+- A local **code environment** set up with the relevant AWS SDK components, namely:
+    - the AWS CLI: see [the AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+      for the installation procedure.
+    - the `boto3` Python library: see the [AWS documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) 
+      for the installation procedure.
+
+## Querying the model
+
+Before starting, make sure to properly configure the authentication credentials for your development
+environment. 
+[The AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+provides an in-depth explanation on the required steps.
+
+<Tabs>
+    <TabItem value="python" label="Python">
+
+        ```python
+        import boto3
+        import json
+
+        client = boto3.client("bedrock-runtime")
+        modelId = "mistral.mistral-large-2402-v1:0"
+
+        prompt = "<s>[INST] What is the best French cheese ? [/INST]"
+        body = json.dumps({
+         "prompt": prompt,
+         "max_tokens": 512,
+         "top_p": 0.8,
+         "temperature": 0.5
+         })
+        accept = "application/json"
+        contentType = "application/json"
+        resp = client.invoke_model(
+             body=body,
+             modelId=modelId,
+             accept="application/json",
+             contentType="application/json"
+             )
+
+        print(json.loads(resp.get("body").read()))
+        ```
+    </TabItem>
+        <TabItem value="cli" label="CLI">
+            ```shell
+            aws bedrock-runtime invoke-model \
+            --model-id "mistral.mistral-large-2402-v1:0" \
+            --body '{"prompt": "What is the best French cheese?", "max_tokens": 512, "top_p": 0.8, "temperature": 0.5}' \
+            resp.json \
+            --cli-binary-format raw-in-base64-out 
+            ```
+    </TabItem>
+</Tabs>
+
+## Going further
+
+For more usage examples and details you can check the following links:
+
+- [AWS documentation on inference requests for Mistral models](https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-mistral.html#model-parameters-mistral-request-response)

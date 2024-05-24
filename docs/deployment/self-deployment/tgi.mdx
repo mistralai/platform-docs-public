@@ -39,7 +39,7 @@ model=mistralai/Mixtral-8x22B-Instruct-v0.1
 
 ```bash
 volume=$PWD/data # share a volume with the Docker container to avoid downloading weights every run
-docker run --gpus all --shm-size 1g -p 8080:80 -v $volume:/data \
+docker run --gpus all --shm-size 1g -p 8080:80 -v $volume:/data  \
     -e HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN \
     ghcr.io/huggingface/text-generation-inference:2.0.3 \
     --model-id $model
@@ -63,10 +63,13 @@ TGI supports the [Messages API](https://huggingface.co/docs/text-generation-infe
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
 
+# init the client but point it to TGI
 client = MistralClient(api_key="-", endpoint="http://127.0.0.1:8080")
 chat_response = client.chat(
     model="-",
-    messages=[ChatMessage(role="user", content="What is the best French cheese?")]
+    messages=[
+      ChatMessage(role="user", content="What is the best French cheese?")
+    ]
 )
 
 print(chat_response.choices[0].message.content)
@@ -79,16 +82,12 @@ print(chat_response.choices[0].message.content)
 from openai import OpenAI
 
 # init the client but point it to TGI
-client = OpenAI(
-    base_url="http://127.0.0.1:8080/v1",
-    api_key="-"
-)
-
+client = OpenAI(api_key="-", base_url="http://127.0.0.1:8080/v1")
 chat_response = client.chat.completions.create(
-    model="tgi",
+    model="-",
     messages=[
-        {"role": "user", "content": "What is deep learning?"}
-    ],
+      {"role": "user", "content": "What is deep learning?"}
+    ]
 )
 
 print(chat_response)

@@ -130,7 +130,7 @@ Suppose a user asks the following question: “What’s the status of my transac
 from mistralai.models.chat_completion import ChatMessage
 
 messages = [
-    ChatMessage(role="user", content="What's the status of my transaction?")
+    ChatMessage(role="user", content="What's the status of my transaction T1001?")
 ]
 ```
 
@@ -160,25 +160,7 @@ response = client.chat(model=model, messages=messages, tools=tools, tool_choice=
 response
 ```
 
-Mistral model identifies there are information missing and responds that “I need the transaction id to check the status. Could you please provide me with the transaction id?”. 
-
-```
-ChatCompletionResponse(id='dca45f6bdc284d48bc13acfdb6e2f980', object='chat.completion', created=1707931630, model='mistral-large', choices=[ChatCompletionResponseChoice(index=0, message=ChatMessage(role='assistant', content='I need the transaction id to check the status. Could you please provide me with the transaction id?', name=None, tool_calls=[]), finish_reason=<FinishReason.stop: 'stop'>)], usage=UsageInfo(prompt_tokens=173, total_tokens=193, completion_tokens=20))
-```
-
-Let’s add this message to the `messages` list and then add another user message providing the transaction ID: “My transaction ID is T1001.”
-
-```python
-messages.append(ChatMessage(role="assistant", content=response.choices[0].message.content))
-messages.append(ChatMessage(role="user", content="My transaction ID is T1001."))
-```
-
-Running the Mistral model again, we get the response including tool_calls with the chosen function name `retrieve_payment_status` and the arguments for this function. 
-
-```python
-response = client.chat(model=model, messages=messages, tools=tools, tool_choice="auto")
-response
-```
+We get the response including tool_calls with the chosen function name `retrieve_payment_status` and the arguments for this function. 
 
 Output:
 ```
@@ -229,7 +211,7 @@ Output
 We can now provide the output from the tools to Mistral models, and in return, the Mistral model can produce a customised final response for the specific user.
 
 ```python
-messages.append(ChatMessage(role="tool", name=function_name, content=function_result))
+messages.append(ChatMessage(role="tool", name=function_name, content=function_result, tool_call_id=tool_call.id))
 
 response = client.chat(model=model, messages=messages)
 response.choices[0].message.content

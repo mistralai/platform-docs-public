@@ -1,0 +1,343 @@
+---
+id: code_generation
+title: Code generation
+sidebar_position: 2.3
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Codestral is a cutting-edge generative model that has been specifically designed and optimized for code generation tasks, including fill-in-the-middle and code completion. Codestral was trained on 80+ programming languages, enabling it to perform well on both common and less common languages. 
+
+:::important[ ]
+We currently offer two domains for Codestral endpoints, both providing FIM and instruct routes:
+
+| Domain  | Features |
+| ------------- | ------------- |
+| codestral.mistral.ai | - Monthly subscription based, free until 1st of August <br/> - Has a rate limit of 30 requests per minute and a high daily limit of 2000 requests <br/> - Requires a new key for which a phone number is needed |
+| api.mistral.ai  | - Allows you to use your existing API key and you can pay to use Codestral <br/> - Ideal for business use <br/> - Provide higher rate limits of 200 requests per second per workspace |
+
+Wondering which endpoint to use ?
+- If you're a user, wanting to query Codestral as part of an IDE plugin, codestral.mistral.ai is recommended.
+- If you're building a plugin, or anything that exposes these endpoints directly to the user, and expect them to bring their own API keys, you should also target codestral.mistral.ai
+- For all other use cases, api.mistral.ai will be better suited
+
+*This guide uses api.mistral.ai for demonstration.*
+:::
+
+
+This guide will walk you through how to use Codestral fill-in-the-middle endpoint, instruct endpoint, open-weight Codestral model, and several community integrations:
+
+- Fill-in-the-middle endpoint
+- Instruct endpoint 
+- Open-weight Codestral
+- Integrations
+
+
+## Fill-in-the-middle endpoint
+With this feature, users can define the starting point of the code using a `prompt`, and the ending point of the code using an optional `suffix` and an optional `stop`. The Codestral model will then generate the code that fits in between, making it ideal for tasks that require a specific piece of code to be generated. Below are three examples:  
+
+### Example 1: Fill in the middle
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python
+import os
+from mistralai.client import MistralClient
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = MistralClient(api_key=api_key)
+
+model = "codestral-latest"
+prompt = "def fibonacci(n: int):"
+suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
+
+response = client.completion(
+    model=model,
+    prompt=prompt,
+    suffix=suffix,
+)
+
+print(
+    f"""
+{prompt}
+{response.choices[0].message.content}
+{suffix}
+"""
+)
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl" default>
+
+```
+curl --location 'https://api.mistral.ai/v1/fim/completions' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--data '{
+    "model": "codestral-latest",
+    "prompt": "def f(",
+    "suffix": "return a + b",
+    "max_tokens": 64,
+    "temperature": 0
+}'
+``` 
+    </TabItem>
+</Tabs>
+
+### Example 2: Completion
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python
+import os
+from mistralai.client import MistralClient
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = MistralClient(api_key=api_key)
+
+model = "codestral-latest"
+prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
+
+response = client.completion(
+    model=model,
+    prompt=prompt
+)
+
+print(
+    f"""
+{prompt}
+{response.choices[0].message.content}
+"""
+)
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```
+curl --location 'https://api.mistral.ai/v1/fim/completions' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--data '{
+    "model": "codestral-latest",
+    "prompt": "def is_odd(n): \n return n % 2 == 1 \n def test_is_odd():", 
+    "suffix": "",
+    "max_tokens": 64,
+    "temperature": 0
+}'
+``` 
+    </TabItem>
+</Tabs>
+
+### Example 3: Stop tokens
+:::tip[ ]
+We recommend adding stop tokens for IDE autocomplete integrations to prevent the model from being too verbose.
+:::
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python
+import os
+from mistralai.client import MistralClient
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = MistralClient(api_key=api_key)
+
+model = "codestral-latest"
+prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
+suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
+
+response = client.completion(
+    model=model,
+    prompt=prompt,
+    suffix=suffix,
+    stop=["\n\n"]
+)
+
+print(
+    f"""
+{prompt}
+{response.choices[0].message.content}
+"""
+)
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```
+curl --location 'https://api.mistral.ai/v1/fim/completions' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--data '{
+    "model": "codestral-latest",
+    "prompt": "def is_odd(n): \n return n % 2 == 1 \n def test_is_odd():", 
+    "suffix": "test_is_odd()",
+    "stop": ["\n\n"],
+    "max_tokens": 64,
+    "temperature": 0
+}'
+``` 
+    </TabItem>
+</Tabs>
+
+## Instruct endpoint
+We also provide the instruct endpoint of Codestral with the same model `codestral-latest`. 
+The only difference is the endpoint used: 
+- FIM endpoint: https://api.mistral.ai/v1/fim/completions
+- Instruct endpoint: https://api.mistral.ai/v1/chat/completions
+
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python
+import os
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = MistralClient(api_key=api_key)
+
+model = "codestral-latest"
+
+messages = [
+    ChatMessage(role="user", content="Write a function for fibonacci")
+]
+chat_response = client.chat(
+    model=model,
+    messages=messages
+)
+print(chat_response.choices[0].message.content)
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "codestral-latest",
+    "messages": [{"role": "user", "content": "Write a function for fibonacci"}]
+  }'
+``` 
+    </TabItem>
+</Tabs>
+
+## Open-weight Codestral 
+Codestral is also available open-weight under the [Mistral AI Non-Production (MNPL) License](https://mistral.ai/licences/MNPL-0.1.md). 
+
+Check out the README of [mistral-inference](https://github.com/mistralai/mistral-inference) to learn how to use `mistral-inference` to run Codestral. 
+
+## Integration with continue.dev
+Continue.dev supports both Codestral base for code generation and Codestral Instruct for chat. 
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/mjltGOJMJZA?si=Tmf0kpPn3hVJ0CaM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+### How to set up Codestral with Continue
+
+**Here is a step-by-step guide on how to set up Codestral with Continue using the Mistral AI API:**
+
+1. Install the Continue VS Code or JetBrains extension following the instructions [here](https://docs.continue.dev/quickstart)
+
+2. Click on the gear icon in the bottom right corner of the Continue window to open `~/.continue/config.json` (MacOS) /  `%userprofile%\.continue\config.json` (Windows)
+
+3. Log in and create an API key on Mistral AI's La Plateforme [here](https://console.mistral.ai/api-keys/)
+
+4. To use Codestral as your model for both `autocomplete` and `chat`, replace  `[API_KEY]` with your Mistral API key below and add it to your `config.json` file:
+
+```json title="~/.continue/config.json"
+{
+  "models": [
+    {
+      "title": "Codestral",
+      "provider": "mistral"
+      "model": "codestral-latest",
+      "apiKey": "[API_KEY]",
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Codestral",
+    "provider": "mistral",
+    "model": "codestral-latest"
+    "apiKey": "[API_KEY]",
+  }
+}
+```
+
+5. If you run into any issues or have any questions, please join our Discord and post in `#help` channel [here](https://discord.gg/EfJEfdFnDQ)
+
+
+## Integration with Tabnine
+Tabnine supports Codestral Instruct for chat. 
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/pFa4NLK9Lbw?si=7tsfFUsOyllkwl-M" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+### How to set up Codestral with Tabnine
+
+#### What is Tabnine Chat? 
+Tabnine Chat is a code-centric chat application that runs in the IDE and allows developers
+ to interact with Tabnine’s AI models in a flexible, free-form way, using natural language. 
+Tabnine Chat also supports dedicated quick actions that use predefined prompts optimized
+ for specific use cases.
+
+#### Getting started
+To start using Tabnine Chat, first [launch](https://docs.tabnine.com/main/getting-started/getting-the-most-from-tabnine-chat/launch) it in your IDE (VSCode, JetBrains, or Eclipse). 
+Then, learn how to [interact](https://docs.tabnine.com/main/getting-started/getting-the-most-from-tabnine-chat/interact) with Tabnine Chat, for example, how to ask questions or give 
+instructions. Once you receive your response, you can [read, review, and apply](https://docs.tabnine.com/main/getting-started/getting-the-most-from-tabnine-chat/consume) it within 
+your code.
+
+#### Selecting Codestral as Tabnine Chat App model
+
+In the Tabnine Chat App, use the [model selector](https://docs.tabnine.com/main/getting-started/getting-the-most-from-tabnine-chat/switching-between-chat-ai-models) to choose *Codestral*.
+
+
+## Integration with LangChain
+
+LangChain provides support for Codestral Instruct. Here is how you can use it in LangChain: 
+
+```py
+# make sure to install `langchain` and `langchain-mistralai` in your Python enviornment
+
+import os
+from langchain_mistralai import ChatMistralAI
+from langchain_core.prompts import ChatPromptTemplate 
+
+api_key = os.environ["MISTRAL_API_KEY"]
+mistral_model = "codestral-latest"
+llm = ChatMistralAI(model=mistral_model, temperature=0, api_key=api_key)
+llm.invoke([("user", "Write a function for fibonacci")])
+```
+
+For a more complex use case of self-corrective code generation using the instruct Codestral tool use, check out this video:
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/zXFxmI9f06M?si=8ZEoqNVECVJQFcVA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+## Integration with LlamaIndex
+LlamaIndex provides support for Codestral Instruct. Here is how you can use it in LlamaIndex: 
+
+```py
+# make sure to install `llama-index` and `llama-index-llms-mistralai` in your Python enviornment
+
+import os
+from llama_index.core.llms import ChatMessage
+from llama_index.llms.mistralai import MistralAI
+
+api_key =  os.environ["MISTRAL_API_KEY"]
+mistral_model = "codestral-latest"
+messages = [
+    ChatMessage(role="user", content="Write a function for fibonacci"),
+]
+MistralAI(api_key=api_key, model=mistral_model).chat(messages)
+```

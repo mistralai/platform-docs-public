@@ -7,13 +7,20 @@ sidebar_position: 2.6
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Users have the option to set `response_format` to `{"type": "json_object"}` to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message.
+Users have the option to set `response_format` to `{"type": "json_object"}` to enable JSON mode.
 Currently, JSON mode is available for all of our models through API. 
+
+:::warning[ ]
+It's important to explicitly ask the model to generate JSON output in your message.
+
+To prevent infinite generations, users are encouraged to ask the model for **short** JSON objects. 
+:::
 
 <Tabs>
   <TabItem value="python" label="python" default>
 
 ```python
+import os
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
 
@@ -23,7 +30,7 @@ model = "mistral-large-latest"
 client = MistralClient(api_key=api_key)
 
 messages = [
-    ChatMessage(role="user", content="What is the best French cheese? Return the product and produce location in JSON format")
+    ChatMessage(role="user", content="What is the best French meal? Return the name and the ingredients in short JSON object.")
 ]
 
 chat_response = client.chat(
@@ -33,6 +40,11 @@ chat_response = client.chat(
 )
 
 print(chat_response.choices[0].message.content)
+
+```
+Example output: 
+```
+{"name": "Coq au Vin", "ingredients": ["chicken", "red wine", "bacon", "mushrooms", "onions", "garlic", "chicken broth", "thyme", "bay leaf", "flour", "butter", "olive oil", "salt", "pepper"]}
 ```
 
 
@@ -48,7 +60,7 @@ const client = new MistralClient(apiKey);
 const chatResponse = await client.chat({
   model: 'mistral-large-latest',
   response_format: {'type': 'json_object'},
-  messages: [{role: 'user', content: 'What is the best French cheese? Return the product and produce location in JSON format'}],
+  messages: [{role: 'user', content: 'What is the best French meal? Return the name and the ingredients in JSON format.'}],
 });
 
 console.log('Chat:', chatResponse.choices[0].message.content);

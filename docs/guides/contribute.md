@@ -1,7 +1,7 @@
 ---
 id: contribute
 title: How to contribute
-sidebar_position: 1.5
+sidebar_position: 1.7
 ---
 
 # How to contribute

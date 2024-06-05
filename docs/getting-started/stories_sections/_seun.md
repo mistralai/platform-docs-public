@@ -2,8 +2,11 @@
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Z6cCDmZmU_U?si=bv_RkuNYxQ2Xo2p9" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
+## Company Information
+[Myo](https://myo.fit) is building multimodal AI for brain health. Right now, we're exploring the relationship between microRNAs and various neurological conditions, including how these biomarkers can be utilized for early detection and monitoring of these diseases. AmiRA is an internal tool powered by Mistral's commercial and open-source models to help understand the functions of certain miRNA in sample results and their accompanying target genes.
+
 ## Description
-Fine-tuning of mistral models and their use in a RAG system for:
+This project demonstrates the fine tuning of mistral models and their use in a RAG system for:
 1. Disease association/prediction provided a given miRNA molecule
 2. Greater scientific accuracy and relevance when determining the function of miRNA molecules.
 

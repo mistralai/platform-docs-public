@@ -15,10 +15,10 @@ paths:
         content:
           application/json:
             schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ChatCompletionRequest'
-                  - $ref: '#/components/schemas/ChatCompletionRequestFunctionCall'
-                  - $ref: '#/components/schemas/ChatCompletionRequestJSONMode'
+              anyOf:
+                - $ref: '#/components/schemas/ChatCompletionRequest'
+                - $ref: '#/components/schemas/ChatCompletionRequestFunctionCall'
+                - $ref: '#/components/schemas/ChatCompletionRequestJSONMode'
       responses:
         '200':
           description: OK
@@ -56,7 +56,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EmbeddingRequest'
-            
+
       responses:
         '200':
           description: OK
@@ -75,6 +75,262 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelList'
+  /files:
+    post:
+      operationId: files_api_routes_upload_file
+      summary: Upload File
+      parameters: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UploadFileOut"
+      description: |-
+        Upload a file that can be used across various endpoints.
+
+        The size of individual files can be a maximum of 512 MB. The Fine-tuning API only supports .jsonl files.
+
+        Please contact us if you need to increase these storage limits.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              title: MultiPartBodyParams
+              type: object
+              properties:
+                purpose:
+                  const: fine-tune
+                  title: Purpose
+                  description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
+                  example: fine-tune
+                file:
+                  format: binary
+                  title: File
+                  type: string
+                  description: |
+                    The File object (not file name) to be uploaded. 
+
+                    To upload a file and specify a custom file name you should format your request as such:
+                      ```
+                      file=@path/to/your/file.jsonl;filename=custom_name.jsonl
+                      ```
+
+                    Otherwise, you can just keep the original file name:
+                      ```
+                      file=@path/to/your/file.jsonl
+                      ```
+              required:
+                - purpose
+                - file
+        required: true
+    get:
+      operationId: files_api_routes_list_files
+      summary: List Files
+      parameters: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ListFilesOut"
+      description: Returns a list of files that belong to the user's organization.
+  /files/{file_id}:
+    get:
+      operationId: files_api_routes_retrieve_file
+      summary: Retrieve File
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            title: File Id
+            type: string
+            description: The ID of the file to use for this request.
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/RetrieveFileOut"
+      description: Returns information about a specific file.
+    delete:
+      operationId: files_api_routes_delete_file
+      summary: Delete File
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            title: File Id
+            type: string
+            description: The ID of the file to use for this request.
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DeleteFileOut"
+      description: Delete a file.
+  /fine_tuning/jobs:
+    get:
+      operationId: jobs_api_routes_fine_tuning_get_fine_tuning_jobs
+      summary: List Fine Tuning Jobs
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 0
+            title: Page
+            type: integer
+          required: false
+          description: The page number of the results to be returned.
+        - in: query
+          name: page_size
+          schema:
+            default: 100
+            title: Page Size
+            type: integer
+          required: false
+          description: The number of items to return per page.
+        - in: query
+          name: model
+          schema:
+            type: string
+            title: Model
+          required: false
+          description: The model name used for fine-tuning to filter on. When set, the other results are not displayed.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - QUEUED
+              - STARTED
+              - RUNNING
+              - FAILED
+              - SUCCESS
+              - CANCELLED
+              - CANCELLATION_REQUESTED
+            title: Status
+          required: false
+          description: The current job state to filter on. When set, the other results are not displayed.
+        - in: query
+          name: created_after
+          schema:
+            type: string
+            format: datetime
+            nullable: true
+            description: The date/time to filter on. When set, the results for previous creation times are not displayed.
+            required: false
+        - in: query
+          name: created_by_me
+          schema:
+            type: bool
+            default: false
+            description: When set, only return results for jobs created by the API caller. Other results are not displayed.
+        - in: query
+          name: wandb_project
+          schema:
+            type: string
+            nullable: true
+            description: The Weights and Biases project to filter on. When set, the other results are not displayed.
+        - in: query
+          name: wandb_name
+          schema:
+            type: string
+            nullable: true
+            description: The Weight and Biases run name to filter on. When set, the other results are not displayed.
+        - in: query
+          name: suffix
+          schema:
+            type: string
+            nullable: true
+            description: The model suffix to filter on. When set, the other results are not displayed.
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/JobsOut"
+      description: Get a list of fine tuning jobs for your organization and user.
+    post:
+      operationId: jobs_api_routes_fine_tuning_create_fine_tuning_job
+      summary: Create Fine Tuning Job
+      parameters:
+        - in: query
+          name: dry_run
+          schema:
+            type: bool
+            default: false
+            description: |
+              * If `true` the job is not spawned, instead the query returns a handful of useful metadata
+                for the user to perform sanity checks (see `JobMetadata` response).
+              * Otherwise, the job is started and the query returns the job ID along with some of the
+                input parameters (see `JobOut` response).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - "$ref": "#/components/schemas/JobOut"
+                  - "$ref": "#/components/schemas/JobMetadata"
+      description: Create a new fine tuning job, it will be queued for processing.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/JobIn"
+        required: true
+  /fine_tuning/jobs/{job_id}:
+    get:
+      operationId: jobs_api_routes_fine_tuning_get_fine_tuning_job
+      summary: Get Fine Tuning Job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            format: uuid
+            title: Job Id
+            type: string
+            description: The ID of the job to analyse.
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DetailedJobOut"
+      description: Get a fine tuned job details by its UUID.
+  /fine_tuning/jobs/{job_id}/cancel:
+    post:
+      operationId: jobs_api_routes_fine_tuning_cancel_fine_tuning_job
+      summary: Cancel Fine Tuning Job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            format: uuid
+            title: Job Id
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DetailedJobOut"
+      description: Request the cancellation of a fine tuning job.
 security:
   - ApiKeyAuth: []
 components:
@@ -232,7 +488,7 @@ components:
                   - tool
               content:
                 type: string
-            example: {"role": "user", "content": "Who is the best French painter? Answer in JSON."}
+            example: { "role": "user", "content": "Who is the best French painter? Answer in JSON." }
         response_format:
           type: object
           description: |
@@ -318,7 +574,7 @@ components:
                   - tool
               content:
                 type: string
-            example: {"role": "user", "content": "What is the weather like in Paris?"}
+            example: { "role": "user", "content": "What is the weather like in Paris?" }
         temperature:
           type: number
           minimum: 0.0
@@ -406,10 +662,10 @@ components:
                         },
                         "unit": {
                           "type": "string",
-                          "enum": ["celsius", "fahrenheit"]
+                          "enum": [ "celsius", "fahrenheit" ]
                         }
                       },
-                      "required": ["location"]
+                      "required": [ "location" ]
                     }
         tool_choice:
           type: string
@@ -711,9 +967,9 @@ components:
                         "function": {
                           "name": "get_current_weather",
                           "arguments": "{\"location\": \"Paris, 75\"}"
-                            }
-                          }
-                      ]
+                        }
+                      }
+                    ]
               finish_reason:
                 type: string
                 enum:
@@ -751,7 +1007,7 @@ components:
           type: array
           items:
             type: string
-          example: ["Hello", "world"]
+          example: [ "Hello", "world" ]
           description: |
             The list of strings to embed.
         encoding_format:
@@ -764,7 +1020,7 @@ components:
     EmbeddingResponse:
       type: object
       properties:
-        id: 
+        id:
           type: string
           example: embd-aad6fc62b17349b192ef09225058bc45
         object:
@@ -782,19 +1038,19 @@ components:
                 type: array
                 items:
                   type: number
-                example: [0.1, 0.2, 0.3]
+                example: [ 0.1, 0.2, 0.3 ]
               index:
                 type: int
                 example: 0
           example: [
             {
               "object": "embedding",
-              "embedding": [0.1, 0.2, 0.3],
+              "embedding": [ 0.1, 0.2, 0.3 ],
               "index": 0
             },
             {
               "object": "embedding",
-              "embedding": [0.4, 0.5, 0.6],
+              "embedding": [ 0.4, 0.5, 0.6 ],
               "index": 1
             }
           ]
@@ -820,6 +1076,7 @@ components:
         - usage
     Model:
       title: Model
+      description: Model object.
       properties:
         id:
           type: string
@@ -834,6 +1091,616 @@ components:
         - object
         - created
         - owned_by
+    UploadFileOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The ID of the created file.
+        object:
+          title: Object
+          type: string
+          example: file
+        bytes:
+          title: Bytes
+          type: integer
+          description: The size (in bytes) of the created file.
+          example: 12000
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for the creation time of the file.
+          example: 1717491627
+        filename:
+          title: Filename
+          type: string
+          description: The name of the file that was uploaded.
+          example: train.jsonl
+        purpose:
+          const: fine-tune
+          title: Purpose
+      required:
+        - id
+        - object
+        - bytes
+        - created_at
+        - filename
+        - purpose
+      title: UploadFileOut
+      type: object
+    ListFilesOut:
+      properties:
+        data:
+          items:
+            "$ref": "#/components/schemas/FileSchema"
+          title: Data
+          type: array
+        object:
+          title: Object
+          type: string
+      required:
+        - data
+        - object
+      title: ListFilesOut
+      type: object
+    RetrieveFileOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+        object:
+          title: Object
+          type: string
+        bytes:
+          title: Bytes
+          type: integer
+        created_at:
+          title: Created At
+          type: integer
+        filename:
+          title: Filename
+          type: string
+        purpose:
+          const: fine-tune
+          title: Purpose
+      required:
+        - id
+        - object
+        - bytes
+        - created_at
+        - filename
+        - purpose
+      title: RetrieveFileOut
+      type: object
+    DeleteFileOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The ID of the deleted file.
+          example: 97f6eca-6276-4993-bfeb-53cbbbba6f08
+        object:
+          title: Object
+          type: string
+          description: The object type that was deleted
+          default: file
+        deleted:
+          title: Deleted
+          type: boolean
+          description: The deletion status.
+      required:
+        - id
+        - object
+        - deleted
+      title: DeleteFileOut
+      type: object
+    FineTuneableModel:
+      enum:
+        - open-mistral-7b
+        - mistral-small-latest
+      title: FineTuneableModel
+      type: string
+      description: The name of the model to fine-tune.
+    JobOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The ID of the job.
+        hyperparameters:
+          "$ref": "#/components/schemas/TrainingParameters"
+        model:
+          "$ref": "#/components/schemas/FineTuneableModel"
+        status:
+          enum:
+            - QUEUED
+            - STARTED
+            - RUNNING
+            - FAILED
+            - SUCCESS
+            - CANCELLED
+            - CANCELLATION_REQUESTED
+          title: Status
+          type: string
+          description: The current status of the fine-tuning job.
+        job_type:
+          title: Job Type
+          type: string
+          description: The type of job (`FT` for fine-tuning).
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was created.
+        modified_at:
+          title: Modified At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was last modified.
+        training_files:
+          items:
+            format: uuid
+            type: string
+          title: Training Files
+          type: array
+          description: A list containing the IDs of uploaded files that contain training data.
+        validation_files:
+          items:
+            format: uuid
+            type: string
+          type: array
+          default: [ ]
+          title: Validation Files
+          description: A list containing the IDs of uploaded files that contain validation data.
+        object:
+          const: job
+          default: job
+          title: Object
+        fine_tuned_model:
+          type: string
+          title: Fine Tuned Model
+          description: The name of the fine-tuned model that is being created. The value will be `null` if the fine-tuning job is still running.
+        integrations:
+          items:
+            "$ref": "#/components/schemas/WandbIntegrationOut"
+          type: array
+          title: Integrations
+          description: A list of integrations enabled for your fine-tuning job.
+      required:
+        - id
+        - hyperparameters
+        - model
+        - status
+        - job_type
+        - created_at
+        - modified_at
+        - training_files
+      title: JobOut
+      type: object
+    JobsOut:
+      properties:
+        data:
+          default: [ ]
+          items:
+            "$ref": "#/components/schemas/JobOut"
+          title: Data
+          type: array
+        object:
+          const: list
+          default: list
+          title: Object
+      title: JobsOut
+      type: object
+    TrainingParameters:
+      description: The fine-tuning hyperparameter settings used in a fine-tune job.
+      properties:
+        training_steps:
+          minimum: 1
+          title: Training Steps
+          type: integer
+          description: |
+            The number of training steps to perform. A training step refers to
+            a single update of the model weights during the fine-tuning process.
+            This update is typically calculated using a batch of samples from the
+            training dataset.
+        learning_rate:
+          default: 0.0001
+          maximum: 1
+          minimum: 1.0e-08
+          title: Learning Rate
+          type: number
+          description: |
+            A parameter describing how much to adjust the pre-trained model's weights
+            in response to the estimated error each time the weights are updated during
+            the fine-tuning process.
+      required:
+        - training_steps
+      title: TrainingParameters
+      type: object
+    WandbIntegrationOut:
+      properties:
+        type:
+          const: wandb
+          default: wandb
+          title: Type
+        project:
+          title: Project
+          type: string
+          description: The name of the project that the new run will be created under.
+        name:
+          type: string
+          title: Name
+          description: A display name to set for the run. If not set, will use the job ID as the name.
+      required:
+        - project
+      title: WandbIntegrationOut
+      type: object
+    JobIn:
+      properties:
+        model:
+          "$ref": "#/components/schemas/FineTuneableModel"
+        training_files:
+          items:
+            format: uuid
+            type: string
+          description: A list containing the IDs of uploaded files that contain training data.
+          minItems: 1
+          title: Training Files
+          type: array
+        validation_files:
+          description: |
+            A list containing the IDs of uploaded files that contain validation data.
+
+            If you provide these files, the data is used to generate validation metrics
+            periodically during fine-tuning. These metrics can be viewed in `checkpoints`
+            when getting the status of a running fine-tuning job.
+
+            The same data should not be present in both train and validation files.
+          items:
+            format: uuid
+            type: string
+          type: array
+          title: Validation Files
+        hyperparameters:
+          "$ref": "#/components/schemas/TrainingParameters"
+        suffix:
+          maxLength: 18
+          type: string
+          title: Suffix
+          description: | 
+            A string that will be added to your fine-tuning model name.
+            For example, a suffix of "my-great-model" would produce a model
+            name like `ft:open-mistral-7b:my-great-model:xxx...`
+        integrations:
+          description: A list of integrations to enable for your fine-tuning job.
+          items:
+            "$ref": "#/components/schemas/WandbIntegration"
+          type: array
+          uniqueItems: true
+          title: Integrations
+      required:
+        - model
+        - training_files
+        - hyperparameters
+      title: JobIn
+      type: object
+    WandbIntegration:
+      properties:
+        type:
+          const: wandb
+          default: wandb
+          title: Type
+        project:
+          title: Project
+          type: string
+          description: The name of the project that the new run will be created under.
+        name:
+          type: string
+          title: Name
+          description: A display name to set for the run. If not set, will use the job ID as the name.
+        api_key:
+          title: Api Key
+          type: string
+          description: The WandB API key to use for authentication.
+      required:
+        - project
+        - api_key
+      title: WandbIntegration
+      type: object
+    CheckpointOut:
+      properties:
+        metrics:
+          "$ref": "#/components/schemas/MetricOut"
+        step_number:
+          title: Step Number
+          type: integer
+          description: The step number that the checkpoint was created at.
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the checkpoint was created.
+      required:
+        - metrics
+        - step_number
+        - created_at
+      title: CheckpointOut
+      type: object
+    DetailedJobOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+        hyperparameters:
+          "$ref": "#/components/schemas/TrainingParameters"
+        model:
+          "$ref": "#/components/schemas/FineTuneableModel"
+        status:
+          enum:
+            - QUEUED
+            - STARTED
+            - RUNNING
+            - FAILED
+            - SUCCESS
+            - CANCELLED
+            - CANCELLATION_REQUESTED
+          title: Status
+          type: string
+          description: The current status of the fine-tuning job.
+        job_type:
+          title: Job Type
+          type: string
+          description: The type of job (`FT` for fine-tuning).
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was created.
+        modified_at:
+          title: Modified At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was last modified.
+        training_files:
+          items:
+            format: uuid
+            type: string
+          title: Training Files
+          type: array
+          description: A list containing the IDs of uploaded files that contain training data.
+        validation_files:
+          items:
+            format: uuid
+            type: string
+          type: array
+          default: [ ]
+          title: Validation Files
+          description: A list containing the IDs of uploaded files that contain validation data.
+        object:
+          const: job
+          default: job
+          title: Object
+        fine_tuned_model:
+          type: string
+          title: Fine Tuned Model
+          description: The name of the fine-tuned model that is being created. The value will be `null` if the fine-tuning job is still running.
+        integrations:
+          items:
+            "$ref": "#/components/schemas/WandbIntegrationOut"
+          type: array
+          title: Integrations
+          description: A list of integrations enabled for your fine-tuning job.
+        events:
+          default: [ ]
+          items:
+            "$ref": "#/components/schemas/EventOut"
+          title: Events
+          type: array
+          description: |
+            Event items are created every time the status of a fine-tuning job changes.
+            The timestamped list of all events is accessible here.
+        checkpoints:
+          default: [ ]
+          items:
+            "$ref": "#/components/schemas/CheckpointOut"
+          title: Checkpoints
+          type: array
+      required:
+        - id
+        - hyperparameters
+        - model
+        - status
+        - job_type
+        - created_at
+        - modified_at
+        - training_files
+      title: DetailedJobOut
+      type: object
+    EventOut:
+      properties:
+        name:
+          title: Name
+          type: string
+          description: The name of the event.
+        data:
+          enum:
+            - QUEUED
+            - STARTED
+            - RUNNING
+            - FAILED
+            - SUCCESS
+            - CANCELLED
+            - CANCELLATION_REQUESTED
+          type: string
+          title: Data
+          description: The status of the fine-tuning job at the time of the event
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) of the event.
+      required:
+        - name
+        - created_at
+      title: EventOut
+      type: object
+    MetricOut:
+      properties:
+        train_loss:
+          type: number
+          title: Train Loss
+        valid_loss:
+          type: number
+          title: Valid Loss
+        valid_mean_token_accuracy:
+          type: number
+          title: Valid Mean Token Accuracy
+      title: MetricOut
+      description: |
+        Metrics at the step number during the fine-tuning job. Use these metrics to
+        assess if the training is going smoothly (loss should decrease, token accuracy
+        should increase).
+      type: object
+    UploadFileResponse:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          example: 497f6eca-6276-4993-bfeb-53cbbbba6f09
+        object:
+          title: Object
+          type: string
+          example: test
+        bytes:
+          title: Bytes
+          type: integer
+          example: 13000
+        created_at:
+          title: Created At
+          type: integer
+          example: 1716963433
+        filename:
+          title: Filename
+          type: string
+          example: files_upload.jsonl
+        purpose:
+          title: Purpose
+          type: string
+          example: fine-tune
+      required:
+        - id
+        - object
+        - bytes
+        - created_at
+        - filename
+        - purpose
+      title: UploadFileResponse
+      type: object
+    FileSchema:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The file identifier, which can be referenced in the API endpoints
+          example: d56b5e4f-16ae-4f07-be8e-b837aa10240f
+        object:
+          title: Object
+          type: string
+          description: The object type, which is always `file`.
+          example: "file"
+        bytes:
+          title: Bytes
+          type: integer
+          description: The size of the file, in bytes.
+          example: 1534119
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the file was created.
+          example: 1716329302
+        filename:
+          title: Filename
+          type: string
+          description: The name of the file
+          example: file_upload.jsonl
+        purpose:
+          title: Purpose
+          type: string
+          description: The intended purpose of the file. Only supports `fine-tune` for now.
+          example: fine-tune
+      required:
+        - id
+        - object
+        - bytes
+        - created_at
+        - filename
+        - purpose
+      title: FileSchema
+      type: object
+    ListFilesResponse:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/FileSchema'
+          title: Data
+          type: array
+        object:
+          title: Object
+          type: string
+      required:
+        - data
+        - object
+      title: ListFilesResponse
+      type: object
+    RetrieveFileResponse:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+        object:
+          title: Object
+          type: string
+        bytes:
+          title: Bytes
+          type: integer
+        created_at:
+          title: Created At
+          type: integer
+        filename:
+          title: Filename
+          type: string
+        purpose:
+          title: Purpose
+          type: string
+      required:
+        - id
+        - object
+        - bytes
+        - created_at
+        - filename
+        - purpose
+      title: RetrieveFileResponse
+      type: object
+    DeleteFileResponse:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+        object:
+          title: Object
+          type: string
+        deleted:
+          title: Deleted
+          type: boolean
+      required:
+        - id
+        - object
+        - deleted
+      title: DeleteFileResponse
+      type: object
     FIMCompletionResponse:
       type: object
       properties:
@@ -898,3 +1765,34 @@ components:
             - prompt_tokens
             - completion_tokens
             - total_tokens
+    JobMetadata:
+      type: object
+      title: JobMetadata
+      properties:
+        training_steps:
+          type: integer
+          description: |
+            The number of training steps to perform. A training step refers to a single update of the model weights during the fine-tuning process. This update is typically calculated using a batch of samples from the training dataset.
+          name: Training steps
+          example: 10
+        train_tokens_per_step:
+          type: integer
+          description: The number of tokens consumed by one training step.
+          name: Training tokens per step
+          example: 131072
+        data_tokens:
+          type: integer
+          description: The total number of tokens in the training dataset.
+          example: 305375
+        train_tokens:
+          type: integer
+          description: The total number of tokens used during the fine-tuning process.
+          example: 1310720
+        epochs:
+          type: float
+          description: The number of complete passes through the entire training dataset.
+          example: 4.2922
+        expected_duration_seconds:
+          type: integer
+          description: The approximated time (in seconds) for the fine-tuning process to complete.
+          example: 220

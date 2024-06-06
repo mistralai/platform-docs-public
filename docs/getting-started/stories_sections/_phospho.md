@@ -1,6 +1,6 @@
 # Phospho: RAG for internet retrieval
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/FG8vl9piGpU?si=trAFN41mYFcwEybI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/kqNtOlSOJIE?si=xQOhIXukTFZhV3xq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 The video showcases the behavior of Tak. When a user inputs a query, Tak will use the LLM knowledge, a tool to search the web and a tool to fetch the news to generate the most relevant answer to the user query. Its behavior depends on the type of query by the user.
 
@@ -12,9 +12,9 @@ In order to provide the most relevant answer to the user query, several function
 ![Performance Metrics](/img/stories/tak_architecture_diagram.png)
 
 ## Company Description
-We are (phospho)[https://phospho.ai/], an open-source text analytics platform for LLM apps. Companies of all sizes use phospho to understand what users do with their LLM app and how well the app performs at the product level.
 
 At phospho, we developed the Tak chatbot as an experimental playground to test new phospho features and showcase the power of phospho analytics. A great thing is that you can use the data logged to phospho to finetune LLM models. 
+We are [phospho](https://phospho.ai/), an open-source text analytics platform for LLM apps. Companies of all sizes use phospho to understand what users do with their LLM app and how well the app performs at the product level.
 
 ## Data
 We used a dataset of user queries in Tak and the corresponding GPT-4-turbo function calls, collected and filtered through the phospho platform. We then divided the dataset into a *train* set (70%), an *evaluation* set (15%) and a test set (15%). 

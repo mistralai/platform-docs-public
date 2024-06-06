@@ -27,6 +27,7 @@ To determine the optimal training duration, we followed the rule of thumb that e
 For the learning rate, we used the suggested learning rate of 6e-5.
 
 ## Eval
+
 To evaluate our fine-tuned model, we run inference of the test set of our dataset, then use binary classification metrics (Accuracy, Recall, F1 score). We test whether we were able to align the behavior of Mistral 7b to the classification behavior of OpenAI GPT-4-turbo, while maintaining the expected structured output. Indeed, we removed the function calling.
 
 ![Performance Metrics](/img/stories/performance_metrics.png)
@@ -36,6 +37,7 @@ Fine-tuning made Mistral 7B match the reference model, **increasing the F1 score
 As we fine-tuned the model to only answer with `news_related` or `not_news_related`, we do not need to use function calling anymore. This led to a **34% decrease in the number of tokens used** excluding the user query, which further decreases costs.
 
 ## Conclusion
+
 In conclusion, by combining phospho data collection and labeling with Mistral's fine-tuning services, we significantly enhanced our ability to deliver precise and relevant answers to user queries while decreasing cost. We have successfully aligned the behavior of Mistral 7B with GPT-4-turbo. This fine-tuning process not only ensures consistent output formatting but also reduces operational costs by minimizing token usage.
 
 If you also want to improve your RAG agent, we encourage you to try fine tuning with Mistral using the data collected and labeled with phospho. This can lead to significant improvement on your user experience.

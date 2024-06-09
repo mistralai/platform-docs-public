@@ -19,7 +19,7 @@ Retrieval-augmented generation (RAG) is an AI framework that synergizes the capa
 
 ## RAG from scratch
 
-This section aims to guide you through the process of building a basic RAG from scratch. We have two goals: firstly, to offer users a comprehensive understanding of the internal workings of RAG and demystify the underlying mechanisms; secondly, to empower you with the essential foundations needed to build an RAG using the minimum required dependencies.
+This section aims to guide you through the process of building a basic RAG from scratch. We have two goals: firstly, to offer users a comprehensive understanding of the internal workings of RAG and demystify the underlying mechanisms; secondly, to empower you with the essential foundations needed to build a RAG using the minimum required dependencies.
 
 ### Import needed packages
 The first step is to install the needed packages `mistralai` and `faiss-cpu` and import them:
@@ -81,7 +81,7 @@ text_embeddings = np.array([get_text_embedding(chunk) for chunk in chunks])
 ```
 
 ### Load into a vector database
-Once we get the text embeddings, a common practice is to store them in a vector database for efficient processing and retrieval. There are several vector database to choose from. In our simple example, we are using an open-source vector database Faiss, which allows for efficient similarity search.
+Once we get the text embeddings, a common practice is to store them in a vector database for efficient processing and retrieval. There are several vector databases to choose from. In our simple example, we are using an open-source vector database Faiss, which allows for efficient similarity search.
 
 With Faiss, we instantiate an instance of the Index class, which defines the indexing structure of the vector database. We then add the text embeddings to this indexing structure.
 
@@ -119,7 +119,7 @@ retrieved_chunk = [chunks[i] for i in I.tolist()[0]]
 
 #### Considerations:
 - **Retrieval methods**: There are a lot different retrieval strategies. In our example, we are showing a simple similarity search with embeddings. Sometimes when there is metadata available for the data, it's better to filter the data based on the metadata first before performing similarity search. There are also other statistical retrieval methods like TF-IDF and BM25 that use frequency and distribution of terms in the document to identify relevant text chunks.
-- **Retrieved document**: Do we always retrieve individual text chunk as it is? Not always.
+- **Retrieved document**: Do we always retrieve an individual text chunk as is? Not always.
     - Sometime, we would like to include more context around the actual retrieved text chunk. We call the actual retrieved text chunk "child chunk" and our goal is to retrieve a larger "parent chunk" that the "child chunk" belongs to.
     - On occasion, we might also want to provide weights to our retrieve documents. For example, a time-weighted approach would help us retrieve the most recent document.
     - One common issue in the retrieval process is the "lost in the middle" problem where the information in the middle of a long context gets lost. Our models have tried to mitigate this issue. For example, in the passkey task, our models have demonstrated the ability to find a "needle in a haystack" by retrieving a randomly inserted passkey within a long prompt, up to 32k context length. However, it is worth considering experimenting with reordering the document to determine if placing the most relevant chunks at the beginning and end leads to improved results.
@@ -253,7 +253,7 @@ print(str(response))
 The two main things the author worked on before college, outside of school, were writing and programming. They wrote short stories and attempted to write programs using an early version of Fortran on an IBM 1401.
 ```
 
-Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
+Visit our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
 
 ## RAG with Haystack
 

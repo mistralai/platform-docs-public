@@ -226,7 +226,7 @@ Here are six specific use cases that you might find helpful:
         line, prompts = args
         record = json.loads(line)
         news_article = record.get("news")
-        critique= record.get("critque")
+        critique= record.get("critique")
 
         part = random.choice(list(range(20)))
         prompt = prompts[part]
@@ -249,7 +249,7 @@ Here are six specific use cases that you might find helpful:
         except Exception as e:
             new_news = "ERROR: " + str(e)
 
-        result = json.dumps({"news": news_article, "critque": critique, "corrected_news": new_news})
+        result = json.dumps({"news": news_article, "critique": critique, "corrected_news": new_news})
 
         # Generate a random 8-digit hexadecimal string
         random_hash = secrets.token_hex(4)

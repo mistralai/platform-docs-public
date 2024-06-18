@@ -1,7 +1,7 @@
 ---
 id: evaluation
 title: Evaluation
-sidebar_position: 1.5
+sidebar_position: 1.6
 ---
 
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/evaluation.ipynb">

@@ -53,6 +53,9 @@ print(dry_run_job)
 
 `mistral-finetune`: You can use the following script to find out: https://github.com/mistralai/mistral-finetune/blob/main/utils/validate_data.py. This script accepts a .yaml training file as input and returns the number of tokens the model is being trained on.
 
+### How to estimate cost of a fine-tuning job?
+For Mistral API, you can use the `dry_run=True` argument as mentioned in the previous question. 
+
 ### What is the recommended learning rate? 
 
 For LoRA fine-tuning, we recommended 1e-4 (default) or 1e-5. 

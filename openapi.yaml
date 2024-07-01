@@ -75,6 +75,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModelList'
+    delete:
+      summary: Delete Model
+      description: Delete a fine-tuned model.
+      operationId: delete_model_v1_models__model_id__delete
+      parameters:
+      - name: model_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Model Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DeleteModelOut"
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HTTPValidationError"
+
   /files:
     post:
       operationId: files_api_routes_upload_file
@@ -1196,6 +1221,31 @@ components:
         - deleted
       title: DeleteFileOut
       type: object
+    DeleteModelOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The ID of the deleted model.
+          example: ft:open-mistral-7b:587a6b29:20240514:7e773925
+        object:
+          title: Object
+          type: string
+          description: The object type that was deleted
+          default: model
+        deleted:
+          title: Deleted
+          type: boolean
+          description: The deletion status
+          example: true
+      required:
+        - id
+        - object
+        - deleted
+      title: DeleteModelOut
+      type: object
+
     FineTuneableModel:
       enum:
         - open-mistral-7b
@@ -1795,3 +1845,33 @@ components:
           type: integer
           description: The approximated time (in seconds) for the fine-tuning process to complete.
           example: 220
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            "$ref": "#/components/schemas/ValidationError"
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+        properties:
+          loc:
+            items:
+              anyOf:
+              - type: string
+              - type: integer
+            type: array
+            title: Location
+          msg:
+            type: string
+            title: Message
+          type:
+            type: string
+            title: Error Type
+        type: object
+        required:
+        - loc
+        - msg
+        - type
+        title: ValidationError

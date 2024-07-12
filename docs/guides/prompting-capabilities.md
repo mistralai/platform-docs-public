@@ -13,7 +13,7 @@ When you first start using Mistral models, your first interaction will revolve a
 - Personalization
 - Evaluation
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/prompting_capabilities.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/prompting/prompting_capabilities.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 

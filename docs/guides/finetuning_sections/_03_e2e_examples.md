@@ -3,7 +3,7 @@ import TabItem from '@theme/TabItem';
 
 ## End-to-end example with Mistral API
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral_finetune_api.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/fine_tune/mistral_finetune_api.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 

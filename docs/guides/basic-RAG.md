@@ -13,7 +13,7 @@ Retrieval-augmented generation (RAG) is an AI framework that synergizes the capa
 - RAG with Mistral and LlamaIndex
 - RAG with Mistral and Haystack
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/basic_RAG.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/basic_RAG.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
@@ -215,7 +215,7 @@ print(response["answer"])
 The two main things the author worked on before college were writing and programming. He wrote short stories and tried programming on an IBM 1401 using Fortran, but he found it difficult to figure out what to do with the machine due to the limited input options. His interest in programming grew with the advent of microcomputers, leading him to write simple games, a program to predict rocket trajectories, and a word processor.
 ```
 
-Visit our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/langgraph_crag_mistral.ipynb) to discover how to use LangChain's LangGraph with the Mistral API to perform Corrective RAG, which enables correction of poor quality retrieval or generations.
+Visit our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/langgraph_crag_mistral.ipynb) to discover how to use LangChain's LangGraph with the Mistral API to perform Corrective RAG, which enables correction of poor quality retrieval or generations.
 
 ## RAG with LlamaIndex
 
@@ -253,7 +253,7 @@ print(str(response))
 The two main things the author worked on before college, outside of school, were writing and programming. They wrote short stories and attempted to write programs using an early version of Fortran on an IBM 1401.
 ```
 
-Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
+Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/third_party/LlamaIndex/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
 
 ## RAG with Haystack
 

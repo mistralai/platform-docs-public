@@ -1,0 +1,252 @@
+---
+id: vertex
+title: Vertex AI
+sidebar_position: 3.23
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+You can deploy the following Mistral AI models from Google Cloud Vertex AI's Model Garden:
+
+- Mistral NeMo
+- Codestral (instruct and FIM modes)
+- Mistral Large
+
+## Pre-requisites
+
+In order to query the model you will need:
+
+- Access to a Google Cloud Project with the Vertex AI API enabled
+- Relevant IAM permissions to be able to enable the model and query endpoints through the following roles:
+  - [Vertex AI User IAM role](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user).
+  - Consumer Procurement Entitlement Manager role
+
+On the client side, you will also need:
+- The `gcloud` CLI to authenticate against the Google Cloud APIs, please refer to
+[this page](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
+for more details.
+- A Python virtual environment with the `mistralai-google-cloud` client package installed.
+- The following environment variables properly set up:
+    - `GOOGLE_PROJECT_ID`: a Google Cloud Project ID with the the Vertex AI API enabled
+    - `GOOGLE_REGION`: a Google Cloud region where Mistral models are available
+      (e.g. `europe-west4`)
+
+## Querying the models (instruct mode)
+
+
+<Tabs>
+    <TabItem value="python" label="Python">
+
+        ```python
+        import httpx
+        import google.auth
+        from google.auth.transport.requests import Request
+        import os
+
+
+        def get_credentials() -> str:
+            credentials, project_id = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+            credentials.refresh(Request())
+            return credentials.token
+
+
+        def build_endpoint_url(
+            region: str,
+            project_id: str,
+            model_name: str,
+            model_version: str,
+            streaming: bool = False,
+        ) -> str:
+            base_url = f"https://{region}-aiplatform.googleapis.com/v1/"
+            project_fragment = f"projects/{project_id}"
+            location_fragment = f"locations/{region}"
+            specifier = "streamRawPredict" if streaming else "rawPredict"
+            model_fragment = f"publishers/mistralai/models/{model_name}@{model_version}"
+            url = f"{base_url}{'/'.join([project_fragment, location_fragment, model_fragment])}:{specifier}"
+            return url
+
+
+        # Retrieve Google Cloud Project ID and Region from environment variables
+        project_id = os.environ.get("GOOGLE_PROJECT_ID")
+        region = os.environ.get("GOOGLE_REGION")
+
+        # Retrieve Google Cloud credentials.
+        access_token = get_credentials()
+
+        model = "mistral-nemo" # Replace with the model you want to use
+        model_version = "2407" # Replace with the model version you want to use
+        is_streamed = False # Change to True to stream token responses
+
+        # Build URL
+        url = build_endpoint_url(
+            project_id=project_id,
+            region=region,
+            model_name=model,
+            model_version=model_version,
+            streaming=is_streamed
+        )
+
+        # Define query headers
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json",
+        }
+
+        # Define POST payload
+        data = {
+            "model": model,
+            "messages": [{"role": "user", "content": "Who is the best French painter?"}],
+            "stream": is_streamed,
+        }
+        # Make the call
+        with httpx.Client() as client:
+            resp = client.post(url, json=data, headers=headers, timeout=None)
+            print(resp.text)
+
+        ```
+
+    </TabItem>
+    <TabItem value="curl" label="cURL">
+
+        ```bash
+        MODEL="mistral-nemo"
+        MODEL_VERSION="2407"
+
+        url="https://$GOOGLE_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_PROJECT_ID/locations/$GOOGLE_REGION/publishers/mistralai/models/$MODEL@$MODEL_VERSION:rawPredict"
+
+        curl \
+          -X POST \
+          -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+          -H "Content-Type: application/json" \
+          $url \
+            --data '{
+              "model": "'"$MODEL"'",
+              "temperature": 0,
+              "messages": [
+                {"role": "user", "content": "What is the best French cheese?"}
+              ]
+            }'
+
+        ```
+    </TabItem>
+</Tabs>
+
+## Querying Codestral in FIM mode
+
+
+<Tabs>
+    <TabItem value="python" label="Python">
+
+        ```python
+        import httpx
+        import google.auth
+        from google.auth.transport.requests import Request
+        import os
+
+
+        def get_credentials() -> str:
+            credentials, project_id = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+            credentials.refresh(Request())
+            return credentials.token
+
+
+        def build_endpoint_url(
+            region: str,
+            project_id: str,
+            model_name: str,
+            model_version: str,
+            streaming: bool = False,
+        ) -> str:
+            base_url = f"https://{region}-aiplatform.googleapis.com/v1/"
+            project_fragment = f"projects/{project_id}"
+            location_fragment = f"locations/{region}"
+            specifier = "streamRawPredict" if streaming else "rawPredict"
+            model_fragment = f"publishers/mistralai/models/{model_name}@{model_version}"
+            url = f"{base_url}{'/'.join([project_fragment, location_fragment, model_fragment])}:{specifier}"
+            return url
+
+
+        # Retrieve Google Cloud Project ID and Region from environment variables
+        project_id = os.environ.get("GOOGLE_PROJECT_ID")
+        region = os.environ.get("GOOGLE_REGION")
+
+        # Retrieve Google Cloud credentials.
+        access_token = get_credentials()
+
+        model = "codestral"
+        model_version = "2405"
+        is_streamed = False # Change to True to stream token responses
+
+        # Build URL
+        url = build_endpoint_url(
+            project_id=project_id,
+            region=region,
+            model_name=model,
+            model_version=model_version,
+            streaming=is_streamed
+        )
+
+        # Define query headers
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json",
+        }
+
+        # Define POST payload
+        data = {
+            "model": model,
+            "prompt": "def say_hello(name: str) -> str:",
+            "suffix": "return n_words"
+        }
+        # Make the call
+        with httpx.Client() as client:
+            resp = client.post(url, json=data, headers=headers, timeout=None)
+            print(resp.text)
+
+
+        ```
+
+    </TabItem>
+    <TabItem value="curl" label="cURL">
+
+        ```bash
+        MODEL="codestral"
+        MODEL_VERSION="2405"
+
+        url="https://$GOOGLE_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_PROJECT_ID/locations/$GOOGLE_REGION/publishers/mistralai/models/$MODEL@$MODEL_VERSION:rawPredict"
+
+
+        curl \
+          -X POST \
+          -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+          -H "Content-Type: application/json" \
+          $url \
+            --data '{
+            "model":"'"$MODEL"'",
+            "prompt": "def count_words_in_file(file_path: str) -> int:",
+            "suffix": "return n_words"
+         }'
+
+        ```
+    </TabItem>
+</Tabs>
+
+
+## Going further
+
+For more information and examples, you can check:
+
+- The Google Cloud [Partner Models](https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/mistral)
+  documentation page.
+- The Vertex Model Cards for [Mistral Large](https://console.cloud.google.com/vertex-ai/publishers/mistralai/model-garden/mistral-large),
+  [Mistral-NeMo](https://console.cloud.google.com/vertex-ai/publishers/mistralai/model-garden/mistral-nemo) and
+  [Codestral](https://console.cloud.google.com/vertex-ai/publishers/mistralai/model-garden/codestral).
+- The [Getting Started Colab Notebook](https://colab.research.google.com/github/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/generative_ai/mistralai_intro.ipynb)
+  for Mistral models on Vertex, along with the [source file on GitHub](https://github.com/GoogleCloudPlatform/vertex-ai-samples/tree/main/notebooks/official/generative_ai/mistralai_intro.ipynb).
+  

@@ -22,7 +22,7 @@ Our team will review each application, evaluating candidates based on the follow
 - **Commitment**: Willingness to commit to the program for at least 6 months.
 
 
-# 🤠 Meet our current Ambassadors 🤠
+# 🤠 Meet our current Ambassadors 🤠
 Thank you to each and every one of you, including those who prefer not to be named, for contributing to our community!
 
 <table>

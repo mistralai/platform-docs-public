@@ -3,7 +3,7 @@
 Once you have chosen fine-tuning as the best approach for your specific use-case,
 the initial and most critical step is to gather and prepare training data for
 fine-tuning the models.
-Here are six specific use cases that you might find helpful:
+Here are seven specific use cases that you might find helpful:
 
 ### Use cases
 

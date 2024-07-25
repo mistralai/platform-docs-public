@@ -6,12 +6,13 @@ sidebar_position: 1.2
 ---
 
 # Basic RAG
-Retrieval-augmented generation (RAG) is an AI framework that synergizes the capabilities of LLMs and information retrieval systems. It's useful to answer questions or generate content leveraging external knowledge. There are two main steps in RAG: 1) retrieval: retrieve relevant information from a knowledge base with text embeddings stored in a vector store; 2) generation: insert the relevant information to the prompt for the LLM to generate information. In this guide, we will walk through a very basic example of RAG with four implementations:
+Retrieval-augmented generation (RAG) is an AI framework that synergizes the capabilities of LLMs and information retrieval systems. It's useful to answer questions or generate content leveraging external knowledge. There are two main steps in RAG: 1) retrieval: retrieve relevant information from a knowledge base with text embeddings stored in a vector store; 2) generation: insert the relevant information to the prompt for the LLM to generate information. In this guide, we will walk through a very basic example of RAG with five implementations:
 
 - RAG from scratch with Mistral
 - RAG with Mistral and LangChain
 - RAG with Mistral and LlamaIndex
 - RAG with Mistral and Haystack
+- RAG with Mistral and Vercel AI SDK
 
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/basic_RAG.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
@@ -321,4 +322,71 @@ print(result["llm"]["replies"][0].content)
 **Output:**
 ```
 The two main things the author worked on before college were writing and programming. He wrote short stories, which he admitted were awful, and essays about various topics. He also worked on spam filters and painted. Additionally, he started having dinners for a group of friends every Thursday night, which taught him how to cook for groups. He also bought a building in Cambridge to use as an office. The author was drawn to writing essays, which he started publishing online, and this helped him figure out what to work on. He also experimented with painting and studied AI in college.
+```
+
+## RAG with Vercel AI SDK
+
+**Code:**
+```typescript
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+import { mistral } from "@ai-sdk/mistral";
+import { cosineSimilarity, embed, embedMany, generateText } from "ai";
+
+dotenv.config();
+
+async function main() {
+  const db: { embedding: number[]; value: string }[] = [];
+
+  const essay = fs.readFileSync(path.join(__dirname, "essay.txt"), "utf8");
+  const chunks = essay
+    .split(".")
+    .map((chunk) => chunk.trim())
+    .filter((chunk) => chunk.length > 0 && chunk !== "\n");
+
+  const { embeddings } = await embedMany({
+    model: mistral.embedding("mistral-embed"),
+    values: chunks,
+  });
+  embeddings.forEach((e, i) => {
+    db.push({
+      embedding: e,
+      value: chunks[i],
+    });
+  });
+
+  const input =
+    "What were the two main things the author worked on before college?";
+
+  const { embedding } = await embed({
+    model: mistral.embedding("mistral-embed"),
+    value: input,
+  });
+  const context = db
+    .map((item) => ({
+      document: item,
+      similarity: cosineSimilarity(embedding, item.embedding),
+    }))
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 3)
+    .map((r) => r.document.value)
+    .join("\n");
+
+  const { text } = await generateText({
+    model: mistral("open-mixtral-8x7b"),
+    prompt: `Answer the following question based only on the provided context:
+             ${context}
+
+             Question: ${input}`,
+  });
+  console.log(text);
+}
+
+main().catch(console.error);
+```
+
+**Output:**
+```
+The two main things the author worked on before college were writing and programming.
 ```

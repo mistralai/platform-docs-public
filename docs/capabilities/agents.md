@@ -26,7 +26,7 @@ To start building your own agent, visit https://console.mistral.ai/build/agents/
 <img src="/img/agent.png" alt="drawing" width="600"/>
 
 Here are the available options for customizing your agent:
-- **Model**: The specific model you would like the agent to use. Default is "Mistral Large 2" (`mistral-large-2407`). The other model choicess are "Mistral Nemo" (`open-mistral-nemo`), "Codestral" (`codestral-2405`), and your fine-tuned models.
+- **Model**: The specific model you would like the agent to use. Default is "Mistral Large 2" (`mistral-large-2407`). The other model choices are "Mistral Nemo" (`open-mistral-nemo`), "Codestral" (`codestral-2405`), and your fine-tuned models.
 - **Temperature**: What sampling temperature to use, between 0.0 and 1.0. Higher values will make the output more random, while lower values will make it more focused and deterministic.
 - **Instructions** (optional): Instructions allows you to enforce a model behavior through all conversations and messages.
 - **Demonstrations** (optional): Few-shot learning examples can be added to help guide the agent to understand the specific behavior you want it to exhibit. You can show the model some examples of input and output to improve performance.

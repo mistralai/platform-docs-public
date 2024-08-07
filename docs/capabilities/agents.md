@@ -256,5 +256,4 @@ Check out this [example notebook](https://github.com/mistralai/cookbook/blob/mai
 
 You can also create role-playing conversation agents. For instance, in this [example](https://github.com/mistralai/cookbook/blob/main/mistral/agents/conversation_agent.ipynb), the role-playing conversation workflow generates an entertaining and humorous exchange between two agents mimicking the styles of two stand-up comedians Ali Wong and Jimmy Yang, incorporating jokes and comedic elements to enhance the conversation.
 
-Here is another [example](https://github.com/mistralai/cookbook/blob/main/mistral/agents/auto_roleplay.ipynb), where we have a Game Master agent orchestrating a roleplaying story between a Narrator agent and a Character agent. The Game Master agent sets the stage and determines which agent drives the next step of the story. 
 </details>

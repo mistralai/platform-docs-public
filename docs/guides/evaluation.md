@@ -142,13 +142,12 @@ We have designed a prompt that incorporates the medical notes as context. Additi
 
 ```py
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 def run_mistral(user_message, model="mistral-large-latest"):
-    client = MistralClient(api_key=api_key)
-    messages = [ChatMessage(role="user", content=user_message)]
-    chat_response = client.chat(
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role": "user", "content": user_message}]
+    chat_response = client.chat.complete(
         model=model,
         messages=messages,
         response_format={"type": "json_object"},
@@ -258,14 +257,10 @@ python_prompts = {
 We have designed a prompt that generates Python code snippets based on descriptions of specific tasks.
 
 ```py
-import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
-
 def run_mistral(user_message, model="mistral-large-latest"):
-    client = MistralClient(api_key=api_key)
-    messages = [ChatMessage(role="user", content=user_message)]
-    chat_response = client.chat(
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role":"user", "content": user_message}]
+    chat_response = client.chat.complete(
         model=model,
         messages=messages,
         response_format={"type": "json_object"},
@@ -380,15 +375,15 @@ from mistralai.models.chat_completion import ChatMessage
 
 
 def run_mistral(user_message, model="open-mistral-7b", is_json=False):
-    client = MistralClient(api_key=os.getenv("MISTRAL_API_KEY"))
-    messages = [ChatMessage(role="user", content=user_message)]
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role":"user", "content":user_message}]
 
     if is_json:
-        chat_response = client.chat(
+        chat_response = client.chat.complete(
             model=model, messages=messages, response_format={"type": "json_object"}
         )
     else:
-        chat_response = client.chat(model=model, messages=messages)
+        chat_response = client.chat.complete(model=model, messages=messages)
 
     return chat_response.choices[0].message.content
 

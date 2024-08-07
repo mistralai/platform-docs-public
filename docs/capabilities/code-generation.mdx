@@ -42,20 +42,21 @@ With this feature, users can define the starting point of the code using a `prom
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def fibonacci(n: int):"
 suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
 
-response = client.completion(
+response = client.fim.complete(
     model=model,
     prompt=prompt,
     suffix=suffix,
+    temperature=0,
+    top_p=1,
 )
 
 print(
@@ -92,19 +93,15 @@ curl --location 'https://api.mistral.ai/v1/fim/completions' \
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
 
-response = client.completion(
-    model=model,
-    prompt=prompt
-)
+response = client.fim.complete(model=model, prompt=prompt, temperature=0, top_p=1)
 
 print(
     f"""
@@ -143,21 +140,17 @@ We recommend adding stop tokens for IDE autocomplete integrations to prevent the
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
 suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
 
-response = client.completion(
-    model=model,
-    prompt=prompt,
-    suffix=suffix,
-    stop=["\n\n"]
+response = client.fim.complete(
+    model=model, prompt=prompt, suffix=suffix, temperature=0, top_p=1, stop=["\n\n"]
 )
 
 print(
@@ -200,21 +193,16 @@ The only difference is the endpoint used:
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
-
-messages = [
-    ChatMessage(role="user", content="Write a function for fibonacci")
-]
-chat_response = client.chat(
-    model=model,
-    messages=messages
+message = [{"role": "user", "content": "Write a function for fibonacci"}]
+chat_response = client.chat.complete(
+    model = model,
+    messages = message
 )
 print(chat_response.choices[0].message.content)
 ```
@@ -242,21 +230,24 @@ We have also released Codestral Mamba 7B, a Mamba2 language model specilized in 
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-mamba-latest"
 
-messages = [
-    ChatMessage(role="user", content="Write a function for fibonacci")
+message = [
+    {
+        "role": "user", 
+        "content": "Write a function for fibonacci"
+    }
 ]
-chat_response = client.chat(
+
+chat_response = client.chat.complete(
     model=model,
-    messages=messages
+    messages=message
 )
 print(chat_response.choices[0].message.content)
 ```

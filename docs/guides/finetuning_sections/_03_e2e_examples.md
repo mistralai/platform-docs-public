@@ -67,22 +67,27 @@ We can then upload both the training data and evaluation data to the Mistral Cli
   <TabItem value="python" label="python" default>
 
 ```python
+from mistralai import Mistral
 import os
-from mistralai.client import MistralClient
 
-api_key = os.environ.get("MISTRAL_API_KEY")
-client = MistralClient(api_key=api_key)
+api_key = os.environ["MISTRAL_API_KEY"]
 
-with open("ultrachat_chunk_train.jsonl", "rb") as f:
-    ultrachat_chunk_train = client.files.create(file=("ultrachat_chunk_train.jsonl", f))
-with open("ultrachat_chunk_eval.jsonl", "rb") as f:
-    ultrachat_chunk_eval = client.files.create(file=("ultrachat_chunk_eval.jsonl", f))
+client = Mistral(api_key=api_key)
+
+ultrachat_chunk_train = client.files.upload(file={
+    "file_name": "ultrachat_chunk_train.jsonl",
+    "content": open("ultrachat_chunk_train.jsonl", "rb"),
+})
+ultrachat_chunk_eval = client.files.upload(file={
+    "file_name": "ultrachat_chunk_eval.jsonl",
+    "content": open("ultrachat_chunk_eval.jsonl", "rb"),
+})
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
+```typescript
 import MistralClient from '@mistralai/mistralai';
 
 const apiKey = process.env.MISTRAL_API_KEY;
@@ -144,24 +149,28 @@ Next, we can create a fine-tuning job:
   <TabItem value="python" label="python" default>
 
 ```python
-from mistralai.models.jobs import TrainingParameters
-
-created_jobs = client.jobs.create(
-    model="open-mistral-7b",
-    training_files=[ultrachat_chunk_train.id],
-    validation_files=[ultrachat_chunk_eval.id],
-    hyperparameters=TrainingParameters(
-        training_steps=10,
-        learning_rate=0.0001,
-        )
+# create a fine-tuning job
+created_jobs = client.fine_tuning.jobs.create(
+    model="open-mistral-7b", 
+    training_files=[{"file_id": ultrachat_chunk_train.id, "weight": 1}],
+    validation_files=[ultrachat_chunk_eval.id], 
+    hyperparameters={
+        "training_steps": 10,
+        "learning_rate":0.0001
+    },
+    auto_start=False
 )
+
+# start a fine-tuning job
+client.fine_tuning.jobs.start(job_id = created_jobs.id)
+
 created_jobs
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
+```typescript
 const createdJob = await client.jobs.create({
   model: 'open-mistral-7b',
   trainingFiles: [ultrachat_chunk_train.id],
@@ -225,49 +234,6 @@ Example output:
 }
 ```
 
-### Use a fine-tuned model 
-When a fine-tuned job is finished, you will be able to see the fine-tuned model name via `retrieved_jobs.fine_tuned_model`. Then you can use our `chat` endpoint to chat with the fine-tuned model: 
-
-
-<Tabs>
-  <TabItem value="python" label="python" default>
-
-```python
-from mistralai.models.chat_completion import ChatMessage
-
-chat_response = client.chat(
-    model=retrieved_job.fine_tuned_model,
-    messages=[ChatMessage(role='user', content='What is the best French cheese?')]
-)
-```
-  </TabItem>
-
-  <TabItem value="javascript" label="javascript">
-
-```javascript
-const chatResponse = await client.chat({
-  model: retrievedJob.fine_tuned_model,
-  messages: [{role: 'user', content: 'What is the best French cheese?'}],
-});
-```
-  </TabItem>
-  
-  <TabItem value="curl" label="curl">
-
-```bash
-curl "https://api.mistral.ai/v1/chat/completions" \
-     --header 'Content-Type: application/json' \
-     --header 'Accept: application/json' \
-     --header "Authorization: Bearer $MISTRAL_API_KEY" \
-     --data '{
-    "model": "ft:open-mistral-7b:daf5e488:20240430:c1bed559",
-    "messages": [{"role": "user", "content": "Who is the most renowned French painter?"}]
-  }'
-
-```
-  </TabItem>
-
-</Tabs>
 
 ### Analyze and evaluate fine-tuned model
 
@@ -284,14 +250,14 @@ Both validation loss and validation token accuracy serve as essential indicators
 
 ```python
 # Retrieve a jobs
-retrieved_jobs = client.jobs.retrieve(created_jobs.id)
+retrieved_jobs = client.fine_tuning.jobs.get(job_id = created_jobs.id)
 print(retrieved_jobs)
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
+```typescript
 // Retrieve a job
 const retrievedJob = await client.jobs.retrieve({ jobId: createdJob.id });
 ```
@@ -451,28 +417,62 @@ curl https://api.mistral.ai/v1/fine_tuning/jobs/<jobid> \
 ```
 </details>
 
+### Use a fine-tuned model 
+When a fine-tuned job is finished, you will be able to see the fine-tuned model name via `retrieved_jobs.fine_tuned_model`. Then you can use our `chat` endpoint to chat with the fine-tuned model: 
+
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+chat_response = client.chat.complete(
+    model = retrieved_jobs.fine_tuned_model,
+    messages = [{"role":'user', "content":'What is the best French cheese?'}]
+)
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const chatResponse = await client.chat({
+  model: retrievedJob.fine_tuned_model,
+  messages: [{role: 'user', content: 'What is the best French cheese?'}],
+});
+```
+  </TabItem>
+  
+  <TabItem value="curl" label="curl">
+
+```bash
+curl "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "ft:open-mistral-7b:daf5e488:20240430:c1bed559",
+    "messages": [{"role": "user", "content": "Who is the most renowned French painter?"}]
+  }'
+
+```
+  </TabItem>
+
+</Tabs>
+
 ### Integration with Weights and Biases
 We can also offer support for integration with Weights & Biases (W&B) to monitor and track various metrics and statistics associated with our fine-tuning jobs. To enable integration with W&B, you will need to create an account with W&B and add your W&B information in the “integrations” section in the job creation request: 
 
 ```python
-from mistralai.models.jobs import WandbIntegrationIn, TrainingParameters
-
-wandb_api_key = os.environ.get("WANDB_API_KEY")
-
-created_jobs = client.jobs.create(
-    model="open-mistral-7b",
-    training_files=[ultrachat_chunk_train.id],
+client.fine_tuning.jobs.create(
+    model="open-mistral-7b", 
+    training_files=[{"file_id": ultrachat_chunk_train.id, "weight": 1}],
     validation_files=[ultrachat_chunk_eval.id],
-    hyperparameters=TrainingParameters(
-        training_steps=300,
-        learning_rate=0.0001,
-    ),
+    hyperparameters={"training_steps": 10, "learning_rate": 0.0001},
     integrations=[
-        WandbIntegrationIn(
-            project="test_api",
-            run_name="test",
-            api_key=wandb_api_key,
-        ).dict()
+        {
+            "project": "<value>",
+            "api_key": "<value>",
+        }
     ]
 )
 ```

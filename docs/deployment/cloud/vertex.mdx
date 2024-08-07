@@ -7,232 +7,216 @@ sidebar_position: 3.23
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## Introduction
 
-You can deploy the following Mistral AI models from Google Cloud Vertex AI's Model Garden:
+Mistral AI's open and commercial models can be deployed on the Google Cloud Vertex AI
+platform as fully managed endpoints. Mistral models on Vertex AI are serverless services
+so you don't have to manage any infrastructure.
 
-- Mistral NeMo
-- Codestral (instruct and FIM modes)
+As of today, the following models are available:
+
 - Mistral Large
+- Mistral NeMo
+- Codestral (chat and FIM completions)
 
-## Pre-requisites
+For more details, visit the [models](../../../getting-started/models) page.
 
-In order to query the model you will need:
+## Getting started
+
+The following sections outline the steps to deploy and query a Mistral model on the
+Vertex AI platform.
+
+### Requesting access to the model
+
+The following items are required:
 
 - Access to a Google Cloud Project with the Vertex AI API enabled
 - Relevant IAM permissions to be able to enable the model and query endpoints through the following roles:
   - [Vertex AI User IAM role](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user).
   - Consumer Procurement Entitlement Manager role
 
-On the client side, you will also need:
-- The `gcloud` CLI to authenticate against the Google Cloud APIs, please refer to
+To enable the model of your choice, navigate to its card in the 
+[Vertex Model Garden catalog](https://cloud.google.com/vertex-ai/generative-ai/docs/model-garden/explore-models),
+then click on "Enable".
+
+
+### Querying the model (chat completion)
+
+Available models expose a REST API that you can query using Mistral's SDKs or plain HTTP calls.
+
+To run the examples below:
+
+- Install the `gcloud` CLI to authenticate against the Google Cloud APIs, please refer to
 [this page](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
 for more details.
-- A Python virtual environment with the `mistralai-google-cloud` client package installed.
-- The following environment variables properly set up:
-    - `GOOGLE_PROJECT_ID`: a Google Cloud Project ID with the the Vertex AI API enabled
-    - `GOOGLE_REGION`: a Google Cloud region where Mistral models are available
-      (e.g. `europe-west4`)
-
-## Querying the models (instruct mode)
-
+- Set the following environment variables:
+    - `GOOGLE_CLOUD_REGION`: The target cloud region.
+    - `GOOGLE_CLOUD_PROJECT_ID`: The name of your project.
+    - `VERTEX_MODEL_NAME`: The name of the model to query (e.g. `mistral-large`).
+    - `VERTEX_MODEL_VERSION`: The version of the model to query (e.g. `2407`).
+    
 
 <Tabs>
-    <TabItem value="python" label="Python">
-
-        ```python
-        import httpx
-        import google.auth
-        from google.auth.transport.requests import Request
-        import os
-
-
-        def get_credentials() -> str:
-            credentials, project_id = google.auth.default(
-                scopes=["https://www.googleapis.com/auth/cloud-platform"]
-            )
-            credentials.refresh(Request())
-            return credentials.token
-
-
-        def build_endpoint_url(
-            region: str,
-            project_id: str,
-            model_name: str,
-            model_version: str,
-            streaming: bool = False,
-        ) -> str:
-            base_url = f"https://{region}-aiplatform.googleapis.com/v1/"
-            project_fragment = f"projects/{project_id}"
-            location_fragment = f"locations/{region}"
-            specifier = "streamRawPredict" if streaming else "rawPredict"
-            model_fragment = f"publishers/mistralai/models/{model_name}@{model_version}"
-            url = f"{base_url}{'/'.join([project_fragment, location_fragment, model_fragment])}:{specifier}"
-            return url
-
-
-        # Retrieve Google Cloud Project ID and Region from environment variables
-        project_id = os.environ.get("GOOGLE_PROJECT_ID")
-        region = os.environ.get("GOOGLE_REGION")
-
-        # Retrieve Google Cloud credentials.
-        access_token = get_credentials()
-
-        model = "mistral-nemo" # Replace with the model you want to use
-        model_version = "2407" # Replace with the model version you want to use
-        is_streamed = False # Change to True to stream token responses
-
-        # Build URL
-        url = build_endpoint_url(
-            project_id=project_id,
-            region=region,
-            model_name=model,
-            model_version=model_version,
-            streaming=is_streamed
-        )
-
-        # Define query headers
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Accept": "application/json",
-        }
-
-        # Define POST payload
-        data = {
-            "model": model,
-            "messages": [{"role": "user", "content": "Who is the best French painter?"}],
-            "stream": is_streamed,
-        }
-        # Make the call
-        with httpx.Client() as client:
-            resp = client.post(url, json=data, headers=headers, timeout=None)
-            print(resp.text)
-
-        ```
-
-    </TabItem>
     <TabItem value="curl" label="cURL">
-
         ```bash
-        MODEL="mistral-nemo"
-        MODEL_VERSION="2407"
+        base_url="https://$GOOGLE_CLOUD_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_CLOUD_PROJECT_ID/locations/$GOOGLE_CLOUD_REGION/publishers/mistralai/models"
+        model_version="$VERTEX_MODEL_NAME@$VERTEX_MODEL_VERSION"
+        url="$base_url/$model_version:rawPredict"
 
-        url="https://$GOOGLE_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_PROJECT_ID/locations/$GOOGLE_REGION/publishers/mistralai/models/$MODEL@$MODEL_VERSION:rawPredict"
-
-        curl \
-          -X POST \
-          -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-          -H "Content-Type: application/json" \
-          $url \
-            --data '{
-              "model": "'"$MODEL"'",
+        curl --location $url\
+          --header "Content-Type: application/json" \
+          --header "Authorization: Bearer $(gcloud auth print-access-token)" \
+          --data '{
+              "model": "'"$VERTEX_MODEL_NAME"'",
               "temperature": 0,
               "messages": [
-                {"role": "user", "content": "What is the best French cheese?"}
-              ]
+                {"role": "user", "content": "Who is the best French painter? Answer in one short sentence."}
+              ],
+              "stream": false
             }'
-
         ```
     </TabItem>
+    <TabItem value="python" label="Python">
+        This code requires a virtual environment with the following packages:
+        - `mistralai[gcp]>=1.0.0` 
+
+        ```python
+        import os
+        from mistralai_gcp import MistralGoogleCloud
+
+        region = os.environ.get("GOOGLE_CLOUD_REGION")
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_NAME")
+        model_name = os.environ.get("VERTEX_MODEL_NAME")
+        model_version = os.environ.get("VERTEX_MODEL_VERSION")
+
+        client = MistralGoogleCloud(region=region, project_id=project_id)
+
+        resp = client.chat.complete(
+            model = f"{model_name}-{model_version}",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Who is the best French painter? Answer in one short sentence.",
+                }
+            ],
+        )
+
+        print(resp.choices[0].message.content)
+        ```
+    </TabItem>
+    <TabItem value="ts" label="TypeScript">
+    This code requires the following package:
+    - `@mistralai/mistralai-gcp` (version >= `1.0.0`)
+
+    ```typescript
+    import { MistralGoogleCloud } from "@mistralai/mistralai-gcp";
+
+    const client = new MistralGoogleCloud({
+        region: process.env.GOOGLE_CLOUD_REGION || "",
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || "",
+    });
+
+    const modelName = process.env.VERTEX_MODEL_NAME|| "";
+    const modelVersion = process.env.VERTEX_MODEL_VERSION || "";
+
+    async function chatCompletion(user_msg: string) {
+        const resp = await client.chat.complete({
+            model: modelName + "-" + modelVersion,
+            messages: [
+                {
+                    content: user_msg,
+                    role: "user",
+                },
+            ],
+        });
+        if (resp.choices && resp.choices.length > 0) {
+            console.log(resp.choices[0]);
+        }
+    }
+
+    chatCompletion("Who is the best French painter? Answer in one short sentence.");
+    ```
+    </TabItem>
+
 </Tabs>
 
-## Querying Codestral in FIM mode
+### Querying the model (FIM completion)
+
+Codestral can be queried using an additional completion mode called fill-in-the-middle (FIM).
+For more information, see the
+[code generation section](../../../capabilities/code_generation/#fill-in-the-middle-endpoint).
 
 
 <Tabs>
+    <TabItem value="curl" label="cURL">
+        ```bash
+        VERTEX_MODEL_NAME=codestral
+        VERTEX_MODEL_VERSION=2405
+
+        base_url="https://$GOOGLE_CLOUD_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_CLOUD_PROJECT_ID/locations/$GOOGLE_CLOUD_REGION/publishers/mistralai/models"
+        model_version="$VERTEX_MODEL_NAME@$VERTEX_MODEL_VERSION"
+        url="$base_url/$model_version:rawPredict"
+
+        curl --location $url\
+          --header "Content-Type: application/json" \
+          --header "Authorization: Bearer $(gcloud auth print-access-token)" \
+          --data '{
+              "model":"'"$VERTEX_MODEL_NAME"'",
+              "prompt": "def count_words_in_file(file_path: str) -> int:",
+              "suffix": "return n_words",
+              "stream": false
+            }'
+        ```
+    </TabItem>
     <TabItem value="python" label="Python">
 
         ```python
-        import httpx
-        import google.auth
-        from google.auth.transport.requests import Request
         import os
+        from mistralai_gcp import MistralGoogleCloud
 
-
-        def get_credentials() -> str:
-            credentials, project_id = google.auth.default(
-                scopes=["https://www.googleapis.com/auth/cloud-platform"]
-            )
-            credentials.refresh(Request())
-            return credentials.token
-
-
-        def build_endpoint_url(
-            region: str,
-            project_id: str,
-            model_name: str,
-            model_version: str,
-            streaming: bool = False,
-        ) -> str:
-            base_url = f"https://{region}-aiplatform.googleapis.com/v1/"
-            project_fragment = f"projects/{project_id}"
-            location_fragment = f"locations/{region}"
-            specifier = "streamRawPredict" if streaming else "rawPredict"
-            model_fragment = f"publishers/mistralai/models/{model_name}@{model_version}"
-            url = f"{base_url}{'/'.join([project_fragment, location_fragment, model_fragment])}:{specifier}"
-            return url
-
-
-        # Retrieve Google Cloud Project ID and Region from environment variables
-        project_id = os.environ.get("GOOGLE_PROJECT_ID")
-        region = os.environ.get("GOOGLE_REGION")
-
-        # Retrieve Google Cloud credentials.
-        access_token = get_credentials()
-
-        model = "codestral"
+        region = os.environ.get("GOOGLE_CLOUD_REGION")
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_NAME")
+        model_name = "codestral"
         model_version = "2405"
-        is_streamed = False # Change to True to stream token responses
 
-        # Build URL
-        url = build_endpoint_url(
-            project_id=project_id,
-            region=region,
-            model_name=model,
-            model_version=model_version,
-            streaming=is_streamed
+        client = MistralGoogleCloud(region=region, project_id=project_id)
+
+        resp = client.fim.complete(
+            model = f"{model_name}-{model_version}",
+            prompt="def count_words_in_file(file_path: str) -> int:",
+            suffix="return n_words"
         )
 
-        # Define query headers
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Accept": "application/json",
-        }
-
-        # Define POST payload
-        data = {
-            "model": model,
-            "prompt": "def say_hello(name: str) -> str:",
-            "suffix": "return n_words"
-        }
-        # Make the call
-        with httpx.Client() as client:
-            resp = client.post(url, json=data, headers=headers, timeout=None)
-            print(resp.text)
-
-
+        print(resp.choices[0].message.content)
         ```
 
     </TabItem>
-    <TabItem value="curl" label="cURL">
+    <TabItem value="ts" label="TypeScript">
 
-        ```bash
-        MODEL="codestral"
-        MODEL_VERSION="2405"
+        ```typescript
+        import { MistralGoogleCloud } from "@mistralai/mistralai-gcp";
 
-        url="https://$GOOGLE_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_PROJECT_ID/locations/$GOOGLE_REGION/publishers/mistralai/models/$MODEL@$MODEL_VERSION:rawPredict"
+        const client = new MistralGoogleCloud({
+            region: process.env.GOOGLE_CLOUD_REGION || "",
+            projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || "",
+        });
 
+        const modelName = "codestral";
+        const modelVersion = "2405";
 
-        curl \
-          -X POST \
-          -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-          -H "Content-Type: application/json" \
-          $url \
-            --data '{
-            "model":"'"$MODEL"'",
-            "prompt": "def count_words_in_file(file_path: str) -> int:",
-            "suffix": "return n_words"
-         }'
+        async function fimCompletion(prompt: string, suffix: string) {
+            const resp = await client.fim.complete({
+                model: modelName + "-" + modelVersion,
+                prompt: prompt,
+                suffix: suffix
+            });
+            if (resp.choices && resp.choices.length > 0) {
+                console.log(resp.choices[0]);
+            }
+        }
 
+        fimCompletion("def count_words_in_file(file_path: str) -> int:",
+                      "return n_words");
         ```
     </TabItem>
 </Tabs>

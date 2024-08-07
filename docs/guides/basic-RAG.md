@@ -23,21 +23,24 @@ Retrieval-augmented generation (RAG) is an AI framework that synergizes the capa
 This section aims to guide you through the process of building a basic RAG from scratch. We have two goals: firstly, to offer users a comprehensive understanding of the internal workings of RAG and demystify the underlying mechanisms; secondly, to empower you with the essential foundations needed to build an RAG using the minimum required dependencies.
 
 ### Import needed packages
-The first step is to install the needed packages `mistralai` and `faiss-cpu` and import them:
+The first step is to install the packages `mistralai` and `faiss-cpu` and import the needed packages:
 
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
+import requests
 import numpy as np
+import faiss
 import os
+from getpass import getpass
+
+api_key= getpass("Type your API Key")
+client = Mistral(api_key=api_key)
 ```
 
 ### Get data
 In this very simple example, we are getting data from an essay written by Paul Graham:
 
 ```python
-import requests
-
 response = requests.get('https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt')
 text = response.text
 ```
@@ -73,9 +76,9 @@ To create an embedding, use Mistral AI's embeddings API endpoint and the embeddi
 
 ```python
 def get_text_embedding(input):
-    embeddings_batch_response = client.embeddings(
+    embeddings_batch_response = client.embeddings.create(
           model="mistral-embed",
-          input=input
+          inputs=input
       )
     return embeddings_batch_response.data[0].embedding
 text_embeddings = np.array([get_text_embedding(chunk) for chunk in chunks])
@@ -145,11 +148,13 @@ Answer:
 Then we can use the Mistral chat completion API to chat with a Mistral model (e.g., mistral-medium-latest) and generate answers based on the user question and the context of the question.
 
 ```python
-def run_mistral(user_message, model="mistral-medium-latest"):
+def run_mistral(user_message, model="mistral-large-latest"):
     messages = [
-        ChatMessage(role="user", content=user_message)
+        {
+            "role": "user", "content": user_message
+        }
     ]
-    chat_response = client.chat(
+    chat_response = client.chat.complete(
         model=model,
         messages=messages
     )

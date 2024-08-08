@@ -4,7 +4,7 @@ title: Function calling
 sidebar_position: 2.5
 ---
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/function_calling.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/function_calling/function_calling.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
@@ -17,6 +17,7 @@ Currently, function calling is available for the following models:
 - Mistral Small 
 - Mistral Large 
 - Mixtral 8x22B 
+- Mistral Nemo
 
 
 ### Four steps 
@@ -127,11 +128,7 @@ names_to_functions = {
 Suppose a user asks the following question: “What’s the status of my transaction?” A standalone LLM would not be able to answer this question, as it needs to query the business logic backend to access the necessary data. But what if we have an exact tool we can use to answer this question? We could potentially provide an answer! 
 
 ```python
-from mistralai.models.chat_completion import ChatMessage
-
-messages = [
-    ChatMessage(role="user", content="What's the status of my transaction T1001?")
-]
+messages = [{"role": "user", "content": "What's the status of my transaction T1001?"}]
 ```
 
 ## Step 2. Model: Generate function arguments 
@@ -149,14 +146,19 @@ Users can use `tool_choice` to speficy how tools are used:
 
 
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import os
+from mistralai import Mistral
 
+api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
-api_key="TYPE YOUR API KEY"
 
-client = MistralClient(api_key=api_key)
-response = client.chat(model=model, messages=messages, tools=tools, tool_choice="auto")
+client = Mistral(api_key=api_key)
+response = client.chat.complete(
+    model = model,
+    messages = messages,
+    tools = tools,
+    tool_choice = "any",
+)
 response
 ```
 
@@ -164,7 +166,7 @@ We get the response including tool_calls with the chosen function name `retrieve
 
 Output:
 ```
-ChatCompletionResponse(id='9ec8d47af52d4c258c641a7d9f62336e', object='chat.completion', created=1707931630, model='mistral-large', choices=[ChatCompletionResponseChoice(index=0, message=ChatMessage(role='assistant', content='', name=None, tool_calls=[ToolCall(id='null', type=<ToolType.function: 'function'>, function=FunctionCall(name='retrieve_payment_status', arguments='{"transaction_id": "T1001"}'))]), finish_reason=<FinishReason.stop: 'stop'>)], usage=UsageInfo(prompt_tokens=211, total_tokens=250, completion_tokens=39))
+ChatCompletionResponse(id='7cbd8962041442459eb3636e1e3cbf10', object='chat.completion', model='mistral-large-latest', usage=Usage(prompt_tokens=94, completion_tokens=30, total_tokens=124), created=1721403550, choices=[Choices(index=0, finish_reason='tool_calls', message=AssistantMessage(content='', tool_calls=[ToolCall(function=FunctionCall(name='retrieve_payment_status', arguments='{"transaction_id": "T1001"}'), id='D681PevKs', type='function')], prefix=False, role='assistant'))])
 ```
 Let’s add the response message to the `messages` list.  
 
@@ -211,9 +213,12 @@ Output
 We can now provide the output from the tools to Mistral models, and in return, the Mistral model can produce a customised final response for the specific user.
 
 ```python
-messages.append(ChatMessage(role="tool", name=function_name, content=function_result, tool_call_id=tool_call.id))
+messages.append({"role":"tool", "name":function_name, "content":function_result, "tool_call_id":tool_call.id})
 
-response = client.chat(model=model, messages=messages)
+response = client.chat.complete(
+    model = model, 
+    messages = messages
+)
 response.choices[0].message.content
 ```
 

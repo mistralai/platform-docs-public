@@ -6,14 +6,15 @@ sidebar_position: 1.2
 ---
 
 # Basic RAG
-Retrieval-augmented generation (RAG) is an AI framework that synergizes the capabilities of LLMs and information retrieval systems. It's useful to answer questions or generate content leveraging external knowledge. There are two main steps in RAG: 1) retrieval: retrieve relevant information from a knowledge base with text embeddings stored in a vector store; 2) generation: insert the relevant information to the prompt for the LLM to generate information. In this guide, we will walk through a very basic example of RAG with four implementations:
+Retrieval-augmented generation (RAG) is an AI framework that synergizes the capabilities of LLMs and information retrieval systems. It's useful to answer questions or generate content leveraging external knowledge. There are two main steps in RAG: 1) retrieval: retrieve relevant information from a knowledge base with text embeddings stored in a vector store; 2) generation: insert the relevant information to the prompt for the LLM to generate information. In this guide, we will walk through a very basic example of RAG with five implementations:
 
 - RAG from scratch with Mistral
 - RAG with Mistral and LangChain
 - RAG with Mistral and LlamaIndex
 - RAG with Mistral and Haystack
+- RAG with Mistral and Vercel AI SDK
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/basic_RAG.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/basic_RAG.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
@@ -22,21 +23,24 @@ Retrieval-augmented generation (RAG) is an AI framework that synergizes the capa
 This section aims to guide you through the process of building a basic RAG from scratch. We have two goals: firstly, to offer users a comprehensive understanding of the internal workings of RAG and demystify the underlying mechanisms; secondly, to empower you with the essential foundations needed to build an RAG using the minimum required dependencies.
 
 ### Import needed packages
-The first step is to install the needed packages `mistralai` and `faiss-cpu` and import them:
+The first step is to install the packages `mistralai` and `faiss-cpu` and import the needed packages:
 
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
+import requests
 import numpy as np
+import faiss
 import os
+from getpass import getpass
+
+api_key= getpass("Type your API Key")
+client = Mistral(api_key=api_key)
 ```
 
 ### Get data
 In this very simple example, we are getting data from an essay written by Paul Graham:
 
 ```python
-import requests
-
 response = requests.get('https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt')
 text = response.text
 ```
@@ -72,9 +76,9 @@ To create an embedding, use Mistral AI's embeddings API endpoint and the embeddi
 
 ```python
 def get_text_embedding(input):
-    embeddings_batch_response = client.embeddings(
+    embeddings_batch_response = client.embeddings.create(
           model="mistral-embed",
-          input=input
+          inputs=input
       )
     return embeddings_batch_response.data[0].embedding
 text_embeddings = np.array([get_text_embedding(chunk) for chunk in chunks])
@@ -144,11 +148,13 @@ Answer:
 Then we can use the Mistral chat completion API to chat with a Mistral model (e.g., mistral-medium-latest) and generate answers based on the user question and the context of the question.
 
 ```python
-def run_mistral(user_message, model="mistral-medium-latest"):
+def run_mistral(user_message, model="mistral-large-latest"):
     messages = [
-        ChatMessage(role="user", content=user_message)
+        {
+            "role": "user", "content": user_message
+        }
     ]
-    chat_response = client.chat(
+    chat_response = client.chat.complete(
         model=model,
         messages=messages
     )
@@ -215,18 +221,17 @@ print(response["answer"])
 The two main things the author worked on before college were writing and programming. He wrote short stories and tried programming on an IBM 1401 using Fortran, but he found it difficult to figure out what to do with the machine due to the limited input options. His interest in programming grew with the advent of microcomputers, leading him to write simple games, a program to predict rocket trajectories, and a word processor.
 ```
 
-Visit our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/langgraph_crag_mistral.ipynb) to discover how to use LangChain's LangGraph with the Mistral API to perform Corrective RAG, which enables correction of poor quality retrieval or generations.
+Visit our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/langgraph_crag_mistral.ipynb) to discover how to use LangChain's LangGraph with the Mistral API to perform Corrective RAG, which enables correction of poor quality retrieval or generations.
 
 ## RAG with LlamaIndex
 
 **Code:**
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.llms import MistralAI
-from llama_index.embeddings import MistralAIEmbedding
-from llama_index import ServiceContext
-from llama_index.query_engine import RetrieverQueryEngine
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.llms.mistralai import MistralAI
+from llama_index.embeddings.mistralai import MistralAIEmbedding
+from llama_index.core import Settings
 
 # Load data
 reader = SimpleDirectoryReader(input_files=["essay.txt"])
@@ -235,10 +240,10 @@ documents = reader.load_data()
 # Define LLM and embedding model
 llm = MistralAI(api_key=api_key, model="mistral-medium")
 embed_model = MistralAIEmbedding(model_name="mistral-embed", api_key=api_key)
-service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
-
+Settings.llm = llm
+Settings.embed_model = embed_model
 # Create vector store index
-index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+index = VectorStoreIndex.from_documents(documents)
 
 # Create query engine
 query_engine = index.as_query_engine(similarity_top_k=2)
@@ -253,7 +258,7 @@ print(str(response))
 The two main things the author worked on before college, outside of school, were writing and programming. They wrote short stories and attempted to write programs using an early version of Fortran on an IBM 1401.
 ```
 
-Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
+Visit out our [community cookbook example](https://github.com/mistralai/cookbook/blob/main/third_party/LlamaIndex/llamaindex_agentic_rag.ipynb) to learn how to use LlamaIndex with the Mistral API to perform complex queries over multiple documents using a ReAct agent, an autonomous LLM-powered agent capable of using tools.
 
 ## RAG with Haystack
 
@@ -322,4 +327,71 @@ print(result["llm"]["replies"][0].content)
 **Output:**
 ```
 The two main things the author worked on before college were writing and programming. He wrote short stories, which he admitted were awful, and essays about various topics. He also worked on spam filters and painted. Additionally, he started having dinners for a group of friends every Thursday night, which taught him how to cook for groups. He also bought a building in Cambridge to use as an office. The author was drawn to writing essays, which he started publishing online, and this helped him figure out what to work on. He also experimented with painting and studied AI in college.
+```
+
+## RAG with Vercel AI SDK
+
+**Code:**
+```typescript
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+import { mistral } from "@ai-sdk/mistral";
+import { cosineSimilarity, embed, embedMany, generateText } from "ai";
+
+dotenv.config();
+
+async function main() {
+  const db: { embedding: number[]; value: string }[] = [];
+
+  const essay = fs.readFileSync(path.join(__dirname, "essay.txt"), "utf8");
+  const chunks = essay
+    .split(".")
+    .map((chunk) => chunk.trim())
+    .filter((chunk) => chunk.length > 0 && chunk !== "\n");
+
+  const { embeddings } = await embedMany({
+    model: mistral.embedding("mistral-embed"),
+    values: chunks,
+  });
+  embeddings.forEach((e, i) => {
+    db.push({
+      embedding: e,
+      value: chunks[i],
+    });
+  });
+
+  const input =
+    "What were the two main things the author worked on before college?";
+
+  const { embedding } = await embed({
+    model: mistral.embedding("mistral-embed"),
+    value: input,
+  });
+  const context = db
+    .map((item) => ({
+      document: item,
+      similarity: cosineSimilarity(embedding, item.embedding),
+    }))
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 3)
+    .map((r) => r.document.value)
+    .join("\n");
+
+  const { text } = await generateText({
+    model: mistral("open-mixtral-8x7b"),
+    prompt: `Answer the following question based only on the provided context:
+             ${context}
+
+             Question: ${input}`,
+  });
+  console.log(text);
+}
+
+main().catch(console.error);
+```
+
+**Output:**
+```
+The two main things the author worked on before college were writing and programming.
 ```

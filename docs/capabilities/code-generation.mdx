@@ -6,6 +6,7 @@ sidebar_position: 2.3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## Codestral
 Codestral is a cutting-edge generative model that has been specifically designed and optimized for code generation tasks, including fill-in-the-middle and code completion. Codestral was trained on 80+ programming languages, enabling it to perform well on both common and less common languages. 
 
 :::important[ ]
@@ -13,7 +14,7 @@ We currently offer two domains for Codestral endpoints, both providing FIM and i
 
 | Domain  | Features |
 | ------------- | ------------- |
-| codestral.mistral.ai | - Monthly subscription based, free until 1st of August <br/> - Has a rate limit of 30 requests per minute and a high daily limit of 2000 requests <br/> - Requires a new key for which a phone number is needed |
+| codestral.mistral.ai | - Monthly subscription based, currently free to use <br/> - Has a rate limit of 30 requests per minute and a high daily limit of 2000 requests <br/> - Requires a new key for which a phone number is needed |
 | api.mistral.ai  | - Allows you to use your existing API key and you can pay to use Codestral <br/> - Ideal for business use <br/> - Provide higher rate limits of 200 requests per second per workspace |
 
 Wondering which endpoint to use ?
@@ -33,28 +34,29 @@ This guide will walk you through how to use Codestral fill-in-the-middle endpoin
 - Integrations
 
 
-## Fill-in-the-middle endpoint
+### Fill-in-the-middle endpoint
 With this feature, users can define the starting point of the code using a `prompt`, and the ending point of the code using an optional `suffix` and an optional `stop`. The Codestral model will then generate the code that fits in between, making it ideal for tasks that require a specific piece of code to be generated. Below are three examples:  
 
-### Example 1: Fill in the middle
+#### Example 1: Fill in the middle
 <Tabs>
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def fibonacci(n: int):"
 suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
 
-response = client.completion(
+response = client.fim.complete(
     model=model,
     prompt=prompt,
     suffix=suffix,
+    temperature=0,
+    top_p=1,
 )
 
 print(
@@ -86,24 +88,20 @@ curl --location 'https://api.mistral.ai/v1/fim/completions' \
     </TabItem>
 </Tabs>
 
-### Example 2: Completion
+#### Example 2: Completion
 <Tabs>
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
 
-response = client.completion(
-    model=model,
-    prompt=prompt
-)
+response = client.fim.complete(model=model, prompt=prompt, temperature=0, top_p=1)
 
 print(
     f"""
@@ -133,7 +131,7 @@ curl --location 'https://api.mistral.ai/v1/fim/completions' \
     </TabItem>
 </Tabs>
 
-### Example 3: Stop tokens
+#### Example 3: Stop tokens
 :::tip[ ]
 We recommend adding stop tokens for IDE autocomplete integrations to prevent the model from being too verbose.
 :::
@@ -142,21 +140,17 @@ We recommend adding stop tokens for IDE autocomplete integrations to prevent the
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
 suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
 
-response = client.completion(
-    model=model,
-    prompt=prompt,
-    suffix=suffix,
-    stop=["\n\n"]
+response = client.fim.complete(
+    model=model, prompt=prompt, suffix=suffix, temperature=0, top_p=1, stop=["\n\n"]
 )
 
 print(
@@ -188,7 +182,7 @@ curl --location 'https://api.mistral.ai/v1/fim/completions' \
     </TabItem>
 </Tabs>
 
-## Instruct endpoint
+### Instruct endpoint
 We also provide the instruct endpoint of Codestral with the same model `codestral-latest`. 
 The only difference is the endpoint used: 
 - FIM endpoint: https://api.mistral.ai/v1/fim/completions
@@ -199,21 +193,16 @@ The only difference is the endpoint used:
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
-
-messages = [
-    ChatMessage(role="user", content="Write a function for fibonacci")
-]
-chat_response = client.chat(
-    model=model,
-    messages=messages
+message = [{"role": "user", "content": "Write a function for fibonacci"}]
+chat_response = client.chat.complete(
+    model = model,
+    messages = message
 )
 print(chat_response.choices[0].message.content)
 ```
@@ -235,10 +224,57 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
     </TabItem>
 </Tabs>
 
-## Open-weight Codestral 
-Codestral is also available open-weight under the [Mistral AI Non-Production (MNPL) License](https://mistral.ai/licences/MNPL-0.1.md). 
+## Codestral Mamba
+We have also released Codestral Mamba 7B, a Mamba2 language model specilized in code generation with the instruct endpoint. 
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+model = "codestral-mamba-latest"
+
+message = [
+    {
+        "role": "user", 
+        "content": "Write a function for fibonacci"
+    }
+]
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=message
+)
+print(chat_response.choices[0].message.content)
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "codestral-mamba-latest",
+    "messages": [{"role": "user", "content": "Write a function for fibonacci"}]
+  }'
+``` 
+    </TabItem>
+</Tabs>
+
+## Open-weight Codestral and Codestral Mamba
+Codestral is available open-weight under the [Mistral AI Non-Production (MNPL) License](https://mistral.ai/licences/MNPL-0.1.md) and 
+Codestral Mamba is available open-weight under the Apache 2.0 license. 
 
 Check out the README of [mistral-inference](https://github.com/mistralai/mistral-inference) to learn how to use `mistral-inference` to run Codestral. 
+
 
 ## Integration with continue.dev
 Continue.dev supports both Codestral base for code generation and Codestral Instruct for chat. 
@@ -350,3 +386,65 @@ messages = [
 MistralAI(api_key=api_key, model=mistral_model).chat(messages)
 ```
 Check out more details on using Instruct and Fill In Middle(FIM) with LlamaIndex in this [notebook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/cookbooks/codestral.ipynb).
+
+## Integration with Jupyter AI
+Jupyter AI seamlessly integrates Codestral into JupyterLab, offering users a streamlined and enhanced AI-assisted coding experience within the Jupyter ecosystem. This integration boosts productivity and optimizes users' overall interaction with Jupyter. 
+
+To get started using Codestral and Jupyter AI in JupyterLab, first install needed packages in your Python environment:
+```bash
+pip install jupyterlab langchain-mistralai jupyter-ai pandas matplotlib
+```
+
+Then launch Jupyter Lab: 
+```bash
+jupyter lab
+```
+
+Afterwards, you can select Codestral as your model of choice, input your Mistral API key, and start coding with Codestral!
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/jNUSTZwlq9M?si=plx_V19ZakgrniHy" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+## Integration with JupyterLite
+
+JupyterLite is a project that aims to bring the JupyterLab environment to the web browser, allowing users to run Jupyter directly in their browser without the need for a local installation.
+
+You can try Codestral with JupyterLite in your browser:
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jupyterlite.github.io/jupyterlab-codestral/lab/index.html)
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/edKyZSWy-Fw?si=pBzFV40vckyuCl6w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+## Integration with CodeGPT 
+
+CodeGPT is a powerful agnostic extension harnessing the capabilities of Large Language Models (LLMs) to boost your programming tasks using AI in VSCode.
+You can select Codestral in CodeGPT for code generation and tab completion. 
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/arzj2BjXTSc?si=hso_zHcWD9qzd9G1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+## Integration with Tabby 
+
+Tabby is an open-source AI coding assistant. You can use Codestral for both code completion and chat via Tabby. 
+
+To use Codestral in Tabby, configure your model configuration in `~/.tabby/config.toml` as follows.
+
+```bash
+[model.completion.http]
+kind = "mistral/completion"
+api_endpoint = "https://api.mistral.ai"
+api_key = "secret-api-key"
+```
+
+You can check out [Tabby's documentation](https://tabby.tabbyml.com/docs/administration/model/#mistral--codestral) to learn more.  
+
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/ufHbMyC0oGA?si=kKlH8L3EtECMdtV7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+## Integration with E2B
+E2B provides open-source secure sandboxes for AI-generated code execution. 
+With E2B, it is easy for developers to add code interpreting capabilities to AI apps using Codestral.
+
+In the following examples, the AI agent performs a data analysis task on an uploaded CSV file, executes the AI-generated code by Codestral in the sandboxed environment by E2B, and returns a chart, saving it as a PNG file.
+
+Python implementation ([cookbook](https://github.com/mistralai/cookbook/tree/main/third_party/E2B_Code_Interpreting/codestral-code-interpreter-python)): 
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/26Wd-kC35Og?si=FgamyNZdzW--6iR7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+JS implementation ([cookbook](https://github.com/mistralai/cookbook/tree/main/third_party/E2B_Code_Interpreting/codestral-code-interpreter-js)):
+<iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/3M1_79U9RZE?si=YlTWN2chAxUhxHfr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

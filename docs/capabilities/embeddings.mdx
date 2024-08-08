@@ -9,23 +9,26 @@ import TabItem from '@theme/TabItem';
 
 Embeddings are vectorial representations of text that capture the semantic meaning of paragraphs through their position in a high dimensional vector space. Mistral AI Embeddings API offers cutting-edge, state-of-the-art embeddings for text, which can be used for many NLP tasks. In this guide, we will cover the fundamentals of the embeddings API, including how to measure the distance between text embeddings, and explore its main use cases: clustering and classification.
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/embeddings.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/embeddings.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-## Mistral Embeddings API
+## Mistral Embed API
 To generate text embeddings using Mistral AI's embeddings API, we can make a request to the API endpoint and specify the embedding model `mistral-embed`, along with providing a list of input texts. The API will then return the corresponding embeddings as numerical vectors, which can be used for further analysis or processing in NLP applications.
 
 ```python
-from mistralai.client import MistralClient
+import os
+from mistralai import Mistral
 
-client = MistralClient(api_key="TYPE YOUR API KEY HERE")
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-embed"
 
-embeddings_batch_response = client.embeddings(
-    model="mistral-embed",
-    input=["Embed this sentence.", "As well as this one."],
+client = Mistral(api_key=api_key)
+
+embeddings_batch_response = client.embeddings.create(
+    model=model,
+    inputs=["Embed this sentence.", "As well as this one."],
 )
-
 ```
 
 The output `embeddings_batch_response` is an EmbeddingResponse object with the embeddings and the token usage information.
@@ -33,9 +36,9 @@ The output `embeddings_batch_response` is an EmbeddingResponse object with the e
 ```
 EmbeddingResponse(
     id='eb4c2c739780415bb3af4e47580318cc', object='list', data=[
-        EmbeddingObject(object='embedding', embedding=[-0.0165863037109375,...], index=0),
-        EmbeddingObject(object='embedding', embedding=[-0.0234222412109375,...], index=1)],
-    model='mistral-embed', usage=UsageInfo(prompt_tokens=15, total_tokens=15, completion_tokens=0)
+        Data(object='embedding', embedding=[-0.0165863037109375,...], index=0),
+        Data(object='embedding', embedding=[-0.0234222412109375,...], index=1)],
+    model='mistral-embed', usage=EmbeddingResponseUsage(prompt_tokens=15, total_tokens=15)
 )
 ```
 
@@ -55,10 +58,10 @@ Let's take a look at a simple example. To simplify working with text embeddings,
 ```python
 from sklearn.metrics.pairwise import euclidean_distances
 
-def get_text_embedding(input):
-    embeddings_batch_response = client.embeddings(
-        model="mistral-embed",
-        input=input
+def get_text_embedding(inputs):
+    embeddings_batch_response = client.embeddings.create(
+        model=model,
+        inputs=inputs
     )
     return embeddings_batch_response.data[0].embedding
 ```
@@ -70,10 +73,10 @@ sentences = [
     "A home without a cat — and a well-fed, well-petted and properly revered cat — may be a perfect home, perhaps, but how can it prove title?",
     "I think books are like people, in the sense that they'll turn up in your life when you most need them"
 ]
-embeddings = [get_text_embedding(t) for t in sentences]
+embeddings = [get_text_embedding([t]) for t in sentences]
 
 reference_sentence = "Books are mirrors: You only see in them what you already have inside you"
-reference_embedding = get_text_embedding(reference_sentence)
+reference_embedding = get_text_embedding([reference_sentence])
 
 for t, e in zip(sentences, embeddings):
     distance = euclidean_distances([e], [reference_embedding])
@@ -102,7 +105,7 @@ sentences = [
     "Where can I find the best cheese?",
 ]
 
-sentence_embeddings = [get_text_embedding(t) for t in sentences]
+sentence_embeddings = [get_text_embedding([t]) for t in sentences]
 
 sentence_embeddings_pairs = list(itertools.combinations(sentence_embeddings, 2))
 sentence_pairs = list(itertools.combinations(sentences, 2))
@@ -133,7 +136,7 @@ df = pd.read_csv(
 def get_embeddings_by_chunks(data, chunk_size):
     chunks = [data[x : x + chunk_size] for x in range(0, len(data), chunk_size)]
     embeddings_response = [
-        client.embeddings(model="mistral-embed", input=c) for c in chunks
+        client.embeddings.create(model=model, inputs=c) for c in chunks
     ]
     return [d.embedding for e in embeddings_response for d in e.data]
 
@@ -216,7 +219,7 @@ After we trained the classifier with our embeddings data, we can try classify ot
 ```python
 # Classify a single example
 text = "I've been experiencing frequent headaches and vision problems."
-clf.predict([get_text_embedding(text)])
+clf.predict([get_text_embedding([text])])
 ```
 
 Output
@@ -277,56 +280,4 @@ I have a persistent cough and have been feeling quite fatigued. My fever is thro
 
 ## Retrieval
 Our embedding model excels in retrieval tasks, as it is trained with retrieval in mind. Embeddings are also incredibly helpful in implementing retrieval-augmented generation (RAG) systems, which use retrieved relevant information from a knowledge base to generate responses. At a high-level, we embed a knowledge base, whether it is a local directory, text files, or internal wikis, into text embeddings and store them in a vector database. Then, based on the user's query, we retrieve the most similar embeddings, which represent the relevant information from the knowledge base. Finally, we feed these relevant embeddings to a large language model to generate a response that is tailored to the user's query and context. If you are interested in learning more about how RAG systems work and how to implement a basic RAG, check out our [previous guide](/guides/rag) on this topic.
-The embeddings API allows you to embed sentences.
 
-<Tabs>
-  <TabItem value="python" label="python" default>
-```python
-from mistralai.client import MistralClient
-
-api_key = os.environ["MISTRAL_API_KEY"]
-client = MistralClient(api_key=api_key)
-
-embeddings_batch_response = client.embeddings(
-      model="mistral-embed",
-      input=["Embed this sentence.", "As well as this one."],
-  )
-```
-  </TabItem>
-  <TabItem value="javascript" label="javascript">
-```javascript
-import MistralClient from '@mistralai/mistralai';
-
-const apiKey = process.env.MISTRAL_API_KEY;
-
-const client = new MistralClient(apiKey);
-
-const input = [];
-for (let i = 0; i < 10; i++) {
-  input.push('What is the best French cheese?');
-}
-
-const embeddingsBatchResponse = await client.embeddings({
-  model: 'mistral-embed',
-  input: input,
-});
-
-console.log('Embeddings Batch:', embeddingsBatchResponse.data);
-```
-  </TabItem>
-  <TabItem value="curl" label="curl">
-```bash
-curl --location "https://api.mistral.ai/v1/embeddings" \
-     --header 'Content-Type: application/json' \
-     --header 'Accept: application/json' \
-     --header "Authorization: Bearer $MISTRAL_API_KEY" \
-     --data '{
-    "model": "mistral-embed",
-    "input": [
-      "Embed this sentence.", 
-      "As well as this one."
-    ]
-  }'
-```
-  </TabItem>
-</Tabs>

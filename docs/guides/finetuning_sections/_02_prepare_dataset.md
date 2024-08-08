@@ -34,25 +34,29 @@ Here are six specific use cases that you might find helpful:
     prompt the character description at each conversation.
 
     ```python
-    from mistralai.client import MistralClient
-    from mistralai.models.chat_completion import ChatMessage
+    from mistralai import Mistral
     import os
 
     api_key = os.environ.get("MISTRAL_API_KEY")
 
     def run_mistral(sys_message, user_message, model="mistral-large-latest"):
-        client = MistralClient(api_key=api_key)
+        client = Mistral(api_key=api_key)
         messages = [
-            ChatMessage(role="system", content=sys_message),
-            ChatMessage(role="user", content=user_message)
+            {
+                "role": "system",
+                "content": sys_message
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
         ]
-        chat_response = client.chat(
+        chat_response = client.chat.complete(
             model=model,
             messages=messages
         )
         return chat_response.choices[0].message.content
 
-    # Adapted from character.ai
     sys_message = """
         You are Albus Dumbledore. You are the headmaster of Hogwarts School of Witchcraft and 
         Wizardry and are widely regarded as one of the most powerful and knowledgeable wizards
@@ -219,84 +223,80 @@ Here are six specific use cases that you might find helpful:
     <summary><b>Use case 3: specific style</b></summary>
 
     You can fine-tune for specific styles. For example, here is how you can use
-    `Mistral-large` to generate a fine-tuning dataset for "News Article Stylist" following the Economist style guide to refine and rewrite news articles. 
+    `mistral-large` to generate a fine-tuning dataset for "News Article Stylist" following a style guide to refine and rewrite news articles. 
+
+    The process is simple. First, using a few guides, we ask the model to evaluate a dataset of articles and provide critiques for possible improvements. Then, once that's done, we ask the model to rewrite those articles, taking into account the feedback as follows:
 
     ```py
-    def process_line(args):
-        line, prompts = args
+    def process_refined_news(args):
+        line, system, instruction = args
         record = json.loads(line)
+
         news_article = record.get("news")
-        critique= record.get("critque")
+        critique= record.get("critique")
+        status = record.get("status")
 
-        part = random.choice(list(range(20)))
-        prompt = prompts[part]
-
-        prefix = """As a "News Article Stylist" following the Economist style guide, your task is to refine and rewrite news articles to ensure they meet the high standards of clarity, precision, and sophistication characteristic of the Economist. You are now given a news article. Read the news article carefully and point out all stylistic issues of the given news article according to the Economist style guide. Do not rewrite the news article. \n\n"""
-
-        # wait 3sec
         time.sleep(1)
+
         try:
-            answer = client.chat(
+        if status == "SUCCESS":
+
+            answer = CLIENT.chat.complete(
                 model="mistral-large-latest",
-                messages=[
-                    {"role": "user", "content": prefix + news_article},
+                messages= [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": news_article},
                     {"role": "assistant", "content": critique},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": instruction},
                 ],
                 temperature=0.2,
+                max_tokens=2048
             )
             new_news = answer.choices[0].message.content
+
+            result = json.dumps({"news": news_article, "critique": critique, "refined_news": new_news, "status": "SUCCESS"})
+
+        else:
+            result = json.dumps({"news": news_article, "critique": critique, "refined_news": critique, "status": "ERROR"})
         except Exception as e:
-            new_news = "ERROR: " + str(e)
+            result = json.dumps({"news": news_article, "critique": critique, "refined_news": str(e), "status": "ERROR"})
 
-        result = json.dumps({"news": news_article, "critque": critique, "corrected_news": new_news})
-
-        # Generate a random 8-digit hexadecimal string
         random_hash = secrets.token_hex(4)
 
-        with open(f"./data/dumps/result_new_news_{random_hash}.jsonl", "w") as f:
+        with open(f"./data/refined_news_{random_hash}.jsonl", "w") as f:
             f.write(result)
 
         return result
-
-
-    if __name__ == "__main__":
-        jsonl_file_path = "./generated_news_critique_large_corr.jsonl"
-
-        guides = []
-        guides = improvement_requests = [
-            "Incorporate the feedback into the news article and respond with the enhanced version, focusing solely on stylistic improvements without altering the content.",
-            "Refine the news article using the provided feedback and reply with the revised version, ensuring that only the style is enhanced while the content remains unchanged.",
-            "Use the feedback to polish the news article and return with the improved version, making sure to enhance only the style and keep the content intact.",
-            "Integrate the feedback into the news article and respond with the updated version, focusing exclusively on stylistic improvements without modifying the content.",
-            "Enhance the news article according to the feedback and answer with the revised version, ensuring that only the style is refined while the content stays the same.",
-            "Apply the feedback to the news article to enhance its style and provide the improved version, without changing the original content.",
-            "Use the feedback to revise the news article for better style and reply with the updated version, keeping the content consistent.",
-            "Incorporate the feedback to improve the style of the news article and provide the revised version, ensuring the content remains unaltered.",
-            "Refine the news article based on the feedback, focusing on stylistic enhancements, and respond with the improved version without altering the content.",
-            "Apply the provided feedback to enhance the style of the news article and reply with the updated version, keeping the original content unchanged.",
-            "Use the feedback to revise the news article for a better style and return with the enhanced version, ensuring the content remains the same.",
-            "Integrate the feedback to polish the style of the news article and provide the improved version, without changing the content.",
-            "Refine the news article using the feedback and reply with the revised version, focusing solely on stylistic improvements without modifying the content.",
-            "Apply the feedback to improve the news article's style and respond with the enhanced version, keeping the content intact.",
-            "Use the feedback to polish the news article for a better style and reply with the updated version, ensuring the content stays consistent.",
-            "Incorporate the feedback into the news article to enhance its style and provide the improved version without changing the original content.",
-            "Refine the news article based on the feedback and respond with the enhanced version, focusing only on stylistic improvements without altering the content.",
-            "Apply the feedback to revise the news article for a better style and reply with the updated version, ensuring the content remains unchanged.",
-            "Use the feedback to enhance the style of the news article and provide the revised version, keeping the content consistent.",
-            "Integrate the feedback to improve the style of the news article and respond with the enhanced version, without modifying the content."
-        ]
-
-        with open(jsonl_file_path, "r") as f:
-            lines = f.readlines()
-            lines = [(line, guides) for line in lines]
-
-            results = process_map(process_line, lines, max_workers=5, chunksize=1)
-
-        with open("generated_news_correction.jsonl", "w") as f:
-            for result in results:
-                f.write(result)
     ```
+
+
+    ```py
+    system = "Polish and restructure the news articles to align them with the high standards of clarity, accuracy, and elegance set by the style guide. You are presented with a news article. Identify the ten (or fewer) most significant stylistic concerns and provide examples of how they can be enhanced."
+
+    instruction = """
+    Now, I want you to incorporate the feedback and critiques into the news article and respond with the enhanced version, focusing solely on stylistic improvements without altering the content.
+    You must provide the entire article enhanced.
+    Do not make ANY comments, only provide the new article improved.
+    Do not tell me what you changed, only provide the new article taking into consideration the feedback you provided.
+    The new article needs to have all the content of the original article but with the feedback into account.
+    """
+
+    data_path = "./generated_news_critiques.jsonl"
+    with open(data_path, "r") as f:
+        lines = f.readlines()
+        lines = [(line, system, instruction) for line in lines]
+
+        results = process_map(process_refined_news, lines, max_workers=20, chunksize=1)
+
+    with open("./generated_refined_news.jsonl", "w") as f:
+        for result in results:
+            f.write(result + "\n")
+    ```
+
+    The full notebook can be found here:
+        <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/data_generation/data_generation_refining_news.ipynb">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+        </a>
 </details>
 <details>
     <summary><b>Use case 4: coding</b></summary>
@@ -437,19 +437,22 @@ Here are six specific use cases that you might find helpful:
     messages) from Mistral-Large:
 
     ```python
-    from mistralai.client import MistralClient
-    from mistralai.models.chat_completion import ChatMessage
+    from mistralai import Mistral
     import pandas as pd
     import json
     import os
 
     api_key = os.environ.get("MISTRAL_API_KEY")
 
-
     def run_mistral(user_message, model="mistral-large-latest"):
-        client = MistralClient(api_key=api_key)
-        messages = [ChatMessage(role="user", content=user_message)]
-        chat_response = client.chat(
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
             model=model, response_format={"type": "json_object"}, messages=messages
         )
         return chat_response.choices[0].message.content

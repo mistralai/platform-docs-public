@@ -23,22 +23,22 @@ the role "assistant" as output.
 
 ### No streaming
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import os
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
 
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the best French cheese?")
-]
-
-# No streaming
-chat_response = client.chat(
-    model=model,
-    messages=messages,
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best French cheese?",
+        },
+    ]
 )
 
 print(chat_response.choices[0].message.content)
@@ -46,85 +46,87 @@ print(chat_response.choices[0].message.content)
 
 ### With streaming 
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import os
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
 
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the best French cheese?")
-]
-
-# With streaming
-stream_response = client.chat_stream(model=model, messages=messages)
+stream_response = client.chat.stream(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best French cheese?",
+        },
+    ]
+)
 
 for chunk in stream_response:
-    print(chunk.choices[0].delta.content)
+    print(chunk.data.choices[0].delta.content)
 ```
 
 ### With async 
 ```python
-from mistralai.async_client import MistralAsyncClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
 
-client = MistralAsyncClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the best French cheese?")
-]
-
-# With async
-async_response = client.chat_stream(model=model, messages=messages)
+async_response = await client.chat.stream_async(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "Who is the best French painter? Answer in JSON.",
+        },
+    ]
+)
 
 async for chunk in async_response: 
-    print(chunk.choices[0].delta.content)
+    print(chunk.data.choices[0].delta.content)
 ```
 
 
   </TabItem>
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
 **No streaming**
-```javascript
-import MistralClient from '@mistralai/mistralai';
+```typescript
+import { Mistral } from '@mistralai/mistralai';
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
-const client = new MistralClient(apiKey);
+const client = new Mistral({apiKey: apiKey});
 
-const chatResponse = await client.chat({
-  model: 'mistral-large-latest',
-  messages: [{role: 'user', content: 'What is the best French cheese?'}],
+const chatResponse = await client.chat.complete({
+    model: "mistral-large-latest",
+    messages: [{role: 'user', content: 'What is the best French cheese?'}]
 });
 
 console.log('Chat:', chatResponse.choices[0].message.content);
 ```
 
 **With streaming**
-```javascript
-import MistralClient from '@mistralai/mistralai';
+```typescript
+import { Mistral } from "@mistralai/mistralai";
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
-const client = new MistralClient(apiKey);
+const client = new Mistral({apiKey: apiKey});
 
-const chatStreamResponse = await client.chatStream({
-  model: 'mistral-tiny',
-  messages: [{role: 'user', content: 'What is the best French cheese?'}],
+const result = await client.chat.stream({
+    model: "mistral-small-latest",
+    messages: [{role: 'user', content: 'What is the best French cheese?'}],
 });
 
-console.log('Chat Stream:');
-for await (const chunk of chatStreamResponse) {
-  if (chunk.choices[0].delta.content !== undefined) {
-    const streamText = chunk.choices[0].delta.content;
+for await (const chunk of result) {
+    const streamText = chunk.data.choices[0].delta.content;
     process.stdout.write(streamText);
-  }
 }
 ```
 
@@ -177,4 +179,28 @@ Chat messages (`messages`) are a collection of prompts or messages, with each me
 
 :::
 
-We also allow a convenient `safe_prompt` flag to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
+## Other useful features
+
+- The `prefix` flag enables prepending content to the assistant's response content. When used in a message, it allows the addition of an assistant's message at the end of the list, which will be prepended to the assistant's response. For more details on how it works see [prefix](/guides/prefix).
+- The `safe_prompt` flag is used to force chat completion to be moderated against sensitive content (see [Guardrailing](../guardrailing)).
+- A `stop` sequence allows forcing the model to stop generating after one or more chosen tokens or strings.
+    <details>
+    <summary><b>Stop Sequence Example</b></summary>
+
+    ```bash
+    curl --location "https://api.mistral.ai/v1/chat/completions" \
+        --header 'Content-Type: application/json' \
+        --header 'Accept: application/json' \
+        --header "Authorization: Bearer $MISTRAL_API_KEY" \
+        --data '{
+        "model": "mistral-large-latest",
+        "messages": [
+        {
+            "role": "user",
+            "content": "What is the capital of France?"
+          }
+        ],
+        "stop": ["Paris"]
+      }'
+    ```
+    </details>

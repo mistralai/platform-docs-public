@@ -123,7 +123,7 @@ console.log('Chat:', chatResponse.choices[0].message.content);
   <TabItem value="curl" label="curl">
 
 ```bash
-curl --location "https://api.mistral.ai/v1/chat/completions" \
+curl --location "https://api.mistral.ai/v1/agents/completions" \
      --header 'Content-Type: application/json' \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \

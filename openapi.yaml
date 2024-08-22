@@ -109,7 +109,10 @@ paths:
                 purpose:
                   const: fine-tune
                   default: fine-tune
+                  enum:
+                    - fine-tune
                   title: Purpose
+                  type: string
                 file:
                   format: binary
                   title: File
@@ -755,7 +758,10 @@ components:
             - files_upload.jsonl
         purpose:
           const: fine-tune
+          enum:
+            - fine-tune
           title: Purpose
+          type: string
           description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
           examples:
             - fine-tune
@@ -814,7 +820,10 @@ components:
             - files_upload.jsonl
         purpose:
           const: fine-tune
+          enum:
+            - fine-tune
           title: Purpose
+          type: string
           description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
           examples:
             - fine-tune
@@ -888,7 +897,10 @@ components:
             - files_upload.jsonl
         purpose:
           const: fine-tune
+          enum:
+            - fine-tune
           title: Purpose
+          type: string
           description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
           examples:
             - fine-tune
@@ -954,7 +966,10 @@ components:
         type:
           const: github
           default: github
+          enum:
+            - github
           title: Type
+          type: string
         name:
           title: Name
           type: string
@@ -1082,7 +1097,10 @@ components:
         object:
           const: job
           default: job
+          enum:
+            - job
           title: Object
+          type: string
           description: The object type of the fine-tuning job.
         fine_tuned_model:
           anyOf:
@@ -1099,7 +1117,12 @@ components:
         integrations:
           anyOf:
             - items:
-                $ref: "#/components/schemas/WandbIntegrationOut"
+                discriminator:
+                  mapping:
+                    wandb: "#/components/schemas/WandbIntegrationOut"
+                  propertyName: type
+                oneOf:
+                  - $ref: "#/components/schemas/WandbIntegrationOut"
               type: array
             - type: "null"
           title: Integrations
@@ -1113,7 +1136,12 @@ components:
         repositories:
           default: []
           items:
-            $ref: "#/components/schemas/GithubRepositoryOut"
+            discriminator:
+              mapping:
+                github: "#/components/schemas/GithubRepositoryOut"
+              propertyName: type
+            oneOf:
+              - $ref: "#/components/schemas/GithubRepositoryOut"
           maxItems: 20
           title: Repositories
           type: array
@@ -1144,7 +1172,10 @@ components:
         object:
           const: list
           default: list
+          enum:
+            - list
           title: Object
+          type: string
         total:
           title: Total
           type: integer
@@ -1166,6 +1197,22 @@ components:
           minimum: 0.00000001
           title: Learning Rate
           type: number
+        weight_decay:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: "null"
+          default: 0.1
+          title: Weight Decay
+        warmup_fraction:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: "null"
+          default: 0.05
+          title: Warmup Fraction
         epochs:
           anyOf:
             - minimum: 0.01
@@ -1187,7 +1234,10 @@ components:
         type:
           const: wandb
           default: wandb
+          enum:
+            - wandb
           title: Type
+          type: string
         project:
           title: Project
           type: string
@@ -1288,7 +1338,10 @@ components:
         object:
           const: job.metadata
           default: job.metadata
+          enum:
+            - job.metadata
           title: Object
+          type: string
       required:
         - details
       title: LegacyJobMetadataOut
@@ -1298,7 +1351,10 @@ components:
         type:
           const: github
           default: github
+          enum:
+            - github
           title: Type
+          type: string
         name:
           title: Name
           type: string
@@ -1355,7 +1411,12 @@ components:
         integrations:
           anyOf:
             - items:
-                $ref: "#/components/schemas/WandbIntegration"
+                discriminator:
+                  mapping:
+                    wandb: "#/components/schemas/WandbIntegration"
+                  propertyName: type
+                oneOf:
+                  - $ref: "#/components/schemas/WandbIntegration"
               type: array
             - type: "null"
           title: Integrations
@@ -1363,7 +1424,12 @@ components:
         repositories:
           default: []
           items:
-            $ref: "#/components/schemas/GithubRepositoryIn"
+            discriminator:
+              mapping:
+                github: "#/components/schemas/GithubRepositoryIn"
+              propertyName: type
+            oneOf:
+              - $ref: "#/components/schemas/GithubRepositoryIn"
           title: Repositories
           type: array
         auto_start:
@@ -1406,6 +1472,24 @@ components:
           title: Learning Rate
           type: number
           description: "A parameter describing how much to adjust the pre-trained model's weights in response to the estimated error each time the weights are updated during the fine-tuning process."
+        weight_decay:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: "null"
+          default: 0.1
+          title: Weight Decay
+          description: "(Advanced Usage) Weight decay adds a term to the loss function that is proportional to the sum of the squared weights. This term reduces the magnitude of the weights and prevents them from growing too large."
+        warmup_fraction:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: "null"
+          default: 0.05
+          title: Warmup Fraction
+          description: "(Advanced Usage) A parameter that specifies the percentage of the total training steps at which the learning rate warm-up phase ends. During this phase, the learning rate gradually increases from a small value to the initial learning rate, helping to stabilize the training process and improve convergence. Similar to `pct_start` in [mistral-finetune](https://github.com/mistralai/mistral-finetune)"
         epochs:
           anyOf:
             - minimum: 0.01
@@ -1428,7 +1512,10 @@ components:
         type:
           const: wandb
           default: wandb
+          enum:
+            - wandb
           title: Type
+          type: string
         project:
           title: Project
           type: string
@@ -1529,7 +1616,10 @@ components:
         object:
           const: job
           default: job
+          enum:
+            - job
           title: Object
+          type: string
         fine_tuned_model:
           anyOf:
             - type: string
@@ -1543,7 +1633,12 @@ components:
         integrations:
           anyOf:
             - items:
-                $ref: "#/components/schemas/WandbIntegrationOut"
+                discriminator:
+                  mapping:
+                    wandb: "#/components/schemas/WandbIntegrationOut"
+                  propertyName: type
+                oneOf:
+                  - $ref: "#/components/schemas/WandbIntegrationOut"
               type: array
             - type: "null"
           title: Integrations
@@ -1555,7 +1650,12 @@ components:
         repositories:
           default: []
           items:
-            $ref: "#/components/schemas/GithubRepositoryOut"
+            discriminator:
+              mapping:
+                github: "#/components/schemas/GithubRepositoryOut"
+              propertyName: type
+            oneOf:
+              - $ref: "#/components/schemas/GithubRepositoryOut"
           maxItems: 20
           title: Repositories
           type: array
@@ -1657,7 +1757,10 @@ components:
         object:
           const: model
           default: model
+          enum:
+            - model
           title: Object
+          type: string
         created:
           title: Created
           type: integer
@@ -1728,7 +1831,10 @@ components:
         object:
           const: model
           default: model
+          enum:
+            - model
           title: Object
+          type: string
         archived:
           default: true
           title: Archived
@@ -1745,7 +1851,10 @@ components:
         object:
           const: model
           default: model
+          enum:
+            - model
           title: Object
+          type: string
         archived:
           default: false
           title: Archived
@@ -2430,7 +2539,9 @@ components:
         role:
           type: string
         content:
-          type: string
+          anyOf:
+            - type: string
+            - type: "null"
         tool_calls:
           anyOf:
             - type: "null"

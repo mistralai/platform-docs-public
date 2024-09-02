@@ -199,6 +199,8 @@ Here is an example of how you can create this agent with using the La Plateforme
 <details>
     <summary><b>Use case 3: Python agent workflow</b></summary>
 
+<img src="/img/agent_demo1.png" alt="drawing" width="600"/>
+
 You can use the Python agent we created in use case 2 in an assistant coding workflow. For example, here is a very simple Python agent workflow with the following steps:
 
 1. User Query:
@@ -229,6 +231,8 @@ Check out this [example notebook](https://github.com/mistralai/cookbook/blob/mai
 
 <details>
     <summary><b>Use case 4: Data analytical multi-agent workflow</b></summary>
+
+<img src="/img/agent_demo2.png" alt="drawing" width="600"/>
 
 You can also leverage multiple agents in a workflow. Here is an example: 
 

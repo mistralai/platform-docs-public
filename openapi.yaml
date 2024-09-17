@@ -44,7 +44,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ModelCard"
+                oneOf:
+                  - $ref: "#/components/schemas/BaseModelCard"
+                  - $ref: "#/components/schemas/FTModelCard"
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    base: "#/components/schemas/BaseModelCard"
+                    fine-tuned: "#/components/schemas/FTModelCard"
+                title: Response Retrieve Model V1 Models  Model Id  Get
         "422":
           description: Validation Error
           content:
@@ -566,6 +574,59 @@ paths:
         - embeddings
 components:
   schemas:
+    BaseModelCard:
+      properties:
+        id:
+          type: string
+          title: Id
+        object:
+          type: string
+          title: Object
+          default: model
+        created:
+          type: integer
+          title: Created
+        owned_by:
+          type: string
+          title: Owned By
+          default: mistralai
+        name:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Description
+        max_context_length:
+          type: integer
+          title: Max Context Length
+          default: 32768
+        aliases:
+          items:
+            type: string
+          type: array
+          title: Aliases
+          default: []
+        deprecation:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+          title: Deprecation
+        capabilities:
+          $ref: "#/components/schemas/ModelCapabilities"
+        type:
+          const: base
+          title: Type
+          default: base
+      type: object
+      required:
+        - id
+        - capabilities
+      title: BaseModelCard
     DeleteModelOut:
       properties:
         id:
@@ -590,6 +651,72 @@ components:
       required:
         - id
       title: DeleteModelOut
+    FTModelCard:
+      properties:
+        id:
+          type: string
+          title: Id
+        object:
+          type: string
+          title: Object
+          default: model
+        created:
+          type: integer
+          title: Created
+        owned_by:
+          type: string
+          title: Owned By
+          default: mistralai
+        name:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Description
+        max_context_length:
+          type: integer
+          title: Max Context Length
+          default: 32768
+        aliases:
+          items:
+            type: string
+          type: array
+          title: Aliases
+          default: []
+        deprecation:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: "null"
+          title: Deprecation
+        capabilities:
+          $ref: "#/components/schemas/ModelCapabilities"
+        type:
+          const: fine-tuned
+          title: Type
+          default: fine-tuned
+        job:
+          type: string
+          title: Job
+        root:
+          type: string
+          title: Root
+        archived:
+          type: boolean
+          title: Archived
+          default: false
+      type: object
+      required:
+        - id
+        - capabilities
+        - job
+        - root
+      title: FTModelCard
+      description: Extra fields for fine-tuned models.
     HTTPValidationError:
       properties:
         detail:
@@ -617,66 +744,12 @@ components:
           type: boolean
           title: Fine Tuning
           default: false
+        vision:
+          type: boolean
+          title: Vision
+          default: false
       type: object
       title: ModelCapabilities
-    ModelCard:
-      properties:
-        id:
-          type: string
-          title: Id
-        object:
-          type: string
-          title: Object
-          default: model
-        created:
-          type: integer
-          title: Created
-        owned_by:
-          type: string
-          title: Owned By
-          default: mistralai
-        root:
-          anyOf:
-            - type: string
-            - type: "null"
-          title: Root
-        archived:
-          type: boolean
-          title: Archived
-          default: false
-        name:
-          anyOf:
-            - type: string
-            - type: "null"
-          title: Name
-        description:
-          anyOf:
-            - type: string
-            - type: "null"
-          title: Description
-        capabilities:
-          $ref: "#/components/schemas/ModelCapabilities"
-        max_context_length:
-          type: integer
-          title: Max Context Length
-          default: 32768
-        aliases:
-          items:
-            type: string
-          type: array
-          title: Aliases
-          default: []
-        deprecation:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: "null"
-          title: Deprecation
-      type: object
-      required:
-        - id
-        - capabilities
-      title: ModelCard
     ModelList:
       properties:
         object:
@@ -685,7 +758,14 @@ components:
           default: list
         data:
           items:
-            $ref: "#/components/schemas/ModelCard"
+            oneOf:
+              - $ref: "#/components/schemas/BaseModelCard"
+              - $ref: "#/components/schemas/FTModelCard"
+            discriminator:
+              propertyName: type
+              mapping:
+                base: "#/components/schemas/BaseModelCard"
+                fine-tuned: "#/components/schemas/FTModelCard"
           type: array
           title: Data
       type: object
@@ -1215,7 +1295,7 @@ components:
           title: Warmup Fraction
         epochs:
           anyOf:
-            - minimum: 0.01
+            - exclusiveMinimum: 0
               type: number
             - type: "null"
           title: Epochs
@@ -1492,7 +1572,7 @@ components:
           description: "(Advanced Usage) A parameter that specifies the percentage of the total training steps at which the learning rate warm-up phase ends. During this phase, the learning rate gradually increases from a small value to the initial learning rate, helping to stabilize the training process and improve convergence. Similar to `pct_start` in [mistral-finetune](https://github.com/mistralai/mistral-finetune)"
         epochs:
           anyOf:
-            - minimum: 0.01
+            - exclusiveMinimum: 0
               type: number
             - type: "null"
           title: Epochs
@@ -1983,8 +2063,10 @@ components:
             - type: "null"
           title: Tools
         tool_choice:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/ToolChoice"
+            - $ref: "#/components/schemas/ToolChoiceEnum"
+          title: Tool Choice
           default: auto
         safe_prompt:
           type: boolean
@@ -1996,24 +2078,6 @@ components:
         - messages
         - model
       title: ChatCompletionRequest
-    ChunkTypes:
-      type: string
-      const: text
-      title: ChunkTypes
-    ContentChunk:
-      properties:
-        type:
-          allOf:
-            - $ref: "#/components/schemas/ChunkTypes"
-          default: text
-        text:
-          type: string
-          title: Text
-      additionalProperties: false
-      type: object
-      required:
-        - text
-      title: ContentChunk
     FIMCompletionRequest:
       properties:
         model:
@@ -2130,11 +2194,56 @@ components:
         - name
         - arguments
       title: FunctionCall
+    FunctionName:
+      properties:
+        name:
+          type: string
+          title: Name
+      additionalProperties: false
+      type: object
+      required:
+        - name
+      title: FunctionName
+      description: this restriction of `Function` is used to select a specific function to call
+    ImageURL:
+      properties:
+        url:
+          type: string
+          title: Url
+        detail:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Detail
+      additionalProperties: false
+      type: object
+      required:
+        - url
+      title: ImageURL
+    ImageURLChunk:
+      properties:
+        type:
+          type: string
+          enum:
+            - image_url
+          const: image_url
+          title: Type
+          default: image_url
+        image_url:
+          anyOf:
+            - $ref: "#/components/schemas/ImageURL"
+            - type: string
+          title: Image Url
+      additionalProperties: false
+      type: object
+      required:
+        - image_url
+      title: ImageURLChunk
+      description: '{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0'
     ResponseFormat:
       properties:
         type:
-          allOf:
-            - $ref: "#/components/schemas/ResponseFormats"
+          $ref: "#/components/schemas/ResponseFormats"
           default: text
       additionalProperties: false
       type: object
@@ -2152,7 +2261,7 @@ components:
           anyOf:
             - type: string
             - items:
-                $ref: "#/components/schemas/ContentChunk"
+                $ref: "#/components/schemas/TextChunk"
               type: array
           title: Content
         role:
@@ -2168,6 +2277,9 @@ components:
     TextChunk:
       properties:
         type:
+          type: string
+          enum:
+            - text
           const: text
           title: Type
           default: text
@@ -2182,8 +2294,7 @@ components:
     Tool:
       properties:
         type:
-          allOf:
-            - $ref: "#/components/schemas/ToolTypes"
+          $ref: "#/components/schemas/ToolTypes"
           default: function
         function:
           $ref: "#/components/schemas/Function"
@@ -2199,8 +2310,7 @@ components:
           title: Id
           default: "null"
         type:
-          allOf:
-            - $ref: "#/components/schemas/ToolTypes"
+          $ref: "#/components/schemas/ToolTypes"
           default: function
         function:
           $ref: "#/components/schemas/FunctionCall"
@@ -2210,12 +2320,26 @@ components:
         - function
       title: ToolCall
     ToolChoice:
+      properties:
+        type:
+          $ref: "#/components/schemas/ToolTypes"
+          default: function
+        function:
+          $ref: "#/components/schemas/FunctionName"
+      additionalProperties: false
+      type: object
+      required:
+        - function
+      title: ToolChoice
+      description: ToolChoice is either a ToolChoiceEnum or a ToolChoice
+    ToolChoiceEnum:
       type: string
       enum:
         - auto
         - none
         - any
-      title: ToolChoice
+        - required
+      title: ToolChoiceEnum
     ToolMessage:
       properties:
         content:
@@ -2243,6 +2367,8 @@ components:
       title: ToolMessage
     ToolTypes:
       type: string
+      enum:
+        - function
       const: function
       title: ToolTypes
     UserMessage:
@@ -2252,7 +2378,7 @@ components:
           anyOf:
             - type: string
             - items:
-                $ref: "#/components/schemas/TextChunk"
+                $ref: "#/components/schemas/ContentChunk"
               type: array
         role:
           type: string
@@ -2332,8 +2458,10 @@ components:
             - type: "null"
           title: Tools
         tool_choice:
-          allOf:
+          anyOf:
             - $ref: "#/components/schemas/ToolChoice"
+            - $ref: "#/components/schemas/ToolChoiceEnum"
+          title: Tool Choice
           default: auto
         agent_id:
           type: string
@@ -2344,6 +2472,16 @@ components:
         - messages
         - agent_id
       title: AgentsCompletionRequest
+    ContentChunk:
+      oneOf:
+        - $ref: "#/components/schemas/TextChunk"
+        - $ref: "#/components/schemas/ImageURLChunk"
+      discriminator:
+        propertyName: type
+        mapping:
+          image_url: "#/components/schemas/ImageURLChunk"
+          text: "#/components/schemas/TextChunk"
+      title: ContentChunk
     EmbeddingRequest:
       properties:
         input:

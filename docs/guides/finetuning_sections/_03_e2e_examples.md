@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 </a>
 
 
-You can fine-tune Mistral’s open-weights models Mistral 7B and Mistral Small via Mistral API. Follow the steps below using Mistral's fine-tuning API.
+You can fine-tune all Mistral’s models via Mistral API. Follow the steps below using Mistral's fine-tuning API.
 
 ### Prepare dataset
 In this example, let’s use the [ultrachat_200k dataset](https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k). We load a chunk of the data into Pandas Dataframes, split the data into training and validation, and save the data into the required `jsonl` format for fine-tuning. 

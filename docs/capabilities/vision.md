@@ -63,10 +63,7 @@ print(chat_response.choices[0].message.content)
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
 
-const apiKey = process.env["MISTRAL_API_KEY"];
-if (!apiKey) {
-  throw new Error("missing MISTRAL_API_KEY environment variable");
-}
+const apiKey = process.env["MISTRAL_API_KEY"]!;
 
 const client = new Mistral({ apiKey: apiKey });
 

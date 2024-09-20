@@ -61,33 +61,29 @@ print(chat_response.choices[0].message.content)
   </TabItem>
   <TabItem value="typescript" label="typescript">
 ```typescript
-import { Mistral } from "mistralai";
+import { Mistral } from "@mistralai/mistralai";
 
-const apiKey = process.env.MISTRAL_API_KEY;
+const apiKey = process.env["MISTRAL_API_KEY"]!;
 
-const mistral = new Mistral({apiKey: apiKey});
+const client = new Mistral({ apiKey: apiKey });
 
-const chatResponse = await mistral.chat.complete({
-    model: "pixtral-12b-2409",
-    messages: [
+const chatResponse = await client.chat.complete({
+  model: "pixtral-12b",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "What's in this image?" },
         {
-        "role": "user",
-        "content": [
-            {
-            "type": "text",
-            "text": "What’s in this image?"
-            },
-            {
-            "type": "image_url",
-            "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
-            }
-        ]
-        }
-    ]
-    }
-);
+          type: "image_url",
+          imageUrl: "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg",
+        },
+      ],
+    },
+  ],
+});
 
-console.log('JSON:', chatResponse.choices[0].message.content)
+console.log("JSON:", chatResponse.choices[0].message.content);
 ```
   </TabItem>
   <TabItem value="curl" label="curl">

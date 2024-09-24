@@ -17,7 +17,7 @@ We provide two primary methods for creating agents:
 
 - La Plateforme [Agent builder](https://console.mistral.ai/build/agents/new): Users can use a user-friendly interface provided on La Plateforme to create and configure their agents.
 
-- [Agent API](#the-agents-api): For developers, we offer the Agents API as a programmatic means to use agents. This method is ideal for developers who need to integrate agent creation into their existing workflows or applications.
+- [Agent API](#the-agent-api): For developers, we offer the Agents API as a programmatic means to use agents. This method is ideal for developers who need to integrate agent creation into their existing workflows or applications.
 
 ## La Plateforme agent builder
 

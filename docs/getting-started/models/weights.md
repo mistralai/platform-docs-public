@@ -1,7 +1,7 @@
 ---
-id: open_weight_models
-title: Open weight models
-sidebar_position: 1.4
+id: weights
+title: Model weights
+slug: weights
 ---
 
 We open-source both pre-trained models and instruction-tuned models. These models are not tuned for safety as we want to empower users to test and refine moderation based on their use cases. For safer models, follow our [guardrailing tutorial](/capabilities/guardrailing).
@@ -10,6 +10,10 @@ We open-source both pre-trained models and instruction-tuned models. These model
 - Mistral 7B, Mixtral 8x7B, Mixtral 8x22B, Codestral Mamba, Mathstral, Mistral Nemo, and Pixtral are under [Apache 2 License](https://choosealicense.com/licenses/apache-2.0/), which permits their use without any constraints.
 - Codestral is under [Mistral AI Non-Production (MNPL) License](https://mistral.ai/licences/MNPL-0.1.md).
 - Mistral Large and Mistral Small are under [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md). 
+
+:::note[ ]
+If you are interested in purchasing a commercial license for our models, please [contact our team](https://mistral.ai/contact/)
+:::
 
 ## Downloading
 

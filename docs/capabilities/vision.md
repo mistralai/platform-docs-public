@@ -63,7 +63,7 @@ print(chat_response.choices[0].message.content)
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
 
-const apiKey = process.env["MISTRAL_API_KEY"]!;
+const apiKey = process.env["MISTRAL_API_KEY"];
 
 const client = new Mistral({ apiKey: apiKey });
 
@@ -332,6 +332,68 @@ curl https://api.mistral.ai/v1/chat/completions \
 Model output: 
 ```
 # Letters Orders and Instructions December 1855\n\n**Hoag's Company, if any opportunity offers.**\n\nYou are to be particularly exact and careful in these pagineries, that there is no disgrace meet between the Returns and you Pay Roll, or those who will be strict examining into it hereafter.\n\nI am & c.\n\n*[Signed]*\nEff.
+```
+
+</details>
+
+<details>
+<summary><b>OCR with structured output</b></summary>
+
+![](https://i.imghippo.com/files/kgXi81726851246.jpg)
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "pixtral-12b-2409",
+    "messages": [
+            {
+                "role": "system",
+                "content": [
+                    {"type": "text",
+                     "text" : "Extract the text elements described by the user from the picture, and return the result formatted as a json in the following format : {name_of_element : [value]}"
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "From this restaurant bill, extract the bill number, item names and associated prices, and total price and return it as a string in a Json object"
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "https://i.imghippo.com/files/kgXi81726851246.jpg"
+                    }
+                ]
+            }
+        ],
+    "response_format": 
+      {
+        "type": "json_object"
+      }
+  }'
+
+```
+
+Model output: 
+```json
+{'bill_number': '566548',
+ 'items': [{'item_name': 'BURGER - MED RARE', 'price': 10},
+  {'item_name': 'WH/SUB POUTINE', 'price': 2},
+  {'item_name': 'BURGER - MED RARE', 'price': 10},
+  {'item_name': 'WH/SUB BSL - MUSH', 'price': 4},
+  {'item_name': 'BURGER - MED WELL', 'price': 10},
+  {'item_name': 'WH BREAD/NO ONION', 'price': 2},
+  {'item_name': 'SUB POUTINE - MUSH', 'price': 2},
+  {'item_name': 'CHK PESTO/BR', 'price': 9},
+  {'item_name': 'SUB POUTINE', 'price': 2},
+  {'item_name': 'SPEC OMELET/BR', 'price': 9},
+  {'item_name': 'SUB POUTINE', 'price': 2},
+  {'item_name': 'BSL', 'price': 8}],
+ 'total_price': 68}
 ```
 
 </details>

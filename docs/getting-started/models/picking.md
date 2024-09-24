@@ -1,84 +1,9 @@
 ---
-id: models
-title: Models
-sidebar_position: 1.3
+id: picking
+title: Model selection
+slug: picking
 ---
 
-## Overview
-
-Mistral provides two types of models: free models and premier models. 
-
-### Premier models
-
-| Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
-|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Mistral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the lastest version v2 released July 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-large-2407/)| 128k   | `mistral-large-latest`| 24.07|
-| Mistral Small | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our latest enterprise-grade small model with the lastest version v2 released September 2024. Learn more on our [blog post](https://mistral.ai/news/september-24-release/) | 32k  | `mistral-small-latest` | 24.09|
-| Codestral |:heavy_check_mark: <br/> [Mistral Non-Production License](https://mistral.ai/licenses/MNPL-0.1.md) | :heavy_check_mark: | Our cutting-edge language model for coding released May 2024 | 32k  | `codestral-latest` | 24.05|
-| Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
-
-
-### Free models
-
-- **Latest models**
-
-| Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
-|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Pixtral | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 12B model with image understanding capabilities in addition to text. Learn more on our [blog post](https://mistral.ai/news/pixtral-12b/)| 128k  | `pixtral-12b-2409` | 24.09|
-
-- **Research models**
-
-| Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
-|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Mistral Nemo | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best multilingual open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-nemo/) | 128k  | `open-mistral-nemo`| 24.07|
-| Codestral Mamba | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first mamba 2 open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/codestral-mamba/) | 256k  | `open-codestral-mamba`| v0.1|
-| Mathstral | :heavy_check_mark: <br/> Apache2 |  | Our first math open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mathstral/) | 32k  | NA| v0.1|
-
-
-- **Legacy models**
-
-| Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
-|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Mistral 7B    | :heavy_check_mark: <br/> Apache2 |:heavy_check_mark: | Our first dense model released September 2023. Learn more on our [blog post](https://mistral.ai/news/announcing-mistral-7b/)| 32k | `open-mistral-7b`| v0.3|
-| Mixtral 8x7B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: |Our first sparse mixture-of-experts released December 2023. Learn more on our [blog post](https://mistral.ai/news/mixtral-of-experts/)| 32k  | `open-mixtral-8x7b`| v0.1|
-| Mixtral 8x22B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best open source model to date released April 2024. Learn more on our [blog post](https://mistral.ai/news/mixtral-8x22b/)| 64k  | `open-mixtral-8x22b`| v0.1|
-
-
-## API versioning 
-
-Mistral AI API are versions with specific release dates. 
-To prevent any disruptions due to model updates and breaking changes, 
-it is recommended to use the dated versions of the Mistral AI API. 
-Additionally, be prepared for the deprecation of certain endpoints in the coming months.
-
-Here are the details of the available versions:
-- `open-mistral-nemo`: currently points to `open-mistral-nemo-2407`.
-- `mistral-small-latest`: currently points to `mistral-small-2409`. `mistral-small-2402` is deprecated.
-- `mistral-medium-latest`: currently points to `mistral-medium-2312`. 
-The previous `mistral-medium` has been dated and tagged as `mistral-medium-2312`. 
-Mistral Medium will be deprecated shortly.
-- `mistral-large-latest`: currently points to `mistral-large-2407`. `mistral-large-2402` will be deprecated shortly. 
-- `codestral-latest`: currently points to `codestral-2405`.
-
-## Benchmarks results
-Mistral ranks second among all models generally available through an API.
-It offers top-tier reasoning capabilities and excels in multilingual tasks and code generation.
-
-You can find the benchmark results in the following blog posts: 
-- [Mistral 7B](https://mistral.ai/news/announcing-mistral-7b/): outperforms Llama 2 13B on all benchmarks and Llama 1 34B on many benchmarks. 
-- [Mixtral 8x7B](https://mistral.ai/news/mixtral-of-experts/): outperforms Llama 2 70B on most benchmarks with 6x faster inference and matches 
-or outperforms GPT3.5 on most standard benchmarks. It handles English, French, Italian, German and Spanish, and shows strong performance in code generation. 
-- [Mixtral 8x22B](https://mistral.ai/news/mixtral-8x22b/): our most performant open model. It handles English,
-  French, Italian, German, Spanish and performs strongly on code-related tasks. Natively handles function calling. 
-- [Mistral Large](https://mistral.ai/news/mistral-large-2407/): a cutting-edge text generation model with top-tier reasoning capabilities.
-It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
-- [Codestral](https://mistral.ai/news/codestral/): as a 22B model, Codestral sets a new standard on the performance/latency space for code generation compared to previous models used for coding.
-- [Codestral-Mamba](https://mistral.ai/news/codestral-mamba/): we have trained this model with advanced code and reasoning capabilities, enabling the model to have a strong performance on par with SOTA transformer-based models.
-- [Mathstral](https://mistral.ai/news/mathstral/): Mathstral stands on the shoulders of Mistral 7B and specialises in STEM subjects. It achieves state-of-the-art reasoning capacities in its size category across various industry-standard benchmarks.
-- [Mistral Nemo](https://mistral.ai/news/mistral-nemo/): Mistral Nemo's reasoning, world knowledge, and coding performance are state-of-the-art in its size category.  As it relies on standard architecture, Mistral Nemo is easy to use and a drop-in replacement in any system using Mistral 7B that it supersedes.
-- [Pixtral](https://mistral.ai/news/pixtral/): Pixtral 12B the first open-source model to demonstrate state-of-the-art multimodal understanding, without regressing on abilities in pure text. 
-
-## Picking a model
 
 This guide will explore the performance and cost trade-offs, and discuss how to select the appropriate model for different use cases. We will delve into various factors to consider, offering guidance on choosing the right model for your specific needs.
 
@@ -93,7 +18,7 @@ Our Legacy models can currently be replaced by our more recent, high-quality mod
 - Mistral Small currently outperforms Mixtral 8x7B and is more cost-effective.
 - Mistral Large currently outperforms Mixtral 8x22B while maintaining the same price ratio.
 
-### Performance and cost trade-offs 
+## Performance and cost trade-offs 
 
 When selecting a model, it is essential to evaluate the performance, and cost trade-offs. Depending on what’s most important for your application, your choice may differ significantly. Note that the models will be updated over time, the information we share below only reflect the current state of the models.
 
@@ -101,7 +26,7 @@ Notably, Mistral Large v2 is currently outperforming all of our other models acr
 
 As a general rule, if you are new to using Large Language Models, you can always start with Mistral Large first. This will allow you to evaluate its cost and performance and determine whether you need to downgrade to Mistral Small or even Mistral Nemo. If you are already using another large language model and are looking to replace a particularly powerful one, then Mistral Large may be the best choice for you. 
 
-### Use cases 
+## Use cases 
 
 ### Mistral Nemo: Simple tasks that one can do in bulk
 Mistral Nemo is the ideal choice for simpe tasks that one can do in builk - like Classification, Customer Support, or Text Generation. It offers excellent performance at an affordable price point. For instance, it can be effectively used for a classification task to classify if an email is spam or not: 

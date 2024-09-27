@@ -71,17 +71,20 @@ An LLM system often composed of more than just one LLM. At the application level
 
 At each step of the LLM system workflow, we can observe the following and set overall Service Level Objectives (SLOs), alerts, and monitoring:
 
-* **Token and cost**
-  * Track the number of tokens processed and the associated costs.  
-* **Traces and latency**  
+### Token and cost
+  * Track the number of tokens processed and the associated costs. 
+
+### Traces and latency
   * Trace the system workflow to observe and monitor the sequence of operations.  
   * Measure and monitor latency to identify performance bottlenecks and ensure timely responses.  
-* **Anomalies and errors** 
+
+### Anomalies and errors
   * Identify issues within the system promptly.  
   * Build datasets for testing  
   * Understand patterns and use cases from thumbs down cases for example  
   * Monitor error rates and negative feedback over time.  
-* **Quality**  
+
+### Quality
   In an observability tool, we should be able to monitor key performance indicators through the evaluation, feedback, and annotation:   
   * **Evaluation**
     * Metrics and criteria used to evaluate the quality and relevance of the output.  
@@ -139,48 +142,59 @@ Here is an [example](https://github.com/mistralai/cookbook/blob/main/third_party
 <img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
 
 
-
-
 ### Integration with Arize Phoenix
 
-Phoenix is an open-source observability library designed for experimentation, evaluation, and troubleshooting. It seems to be designed for RAG applications and thus great for RAG use cases.   
+Phoenix is an open-source observability library designed for experimentation, evaluation, and troubleshooting. It is designed to support agents, RAG pipelines, and other LLM applications.
 
 
 **Pros:**
 
-* Open-source  
-* Great for observing RAG applications   
-* Support local deployment
+* Open-source ([Github](https://github.com/Arize-ai/phoenix)), and built on OpenTelemetry
+* Can be [self-hosted](https://docs.arize.com/phoenix/setup/environments#container), accessed via [cloud](https://docs.arize.com/phoenix/hosted-phoenix), or run directly in a [notebook](https://docs.arize.com/phoenix/setup/environments#notebooks)
+* Provides a [Mistral integration](https://docs.arize.com/phoenix/tracing/integrations-tracing/mistralai) to automatically trace Client.chat and Agent.chat calls
+* Strong analytical platform, with a copilot agent to help debug your application
+
 
 
 **Mistral integration Example:**
-[https://github.com/mistralai/cookbook/blob/main/third\_party/Phoenix/arize\_phoenix\_tracing.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/Phoenix/arize_phoenix_tracing.ipynb)
+Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/Phoenix/arize_phoenix_tracing.ipynb) that shows how to trace Mistral chat.complete and tool calls in Phoenix. 
 
-<img src="/img/guides/obs_phoenix.png" alt="drawing" width="700"/>
+<img src="/img/guides/obs_phoenix1.png" alt="drawing" width="700"/>
 
 ### Integration with Weights and Biases 
 
-Weights and Biases is designed to assist developers in training and fine-tuning models, managing models from experimentation to production, and tracking and evaluating LLM applications.  
+Weights & Biases is an end-to-end AI developer platform for ML and LLM workflows used for both fine-tuning and LLM application building. Use W&B Weave to evaluate, monitor, and iterate on GenAI applications, and W&B Models as a system of record to train, fine-tune, and manage AI models.
 
 <img src="/img/guides/obs_wandb.png" alt="drawing" width="700"/>
 
 
 **Pros:**
 
-* Integrate with Mistral fine-tuning service 
+* Platform for both LLM app development and fine-tuning
+* Integrated with [Mistral API](https://weave-docs.wandb.ai/guides/integrations/mistral/)
+  * Get started by adding one line: `weave.init('my-project')`
+  * Automatically tracks inputs, output, context, errors, evaluation metrics & traces
+* Integrated with [Mistral fine-tuning service](/guides/finetuning/#integration-with-weights-and-biases)
+  * Track training metrics while fine-tuning
+  * Compare training experiments
 
 **Mistral integration Example:**
 
-[https://github.com/mistralai/cookbook/tree/main/third\_party/wandb](https://github.com/mistralai/cookbook/tree/main/third_party/wandb)
+To get you started you can check our recent webinar "Fine-tuning an LLM judge to reduce hallucination" and the [cookbook](https://github.com/mistralai/cookbook/tree/main/third_party/wandb). 
+
+<iframe width="100%" height="315" src="https://www.youtube.com/embed/VBbq7NPWzlo?si=h8NyuQVH78N8AAwV" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 
 ### Integration with PromptLayer
 
-PromptLayer is the observability platform for prompt management, collaboration, and evaluation.
+PromptLayer is a platform for prompt management, collaboration, monitoring, and evaluation. Good for hackers and production teams alike.
 
 **Pros:**
 
-* Strong in prompt management  
-* Support Mistral natively
+* No-code CMS for prompt management and versioning
+* Native support for Mistral
+* Prompts are model agnostic by default
+* Simple prompt tracking and observability
 
 **Mistral integration:**
 

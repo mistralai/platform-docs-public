@@ -137,7 +137,7 @@ Here is an example tracking traces, input, output, documents, tokens, and status
 * Analytical dashboard 
 
 **Mistral integration example:** 
-Here is an [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/langfuse_llm_monitoring.ipynb) where we build a RAG application with LlamaIndex, observe the steps with Langfuse, and analyze the data in PostHog.
+Here is a step-by-step [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/cookbook_langfuse_mistral_sdk_integration.ipynb) of integrating Langfuse with the Mistral, and another [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/cookbook_langfuse_posthog_llama_langfuse.ipynb) where we build a RAG application with LlamaIndex, observe the steps with Langfuse, and analyze the data in PostHog.
 
 <img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
 

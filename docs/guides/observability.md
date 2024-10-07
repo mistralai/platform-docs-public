@@ -225,7 +225,7 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 **Pros:**
 
-* Open-source ([Github](https://github.com/openlit/openlit)) and easy to self-host
+* Open-source ([Github](https://github.com/openlit/openlit)) and easy to self-host in your environment
 * OpenTelemetry-native & vendor-neutral SDKs
 * Complete Observability for GenAI Stack, from LLMs to GPUs
 * Cost tracking for custom and fine-tuned models
@@ -234,6 +234,22 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 **Mistral integration Example:** 
 
-[https://docs.openlit.io/latest/integrations/mistral](https://docs.openlit.io/latest/integrations/mistral)
-
 <img src="/img/guides/obs_openlit1.png" alt="Image showing OpenTelemetry tracing for Mistral AI using OpenLIT" width="700"/>
+
+To get started, You can follow the below steps
+
+1. Install the OpenLIT SDK
+
+```shell
+pip install openlit
+```
+
+2. Add the following 2 lines to your application code automatically start collecting metrics and traces from Mistral AI usage in your Application
+
+```python
+import openlit
+
+openlit.init()
+```
+
+For more details, checkout the [official OpenLIT docs](https://docs.openlit.io/latest/integrations/mistral) for Mistral AI Integration.

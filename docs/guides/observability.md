@@ -221,6 +221,8 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 [OpenLIT](https://openlit.io/) is an open-source tool designed for complete LLM engineering, fully integrated with OpenTelemetry. It provides comprehensive OTel-native observability including GPU monitoring and exceptions monitoring, an experimentation playground, prompt management, and metrics for effective debugging.
 
+<img src="/img/guides/obs_openlit2.gif" alt="OpenLIT and Mistral Integration image" width="700"/>
+
 **Pros:**
 
 * Open-source ([Github](https://github.com/openlit/openlit)) and easy to self-host
@@ -234,4 +236,4 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 [https://docs.openlit.io/latest/integrations/mistral](https://docs.openlit.io/latest/integrations/mistral)
 
-<img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>
+<img src="/img/guides/obs_openlit1.png" alt="Image showing OpenTelemetry tracing for Mistral AI using OpenLIT" width="700"/>

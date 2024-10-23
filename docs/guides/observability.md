@@ -9,91 +9,96 @@ sidebar_position: 1.7
 
 Observability is essential for Large Language Model (LLM) systems across prototyping, testing, and production for several reasons:
 
-* **Visibility**: Observability provides detailed insights into the internal states of LLM applications, allowing developers to understand system behavior. This visibility is crucial for identifying and diagnosing issues and debugging.  
-* **Production requirement**: Implementing observability in production environments address critical requirements including monitoring, scalability, security and compliance.   
-* **Reproducibility**: Observability enables developers to observe and reproduce LLM system behavior.   
-* **Continuous improvement**: The insights gained from observability data can be used to drive continuous improvement initiatives. 
+- **Visibility**: Observability provides detailed insights into the internal states of LLM applications, allowing developers to understand system behavior. This visibility is crucial for identifying and diagnosing issues and debugging.
+- **Production requirement**: Implementing observability in production environments address critical requirements including monitoring, scalability, security and compliance.
+- **Reproducibility**: Observability enables developers to observe and reproduce LLM system behavior.
+- **Continuous improvement**: The insights gained from observability data can be used to drive continuous improvement initiatives.
 
-## What components do we observe? 
+## What components do we observe?
 
-The short answer is: anything and everything! 
+The short answer is: anything and everything!
 
-An LLM (Large Language Model) application can include one or more LLM calls. Understanding both the details at the individual API call level and the sequence of these calls at the application level  is crucial: 
+An LLM (Large Language Model) application can include one or more LLM calls. Understanding both the details at the individual API call level and the sequence of these calls at the application level is crucial:
 
-1) **Individual LLM call level**: at the individual LLM API call level, an LLM receives an input prompt and generates an output. Therefore, we can monitor and observe three key components: input prompt, model, and output. 
+1. **Individual LLM call level**: at the individual LLM API call level, an LLM receives an input prompt and generates an output. Therefore, we can monitor and observe three key components: input prompt, model, and output.
 
-2) **Application level**: At the application level, it’s important to observe the pattern, logistics and sequence of LLM calls. This sequence determines the flow of information and the order in which LLMs are called and which tasks are executed.
+2. **Application level**: At the application level, it’s important to observe the pattern, logistics and sequence of LLM calls. This sequence determines the flow of information and the order in which LLMs are called and which tasks are executed.
 
-## Individual level: what components can we observe? 
+## Individual level: what components can we observe?
 
 For effective observability, we need to monitor and record detailed information for each version of each component involved in the interaction with the LLM. Here's a breakdown of what to observe and some expected modules in an observability tool:
 
-### Input prompt 
+### Input prompt
 
-* **Prompt template**
-  * The standardized format or structure used to generate the input prompt, including any placeholders or variables within the template.  
-  * Observability tools often provide a registry of prompt templates that the community or an organization can use and share.  
-* **Examples**
-  * Few-shot in-context learning is often effective in prompt engineering. Specific examples or sample inputs can be used to guide the model's response used.  
-* **Retrieve context**  
-  * In a Retrieval-Augmented Generation (RAG) system, relevant context is retrieved from external sources or databases to provide information for the LLM, making the results more reliable.  
-* **Memory**  
-  * Historical data or previous interactions stored in memory.  
-  * How this memory is used to influence the current prompt, such as summarizing past memory, retrieving relevant memory, or using the most recent memory.  
-* **Tools**
-  * Any tools or utilities used to preprocess or enhance the input prompt.  
-  * Tools are becoming increasingly important in LLM applications, serving as the bridge to real-life applications.  
-  * Specific configurations or settings applied by these tools and their impact.
+- **Prompt template**
+  - The standardized format or structure used to generate the input prompt, including any placeholders or variables within the template.
+  - Observability tools often provide a registry of prompt templates that the community or an organization can use and share.
+- **Examples**
+  - Few-shot in-context learning is often effective in prompt engineering. Specific examples or sample inputs can be used to guide the model's response used.
+- **Retrieve context**
+  - In a Retrieval-Augmented Generation (RAG) system, relevant context is retrieved from external sources or databases to provide information for the LLM, making the results more reliable.
+- **Memory**
+  - Historical data or previous interactions stored in memory.
+  - How this memory is used to influence the current prompt, such as summarizing past memory, retrieving relevant memory, or using the most recent memory.
+- **Tools**
+  - Any tools or utilities used to preprocess or enhance the input prompt.
+  - Tools are becoming increasingly important in LLM applications, serving as the bridge to real-life applications.
+  - Specific configurations or settings applied by these tools and their impact.
 
-### Model 
+### Model
 
-* **Models specs**
-  * The specific version or identifier of the model being used.  
-  * Configuration settings, hyperparameters, and any customizations applied to the model.
+- **Models specs**
+  - The specific version or identifier of the model being used.
+  - Configuration settings, hyperparameters, and any customizations applied to the model.
 
 ### Output
 
-* **Formatting**  
-  * The structure and format of the output generated by the model.
+- **Formatting**
+  - The structure and format of the output generated by the model.
 
 ## Application level: what workflow patterns can we observe?
 
-An LLM system often composed of more than just one LLM. At the application level, there are specific workflow patterns that require specific observability in each step of the workflow. Here is some example workflows: 
+An LLM system often composed of more than just one LLM. At the application level, there are specific workflow patterns that require specific observability in each step of the workflow. Here is some example workflows:
 
-* **RAG**  
-  * A RAG system includes the document retrieval step in addition to the generation step from an LLM. Additional observability is needed to track and monitor the external document/dataset and the retrieval step.   
-* **LLM as part of a system** 
-  * An LLM system could involve multiple LLMs chained together, [flow engineering](https://x.com/karpathy/status/1748043513156272416) with various iterations, or a complicated multi-agent system, for example to create a simulated world. The input and output of each step need to be observed to understand the overall system behavior, identify bottlenecks, and ensure the system's reliability and performance.  
-* **Fine-tuning**
-  * Fine-tuning is a distinct workflow that might be part of a larger workflow or a prerequisite step of another workflow. It involves preparing a fine-tuning dataset, uploading data, creating a fine-tuning job, and using a fine-tuned model. Each of these steps, especially the fine-tuning training job, could benefit from observability to track fine-tuning datasets, monitor progress, identify issues, and ensure the quality of the fine-tuned model.
+- **RAG**
+  - A RAG system includes the document retrieval step in addition to the generation step from an LLM. Additional observability is needed to track and monitor the external document/dataset and the retrieval step.
+- **LLM as part of a system**
+  - An LLM system could involve multiple LLMs chained together, [flow engineering](https://x.com/karpathy/status/1748043513156272416) with various iterations, or a complicated multi-agent system, for example to create a simulated world. The input and output of each step need to be observed to understand the overall system behavior, identify bottlenecks, and ensure the system's reliability and performance.
+- **Fine-tuning**
+  - Fine-tuning is a distinct workflow that might be part of a larger workflow or a prerequisite step of another workflow. It involves preparing a fine-tuning dataset, uploading data, creating a fine-tuning job, and using a fine-tuned model. Each of these steps, especially the fine-tuning training job, could benefit from observability to track fine-tuning datasets, monitor progress, identify issues, and ensure the quality of the fine-tuned model.
 
 ## What metrics do we observe?
 
 At each step of the LLM system workflow, we can observe the following and set overall Service Level Objectives (SLOs), alerts, and monitoring:
 
 ### Token and cost
-  * Track the number of tokens processed and the associated costs. 
+
+- Track the number of tokens processed and the associated costs.
 
 ### Traces and latency
-  * Trace the system workflow to observe and monitor the sequence of operations.  
-  * Measure and monitor latency to identify performance bottlenecks and ensure timely responses.  
+
+- Trace the system workflow to observe and monitor the sequence of operations.
+- Measure and monitor latency to identify performance bottlenecks and ensure timely responses.
 
 ### Anomalies and errors
-  * Identify issues within the system promptly.  
-  * Build datasets for testing  
-  * Understand patterns and use cases from thumbs down cases for example  
-  * Monitor error rates and negative feedback over time.  
+
+- Identify issues within the system promptly.
+- Build datasets for testing
+- Understand patterns and use cases from thumbs down cases for example
+- Monitor error rates and negative feedback over time.
 
 ### Quality
-  In an observability tool, we should be able to monitor key performance indicators through the evaluation, feedback, and annotation:   
-  * **Evaluation**
-    * Metrics and criteria used to evaluate the quality and relevance of the output.  
-    * Observability tools often provide comprehensive evaluation toolkits for creating evaluation datasets, annotating, evaluating, and comparing model results.  
-  * **Feedback**
-    * User feedback on the output, including ratings, comments, and suggestions.  
-    * Any automated feedback mechanisms or systems in place to collect and analyze user feedback.  
-  * **Annotation**   
-    * Manual or automated annotations added to the output for further analysis and potentially added to the evaluation or fine-tuning dataset.
+
+In an observability tool, we should be able to monitor key performance indicators through the evaluation, feedback, and annotation:
+
+- **Evaluation**
+  - Metrics and criteria used to evaluate the quality and relevance of the output.
+  - Observability tools often provide comprehensive evaluation toolkits for creating evaluation datasets, annotating, evaluating, and comparing model results.
+- **Feedback**
+  - User feedback on the output, including ratings, comments, and suggestions.
+  - Any automated feedback mechanisms or systems in place to collect and analyze user feedback.
+- **Annotation**
+  - Manual or automated annotations added to the output for further analysis and potentially added to the evaluation or fine-tuning dataset.
 
 ## Integrations
 
@@ -101,28 +106,44 @@ Mistral integrates with several observability tools to help you monitor and ensu
 
 ### Integration with LangSmith
 
-LangSmith provides observability throughout the LLM application development lifecycle.   
+LangSmith provides observability throughout the LLM application development lifecycle.
 
 <img src="/img/guides/obs_langchain0.png" alt="drawing" width="700"/>
 
-
 **Pros:**
 
-* LangSmith is compatible with both the LangChain ecosystem and external systems.  
-* Deployment option coming soon.  
-* It offers a broad range of observable areas, serving as an all-in-one platform.
+- LangSmith is compatible with both the LangChain ecosystem and external systems.
+- Deployment option coming soon.
+- It offers a broad range of observable areas, serving as an all-in-one platform.
 
 **Mistral integration Example:**
 
-* All of the [langchain notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/langchain) in the Mistral cookbook include LangSmith integration. 
+- All of the [langchain notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/langchain) in the Mistral cookbook include LangSmith integration.
 
-Here is an example tracking traces, input, output, documents, tokens, and status when we run the [corrective RAG example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/corrective_rag_mistral.ipynb) from the Mistral cookbook. 
-
+Here is an example tracking traces, input, output, documents, tokens, and status when we run the [corrective RAG example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/corrective_rag_mistral.ipynb) from the Mistral cookbook.
 
 <img src="/img/guides/obs_langchain.png" alt="drawing" width="700"/>
 
+### Integration with phospho
 
-### Integration with Langfuse 
+[phospho](https://phospho.ai/) is a text analytics platform that makes it easy to get answers, take decisions and reduce churn by data mining user messages.
+
+<img src="/img/guides/obs_phospho.png" alt="drawing" width="700"/>
+
+**Pros:**
+
+- Open-source ([github](https://github.com/phospho-app)) platform
+- No code clustering and analytics
+- Customizable dashboards
+- Many integrations with other observability frameworks, languages, APIs…
+
+**Mistral integration example:**
+
+- All of the [phospho notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/phospho) in the Mistral cookbook.
+
+<img src="/img/guides/obs_phospho2.png" alt="drawing" width="700"/>
+
+### Integration with Langfuse
 
 [Langfuse](https://langfuse.com) is another observability platform that offers features such as races, evals, prompt management, and metrics for debugging. It's excellent for easy application iterations, prototyping, and evaluation.
 
@@ -130,60 +151,54 @@ Here is an example tracking traces, input, output, documents, tokens, and status
 
 **Pros:**
 
-* Open-source ([github](https://github.com/langfuse/langfuse/))  
-* Support local deployment ([local](https://langfuse.com/docs/deployment/local), [self-host](https://langfuse.com/docs/deployment/self-host))  
-* Natively support Mistral API (coming soon)  
-* Integration with various frameworks   
-* Analytical dashboard 
+- Open-source ([github](https://github.com/langfuse/langfuse/))
+- Support local deployment ([local](https://langfuse.com/docs/deployment/local), [self-host](https://langfuse.com/docs/deployment/self-host))
+- Natively support Mistral API (coming soon)
+- Integration with various frameworks
+- Analytical dashboard
 
-**Mistral integration example:** 
+**Mistral integration example:**
 Here is a step-by-step [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/cookbook_langfuse_mistral_sdk_integration.ipynb) of integrating Langfuse with the Mistral, and another [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/cookbook_langfuse_posthog_llama_langfuse.ipynb) where we build a RAG application with LlamaIndex, observe the steps with Langfuse, and analyze the data in PostHog.
 
 <img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
-
 
 ### Integration with Arize Phoenix
 
 Phoenix is an open-source observability library designed for experimentation, evaluation, and troubleshooting. It is designed to support agents, RAG pipelines, and other LLM applications.
 
-
 **Pros:**
 
-* Open-source ([Github](https://github.com/Arize-ai/phoenix)), and built on OpenTelemetry
-* Can be [self-hosted](https://docs.arize.com/phoenix/setup/environments#container), accessed via [cloud](https://docs.arize.com/phoenix/hosted-phoenix), or run directly in a [notebook](https://docs.arize.com/phoenix/setup/environments#notebooks)
-* Provides a [Mistral integration](https://docs.arize.com/phoenix/tracing/integrations-tracing/mistralai) to automatically trace Client.chat and Agent.chat calls
-* Strong analytical platform, with a copilot agent to help debug your application
-
-
+- Open-source ([Github](https://github.com/Arize-ai/phoenix)), and built on OpenTelemetry
+- Can be [self-hosted](https://docs.arize.com/phoenix/setup/environments#container), accessed via [cloud](https://docs.arize.com/phoenix/hosted-phoenix), or run directly in a [notebook](https://docs.arize.com/phoenix/setup/environments#notebooks)
+- Provides a [Mistral integration](https://docs.arize.com/phoenix/tracing/integrations-tracing/mistralai) to automatically trace Client.chat and Agent.chat calls
+- Strong analytical platform, with a copilot agent to help debug your application
 
 **Mistral integration Example:**
-Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/Phoenix/arize_phoenix_tracing.ipynb) that shows how to trace Mistral chat.complete and tool calls in Phoenix. 
+Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/Phoenix/arize_phoenix_tracing.ipynb) that shows how to trace Mistral chat.complete and tool calls in Phoenix.
 
 <img src="/img/guides/obs_phoenix1.png" alt="drawing" width="700"/>
 
-### Integration with Weights and Biases 
+### Integration with Weights and Biases
 
 Weights & Biases is an end-to-end AI developer platform for ML and LLM workflows used for both fine-tuning and LLM application building. Use W&B Weave to evaluate, monitor, and iterate on GenAI applications, and W&B Models as a system of record to train, fine-tune, and manage AI models.
 
 <img src="/img/guides/obs_wandb.png" alt="drawing" width="700"/>
 
-
 **Pros:**
 
-* Platform for both LLM app development and fine-tuning
-* Integrated with [Mistral API](https://weave-docs.wandb.ai/guides/integrations/mistral/)
-  * Get started by adding one line: `weave.init('my-project')`
-  * Automatically tracks inputs, output, context, errors, evaluation metrics & traces
-* Integrated with [Mistral fine-tuning service](/guides/finetuning/#integration-with-weights-and-biases)
-  * Track training metrics while fine-tuning
-  * Compare training experiments
+- Platform for both LLM app development and fine-tuning
+- Integrated with [Mistral API](https://weave-docs.wandb.ai/guides/integrations/mistral/)
+  - Get started by adding one line: `weave.init('my-project')`
+  - Automatically tracks inputs, output, context, errors, evaluation metrics & traces
+- Integrated with [Mistral fine-tuning service](/guides/finetuning/#integration-with-weights-and-biases)
+  - Track training metrics while fine-tuning
+  - Compare training experiments
 
 **Mistral integration Example:**
 
-To get you started you can check our recent webinar "Fine-tuning an LLM judge to reduce hallucination" and the [cookbook](https://github.com/mistralai/cookbook/tree/main/third_party/wandb). 
+To get you started you can check our recent webinar "Fine-tuning an LLM judge to reduce hallucination" and the [cookbook](https://github.com/mistralai/cookbook/tree/main/third_party/wandb).
 
 <iframe width="100%" height="315" src="https://www.youtube.com/embed/VBbq7NPWzlo?si=h8NyuQVH78N8AAwV" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
 
 ### Integration with PromptLayer
 
@@ -191,10 +206,10 @@ PromptLayer is a platform for prompt management, collaboration, monitoring, and 
 
 **Pros:**
 
-* No-code CMS for prompt management and versioning
-* Native support for Mistral
-* Prompts are model agnostic by default
-* Simple prompt tracking and observability
+- No-code CMS for prompt management and versioning
+- Native support for Mistral
+- Prompts are model agnostic by default
+- Simple prompt tracking and observability
 
 **Mistral integration:**
 
@@ -206,13 +221,13 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 **Pros:**
 
-* Open-source  
-* Designed for observing agents   
-* Allow for time travel   
-* Integrates with CrewAI, AutoGen, & LangChain
+- Open-source
+- Designed for observing agents
+- Allow for time travel
+- Integrates with CrewAI, AutoGen, & LangChain
 
-**Mistral integration Example:** 
+**Mistral integration Example:**
 
-[https://github.com/mistralai/cookbook/blob/main/third\_party/CAMEL\_AI/camel\_roleplaying\_scraper.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb)
+[https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb)
 
 <img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>

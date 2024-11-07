@@ -70,25 +70,34 @@ for chunk in stream_response:
 
 ### With async 
 ```python
+import asyncio
+import os
+
 from mistralai import Mistral
 
-api_key = os.environ["MISTRAL_API_KEY"]
-model = "mistral-large-latest"
 
-client = Mistral(api_key=api_key)
+async def main():
+    api_key = os.environ["MISTRAL_API_KEY"]
+    model = "mistral-tiny"
 
-async_response = await client.chat.stream_async(
-    model = model,
-    messages = [
-        {
-            "role": "user",
-            "content": "Who is the best French painter? Answer in JSON.",
-        },
-    ]
-)
+    client = Mistral(api_key=api_key)
 
-async for chunk in async_response: 
-    print(chunk.data.choices[0].delta.content)
+    response = await client.chat.stream_async(
+        model=model,
+        messages=[
+             {
+                  "role": "user",
+                  "content": "Who is the best French painter? Answer in JSON.",
+              },
+        ],
+    )
+    async for chunk in response:
+        if chunk.data.choices[0].delta.content is not None:
+            print(chunk.data.choices[0].delta.content, end="")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 

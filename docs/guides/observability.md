@@ -216,3 +216,22 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 [https://github.com/mistralai/cookbook/blob/main/third\_party/CAMEL\_AI/camel\_roleplaying\_scraper.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb)
 
 <img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>
+
+### Integration with phospho
+
+[phospho](https://phospho.ai/) is a text analytics platform that makes it easy to get answers, take decisions and reduce churn by data mining user messages.
+
+<img src="/img/guides/obs_phospho.png" alt="drawing" width="700"/>
+
+**Pros:**
+
+- Open-source ([github](https://github.com/phospho-app)) platform
+- No code clustering and analytics
+- Customizable dashboards
+- Many integrations with other observability frameworks, languages, APIs…
+
+**Mistral integration example:**
+
+- Check out the [phospho notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/phospho) in the Mistral cookbook.
+
+<img src="/img/guides/obs_phospho2.png" alt="drawing" width="700"/>

@@ -22,6 +22,7 @@ Mistral provides two types of models: free models and premier models.
 | Mistral Small | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our latest enterprise-grade small model with the lastest version v2 released September 2024. Learn more on our [blog post](https://mistral.ai/news/september-24-release/) | 32k  | `mistral-small-latest` | 24.09|
 | Codestral |:heavy_check_mark: <br/> [Mistral Non-Production License](https://mistral.ai/licenses/MNPL-0.1.md) | :heavy_check_mark: | Our cutting-edge language model for coding released May 2024 | 32k  | `codestral-latest` | 24.05|
 | Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
+| Mistral Moderation | | :heavy_check_mark: | Our moderation service that enables our users to detect harmful text content | 8k  | `mistral-moderation-latest` | 24.11|
 
 
 ### Free models
@@ -58,6 +59,7 @@ it is recommended to use the dated versions of the Mistral AI API.
 Additionally, be prepared for the deprecation of certain endpoints in the coming months.
 
 Here are the details of the available versions:
+- `mistral-moderation-latest`: currently points to `mistral-moderation-2411`.
 - `ministral-3b-latest`: currently points to `ministral-3b-2410`.
 - `ministral-8b-latest`: currently points to `ministral-8b-2410`.
 - `open-mistral-nemo`: currently points to `open-mistral-nemo-2407`.

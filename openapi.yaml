@@ -115,12 +115,13 @@ paths:
               type: object
               properties:
                 purpose:
-                  const: fine-tune
+                  allOf:
+                    - enum:
+                        - fine-tune
+                        - batch
+                      title: FilePurpose
+                      type: string
                   default: fine-tune
-                  enum:
-                    - fine-tune
-                  title: Purpose
-                  type: string
                 file:
                   format: binary
                   title: File
@@ -134,6 +135,56 @@ paths:
     get:
       operationId: files_api_routes_list_files
       summary: List Files
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 0
+            title: Page
+            type: integer
+          required: false
+        - in: query
+          name: page_size
+          schema:
+            default: 100
+            title: Page Size
+            type: integer
+          required: false
+        - in: query
+          name: sample_type
+          schema:
+            anyOf:
+              - items:
+                  $ref: "#/components/schemas/SampleType"
+                type: array
+              - type: "null"
+            title: Sample Type
+          required: false
+        - in: query
+          name: source
+          schema:
+            anyOf:
+              - items:
+                  $ref: "#/components/schemas/Source"
+                type: array
+              - type: "null"
+            title: Source
+          required: false
+        - in: query
+          name: search
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Search
+          required: false
+        - in: query
+          name: purpose
+          schema:
+            anyOf:
+              - $ref: "#/components/schemas/FilePurpose"
+              - type: "null"
+          required: false
       responses:
         "200":
           description: OK
@@ -183,6 +234,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/DeleteFileOut"
       description: Delete a file.
+      tags:
+        - files
+  /v1/files/{file_id}/content:
+    get:
+      operationId: files_api_routes_download_file
+      summary: Download File
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            title: File Id
+            type: string
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+      description: Download a file
       tags:
         - files
   /v1/fine_tuning/jobs:
@@ -468,6 +541,138 @@ paths:
       description: Un-archive a fine-tuned model.
       tags:
         - models
+  /v1/batch/jobs:
+    get:
+      operationId: jobs_api_routes_batch_get_batch_jobs
+      summary: Get Batch Jobs
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 0
+            title: Page
+            type: integer
+          required: false
+        - in: query
+          name: page_size
+          schema:
+            default: 100
+            title: Page Size
+            type: integer
+          required: false
+        - in: query
+          name: model
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Model
+          required: false
+        - in: query
+          name: metadata
+          schema:
+            anyOf:
+              - type: object
+                additionalProperties: true
+              - type: "null"
+            title: Metadata
+          required: false
+        - in: query
+          name: created_after
+          schema:
+            anyOf:
+              - format: date-time
+                type: string
+              - type: "null"
+            title: Created After
+          required: false
+        - in: query
+          name: created_by_me
+          schema:
+            default: false
+            title: Created By Me
+            type: boolean
+          required: false
+        - in: query
+          name: status
+          schema:
+            anyOf:
+              - $ref: "#/components/schemas/BatchJobStatus"
+              - type: "null"
+          required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchJobsOut"
+      description: Get a list of batch jobs for your organization and user.
+      tags:
+        - batch
+    post:
+      operationId: jobs_api_routes_batch_create_batch_job
+      summary: Create Batch Job
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchJobOut"
+      description: Create a new batch job, it will be queued for processing.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchJobIn"
+        required: true
+      tags:
+        - batch
+  /v1/batch/jobs/{job_id}:
+    get:
+      operationId: jobs_api_routes_batch_get_batch_job
+      summary: Get Batch Job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            format: uuid
+            title: Job Id
+            type: string
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchJobOut"
+      description: Get a batch job details by its UUID.
+      tags:
+        - batch
+  /v1/batch/jobs/{job_id}/cancel:
+    post:
+      operationId: jobs_api_routes_batch_cancel_batch_job
+      summary: Cancel Batch Job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            format: uuid
+            title: Job Id
+            type: string
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchJobOut"
+      description: Request the cancellation of a batch job.
+      tags:
+        - batch
   /v1/chat/completions:
     post:
       summary: Chat Completion
@@ -572,6 +777,54 @@ paths:
                 $ref: "#/components/schemas/HTTPValidationError"
       tags:
         - embeddings
+  /v1/moderations:
+    post:
+      summary: Moderations
+      operationId: moderations_v1_moderations_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassificationRequest"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassificationResponse" }
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+      tags:
+        - classifiers
+  /v1/chat/moderations:
+    post:
+      summary: Moderations Chat
+      operationId: moderations_chat_v1_chat_moderations_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatClassificationRequest"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClassificationResponse" }
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+      tags:
+        - classifiers
 components:
   schemas:
     BaseModelCard:
@@ -590,6 +843,8 @@ components:
           type: string
           title: Owned By
           default: mistralai
+        capabilities:
+          $ref: "#/components/schemas/ModelCapabilities"
         name:
           anyOf:
             - type: string
@@ -616,9 +871,15 @@ components:
               format: date-time
             - type: "null"
           title: Deprecation
-        capabilities:
-          $ref: "#/components/schemas/ModelCapabilities"
+        default_model_temperature:
+          anyOf:
+            - type: number
+            - type: "null"
+          title: Default Model Temperature
         type:
+          type: string
+          enum:
+            - base
           const: base
           title: Type
           default: base
@@ -667,6 +928,8 @@ components:
           type: string
           title: Owned By
           default: mistralai
+        capabilities:
+          $ref: "#/components/schemas/ModelCapabilities"
         name:
           anyOf:
             - type: string
@@ -693,9 +956,15 @@ components:
               format: date-time
             - type: "null"
           title: Deprecation
-        capabilities:
-          $ref: "#/components/schemas/ModelCapabilities"
+        default_model_temperature:
+          anyOf:
+            - type: number
+            - type: "null"
+          title: Default Model Temperature
         type:
+          type: string
+          enum:
+            - fine-tuned
           const: fine-tuned
           title: Type
           default: fine-tuned
@@ -791,16 +1060,26 @@ components:
         - msg
         - type
       title: ValidationError
+    FilePurpose:
+      enum:
+        - fine-tune
+        - batch
+      title: FilePurpose
+      type: string
     SampleType:
       enum:
         - pretrain
         - instruct
+        - batch_request
+        - batch_result
+        - batch_error
       title: SampleType
       type: string
     Source:
       enum:
         - upload
         - repository
+        - mistral
       title: Source
       type: string
     UploadFileOut:
@@ -837,11 +1116,7 @@ components:
           examples:
             - files_upload.jsonl
         purpose:
-          const: fine-tune
-          enum:
-            - fine-tune
-          title: Purpose
-          type: string
+          $ref: "#/components/schemas/FilePurpose"
           description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
           examples:
             - fine-tune
@@ -899,11 +1174,7 @@ components:
           examples:
             - files_upload.jsonl
         purpose:
-          const: fine-tune
-          enum:
-            - fine-tune
-          title: Purpose
-          type: string
+          $ref: "#/components/schemas/FilePurpose"
           description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
           examples:
             - fine-tune
@@ -937,9 +1208,13 @@ components:
         object:
           title: Object
           type: string
+        total:
+          title: Total
+          type: integer
       required:
         - data
         - object
+        - total
       title: ListFilesOut
       type: object
     RetrieveFileOut:
@@ -976,11 +1251,7 @@ components:
           examples:
             - files_upload.jsonl
         purpose:
-          const: fine-tune
-          enum:
-            - fine-tune
-          title: Purpose
-          type: string
+          $ref: "#/components/schemas/FilePurpose"
           description: The intended purpose of the uploaded file. Only accepts fine-tuning (`fine-tune`) for now.
           examples:
             - fine-tune
@@ -993,6 +1264,9 @@ components:
           title: Num Lines
         source:
           $ref: "#/components/schemas/Source"
+        deleted:
+          title: Deleted
+          type: boolean
       required:
         - id
         - object
@@ -1002,6 +1276,7 @@ components:
         - purpose
         - sample_type
         - source
+        - deleted
       title: RetrieveFileOut
       type: object
     DeleteFileOut:
@@ -1307,6 +1582,12 @@ components:
             - type: "null"
           default: 0.9
           title: Fim Ratio
+        seq_len:
+          anyOf:
+            - minimum: 100
+              type: integer
+            - type: "null"
+          title: Seq Len
       title: TrainingParameters
       type: object
     WandbIntegrationOut:
@@ -1584,6 +1865,12 @@ components:
             - type: "null"
           default: 0.9
           title: Fim Ratio
+        seq_len:
+          anyOf:
+            - minimum: 100
+              type: integer
+            - type: "null"
+          title: Seq Len
       title: TrainingParametersIn
       type: object
       description: The fine-tuning hyperparameter settings used in a fine-tune job.
@@ -1943,13 +2230,189 @@ components:
         - id
       title: UnarchiveFTModelOut
       type: object
+    BatchJobStatus:
+      enum:
+        - QUEUED
+        - RUNNING
+        - SUCCESS
+        - FAILED
+        - TIMEOUT_EXCEEDED
+        - CANCELLATION_REQUESTED
+        - CANCELLED
+      title: BatchJobStatus
+      type: string
+    BatchError:
+      properties:
+        message:
+          title: Message
+          type: string
+        count:
+          default: 1
+          title: Count
+          type: integer
+      required:
+        - message
+      title: BatchError
+      type: object
+    BatchJobOut:
+      properties:
+        id:
+          title: Id
+          type: string
+        object:
+          const: batch
+          default: batch
+          enum:
+            - batch
+          title: Object
+          type: string
+        input_files:
+          items:
+            format: uuid
+            type: string
+          title: Input Files
+          type: array
+        metadata:
+          anyOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+          title: Metadata
+        endpoint:
+          title: Endpoint
+          type: string
+        model:
+          title: Model
+          type: string
+        output_file:
+          anyOf:
+            - format: uuid
+              type: string
+            - type: "null"
+          title: Output File
+        error_file:
+          anyOf:
+            - format: uuid
+              type: string
+            - type: "null"
+          title: Error File
+        errors:
+          items:
+            $ref: "#/components/schemas/BatchError"
+          title: Errors
+          type: array
+        status:
+          $ref: "#/components/schemas/BatchJobStatus"
+        created_at:
+          title: Created At
+          type: integer
+        total_requests:
+          title: Total Requests
+          type: integer
+        completed_requests:
+          title: Completed Requests
+          type: integer
+        succeeded_requests:
+          title: Succeeded Requests
+          type: integer
+        failed_requests:
+          title: Failed Requests
+          type: integer
+        started_at:
+          anyOf:
+            - type: integer
+            - type: "null"
+          title: Started At
+        completed_at:
+          anyOf:
+            - type: integer
+            - type: "null"
+          title: Completed At
+      required:
+        - id
+        - input_files
+        - endpoint
+        - model
+        - errors
+        - status
+        - created_at
+        - total_requests
+        - completed_requests
+        - succeeded_requests
+        - failed_requests
+      title: BatchJobOut
+      type: object
+    BatchJobsOut:
+      properties:
+        data:
+          default: []
+          items:
+            $ref: "#/components/schemas/BatchJobOut"
+          title: Data
+          type: array
+        object:
+          const: list
+          default: list
+          enum:
+            - list
+          title: Object
+          type: string
+        total:
+          title: Total
+          type: integer
+      required:
+        - total
+      title: BatchJobsOut
+      type: object
+    ApiEndpoint:
+      enum:
+        - /v1/chat/completions
+        - /v1/embeddings
+        - /v1/fim/completions
+        - /v1/moderations
+      title: ApiEndpoint
+      type: string
+    BatchJobIn:
+      properties:
+        input_files:
+          items:
+            format: uuid
+            type: string
+          title: Input Files
+          type: array
+        endpoint:
+          $ref: "#/components/schemas/ApiEndpoint"
+        model:
+          title: Model
+          type: string
+        metadata:
+          anyOf:
+            - additionalProperties:
+                maxLength: 512
+                minLength: 1
+                type: string
+              type: object
+            - type: "null"
+          title: Metadata
+        timeout_hours:
+          default: 24
+          title: Timeout Hours
+          type: integer
+      required:
+        - input_files
+        - endpoint
+        - model
+      title: BatchJobIn
+      type: object
     AssistantMessage:
       properties:
         content:
+          title: Content
           anyOf:
             - type: string
-            - type: "null"
-          title: Content
+            - items:
+                $ref: "#/components/schemas/ContentChunk"
+              type: array
         tool_calls:
           anyOf:
             - items:
@@ -1961,7 +2424,6 @@ components:
           type: boolean
           title: Prefix
           default: false
-          description: "Set this to `true` when adding an assistant message as prefix to condition the model response. The role of the prefix message is to force the model to start its answer by the content of the message."
         role:
           type: string
           default: assistant
@@ -1982,12 +2444,13 @@ components:
           examples:
             - mistral-small-latest
         temperature:
-          type: number
-          maximum: 1.5
-          minimum: 0
+          anyOf:
+            - type: number
+              maximum: 1.5
+              minimum: 0
+            - type: "null"
           title: Temperature
-          default: 0.3
-          description: "What sampling temperature to use, we recommend between 0.0 and 1.0. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or `top_p` but not both."
+          description: "What sampling temperature to use, we recommend between 0.0 and 0.7. Higher values like 0.7 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or `top_p` but not both. The default value varies depending on the model you are targeting. Call the `/models` endpoint to retrieve the appropriate value."
         top_p:
           type: number
           maximum: 1
@@ -2061,6 +2524,27 @@ components:
             - $ref: "#/components/schemas/ToolChoiceEnum"
           title: Tool Choice
           default: auto
+        presence_penalty:
+          type: number
+          maximum: 2
+          minimum: -2
+          title: Presence Penalty
+          default: 0.0
+          description: presence_penalty determines how much the model penalizes the repetition of words or phrases. A higher presence penalty encourages the model to use a wider variety of words and phrases, making the output more diverse and creative.
+        frequency_penalty:
+          type: number
+          maximum: 2
+          minimum: -2
+          title: Frequency Penalty
+          default: 0.0
+          description: frequency_penalty penalizes the repetition of words based on their frequency in the generated text. A higher frequency penalty discourages the model from repeating words that have already appeared frequently in the output, promoting diversity and reducing repetition.
+        n:
+          anyOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
+          title: N
+          description: Number of completions to return for each request, input tokens are only billed once.
         safe_prompt:
           type: boolean
           description: Whether to inject a safety prompt before all conversations.
@@ -2083,12 +2567,13 @@ components:
           examples:
             - codestral-2405
         temperature:
-          type: number
-          maximum: 1.5
-          minimum: 0
+          anyOf:
+            - type: number
+              maximum: 1.5
+              minimum: 0
+            - type: "null"
           title: Temperature
-          default: 0.7
-          description: "What sampling temperature to use, between 0.0 and 1.0. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or `top_p` but not both."
+          description: "What sampling temperature to use, we recommend between 0.0 and 0.7. Higher values like 0.7 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or `top_p` but not both. The default value varies depending on the model you are targeting. Call the `/models` endpoint to retrieve the appropriate value."
         top_p:
           type: number
           maximum: 1
@@ -2103,13 +2588,6 @@ components:
             - type: "null"
           title: Max Tokens
           description: "The maximum number of tokens to generate in the completion. The token count of your prompt plus `max_tokens` cannot exceed the model's context length."
-        min_tokens:
-          anyOf:
-            - type: integer
-              minimum: 0
-            - type: "null"
-          title: Min Tokens
-          description: The minimum number of tokens to generate in the completion.
         stream:
           type: boolean
           title: Stream
@@ -2145,6 +2623,13 @@ components:
           description: "Optional text/code that adds more context for the model. When given a `prompt` and a `suffix` the model will fill what is between them. When `suffix` is not provided, the model will simply execute completion starting with `prompt`."
           examples:
             - return a+b
+        min_tokens:
+          anyOf:
+            - type: integer
+              minimum: 0
+            - type: "null"
+          title: Min Tokens
+          description: The minimum number of tokens to generate in the completion.
       additionalProperties: false
       type: object
       required:
@@ -2413,10 +2898,9 @@ components:
           title: Random Seed
           description: The seed to use for random sampling. If set, different calls will generate deterministic results.
         messages:
-          type: array
-          title: Messages
           items:
             oneOf:
+              - $ref: "#/components/schemas/SystemMessage"
               - $ref: "#/components/schemas/UserMessage"
               - $ref: "#/components/schemas/AssistantMessage"
               - $ref: "#/components/schemas/ToolMessage"
@@ -2424,8 +2908,11 @@ components:
               propertyName: role
               mapping:
                 assistant: "#/components/schemas/AssistantMessage"
+                system: "#/components/schemas/SystemMessage"
                 tool: "#/components/schemas/ToolMessage"
                 user: "#/components/schemas/UserMessage"
+          type: array
+          title: Messages
           description: The prompt(s) to generate completions for, encoded as a list of dict with role and content.
           examples:
             - [
@@ -2449,6 +2936,27 @@ components:
             - $ref: "#/components/schemas/ToolChoiceEnum"
           title: Tool Choice
           default: auto
+        presence_penalty:
+          type: number
+          maximum: 2
+          minimum: -2
+          title: Presence Penalty
+          default: 0.0
+          description: presence_penalty determines how much the model penalizes the repetition of words or phrases. A higher presence penalty encourages the model to use a wider variety of words and phrases, making the output more diverse and creative.
+        frequency_penalty:
+          type: number
+          maximum: 2
+          minimum: -2
+          title: Frequency Penalty
+          default: 0.0
+          description: frequency_penalty penalizes the repetition of words based on their frequency in the generated text. A higher frequency penalty discourages the model from repeating words that have already appeared frequently in the output, promoting diversity and reducing repetition.
+        n:
+          anyOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
+          title: N
+          description: Number of completions to return for each request, input tokens are only billed once.
         agent_id:
           type: string
           description: The ID of the agent to use for this completion.
@@ -2478,10 +2986,12 @@ components:
               type: array
           title: Input
           description: Text to embed.
+          example: ["Embed this sentence.", "As well as this one."]
         model:
           type: string
           title: Model
           description: ID of the model to use.
+          default: mistral-embed
         encoding_format:
           anyOf:
             - type: string
@@ -2495,6 +3005,73 @@ components:
         - input
         - model
       title: EmbeddingRequest
+    ChatClassificationRequest:
+      properties:
+        input:
+          anyOf:
+            - items:
+                oneOf:
+                  - $ref: "#/components/schemas/SystemMessage"
+                  - $ref: "#/components/schemas/UserMessage"
+                  - $ref: "#/components/schemas/AssistantMessage"
+                  - $ref: "#/components/schemas/ToolMessage"
+                discriminator:
+                  propertyName: role
+                  mapping:
+                    assistant: "#/components/schemas/AssistantMessage"
+                    system: "#/components/schemas/SystemMessage"
+                    tool: "#/components/schemas/ToolMessage"
+                    user: "#/components/schemas/UserMessage"
+              type: array
+            - items:
+                items:
+                  oneOf:
+                    - $ref: "#/components/schemas/SystemMessage"
+                    - $ref: "#/components/schemas/UserMessage"
+                    - $ref: "#/components/schemas/AssistantMessage"
+                    - $ref: "#/components/schemas/ToolMessage"
+                  discriminator:
+                    propertyName: role
+                    mapping:
+                      assistant: "#/components/schemas/AssistantMessage"
+                      system: "#/components/schemas/SystemMessage"
+                      tool: "#/components/schemas/ToolMessage"
+                      user: "#/components/schemas/UserMessage"
+                type: array
+              type: array
+          title: Input
+          description: Chat to classify
+        model:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Model
+      additionalProperties: false
+      type: object
+      required:
+        - input
+        - model
+      title: ChatClassificationRequest
+    ClassificationRequest:
+      properties:
+        input:
+          anyOf:
+            - type: string
+            - items:
+                type: string
+              type: array
+          title: Input
+          description: Text to classify.
+        model:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Model
+      additionalProperties: false
+      type: object
+      required:
+        - input
+      title: ClassificationRequest
     UsageInfo:
       title: UsageInfo
       type: object
@@ -2539,7 +3116,7 @@ components:
           type: integer
           example: 0
         message:
-          $ref: "#/components/schemas/AssistantMessage"
+          $ref: "#/components/schemas/DeltaMessage"
         finish_reason:
           type: string
           enum:
@@ -2549,6 +3126,27 @@ components:
             - error
             - tool_calls
           example: stop
+    DeltaMessage:
+      title: DeltaMessage
+      type: object
+      properties:
+        role:
+          anyOf:
+            - type: string
+            - type: "null"
+        content:
+          anyOf:
+            - type: string
+            - type: "null"
+            - items:
+                $ref: "#/components/schemas/ContentChunk"
+              type: array
+        tool_calls:
+          anyOf:
+            - type: "null"
+            - type: array
+              items:
+                $ref: "#/components/schemas/ToolCall"
     ChatCompletionResponseBase:
       allOf:
         - $ref: "#/components/schemas/ResponseBase"
@@ -2617,13 +3215,42 @@ components:
             - data
             - model
             - usage
+    ClassificationResponse:
+      type: object
+      title: ClassificationResponse
+      properties:
+        id:
+          type: string
+          example: mod-e5cc70bb28c444948073e77776eb30ef
+        model:
+          type: string
+        results:
+          type: array
+          items:
+            - $ref: "#/components/schemas/ClassificationObject"
+    ClassificationObject:
+      type: object
+      title: ClassificationObject
+      properties:
+        categories:
+          description: Classifier result thresholded
+          type: object
+          additionalProperties:
+            type: boolean
+        category_scores:
+          description: Classifier result
+          type: object
+          additionalProperties:
+            type: number
     CompletionEvent:
+      title: CompletionEvent
       type: object
       required: [data]
       properties:
         data:
           $ref: "#/components/schemas/CompletionChunk"
     CompletionChunk:
+      title: CompletionChunk
       type: object
       required: [id, model, choices]
       properties:
@@ -2642,6 +3269,7 @@ components:
           items:
             $ref: "#/components/schemas/CompletionResponseStreamChoice"
     CompletionResponseStreamChoice:
+      title: CompletionResponseStreamChoice
       type: object
       required: [index, delta, finish_reason]
       properties:
@@ -2657,21 +3285,6 @@ components:
             - error
             - tool_calls
             - null
-    DeltaMessage:
-      type: object
-      properties:
-        role:
-          type: string
-        content:
-          anyOf:
-            - type: string
-            - type: "null"
-        tool_calls:
-          anyOf:
-            - type: "null"
-            - type: array
-              items:
-                $ref: "#/components/schemas/ToolCall"
   securitySchemes:
     ApiKey:
       type: http
@@ -2689,6 +3302,9 @@ tags:
   - name: embeddings
     x-displayName: Embeddings
     description: Embeddings API.
+  - name: classifiers
+    x-displayName: Classifiers
+    description: Classifiers API.
   - name: files
     x-displayName: Files
     description: Files API
@@ -2698,6 +3314,9 @@ tags:
   - name: models
     x-displayName: Models
     description: Model Management API
+  - name: batch
+    x-displayName: Batch
+    description: Batch API
 security:
   - ApiKey: []
 servers:

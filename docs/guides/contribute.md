@@ -14,10 +14,10 @@ Thank you for your interest in contributing to Mistral AI. We welcome everyone w
 If you are interested in contributing to our [official docs](https://docs.mistral.ai/), please submit a PR at [https://github.com/mistralai/platform-docs-public](https://github.com/mistralai/platform-docs-public). 
 
 You can easily help by:
-- fix a typo
-- clarify a section
-- document an underdocumented feature
-- update a section that should have been updated
+- fixing a typo
+- clarifying a section
+- documenting an underdocumented feature
+- updating a section that should have been updated
 - ... 
 
 ## Contributing to the code clients

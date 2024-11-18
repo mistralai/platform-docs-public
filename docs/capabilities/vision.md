@@ -399,6 +399,12 @@ Model output:
 </details>
 
 ## FAQ
+- What is the price per image?
+
+    The price is calculated using the same pricing as input tokens. Each image will be divided into batches of 16x16 pixels, with each batch converted to a token. As a rule of thumb, an image with a resolution of "ResolutionX"x"ResolutionY" will consume approximately `(ResolutionX/16) * (ResolutionY/16)` tokens.    
+    For example, a 720x512 image will consume approximately `(720/16) * (512/16)` ≈ 1440 tokens.  
+    Note that all images with a resolution higher than 1024x1024 will be downscaled while maintaining the same aspect ratio. For instance, a 1436x962 image will be downscaled to approximately 1024x686, consuming around `(1024/16) * (686/16)` ≈ 2600 tokens.
+  
 - Can I fine-tune the image capabilities in Pixtral 12B?
 
     No, we do not currently support fine-tuning the image capabilities of Pixtral 12B.

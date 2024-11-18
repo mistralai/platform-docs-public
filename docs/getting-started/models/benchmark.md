@@ -10,7 +10,8 @@ LLM (Large Language Model) benchmarks are standardized tests or datasets used to
 Mistral demonstrates top-tier reasoning capabilities and excels in advanced reasoning, multilingual tasks, math, and code generation. The company reports benchmark results on popular public benchmarks such as MMLU (Massive Multitask Language Understanding), MT-bench, and others.
 
 You can find the benchmark results in the following blog posts: 
-- [Pixtral](https://mistral.ai/news/pixtral-12b/): Pixtral 12B the first open-source model to demonstrate state-of-the-art multimodal understanding, without regressing on abilities in pure text. 
+- [Pixtral Large](https://mistral.ai/news/pixtral-large/): Pixtral Large is a 124B open-weights multimodal model built on top of Mistral Large 2. It is the second model in our multimodal family and demonstrates frontier-level image understanding.
+- [Pixtral 12B](https://mistral.ai/news/pixtral-12b/): Pixtral 12B the first open-source model to demonstrate state-of-the-art multimodal understanding, without regressing on abilities in pure text. 
 - [Mistral Large](https://mistral.ai/news/mistral-large-2407/): a cutting-edge text generation model with top-tier reasoning capabilities.
 It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
 - [Mistral Nemo](https://mistral.ai/news/mistral-nemo/): Mistral Nemo's reasoning, world knowledge, and coding performance are state-of-the-art in its size category.  As it relies on standard architecture, Mistral Nemo is easy to use and a drop-in replacement in any system using Mistral 7B that it supersedes.

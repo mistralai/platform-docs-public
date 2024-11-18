@@ -16,9 +16,10 @@ Mistral provides two types of models: free models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
+| Mistral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the lastest version released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/) | 128k   | `mistral-large-latest`| 24.11|
+| Pixtral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our frontier-class multimodal model released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/)| 128k   | `pixtral-large-latest`| 24.11|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-3b-latest` | 24.10|
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-8b-latest` | 24.10|
-| Mistral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the lastest version v2 released July 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-large-2407/)| 128k   | `mistral-large-latest`| 24.07|
 | Mistral Small | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our latest enterprise-grade small model with the lastest version v2 released September 2024. Learn more on our [blog post](https://mistral.ai/news/september-24-release/) | 32k  | `mistral-small-latest` | 24.09|
 | Codestral |:heavy_check_mark: <br/> [Mistral Non-Production License](https://mistral.ai/licenses/MNPL-0.1.md) | :heavy_check_mark: | Our cutting-edge language model for coding released May 2024 | 32k  | `codestral-latest` | 24.05|
 | Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
@@ -59,6 +60,8 @@ it is recommended to use the dated versions of the Mistral AI API.
 Additionally, be prepared for the deprecation of certain endpoints in the coming months.
 
 Here are the details of the available versions:
+- `mistral-large-latest`: currently points to `mistral-large-2411`. `mistral-large-2407` and `mistral-large-2402` will be deprecated shortly. 
+- `pixtral-large-latest`: currently points to `pixtral-large-2411`. 
 - `mistral-moderation-latest`: currently points to `mistral-moderation-2411`.
 - `ministral-3b-latest`: currently points to `ministral-3b-2410`.
 - `ministral-8b-latest`: currently points to `ministral-8b-2410`.
@@ -67,5 +70,4 @@ Here are the details of the available versions:
 - `mistral-medium-latest`: currently points to `mistral-medium-2312`. 
 The previous `mistral-medium` has been dated and tagged as `mistral-medium-2312`. 
 Mistral Medium will be deprecated shortly.
-- `mistral-large-latest`: currently points to `mistral-large-2407`. `mistral-large-2402` will be deprecated shortly. 
 - `codestral-latest`: currently points to `codestral-2405`.

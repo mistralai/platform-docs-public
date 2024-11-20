@@ -29,9 +29,9 @@ The easiest way to get started is to take a look at the [issue list](https://git
 
 
 ### JavaScript client
-Submit a PR to improve our JavaScript client: [https://github.com/mistralai/client-js](https://github.com/mistralai/client-js)
+Submit a PR to improve our JavaScript client: [https://github.com/mistralai/client-ts](https://github.com/mistralai/client-ts)
 
-The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-js/issues) and see which one you might be interested in helping.  
+The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-ts/issues) and see which one you might be interested in helping.  
 
 
 ## Contributing to the community 

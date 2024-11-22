@@ -114,7 +114,7 @@ LangSmith provides observability throughout the LLM application development life
 
 **Mistral integration Example:**
 
-* All of the [langchain notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/langchain) in the Mistral cookbook include LangSmith integration. 
+* All of the [langchain notebooks](https://github.com/mistralai//tree/main/third_party/langchain) in the Mistral cookbook include LangSmith integration. 
 
 Here is an example tracking traces, input, output, documents, tokens, and status when we run the [corrective RAG example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/corrective_rag_mistral.ipynb) from the Mistral cookbook. 
 
@@ -251,5 +251,6 @@ import openlit
 
 openlit.init()
 ```
+Here is an example tracking traces, input, output, documents, tokens, and status when we using Mistral AI Model (https://github.com/mistralai/cookbook/blob/main/third_party/openlit/cookbook_mistral_opentelemetry.ipynb) from the Mistral cookbook. 
 
 For more details, checkout the [official OpenLIT docs](https://docs.openlit.io/latest/integrations/mistral) for Mistral AI Integration.

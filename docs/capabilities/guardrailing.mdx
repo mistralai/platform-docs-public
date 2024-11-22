@@ -1,11 +1,192 @@
 ---
 id: guardrailing
-title: Guardrailing
+title: Moderation
 sidebar_position: 2.7
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+
+## Moderation API
+
+We are introducing our new moderation service, which is powered by the Mistral Moderation model, a classifier model
+based on Ministral 8B 24.10. It enables our users to detect harmful text content along several policy dimensions.
+
+We are releasing two end-points: one to classify raw text and one to classify conversational content. More details below.
+
+### Raw-text endpoint
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+response = client.classifiers.moderate(
+    model = "mistral-moderation-latest",  
+    inputs=["...text to classify..."]
+)
+
+print(response)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript 
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({apiKey});
+
+const response = await client.classifiers.moderate({
+    model: "mistral-moderation-latest",
+    inputs: ["...text to classify..."],
+});
+
+console.log(response);
+
+```
+  </TabItem>
+  <TabItem value="curl" label="curl">
+```curl
+curl https://api.mistral.ai/v1/moderations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-moderation-latest", 
+    "input": ["...text to classify..."]
+  }'
+```
+  </TabItem>
+</Tabs>
+
+
+### Conversational endpoint
+
+If you are using the moderation API in a conversational setting, we recommend
+using the conversational endpoint and sending your conversation payload as shown
+below. Note that the model is trained to classify the last turn of a conversation
+given the conversational context.
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+```python 
+import os
+
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.classifiers.moderate_chat(
+    model="mistral-moderation-latest",
+    inputs=[
+        {"role": "user", "content": "...user prompt ..."},
+        {"role": "assistant", "content": "...assistant response..."},
+    ],
+)
+
+print(response)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript 
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({apiKey});
+
+const response = await client.classifiers.moderateChat({
+  model: "mistral-moderation-latest",
+  inputs = [
+    { role: "user", content: "...user prompt ..." },
+    { role: "assistant", content: "...assistant response..." },
+  ],
+});
+
+console.log(response);
+
+```
+  </TabItem>
+  <TabItem value="curl" label="curl">
+```curl
+curl https://api.mistral.ai/v1/chat/moderations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-moderation-latest", 
+    "input": [{"role": "user", "content": "...user prompt ..."}, {"role": "assistant", "content": "...assistant response..."}]
+  }'
+```
+  </TabItem>
+</Tabs>
+
+
+Below is an example outputs
+
+```
+ClassificationResponse(
+    id='091b378dec1444e2a4800d6915aad0fa',
+    model='mistral-moderation-latest',
+    results=[
+        ClassificationObject(
+            categories={
+                'sexual': False,
+                'hate_and_discrimination': False,
+                'violence_and_threats': True,
+                'dangerous_and_criminal_content': False,
+                'selfharm': False,
+                'health': False,
+                'financial': False,
+                'law': False,
+                'pii': False
+            },
+            category_scores={
+                'sexual': 9.608268737792969e-05,
+                'hate_and_discrimination': 0.0001398324966430664,
+                'violence_and_threats': 0.9990234375,
+                'dangerous_and_criminal_content': 1.5676021575927734e-05,
+                'selfharm': 0.0001233816146850586,
+                'health': 3.2782554626464844e-06,
+                'financial': 1.3828277587890625e-05,
+                'law': 2.282857894897461e-05,
+                'pii': 0.0001233816146850586
+            }
+        )
+    ]
+)
+```
+:::note[ ]
+The policy threshold is determined based on the optimal performance of our internal test set. 
+You can use the raw score or adjust the threshold according to your specific use cases. 
+
+We intend to continually improve the underlying model of the moderation endpoint.
+Custom policies that depend on `category_scores` can require recalibration.
+:::
+
+
+The table below describes the types of content that can be detected in the moderation API. 
+| Category | Description |
+| --- | --- |
+| Sexual | Material that explicitly depicts, describes, or promotes sexual activities, nudity, or sexual services. This includes pornographic content, graphic descriptions of sexual acts, and solicitation for sexual purposes. Educational or medical content about sexual health presented in a non-explicit, informational context is generally exempted. |
+| Hate and Discrimination | Content that expresses prejudice, hostility, or advocates discrimination against individuals or groups based on protected characteristics such as race, ethnicity, religion, gender, sexual orientation, or disability. This includes slurs, dehumanizing language, calls for exclusion or harm targeted at specific groups, and persistent harassment or bullying of individuals based on these characteristics. |
+| Violence and Threats | Content that describes, glorifies, incites, or threatens physical violence against individuals or groups. This includes graphic depictions of injury or death, explicit threats of harm, and instructions for carrying out violent acts. This category covers both targeted threats and general promotion or glorification of violence. |
+| Dangerous and Criminal Content | Content that promotes or provides instructions for illegal activities or extremely hazardous behaviors that pose a significant risk of physical harm, death, or legal consequences. This includes guidance on creating weapons or explosives, encouragement of extreme risk-taking behaviors, and promotion of non-violent crimes such as fraud, theft, or drug trafficking. |
+| Self-Harm | Content that promotes, instructs, plans, or encourages deliberate self-injury, suicide, eating disorders, or other self-destructive behaviors. This includes detailed methods, glorification, statements of intent, dangerous challenges, and related slang terms |
+| Health | Content that contains or tries to elicit detailed or tailored medical advice. |
+| Financial | Content that contains or tries to elicit detailed or tailored financial advice. |
+| Law | Content that contains or tries to elicit detailed or tailored legal advice. |
+| PII | Content that requests, shares, or attempts to elicit personal identifying information such as full names, addresses, phone numbers, social security numbers, or financial account details. |
+
+
+### FAQ
+Q: What is the distribution of false-positive and false-negative results on the new moderation API models. Specifically, will they be more likely to flag something as harmful when it is not or not flag something that is harmful?
+
+A: On our internal testset, policies have a precision between [0.8 - 0.9] and a recall between [0.7 - 0.99]. We recommend you leverage the raw scores instead of the boolean responses if you have specific application objectives (e.g. reduce false positives) and set thresholds accordingly. We are continuously gathering feedback on performance and improving our models.
+
 
 ## System prompt to enforce guardrails
 
@@ -55,7 +236,7 @@ Toggling the safe prompt will prepend your messages with the following system pr
 Always assist with care, respect, and truth. Respond with utmost utility yet securely. Avoid harmful, unethical, prejudiced, or negative content. Ensure replies promote fairness and positivity.
 ```
 
-## Guardrailing results with Mistral safety prompt
+### Guardrailing results with Mistral safety prompt
 
 To evaluate the ability of the model to avoid inappropriate outputs we used a set of adversarial prompts deliberately asking for content excluded by guardrails, kindly provided by the community. 
 
@@ -70,40 +251,26 @@ As an illustration, we provide below the answers of Mistral 7B and Mistral Large
 
 ## Content moderation with self-reflection
 
-Mistral models also act as great content moderators: the model itself is able to accurately classify a user prompt or its generated answer as being either acceptable or falling into one of the following categories:
+Mistral models can also act as great content moderators: the model itself is able to accurately classify a user prompt or its generated answer as being either acceptable or falling into one of the following categories:
 
 - Illegal activities such as terrorism, child abuse or fraud
 - Hateful, harassing or violent content such as discrimination, self-harm or bullying.
 - Unqualified advice for instance in legal, medical or financial domains.
 
-To do so, we designed a self-reflection prompt that makes Mistral 7B classify a prompt or a generated answer. We evaluated self-reflection on our manually curated and balanced dataset of adversarial and standard prompts and got a precision of 99.4% for a recall of 95.6% (considering acceptable prompts as positives).
+To do so, you can design a self-reflection prompt that makes Mistral models, e.g., Mistral Large 2, classify a prompt or a generated answer.
 
-Strong and subtle moderation models have many applications, ranging from comments on social media or forums to brand monitoring on the internet. It can serve as a plug-in post-processing on top of model output to ban selected types of content and report misusage.
-
-Reversely, Mistral 7B can be used in an adversarial way to stress test content moderation and improve it.
-
-We also provide our self-reflection prompt, strongly inspired by many initiatives from the AI community.
+Here is an example self-reflection prompt for classifying text into categories such as physical harm, economic harm, and fraud:
 
 ```
 You're given a list of moderation categories as below:
 
-- illegal: Illegal activity.
-- child abuse: child sexual abuse material or any content that exploits or harms children.
-- hate violence harassment: Generation of hateful, harassing, or violent content: content that expresses, incites, or promotes hate based on identity, content that intends to harass, threaten, or bully an individual, content that promotes or glorifies violence or celebrates the suffering or humiliation of others.
-- malware: Generation of malware: content that attempts to generate code that is designed to disrupt, damage, or gain unauthorized access to a computer system.
 - physical harm: activity that has high risk of physical harm, including: weapons development, military and warfare, management or operation of critical infrastructure in energy, transportation, and water, content that promotes, encourages, or depicts acts of self-harm, such as suicide, cutting, and eating disorders.
 - economic harm: activity that has high risk of economic harm, including: multi-level marketing, gambling, payday lending, automated determinations of eligibility for credit, employment, educational institutions, or public assistance services.
 - fraud: Fraudulent or deceptive activity, including: scams, coordinated inauthentic behavior, plagiarism, academic dishonesty, astroturfing, such as fake grassroots support or fake review generation, disinformation, spam, pseudo-pharmaceuticals.
-- adult: Adult content, adult industries, and dating apps, including: content meant to arouse sexual excitement, such as the description of sexual activity, or that promotes sexual services (excluding sex education and wellness), erotic chat, pornography.
-- political: Political campaigning or lobbying, by: generating high volumes of campaign materials, generating campaign materials personalized to or targeted at specific demographics, building conversational or interactive systems such as chatbots that provide information about campaigns or engage in political advocacy or lobbying, building products for political campaigning or lobbying purposes.
-- privacy: Activity that violates people's privacy, including: tracking or monitoring an individual without their consent, facial recognition of private individuals, classifying individuals based on protected characteristics, using biometrics for identification or assessment, unlawful collection or disclosure of personal identifiable information or educational, financial, or other protected records.
-- unqualified law: Engaging in the unauthorized practice of law, or offering tailored legal advice without a qualified person reviewing the information.
-- unqualified financial: Offering tailored financial advice without a qualified person reviewing the information.
-- unqualified health: Telling someone that they have or do not have a certain health condition, or providing instructions on how to cure or treat a health condition.
 
 Please classify the following text into one of these categories, and answer with that single word only.
 
 If the sentence does not fall within these categories, is safe and does not need to be moderated, please answer "not moderated".
 ```
 
-*The answers of Mistral 7B-Instruct without prompt and with Mistral prompts are available on demand as they contain examples of text that may be considered unsafe, offensive, or upsetting.*
+Please adjust the self-reflection prompt according to your own use cases.

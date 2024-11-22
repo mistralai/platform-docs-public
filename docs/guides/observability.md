@@ -217,6 +217,7 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 <img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>
 
+
 ### Integration with OpenLIT
 
 [OpenLIT](https://openlit.io/) is an open-source tool designed for complete LLM engineering, fully integrated with OpenTelemetry. It provides comprehensive OTel-native observability including GPU monitoring and exceptions monitoring, an experimentation playground, prompt management, and metrics for effective debugging.
@@ -254,3 +255,23 @@ openlit.init()
 Here is an example tracking traces, input, output, documents, tokens, and status when we using Mistral AI Model (https://github.com/mistralai/cookbook/blob/main/third_party/openlit/cookbook_mistral_opentelemetry.ipynb) from the Mistral cookbook. 
 
 For more details, checkout the [official OpenLIT docs](https://docs.openlit.io/latest/integrations/mistral) for Mistral AI Integration.
+
+
+### Integration with phospho
+
+[phospho](https://phospho.ai/) is a text analytics platform that makes it easy to get answers, take decisions and reduce churn by data mining user messages.
+
+<img src="/img/guides/obs_phospho.png" alt="drawing" width="700"/>
+
+**Pros:**
+
+- Open-source ([github](https://github.com/phospho-app)) platform
+- No code clustering and analytics
+- Customizable dashboards
+- Many integrations with other observability frameworks, languages, APIs…
+
+**Mistral integration example:**
+
+- Check out the [phospho notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/phospho) in the Mistral cookbook.
+
+<img src="/img/guides/obs_phospho2.png" alt="drawing" width="700"/>

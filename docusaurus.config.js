@@ -135,7 +135,7 @@ const config = {
               },
               {
                 label: "Contributing",
-                to: "guides/contribute",
+                to: "guides/contribute/overview",
               },
             ],
           },

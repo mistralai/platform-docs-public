@@ -43,15 +43,6 @@ Mistral provides two types of models: free models and premier models.
 | Mathstral | :heavy_check_mark: <br/> Apache2 |  | Our first math open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mathstral/) | 32k  | NA| v0.1|
 
 
-- **Legacy models**
-
-| Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
-|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Mistral 7B    | :heavy_check_mark: <br/> Apache2 |:heavy_check_mark: | Our first dense model released September 2023. Learn more on our [blog post](https://mistral.ai/news/announcing-mistral-7b/)| 32k | `open-mistral-7b`| v0.3|
-| Mixtral 8x7B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: |Our first sparse mixture-of-experts released December 2023. Learn more on our [blog post](https://mistral.ai/news/mixtral-of-experts/)| 32k  | `open-mixtral-8x7b`| v0.1|
-| Mixtral 8x22B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best open source model to date released April 2024. Learn more on our [blog post](https://mistral.ai/news/mixtral-8x22b/)| 64k  | `open-mixtral-8x22b`| v0.1|
-
-
 ## API versioning 
 
 Mistral AI API are versions with specific release dates. 
@@ -60,14 +51,35 @@ it is recommended to use the dated versions of the Mistral AI API.
 Additionally, be prepared for the deprecation of certain endpoints in the coming months.
 
 Here are the details of the available versions:
-- `mistral-large-latest`: currently points to `mistral-large-2411`. `mistral-large-2407` and `mistral-large-2402` will be deprecated shortly. 
+- `mistral-large-latest`: currently points to `mistral-large-2411`. 
 - `pixtral-large-latest`: currently points to `pixtral-large-2411`. 
 - `mistral-moderation-latest`: currently points to `mistral-moderation-2411`.
 - `ministral-3b-latest`: currently points to `ministral-3b-2410`.
 - `ministral-8b-latest`: currently points to `ministral-8b-2410`.
 - `open-mistral-nemo`: currently points to `open-mistral-nemo-2407`.
-- `mistral-small-latest`: currently points to `mistral-small-2409`. `mistral-small-2402` is deprecated.
-- `mistral-medium-latest`: currently points to `mistral-medium-2312`. 
-The previous `mistral-medium` has been dated and tagged as `mistral-medium-2312`. 
-Mistral Medium will be deprecated shortly.
+- `mistral-small-latest`: currently points to `mistral-small-2409`. 
 - `codestral-latest`: currently points to `codestral-2405`.
+
+## Model deprecation
+### Overview
+Our model offering is continuously refreshed with newer, better models. As part of this process, we deprecate and retire older models. This document provides information about which models are currently available, deprecated, or retired.
+
+### Terminology
+- Legacy date: The date to mark the model as legacy. On this date we will inform our customers that a specific model will be deprecated and retired soon.
+- Deprecation date: The date to mark the model as deprecated. When a model is deprecated, it continues to be available for use by customers with existing deployments until the model is retired. 
+- Retirement date: The date to mark the model as retired. When a model is retired from la Plateforme, it is no longer available for use, and when prompted, it will return an error response.
+
+### How to Prepare for Model Retirements and Version Upgrades
+To prepare for model retirements and version upgrades, we recommend that customers evaluate their applications with the new models and versions and assess their behavior. We also recommend that customers update their applications to use the new models and versions before the retirement date
+
+### Legacy models
+
+| Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|Legacy date|Deprecation on date|Retirement date|Alternative model|
+|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
+| Mistral 7B    | :heavy_check_mark: <br/> Apache2 |:heavy_check_mark: | Our first dense model released September 2023. Learn more on our [blog post](https://mistral.ai/news/announcing-mistral-7b/)| 32k | `open-mistral-7b`| v0.3|2024/11/25|2024/11/30|2025/03/30| `ministral-8b-latest`|
+| Mixtral 8x7B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: |Our first sparse mixture-of-experts released December 2023. Learn more on our [blog post](https://mistral.ai/news/mixtral-of-experts/)| 32k  | `open-mixtral-8x7b`| v0.1| 2024/11/25|2024/11/30|2025/03/30| `mistral-small-latest`|
+| Mixtral 8x22B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best open source model to date released April 2024. Learn more on our [blog post](https://mistral.ai/news/mixtral-8x22b/)| 64k  | `open-mixtral-8x22b`| v0.1|2024/11/25|2024/11/30|2025/03/30| `mistral-small-latest`|
+| Mistral Medium  | | :heavy_check_mark: | Ideal for intermediate tasks that require moderate reasoning | 32k  | `mistral-medium-2312`| 23.12 |2024/11/25|2024/11/30|2025/03/30|`mistral-small-latest`|
+| Mistral Small 24.02|  | :heavy_check_mark: | Our latest enterprise-grade small model with the first version released Feb. 2024 | 32k  | `mistral-small-2402` | 24.09| 2024/11/25|2024/11/30|2025/03/30| `mistral-small-latest`|
+| Mistral Large 24.02  | | :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the the first version released Feb. 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-large/) | 32k   | `mistral-large-2402`| 24.02|2024/11/25|2024/11/30|2025/03/30| `mistral-large-latest` | 
+| Mistral Large 24.07  | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the the second version released July 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-large-2407/) | 128k   | `mistral-large-2407`| 24.02|2024/11/25|2024/11/30|2025/03/30| `mistral-large-latest`|

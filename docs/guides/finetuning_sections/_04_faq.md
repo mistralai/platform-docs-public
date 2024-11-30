@@ -47,7 +47,7 @@ For Mistral API, you can use the `auto_start=False` argument as mentioned in the
 
 ### What is the recommended learning rate? 
 
-For LoRA fine-tuning, we recommended 1e-4 (default) or 1e-5. 
+For LoRA fine-tuning, we recommend 1e-4 (default) or 1e-5. 
 
 Note that the learning rate we define is the peak learning rate, instead of a flat learning rate. The learning rate follows a linear warmup and cosine decay schedule. During the warmup phase, the learning rate is linearly increased from a small initial value to a larger value over a certain number of training steps. After the warmup phase, the learning rate is decayed using a cosine function.
 

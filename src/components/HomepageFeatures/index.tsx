@@ -28,7 +28,7 @@ const FeatureList: FeatureItem[] = [
     title: 'The best Open Source LLMs',
     description: (
       <>
-        Our top level team of researchers and engineers are working on the best open source models.
+        Our top-level team of researchers and engineers are working on the best open source models.
       </>
     ),
   },

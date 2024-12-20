@@ -2,7 +2,7 @@
 id: observability
 title: Observability
 slug: observability
-sidebar_position: 1.7
+sidebar_position: 1.8
 ---
 
 ## Why observability?

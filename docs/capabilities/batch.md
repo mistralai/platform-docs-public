@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 A batch is composed of a list of API requests. The structure of an individual request includes:
 
-- A unique `custom_id` for identifying each request and referening results after completion 
+- A unique `custom_id` for identifying each request and referencing results after completion 
 - A `body` object with message information 
 
 Here's an example of how to structure a batch request:

@@ -4,7 +4,6 @@ title: Contribute
 slug: overview
 ---
 
-
 # How to contribute
 
 Thank you for your interest in contributing to Mistral AI. We welcome everyone who wishes to contribute and we appreciate your time and effort!

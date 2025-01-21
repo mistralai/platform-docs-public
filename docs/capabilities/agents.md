@@ -112,7 +112,7 @@ const apiKey = process.env.MISTRAL_API_KEY;
 const client = new Mistral({apiKey: apiKey});
 
 const chatResponse = await client.agents.complete({
-  agent_id: "ag:3996db2b:20240805:french-agent:a8997aab",
+  agentId: "ag:3996db2b:20240805:french-agent:a8997aab",
   messages: [{role: 'user', content: 'What is the best French cheese?'}],
 });
 
@@ -135,6 +135,10 @@ curl --location "https://api.mistral.ai/v1/agents/completions" \
   </TabItem>
 
 </Tabs>
+
+:::note[ ]
+- Typescript : Please note that storing secrets such as the API key on the client side (`process.env.MISTRAL_API_KEY`) is dangerous and may lead to secret disclosure
+:::
 
 <!-- 
 ### List/delete agents

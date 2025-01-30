@@ -7,9 +7,9 @@ slug: weights
 We open-source both pre-trained models and instruction-tuned models. These models are not tuned for safety as we want to empower users to test and refine moderation based on their use cases. For safer models, follow our [guardrailing tutorial](/capabilities/guardrailing).
 
 ## License
-- Mistral 7B, Mixtral 8x7B, Mixtral 8x22B, Codestral Mamba, Mathstral, Mistral Nemo, and Pixtral 12B are under [Apache 2 License](https://choosealicense.com/licenses/apache-2.0/), which permits their use without any constraints.
+- Mistral 7B, Mixtral 8x7B, Mixtral 8x22B, Codestral Mamba, Mathstral, Mistral Nemo, Pixtral 12B, and Mistral Small are under [Apache 2 License](https://choosealicense.com/licenses/apache-2.0/), which permits their use without any constraints.
 - Codestral is under [Mistral AI Non-Production (MNPL) License](https://mistral.ai/licences/MNPL-0.1.md).
-- Ministral 8B, Mistral Large, Pixtral Large and Mistral Small are under [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md). 
+- Ministral 8B, Mistral Large, and Pixtral Large are under [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md). 
 
 :::note[ ]
 If you are interested in purchasing a commercial license for our models, please [contact our team](https://mistral.ai/contact/)
@@ -41,6 +41,8 @@ If you are interested in purchasing a commercial license for our models, please 
 | Ministral-8B-Instruct-2410 | [Hugging Face](https://huggingface.co/mistralai/Ministral-8B-Instruct-2410) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
 | Mistral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling |
 | Pixtral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Pixtral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling |
+| Mistral-Small-Base-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Base-2501)| - 32768 vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Mistral-Small-Instruct-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2501)| - 32768 vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
 
 ## Sizes
 
@@ -59,6 +61,9 @@ If you are interested in purchasing a commercial license for our models, please 
 | Ministral-8B-2410 | 8B | 8B | 24 |
 | Mistral-Large-Instruct-2411  | 123B | 123B | 250 |
 | Pixtral-Large-Instruct-2411  | 124B | 124B | 250 |
+| Mistral-Small-Base-2501  | 24B | 24B | 60 |
+| Mistral-Small-Instruct-2501  | 24B | 24B | 60 |
+
 
 ## How to run? 
 Check out [mistral-inference](https://github.com/mistralai/mistral-inference/), a Python package for running our models. You can install `mistral-inference` by

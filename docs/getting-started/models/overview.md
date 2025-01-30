@@ -21,7 +21,6 @@ Mistral provides two types of models: free models and premier models.
 | Pixtral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our frontier-class multimodal model released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/)| 131k   | `pixtral-large-latest`| 24.11|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 131k  | `ministral-3b-latest` | 24.10|
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 131k  | `ministral-8b-latest` | 24.10|
-| Mistral Small | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our latest enterprise-grade small model with the lastest version v2 released September 2024. Learn more on our [blog post](https://mistral.ai/news/september-24-release/) | 32k  | `mistral-small-latest` | 24.09|
 | Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
 | Mistral Moderation | | :heavy_check_mark: | Our moderation service that enables our users to detect harmful text content | 8k  | `mistral-moderation-latest` | 24.11|
 
@@ -32,6 +31,7 @@ Mistral provides two types of models: free models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
+| Mistral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category with the lastest version v3 released January 2025. Learn more on our blog post [TODO add LINK] | 32k  | `mistral-small-latest` | 25.01|
 | Pixtral | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 12B model with image understanding capabilities in addition to text. Learn more on our [blog post](https://mistral.ai/news/pixtral-12b/)| 131k  | `pixtral-12b-2409` | 24.09|
 
 - **Research models**
@@ -57,7 +57,7 @@ Here are the details of the available versions:
 - `ministral-3b-latest`: currently points to `ministral-3b-2410`.
 - `ministral-8b-latest`: currently points to `ministral-8b-2410`.
 - `open-mistral-nemo`: currently points to `open-mistral-nemo-2407`.
-- `mistral-small-latest`: currently points to `mistral-small-2409`. 
+- `mistral-small-latest`: currently points to `mistral-small-2501`. 
 - `codestral-latest`: currently points to `codestral-2501`.
 
 ## Model deprecation

@@ -148,14 +148,14 @@ Here's the PortkeyAI observability section in the same style as the Mistral docs
 
 ### Integration with PortkeyAI
 
-PortkeyAI is an open-source AI gateway that provides unified observability across all your LLM integrations. It offers real-time analytics, detailed logs, tracing, and metadata tracking through a single API layer.
+PortkeyAI is an open-source AI gateway that provides unified observability across all your Mistral AI requests. It offers real-time analytics, detailed logs, tracing, and metadata tracking through a single API layer.
 
 <img src="https://raw.githubusercontent.com/siddharthsambharia-portkey/Portkey-Product-Images/refs/heads/main/Portkey-Dashboard.png" alt="Portkey Analytics Dashboard" width="700"/>
 
 **Pros:**
 
 * **Open-source AI Gateway** - Self-host or use cloud-managed version
-* **Unified API** - Works with Mistral, OpenAI, Anthropic and 10+ providers
+* **Unified API** - OpenAI compliant API that works with Mistral models
 * **Real-time Analytics** - Track cost, latency, token usage across all models
 * **Metadata Filtering** - Add custom metadata and filter logs by any parameter
 * **Request Tracing** - Visualize complete request lifecycle and LLM call chains

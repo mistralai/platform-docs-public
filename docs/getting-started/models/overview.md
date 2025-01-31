@@ -16,7 +16,7 @@ Mistral provides two types of models: free models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Codestral | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more on our blog post(https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-latest` | 25.01|
+| Codestral | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more on our [blog post](https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-latest` | 25.01|
 | Mistral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the lastest version released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/) | 131k   | `mistral-large-latest`| 24.11|
 | Pixtral Large  |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our frontier-class multimodal model released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/)| 131k   | `pixtral-large-latest`| 24.11|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 131k  | `ministral-3b-latest` | 24.10|
@@ -31,7 +31,7 @@ Mistral provides two types of models: free models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Mistral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category with the lastest version v3 released January 2025. Learn more on our blog post [TODO add LINK] | 32k  | `mistral-small-latest` | 25.01|
+| Mistral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category with the lastest version v3 released January 2025. Learn more on our [blog post](https://mistral.ai/news/mistral-small-3/) | 32k  | `mistral-small-latest` | 25.01|
 | Pixtral | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 12B model with image understanding capabilities in addition to text. Learn more on our [blog post](https://mistral.ai/news/pixtral-12b/)| 131k  | `pixtral-12b-2409` | 24.09|
 
 - **Research models**

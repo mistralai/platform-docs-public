@@ -142,6 +142,68 @@ Here is a step-by-step [example](https://github.com/mistralai/cookbook/blob/main
 <img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
 
 
+
+Here's the PortkeyAI observability section in the same style as the Mistral docs:
+
+
+### Integration with PortkeyAI
+
+PortkeyAI is an open-source AI gateway that provides unified observability across all your LLM integrations. It offers real-time analytics, detailed logs, tracing, and metadata tracking through a single API layer.
+
+<img src="https://raw.githubusercontent.com/siddharthsambharia-portkey/Portkey-Product-Images/refs/heads/main/Portkey-Dashboard.png" alt="Portkey Analytics Dashboard" width="700"/>
+
+**Pros:**
+
+* **Open-source AI Gateway** - Self-host or use cloud-managed version
+* **Unified API** - Works with Mistral, OpenAI, Anthropic and 10+ providers
+* **Real-time Analytics** - Track cost, latency, token usage across all models
+* **Metadata Filtering** - Add custom metadata and filter logs by any parameter
+* **Request Tracing** - Visualize complete request lifecycle and LLM call chains
+* **Feedback API** - Programmatically collect user feedback on generations
+
+**Key Observability Features:**
+
+1. **Cost Tracking** - Real-time spend tracking across models/providers
+2. **Latency Monitoring** - P95/P99 latency metrics with error budgets 
+3. **Token Analytics** - Input/output token tracking with cost estimates
+4. **Custom Metadata** - Add business context (user IDs, session IDs, etc)
+5. **Semantic Search** - Search across all LLM request/responses
+6. **Tracing** - Visualize complex workflows and multi-LLM call chains
+
+**Mistral Integration Example:**
+```bash
+!pip install portkey-ai
+```
+```python
+from portkey_ai import Portkey
+
+portkey = Portkey(
+    api_key="PORTKEY_API_KEY",
+    virtual_key="MISTRAL_VIRTUAL_KEY",
+    metadata={"environment": "production", "user_id": "123"}
+)
+
+# Track metadata and trace ID for observability
+response = portkey.with_options(
+    metadata = {
+        "_user": "USER_ID",
+        "environment": "production",
+        "prompt": "test_prompt",
+        "session_id": "1729"
+}).chat.completions.create(
+    messages = [{ "role": 'user', "content": 'What is 1729' }],
+    model = 'your-mistral-model'
+)
+
+print(response.choices[0].message)
+```
+
+**Getting Started:**
+- [Mistral Integration Guide on Portkey Docs](https://portkey.sh/mistral)
+- [Open-source Gateway GitHub](https://github.com/Portkey-AI/gateway)
+
+
+
 ### Integration with Arize Phoenix
 
 Phoenix is an open-source observability library designed for experimentation, evaluation, and troubleshooting. It is designed to support agents, RAG pipelines, and other LLM applications.

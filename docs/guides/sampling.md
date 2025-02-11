@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # Sampling: Overview on our sampling settings
 
-Here, we will discuss the sampling settings that influence the output of Language Learning Models (LLMs). This guide covers parameters such as **Temperature**, **N**, **Top P**, **Presence Penalty**, and **Frequency Penalty**, and explains how to adjust them. Whether you aim to generate creative content or ensure accurate responses, understanding these settings is key.
+Here, we will discuss the sampling settings that influence the output of Large Language Models (LLMs). This guide covers parameters such as **Temperature**, **N**, **Top P**, **Presence Penalty**, and **Frequency Penalty**, and explains how to adjust them. Whether you aim to generate creative content or ensure accurate responses, understanding these settings is key.
 
 Let's explore each parameter and learn how to fine-tune LLM outputs effectively.
 
@@ -80,7 +80,7 @@ In this example, the model generates 10 responses for the same input prompt. Thi
 
 ## Temperature
 
-**Temperature** in Language Learning Models (LLMs) controls output diversity. Lower values make the model more deterministic, focusing on likely responses for accuracy. Higher values increase creativity and diversity. During text generation, LLMs predict tokens with associated probabilities using a softmax function. Temperature scales these probabilities: higher temperatures flatten the distribution, making outputs more varied, while lower temperatures amplify differences, favoring more likely tokens.
+**Temperature** in Large Language Models (LLMs) controls output diversity. Lower values make the model more deterministic, focusing on likely responses for accuracy. Higher values increase creativity and diversity. During text generation, LLMs predict tokens with associated probabilities using a softmax function. Temperature scales these probabilities: higher temperatures flatten the distribution, making outputs more varied, while lower temperatures amplify differences, favoring more likely tokens.
 
 ## Visualization
 

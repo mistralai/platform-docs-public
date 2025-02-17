@@ -370,8 +370,7 @@ First, let's use a smaller model, `open-mistral-7b', to generate a summary for t
 
 ```py
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 
 def run_mistral(user_message, model="open-mistral-7b", is_json=False):

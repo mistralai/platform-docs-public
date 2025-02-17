@@ -387,7 +387,7 @@ Model output:
   {'item_name': 'WH/SUB BSL - MUSH', 'price': 4},
   {'item_name': 'BURGER - MED WELL', 'price': 10},
   {'item_name': 'WH BREAD/NO ONION', 'price': 2},
-  {'item_name': 'SUB POUTINE - MUSH', 'price': 2},
+  {'item_name': 'SUB POUTINE - MUSH', 'price': 0},
   {'item_name': 'CHK PESTO/BR', 'price': 9},
   {'item_name': 'SUB POUTINE', 'price': 2},
   {'item_name': 'SPEC OMELET/BR', 'price': 9},

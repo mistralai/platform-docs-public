@@ -2,7 +2,6 @@
 id: robots
 title: Mistral AI Crawlers
 slug: robots
-sidebar_position: 1.92
 ---
 
 ## Mistral AI Crawlers

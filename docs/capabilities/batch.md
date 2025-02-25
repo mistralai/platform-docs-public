@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 A batch is composed of a list of API requests. The structure of an individual request includes:
 
-- A unique `custom_id` for identifying each request and referening results after completion 
+- A unique `custom_id` for identifying each request and referencing results after completion 
 - A `body` object with message information 
 
 Here's an example of how to structure a batch request:
@@ -405,10 +405,9 @@ Currently, there is a maximum limit of 1 million pending requests per workspace.
 Currently, there is no maximum limit. 
 
 ### How long does the batch API take to process? 
-Batch generation can take up to 24 hours, although it might finish earlier. Please note that processing speeds may be adjusted based on current demand and the volume of your request. Your batch results will only be accessible once the entire batch processing is complete.
+Processing speeds may be adjusted based on current demand and the volume of your request. Your batch results will only be accessible once the entire batch processing is complete.
 
-Users can set `timeout_hours` when creating a job, which specifies the number of hours after which the job should expire. It defaults to 24 hours and cannot exceed this limit at present. This means that batches will expire if processing does not complete within 24 hours. This is subject to change in the future.
-
+Users can set `timeout_hours` when creating a job, which specifies the number of hours after which the job should expire. It defaults to 24 hours and should be lower than 7 days. A batch will expire if processing does not complete within the specified timeout.
 
 ### Can I view batch results from my workspace?
 Yes, batches are specific to a workspace. You can see all batches and their results that were created within the workspace associated with your API key.

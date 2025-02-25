@@ -14,8 +14,11 @@ You can find the benchmark results in the following blog posts:
 - [Pixtral 12B](https://mistral.ai/news/pixtral-12b/): Pixtral 12B the first open-source model to demonstrate state-of-the-art multimodal understanding, without regressing on abilities in pure text. 
 - [Mistral Large](https://mistral.ai/news/mistral-large-2407/): a cutting-edge text generation model with top-tier reasoning capabilities.
 It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
+- [Mistral Small](https://mistral.ai/news/mistral-small-3/): A powerful and efficient text generation model with high level conversational and translation capabilities.
+- [Mistral Saba](https://mistral.ai/news/mistral-saba/): A powerful and efficient text generation model trained extensively on languages from the Middle East and South Asia, achieving state-of-the-art quality comparable to much larger models.
+It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
 - [Mistral Nemo](https://mistral.ai/news/mistral-nemo/): Mistral Nemo's reasoning, world knowledge, and coding performance are state-of-the-art in its size category.  As it relies on standard architecture, Mistral Nemo is easy to use and a drop-in replacement in any system using Mistral 7B that it supersedes.
-- [Codestral](https://mistral.ai/news/codestral/): as a 22B model, Codestral sets a new standard on the performance/latency space for code generation compared to previous models used for coding.
+- [Codestral](https://mistral.ai/news/codestral-2501/): Codestral sets a new standard on the performance/latency space for code generation compared to previous models used for coding.
 - [Codestral-Mamba](https://mistral.ai/news/codestral-mamba/): we have trained this model with advanced code and reasoning capabilities, enabling the model to have a strong performance on par with SOTA transformer-based models.
 - [Mathstral](https://mistral.ai/news/mathstral/): Mathstral stands on the shoulders of Mistral 7B and specialises in STEM subjects. It achieves state-of-the-art reasoning capacities in its size category across various industry-standard benchmarks. 
 - [Mixtral 8x22B](https://mistral.ai/news/mixtral-8x22b/): our most performant open model. It handles English,

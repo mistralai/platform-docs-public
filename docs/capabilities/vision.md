@@ -13,7 +13,7 @@ If the image is hosted online, you can simply provide the URL of the image in th
 
 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -117,6 +117,8 @@ curl https://api.mistral.ai/v1/chat/completions \
 ## Passing a Base64 Encoded Image
 If you have an image or a set of images stored locally, you can pass them to the model in base64 encoded format. Base64 encoding is a common method for converting binary data into a text format that can be easily transmitted over the internet. This is particularly useful when you need to include images in API requests.
 
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```py
 import base64
@@ -177,6 +179,63 @@ chat_response = client.chat.complete(
 # Print the content of the response
 print(chat_response.choices[0].message.content)
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import type { ChatCompletionRequest } from "@mistralai/mistralai/models/components";
+import fs from "fs";
+import path from "path";
+
+// Retrieving the API key from our environment
+const apiKey = process.env["MISTRAL_API_KEY"];
+// path to the image we want to encode to base64
+const imagePath = path.join(__dirname, "path_to_your_image.jpeg");
+
+// Encoding the image to Base 64
+const base64 = base64_encode(imagePath);
+
+// Initializing a Mistral Client with our API Key
+const client = new Mistral({ apiKey: apiKey });
+
+// Specifying the model we want to use
+const model = "pixtral-12b-2409";
+
+function base64_encode(file: string) {
+  var bitmap = fs.readFileSync(file);
+  // convert binary data to base64 encoded string
+  return new Buffer(bitmap).toString("base64");
+}
+
+// Defining our Messages
+const messages: ChatCompletionRequest["messages"] = [
+  {
+    role: "user",
+    content: [
+      { type: "text", text: "What's in this image?" },
+      {
+        type: "image_url",
+        // Important here, we pass on "data:image/jpeg;base64," so that Mistral knows what we are encoding.
+        imageUrl: "data:image/jpeg;base64," + base64,
+      },
+    ],
+  },
+];
+
+// Getting the text response
+const chatResponse = await client.chat.complete({
+  model: model,
+  messages: messages,
+});
+
+// Logging the response
+console.log("Response: ", chatResponse.choices?.[0].message.content);
+```
+
+  </TabItem>
+</Tabs>
 
 ## Use cases
 <details>

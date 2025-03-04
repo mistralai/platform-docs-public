@@ -204,7 +204,7 @@ const client = new Mistral({ apiKey: apiKey });
 const model = "pixtral-12b-2409";
 
 function base64_encode(file: string) {
-  var bitmap = fs.readFileSync(file);
+  const bitmap = fs.readFileSync(file);
   // convert binary data to base64 encoded string
   return new Buffer(bitmap).toString("base64");
 }

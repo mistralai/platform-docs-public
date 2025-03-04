@@ -63,7 +63,7 @@ Let’s inspect one of these cases. There are two issues with this use case:
 ### Upload dataset
 We can then upload both the training data and evaluation data to the Mistral Client, making them available for use in fine-tuning jobs. 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -145,7 +145,7 @@ Note that you will need the file IDs for the next steps.
 ### Create a fine-tuning job
 Next, we can create a fine-tuning job:
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -245,7 +245,7 @@ When we retrieve a model, we get the following metrics every 10% of the progress
 Both validation loss and validation token accuracy serve as essential indicators of the model's overall performance, helping to assess its ability to generalize and make accurate predictions on new data.
 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -421,7 +421,7 @@ curl https://api.mistral.ai/v1/fine_tuning/jobs/<jobid> \
 When a fine-tuned job is finished, you will be able to see the fine-tuned model name via `retrieved_jobs.fine_tuned_model`. Then you can use our `chat` endpoint to chat with the fine-tuned model: 
 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python

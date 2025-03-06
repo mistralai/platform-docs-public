@@ -54,7 +54,7 @@ const ocrResponse = await client.ocr.process({
     model: "mistral-ocr-latest",
     document: {
         type: "document_url",
-        document_url: "https://arxiv.org/pdf/2201.04234"
+        documentUrl: "https://arxiv.org/pdf/2201.04234"
     },
     include_image_base64: true
 });
@@ -537,7 +537,7 @@ client.files.retrieve(file_id=uploaded_pdf.id)
 
 ```typescript
 await client.files.retrieve({
-    file_id: uploaded_pdf.id
+    fileId: uploaded_pdf.id
 });
 ```
   </TabItem>
@@ -571,7 +571,7 @@ signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
 
 ```typescript
 const signedUrl = await mistral.files.getSignedUrl({
-    file_id: uploaded_pdf.id,
+    fileId: uploaded_pdf.id,
 });
 ```
   </TabItem>
@@ -621,7 +621,7 @@ const ocrResponse = await client.ocr.process({
     model: "mistral-ocr-latest",
     document: {
         type: "document_url",
-        document_url: signedUrl.url,
+        documentUrl: signedUrl.url,
     }
 });
 ```
@@ -712,7 +712,7 @@ const ocrResponse = await client.ocr.process({
     model: "mistral-ocr-latest",
     document: {
         type: "image_url",
-        image_url: "https://media-cldnry.s-nbcnews.com/image/upload/t_fit-560w,f_avif,q_auto:eco,dpr_2/rockcms/2023-11/short-quotes-swl-231117-02-33d404.jpg",
+        imageUrl: "https://media-cldnry.s-nbcnews.com/image/upload/t_fit-560w,f_avif,q_auto:eco,dpr_2/rockcms/2023-11/short-quotes-swl-231117-02-33d404.jpg",
     }
 });
 ```

@@ -1,93 +1,35 @@
 ---
-id: models
-title: Models
-sidebar_position: 1.3
+id: picking
+title: Model selection
+slug: picking
 ---
 
-## Overview
-
-Mistral provides two types of models: open-weights models (Mistral 7B, Mixtral 8x7B, Mixtral 8x22B) and optimized commercial models (Mistral Small, Mistral Medium, Mistral Large, and Mistral Embeddings). 
-- The open-weights models are highly efficient and available under a fully permissive Apache 2 license. 
-They are ideal for customization, such as fine-tuning, due to their portability, control, and fast performance. 
-- On the other hand, the optimized commercial models are designed for high performance and are available through flexible deployment options.
-
-| Model               | Available Open-weight|Available via API| Description | Max Tokens| API Endpoints|
-|--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Mistral 7B    | :heavy_check_mark: <br/> Apache2 |:heavy_check_mark: |The first dense model released by Mistral AI, perfect for experimentation, customization, and quick iteration. At the time of the release, it matched the capabilities of models up to 30B parameters. Learn more on our [blog post](https://mistral.ai/news/announcing-mistral-7b/)| 32k | `open-mistral-7b`|
-| Mixtral 8x7B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: |A sparse mixture of experts model. As such, it leverages up to 45B parameters but only uses about 12B during inference, leading to better inference throughput at the cost of more vRAM. Learn more on the dedicated [blog post](https://mistral.ai/news/mixtral-of-experts/)| 32k  | `open-mixtral-8x7b`| 
-| Mixtral 8x22B  |:heavy_check_mark: <br/> Apache2 | :heavy_check_mark: |A bigger sparse mixture of experts model. As such, it leverages up to 141B parameters but only uses about 39B during inference, leading to better inference throughput at the cost of more vRAM. Learn more on the dedicated [blog post](https://mistral.ai/news/mixtral-8x22b/)| 64k  | `open-mixtral-8x22b`| 
-| Mistral Small  ||:heavy_check_mark: |Suitable for simple tasks that one can do in bulk (Classification, Customer Support, or Text Generation)| 32k   | `mistral-small-latest`| 
-| Mistral Medium <br/> (will be deprecated in the coming months)  ||:heavy_check_mark: |Ideal for intermediate tasks that require moderate reasoning (Data extraction, Summarizing a Document, Writing emails, Writing a Job Description, or Writing Product Descriptions)| 32k   | `mistral-medium-latest`| 
-| Mistral Large  || :heavy_check_mark: |Our flagship model that's ideal for complex tasks that require large reasoning capabilities or are highly specialized (Synthetic Text Generation, Code Generation, RAG, or Agents). Learn more on our [blog post](https://mistral.ai/news/mistral-large/)| 32k   | `mistral-large-latest`| 
-| Mistral Embeddings  ||:heavy_check_mark: | A model that converts text into numerical vectors of embeddings in 1024 dimensions. Embedding models enable retrieval and retrieval-augmented generation applications. It achieves a retrieval score of 55.26 on MTEB. | 8k  | `mistral-embed`| 
-| Codestral  |:heavy_check_mark: <br/> MNPL|:heavy_check_mark: | A cutting-edge generative model that has been specifically designed and optimized for code generation tasks, including fill-in-the-middle and code completion | 32k  | `codestral-latest`| 
-
-## Pricing
-
-Please refer to the [pricing page](https://mistral.ai/technology/#pricing) for detailed information on costs.
-
-## API versioning 
-
-Mistral AI API are versions with specific release dates. 
-To prevent any disruptions due to model updates and breaking changes, 
-it is recommended to use the dated versions of the Mistral AI API. 
-Additionally, be prepared for the deprecation of certain endpoints in the coming months.
-
-Here are the details of the available versions:
-- `open-mistral-7b`: currently points to `mistral-tiny-2312`. 
-It used to be called `mistral-tiny`, which will be deprecated shortly.
-- `open-mixtral-8x7b`: currently points to `mistral-small-2312`. 
-It used to be called `mistral-small`, which will be deprecated shortly.
-- `open-mixtral-8x22b` points to `open-mixtral-8x22b-2404`.
-- `mistral-small-latest`: currently points to `mistral-small-2402`. 
-- `mistral-medium-latest`: currently points to `mistral-medium-2312`. 
-The previous `mistral-medium` has been dated and tagged as `mistral-medium-2312`. 
-Mistral Medium will be deprecated shortly.
-- `mistral-large-latest`: currently points to `mistral-large-2402`. 
-- `codestral-latest`: currently points to `codestral-2405`.
-
-## Benchmarks results
-Mistral ranks second among all models generally available through an API.
-It offers top-tier reasoning capabilities and excels in multilingual tasks and code generation.
-
-You can find the benchmark results in the following blog posts: 
-- [Mistral 7B](https://mistral.ai/news/announcing-mistral-7b/): outperforms Llama 2 13B on all benchmarks and Llama 1 34B on many benchmarks. 
-- [Mixtral 8x7B](https://mistral.ai/news/mixtral-of-experts/): outperforms Llama 2 70B on most benchmarks with 6x faster inference and matches 
-or outperforms GPT3.5 on most standard benchmarks. It handles English, French, Italian, German and Spanish, and shows strong performance in code generation. 
-- [Mixtral 8x22B](https://mistral.ai/news/mixtral-8x22b/): our most performant open model. It handles English,
-  French, Italian, German, Spanish and performs strongly on code-related tasks. Natively handles function calling. 
-- [Mistral Large](https://mistral.ai/news/mistral-large/): a cutting-edge text generation model with top-tier reasoning capabilities.
-It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
- 
-
-## Picking a model
 
 This guide will explore the performance and cost trade-offs, and discuss how to select the appropriate model for different use cases. We will delve into various factors to consider, offering guidance on choosing the right model for your specific needs.
 
 Today, Mistral models are behind many LLM applications at scale. Here is a brief overview on the types of use cases we see along with their respective Mistral model:
 
-1) Simple tasks that one can do in bulk (Classification, Customer Support, or Text Generation) are powered by Mistral Small.
-2) Intermediate tasks that require moderate reasoning (Data extraction, Summarizing a Document, Writing emails, Writing a Job Description, or Writing Product Descriptions) are powered by Mistral 8x22B.
+1) Simple tasks that one can do in bulk (Classification, Customer Support, or Text Generation) can be powered by Mistral Nemo.
+2) Intermediate tasks that require moderate reasoning (Data extraction, Summarizing a Document, Writing emails, Writing a Job Description, or Writing Product Descriptions) are powered by Mistral Small.
 3) Complex tasks that require large reasoning capabilities or are highly specialized (Synthetic Text Generation, Code Generation, RAG, or Agents) are powered by Mistral Large.
 
+Our Legacy models can currently be replaced by our more recent, high-quality models. If you are considering an upgrade, here are some general comments that may assist you:
+- Mistral Nemo currently outperforms Mistral 7B and is more cost-effective.
+- Mistral Small currently outperforms Mixtral 8x7B and is more cost-effective.
+- Mistral Large currently outperforms Mixtral 8x22B while maintaining the same price ratio.
 
-### Performance and cost trade-offs 
+## Performance and cost trade-offs 
 
 When selecting a model, it is essential to evaluate the performance, and cost trade-offs. Depending on what’s most important for your application, your choice may differ significantly. Note that the models will be updated over time, the information we share below only reflect the current state of the models.
 
-In general, the larger the model, the better the performance. For instance, when looking at the popular benchmark MMLU (Massive Multitask Language Understanding), the performance ranking of Mistral’s models is as follows: Mistral Large > Mistral 8x22B > Mistral Small > Mixtral 8x7B > Mistral 7B. Notably, Mistral Large is currently outperforming all other four models across almost all benchmarks.
- 
-<img src="/img/guides/modelselection1.png" alt="drawing" width="600"/>
+Notably, Mistral Large v2 is currently outperforming all of our other models across almost all benchmarks. By considering the performance, speed, and cost details, hopefully you can find the best model that suits your application's needs.
 
+As a general rule, if you are new to using Large Language Models, you can always start with Mistral Large first. This will allow you to evaluate its cost and performance and determine whether you need to downgrade to Mistral Small or even Mistral Nemo. If you are already using another large language model and are looking to replace a particularly powerful one, then Mistral Large may be the best choice for you. 
 
-In addition to the benchmarks mentioned above, you can also refer to various other independent benchmarks, such as https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard and https://artificialanalysis.ai/, to gain more insight into the performance and speed of different large language models.  By considering the performance, speed, and cost details, hopefully you can find the best model that suits your application's needs.
+## Use cases 
 
-As a general rule, if you are new to using Large Language Models, you can always start with Mistral Large first. This will allow you to evaluate its cost and performance and determine whether you need to downgrade to Mistral 8x22B or even Mistral Small. If you are already using another large language model and are looking to replace a particularly powerful one, then Mistral Large may be the best choice for you. 
-
-### Use cases 
-
-### Mistral Small: Simple tasks that one can do in bulk
-Mistral Small is the ideal choice for simpe tasks that one can do in builk - like Classification, Customer Support, or Text Generation. It offers excellent performance at an affordable price point. For instance, it can be effectively used for a classification task to classify if an email is spam or not: 
+### Mistral Nemo: Simple tasks that one can do in bulk
+Mistral Nemo is the ideal choice for simpe tasks that one can do in builk - like Classification, Customer Support, or Text Generation. It offers excellent performance at an affordable price point. For instance, it can be effectively used for a classification task to classify if an email is spam or not: 
 
 **Prompt:**
 ```
@@ -96,10 +38,10 @@ Classify the following email to determine if it is spam or not. Only respond wit
 🎉 Urgent! You've Won a $1,000,000 Cash Prize! 💰 To claim your prize, please click on the link below: https://bit.ly/claim-your-prize
 ```
 
-Mistral Small, Mistral 8x22B, and Mistral Large all can accurately classify this email correctly as “Spam”. Mistral Small is capable to provide the correct classification as the larger models. So it is the most efficient and affordable choice for this kind of tasks. 
+All of our models can accurately classify this email correctly as “Spam”. Mistral Nemo is capable to provide the correct classification as the larger models. So it is the most efficient and affordable choice for this kind of tasks. 
 
-### Mistral 8x22B: Intermediate tasks that require language transformation
-Mistral 8x22B is the ideal for intermediate tasks that require moderate reasoning - like Data extraction, Summarizing a Document, Writing a Job Description, or Writing Product Descriptions. Mistral 8x22B strikes a balance between performance and capability, making it suitable for a wide range of tasks that only require language transformaion. For example, Mistral 8x22B can write an email:
+### Mistral Small: Intermediate tasks that require language transformation
+Mistral Small is the ideal for intermediate tasks that require moderate reasoning - like Data extraction, Summarizing a Document, Writing a Job Description, or Writing Product Descriptions. Mistral Small strikes a balance between performance and capability, making it suitable for a wide range of tasks that only require language transformaion. For example, Mistral Small can write an email:
 
 **Prompt:**
 ```

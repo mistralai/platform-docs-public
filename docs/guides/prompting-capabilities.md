@@ -13,7 +13,7 @@ When you first start using Mistral models, your first interaction will revolve a
 - Personalization
 - Evaluation
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/prompting_capabilities.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/prompting/prompting_capabilities.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
@@ -221,7 +221,7 @@ You will only respond with a JSON object with the key Summary and Confidence. Do
 </details>
 
 #### Strategies we used:
-- **JSON output**: For facilitating downstream tasks, JSON format output is frequently preferred. We can specify in the prompt that "You will only respond with a JSON object with the key Summary and Confidence." Specifying these keys within the JSON object is beneficial for clarity and consistency.
+- **JSON output**: For facilitating downstream tasks, JSON format output is frequently preferred. We can enable the JSON mode by setting the response_format to `{"type": "json_object"}` and specify in the prompt that "You will only respond with a JSON object with the key Summary and Confidence." Specifying these keys within the JSON object is beneficial for clarity and consistency.
 - **Higher Temperature**: In this example, we increase the temperature score to encourage the model to be more creative and output three generated summaries that are different from each other.
 
 ### Introduce an evaluation step

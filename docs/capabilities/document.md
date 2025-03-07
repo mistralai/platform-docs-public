@@ -56,7 +56,7 @@ const ocrResponse = await client.ocr.process({
         type: "document_url",
         documentUrl: "https://arxiv.org/pdf/2201.04234"
     },
-    include_image_base64: true
+    includeImageBase64: true
 });
 ```
   </TabItem>
@@ -570,7 +570,7 @@ signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const signedUrl = await mistral.files.getSignedUrl({
+const signedUrl = await client.files.getSignedUrl({
     fileId: uploaded_pdf.id,
 });
 ```

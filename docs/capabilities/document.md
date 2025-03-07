@@ -570,7 +570,7 @@ signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const signedUrl = await mistral.files.getSignedUrl({
+const signedUrl = await client.files.getSignedUrl({
     fileId: uploaded_pdf.id,
 });
 ```

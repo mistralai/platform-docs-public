@@ -56,7 +56,7 @@ const ocrResponse = await client.ocr.process({
         type: "document_url",
         documentUrl: "https://arxiv.org/pdf/2201.04234"
     },
-    include_image_base64: true
+    includeImageBase64: true
 });
 ```
   </TabItem>

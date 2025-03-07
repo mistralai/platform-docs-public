@@ -55,7 +55,8 @@ const batchData = await client.files.upload({
     file: {
         fileName: "batch_input_file.jsonl",
         content: batchFile,
-    }
+    },
+    purpose: "batch"
 });
 ```
   </TabItem>

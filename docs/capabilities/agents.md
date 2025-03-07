@@ -1,7 +1,7 @@
 ---
 id: agents
 title: Agents
-sidebar_position: 2.9
+sidebar_position: 2.91
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -17,7 +17,7 @@ We provide two primary methods for creating agents:
 
 - La Plateforme [Agent builder](https://console.mistral.ai/build/agents/new): Users can use a user-friendly interface provided on La Plateforme to create and configure their agents.
 
-- [Agent API](#the-agents-api): For developers, we offer the Agents API as a programmatic means to use agents. This method is ideal for developers who need to integrate agent creation into their existing workflows or applications.
+- [Agent API](#the-agent-api): For developers, we offer the Agents API as a programmatic means to use agents. This method is ideal for developers who need to integrate agent creation into their existing workflows or applications.
 
 ## La Plateforme agent builder
 
@@ -112,7 +112,7 @@ const apiKey = process.env.MISTRAL_API_KEY;
 const client = new Mistral({apiKey: apiKey});
 
 const chatResponse = await client.agents.complete({
-  agent_id: "ag:3996db2b:20240805:french-agent:a8997aab",
+  agentId: "ag:3996db2b:20240805:french-agent:a8997aab",
   messages: [{role: 'user', content: 'What is the best French cheese?'}],
 });
 
@@ -135,6 +135,10 @@ curl --location "https://api.mistral.ai/v1/agents/completions" \
   </TabItem>
 
 </Tabs>
+
+:::note[ ]
+- Typescript : Please note that storing secrets such as the API key on the client side (`process.env.MISTRAL_API_KEY`) is dangerous and may lead to secret disclosure
+:::
 
 <!-- 
 ### List/delete agents

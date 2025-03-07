@@ -63,7 +63,7 @@ print(chat_response.choices[0].message.content)
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
 
-const apiKey = process.env["MISTRAL_API_KEY"]!;
+const apiKey = process.env["MISTRAL_API_KEY"];
 
 const client = new Mistral({ apiKey: apiKey });
 
@@ -336,7 +336,75 @@ Model output:
 
 </details>
 
+<details>
+<summary><b>OCR with structured output</b></summary>
+
+![](https://i.imghippo.com/files/kgXi81726851246.jpg)
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "pixtral-12b-2409",
+    "messages": [
+            {
+                "role": "system",
+                "content": [
+                    {"type": "text",
+                     "text" : "Extract the text elements described by the user from the picture, and return the result formatted as a json in the following format : {name_of_element : [value]}"
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "From this restaurant bill, extract the bill number, item names and associated prices, and total price and return it as a string in a Json object"
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": "https://i.imghippo.com/files/kgXi81726851246.jpg"
+                    }
+                ]
+            }
+        ],
+    "response_format": 
+      {
+        "type": "json_object"
+      }
+  }'
+
+```
+
+Model output: 
+```json
+{'bill_number': '566548',
+ 'items': [{'item_name': 'BURGER - MED RARE', 'price': 10},
+  {'item_name': 'WH/SUB POUTINE', 'price': 2},
+  {'item_name': 'BURGER - MED RARE', 'price': 10},
+  {'item_name': 'WH/SUB BSL - MUSH', 'price': 4},
+  {'item_name': 'BURGER - MED WELL', 'price': 10},
+  {'item_name': 'WH BREAD/NO ONION', 'price': 2},
+  {'item_name': 'SUB POUTINE - MUSH', 'price': 2},
+  {'item_name': 'CHK PESTO/BR', 'price': 9},
+  {'item_name': 'SUB POUTINE', 'price': 2},
+  {'item_name': 'SPEC OMELET/BR', 'price': 9},
+  {'item_name': 'SUB POUTINE', 'price': 2},
+  {'item_name': 'BSL', 'price': 8}],
+ 'total_price': 68}
+```
+
+</details>
+
 ## FAQ
+- What is the price per image?
+
+    The price is calculated using the same pricing as input tokens. Each image will be divided into batches of 16x16 pixels, with each batch converted to a token. As a rule of thumb, an image with a resolution of "ResolutionX"x"ResolutionY" will consume approximately `(ResolutionX/16) * (ResolutionY/16)` tokens.    
+    For example, a 720x512 image will consume approximately `(720/16) * (512/16)` ≈ 1440 tokens.  
+    Note that all images with a resolution higher than 1024x1024 will be downscaled while maintaining the same aspect ratio. For instance, a 1436x962 image will be downscaled to approximately 1024x686, consuming around `(1024/16) * (686/16)` ≈ 2600 tokens.
+  
 - Can I fine-tune the image capabilities in Pixtral 12B?
 
     No, we do not currently support fine-tuning the image capabilities of Pixtral 12B.

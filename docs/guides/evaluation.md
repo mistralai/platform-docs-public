@@ -1,7 +1,7 @@
 ---
 id: evaluation
 title: Evaluation
-sidebar_position: 1.6
+sidebar_position: 1.7
 ---
 
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/evaluation/evaluation.ipynb">
@@ -370,9 +370,7 @@ First, let's use a smaller model, `open-mistral-7b', to generate a summary for t
 
 ```py
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
-
+from mistralai import Mistral
 
 def run_mistral(user_message, model="open-mistral-7b", is_json=False):
     client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))

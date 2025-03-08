@@ -34,31 +34,20 @@ The size limit for the validation data is 1MB. As a rule of thumb:
 
 A general rule of thumb is: Num epochs = max_steps / file_of_training_jsonls_in_MB. For instance, if your training file is 100MB and you set max_steps=1000, the training process will roughly perform 10 epochs.
 
-### Where can I find information on ETA / number of tokens / number of passes over each files?
+### Where can I find information on cost/ ETA / number of tokens / number of passes over each files?
 
-Mistral API: Use the `dry_run=True` argument.
+Mistral API: When you create a fine-tuning job, you should automatically see these info with the default `auto_start=False` argument.
 
-```python
-dry_run_job = await client.jobs.create(
-    model="open-mistral-7b",
-    training_files=[training_file.id],
-    hyperparameters=TrainingParameters(
-        training_steps=10,
-        learning_rate=0.0001,
-    ),
-    dry_run=True,
-)
-print(dry_run_job)
-```
+Note that the `dry_run=True` argument will be removed in September.
 
 `mistral-finetune`: You can use the following script to find out: https://github.com/mistralai/mistral-finetune/blob/main/utils/validate_data.py. This script accepts a .yaml training file as input and returns the number of tokens the model is being trained on.
 
 ### How to estimate cost of a fine-tuning job?
-For Mistral API, you can use the `dry_run=True` argument as mentioned in the previous question. 
+For Mistral API, you can use the `auto_start=False` argument as mentioned in the previous question. 
 
 ### What is the recommended learning rate? 
 
-For LoRA fine-tuning, we recommended 1e-4 (default) or 1e-5. 
+For LoRA fine-tuning, we recommend 1e-4 (default) or 1e-5. 
 
 Note that the learning rate we define is the peak learning rate, instead of a flat learning rate. The learning rate follows a linear warmup and cosine decay schedule. During the warmup phase, the learning rate is linearly increased from a small initial value to a larger value over a certain number of training steps. After the warmup phase, the learning rate is decayed using a cosine function.
 

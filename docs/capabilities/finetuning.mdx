@@ -1,7 +1,7 @@
 ---
 id: finetuning
 title: Fine-tuning
-sidebar_position: 2.8
+sidebar_position: 2.9
 ---
 
 import Tabs from '@theme/Tabs';
@@ -175,31 +175,47 @@ making them available for use in fine-tuning jobs.
   <TabItem value="python" label="python" default>
 
 ```python
+from mistralai import Mistral
 import os
-from mistralai.client import MistralClient
 
-api_key = os.environ.get("MISTRAL_API_KEY")
-client = MistralClient(api_key=api_key)
+api_key = os.environ["MISTRAL_API_KEY"]
 
-with open("training_file.jsonl", "rb") as f:
-    training_data = client.files.create(file=("training_file.jsonl", f))    
+client = Mistral(api_key=api_key)
+
+training_data = client.files.upload(
+    file={
+        "file_name": "ultrachat_chunk_train.jsonl",
+        "content": open("ultrachat_chunk_train.jsonl", "rb"),
+    }
+)  
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
-import MistralClient from '@mistralai/mistralai';
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
-const client = new MistralClient(apiKey);
+const client = new Mistral({apiKey: apiKey});
 
-const file = fs.readFileSync('training_file.jsonl');
-const training_data = await client.files.create({ file });
+const training_file = fs.readFileSync('training_file.jsonl');
+const training_data = await client.files.upload({
+    file: {
+        fileName: "training_file.jsonl",
+        content: training_file,
+    }
+});
 
-const file = fs.readFileSync('validation_file.jsonl');
-const validation_data = await client.files.create({ file });
+const validation_file = fs.readFileSync('validation_file.jsonl');
+const validation_data = await client.files.upload({
+    file: {
+        fileName: "validation_file.jsonl",
+        content: validation_file,
+    }
+});
 ```
   </TabItem>
   
@@ -222,43 +238,52 @@ curl https://api.mistral.ai/v1/files \
 
 ## Create a fine-tuning job
 The next step is to create a fine-tuning job. 
-- model: the specific model you would like to fine-tune. The choices are `open-mistral-7b` (v0.3), `mistral-small-latest` (`mistral-small-2402`),  `codestral-latest` (`codestral-2405`), `open-mistral-nemo` and , `mistral-large-latest` (`mistral-large-2407`).
+- model: the specific model you would like to fine-tune. The choices are `open-mistral-7b` (v0.3), `mistral-small-latest` (`mistral-small-2409`),  `codestral-latest` (`codestral-2405`), `open-mistral-nemo`, `mistral-large-latest` (`mistral-large-2411`), and `ministral-8b-latest`(`ministral-3b-2410`).
 - training_files: a collection of training file IDs, which can consist of a single file or multiple files
 - validation_files: a collection of validation file IDs, which can consist of a single file or multiple files
 - hyperparameters:  two adjustable hyperparameters, "training_step" and "learning_rate", that users can modify.
-
+- auto_start:
+    - `auto_start=True`: Your job will be launched immediately after validation.
+    - `auto_start=False` (default): You can manually start the training after validation by sending a POST request to `/fine_tuning/jobs/<uuid>/start`.
 
 <Tabs>
   <TabItem value="python" label="python" default>
 
 ```python
-from mistralai.models.jobs import TrainingParameters
-
-created_jobs = client.jobs.create(
-    model="open-mistral-7b",
-    training_files=[training_data.id],
-    validation_files=[validation_data.id],
-    hyperparameters=TrainingParameters(
-        training_steps=10,
-        learning_rate=0.0001,
-        )
+# create a fine-tuning job
+created_jobs = client.fine_tuning.jobs.create(
+    model="open-mistral-7b", 
+    training_files=[{"file_id": ultrachat_chunk_train.id, "weight": 1}],
+    validation_files=[ultrachat_chunk_eval.id], 
+    hyperparameters={
+        "training_steps": 10,
+        "learning_rate":0.0001
+    },
+    auto_start=False
 )
+
+# start a fine-tuning job
+client.fine_tuning.jobs.start(job_id = created_jobs.id)
+
 created_jobs
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
-const createdJob = await client.jobs.create({
-  model: 'open-mistral-7b',
-  trainingFiles: [training_data.id],
-  validationFiles: [validation_data.id],
-  hyperparameters: {
-    trainingSteps: 10,
-    learningRate: 0.0001,
-  },
-});
+```typescript
+const createdJob = await client.fineTuning.jobs.create({
+    model: 'open-mistral-7b',
+    trainingFiles: [{fileId: training_data.id, weight: 1}],
+    validationFiles: [validation_data.id],
+    hyperparameters: {
+      trainingSteps: 10,
+      learningRate: 0.0001,
+    },
+    autoStart:false,
+  });
+
+await client.fineTuning.jobs.start({jobId: createdJob.id})
 ```
   </TabItem>
   
@@ -291,37 +316,39 @@ curl https://api.mistral.ai/v1/fine_tuning/jobs \
 You can also list jobs, retrieve a job, or cancel a job. 
 
 You can filter and view a list of jobs using various parameters such as 
-`page`, `page_size`, `model`, `created_after`, `created_by_me`, `status`, `wandb_project`, `wandb_name`, and `suffix`. Check out our [API specs](/api/#operation/jobs_api_routes_fine_tuning_get_fine_tuning_jobs) for details.
+`page`, `page_size`, `model`, `created_after`, `created_by_me`, `status`, `wandb_project`, `wandb_name`, and `suffix`. Check out our [API specs](https://docs.mistral.ai/api/#tag/fine-tuning) for details.
 
 <Tabs>
   <TabItem value="python" label="python" default>
 
 ```python
 # List jobs
-jobs = client.jobs.list()
+jobs = client.fine_tuning.jobs.list()
 print(jobs)
 
 # Retrieve a jobs
-retrieved_jobs = client.jobs.retrieve(created_jobs.id)
+retrieved_jobs = client.fine_tuning.jobs.get(job_id = created_jobs.id)
 print(retrieved_jobs)
 
 # Cancel a jobs
-canceled_jobs = client.jobs.cancel(created_jobs.id)
+canceled_jobs = client.fine_tuning.jobs.cancel(job_id = created_jobs.id)
 print(canceled_jobs)
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
+```typescript
 // List jobs
-const jobs = await client.jobs.list();
+const jobs = await client.fineTuning.jobs.list();
 
 // Retrieve a job
-const retrievedJob = await client.jobs.retrieve({ jobId: createdJob.id });
+const retrievedJob = await mistral.fineTuning.jobs.get({ jobId: createdJob.id })
 
 // Cancel a job
-const canceledJob = await client.jobs.cancel({ jobId: createdJob.id });
+const canceledJob = await mistral.fineTuning.jobs.cancel({
+  jobId: createdJob.id,
+});
 ```
   </TabItem>
   
@@ -355,18 +382,16 @@ When a fine-tuned job is finished, you will be able to see the fine-tuned model 
   <TabItem value="python" label="python" default>
 
 ```python
-from mistralai.models.chat_completion import ChatMessage
-
-chat_response = client.chat(
+chat_response = client.chat.complete(
     model=retrieved_job.fine_tuned_model,
-    messages=[ChatMessage(role='user', content='What is the best French cheese?')]
+    messages = [{"role":'user', "content":'What is the best French cheese?'}]
 )
 ```
   </TabItem>
 
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
-```javascript
+```typescript
 const chatResponse = await client.chat({
   model: retrievedJob.fine_tuned_model,
   messages: [{role: 'user', content: 'What is the best French cheese?'}],
@@ -397,7 +422,7 @@ curl "https://api.mistral.ai/v1/chat/completions" \
   <TabItem value="python" label="python" default>
 
 ```python
-client.delete_model(retrieved_job.fine_tuned_model)
+client.models.delete(model_id=retrieved_job.fine_tuned_model)
 ```
   </TabItem>
 

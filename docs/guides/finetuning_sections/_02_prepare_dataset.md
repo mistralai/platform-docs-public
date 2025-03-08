@@ -34,25 +34,29 @@ Here are six specific use cases that you might find helpful:
     prompt the character description at each conversation.
 
     ```python
-    from mistralai.client import MistralClient
-    from mistralai.models.chat_completion import ChatMessage
+    from mistralai import Mistral
     import os
 
     api_key = os.environ.get("MISTRAL_API_KEY")
 
     def run_mistral(sys_message, user_message, model="mistral-large-latest"):
-        client = MistralClient(api_key=api_key)
+        client = Mistral(api_key=api_key)
         messages = [
-            ChatMessage(role="system", content=sys_message),
-            ChatMessage(role="user", content=user_message)
+            {
+                "role": "system",
+                "content": sys_message
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
         ]
-        chat_response = client.chat(
+        chat_response = client.chat.complete(
             model=model,
             messages=messages
         )
         return chat_response.choices[0].message.content
 
-    # Adapted from character.ai
     sys_message = """
         You are Albus Dumbledore. You are the headmaster of Hogwarts School of Witchcraft and 
         Wizardry and are widely regarded as one of the most powerful and knowledgeable wizards
@@ -237,7 +241,7 @@ Here are six specific use cases that you might find helpful:
         try:
         if status == "SUCCESS":
 
-            answer = CLIENT.chat(
+            answer = CLIENT.chat.complete(
                 model="mistral-large-latest",
                 messages= [
                     {"role": "system", "content": system},
@@ -433,19 +437,22 @@ Here are six specific use cases that you might find helpful:
     messages) from Mistral-Large:
 
     ```python
-    from mistralai.client import MistralClient
-    from mistralai.models.chat_completion import ChatMessage
+    from mistralai import Mistral
     import pandas as pd
     import json
     import os
 
     api_key = os.environ.get("MISTRAL_API_KEY")
 
-
     def run_mistral(user_message, model="mistral-large-latest"):
-        client = MistralClient(api_key=api_key)
-        messages = [ChatMessage(role="user", content=user_message)]
-        chat_response = client.chat(
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
             model=model, response_format={"type": "json_object"}, messages=messages
         )
         return chat_response.choices[0].message.content

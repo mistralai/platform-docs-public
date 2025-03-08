@@ -23,22 +23,22 @@ the role "assistant" as output.
 
 ### No streaming
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import os
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
 
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the best French cheese?")
-]
-
-# No streaming
-chat_response = client.chat(
-    model=model,
-    messages=messages,
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best French cheese?",
+        },
+    ]
 )
 
 print(chat_response.choices[0].message.content)
@@ -46,85 +46,96 @@ print(chat_response.choices[0].message.content)
 
 ### With streaming 
 ```python
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import os
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
 
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the best French cheese?")
-]
-
-# With streaming
-stream_response = client.chat_stream(model=model, messages=messages)
+stream_response = client.chat.stream(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best French cheese?",
+        },
+    ]
+)
 
 for chunk in stream_response:
-    print(chunk.choices[0].delta.content)
+    print(chunk.data.choices[0].delta.content)
 ```
 
 ### With async 
 ```python
-from mistralai.async_client import MistralAsyncClient
-from mistralai.models.chat_completion import ChatMessage
+import asyncio
+import os
 
-api_key = os.environ["MISTRAL_API_KEY"]
-model = "mistral-large-latest"
+from mistralai import Mistral
 
-client = MistralAsyncClient(api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the best French cheese?")
-]
+async def main():
+    api_key = os.environ["MISTRAL_API_KEY"]
+    model = "mistral-tiny"
 
-# With async
-async_response = client.chat_stream(model=model, messages=messages)
+    client = Mistral(api_key=api_key)
 
-async for chunk in async_response: 
-    print(chunk.choices[0].delta.content)
+    response = await client.chat.stream_async(
+        model=model,
+        messages=[
+             {
+                  "role": "user",
+                  "content": "Who is the best French painter? Answer in JSON.",
+              },
+        ],
+    )
+    async for chunk in response:
+        if chunk.data.choices[0].delta.content is not None:
+            print(chunk.data.choices[0].delta.content, end="")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 
   </TabItem>
-  <TabItem value="javascript" label="javascript">
+  <TabItem value="typescript" label="typescript">
 
 **No streaming**
-```javascript
-import MistralClient from '@mistralai/mistralai';
+```typescript
+import { Mistral } from '@mistralai/mistralai';
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
-const client = new MistralClient(apiKey);
+const client = new Mistral({apiKey: apiKey});
 
-const chatResponse = await client.chat({
-  model: 'mistral-large-latest',
-  messages: [{role: 'user', content: 'What is the best French cheese?'}],
+const chatResponse = await client.chat.complete({
+    model: "mistral-large-latest",
+    messages: [{role: 'user', content: 'What is the best French cheese?'}]
 });
 
 console.log('Chat:', chatResponse.choices[0].message.content);
 ```
 
 **With streaming**
-```javascript
-import MistralClient from '@mistralai/mistralai';
+```typescript
+import { Mistral } from "@mistralai/mistralai";
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
-const client = new MistralClient(apiKey);
+const client = new Mistral({apiKey: apiKey});
 
-const chatStreamResponse = await client.chatStream({
-  model: 'mistral-tiny',
-  messages: [{role: 'user', content: 'What is the best French cheese?'}],
+const result = await client.chat.stream({
+    model: "mistral-small-latest",
+    messages: [{role: 'user', content: 'What is the best French cheese?'}],
 });
 
-console.log('Chat Stream:');
-for await (const chunk of chatStreamResponse) {
-  if (chunk.choices[0].delta.content !== undefined) {
-    const streamText = chunk.choices[0].delta.content;
+for await (const chunk of result) {
+    const streamText = chunk.data.choices[0].delta.content;
     process.stdout.write(streamText);
-  }
 }
 ```
 

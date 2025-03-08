@@ -14,10 +14,10 @@ We currently offer two domains for Codestral endpoints, both providing FIM and i
 
 | Domain  | Features |
 | ------------- | ------------- |
-| codestral.mistral.ai | - Monthly subscription based, free until 1st of August <br/> - Has a rate limit of 30 requests per minute and a high daily limit of 2000 requests <br/> - Requires a new key for which a phone number is needed |
-| api.mistral.ai  | - Allows you to use your existing API key and you can pay to use Codestral <br/> - Ideal for business use <br/> - Provide higher rate limits of 200 requests per second per workspace |
+| codestral.mistral.ai | - Monthly subscription based, currently free to use <br/> - Requires a new key for which a phone number is needed |
+| api.mistral.ai  | - Allows you to use your existing API key and you can pay to use Codestral <br/> - Ideal for business use |
 
-Wondering which endpoint to use ?
+Wondering which endpoint to use?
 - If you're a user, wanting to query Codestral as part of an IDE plugin, codestral.mistral.ai is recommended.
 - If you're building a plugin, or anything that exposes these endpoints directly to the user, and expect them to bring their own API keys, you should also target codestral.mistral.ai
 - For all other use cases, api.mistral.ai will be better suited
@@ -42,20 +42,21 @@ With this feature, users can define the starting point of the code using a `prom
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def fibonacci(n: int):"
 suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
 
-response = client.completion(
+response = client.fim.complete(
     model=model,
     prompt=prompt,
     suffix=suffix,
+    temperature=0,
+    top_p=1,
 )
 
 print(
@@ -92,19 +93,15 @@ curl --location 'https://api.mistral.ai/v1/fim/completions' \
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
 
-response = client.completion(
-    model=model,
-    prompt=prompt
-)
+response = client.fim.complete(model=model, prompt=prompt, temperature=0, top_p=1)
 
 print(
     f"""
@@ -143,21 +140,17 @@ We recommend adding stop tokens for IDE autocomplete integrations to prevent the
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
 prompt = "def is_odd(n): \n return n % 2 == 1 \ndef test_is_odd():"
 suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
 
-response = client.completion(
-    model=model,
-    prompt=prompt,
-    suffix=suffix,
-    stop=["\n\n"]
+response = client.fim.complete(
+    model=model, prompt=prompt, suffix=suffix, temperature=0, top_p=1, stop=["\n\n"]
 )
 
 print(
@@ -200,21 +193,16 @@ The only difference is the endpoint used:
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-latest"
-
-messages = [
-    ChatMessage(role="user", content="Write a function for fibonacci")
-]
-chat_response = client.chat(
-    model=model,
-    messages=messages
+message = [{"role": "user", "content": "Write a function for fibonacci"}]
+chat_response = client.chat.complete(
+    model = model,
+    messages = message
 )
 print(chat_response.choices[0].message.content)
 ```
@@ -237,26 +225,29 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 </Tabs>
 
 ## Codestral Mamba
-We have also released Codestral Mamba 7B, a Mamba2 language model specilized in code generation with the instruct endpoint. 
+We have also released Codestral Mamba 7B, a Mamba2 language model specialized in code generation with the instruct endpoint. 
 <Tabs>
   <TabItem value="python" label="python" default>
 ```python
 import os
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 
-client = MistralClient(api_key=api_key)
+client = Mistral(api_key=api_key)
 
 model = "codestral-mamba-latest"
 
-messages = [
-    ChatMessage(role="user", content="Write a function for fibonacci")
+message = [
+    {
+        "role": "user", 
+        "content": "Write a function for fibonacci"
+    }
 ]
-chat_response = client.chat(
+
+chat_response = client.chat.complete(
     model=model,
-    messages=messages
+    messages=message
 )
 print(chat_response.choices[0].message.content)
 ```
@@ -418,7 +409,7 @@ Afterwards, you can select Codestral as your model of choice, input your Mistral
 JupyterLite is a project that aims to bring the JupyterLab environment to the web browser, allowing users to run Jupyter directly in their browser without the need for a local installation.
 
 You can try Codestral with JupyterLite in your browser:
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jupyterlite.github.io/jupyterlab-codestral/lab/index.html)
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jupyterlite.github.io/ai/lab/index.html)
 
 <iframe width="560" height="315" width="100%" src="https://www.youtube.com/embed/edKyZSWy-Fw?si=pBzFV40vckyuCl6w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 

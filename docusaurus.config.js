@@ -173,7 +173,8 @@ const config = {
     }),
     plugins: [
       [
-        require.resolve('@getcanary/docusaurus-pagefind'),
+        // https://docs.getcanary.dev/docs/local/integrations/docusaurus.html
+        require.resolve('@getcanary/docusaurus-theme-search-pagefind'),
         {
           includeRoutes: ["**/*"],
           excludeRoutes: ['/api*', '/api/*'],

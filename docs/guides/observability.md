@@ -265,8 +265,7 @@ PortkeyAI is an open-source AI gateway that provides unified observability acros
 5. **Semantic Search** - Search across all LLM request/responses
 6. **Tracing** - Visualize complex workflows and multi-LLM call chains
 
-<img width="400" src="https://raw.githubusercontent.com/siddharthsambharia-portkey/Portkey-Product-Images/main/full-white-text.png" alt="portkey">
-
+**Mistral Integration with Portkey:**
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16Z1AlAsW_d_mB5UK1EbailGt4laUU7E9?usp=sharing)
 
 **Getting Started:**

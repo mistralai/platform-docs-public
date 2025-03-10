@@ -22,7 +22,7 @@ The Document OCR (Optical Character Recognition) processor, powered by our lates
 The OCR processor returns both the extracted text content and metadata about the document structure, making it easy to work with the recognized content programmatically.
 
 ### OCR with PDF
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
@@ -56,7 +56,7 @@ const ocrResponse = await client.ocr.process({
         type: "document_url",
         documentUrl: "https://arxiv.org/pdf/2201.04234"
     },
-    include_image_base64: true
+    includeImageBase64: true
 });
 ```
   </TabItem>
@@ -470,7 +470,7 @@ curl https://api.mistral.ai/v1/ocr \
 You can also upload a PDF file and get the OCR results from the uploaded PDF. 
 
 #### Upload a file
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -525,7 +525,7 @@ curl https://api.mistral.ai/v1/files \
 </Tabs>
 
 #### Retrieve File
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
@@ -559,7 +559,7 @@ id='00edaf84-95b0-45db-8f83-f71138491f23' object='file' size_bytes=3749788 creat
 ```
 
 #### Get signed URL
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
@@ -570,7 +570,7 @@ signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const signedUrl = await mistral.files.getSignedUrl({
+const signedUrl = await client.files.getSignedUrl({
     fileId: uploaded_pdf.id,
 });
 ```
@@ -590,7 +590,7 @@ curl -X GET "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
 
 #### Get OCR results
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
@@ -644,7 +644,7 @@ curl https://api.mistral.ai/v1/ocr \
 </Tabs>
 
 ### OCR with image
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
@@ -760,7 +760,7 @@ The Document understanding capability combines OCR with large language model cap
 
 The examples below show how to interact with a PDF document using natural language:
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -874,3 +874,7 @@ For more information and guides on how to make use of OCR and leverage document 
 - [Tool Use and Document Understanding](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/ocr/document_understanding.ipynb)
 - [Batch OCR](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/ocr/batch_ocr.ipynb)
 - [Structured OCR](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/ocr/structured_ocr.ipynb)
+
+## FAQ
+### Are there any limits regarding the OCR API?
+Yes, there are certain limitations for the OCR API. Uploaded document files must not exceed 50 MB in size and should be no longer than 1,000 pages.

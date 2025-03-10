@@ -76,7 +76,7 @@ curl --location "https://api.mistral.ai/v1/agents" \
 ### Use an agent
 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python

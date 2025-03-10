@@ -13,7 +13,7 @@ If the image is hosted online, you can simply provide the URL of the image in th
 
 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python

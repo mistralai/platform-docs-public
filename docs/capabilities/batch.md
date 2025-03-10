@@ -22,8 +22,9 @@ Here's an example of how to structure a batch request:
 
 Save your batch into a .jsonl file. Once saved, you can upload your batch input file to ensure it is correctly referenced when initiating batch processes: 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
+
 ```python
 from mistralai import Mistral
 import os
@@ -40,8 +41,10 @@ batch_data = client.files.upload(
     
 )
 ```
+
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 import { Mistral } from '@mistralai/mistralai';
 import fs from 'fs';
@@ -58,14 +61,17 @@ const batchData = await client.files.upload({
     }
 });
 ```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```curl
 curl https://api.mistral.ai/v1/files \
   -H "Authorization: Bearer $MISTRAL_API_KEY" \
   -F purpose="batch" \
   -F file="@batch_input_file.jsonl"
 ```
+
   </TabItem>
 </Tabs>
 
@@ -78,7 +84,7 @@ Create a new batch job, it will be queued for processing.
 - `endpoint`: we currently support `/v1/embeddings`, `/v1/chat/completions`, `/v1/fim/completions`, `/v1/moderations`, `/v1/chat/moderations`.
 - `metadata`: optional custom metadata for the batch.
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 ```python
 created_job = client.batch.jobs.create(
@@ -90,6 +96,7 @@ created_job = client.batch.jobs.create(
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 import { Mistral } from '@mistralai/mistralai';
 
@@ -105,7 +112,9 @@ const createdJob = await client.batch.jobs.create({
 });
 ```
   </TabItem>
+
   <TabItem value="curl" label="curl">
+
 ```bash
 curl --location "https://api.mistral.ai/v1/batch/jobs" \
 --header "Authorization: Bearer $MISTRAL_API_KEY" \
@@ -128,43 +137,55 @@ curl --location "https://api.mistral.ai/v1/batch/jobs" \
 
 ## Get a batch job details 
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
+
 ```python
 retrieved_job = client.batch.jobs.get(job_id=created_job.id)
 ```
+
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 const retrievedJob = await client.batch.jobs.get({ jobId: createdJob.id}); 
 ```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl https://api.mistral.ai/v1/batch/jobs/<jobid> \
 --header "Authorization: Bearer $MISTRAL_API_KEY" \
 --header 'Content-Type: application/json'
 ```
+
   </TabItem>
 </Tabs>
 
 ## Get batch job results
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
+
 ```python
 client.files.download(file_id=retrieved_job.output_file)
 ```
+
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 client.files.download({ fileId: retrieved_job.output_file}); 
 ```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl 'https://api.mistral.ai/v1/files/<uuid>/content' \
 --header "Authorization: Bearer $MISTRAL_API_KEY" \
 ```
+
   </TabItem>
 </Tabs>
 
@@ -176,16 +197,19 @@ You can view a list of your batch jobs and filter them by various criteria, incl
 `CANCELLED`
 - Metadata: custom metadata key and value for the batch
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
+
 ```python
 list_job = client.batch.jobs.list(
     status="RUNNING",   
     metadata={"job_type": "testing"}
 )
 ```
+
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 const listJob = await client.batch.jobs.list({ 
     status: "RUNNING",
@@ -194,38 +218,47 @@ const listJob = await client.batch.jobs.list({
     }
 });
 ```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl 'https://api.mistral.ai/v1/batch/jobs?status=RUNNING&job_type=testing'\
 --header 'x-api-key: $MISTRAL_API_KEY' \
 --header 'Content-Type: application/json'
 ```
+
   </TabItem>
 </Tabs>
 
 
 ## Request the cancellation of a batch job
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
+
 ```python
 canceled_job = client.batch.jobs.cancel(job_id=created_job.id)
 ```
+
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 const canceledJob = await mistral.fineTuning.jobs.cancel({
   jobId: createdJob.id,
 });
 ```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl -X POST https://api.mistral.ai/v1/batch/jobs/<jobid>/cancel \
 --header "Authorization: Bearer $MISTRAL_API_KEY" \
 --header 'Content-Type: application/json'
 ```
+
   </TabItem>
 </Tabs>
 

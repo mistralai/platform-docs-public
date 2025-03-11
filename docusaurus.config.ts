@@ -1,10 +1,14 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
+import type { ScalarOptions } from '@scalar/docusaurus'
 import type { Config } from '@docusaurus/types'
 import { themes } from 'prism-react-renderer'
-
+import fs from 'fs'
 const lightCodeTheme = themes.okaidia;
 const darkCodeTheme = themes.okaidia;
+
+// Read the openapi.yaml file
+const specFile = fs.readFileSync('./openapi.yaml', 'utf8')
 
 const config: Config = {
   title: "Mistral AI Large Language Models",
@@ -154,7 +158,22 @@ const config: Config = {
         respectPrefersColorScheme: true,
       },
     }),
-    plugins: [require.resolve('docusaurus-lunr-search')],
+    plugins: [
+      require.resolve('docusaurus-lunr-search'),
+      [
+        '@scalar/docusaurus',
+        {
+          label: 'API',
+          route: '/api',
+          configuration: {
+            spec: {
+              content: specFile,
+            },
+            hideDarkModeToggle: true,
+          },
+        } as ScalarOptions,
+      ],
+    ],
 };
 
-module.exports = config;
+export default config;

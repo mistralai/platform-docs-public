@@ -240,6 +240,22 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 <img src="/img/guides/obs_phospho2.png" alt="drawing" width="700"/>
 
+### Integration with MLflow
+
+MLflow is a unified, end-to-end, open source MLOps platform for both traditional ML and GenAI applications, providing comprehensive tracing capabilities to monitor and analyze the execution of GenAI applications.
+
+**Pros:**
+
+* Open-source ([Github](https://github.com/mlflow/mlflow))
+* Add Mistral integration with one line: `mlflow.mistral.autolog()` and get full tracing of chat and embedding calls.
+* Can be [run locally or self-hosted](https://mlflow.org/docs/latest/getting-started/intro-quickstart/index.html), or used via one of the available [Managed MLflow services](https://mlflow.org/docs/latest/introduction/index.html#running-mlflow-anywhere)
+* Provides complete model evaluation, versioning, and deployment capabilities, in addition to tracing and experiment tracking.
+
+**Mistral integration Example:**
+Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/MLflow/mistral-mlflow-tracing.ipynb).
+
+<img src="/img/guides/obs_mlflow.png" alt="drawing" width="700"/>
+
 
 ### Integration with PortkeyAI
 

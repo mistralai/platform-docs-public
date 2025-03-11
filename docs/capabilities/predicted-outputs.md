@@ -1,7 +1,7 @@
 ---
 id: predicted-outputs
 title: Predicted outputs
-sidebar_position: 2.92
+sidebar_position: 2.93
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -14,7 +14,7 @@ This approach minimizes latency while maintaining high output quality. In tasks 
 
 Predicted Outputs shine in scenarios where you need to regenerate text documents or code files with minor modifications. The key parameter introduced is the `prediction` parameter, which enables users to define predicted outputs. For example, imagine you want your model to update the model used in a fine-tuning job. You can include the code snippet you'd like to modify as both the user prompt and the predicted output.
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 ```python
 import os

@@ -287,3 +287,7 @@ PortkeyAI is an open-source AI gateway that provides unified observability acros
 **Getting Started:**
 - [Mistral Integration Guide on Portkey Docs](https://portkey.sh/mistral)
 - [Open-source Gateway GitHub](https://github.com/Portkey-AI/gateway)
+
+Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/MLflow/mistral-mlflow-tracing.ipynb). 
+
+<img src="/img/guides/obs_mlflow.png" alt="drawing" width="700"/>

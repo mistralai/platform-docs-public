@@ -658,7 +658,7 @@ ocr_response = client.ocr.process(
     model="mistral-ocr-latest",
     document={
         "type": "image_url",
-        "image_url": "https://media-cldnry.s-nbcnews.com/image/upload/t_fit-560w,f_avif,q_auto:eco,dpr_2/rockcms/2023-11/short-quotes-swl-231117-02-33d404.jpg"
+        "image_url": "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png"
     }
 )
 ```
@@ -712,7 +712,7 @@ const ocrResponse = await client.ocr.process({
     model: "mistral-ocr-latest",
     document: {
         type: "image_url",
-        imageUrl: "https://media-cldnry.s-nbcnews.com/image/upload/t_fit-560w,f_avif,q_auto:eco,dpr_2/rockcms/2023-11/short-quotes-swl-231117-02-33d404.jpg",
+        imageUrl: "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png",
     }
 });
 ```
@@ -726,7 +726,7 @@ curl https://api.mistral.ai/v1/ocr \
     "model": "mistral-ocr-latest",
     "document": {
         "type": "image_url",
-        "image_url": "https://media-cldnry.s-nbcnews.com/image/upload/t_fit-560w,f_avif,q_auto:eco,dpr_2/rockcms/2023-11/short-quotes-swl-231117-02-33d404.jpg"
+        "image_url": "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png"
     }
   }' -o ocr_output.json
 ```

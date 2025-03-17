@@ -712,7 +712,11 @@ const ocrResponse = await client.ocr.process({
     model: "mistral-ocr-latest",
     document: {
         type: "image_url",
+<<<<<<< HEAD
+        imageUrl: "https://media-cldnry.s-nbcnews.com/image/upload/t_fit-560w,f_avif,q_auto:eco,dpr_2/rockcms/2023-11/short-quotes-swl-231117-02-33d404.jpg",
+=======
         imageUrl: "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png",
+>>>>>>> public/main
     }
 });
 ```

@@ -14,7 +14,7 @@ You can find the benchmark results in the following blog posts:
 - [Pixtral 12B](https://mistral.ai/news/pixtral-12b/): Pixtral 12B the first open-source model to demonstrate state-of-the-art multimodal understanding, without regressing on abilities in pure text. 
 - [Mistral Large](https://mistral.ai/news/mistral-large-2407/): a cutting-edge text generation model with top-tier reasoning capabilities.
 It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
-- [Mistral Small](https://mistral.ai/news/mistral-small-3/): A powerful and efficient text generation model with high level conversational and translation capabilities.
+- [Mistral Small](https://mistral.ai/news/mistral-small-3-1/): A powerful and efficient multimodal model with high level conversational and translation capabilities.
 - [Mistral Saba](https://mistral.ai/news/mistral-saba/): A powerful and efficient text generation model trained extensively on languages from the Middle East and South Asia, achieving state-of-the-art quality comparable to much larger models.
 It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
 - [Mistral Nemo](https://mistral.ai/news/mistral-nemo/): Mistral Nemo's reasoning, world knowledge, and coding performance are state-of-the-art in its size category.  As it relies on standard architecture, Mistral Nemo is easy to use and a drop-in replacement in any system using Mistral 7B that it supersedes.

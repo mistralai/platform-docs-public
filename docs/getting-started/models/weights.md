@@ -36,13 +36,15 @@ If you are interested in purchasing a commercial license for our models, please 
 | Mistral-Nemo-Base-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Nemo-Base-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-nemo-2407/mistral-nemo-base-2407.tar) (md5sum: `c5d079ac4b55fc1ae35f51f0a3c0eb83`) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer |  
 | Mistral-Nemo-Instruct-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-nemo-2407/mistral-nemo-instruct-2407.tar) (md5sum: `296fbdf911cb88e6f0be74cd04827fe7`) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
 | Mistral-Large-Instruct-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Large-Instruct-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-large-2407/mistral-large-instruct-2407.tar) (md5sum: `fc602155f9e39151fba81fcaab2fa7c4`)| - 32768 vocabulary size <br/> - Supports v3 Tokenizer <br/> - Supports function calling |
-| Pixtral-2409 | [Hugging Face](https://huggingface.co/mistralai/Pixtral-12B-2409) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
+| Pixtral-2409 | [Hugging Face](https://huggingface.co/mistralai/Pixtral-12B-2409) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 | Mistral-Small-Instruct-2409 | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2409) | - 32768 vocabulary size <br/> - Supports v3 Tokenizer <br/> - Supports function calling |
 | Ministral-8B-Instruct-2410 | [Hugging Face](https://huggingface.co/mistralai/Ministral-8B-Instruct-2410) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
 | Mistral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling |
-| Pixtral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Pixtral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling |
-| Mistral-Small-Base-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Base-2501)| - 32768 vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
-| Mistral-Small-Instruct-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2501)| - 32768 vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Pixtral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Pixtral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling <br/> - Supports images |
+| Mistral-Small-Base-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Base-2501)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Mistral-Small-Instruct-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2501)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Mistral-Small-Base-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Base-2503)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
+| Mistral-Small-Instruct-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 
 ## Sizes
 
@@ -63,6 +65,8 @@ If you are interested in purchasing a commercial license for our models, please 
 | Pixtral-Large-Instruct-2411  | 124B | 124B | 250 |
 | Mistral-Small-Base-2501  | 24B | 24B | 60 |
 | Mistral-Small-Instruct-2501  | 24B | 24B | 60 |
+| Mistral-Small-Base-2503  | 24B | 24B | 60 |
+| Mistral-Small-Instruct-2503  | 24B | 24B | 60 |
 
 
 ## How to run? 

@@ -6,12 +6,15 @@ sidebar_position: 2.21
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Our latest Pixtral 12B introduces vision capabilities, enabling it to analyze images and provide insights based on visual content in addition to text. This multimodal approach opens up new possibilities for applications that require both textual and visual understanding.
+Our latest Mistral Small and our Pixtral models possess vision capabilities, enabling them to analyze images and provide insights based on visual content in addition to text. This multimodal approach opens up new possibilities for applications that require both textual and visual understanding.
+
+## Models with Vision Capacilities:
+- Pixtral 12B (`pixtral-12b-latest`)
+- Pixtral Large 2411 (`pixtral-large-latest`)
+- Mistral Small 2503 (`mistral-small-latest`)
 
 ## Passing an Image URL
 If the image is hosted online, you can simply provide the URL of the image in the request. This method is straightforward and does not require any encoding.
-
-
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -399,21 +402,30 @@ Model output:
 </details>
 
 ## FAQ
-- What is the price per image?
 
-    The price is calculated using the same pricing as input tokens. Each image will be divided into batches of 16x16 pixels, with each batch converted to a token. As a rule of thumb, an image with a resolution of "ResolutionX"x"ResolutionY" will consume approximately `(ResolutionX/16) * (ResolutionY/16)` tokens.    
-    For example, a 720x512 image will consume approximately `(720/16) * (512/16)` ≈ 1440 tokens.  
+- **What is the price per image?**
+
+    The price is calculated using the same pricing as input tokens.
+  
+    **Pixtral:**
+  
+    For both Pixtral models, each image will be divided into batches of 16x16 pixels, with each batch converted to a token. As a rule of thumb, an image with a resolution of "ResolutionX"x"ResolutionY" will consume approximately `(ResolutionX/16) * (ResolutionY/16)` tokens.
+    For example, a 720x512 image will consume approximately `(720/16) * (512/16)` ≈ 1440 tokens.
     Note that all images with a resolution higher than 1024x1024 will be downscaled while maintaining the same aspect ratio. For instance, a 1436x962 image will be downscaled to approximately 1024x686, consuming around `(1024/16) * (686/16)` ≈ 2600 tokens.
   
-- Can I fine-tune the image capabilities in Pixtral 12B?
+    **Small 2503:**
+  
+    Small is similar; however, instead of batches of 16, it will be batched in 14 pixels. Instead of a maximum resolution of 1024x1024, it has a maximum resolution of 1540x1540.
+  
+- **Can I fine-tune the image capabilities?**
 
-    No, we do not currently support fine-tuning the image capabilities of Pixtral 12B.
+    No, we do not currently support fine-tuning the image capabilities.
 
-- Can I use Pixtral 12B to generate images?
+- **Can I use them to generate images?**
 
-    No, Pixtral 12B is designed to understand and analyze images, not to generate them.
+    No, they are designed to understand and analyze images, not to generate them.
 
-- What types of image files are supported?
+- **What types of image files are supported?**
     
     We currently support the following image formats:
 
@@ -422,17 +434,14 @@ Model output:
     - WEBP (.webp) 
     - Non-animated GIF with only one frame (.gif) 
 
-- Is there a limit to the size of the image?
+- **Is there a limit to the size of the image?**
 
     The current file size limit is 10Mb. 
 
-- What's the maximum number images per request? 
+- **What's the maximum number images per request?** 
 
     The maximum number images per request via API is 8.
 
-- What is the rate limit for Pixtral 12B?
+- **What is the rate limit?**
 
     For information on rate limits, please visit https://console.mistral.ai/limits/.
-
-
-

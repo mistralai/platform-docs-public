@@ -413,9 +413,14 @@ Model output:
     For example, a 720x512 image will consume approximately `(720/16) * (512/16)` ≈ 1440 tokens.
     Note that all images with a resolution higher than 1024x1024 will be downscaled while maintaining the same aspect ratio. For instance, a 1436x962 image will be downscaled to approximately 1024x686, consuming around `(1024/16) * (686/16)` ≈ 2600 tokens.
   
+    Final Formula: `N of tokens ≈ (ResolutionX * ResolutionY) / 256`
+  
     **Small 2503:**
   
     Small is similar; however, instead of batches of 16, it will be batched in 14 pixels. Instead of a maximum resolution of 1024x1024, it has a maximum resolution of 1540x1540.
+    Due to its slightly different architecture, it also only uses 1/4 of that number of tokens as input to the text decoder. This means that in total, you can summarize the consumption approximately as `(ResolutionX/14) * (ResolutionY/14) * 1/4`, which is approximately 3x less than Pixtral models, making it use fewer tokens and be more efficient.
+
+    Final Formula: `N of tokens ≈ (ResolutionX * ResolutionY) / 784`
   
 - **Can I fine-tune the image capabilities?**
 

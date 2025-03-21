@@ -76,6 +76,21 @@ Conversational data between user and assistant, which can be one-turn or multi-t
 }
 ```
 
+Note that the files must be in JSONL format, meaning every JSON object must be flattened into a single line, and each JSON object is on a new line.
+<details>
+
+<summary><b>Raw `.jsonl` file example.</b></summary>
+
+```json
+{"messages": [{"role": "user","content": "..."},{"role": "assistant","content": "..."},...]}
+{"messages": [{"role": "user","content": "..."},{"role": "assistant","content": "..."},...]}
+{"messages": [{"role": "user","content": "..."},{"role": "assistant","content": "..."},...]}
+{"messages": [{"role": "user","content": "..."},{"role": "assistant","content": "..."},...]}
+...
+```
+
+</details>
+
 - Conversational data must be stored under the `"messages"` key as a list. 
 - Each list item is a dictionary containing the `"content"` and `"role"` keys. `"role"` is a string: `"user"`, `"assistant"`, or `"system"`. 
 - Loss computation is performed only on tokens corresponding to assistant messages (`"role" == "assistant"`).
@@ -261,12 +276,10 @@ created_jobs = client.fine_tuning.jobs.create(
     },
     auto_start=False
 )
-
-# start a fine-tuning job
-client.fine_tuning.jobs.start(job_id = created_jobs.id)
-
-created_jobs
 ```
+
+After creating a fine-tuning job, you can check the job status using 
+`client.fine_tuning.jobs.get(job_id = created_jobs.id)`. 
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -282,9 +295,10 @@ const createdJob = await client.fineTuning.jobs.create({
     },
     autoStart:false,
   });
-
-await client.fineTuning.jobs.start({jobId: createdJob.id})
 ```
+
+After creating a fine-tuning job, you can check the job status using 
+`client.fineTuning.jobs.get({ jobId: createdJob.id })`. 
   </TabItem>
   
   <TabItem value="curl" label="curl">
@@ -305,8 +319,50 @@ curl https://api.mistral.ai/v1/fine_tuning/jobs \
   "hyperparameters": {
     "training_steps": 10,
     "learning_rate": 0.0001
-  }
+  },
+  "auto_start": false
 }'
+```
+
+After creating a fine-tuning job, you can check the job status using: 
+```bash
+curl https://api.mistral.ai/v1/fine_tuning/jobs/<jobid> \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header 'Content-Type: application/json'
+```
+
+  </TabItem>
+
+</Tabs>
+
+Initially, the job status will be `"QUEUED"`. 
+After a brief period, the status will update to `"VALIDATED"`. 
+At this point, you can proceed to start the fine-tuning job:
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+# start a fine-tuning job
+client.fine_tuning.jobs.start(job_id = created_jobs.id)
+
+created_jobs
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.fineTuning.jobs.start({jobId: createdJob.id})
+```
+  </TabItem>
+  
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/fine_tuning/jobs/<jobid>/start \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header 'Content-Type: application/json'
 ```
   </TabItem>
 
@@ -343,10 +399,10 @@ print(canceled_jobs)
 const jobs = await client.fineTuning.jobs.list();
 
 // Retrieve a job
-const retrievedJob = await mistral.fineTuning.jobs.get({ jobId: createdJob.id })
+const retrievedJob = await client.fineTuning.jobs.get({ jobId: createdJob.id })
 
 // Cancel a job
-const canceledJob = await mistral.fineTuning.jobs.cancel({
+const canceledJob = await client.fineTuning.jobs.cancel({
   jobId: createdJob.id,
 });
 ```

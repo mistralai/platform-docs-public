@@ -4,6 +4,9 @@ title: Function calling
 sidebar_position: 2.5
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/function_calling/function_calling.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
@@ -38,6 +41,9 @@ In this guide, we will walk through a simple example to demonstrate how function
 
 Before we get started, let’s assume we have a dataframe consisting of payment transactions. When users ask questions about this dataframe, they can use certain tools to answer questions about this data. This is just an example to emulate an external database that the LLM cannot directly access.
 
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
 ```python
 import pandas as pd
 
@@ -54,6 +60,32 @@ data = {
 df = pd.DataFrame(data)
 ```
 
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// Assuming we have the following data
+const data = {
+    transactionId: ['T1001', 'T1002', 'T1003', 'T1004', 'T1005'],
+    customerId: ['C001', 'C002', 'C003', 'C002', 'C001'],
+    paymentAmount: [125.50, 89.99, 120.00, 54.30, 210.20],
+    paymentDate: ['2021-10-05', '2021-10-06', '2021-10-07', '2021-10-05', '2021-10-08'],
+    paymentStatus: ['Paid', 'Unpaid', 'Paid', 'Paid', 'Pending']
+};
+
+// Convert data into an array of objects for easier manipulation
+const transactions = data.transactionId.map((id, index) => ({
+    transactionId: id,
+    customerId: data.customerId[index],
+    paymentAmount: data.paymentAmount[index],
+    paymentDate: data.paymentDate[index],
+    paymentStatus: data.paymentStatus[index]
+}));
+```
+
+  </TabItem>
+</Tabs>
+
 ## Step 1. User: specify tools and query
 
 <img src="/img/guides/functioncalling2.png" alt="drawing" width="600"/>
@@ -62,6 +94,9 @@ df = pd.DataFrame(data)
 Users can define all the necessary tools for their use cases. 
 
 - In many cases, we might have multiple tools at our disposal. For example, let’s consider we have two functions as our two tools: `retrieve_payment_status` and `retrieve_payment_date` to retrieve payment status and payment date given transaction ID.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 def retrieve_payment_status(df: data, transaction_id: str) -> str:
@@ -74,9 +109,34 @@ def retrieve_payment_date(df: data, transaction_id: str) -> str:
         return json.dumps({'date': df[df.transaction_id == transaction_id].payment_date.item()})
     return json.dumps({'error': 'transaction id not found.'})
 ```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
 
+```typescript
+function retrievePaymentStatus(transactions, transactionId) {
+    const transaction = transactions.find(t => t.transactionId === transactionId);
+    if (transaction) {
+        return JSON.stringify({ status: transaction.paymentStatus });
+    }
+    return JSON.stringify({ error: 'transaction id not found.' });
+}
+
+function retrievePaymentDate(transactions, transactionId) {
+    const transaction = transactions.find(t => t.transactionId === transactionId);
+    if (transaction) {
+        return JSON.stringify({ date: transaction.paymentDate });
+    }
+    return JSON.stringify({ error: 'transaction id not found.' });
+}
+```
+
+  </TabItem>
+</Tabs>
 
 - In order for Mistral models to understand the functions, we need to outline the function specifications with a JSON schema. Specifically, we need to describe the type, function name, function description, function parameters, and the required parameter for the function.  Since we have two functions here, let’s list two function specifications in a list. 
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 tools = [
@@ -117,7 +177,55 @@ tools = [
 ]
 ```
 
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const tools = [
+    {
+        type: "function",
+        function: {
+            name: "retrievePaymentStatus",
+            description: "Get payment status of a transaction",
+            parameters: {
+                type: "object",
+                properties: {
+                    transactionId: {
+                        type: "string",
+                        description: "The transaction id.",
+                    }
+                },
+                required: ["transactionId"],
+            },
+        },
+    },
+    {
+        type: "function",
+        function: {
+            name: "retrievePaymentDate",
+            description: "Get payment date of a transaction",
+            parameters: {
+                type: "object",
+                properties: {
+                    transactionId: {
+                        type: "string",
+                        description: "The transaction id.",
+                    }
+                },
+                required: ["transactionId"],
+            },
+        },
+    }
+];
+```
+
+  </TabItem>
+</Tabs>
+
 - Then we organize the two functions into a dictionary where keys represent the function name, and values are the function with the `df` defined. This allows us to call each function based on its function name. 
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 import functools
@@ -128,12 +236,38 @@ names_to_functions = {
 }
 ```
 
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const namesToFunctions = {
+    'retrievePaymentStatus': (transactionId) => retrievePaymentStatus(transactions, transactionId),
+    'retrievePaymentDate': (transactionId) => retrievePaymentDate(transactions, transactionId)
+};
+```
+
+  </TabItem>
+</Tabs>
+
 ### User query
 Suppose a user asks the following question: “What’s the status of my transaction?” A standalone LLM would not be able to answer this question, as it needs to query the business logic backend to access the necessary data. But what if we have an exact tool we can use to answer this question? We could potentially provide an answer! 
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 messages = [{"role": "user", "content": "What's the status of my transaction T1001?"}]
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const messages = [{"role": "user", "content": "What's the status of my transaction T1001?"}];
+```
+
+  </TabItem>
+</Tabs>
 
 ## Step 2. Model: Generate function arguments 
 
@@ -148,6 +282,13 @@ Users can use `tool_choice` to specify how tools are used:
 - "any": forces tool use.
 - "none": prevents tool use.
 
+### parallel_tool_calls
+Users can use `parallel_tool_calls` to specify whether parallel tool calling is allowed.
+- true: default mode. The model decides if it uses parallel tool calls or not.
+- false: forces the model to use single tool calling.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 import os
@@ -162,6 +303,7 @@ response = client.chat.complete(
     messages = messages,
     tools = tools,
     tool_choice = "any",
+    parallel_tool_calls = False,
 )
 response
 ```
@@ -172,11 +314,50 @@ Output:
 ```
 ChatCompletionResponse(id='7cbd8962041442459eb3636e1e3cbf10', object='chat.completion', model='mistral-large-latest', usage=Usage(prompt_tokens=94, completion_tokens=30, total_tokens=124), created=1721403550, choices=[Choices(index=0, finish_reason='tool_calls', message=AssistantMessage(content='', tool_calls=[ToolCall(function=FunctionCall(name='retrieve_payment_status', arguments='{"transaction_id": "T1001"}'), id='D681PevKs', type='function')], prefix=False, role='assistant'))])
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const model = "mistral-large-latest";
+
+const client = new Mistral({ apiKey: apiKey });
+
+let response = await client.chat.complete({
+    model: model,
+    messages: messages,
+    tools: tools,
+    toolChoice: "any",
+    parallelToolCalls: false,
+});
+```
+
+We get the response including toolCalls with the chosen function name `retrievePaymentStatus` and the arguments for this function. 
+
+  </TabItem>
+</Tabs>
+
 Let’s add the response message to the `messages` list.  
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 messages.append(response.choices[0].message)
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+messages.push(response.choices[0].message);
+```
+
+  </TabItem>
+</Tabs>
 
 ## Step 3. User: Execute function to obtain tool results
 
@@ -186,6 +367,10 @@ How do we execute the function? Currently, it is the user’s responsibility to 
 
 
 Let’s extract some useful function information from model response including `function_name` and `function_params`. It’s clear here that our Mistral model has chosen to use the function `retrieve_payment_status` with the parameter `transaction_id` set to T1001. 
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
 ```python
 import json
 
@@ -199,7 +384,29 @@ Output
 function_name:  retrieve_payment_status 
 function_params: {'transaction_id': 'T1001'}
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const toolCall = response.choices[0].message.toolCalls[0];
+const functionName = toolCall.function.name;
+const functionParams = JSON.parse(toolCall.function.arguments);
+console.log("\nfunction_name: ", functionName, "\nfunction_params: ", functionParams);
+```
+Output
+```
+function_name:  retrievePaymentStatus 
+function_params:  { transactionId: 'T1001' }
+```
+
+  </TabItem>
+</Tabs>
+
 Now we can execute the function and we get the function output `'{"status": "Paid"}'`. 
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```python
 function_result = names_to_functions[function_name](**function_params)
@@ -210,14 +417,37 @@ Output
 '{"status": "Paid"}'
 ```
 
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const functionResult = namesToFunctions[functionName](functionParams.transactionId);
+console.log(functionResult);
+```
+Output
+```
+{"status":"Paid"}
+```
+
+  </TabItem>
+</Tabs>
+
 ## Step 4. Model: Generate final answer
 
 <img src="/img/guides/functioncalling5.png" alt="drawing" width="600"/>
 
 We can now provide the output from the tools to Mistral models, and in return, the Mistral model can produce a customised final response for the specific user.
 
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
 ```python
-messages.append({"role":"tool", "name":function_name, "content":function_result, "tool_call_id":tool_call.id})
+messages.append({
+    "role":"tool", 
+    "name":function_name, 
+    "content":function_result, 
+    "tool_call_id":tool_call.id
+})
 
 response = client.chat.complete(
     model = model, 
@@ -230,3 +460,28 @@ Output:
 ```
 The status of your transaction with ID T1001 is "Paid". Is there anything else I can assist you with?
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+messages.push({
+    role: "tool",
+    name: functionName,
+    content: functionResult,
+    toolCallId: toolCall.id
+});
+
+response = await client.chat.complete({
+    model: model,
+    messages: messages
+});
+console.log(response.choices[0].message.content);
+```
+
+Output:
+```
+The status of your transaction with ID T1001 is "Paid". Is there anything else I can assist you with?
+```
+  </TabItem>
+</Tabs>

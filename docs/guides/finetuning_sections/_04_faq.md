@@ -29,6 +29,13 @@ The size limit for the validation data is 1MB. As a rule of thumb:
 
 `validation_set_max_size = min(1MB, 5% of training data)`
 
+### What happens if I try to create a job that already exists?
+
+At job creation, you will receive a `409 Conflict` error in case a similar job is already running / validated / queued. This mechanism helps avoid inadvertently creating duplicate jobs, saving resources and preventing redundancy.
+
+### What if I upload an already existing file?
+
+If a file is uploaded and matches an existing file in both content and name, the pre-existing file is returned instead of creating a new one.
 
 ### How many epochs are in the training process? 
 

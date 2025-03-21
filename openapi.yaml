@@ -747,23 +747,22 @@ paths:
       description: FIM completion.
       tags:
         - fim
-  /v1/ocr:
+  /v1/agents/completions:
     post:
-      summary: OCR
-      operationId: ocr_v1_ocr_post
+      summary: Agents Completion
+      operationId: agents_completion_v1_agents_completions_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OCRRequest'
+              $ref: '#/components/schemas/AgentsCompletionRequest'
         required: true
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/OCRResponse'
+              schema: {$ref: '#/components/schemas/ChatCompletionResponse'}
         '422':
           description: Validation Error
           content:
@@ -771,7 +770,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
-        - ocr
+        - agents
+  /v1/embeddings:
+    post:
+      summary: Embeddings
+      description: 'Embeddings'
+      operationId: embeddings_v1_embeddings_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddingRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EmbeddingResponse'}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - embeddings
   /v1/moderations:
     post:
       summary: Moderations
@@ -798,8 +822,8 @@ paths:
         - classifiers
   /v1/chat/moderations:
     post:
-      summary: Moderations Chat
-      operationId: moderations_chat_v1_chat_moderations_post
+      summary: Chat Moderations
+      operationId: chat_moderations_v1_chat_moderations_post
       requestBody:
         content:
           application/json:
@@ -820,23 +844,23 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
         - classifiers
-  /v1/embeddings:
+  /v1/ocr:
     post:
-      summary: Embeddings
-      description: 'Embeddings'
-      operationId: embeddings_v1_embeddings_post
+      summary: OCR
+      operationId: ocr_v1_ocr_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmbeddingRequest'
+              $ref: '#/components/schemas/OCRRequest'
         required: true
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/EmbeddingResponse'}
+              schema:
+                $ref: '#/components/schemas/OCRResponse'
         '422':
           description: Validation Error
           content:
@@ -844,31 +868,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
-        - embeddings
-  /v1/agents/completions:
-    post:
-      summary: Agents Completion
-      operationId: agents_completion_v1_agents_completions_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AgentsCompletionRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/ChatCompletionResponse'}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      tags:
-        - agents
+        - ocr
 components:
   schemas:
     BaseModelCard:
@@ -1110,6 +1110,7 @@ components:
       enum:
         - fine-tune
         - batch
+        - ocr
     SampleType:
       title: SampleType
       type: string
@@ -2601,6 +2602,10 @@ components:
             type: content
             content: ''
           description: Enable users to specify expected results, optimizing response times by leveraging known or predictable content. This approach is especially effective for updating text documents or code files with minimal changes, reducing latency while maintaining high-quality results.
+        parallel_tool_calls:
+          type: boolean
+          title: Parallel Tool Calls
+          default: true
         safe_prompt:
           type: boolean
           description: Whether to inject a safety prompt before all conversations.
@@ -2682,11 +2687,6 @@ components:
       title: ClassificationRequest
     DocumentURLChunk:
       properties:
-        type:
-          type: string
-          const: document_url
-          title: Type
-          default: document_url
         document_url:
           type: string
           title: Document Url
@@ -2696,6 +2696,12 @@ components:
             - type: 'null'
           title: Document Name
           description: The filename of the document
+        type:
+          type: string
+          enum:
+            - document_url
+          title: Type
+          default: document_url
       additionalProperties: false
       type: object
       required:
@@ -2706,8 +2712,8 @@ components:
         model:
           title: Model
           type: string
-          default: mistral-embed
           description: ID of the model to use.
+          example: mistral-embed
         input:
           anyOf:
             - type: string
@@ -3391,6 +3397,10 @@ components:
             type: content
             content: ''
           description: Enable users to specify expected results, optimizing response times by leveraging known or predictable content. This approach is especially effective for updating text documents or code files with minimal changes, reducing latency while maintaining high-quality results.
+        parallel_tool_calls:
+          type: boolean
+          title: Parallel Tool Calls
+          default: true
         agent_id:
           type: string
           description: The ID of the agent to use for this completion.
@@ -3414,6 +3424,58 @@ components:
           text: '#/components/schemas/TextChunk'
           reference: '#/components/schemas/ReferenceChunk'
       title: ContentChunk
+    CompletionEvent:
+      title: CompletionEvent
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/CompletionChunk'
+    CompletionChunk:
+      title: CompletionChunk
+      type: object
+      required:
+        - id
+        - model
+        - choices
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        created:
+          type: integer
+        model:
+          type: string
+        usage:
+          $ref: '#/components/schemas/UsageInfo'
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompletionResponseStreamChoice'
+    CompletionResponseStreamChoice:
+      title: CompletionResponseStreamChoice
+      type: object
+      required:
+        - index
+        - delta
+        - finish_reason
+      properties:
+        index:
+          type: integer
+        delta:
+          $ref: '#/components/schemas/DeltaMessage'
+        finish_reason:
+          type:
+            - string
+            - 'null'
+          enum:
+            - stop
+            - length
+            - error
+            - tool_calls
+            - null
     UsageInfo:
       title: UsageInfo
       type: object
@@ -3595,58 +3657,6 @@ components:
           type: object
           additionalProperties:
             type: number
-    CompletionEvent:
-      title: CompletionEvent
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          $ref: '#/components/schemas/CompletionChunk'
-    CompletionChunk:
-      title: CompletionChunk
-      type: object
-      required:
-        - id
-        - model
-        - choices
-      properties:
-        id:
-          type: string
-        object:
-          type: string
-        created:
-          type: integer
-        model:
-          type: string
-        usage:
-          $ref: '#/components/schemas/UsageInfo'
-        choices:
-          type: array
-          items:
-            $ref: '#/components/schemas/CompletionResponseStreamChoice'
-    CompletionResponseStreamChoice:
-      title: CompletionResponseStreamChoice
-      type: object
-      required:
-        - index
-        - delta
-        - finish_reason
-      properties:
-        index:
-          type: integer
-        delta:
-          $ref: '#/components/schemas/DeltaMessage'
-        finish_reason:
-          type:
-            - string
-            - 'null'
-          enum:
-            - stop
-            - length
-            - error
-            - tool_calls
-            - null
   securitySchemes:
     ApiKey:
       type: http

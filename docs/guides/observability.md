@@ -122,25 +122,29 @@ Here is an example tracking traces, input, output, documents, tokens, and status
 <img src="/img/guides/obs_langchain.png" alt="drawing" width="700"/>
 
 
-### Integration with Langfuse 
+### Integration with 🪢 Langfuse
 
-[Langfuse](https://langfuse.com) is another observability platform that offers features such as races, evals, prompt management, and metrics for debugging. It's excellent for easy application iterations, prototyping, and evaluation.
+[Langfuse](https://langfuse.com) ([GitHub](https://github.com/langfuse/langfuse)) is an open-source platform for LLM engineering. It provides tracing and monitoring capabilities for AI applications, helping developers debug, analyze, and optimize their products. Langfuse integrates with various tools and frameworks via native integrations, OpenTelemetry, and SDKs.
 
 <img src="/img/guides/obs_langfuse.png" alt="drawing" width="700"/>
 
 **Pros:**
 
-* Open-source ([github](https://github.com/langfuse/langfuse/))  
-* Support local deployment ([local](https://langfuse.com/docs/deployment/local), [self-host](https://langfuse.com/docs/deployment/self-host))  
-* Natively support Mistral API (coming soon)  
-* Integration with various frameworks   
-* Analytical dashboard 
+* Most used open-source LLMOps platform ([blog post](https://langfuse.com/blog/2024-11-most-used-oss-llmops))
+* Model and framework agnostic
+* Built for production
+* Incrementally adoptable, start with one feature and expand to the full platform over time
+* API-first, all features are available via API for custom integrations
+* Optionally, Langfuse can be easily self-hosted
 
 **Mistral integration example:** 
-Here is a step-by-step [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/cookbook_langfuse_mistral_sdk_integration.ipynb) of integrating Langfuse with the Mistral, and another [example](https://github.com/mistralai/cookbook/blob/main/third_party/Langfuse/cookbook_langfuse_posthog_llama_langfuse.ipynb) where we build a RAG application with LlamaIndex, observe the steps with Langfuse, and analyze the data in PostHog.
+
+* [Step-by-step guide](https://langfuse.com/docs/integrations/mistral-sdk) on tracing Mistral models with Langfuse.
+* [Cookbook](https://langfuse.com/guides/cookbook/integration_llama_index_posthog_mistral) on building a RAG application with Mistral and LlamaIndex and trace the steps with Langfuse.
 
 <img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
 
+_[Public example trace in Langfuse](https://cloud.langfuse.com/project/cloramnkj0002jz088vzn1ja4/traces/a3360c6f-24ad-455c-aae7-eb9d5c6f5dac?observation=767f8ac1-0c7d-412f-8fd8-2642acb267c6&display=preview)_
 
 ### Integration with Arize Phoenix
 

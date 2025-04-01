@@ -30,7 +30,7 @@ Thank you to each and every one of you, including those who prefer not to be nam
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://www.youtube.com/@matthew_berman">
         <figure>
-          <img src="https://pbs.twimg.com/profile_images/1656436683926302721/oLW2WgJx_400x400.jpg" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+          <img src="https://yt3.googleusercontent.com/FLJEnb2WnG3g0GV9GbGbdvkMKqInA0WcEzQkL-haJ0mBSDHl5wrUrmQ2w1_wyeoonmKl5DWvVwk=s160-c-k-c0x00ffffff-no-rj" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>Matthew Berman</figcaption>
         </figure>
       </a> 

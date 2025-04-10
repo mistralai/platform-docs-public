@@ -501,11 +501,11 @@ const apiKey = process.env.MISTRAL_API_KEY;
 
 const client = new Mistral({apiKey: apiKey});
 
-const uploaded_file = fs.readFileSync('uploaded_file.pdf');
-const uploaded_pdf = await client.files.upload({
+const uploadedFile = fs.readFileSync('uploaded_file.pdf');
+const uploadedPdf = await client.files.upload({
     file: {
         fileName: "uploaded_file.pdf",
-        content: uploaded_file,
+        content: uploadedFile,
     },
     purpose: "ocr"
 });
@@ -529,15 +529,15 @@ curl https://api.mistral.ai/v1/files \
   <TabItem value="python" label="python">
 
 ```python
-client.files.retrieve(file_id=uploaded_pdf.id)
+retrieved_file = client.files.retrieve(file_id=uploaded_pdf.id)
 ```
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-await client.files.retrieve({
-    fileId: uploaded_pdf.id
+const retrievedFile = await client.files.retrieve({
+    fileId: uploadedPdf.id
 });
 ```
   </TabItem>
@@ -571,7 +571,7 @@ signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
 
 ```typescript
 const signedUrl = await client.files.getSignedUrl({
-    fileId: uploaded_pdf.id,
+    fileId: uploadedPdf.id,
 });
 ```
   </TabItem>
@@ -776,6 +776,16 @@ model = "mistral-small-latest"
 # Initialize the Mistral client
 client = Mistral(api_key=api_key)
 
+# If local document, upload and retrieve the signed url
+# uploaded_pdf = client.files.upload(
+#     file={
+#         "file_name": "uploaded_file.pdf",
+#         "content": open("uploaded_file.pdf", "rb"),
+#     },
+#     purpose="ocr"
+# )
+# signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
+
 # Define the messages for the chat
 messages = [
     {
@@ -788,6 +798,7 @@ messages = [
             {
                 "type": "document_url",
                 "document_url": "https://arxiv.org/pdf/1805.04770"
+                # "document_url": signed_url.url
             }
         ]
     }
@@ -806,17 +817,32 @@ print(chat_response.choices[0].message.content)
 # The last sentence in the document is:\n\n\"Zaremba, W., Sutskever, I., and Vinyals, O. Recurrent neural network regularization. arXiv:1409.2329, 2014.
 ```
 
-
   </TabItem>
   <TabItem value="typescript" label="typescript">
+    
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
+// import fs from 'fs';
 
+// Retrieve the API key from environment variables
 const apiKey = process.env["MISTRAL_API_KEY"];
 
 const client = new Mistral({
   apiKey: apiKey,
 });
+
+// If local document, upload and retrieve the signed url
+// const uploaded_file = fs.readFileSync('uploaded_file.pdf');
+// const uploaded_pdf = await client.files.upload({
+//     file: {
+//         fileName: "uploaded_file.pdf",
+//         content: uploaded_file,
+//     },
+//     purpose: "ocr"
+// });
+// const signedUrl = await client.files.getSignedUrl({
+//     fileId: uploaded_pdf.id,
+// });
 
 const chatResponse = await client.chat.complete({
   model: "mistral-small-latest",
@@ -831,6 +857,7 @@ const chatResponse = await client.chat.complete({
         {
           type: "document_url",
           documentUrl: "https://arxiv.org/pdf/1805.04770",
+          // documentUrl: signedUrl.url
         },
       ],
     },

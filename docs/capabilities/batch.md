@@ -36,9 +36,9 @@ client = Mistral(api_key=api_key)
 batch_data = client.files.upload(
     file={
         "file_name": "test.jsonl",
-        "content": open("test.jsonl", "rb")},
+        "content": open("test.jsonl", "rb")
+    },
     purpose = "batch"
-    
 )
 ```
 
@@ -58,7 +58,8 @@ const batchData = await client.files.upload({
     file: {
         fileName: "batch_input_file.jsonl",
         content: batchFile,
-    }
+    },
+    purpose: "batch"
 });
 ```
 
@@ -168,14 +169,31 @@ curl https://api.mistral.ai/v1/batch/jobs/<jobid> \
   <TabItem value="python" label="python" default>
 
 ```python
-client.files.download(file_id=retrieved_job.output_file)
+output_file_stream = client.files.download(file_id=retrieved_job.output_file)
+
+# Write and save the file
+with open('batch_results.jsonl', 'wb') as f:
+    f.write(output_file_stream.read())
 ```
 
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-client.files.download({ fileId: retrieved_job.output_file}); 
+import fs from 'fs';
+
+const outputFileStream = await client.files.download({ fileId: retrievedJob.outputFile });
+
+// Write the stream to a file
+const writeStream = fs.createWriteStream('batch_results.jsonl');
+outputFileStream.pipeTo(new WritableStream({
+    write(chunk) {
+      writeStream.write(chunk);
+    },
+    close() {
+      writeStream.end();
+    }
+}));
 ```
 
   </TabItem>
@@ -193,8 +211,7 @@ curl 'https://api.mistral.ai/v1/files/<uuid>/content' \
 You can view a list of your batch jobs and filter them by various criteria, including:
 
 - Status: `QUEUED`,
-`RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT_EXCEEDED`,`CANCELLATION_REQUESTED`, `CANCELLATION_REQUESTED`,
-`CANCELLED`
+`RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT_EXCEEDED`, `CANCELLATION_REQUESTED` and `CANCELLED`
 - Metadata: custom metadata key and value for the batch
 
 <Tabs groupId="code">
@@ -214,7 +231,7 @@ list_job = client.batch.jobs.list(
 const listJob = await client.batch.jobs.list({ 
     status: "RUNNING",
     metadata: {
-        job_type: "testing"
+        jobType: "testing"
     }
 });
 ```
@@ -245,7 +262,7 @@ canceled_job = client.batch.jobs.cancel(job_id=created_job.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const canceledJob = await mistral.fineTuning.jobs.cancel({
+const canceledJob = await mistral.batch.jobs.cancel({
   jobId: createdJob.id,
 });
 ```

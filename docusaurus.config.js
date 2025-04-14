@@ -171,7 +171,20 @@ const config = {
         respectPrefersColorScheme: true,
       },
     }),
-    plugins: [require.resolve('docusaurus-lunr-search')],
+    plugins: [
+      [
+        // https://docs.getcanary.dev/docs/local/integrations/docusaurus.html
+        require.resolve('@getcanary/docusaurus-theme-search-pagefind'),
+        {
+          includeRoutes: ["**/*"],
+          excludeRoutes: ['/api*', '/api/*'],
+          styles: {
+            "--canary-color-primary-c": 0.05,
+            "--canary-color-primary-h": 50,
+          },
+        }
+      ]
+    ]
 };
 
 module.exports = config;

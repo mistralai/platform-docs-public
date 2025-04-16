@@ -197,6 +197,7 @@ paths:
         - in: path
           name: file_id
           schema:
+            format: uuid
             title: File Id
             type: string
           required: true
@@ -217,6 +218,7 @@ paths:
         - in: path
           name: file_id
           schema:
+            format: uuid
             title: File Id
             type: string
           required: true
@@ -238,6 +240,7 @@ paths:
         - in: path
           name: file_id
           schema:
+            format: uuid
             title: File Id
             type: string
           required: true
@@ -260,6 +263,7 @@ paths:
         - in: path
           name: file_id
           schema:
+            format: uuid
             title: File Id
             type: string
           required: true
@@ -321,6 +325,15 @@ paths:
             title: Created After
           required: false
           description: The date/time to filter on. When set, the results for previous creation times are not displayed.
+        - in: query
+          name: created_before
+          schema:
+            anyOf:
+              - format: date-time
+                type: string
+              - type: 'null'
+            title: Created Before
+          required: false
         - in: query
           name: created_by_me
           schema:
@@ -406,7 +419,14 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/JobOut'
+                  - discriminator:
+                      mapping:
+                        classifier: '#/components/schemas/ClassifierJobOut'
+                        completion: '#/components/schemas/CompletionJobOut'
+                      propertyName: job_type
+                    oneOf:
+                      - $ref: '#/components/schemas/CompletionJobOut'
+                      - $ref: '#/components/schemas/ClassifierJobOut'
                   - $ref: '#/components/schemas/LegacyJobMetadataOut'
                 title: Response
       description: Create a new fine-tuning job, it will be queued for processing.
@@ -437,7 +457,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailedJobOut'
+                discriminator:
+                  mapping:
+                    classifier: '#/components/schemas/ClassifierDetailedJobOut'
+                    completion: '#/components/schemas/CompletionDetailedJobOut'
+                  propertyName: job_type
+                oneOf:
+                  - $ref: '#/components/schemas/CompletionDetailedJobOut'
+                  - $ref: '#/components/schemas/ClassifierDetailedJobOut'
+                title: Response
       description: Get a fine-tuned job details by its UUID.
       tags:
         - fine-tuning
@@ -460,7 +488,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailedJobOut'
+                discriminator:
+                  mapping:
+                    classifier: '#/components/schemas/ClassifierDetailedJobOut'
+                    completion: '#/components/schemas/CompletionDetailedJobOut'
+                  propertyName: job_type
+                oneOf:
+                  - $ref: '#/components/schemas/CompletionDetailedJobOut'
+                  - $ref: '#/components/schemas/ClassifierDetailedJobOut'
+                title: Response
       description: Request the cancellation of a fine tuning job.
       tags:
         - fine-tuning
@@ -482,7 +518,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailedJobOut'
+                discriminator:
+                  mapping:
+                    classifier: '#/components/schemas/ClassifierDetailedJobOut'
+                    completion: '#/components/schemas/CompletionDetailedJobOut'
+                  propertyName: job_type
+                oneOf:
+                  - $ref: '#/components/schemas/CompletionDetailedJobOut'
+                  - $ref: '#/components/schemas/ClassifierDetailedJobOut'
+                title: Response
       description: Request the start of a validated fine tuning job.
       tags:
         - fine-tuning
@@ -505,7 +549,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FTModelOut'
+                discriminator:
+                  mapping:
+                    classifier: '#/components/schemas/ClassifierFTModelOut'
+                    completion: '#/components/schemas/CompletionFTModelOut'
+                  propertyName: model_type
+                oneOf:
+                  - $ref: '#/components/schemas/CompletionFTModelOut'
+                  - $ref: '#/components/schemas/ClassifierFTModelOut'
+                title: Response
       description: Update a model name or description.
       requestBody:
         content:
@@ -616,8 +668,11 @@ paths:
           name: status
           schema:
             anyOf:
-              - $ref: '#/components/schemas/BatchJobStatus'
+              - items:
+                  $ref: '#/components/schemas/BatchJobStatus'
+                type: array
               - type: 'null'
+            title: Status
           required: false
       responses:
         '200':
@@ -811,7 +866,7 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/ClassificationResponse'}
+              schema: {$ref: '#/components/schemas/ModerationResponse'}
         '422':
           description: Validation Error
           content:
@@ -835,7 +890,7 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/ClassificationResponse'}
+              schema: {$ref: '#/components/schemas/ModerationResponse'}
         '422':
           description: Validation Error
           content:
@@ -869,6 +924,54 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
         - ocr
+  /v1/classifications:
+    post:
+      summary: Classifications
+      operationId: classifications_v1_classifications_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassificationRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ClassificationResponse'}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - classifiers
+  /v1/chat/classifications:
+    post:
+      summary: Chat Classifications
+      operationId: chat_classifications_v1_chat_classifications_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatClassificationRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ClassificationResponse'}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - classifiers
 components:
   schemas:
     BaseModelCard:
@@ -1360,6 +1463,341 @@ components:
         - url
       title: FileSignedURL
       type: object
+    ClassifierJobOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The ID of the job.
+        auto_start:
+          title: Auto Start
+          type: boolean
+        model:
+          $ref: '#/components/schemas/FineTuneableModel'
+        status:
+          enum:
+            - QUEUED
+            - STARTED
+            - VALIDATING
+            - VALIDATED
+            - RUNNING
+            - FAILED_VALIDATION
+            - FAILED
+            - SUCCESS
+            - CANCELLED
+            - CANCELLATION_REQUESTED
+          title: Status
+          type: string
+          description: The current status of the fine-tuning job.
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was created.
+        modified_at:
+          title: Modified At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was last modified.
+        training_files:
+          items:
+            format: uuid
+            type: string
+          title: Training Files
+          type: array
+          description: A list containing the IDs of uploaded files that contain training data.
+        validation_files:
+          anyOf:
+            - items:
+                format: uuid
+                type: string
+              type: array
+            - type: 'null'
+          default: []
+          title: Validation Files
+          description: A list containing the IDs of uploaded files that contain validation data.
+        object:
+          default: job
+          title: Object
+          type: string
+          description: The object type of the fine-tuning job.
+          enum:
+            - job
+        fine_tuned_model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Fine Tuned Model
+          description: The name of the fine-tuned model that is being created. The value will be `null` if the fine-tuning job is still running.
+        suffix:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Suffix
+          description: Optional text/code that adds more context for the model. When given a `prompt` and a `suffix` the model will fill what is between them. When `suffix` is not provided, the model will simply execute completion starting with `prompt`.
+        integrations:
+          anyOf:
+            - items:
+                discriminator:
+                  mapping:
+                    wandb: '#/components/schemas/WandbIntegrationOut'
+                  propertyName: type
+                oneOf:
+                  - $ref: '#/components/schemas/WandbIntegrationOut'
+              type: array
+            - type: 'null'
+          title: Integrations
+          description: A list of integrations enabled for your fine-tuning job.
+        trained_tokens:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Trained Tokens
+          description: Total number of tokens trained.
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/JobMetadataOut'
+            - type: 'null'
+        job_type:
+          default: classifier
+          title: Job Type
+          type: string
+          description: The type of job (`FT` for fine-tuning).
+          enum:
+            - classifier
+        hyperparameters:
+          $ref: '#/components/schemas/ClassifierTrainingParameters'
+      required:
+        - id
+        - auto_start
+        - model
+        - status
+        - created_at
+        - modified_at
+        - training_files
+        - hyperparameters
+      title: ClassifierJobOut
+      type: object
+    ClassifierTrainingParameters:
+      properties:
+        training_steps:
+          anyOf:
+            - minimum: 1
+              type: integer
+            - type: 'null'
+          title: Training Steps
+        learning_rate:
+          default: 0.0001
+          maximum: 1
+          minimum: 0.00000001
+          title: Learning Rate
+          type: number
+        weight_decay:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.1
+          title: Weight Decay
+        warmup_fraction:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.05
+          title: Warmup Fraction
+        epochs:
+          anyOf:
+            - exclusiveMinimum: 0
+              type: number
+            - type: 'null'
+          title: Epochs
+        seq_len:
+          anyOf:
+            - minimum: 100
+              type: integer
+            - type: 'null'
+          title: Seq Len
+      title: ClassifierTrainingParameters
+      type: object
+    CompletionJobOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+          description: The ID of the job.
+        auto_start:
+          title: Auto Start
+          type: boolean
+        model:
+          $ref: '#/components/schemas/FineTuneableModel'
+        status:
+          enum:
+            - QUEUED
+            - STARTED
+            - VALIDATING
+            - VALIDATED
+            - RUNNING
+            - FAILED_VALIDATION
+            - FAILED
+            - SUCCESS
+            - CANCELLED
+            - CANCELLATION_REQUESTED
+          title: Status
+          type: string
+          description: The current status of the fine-tuning job.
+        created_at:
+          title: Created At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was created.
+        modified_at:
+          title: Modified At
+          type: integer
+          description: The UNIX timestamp (in seconds) for when the fine-tuning job was last modified.
+        training_files:
+          items:
+            format: uuid
+            type: string
+          title: Training Files
+          type: array
+          description: A list containing the IDs of uploaded files that contain training data.
+        validation_files:
+          anyOf:
+            - items:
+                format: uuid
+                type: string
+              type: array
+            - type: 'null'
+          default: []
+          title: Validation Files
+          description: A list containing the IDs of uploaded files that contain validation data.
+        object:
+          default: job
+          title: Object
+          type: string
+          description: The object type of the fine-tuning job.
+          enum:
+            - job
+        fine_tuned_model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Fine Tuned Model
+          description: The name of the fine-tuned model that is being created. The value will be `null` if the fine-tuning job is still running.
+        suffix:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Suffix
+          description: Optional text/code that adds more context for the model. When given a `prompt` and a `suffix` the model will fill what is between them. When `suffix` is not provided, the model will simply execute completion starting with `prompt`.
+        integrations:
+          anyOf:
+            - items:
+                discriminator:
+                  mapping:
+                    wandb: '#/components/schemas/WandbIntegrationOut'
+                  propertyName: type
+                oneOf:
+                  - $ref: '#/components/schemas/WandbIntegrationOut'
+              type: array
+            - type: 'null'
+          title: Integrations
+          description: A list of integrations enabled for your fine-tuning job.
+        trained_tokens:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Trained Tokens
+          description: Total number of tokens trained.
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/JobMetadataOut'
+            - type: 'null'
+        job_type:
+          default: completion
+          title: Job Type
+          type: string
+          description: The type of job (`FT` for fine-tuning).
+          enum:
+            - completion
+        hyperparameters:
+          $ref: '#/components/schemas/CompletionTrainingParameters'
+        repositories:
+          default: []
+          items:
+            discriminator:
+              mapping:
+                github: '#/components/schemas/GithubRepositoryOut'
+              propertyName: type
+            oneOf:
+              - $ref: '#/components/schemas/GithubRepositoryOut'
+          title: Repositories
+          type: array
+      required:
+        - id
+        - auto_start
+        - model
+        - status
+        - created_at
+        - modified_at
+        - training_files
+        - hyperparameters
+      title: CompletionJobOut
+      type: object
+    CompletionTrainingParameters:
+      properties:
+        training_steps:
+          anyOf:
+            - minimum: 1
+              type: integer
+            - type: 'null'
+          title: Training Steps
+        learning_rate:
+          default: 0.0001
+          maximum: 1
+          minimum: 0.00000001
+          title: Learning Rate
+          type: number
+        weight_decay:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.1
+          title: Weight Decay
+        warmup_fraction:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.05
+          title: Warmup Fraction
+        epochs:
+          anyOf:
+            - exclusiveMinimum: 0
+              type: number
+            - type: 'null'
+          title: Epochs
+        seq_len:
+          anyOf:
+            - minimum: 100
+              type: integer
+            - type: 'null'
+          title: Seq Len
+        fim_ratio:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.9
+          title: Fim Ratio
+      title: CompletionTrainingParameters
+      type: object
     FineTuneableModel:
       enum:
         - open-mistral-7b
@@ -1368,18 +1806,18 @@ components:
         - mistral-large-latest
         - open-mistral-nemo
         - ministral-3b-latest
+        - ministral-8b-latest
       title: FineTuneableModel
       type: string
       description: The name of the model to fine-tune.
     GithubRepositoryOut:
       properties:
         type:
-          const: github
           default: github
-          enum:
-            - github
           title: Type
           type: string
+          enum:
+            - github
         name:
           title: Name
           type: string
@@ -1446,145 +1884,27 @@ components:
           title: Estimated Start Time
       title: JobMetadataOut
       type: object
-    JobOut:
-      properties:
-        id:
-          format: uuid
-          title: Id
-          type: string
-          description: The ID of the job.
-        auto_start:
-          title: Auto Start
-          type: boolean
-        hyperparameters:
-          $ref: '#/components/schemas/TrainingParameters'
-        model:
-          $ref: '#/components/schemas/FineTuneableModel'
-        status:
-          enum:
-            - QUEUED
-            - STARTED
-            - VALIDATING
-            - VALIDATED
-            - RUNNING
-            - FAILED_VALIDATION
-            - FAILED
-            - SUCCESS
-            - CANCELLED
-            - CANCELLATION_REQUESTED
-          title: Status
-          type: string
-          description: The current status of the fine-tuning job.
-        job_type:
-          title: Job Type
-          type: string
-          description: The type of job (`FT` for fine-tuning).
-        created_at:
-          title: Created At
-          type: integer
-          description: The UNIX timestamp (in seconds) for when the fine-tuning job was created.
-        modified_at:
-          title: Modified At
-          type: integer
-          description: The UNIX timestamp (in seconds) for when the fine-tuning job was last modified.
-        training_files:
-          items:
-            format: uuid
-            type: string
-          title: Training Files
-          type: array
-          description: A list containing the IDs of uploaded files that contain training data.
-        validation_files:
-          anyOf:
-            - items:
-                format: uuid
-                type: string
-              type: array
-            - type: 'null'
-          default: []
-          title: Validation Files
-          description: A list containing the IDs of uploaded files that contain validation data.
-        object:
-          const: job
-          default: job
-          enum:
-            - job
-          title: Object
-          type: string
-          description: The object type of the fine-tuning job.
-        fine_tuned_model:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Fine Tuned Model
-          description: The name of the fine-tuned model that is being created. The value will be `null` if the fine-tuning job is still running.
-        suffix:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Suffix
-          description: Optional text/code that adds more context for the model. When given a `prompt` and a `suffix` the model will fill what is between them. When `suffix` is not provided, the model will simply execute completion starting with `prompt`.
-        integrations:
-          anyOf:
-            - items:
-                discriminator:
-                  mapping:
-                    wandb: '#/components/schemas/WandbIntegrationOut'
-                  propertyName: type
-                oneOf:
-                  - $ref: '#/components/schemas/WandbIntegrationOut'
-              type: array
-            - type: 'null'
-          title: Integrations
-          description: A list of integrations enabled for your fine-tuning job.
-        trained_tokens:
-          anyOf:
-            - type: integer
-            - type: 'null'
-          title: Trained Tokens
-          description: Total number of tokens trained.
-        repositories:
-          default: []
-          items:
-            discriminator:
-              mapping:
-                github: '#/components/schemas/GithubRepositoryOut'
-              propertyName: type
-            oneOf:
-              - $ref: '#/components/schemas/GithubRepositoryOut'
-          title: Repositories
-          type: array
-        metadata:
-          anyOf:
-            - $ref: '#/components/schemas/JobMetadataOut'
-            - type: 'null'
-      required:
-        - id
-        - auto_start
-        - hyperparameters
-        - model
-        - status
-        - job_type
-        - created_at
-        - modified_at
-        - training_files
-      title: JobOut
-      type: object
     JobsOut:
       properties:
         data:
           default: []
           items:
-            $ref: '#/components/schemas/JobOut'
+            discriminator:
+              mapping:
+                classifier: '#/components/schemas/ClassifierJobOut'
+                completion: '#/components/schemas/CompletionJobOut'
+              propertyName: job_type
+            oneOf:
+              - $ref: '#/components/schemas/CompletionJobOut'
+              - $ref: '#/components/schemas/ClassifierJobOut'
           title: Data
           type: array
         object:
-          const: list
           default: list
-          enum:
-            - list
           title: Object
           type: string
+          enum:
+            - list
         total:
           title: Total
           type: integer
@@ -1592,67 +1912,14 @@ components:
         - total
       title: JobsOut
       type: object
-    TrainingParameters:
-      properties:
-        training_steps:
-          anyOf:
-            - minimum: 1
-              type: integer
-            - type: 'null'
-          title: Training Steps
-        learning_rate:
-          default: 0.0001
-          maximum: 1
-          minimum: 0.00000001
-          title: Learning Rate
-          type: number
-        weight_decay:
-          anyOf:
-            - maximum: 1
-              minimum: 0
-              type: number
-            - type: 'null'
-          default: 0.1
-          title: Weight Decay
-        warmup_fraction:
-          anyOf:
-            - maximum: 1
-              minimum: 0
-              type: number
-            - type: 'null'
-          default: 0.05
-          title: Warmup Fraction
-        epochs:
-          anyOf:
-            - exclusiveMinimum: 0
-              type: number
-            - type: 'null'
-          title: Epochs
-        fim_ratio:
-          anyOf:
-            - maximum: 1
-              minimum: 0
-              type: number
-            - type: 'null'
-          default: 0.9
-          title: Fim Ratio
-        seq_len:
-          anyOf:
-            - minimum: 100
-              type: integer
-            - type: 'null'
-          title: Seq Len
-      title: TrainingParameters
-      type: object
     WandbIntegrationOut:
       properties:
         type:
-          const: wandb
           default: wandb
-          enum:
-            - wandb
           title: Type
           type: string
+          enum:
+            - wandb
         project:
           title: Project
           type: string
@@ -1668,6 +1935,11 @@ components:
             - type: string
             - type: 'null'
           title: Run Name
+        url:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Url
       required:
         - project
       title: WandbIntegrationOut
@@ -1751,25 +2023,165 @@ components:
           examples:
             - 10
         object:
-          const: job.metadata
           default: job.metadata
-          enum:
-            - job.metadata
           title: Object
           type: string
+          enum:
+            - job.metadata
       required:
         - details
       title: LegacyJobMetadataOut
       type: object
+    ClassifierTargetIn:
+      properties:
+        name:
+          title: Name
+          type: string
+        labels:
+          items:
+            type: string
+          title: Labels
+          type: array
+        weight:
+          default: 1.0
+          minimum: 0
+          title: Weight
+          type: number
+        loss_function:
+          anyOf:
+            - $ref: '#/components/schemas/FTClassifierLossFunction'
+            - type: 'null'
+      required:
+        - name
+        - labels
+      title: ClassifierTargetIn
+      type: object
+    ClassifierTrainingParametersIn:
+      properties:
+        training_steps:
+          anyOf:
+            - minimum: 1
+              type: integer
+            - type: 'null'
+          title: Training Steps
+          description: The number of training steps to perform. A training step refers to a single update of the model weights during the fine-tuning process. This update is typically calculated using a batch of samples from the training dataset.
+        learning_rate:
+          default: 0.0001
+          maximum: 1
+          minimum: 0.00000001
+          title: Learning Rate
+          type: number
+          description: A parameter describing how much to adjust the pre-trained model's weights in response to the estimated error each time the weights are updated during the fine-tuning process.
+        weight_decay:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.1
+          title: Weight Decay
+          description: (Advanced Usage) Weight decay adds a term to the loss function that is proportional to the sum of the squared weights. This term reduces the magnitude of the weights and prevents them from growing too large.
+        warmup_fraction:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.05
+          title: Warmup Fraction
+          description: (Advanced Usage) A parameter that specifies the percentage of the total training steps at which the learning rate warm-up phase ends. During this phase, the learning rate gradually increases from a small value to the initial learning rate, helping to stabilize the training process and improve convergence. Similar to `pct_start` in [mistral-finetune](https://github.com/mistralai/mistral-finetune)
+        epochs:
+          anyOf:
+            - exclusiveMinimum: 0
+              type: number
+            - type: 'null'
+          title: Epochs
+        seq_len:
+          anyOf:
+            - minimum: 100
+              type: integer
+            - type: 'null'
+          title: Seq Len
+      title: ClassifierTrainingParametersIn
+      type: object
+      description: The fine-tuning hyperparameter settings used in a classifier fine-tune job.
+    CompletionTrainingParametersIn:
+      properties:
+        training_steps:
+          anyOf:
+            - minimum: 1
+              type: integer
+            - type: 'null'
+          title: Training Steps
+          description: The number of training steps to perform. A training step refers to a single update of the model weights during the fine-tuning process. This update is typically calculated using a batch of samples from the training dataset.
+        learning_rate:
+          default: 0.0001
+          maximum: 1
+          minimum: 0.00000001
+          title: Learning Rate
+          type: number
+          description: A parameter describing how much to adjust the pre-trained model's weights in response to the estimated error each time the weights are updated during the fine-tuning process.
+        weight_decay:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.1
+          title: Weight Decay
+          description: (Advanced Usage) Weight decay adds a term to the loss function that is proportional to the sum of the squared weights. This term reduces the magnitude of the weights and prevents them from growing too large.
+        warmup_fraction:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.05
+          title: Warmup Fraction
+          description: (Advanced Usage) A parameter that specifies the percentage of the total training steps at which the learning rate warm-up phase ends. During this phase, the learning rate gradually increases from a small value to the initial learning rate, helping to stabilize the training process and improve convergence. Similar to `pct_start` in [mistral-finetune](https://github.com/mistralai/mistral-finetune)
+        epochs:
+          anyOf:
+            - exclusiveMinimum: 0
+              type: number
+            - type: 'null'
+          title: Epochs
+        seq_len:
+          anyOf:
+            - minimum: 100
+              type: integer
+            - type: 'null'
+          title: Seq Len
+        fim_ratio:
+          anyOf:
+            - maximum: 1
+              minimum: 0
+              type: number
+            - type: 'null'
+          default: 0.9
+          title: Fim Ratio
+      title: CompletionTrainingParametersIn
+      type: object
+      description: The fine-tuning hyperparameter settings used in a fine-tune job.
+    FTClassifierLossFunction:
+      enum:
+        - single_class
+        - multi_class
+      title: FTClassifierLossFunction
+      type: string
+    FineTuneableModelType:
+      enum:
+        - completion
+        - classifier
+      title: FineTuneableModelType
+      type: string
     GithubRepositoryIn:
       properties:
         type:
-          const: github
           default: github
-          enum:
-            - github
           title: Type
           type: string
+          enum:
+            - github
         name:
           title: Name
           type: string
@@ -1814,8 +2226,6 @@ components:
             - type: 'null'
           title: Validation Files
           description: A list containing the IDs of uploaded files that contain validation data. If you provide these files, the data is used to generate validation metrics periodically during fine-tuning. These metrics can be viewed in `checkpoints` when getting the status of a running fine-tuning job. The same data should not be present in both train and validation files.
-        hyperparameters:
-          $ref: '#/components/schemas/TrainingParametersIn'
         suffix:
           anyOf:
             - maxLength: 18
@@ -1836,22 +2246,44 @@ components:
             - type: 'null'
           title: Integrations
           description: A list of integrations to enable for your fine-tuning job.
-        repositories:
-          default: []
-          items:
-            discriminator:
-              mapping:
-                github: '#/components/schemas/GithubRepositoryIn'
-              propertyName: type
-            oneOf:
-              - $ref: '#/components/schemas/GithubRepositoryIn'
-          maxItems: 50
-          title: Repositories
-          type: array
         auto_start:
           description: This field will be required in a future release.
           title: Auto Start
           type: boolean
+        invalid_sample_skip_percentage:
+          default: 0
+          maximum: 0.5
+          minimum: 0
+          title: Invalid Sample Skip Percentage
+          type: number
+        job_type:
+          anyOf:
+            - $ref: '#/components/schemas/FineTuneableModelType'
+            - type: 'null'
+        hyperparameters:
+          anyOf:
+            - $ref: '#/components/schemas/CompletionTrainingParametersIn'
+            - $ref: '#/components/schemas/ClassifierTrainingParametersIn'
+          title: Hyperparameters
+        repositories:
+          anyOf:
+            - items:
+                discriminator:
+                  mapping:
+                    github: '#/components/schemas/GithubRepositoryIn'
+                  propertyName: type
+                oneOf:
+                  - $ref: '#/components/schemas/GithubRepositoryIn'
+              type: array
+            - type: 'null'
+          title: Repositories
+        classifier_targets:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/ClassifierTargetIn'
+              type: array
+            - type: 'null'
+          title: Classifier Targets
       required:
         - model
         - hyperparameters
@@ -1872,72 +2304,14 @@ components:
         - file_id
       title: TrainingFile
       type: object
-    TrainingParametersIn:
-      properties:
-        training_steps:
-          anyOf:
-            - minimum: 1
-              type: integer
-            - type: 'null'
-          title: Training Steps
-          description: The number of training steps to perform. A training step refers to a single update of the model weights during the fine-tuning process. This update is typically calculated using a batch of samples from the training dataset.
-        learning_rate:
-          default: 0.0001
-          maximum: 1
-          minimum: 0.00000001
-          title: Learning Rate
-          type: number
-          description: A parameter describing how much to adjust the pre-trained model's weights in response to the estimated error each time the weights are updated during the fine-tuning process.
-        weight_decay:
-          anyOf:
-            - maximum: 1
-              minimum: 0
-              type: number
-            - type: 'null'
-          default: 0.1
-          title: Weight Decay
-          description: (Advanced Usage) Weight decay adds a term to the loss function that is proportional to the sum of the squared weights. This term reduces the magnitude of the weights and prevents them from growing too large.
-        warmup_fraction:
-          anyOf:
-            - maximum: 1
-              minimum: 0
-              type: number
-            - type: 'null'
-          default: 0.05
-          title: Warmup Fraction
-          description: (Advanced Usage) A parameter that specifies the percentage of the total training steps at which the learning rate warm-up phase ends. During this phase, the learning rate gradually increases from a small value to the initial learning rate, helping to stabilize the training process and improve convergence. Similar to `pct_start` in [mistral-finetune](https://github.com/mistralai/mistral-finetune)
-        epochs:
-          anyOf:
-            - exclusiveMinimum: 0
-              type: number
-            - type: 'null'
-          title: Epochs
-        fim_ratio:
-          anyOf:
-            - maximum: 1
-              minimum: 0
-              type: number
-            - type: 'null'
-          default: 0.9
-          title: Fim Ratio
-        seq_len:
-          anyOf:
-            - minimum: 100
-              type: integer
-            - type: 'null'
-          title: Seq Len
-      title: TrainingParametersIn
-      type: object
-      description: The fine-tuning hyperparameter settings used in a fine-tune job.
     WandbIntegration:
       properties:
         type:
-          const: wandb
           default: wandb
-          enum:
-            - wandb
           title: Type
           type: string
+          enum:
+            - wandb
         project:
           title: Project
           type: string
@@ -1984,7 +2358,7 @@ components:
         - created_at
       title: CheckpointOut
       type: object
-    DetailedJobOut:
+    ClassifierDetailedJobOut:
       properties:
         id:
           format: uuid
@@ -1993,8 +2367,6 @@ components:
         auto_start:
           title: Auto Start
           type: boolean
-        hyperparameters:
-          $ref: '#/components/schemas/TrainingParameters'
         model:
           $ref: '#/components/schemas/FineTuneableModel'
         status:
@@ -2010,9 +2382,6 @@ components:
             - CANCELLED
             - CANCELLATION_REQUESTED
           title: Status
-          type: string
-        job_type:
-          title: Job Type
           type: string
         created_at:
           title: Created At
@@ -2036,12 +2405,11 @@ components:
           default: []
           title: Validation Files
         object:
-          const: job
           default: job
-          enum:
-            - job
           title: Object
           type: string
+          enum:
+            - job
         fine_tuned_model:
           anyOf:
             - type: string
@@ -2069,6 +2437,161 @@ components:
             - type: integer
             - type: 'null'
           title: Trained Tokens
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/JobMetadataOut'
+            - type: 'null'
+        job_type:
+          default: classifier
+          title: Job Type
+          type: string
+          enum:
+            - classifier
+        hyperparameters:
+          $ref: '#/components/schemas/ClassifierTrainingParameters'
+        events:
+          default: []
+          items:
+            $ref: '#/components/schemas/EventOut'
+          title: Events
+          type: array
+          description: Event items are created every time the status of a fine-tuning job changes. The timestamped list of all events is accessible here.
+        checkpoints:
+          default: []
+          items:
+            $ref: '#/components/schemas/CheckpointOut'
+          title: Checkpoints
+          type: array
+        classifier_targets:
+          items:
+            $ref: '#/components/schemas/ClassifierTargetOut'
+          title: Classifier Targets
+          type: array
+      required:
+        - id
+        - auto_start
+        - model
+        - status
+        - created_at
+        - modified_at
+        - training_files
+        - hyperparameters
+        - classifier_targets
+      title: ClassifierDetailedJobOut
+      type: object
+    ClassifierTargetOut:
+      properties:
+        name:
+          title: Name
+          type: string
+        labels:
+          items:
+            type: string
+          title: Labels
+          type: array
+        weight:
+          title: Weight
+          type: number
+        loss_function:
+          $ref: '#/components/schemas/FTClassifierLossFunction'
+      required:
+        - name
+        - labels
+        - weight
+        - loss_function
+      title: ClassifierTargetOut
+      type: object
+    CompletionDetailedJobOut:
+      properties:
+        id:
+          format: uuid
+          title: Id
+          type: string
+        auto_start:
+          title: Auto Start
+          type: boolean
+        model:
+          $ref: '#/components/schemas/FineTuneableModel'
+        status:
+          enum:
+            - QUEUED
+            - STARTED
+            - VALIDATING
+            - VALIDATED
+            - RUNNING
+            - FAILED_VALIDATION
+            - FAILED
+            - SUCCESS
+            - CANCELLED
+            - CANCELLATION_REQUESTED
+          title: Status
+          type: string
+        created_at:
+          title: Created At
+          type: integer
+        modified_at:
+          title: Modified At
+          type: integer
+        training_files:
+          items:
+            format: uuid
+            type: string
+          title: Training Files
+          type: array
+        validation_files:
+          anyOf:
+            - items:
+                format: uuid
+                type: string
+              type: array
+            - type: 'null'
+          default: []
+          title: Validation Files
+        object:
+          default: job
+          title: Object
+          type: string
+          enum:
+            - job
+        fine_tuned_model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Fine Tuned Model
+        suffix:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Suffix
+        integrations:
+          anyOf:
+            - items:
+                discriminator:
+                  mapping:
+                    wandb: '#/components/schemas/WandbIntegrationOut'
+                  propertyName: type
+                oneOf:
+                  - $ref: '#/components/schemas/WandbIntegrationOut'
+              type: array
+            - type: 'null'
+          title: Integrations
+        trained_tokens:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Trained Tokens
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/JobMetadataOut'
+            - type: 'null'
+        job_type:
+          default: completion
+          title: Job Type
+          type: string
+          enum:
+            - completion
+        hyperparameters:
+          $ref: '#/components/schemas/CompletionTrainingParameters'
         repositories:
           default: []
           items:
@@ -2080,10 +2603,6 @@ components:
               - $ref: '#/components/schemas/GithubRepositoryOut'
           title: Repositories
           type: array
-        metadata:
-          anyOf:
-            - $ref: '#/components/schemas/JobMetadataOut'
-            - type: 'null'
         events:
           default: []
           items:
@@ -2100,14 +2619,13 @@ components:
       required:
         - id
         - auto_start
-        - hyperparameters
         - model
         - status
-        - job_type
         - created_at
         - modified_at
         - training_files
-      title: DetailedJobOut
+        - hyperparameters
+      title: CompletionDetailedJobOut
       type: object
     EventOut:
       properties:
@@ -2150,38 +2668,17 @@ components:
       title: MetricOut
       type: object
       description: Metrics at the step number during the fine-tuning job. Use these metrics to assess if the training is going smoothly (loss should decrease, token accuracy should increase).
-    FTModelCapabilitiesOut:
-      properties:
-        completion_chat:
-          default: true
-          title: Completion Chat
-          type: boolean
-        completion_fim:
-          default: false
-          title: Completion Fim
-          type: boolean
-        function_calling:
-          default: false
-          title: Function Calling
-          type: boolean
-        fine_tuning:
-          default: false
-          title: Fine Tuning
-          type: boolean
-      title: FTModelCapabilitiesOut
-      type: object
-    FTModelOut:
+    ClassifierFTModelOut:
       properties:
         id:
           title: Id
           type: string
         object:
-          const: model
           default: model
-          enum:
-            - model
           title: Object
           type: string
+          enum:
+            - model
         created:
           title: Created
           type: integer
@@ -2220,6 +2717,17 @@ components:
           format: uuid
           title: Job
           type: string
+        classifier_targets:
+          items:
+            $ref: '#/components/schemas/ClassifierTargetOut'
+          title: Classifier Targets
+          type: array
+        model_type:
+          default: classifier
+          title: Model Type
+          type: string
+          enum:
+            - classifier
       required:
         - id
         - created
@@ -2228,7 +2736,97 @@ components:
         - archived
         - capabilities
         - job
-      title: FTModelOut
+        - classifier_targets
+      title: ClassifierFTModelOut
+      type: object
+    CompletionFTModelOut:
+      properties:
+        id:
+          title: Id
+          type: string
+        object:
+          default: model
+          title: Object
+          type: string
+          enum:
+            - model
+        created:
+          title: Created
+          type: integer
+        owned_by:
+          title: Owned By
+          type: string
+        root:
+          title: Root
+          type: string
+        archived:
+          title: Archived
+          type: boolean
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        capabilities:
+          $ref: '#/components/schemas/FTModelCapabilitiesOut'
+        max_context_length:
+          default: 32768
+          title: Max Context Length
+          type: integer
+        aliases:
+          default: []
+          items:
+            type: string
+          title: Aliases
+          type: array
+        job:
+          format: uuid
+          title: Job
+          type: string
+        model_type:
+          default: completion
+          title: Model Type
+          type: string
+          enum:
+            - completion
+      required:
+        - id
+        - created
+        - owned_by
+        - root
+        - archived
+        - capabilities
+        - job
+      title: CompletionFTModelOut
+      type: object
+    FTModelCapabilitiesOut:
+      properties:
+        completion_chat:
+          default: true
+          title: Completion Chat
+          type: boolean
+        completion_fim:
+          default: false
+          title: Completion Fim
+          type: boolean
+        function_calling:
+          default: false
+          title: Function Calling
+          type: boolean
+        fine_tuning:
+          default: false
+          title: Fine Tuning
+          type: boolean
+        classification:
+          default: false
+          title: Classification
+          type: boolean
+      title: FTModelCapabilitiesOut
       type: object
     UpdateFTModelIn:
       properties:
@@ -2250,12 +2848,11 @@ components:
           title: Id
           type: string
         object:
-          const: model
           default: model
-          enum:
-            - model
           title: Object
           type: string
+          enum:
+            - model
         archived:
           default: true
           title: Archived
@@ -2270,12 +2867,11 @@ components:
           title: Id
           type: string
         object:
-          const: model
           default: model
-          enum:
-            - model
           title: Object
           type: string
+          enum:
+            - model
         archived:
           default: false
           title: Archived
@@ -2314,12 +2910,11 @@ components:
           title: Id
           type: string
         object:
-          const: batch
           default: batch
-          enum:
-            - batch
           title: Object
           type: string
+          enum:
+            - batch
         input_files:
           items:
             format: uuid
@@ -2405,12 +3000,11 @@ components:
           title: Data
           type: array
         object:
-          const: list
           default: list
-          enum:
-            - list
           title: Object
           type: string
+          enum:
+            - list
         total:
           title: Total
           type: integer
@@ -2446,6 +3040,9 @@ components:
                 maxLength: 512
                 minLength: 1
                 type: string
+              propertyNames:
+                maxLength: 32
+                minLength: 1
               type: object
             - type: 'null'
           title: Metadata
@@ -2618,9 +3215,6 @@ components:
       title: ChatCompletionRequest
     ChatModerationRequest:
       properties:
-        model:
-          title: Model
-          type: string
         input:
           anyOf:
             - items:
@@ -2655,10 +3249,9 @@ components:
               type: array
           title: Input
           description: Chat to classify
-        truncate_for_context_length:
-          type: boolean
-          title: Truncate For Context Length
-          default: false
+        model:
+          title: Model
+          type: string
       additionalProperties: false
       type: object
       required:
@@ -2683,6 +3276,7 @@ components:
       type: object
       required:
         - input
+        - model
         - model
       title: ClassificationRequest
     DocumentURLChunk:
@@ -2895,6 +3489,29 @@ components:
         - image_url
       title: ImageURLChunk
       description: '{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0'
+    InstructRequest:
+      properties:
+        messages:
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/SystemMessage'
+              - $ref: '#/components/schemas/UserMessage'
+              - $ref: '#/components/schemas/AssistantMessage'
+              - $ref: '#/components/schemas/ToolMessage'
+            discriminator:
+              propertyName: role
+              mapping:
+                assistant: '#/components/schemas/AssistantMessage'
+                system: '#/components/schemas/SystemMessage'
+                tool: '#/components/schemas/ToolMessage'
+                user: '#/components/schemas/UserMessage'
+          type: array
+          title: Messages
+      additionalProperties: false
+      type: object
+      required:
+        - messages
+      title: InstructRequest
     JsonSchema:
       properties:
         name:
@@ -3410,6 +4027,68 @@ components:
         - messages
         - agent_id
       title: AgentsCompletionRequest
+    ClassificationResponse:
+      type: object
+      title: ClassificationResponse
+      properties:
+        id:
+          type: string
+          example: mod-e5cc70bb28c444948073e77776eb30ef
+        model:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+            title: ClassificationTargetResult
+            additionalProperties:
+              $ref: '#/components/schemas/ClassificationTargetResult'
+      required:
+        - id
+        - model
+        - results
+    ClassificationTargetResult:
+      type: object
+      title: ClassificationTargetResult
+      properties:
+        scores:
+          type: object
+          title: ClassifierTargetResultScores
+          additionalProperties:
+            type: number
+      required:
+        - scores
+    ModerationResponse:
+      type: object
+      title: ModerationResponse
+      properties:
+        id:
+          type: string
+          example: mod-e5cc70bb28c444948073e77776eb30ef
+        model:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModerationObject'
+      required:
+        - id
+        - model
+        - results
+    ModerationObject:
+      type: object
+      title: ModerationObject
+      properties:
+        categories:
+          description: Moderation result thresholds
+          type: object
+          additionalProperties:
+            type: boolean
+        category_scores:
+          description: Moderation result
+          type: object
+          additionalProperties:
+            type: number
     ContentChunk:
       oneOf:
         - $ref: '#/components/schemas/TextChunk'
@@ -3424,6 +4103,27 @@ components:
           text: '#/components/schemas/TextChunk'
           reference: '#/components/schemas/ReferenceChunk'
       title: ContentChunk
+    ChatClassificationRequest:
+      properties:
+        model:
+          title: Model
+          type: string
+        inputs:
+          $ref: '#/components/schemas/ChatClassificationRequestInputs'
+      additionalProperties: false
+      type: object
+      required:
+        - inputs
+        - model
+      title: ChatClassificationRequest
+    ChatClassificationRequestInputs:
+      anyOf:
+        - $ref: '#/components/schemas/InstructRequest'
+        - items:
+            $ref: '#/components/schemas/InstructRequest'
+          type: array
+      title: ChatClassificationRequestInputs
+      description: Chat to classify
     CompletionEvent:
       title: CompletionEvent
       type: object
@@ -3630,33 +4330,6 @@ components:
             - data
             - model
             - usage
-    ClassificationResponse:
-      type: object
-      title: ClassificationResponse
-      properties:
-        id:
-          type: string
-          example: mod-e5cc70bb28c444948073e77776eb30ef
-        model:
-          type: string
-        results:
-          type: array
-          items:
-            - $ref: '#/components/schemas/ClassificationObject'
-    ClassificationObject:
-      type: object
-      title: ClassificationObject
-      properties:
-        categories:
-          description: Classifier result thresholded
-          type: object
-          additionalProperties:
-            type: boolean
-        category_scores:
-          description: Classifier result
-          type: object
-          additionalProperties:
-            type: number
   securitySchemes:
     ApiKey:
       type: http

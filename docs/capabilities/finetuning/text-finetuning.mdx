@@ -1,47 +1,19 @@
 ---
-id: finetuning
-title: Fine-tuning
-sidebar_position: 2.9
+id: text_finetuning
+title: Text Fine-tuning
+slug: text_finetuning
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Fine-tuning allows you to tailor a pre-trained language model to your specific needs by training it on your dataset. This guide explains how to fine-tune text models, from preparing your data to training, whether you aim to improve domain-specific understanding or adapt to a unique conversational style.
+
 :::tip[ ]
-For detailed end-to-end fine-tuning examples and FAQ, check out our [fine-tuning guide](../../guides/finetuning).
+For detailed end-to-end fine-tuning examples and FAQ, check out our [fine-tuning guide](../../../guides/finetuning).
 :::
 
-:::warning[ ]
-Every fine-tuning job comes with a minimum fee of $4, and there's a monthly storage fee of $2 for each model. For more detailed pricing information, please visit our [pricing page](https://mistral.ai/technology/#pricing). 
-:::
-
-## Fine-tuning basics
-
-### Fine-tuning vs. prompting 
-
-When deciding whether to use prompt engineering or fine-tuning for an AI model, it can be difficult to determine which method is best. It's generally recommended to start with prompt engineering, as it's faster and less resource-intensive. To help you choose the right approach, here are the key benefits of prompting and fine-tuning:
-
-- **Benefits of Prompting**
-    - A generic model can work out of the box (the task can be described in a zero shot fashion)
-    - Does not require any fine-tuning data or training to work
-    - Can easily be updated for new workflows and prototyping
-  
-  Check out our [prompting guide](https://docs.mistral.ai/guides/prompting_capabilities/) to explore various capabilities of Mistral models. 
-
-- **Benefits of Fine-tuning**
-    - Works significantly better than prompting
-    - Typically works better than a larger model (faster and cheaper because it doesn't require a very long prompt)
-    - Provides a better alignment with the task of interest because it has been specifically trained on these tasks 
-    - Can be used to teach new facts and information to the model (such as advanced tools or complicated workflows)
-
-### Common use cases
-
-Fine-tuning has a wide range of use cases, some of which include:
-- Customizing the model to generate responses in a specific format and tone
-- Specializing the model for a specific topic or domain to improve its performance on domain-specific tasks
-- Improving the model through distillation from a stronger and more powerful model by training it to mimic the behavior of the larger model 
-- Enhancing the model’s performance by mimicking the behavior of a model with a complex prompt, but without the need for the actual prompt, thereby saving tokens, and reducing associated costs
-- Reducing cost and latency by using a small yet efficient fine-tuned model
+You can both finetune directly in [la plateforme](https://console.mistral.ai/build/finetuned-models) or via our API.
 
 ## Dataset Format
 
@@ -199,8 +171,15 @@ client = Mistral(api_key=api_key)
 
 training_data = client.files.upload(
     file={
-        "file_name": "ultrachat_chunk_train.jsonl",
-        "content": open("ultrachat_chunk_train.jsonl", "rb"),
+        "file_name": "training_file.jsonl",
+        "content": open("training_file.jsonl", "rb"),
+    }
+)  
+
+validation_data = client.files.upload(
+    file={
+        "file_name": "validation_file.jsonl",
+        "content": open("validation_file.jsonl", "rb"),
     }
 )  
 ```
@@ -256,10 +235,11 @@ The next step is to create a fine-tuning job.
 - model: the specific model you would like to fine-tune. The choices are `open-mistral-7b` (v0.3), `mistral-small-latest` (`mistral-small-2409`),  `codestral-latest` (`codestral-2405`), `open-mistral-nemo`, `mistral-large-latest` (`mistral-large-2411`), and `ministral-8b-latest`(`ministral-3b-2410`).
 - training_files: a collection of training file IDs, which can consist of a single file or multiple files
 - validation_files: a collection of validation file IDs, which can consist of a single file or multiple files
-- hyperparameters:  two adjustable hyperparameters, "training_step" and "learning_rate", that users can modify.
+- hyperparameters:  two adjustable hyperparameters, "training_steps" and "learning_rate", that users can modify.
 - auto_start:
     - `auto_start=True`: Your job will be launched immediately after validation.
     - `auto_start=False` (default): You can manually start the training after validation by sending a POST request to `/fine_tuning/jobs/<uuid>/start`.
+- integrations: external integrations we support such as Weights and Biases for metrics tracking during training.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -268,13 +248,19 @@ The next step is to create a fine-tuning job.
 # create a fine-tuning job
 created_jobs = client.fine_tuning.jobs.create(
     model="open-mistral-7b", 
-    training_files=[{"file_id": ultrachat_chunk_train.id, "weight": 1}],
-    validation_files=[ultrachat_chunk_eval.id], 
+    training_files=[{"file_id": training_data.id, "weight": 1}],
+    validation_files=[validation_data.id], 
     hyperparameters={
         "training_steps": 10,
         "learning_rate":0.0001
     },
-    auto_start=False
+    auto_start=False,
+#   integrations=[
+#       {
+#           "project": "finetuning",
+#           "api_key": "WANDB_KEY",
+#       }
+#   ]    
 )
 ```
 
@@ -294,7 +280,13 @@ const createdJob = await client.fineTuning.jobs.create({
       learningRate: 0.0001,
     },
     autoStart:false,
-  });
+//  integrations=[
+//      {
+//          project: "finetuning",
+//          apiKey: "WANDB_KEY",
+//      }
+//  ]   
+});
 ```
 
 After creating a fine-tuning job, you can check the job status using 
@@ -339,7 +331,7 @@ Initially, the job status will be `"QUEUED"`.
 After a brief period, the status will update to `"VALIDATED"`. 
 At this point, you can proceed to start the fine-tuning job:
 
-<Tabs>
+<Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
 ```python
@@ -356,7 +348,7 @@ created_jobs
 await client.fineTuning.jobs.start({jobId: createdJob.id})
 ```
   </TabItem>
-  
+
   <TabItem value="curl" label="curl">
 
 ```bash
@@ -448,7 +440,7 @@ chat_response = client.chat.complete(
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const chatResponse = await client.chat({
+const chatResponse = await client.chat.complete({
   model: retrievedJob.fine_tuned_model,
   messages: [{role: 'user', content: 'What is the best French cheese?'}],
 });
@@ -466,7 +458,6 @@ curl "https://api.mistral.ai/v1/chat/completions" \
     "model": "ft:open-mistral-7b:daf5e488:20240430:c1bed559",
     "messages": [{"role": "user", "content": "Who is the most renowned French painter?"}]
   }'
-
 ```
   </TabItem>
 
@@ -482,6 +473,13 @@ client.models.delete(model_id=retrieved_job.fine_tuned_model)
 ```
   </TabItem>
 
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.models.delete({modelId:retrieved_job.fine_tuned_model})
+```
+
+  </TabItem>
   
   <TabItem value="curl" label="curl">
 
@@ -495,6 +493,6 @@ curl --location --request DELETE 'https://api.mistral.ai/v1/models/ft:open-mistr
 </Tabs>
 
 
-import FAQ from "../guides/finetuning_sections/_04_faq.md";
+import FAQ from "../../guides/finetuning_sections/_04_faq.md";
 
 <FAQ />

@@ -635,7 +635,7 @@ curl https://api.mistral.ai/v1/ocr \
     "model": "mistral-ocr-latest",
     "document": {
         "type": "document_url",
-        "document_url": "<uuid>",
+        "document_url": "<signed_url>"
     },
     "include_image_base64": true
   }' -o ocr_output.json

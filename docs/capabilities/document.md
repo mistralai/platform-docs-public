@@ -80,6 +80,7 @@ ocr_response = client.ocr.process(
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 import { Mistral } from '@mistralai/mistralai';
 
@@ -95,8 +96,51 @@ const ocrResponse = await client.ocr.process({
     includeImageBase64: true
 });
 ```
+
+Or passing a Base64 encoded pdf:
+```ts
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+async function encodePdf(pdfPath) {
+    try {
+        // Read the PDF file as a buffer
+        const pdfBuffer = fs.readFileSync(pdfPath);
+
+        // Convert the buffer to a Base64-encoded string
+        const base64Pdf = pdfBuffer.toString('base64');
+        return base64Pdf;
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        return null;
+    }
+}
+
+const pdfPath = "path_to_your_pdf.pdf";
+
+const base64Pdf = await encodePdf(pdfPath);
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({ apiKey: apiKey });
+
+try {
+    const ocrResponse = await client.ocr.process({
+        model: "mistral-ocr-latest",
+        document: {
+            type: "document_url",
+            documentUrl: "data:application/pdf;base64,"+base64Pdf
+        },
+        includeImageBase64: true
+    });
+    console.log(ocrResponse);
+} catch (error) {
+    console.error("Error processing OCR:", error);
+}
+```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl https://api.mistral.ai/v1/ocr \
   -H "Content-Type: application/json" \
@@ -106,6 +150,21 @@ curl https://api.mistral.ai/v1/ocr \
     "document": {
         "type": "document_url",
         "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+
+Or passing a Base64 encoded pdf:
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "data:application/pdf;base64,<base64_pdf>"
     },
     "include_image_base64": true
   }' -o ocr_output.json
@@ -647,6 +706,7 @@ ocr_response = client.ocr.process(
 
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 import { Mistral } from '@mistralai/mistralai';
 
@@ -663,6 +723,7 @@ const ocrResponse = await client.ocr.process({
 ```
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl https://api.mistral.ai/v1/ocr \
   -H "Content-Type: application/json" \
@@ -671,7 +732,7 @@ curl https://api.mistral.ai/v1/ocr \
     "model": "mistral-ocr-latest",
     "document": {
         "type": "document_url",
-        "document_url": "<uuid>",
+        "document_url": "<signed_url>"
     },
     "include_image_base64": true
   }' -o ocr_output.json
@@ -738,6 +799,7 @@ ocr_response = client.ocr.process(
 
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 import { Mistral } from '@mistralai/mistralai';
 
@@ -752,8 +814,51 @@ const ocrResponse = await client.ocr.process({
     }
 });
 ```
+
+Or passing a Base64 encoded image:
+```ts
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+async function encodeImage(imagePath) {
+    try {
+        // Read the image file as a buffer
+        const imageBuffer = fs.readFileSync(imagePath);
+
+        // Convert the buffer to a Base64-encoded string
+        const base64Image = imageBuffer.toString('base64');
+        return base64Image;
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        return null;
+    }
+}
+
+const imagePath = "path_to_your_image.jpg";
+
+const base64Image = await encodeImage(imagePath);
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({ apiKey: apiKey });
+
+try {
+    const ocrResponse = await client.ocr.process({
+        model: "mistral-ocr-latest",
+        document: {
+            type: "image_url",
+            imageUrl: "data:image/jpeg;base64," + base64Image
+        },
+        includeImageBase64: true
+    });
+    console.log(ocrResponse);
+} catch (error) {
+    console.error("Error processing OCR:", error);
+}
+```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl https://api.mistral.ai/v1/ocr \
   -H "Content-Type: application/json" \
@@ -766,6 +871,21 @@ curl https://api.mistral.ai/v1/ocr \
     }
   }' -o ocr_output.json
 ```
+
+Or passing a Base64 encoded image:
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "image_url",
+        "image_url": "data:image/jpeg;base64,<base64_image>"
+    }
+  }' -o ocr_output.json
+```
+
   </TabItem>
 </Tabs>
 

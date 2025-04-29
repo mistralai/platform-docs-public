@@ -59,10 +59,9 @@ chat_response = client.chat.complete(
 print(chat_response.choices[0].message.content)
 
 ```
-
-
   </TabItem>
   <TabItem value="typescript" label="typescript">
+
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
 
@@ -88,8 +87,10 @@ const chatResponse = await client.chat.complete({
 
 console.log("JSON:", chatResponse.choices[0].message.content);
 ```
+
   </TabItem>
   <TabItem value="curl" label="curl">
+
 ```bash
 curl https://api.mistral.ai/v1/chat/completions \
   -H "Content-Type: application/json" \
@@ -120,6 +121,8 @@ curl https://api.mistral.ai/v1/chat/completions \
 ## Passing a Base64 Encoded Image
 If you have an image or a set of images stored locally, you can pass them to the model in base64 encoded format. Base64 encoding is a common method for converting binary data into a text format that can be easily transmitted over the internet. This is particularly useful when you need to include images in API requests.
 
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 
 ```py
 import base64
@@ -180,6 +183,87 @@ chat_response = client.chat.complete(
 # Print the content of the response
 print(chat_response.choices[0].message.content)
 ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+
+```ts
+import { Mistral } from "@mistralai/mistralai";
+import fs from 'fs';
+
+async function encodeImage(imagePath) {
+    try {
+        // Read the image file as a buffer
+        const imageBuffer = fs.readFileSync(imagePath);
+
+        // Convert the buffer to a Base64-encoded string
+        const base64Image = imageBuffer.toString('base64');
+        return base64Image;
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        return null;
+    }
+}
+
+// Path to your image
+const imagePath = "path_to_your_image.jpg"
+
+// Getting the base64 string
+const base64Image = await encodeImage(imagePath)
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+const chatResponse = await client.chat.complete({
+  model: "pixtral-12b",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "What's in this image?" },
+        {
+          type: "image_url",
+          imageUrl: f"data:image/jpeg;base64," + base64Image,
+        },
+      ],
+    },
+  ],
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "pixtral-12b-2409",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "What’s in this image?"
+          },
+          {
+            "type": "image_url",
+            "image_url": "data:image/jpeg;base64,<base64_image>"
+          }
+        ]
+      }
+    ],
+    "max_tokens": 300
+  }'
+```
+
+  </TabItem>
+</Tabs>
 
 ## Use cases
 <details>

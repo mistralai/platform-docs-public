@@ -11,6 +11,7 @@ Our latest Mistral Small and our Pixtral models possess vision capabilities, ena
 ## Models with Vision Capacilities:
 - Pixtral 12B (`pixtral-12b-latest`)
 - Pixtral Large 2411 (`pixtral-large-latest`)
+- Mistral Medium 2505 (`mistral-medium-latest`)
 - Mistral Small 2503 (`mistral-small-latest`)
 
 ## Passing an Image URL
@@ -499,7 +500,7 @@ Model output:
   
     Final Formula: `N of tokens ≈ (ResolutionX * ResolutionY) / 256`
   
-    **Small 2503:**
+    **Small / Medium:**
   
     Small is similar; however, instead of batches of 16, it will be batched in 14 pixels. Instead of a maximum resolution of 1024x1024, it has a maximum resolution of 1540x1540.
     Due to its slightly different architecture, it also only uses 1/4 of that number of tokens as input to the text decoder. This means that in total, you can summarize the consumption approximately as `(ResolutionX/14) * (ResolutionY/14) * 1/4`, which is approximately 3x less than Pixtral models, making it use fewer tokens and be more efficient.

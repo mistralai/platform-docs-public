@@ -7,7 +7,7 @@ slug: weights
 We open-source both pre-trained models and instruction-tuned models. These models are not tuned for safety as we want to empower users to test and refine moderation based on their use cases. For safer models, follow our [guardrailing tutorial](/capabilities/guardrailing).
 
 ## License
-- Mistral 7B, Mixtral 8x7B, Mixtral 8x22B, Codestral Mamba, Mathstral, Mistral Nemo, Pixtral 12B, and Mistral Small are under [Apache 2 License](https://choosealicense.com/licenses/apache-2.0/), which permits their use without any constraints.
+- Mistral 7B, Mixtral 8x7B, Mixtral 8x22B, Codestral Mamba, Mathstral, Mistral Nemo, Pixtral 12B, Mistral Small and Devstral Small are under [Apache 2 License](https://choosealicense.com/licenses/apache-2.0/), which permits their use without any constraints.
 - Codestral is under [Mistral AI Non-Production (MNPL) License](https://mistral.ai/licences/MNPL-0.1.md).
 - Ministral 8B, Mistral Large, and Pixtral Large are under [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md). 
 
@@ -33,18 +33,19 @@ If you are interested in purchasing a commercial license for our models, please 
 | Codestral-22B-v0.1  | [Hugging Face](https://huggingface.co/mistralai/Codestral-22B-v0.1) <br/> [raw_weights](https://models.mistralcdn.com/codestral-22b-v0-1/codestral-22B-v0.1.tar) (md5sum: `1ea95d474a1d374b1d1b20a8e0159de3`) | - 32768 vocabulary size <br/> - Supports v3 Tokenizer |
 | Codestral-Mamba-7B-v0.1  | [Hugging Face](https://huggingface.co/mistralai/mamba-codestral-7B-v0.1) <br/> [raw_weights](https://models.mistralcdn.com/codestral-mamba-7b-v0-1/codestral-mamba-7B-v0.1.tar) (md5sum: `d3993e4024d1395910c55db0d11db163`) | - 32768 vocabulary size <br/> - Supports v3 Tokenizer |
 | Mathstral-7B-v0.1  | [Hugging Face](https://huggingface.co/mistralai/mathstral-7B-v0.1) <br/> [raw_weights](https://models.mistralcdn.com/mathstral-7b-v0-1/mathstral-7B-v0.1.tar) (md5sum: `5f05443e94489c261462794b1016f10b`) | - 32768 vocabulary size <br/> - Supports v3 Tokenizer |
-| Mistral-Nemo-Base-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Nemo-Base-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-nemo-2407/mistral-nemo-base-2407.tar) (md5sum: `c5d079ac4b55fc1ae35f51f0a3c0eb83`) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer |  
-| Mistral-Nemo-Instruct-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-nemo-2407/mistral-nemo-instruct-2407.tar) (md5sum: `296fbdf911cb88e6f0be74cd04827fe7`) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
+| Mistral-Nemo-Base-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Nemo-Base-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-nemo-2407/mistral-nemo-base-2407.tar) (md5sum: `c5d079ac4b55fc1ae35f51f0a3c0eb83`) | - 128k vocabulary size <br/> - Supports v3 tekken.json tokenizer |  
+| Mistral-Nemo-Instruct-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-nemo-2407/mistral-nemo-instruct-2407.tar) (md5sum: `296fbdf911cb88e6f0be74cd04827fe7`) | - 128k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
 | Mistral-Large-Instruct-2407  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Large-Instruct-2407) <br/> [raw_weights](https://models.mistralcdn.com/mistral-large-2407/mistral-large-instruct-2407.tar) (md5sum: `fc602155f9e39151fba81fcaab2fa7c4`)| - 32768 vocabulary size <br/> - Supports v3 Tokenizer <br/> - Supports function calling |
-| Pixtral-2409 | [Hugging Face](https://huggingface.co/mistralai/Pixtral-12B-2409) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
+| Pixtral-2409 | [Hugging Face](https://huggingface.co/mistralai/Pixtral-12B-2409) | - 128k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 | Mistral-Small-Instruct-2409 | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2409) | - 32768 vocabulary size <br/> - Supports v3 Tokenizer <br/> - Supports function calling |
-| Ministral-8B-Instruct-2410 | [Hugging Face](https://huggingface.co/mistralai/Ministral-8B-Instruct-2410) | - 131k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
+| Ministral-8B-Instruct-2410 | [Hugging Face](https://huggingface.co/mistralai/Ministral-8B-Instruct-2410) | - 128k vocabulary size <br/> - Supports v3 tekken.json tokenizer <br/> - Supports function calling |
 | Mistral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling |
 | Pixtral-Large-Instruct-2411  | [Hugging Face](https://huggingface.co/mistralai/Pixtral-Large-Instruct-2411)| - 32768 vocabulary size <br/> - Supports v7 tokenizer <br/> - Supports function calling <br/> - Supports images |
-| Mistral-Small-Base-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Base-2501)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
-| Mistral-Small-Instruct-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2501)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
-| Mistral-Small-Base-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Base-2503)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
-| Mistral-Small-Instruct-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503)| - 131k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
+| Mistral-Small-Base-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Base-2501)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Mistral-Small-Instruct-2501  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-Instruct-2501)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Mistral-Small-Base-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Base-2503)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
+| Mistral-Small-Instruct-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
+| Devstral-Small-2505  | [Hugging Face](https://huggingface.co/mistralai/Devstral-Small-2505)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
 
 ## Sizes
 
@@ -67,7 +68,7 @@ If you are interested in purchasing a commercial license for our models, please 
 | Mistral-Small-Instruct-2501  | 24B | 24B | 60 |
 | Mistral-Small-Base-2503  | 24B | 24B | 60 |
 | Mistral-Small-Instruct-2503  | 24B | 24B | 60 |
-
+| Devstral-Small-2505  | 24B | 24B | 60 |
 
 ## How to run? 
 Check out [mistral-inference](https://github.com/mistralai/mistral-inference/), a Python package for running our models. You can install `mistral-inference` by

@@ -17,6 +17,7 @@ It can be used for complex multilingual reasoning tasks, including text understa
 - [Mistral Medium](https://mistral.ai/news/mistral-medium-3/): a cutting-edge multimodal model.
 It can be used for professional use cases, coding, function-calling and reasoning tasks.
 - [Mistral Small](https://mistral.ai/news/mistral-small-3-1/): A powerful and efficient multimodal model with high level conversational and translation capabilities.
+- [Devstral Small](https://mistral.ai/news/devstral/): A powerful and efficient 24B text model. Debuting as #1 open source model on SWE-bench. This model has high agentic capabilities, performing well with OpenHands and SWE-agent code agent frameworks.
 - [Mistral Saba](https://mistral.ai/news/mistral-saba/): A powerful and efficient text generation model trained extensively on languages from the Middle East and South Asia, achieving state-of-the-art quality comparable to much larger models.
 It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
 - [Mistral Nemo](https://mistral.ai/news/mistral-nemo/): Mistral Nemo's reasoning, world knowledge, and coding performance are state-of-the-art in its size category.  As it relies on standard architecture, Mistral Nemo is easy to use and a drop-in replacement in any system using Mistral 7B that it supersedes.

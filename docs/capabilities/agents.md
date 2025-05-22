@@ -23,7 +23,7 @@ We provide two primary methods for creating agents:
 
 To start building your own agent, visit https://console.mistral.ai/build/agents/new.
 
-<img src="/img/agent.png" alt="drawing" width="600"/>
+<img src="/static/img/agent.png" alt="drawing" width="600"/>
 
 Here are the available options for customizing your agent:
 - **Model**: The specific model you would like the agent to use. Default is "Mistral Large 2" (`mistral-large-2407`). The other model choices are "Mistral Nemo" (`open-mistral-nemo`), "Codestral" (`codestral-2405`), and your fine-tuned models.
@@ -180,7 +180,7 @@ TODO
 ``` -->
 
 Here is an example of how you can create this agent with the La Plateforme [agent builder](https://console.mistral.ai/build/agents/new).
-<img src="/img/French_agent.png" alt="drawing" width="600"/>
+<img src="/static/img/French_agent.png" alt="drawing" width="600"/>
 </details>
 
 <details>
@@ -197,13 +197,13 @@ TODO
 Here is an example of how you can create this agent with using the La Plateforme [agent builder](https://console.mistral.ai/build/agents/new).
 
    
-<img src="/img/Python_agent.png" alt="drawing" width="600"/>
+<img src="/static/img/Python_agent.png" alt="drawing" width="600"/>
 </details>
 
 <details>
     <summary><b>Use case 3: Python agent workflow</b></summary>
 
-<img src="/img/agent_demo1.png" alt="drawing" width="600"/>
+<img src="/static/img/agent_demo1.png" alt="drawing" width="600"/>
 
 You can use the Python agent we created in use case 2 in an assistant coding workflow. For example, here is a very simple Python agent workflow with the following steps:
 
@@ -236,7 +236,7 @@ Check out this [example notebook](https://github.com/mistralai/cookbook/blob/mai
 <details>
     <summary><b>Use case 4: Data analytical multi-agent workflow</b></summary>
 
-<img src="/img/agent_demo2.png" alt="drawing" width="600"/>
+<img src="/static/img/agent_demo2.png" alt="drawing" width="600"/>
 
 You can also leverage multiple agents in a workflow. Here is an example: 
 

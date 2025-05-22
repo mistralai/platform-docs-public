@@ -57,7 +57,7 @@ Let’s inspect one of these cases. There are two issues with this use case:
 - one of the assistant messages is an empty string; 
 - the last message is not an assistant message. 
 
-<img src="/img/guides/ft1.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/ft1.png" alt="drawing" width="700"/>
 
 
 ### Upload dataset
@@ -479,7 +479,7 @@ client.fine_tuning.jobs.create(
 
 Here are the screenshots of the W&B dashboard showing the information of our fine-tuning job. 
 
-<img src="/img/guides/ft2.png" alt="drawing" width="100%"/>
+<img src="/static/img/guides/ft2.png" alt="drawing" width="100%"/>
 
 ## End-to-end example with open-source `mistral-finetune`
 We have also open sourced fine-tuning codebase mistral-finetune allowing you to fine-tune Mistral’s open-weights models (Mistral 7B, Mixtral 8x7B, Mixtral 8x22B). 

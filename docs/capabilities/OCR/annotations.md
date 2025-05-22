@@ -17,7 +17,7 @@ In addition to the basic OCR functionnality, Mistral Document AI API adds the `a
 
 <div style={{ textAlign: 'center' }}>
   <img
-    src="/img/ocr_annotations_explanation.png"
+    src="/static/img/ocr_annotations_explanation.png"
     alt="annotations_explanation_graph"
     width="600"
     style={{ borderRadius: '15px' }}
@@ -42,7 +42,7 @@ In addition to the basic OCR functionnality, Mistral Document AI API adds the `a
 
 <div style={{ textAlign: 'center' }}>
   <img
-    src="/img/ocr_annotations_workflow.png"
+    src="/static/img/ocr_annotations_workflow.png"
     alt="annotations_workflow_graph"
     width="800"
     style={{ borderRadius: '15px' }}

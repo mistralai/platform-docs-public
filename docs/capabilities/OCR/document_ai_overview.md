@@ -8,7 +8,7 @@ slug: document_ai_overview
 
 <div style={{ textAlign: 'center' }}>
   <img
-    src="/img/document_ai_overview.png"
+    src="/static/img/document_ai_overview.png"
     alt="Document AI Graph"
     width="500"
     style={{ borderRadius: '15px' }}
@@ -19,6 +19,6 @@ Mistral Document AI offers enterprise-level document processing, combining cutti
 
 ## Services
 
-- [Basic OCR](../basic_ocr): Discover our OCR model and its extensive capabilities.
-- [Annotations](../annotations): Annotate and extract data from your documents using our built-in Structured Outputs.
-- [Document Understanding](../document_understanding): Harness the power of our models in conjunction with our OCR technology.
+- [Basic OCR](/docs/capabilities/OCR/basic_ocr.md): Discover our OCR model and its extensive capabilities.
+- [Annotations](/docs/capabilities/OCR/annotations.md): Annotate and extract data from your documents using our built-in Structured Outputs.
+- [Document Understanding](/docs/capabilities/OCR/document_understanding.md): Harness the power of our models in conjunction with our OCR technology.

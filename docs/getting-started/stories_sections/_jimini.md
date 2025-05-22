@@ -37,14 +37,14 @@ To determine the optimal training duration, we followed the rule of thumb that e
 
 To tune the `learning_rate`, we opted to measure third-party and more generic capabilities than legal criteria to ensure that the model does not regress due to catastrophic forgetting. To this end, we evaluated the model's performance using the [faithfulness](https://docs.ragas.io/en/stable/concepts/metrics/faithfulness.html) and [relevancy](https://docs.ragas.io/en/stable/references/metrics.html#ragas.metrics.AnswerRelevancy) metrics from [RAGAS](https://arxiv.org/abs/2309.15217) on a proprietary *generalist* dataset.
 
-![RAGAS evaluation on BSARD](/img/stories/results_bsard.png)
+![RAGAS evaluation on BSARD](/static/img/stories/results_bsard.png)
 *Figure 1: RAGAS based evaluation of Faithfulness and Answer relevancy of the `mistral-small-latest` and `mistral-small-fine-tuned` models for different learning rates and different number of steps.*
 
 ​​We have therefore selected a `learning_rate` of `1e-6`, for which we observe a slight improvement compared to `mistral-small-latest`, as well as a balance between the two criteria. Thus, there does not appear to be any regression of the model's general capabilities.
 
 In addition to this initial sanity check, we used the very useful integration of the Mistral AI fine-tuning endpoint’s with [Weights & Biases](https://wandb.ai/site) to monitor our trainings, and we have notably measured the evolution of the model's `perplexity`, which seems to effectively converge under this training regime (where each token is seen 3 times).
 
-![BSARD training curves](/img/stories/bsard_curves.png)
+![BSARD training curves](/static/img/stories/bsard_curves.png)
 *Figure 2: Perplexity and eval loss during the fine-tuning on BSARD monitored in *Weights & Biases*.*
 
 ### Eval
@@ -91,7 +91,7 @@ We conducted a rigorous evaluation of several candidate `Judge LLMs`, including 
 
 ### Results
 
-![BSARD evaluation on legal quality](/img/stories/legal_quality.png)
+![BSARD evaluation on legal quality](/static/img/stories/legal_quality.png)
 *Figure 3: LLM-as-a-judge evaluation of `mistral-small-latest` and `mistral-small-finetuned` based on the legal quality of their answers.*
 
 We observe a significant improvement, with a score increase from 1.42 to 1.73, representing a **20% enhancement!**
@@ -135,7 +135,7 @@ The answer from `mistral-small-finetuned` is clear and well-structured, supporte
 
 To enhance our legal translation tool, we have also fine-tuned `mistral-small-latest` on legal documents. For this purpose, we selected a subset of the [Multi EURLEX](https://arxiv.org/pdf/2109.00904) dataset, which consists of 35,000 European legal documents in French translated into German.
 
-![Multi EURLEX training curves](/img/stories/eurlex_curves.png)
+![Multi EURLEX training curves](/static/img/stories/eurlex_curves.png)
 
 *Figure 4: Perplexity and eval loss during the fine-tuning on Multi EURLEX monitored in *Weights & Biases*.*
 

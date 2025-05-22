@@ -1,7 +1,7 @@
 ---
 id: batch
 title: Batch Inference
-sidebar_position: 2.92
+sidebar_position: 12
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

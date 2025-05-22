@@ -1,7 +1,7 @@
 ---
 id: agents
 title: Agents
-sidebar_position: 2.91
+sidebar_position: 11
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

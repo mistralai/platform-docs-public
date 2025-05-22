@@ -9,7 +9,7 @@ The video showcases the behavior of Tak. When a user inputs a query, Tak will us
 
 In order to provide the most relevant answer to the user query, several function calls are performed to categorize the request (see diagram below). As the multiple agents are chained, ensuring consistently formatted outputs is crucial.
 
-![Performance Metrics](/img/stories/tak_architecture_diagram.png)
+![Performance Metrics](/static/img/stories/tak_architecture_diagram.png)
 
 ## Company Description
 
@@ -26,7 +26,7 @@ For the learning rate, we used the suggested learning rate of 6e-5.
 ## Eval
 To evaluate our fine-tuned model, we run inference of the test set of our dataset, then use binary classification metrics (Accuracy, Recall, F1 score). We test whether we were able to align the behavior of Mistral 7b to the classification behavior of OpenAI GPT-4-turbo, while maintaining the expected structured output. Indeed, we removed the function calling.
 
-![Performance Metrics](/img/stories/performance_metrics.png)
+![Performance Metrics](/static/img/stories/performance_metrics.png)
 
 Fine-tuning made Mistral 7B match the reference model, **increasing the F1 score from 20% to 78%**. Without fine-tuning, Mistral 7B achieved 87% accuracy and 20% recall on our classification task. With the fine-tuned model, we achieved 96% accuracy and 90% recall.
 

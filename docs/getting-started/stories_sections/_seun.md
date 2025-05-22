@@ -67,7 +67,7 @@ This leaves us with ~28000 question/answer pairs to feed into the model for tuni
 
 A simple table lookup (Pandas Dataframe) was used to surface relevant information about each miRNA present in query strings, and whole abstracts were fed into the model. N of results was never more than 12, and the context window limit was never reached.
 
-![](/img/stories/rag.png)
+![](/static/img/stories/rag.png)
 
 Embeddings for each paper and title abstract were prepopulated and stored in the dataframe, and cosine similarity was used to surface the top-***k*** most relevant papers before feeding into the model. The number of results fed into the model varied depending on the number of entries present for each molecule. (ie. if there is only 1 entry, k will equal 1. If there are 30 entries, get the best 12 via cosine similarity.)
 
@@ -78,11 +78,11 @@ For disease association and prediction, 150 random questions from a miRNA diseas
 
 The fine-tuned model outperformed both `mistral-small-latest` and `mistral-large-latest` in question answering, without explicitly seeing any data affiliated to the benchmark. Values below are the averages across 3 attempts.
 
-![](/img/stories/test.png)
+![](/static/img/stories/test.png)
 
 One of the benefits of fine-tuning is that you can achieve better performnance with smaller, and therefore faster, models. Below is the average latency for each API call for the same three runs above.
 
-![](/img/stories/latency.png)
+![](/static/img/stories/latency.png)
 
 ## Example responses
 

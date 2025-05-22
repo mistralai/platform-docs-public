@@ -14,7 +14,7 @@ Mistral Document AI API comes with a Document OCR (Optical Character Recognition
 
 <div style={{ textAlign: 'center' }}>
   <img
-    src="/img/basic_ocr_graph.png"
+    src="/static/img/basic_ocr_graph.png"
     alt="Basic OCR Graph"
     width="600"
     style={{ borderRadius: '15px' }}

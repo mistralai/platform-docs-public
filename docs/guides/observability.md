@@ -103,7 +103,7 @@ Mistral integrates with several observability tools to help you monitor and ensu
 
 LangSmith provides observability throughout the LLM application development lifecycle.   
 
-<img src="/img/guides/obs_langchain0.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_langchain0.png" alt="drawing" width="700"/>
 
 
 **Pros:**
@@ -119,14 +119,14 @@ LangSmith provides observability throughout the LLM application development life
 Here is an example tracking traces, input, output, documents, tokens, and status when we run the [corrective RAG example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/corrective_rag_mistral.ipynb) from the Mistral cookbook. 
 
 
-<img src="/img/guides/obs_langchain.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_langchain.png" alt="drawing" width="700"/>
 
 
 ### Integration with 🪢 Langfuse
 
 [Langfuse](https://langfuse.com) ([GitHub](https://github.com/langfuse/langfuse)) is an open-source platform for LLM engineering. It provides tracing and monitoring capabilities for AI applications, helping developers debug, analyze, and optimize their products. Langfuse integrates with various tools and frameworks via native integrations, OpenTelemetry, and SDKs.
 
-<img src="/img/guides/obs_langfuse.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_langfuse.png" alt="drawing" width="700"/>
 
 **Pros:**
 
@@ -142,7 +142,7 @@ Here is an example tracking traces, input, output, documents, tokens, and status
 * [Step-by-step guide](https://langfuse.com/docs/integrations/mistral-sdk) on tracing Mistral models with Langfuse.
 * [Cookbook](https://langfuse.com/guides/cookbook/integration_llama_index_posthog_mistral) on building a RAG application with Mistral and LlamaIndex and trace the steps with Langfuse.
 
-<img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
 
 _[Public example trace in Langfuse](https://cloud.langfuse.com/project/cloramnkj0002jz088vzn1ja4/traces/a3360c6f-24ad-455c-aae7-eb9d5c6f5dac?observation=767f8ac1-0c7d-412f-8fd8-2642acb267c6&display=preview)_
 
@@ -163,13 +163,13 @@ Phoenix is an open-source observability library designed for experimentation, ev
 **Mistral integration Example:**
 Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/Phoenix/arize_phoenix_tracing.ipynb) that shows how to trace Mistral chat.complete and tool calls in Phoenix. 
 
-<img src="/img/guides/obs_phoenix1.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_phoenix1.png" alt="drawing" width="700"/>
 
 ### Integration with Weights and Biases 
 
 Weights & Biases is an end-to-end AI developer platform for ML and LLM workflows used for both fine-tuning and LLM application building. Use W&B Weave to evaluate, monitor, and iterate on GenAI applications, and W&B Models as a system of record to train, fine-tune, and manage AI models.
 
-<img src="/img/guides/obs_wandb.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_wandb.png" alt="drawing" width="700"/>
 
 
 **Pros:**
@@ -219,13 +219,13 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 [https://github.com/mistralai/cookbook/blob/main/third\_party/CAMEL\_AI/camel\_roleplaying\_scraper.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb)
 
-<img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_agentops.png" alt="drawing" width="700"/>
 
 ### Integration with phospho
 
 [phospho](https://phospho.ai/) is a text analytics platform that makes it easy to get answers, take decisions and reduce churn by data mining user messages.
 
-<img src="/img/guides/obs_phospho.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_phospho.png" alt="drawing" width="700"/>
 
 **Pros:**
 
@@ -238,7 +238,7 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 
 - Check out the [phospho notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/phospho) in the Mistral cookbook.
 
-<img src="/img/guides/obs_phospho2.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_phospho2.png" alt="drawing" width="700"/>
 
 ### Integration with MLflow
 
@@ -254,4 +254,4 @@ MLflow is a unified, end-to-end, open source MLOps platform for both traditional
 **Mistral integration Example:**
 Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/MLflow/mistral-mlflow-tracing.ipynb). 
 
-<img src="/img/guides/obs_mlflow.png" alt="drawing" width="700"/>
+<img src="/static/img/guides/obs_mlflow.png" alt="drawing" width="700"/>

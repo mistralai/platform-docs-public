@@ -88,7 +88,7 @@ To better understand the underlying principle and impact it has on the probabili
     *"What is the best mythical creature? Answer with a single word."*
 
 <div style={{ textAlign: 'center' }}>
-  <img src="/img/barplot.png" alt="Example Image" width="800"/>
+  <img src="/static/img/barplot.png" alt="Example Image" width="800"/>
 
   <sub><sup>Barplot example comparing the distribution with different `Temperature` values and the top 5 tokens using Mistral 7B at 4 bits precision.</sup></sub>
 </div>
@@ -191,7 +191,7 @@ We will visualize the token probability distribution across different temperatur
 
 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
     <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-    <img src="/img/top_barplot.png" alt="Example Image" style={{ width: '85%' }} />
+    <img src="/static/img/top_barplot.png" alt="Example Image" style={{ width: '85%' }} />
     <br/><sub><sup>Different Temperature values and the top 5 tokens using Mistral 7B at 4 bits precision.</sup></sub>
     </div>
 
@@ -200,7 +200,7 @@ We will visualize the token probability distribution across different temperatur
     </div>
 
     <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-    <img src="/img/top_barplot_black.png" alt="Example Image" style={{ width: '85%' }} />
+    <img src="/static/img/top_barplot_black.png" alt="Example Image" style={{ width: '85%' }} />
     <br/><sub><sup>Top P considers only the top tokens until reaching 50% probability.</sup></sub>
     </div>
 
@@ -209,7 +209,7 @@ We will visualize the token probability distribution across different temperatur
     </div>
 
     <div style={{ textAlign: 'center' }}>
-    <img src="/img/top_barplot_final.png" alt="Example Image" style={{ width: '85%' }} />
+    <img src="/static/img/top_barplot_final.png" alt="Example Image" style={{ width: '85%' }} />
     <br/><sub><sup>Other tokens' probabilities are set to 0, and the remaining tokens' probabilities are adjusted.</sup></sub>
     </div>
 </div>

@@ -16,7 +16,7 @@ The Document understanding capability combines OCR with large language model cap
 
 <div style={{ textAlign: 'center' }}>
   <img
-    src="/img/document_understanding.png"
+    src="/static/img/document_understanding.png"
     alt="Document Understanding Graph"
     width="800"
     style={{ borderRadius: '15px' }}

@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 # Annotations
 
-In addition to the basic OCR functionnality, Mistral Document AI API adds the `annotations` functionality, which allows you to extract information in a structured json-format that you provide. Specifically, it offers two types of annotations: 
+In addition to the basic OCR functionality, Mistral Document AI API adds the `annotations` functionality, which allows you to extract information in a structured json-format that you provide. Specifically, it offers two types of annotations: 
 - `bbox_annotation`: gives you the annotation of the bboxes extracted by the OCR model (charts/ figures etc) based on user requirement and provided bbox/image annotation format. The user may ask to describe/caption the figure for instance.
 - `document_annotation`: returns the annotation of the entire document based on the provided document annotation format.
 
@@ -293,7 +293,7 @@ curl --location 'https://api.mistral.ai/v1/ocr' \
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
-Here is an example of how to use our Document Annotation functionnality using the Mistral AI client and Pydantic:
+Here is an example of how to use our Document Annotation functionality using the Mistral AI client and Pydantic:
 
 **Define the Data Model**
 
@@ -336,7 +336,7 @@ response = client.ocr.process(
   </TabItem>
    <TabItem value="typescript" label="typescript" default>
 
-Here is an example of how to use our Document Annotation functionnality using the Mistral AI client and Zod:
+Here is an example of how to use our Document Annotation functionality using the Mistral AI client and Zod:
 
 **Define the Data Model**
 

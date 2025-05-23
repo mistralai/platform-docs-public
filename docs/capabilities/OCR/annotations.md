@@ -160,11 +160,11 @@ const ImageSchema = z.object({
 
 **Start the completion**
 
-Next, use the Mistral AI python client to make a request and ensure the response adheres to the defined structure using `bbox_annotation_format` set to the corresponding Zod schema:
+Next, use the Mistral AI typescript client to make a request and ensure the response adheres to the defined structure using `bbox_annotation_format` set to the corresponding Zod schema:
 
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
-import { responseFormatFromZodSchema } from "@mistralai/mistralai";
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
@@ -178,7 +178,7 @@ async function processDocument() {
         type: "document_url",
         documentUrl: "https://arxiv.org/pdf/2410.07073"
       },
-      bboxAnnotationFormat: responseFormatFromZodSchema(ImageSchema),
+      bboxAnnotationFormat: responseFormatFromZodObject(ImageSchema),
       includeImageBase64: true,
     });
 
@@ -355,11 +355,11 @@ const DocumentSchema = z.object({
 
 **Start the completion**
 
-Next, use the Mistral AI python client to make a request and ensure the response adheres to the defined structures using `document_annotation_format` set to the corresponding Zod schema:
+Next, use the Mistral AI typescript client to make a request and ensure the response adheres to the defined structures using `document_annotation_format` set to the corresponding Zod schema:
 
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
-import { responseFormatFromZodSchema } from "@mistralai/mistralai";
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
@@ -374,7 +374,7 @@ async function processDocument() {
         type: "document_url",
         documentUrl: "https://arxiv.org/pdf/2410.07073"
       },
-      documentAnnotationFormat: responseFormatFromZodSchema(DocumentSchema),
+      documentAnnotationFormat: responseFormatFromZodObject(DocumentSchema),
       includeImageBase64: true,
     });
 
@@ -575,11 +575,11 @@ const DocumentSchema = z.object({
 
 **Start the completion**
 
-Next, use the Mistral AI python client to make a request and ensure the response adheres to the defined structures using `bbox_annotation_format` and `document_annotation_format` set to the corresponding Zod schemas:
+Next, use the Mistral AI typescript client to make a request and ensure the response adheres to the defined structures using `bbox_annotation_format` and `document_annotation_format` set to the corresponding Zod schemas:
 
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
-import { responseFormatFromZodSchema } from "@mistralai/mistralai";
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
@@ -594,8 +594,8 @@ async function processDocument() {
         type: "document_url",
         documentUrl: "https://arxiv.org/pdf/2410.07073"
       },
-      bboxAnnotationFormat: responseFormatFromZodSchema(ImageSchema),
-      documentAnnotationFormat: responseFormatFromZodSchema(DocumentSchema),
+      bboxAnnotationFormat: responseFormatFromZodObject(ImageSchema),
+      documentAnnotationFormat: responseFormatFromZodObject(DocumentSchema),
       includeImageBase64: true,
     });
 

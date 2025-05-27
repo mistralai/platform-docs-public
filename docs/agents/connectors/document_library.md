@@ -129,7 +129,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
   </TabItem>
 </Tabs>
 
-For explanation purposes, lets restructure the previous output in a more readeable JSON format.
+For explanation purposes, lets restructure the previous output in a more readable JSON format.
 
 ```json
 {

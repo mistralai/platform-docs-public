@@ -136,7 +136,7 @@ Everything is ready; you can run our Agent and get the output results!
 
 ```python
         # Run the agent with a query
-        run_result = await client.conversations.run_async(
+        run_result = await client.beta.conversations.run_async(
             run_ctx=run_ctx,
             inputs="Tell me the weather in John's location currently.",
         )
@@ -213,7 +213,7 @@ Finally, we run the agent with a query and print the results.
 
 ```python
         # Run the agent with a query
-        run_result = await client.conversations.run_async(
+        run_result = await client.beta.conversations.run_async(
             run_ctx=run_ctx,
             inputs="Can you write a hello_world.py and check for security vulnerabilities",
         )
@@ -374,7 +374,7 @@ Finally, we run the agent with a query and print the results.
 
 ```python
         # Run the agent with a query
-        run_result = await client.conversations.run_async(
+        run_result = await client.beta.conversations.run_async(
             run_ctx=run_ctx,
             inputs="Tell me which projects do I have in my workspace?",
         )
@@ -397,7 +397,7 @@ Here is a brief example of how to stream conversations:
 
 ```python
     # Stream the agent's responses
-    events = await client.conversations.run_stream_async(
+    events = await client.beta.conversations.run_stream_async(
         run_ctx=run_ctx,
         inputs="Tell me the weather in John's location currently.",
     )

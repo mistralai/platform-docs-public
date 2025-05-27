@@ -89,7 +89,7 @@ Now that we have our coding agent ready, we can at any point make use of it to r
   <TabItem value="python" label="python" default>
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=code_agent.id, inputs="Run a fibonacci function for the first 20 values."
 )
 ```

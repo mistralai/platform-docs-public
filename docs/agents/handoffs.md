@@ -217,7 +217,7 @@ The first example asks for the US central bank interest rate, so we expect to in
   <TabItem value="python" label="python" default>
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=finance_agent.id,
     inputs="Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y"
 )
@@ -286,7 +286,7 @@ The second example asks for the European central bank interest rate and to plot 
 ```py
 from mistralai import FunctionResultEntry
 
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=finance_agent.id,
     inputs="Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years"
 )
@@ -297,7 +297,7 @@ if response.outputs[-1].type == "function.call" and response.outputs[-1].name ==
         tool_call_id=response.outputs[-1].tool_call_id,
         result="2.5%",
     )
-    response = client.conversations.append(
+    response = client.beta.conversations.append(
         conversation_id=response.conversation_id,
         inputs=[user_entry]
     )

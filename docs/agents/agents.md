@@ -169,13 +169,13 @@ For more information regarding handoffs visit [this section](../handoffs).
   <TabItem value="python" label="python" default>
   
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=simple_agent.id, inputs="Who is Albert Einstein?", #store=False
 )
 ```
 or...
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=simple_agent.id, inputs=[{"role": "user", "content": "Who is Albert Einstein?"}], #store=False
 )
 ```
@@ -183,7 +183,7 @@ Both options are equivalent.
 
 Without an Agent, querying Conversations could look like so:
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     model="mistral-medium-latest", inputs=[{"role": "user", "content": "Who is Albert Einstein?"}], tools=[], #store=False
 )
 ```
@@ -240,7 +240,7 @@ You can continue the conversation; the history is stored when using the correct 
   <TabItem value="python" label="python" default>
 
 ```py 
-response = client.conversations.append(
+response = client.beta.conversations.append(
     conversation_id=response.conversation_id, inputs="Translate to French."
 )
 ```
@@ -281,13 +281,13 @@ You can also stream the outputs, both when starting a conversation or continuing
 
 #### Start
 ```py
-response = client.conversations.start_stream(
+response = client.beta.conversations.start_stream(
     agent_id=websearch_agent.id, inputs="Who is Albert Einstein?"
 )
 ```
 #### Continue
 ```py
-response = client.conversations.append_stream(
+response = client.beta.conversations.append_stream(
     conversation_id=response.conversation_id, inputs="Translate to French."
 )
 ```

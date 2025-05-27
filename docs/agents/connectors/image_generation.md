@@ -91,7 +91,7 @@ Now that we have our image generation agent ready, we can create images on deman
   <TabItem value="python" label="python" default>
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=image_agent.id, inputs="Generate an orange cat in an office."
 )
 ```

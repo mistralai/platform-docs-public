@@ -94,7 +94,7 @@ Now that we have our websearch agent ready, we can at any point make use of it t
   <TabItem value="python" label="python" default>
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=websearch_agent.id, inputs="Who won the last European Football cup?"
 )
 ```

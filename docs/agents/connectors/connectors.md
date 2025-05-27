@@ -37,7 +37,7 @@ library_agent = client.beta.agents.create(
 Or call our conversations API directly:
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     model="...", inputs=[...], tools=[...], # store=False
 )
 ```

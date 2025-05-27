@@ -25,7 +25,7 @@ They are also available for users to use them directly via Conversations without
 You can either create an Agent with the desired tools:
 
 ```py
-library_agent = client.agents.create(
+library_agent = client.beta.agents.create(
     model="...",
     name="...",
     description="...",

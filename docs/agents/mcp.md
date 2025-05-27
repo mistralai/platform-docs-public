@@ -74,7 +74,7 @@ We can now define the server parameters, which will point to a specific path. Fo
     )
 
     # Create an agent to tell the weather
-    weather_agent = client.agents.create(
+    weather_agent = client.beta.agents.create(
         model=MODEL,
         name="weather teller",
         instructions="You are able to tell the weather.",

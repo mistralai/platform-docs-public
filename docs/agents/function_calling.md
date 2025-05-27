@@ -49,7 +49,7 @@ def get_european_central_bank_interest_rate(date: str) -> Dict[str, str]:
 Once defined, we provide a Shema corresponding to the same function.
 
 ```py
-ecb_interest_rate_agent = client.agents.create(
+ecb_interest_rate_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="Can find the current interest rate of the European central bank",
     name="ecb-interest-rate-agent",

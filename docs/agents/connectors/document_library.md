@@ -32,7 +32,7 @@ This feature is currently in testing, so it may undergo considerable changes in 
   <TabItem value="python" label="python" default>
 
 ```py
-library_agent = client.agents.create(
+library_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     name="Document Library Agent",
     description="Agent used to access documents from the document library.",

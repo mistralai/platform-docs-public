@@ -49,18 +49,18 @@ class CalcResult(BaseModel):
     result: str
 
 # Create your agents
-finance_agent = client.agents.create(
+finance_agent = client.beta.agents.create(
     model="mistral-large-latest",
     description="Agent used to answer financial related requests",
     name="finance-agent",
 )
-web_search_agent = client.agents.create(
+web_search_agent = client.beta.agents.create(
     model="mistral-large-latest",
     description="Agent that can search online for any information if needed",
     name="websearch-agent",
     tools=[{"type": "web_search"}],
 )
-ecb_interest_rate_agent = client.agents.create(
+ecb_interest_rate_agent = client.beta.agents.create(
     model="mistral-large-latest",
     description="Can find the current interest rate of the European central bank",
     name="ecb-interest-rate-agent",
@@ -85,14 +85,14 @@ ecb_interest_rate_agent = client.agents.create(
         },
     ],
 )
-graph_agent = client.agents.create(
+graph_agent = client.beta.agents.create(
     model="mistral-large-latest",
     name="graph-drawing-agent",
     description="Agent used to create graphs using the code interpreter tool.",
     instructions="Use the code interpreter tool when you have to draw a graph.",
     tools=[{"type": "code_interpreter"}]
 )
-calculator_agent = client.agents.create(
+calculator_agent = client.beta.agents.create(
     model="mistral-large-latest",
     name="calculator-agent",
     description="Agent used to make detailed calculations",
@@ -147,19 +147,19 @@ Once all our Agents created, we update our previous defined Agents with a list o
 
 ```py
 # Allow the finance_agent to handoff the conversation to the ecb_interest_rate_agent or web_search_agent
-finance_agent = client.agents.update(
+finance_agent = client.beta.agents.update(
     agent_id=finance_agent.id, 
     handoffs=[ecb_interest_rate_agent.id, web_search_agent.id]
 )
 
 # Allow the ecb_interest_rate_agent to handoff the conversation to the graph_agent or calculator_agent
-ecb_interest_rate_agent = client.agents.update(
+ecb_interest_rate_agent = client.beta.agents.update(
     agent_id=ecb_interest_rate_agent.id, 
     handoffs=[graph_agent.id, calculator_agent.id]
 )
 
 # Allow the web_search_agent to handoff the conversation to the graph_agent or calculator_agent
-web_search_agent = client.agents.update(
+web_search_agent = client.beta.agents.update(
     agent_id=web_search_agent.id, 
     handoffs=[graph_agent.id, calculator_agent.id]
 )

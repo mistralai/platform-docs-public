@@ -27,7 +27,7 @@ Note that you can still add more tools to the agent, the model is free to run co
   <TabItem value="python" label="python" default>
 
 ```py
-code_agent = client.agents.create(
+code_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     name="Coding Agent",
     description="Agent used to execute code using the interpreter tool.",

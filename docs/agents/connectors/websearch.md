@@ -33,7 +33,7 @@ Note that you can still add more tools to the agent, the model is free to search
   <TabItem value="python" label="python" default>
 
 ```py
-websearch_agent = client.agents.create(
+websearch_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="Agent able to search information over the web, such as news, weather, sport results...",
     name="Websearch Agent",

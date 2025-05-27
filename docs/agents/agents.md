@@ -42,7 +42,7 @@ from mistralai import Mistral
 api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key)
 
-simple_agent = client.agents.create(
+simple_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="A simple Agent with persistent state.",
     name="Simple Agent"
@@ -58,7 +58,7 @@ model='mistral-medium-2505' name='Simple Agent' description='A simple Agent with
 
 Here is an example of a Web Search Agent using our built-in tool:
 ```py
-websearch_agent = client.agents.create(
+websearch_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="Agent able to search information over the web, such as news, weather, sport results...",
     name="Websearch Agent",
@@ -108,7 +108,7 @@ The result is a new Agent with the new settings, you can this way have the previ
   <TabItem value="python" label="python" default>
 
 ```py
-simple_agent = client.agents.update(
+simple_agent = client.beta.agents.update(
     agent_id=simple_agent.id, 
     description="An edited simple agent.",
     completion_args={

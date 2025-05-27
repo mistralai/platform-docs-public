@@ -54,7 +54,7 @@ model='mistral-medium-2505' name='Document Library Agent' description='Agent use
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -110,7 +110,7 @@ conversation_id='conv_06835bb1996079898000435d8a0b1afd' outputs=[ToolExecutionEn
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">

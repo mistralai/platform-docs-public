@@ -54,7 +54,7 @@ model='mistral-medium-2505' name='Websearch Agent' description='Agent able to se
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -109,7 +109,7 @@ conversation_id='conv_06835b734f2776bb80008fa7a309bf5a' outputs=[ToolExecutionEn
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">

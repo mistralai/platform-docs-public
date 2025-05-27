@@ -111,7 +111,7 @@ calculator_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -167,7 +167,7 @@ web_search_agent = client.beta.agents.update(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -257,11 +257,11 @@ content=' {"result": "The future value of the investment after 10 years is $1,54
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 </Tabs>
 
@@ -362,7 +362,7 @@ for i, chunk in enumerate(response.outputs[-1].content):
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">

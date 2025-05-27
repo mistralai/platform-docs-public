@@ -80,7 +80,7 @@ You can find more information [here](../connectors/websearch).
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -121,7 +121,7 @@ simple_agent = client.beta.agents.update(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -196,7 +196,7 @@ conversation_id='conv_0680b7001110794a8000568d65fd125d' outputs=[MessageOutputEn
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -254,7 +254,7 @@ conversation_id='conv_0680b7001110794a8000568d65fd125d' outputs=[MessageOutputEn
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -294,7 +294,7 @@ response = client.beta.conversations.append_stream(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">

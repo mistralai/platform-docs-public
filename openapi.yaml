@@ -89,6 +89,441 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
         - models
+  /v1/conversations:
+    post:
+      summary: Create a conversation and append entries to it.
+      description: Create a new conversation, using a base model or an agent and append entries. Completion and tool executions are run and the response is appended to the conversation.Use the returned conversation_id to continue the conversation.
+      operationId: agents_api_v1_conversations_start
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      summary: List all created conversations.
+      description: Retrieve a list of conversation entities sorted by creation time.
+      operationId: agents_api_v1_conversations_list
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            title: Page
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/ModelConversation'
+                    - $ref: '#/components/schemas/AgentConversation'
+                title: Response V1 Conversations List
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}:
+    get:
+      summary: Retrieve a conversation information.
+      description: Given a conversation_id retrieve a conversation entity with its attributes.
+      operationId: agents_api_v1_conversations_get
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Conversation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/ModelConversation'
+                  - $ref: '#/components/schemas/AgentConversation'
+                title: Response V1 Conversations Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      summary: Append new entries to an existing conversation.
+      description: Run completion on the history of the conversation and the user entries. Return the new created entries.
+      operationId: agents_api_v1_conversations_append
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: ID of the conversation to which we append entries.
+            title: Conversation Id
+          description: ID of the conversation to which we append entries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationAppendRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}/history:
+    get:
+      summary: Retrieve all entries in a conversation.
+      description: Given a conversation_id retrieve all the entries belonging to that conversation. The entries are sorted in the order they were appended, those can be messages, connectors or function_call.
+      operationId: agents_api_v1_conversations_history
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Conversation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationHistory'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}/messages:
+    get:
+      summary: Retrieve all messages in a conversation.
+      description: Given a conversation_id retrieve all the messages belonging to that conversation. This is similar to retrieving all entries except we filter the messages only.
+      operationId: agents_api_v1_conversations_messages
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Conversation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationMessages'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}/restart:
+    post:
+      summary: Restart a conversation starting from a given entry.
+      description: Given a conversation_id and an id, recreate a conversation from this point and run completion. A new conversation is returned with the new entries returned.
+      operationId: agents_api_v1_conversations_restart
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRestartRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/agents:
+    post:
+      summary: Create a agent that can be used within a conversation.
+      description: Create a new agent giving it instructions, tools, description. The agent is then available to be used as a regular assistant in a conversation or as part of an agent pool from which it can be used.
+      operationId: agents_api_v1_agents_create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCreationRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      summary: List agent entities.
+      description: Retrieve a list of agent entities sorted by creation time.
+      operationId: agents_api_v1_agents_list
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            title: Page
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Agent'
+                title: Response V1 Agents List
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/agents/{agent_id}:
+    get:
+      summary: Retrieve an agent entity.
+      description: Given an agent retrieve an agent entity with its attributes.
+      operationId: agents_api_v1_agents_get
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Agent Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      summary: Update an agent entity.
+      description: Update an agent attributes and create a new version.
+      operationId: agents_api_v1_agents_update
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Agent Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentUpdateRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/agents/{agent_id}/version:
+    patch:
+      summary: Update an agent version.
+      description: Switch the version of an agent.
+      operationId: agents_api_v1_agents_update_version
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Agent Id
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: integer
+            title: Version
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations#stream:
+    post:
+      summary: Create a conversation and append entries to it.
+      description: Create a new conversation, using a base model or an agent and append entries. Completion and tool executions are run and the response is appended to the conversation.Use the returned conversation_id to continue the conversation.
+      operationId: agents_api_v1_conversations_start_stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationStreamRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ConversationEvents'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}#stream:
+    post:
+      summary: Append new entries to an existing conversation.
+      description: Run completion on the history of the conversation and the user entries. Return the new created entries.
+      operationId: agents_api_v1_conversations_append_stream
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: ID of the conversation to which we append entries.
+            title: Conversation Id
+          description: ID of the conversation to which we append entries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationAppendStreamRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ConversationEvents'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/conversations/{conversation_id}/restart#stream:
+    post:
+      summary: Restart a conversation starting from a given entry.
+      description: Given a conversation_id and an id, recreate a conversation from this point and run completion. A new conversation is returned with the new entries returned.
+      operationId: agents_api_v1_conversations_restart_stream
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRestartStreamRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ConversationEvents'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /v1/files:
     post:
       operationId: files_api_routes_upload_file
@@ -1207,6 +1642,1633 @@ components:
         - msg
         - type
       title: ValidationError
+    Agent:
+      properties:
+        instructions:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Instructions
+          description: Instruction prompt the model will follow during the conversation.
+        tools:
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FunctionTool'
+              - $ref: '#/components/schemas/WebSearchTool'
+              - $ref: '#/components/schemas/WebSearchPremiumTool'
+              - $ref: '#/components/schemas/CodeInterpreterTool'
+              - $ref: '#/components/schemas/ImageGenerationTool'
+              - $ref: '#/components/schemas/DocumentLibraryTool'
+            discriminator:
+              propertyName: type
+              mapping:
+                code_interpreter: '#/components/schemas/CodeInterpreterTool'
+                document_library: '#/components/schemas/DocumentLibraryTool'
+                function: '#/components/schemas/FunctionTool'
+                image_generation: '#/components/schemas/ImageGenerationTool'
+                web_search: '#/components/schemas/WebSearchTool'
+                web_search_premium: '#/components/schemas/WebSearchPremiumTool'
+          type: array
+          title: Tools
+          description: List of tools which are available to the model during the conversation.
+        completion_args:
+          $ref: '#/components/schemas/CompletionArgs'
+          description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        model:
+          type: string
+          title: Model
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        handoffs:
+          anyOf:
+            - items:
+                type: string
+              type: array
+              minItems: 1
+            - type: 'null'
+          title: Handoffs
+        object:
+          type: string
+          enum:
+            - agent
+          title: Object
+          default: agent
+        id:
+          type: string
+          title: Id
+        version:
+          type: integer
+          title: Version
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+        - model
+        - name
+        - id
+        - version
+        - created_at
+        - updated_at
+      title: Agent
+    AgentConversation:
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+          description: Name given to the conversation.
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+          description: Description of the what the conversation is about.
+        object:
+          type: string
+          enum:
+            - conversation
+          title: Object
+          default: conversation
+        id:
+          type: string
+          title: Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        agent_id:
+          type: string
+          title: Agent Id
+      additionalProperties: false
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+        - agent_id
+      title: AgentConversation
+    AgentCreationRequest:
+      properties:
+        instructions:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Instructions
+          description: Instruction prompt the model will follow during the conversation.
+        tools:
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FunctionTool'
+              - $ref: '#/components/schemas/WebSearchTool'
+              - $ref: '#/components/schemas/WebSearchPremiumTool'
+              - $ref: '#/components/schemas/CodeInterpreterTool'
+              - $ref: '#/components/schemas/ImageGenerationTool'
+              - $ref: '#/components/schemas/DocumentLibraryTool'
+            discriminator:
+              propertyName: type
+              mapping:
+                code_interpreter: '#/components/schemas/CodeInterpreterTool'
+                document_library: '#/components/schemas/DocumentLibraryTool'
+                function: '#/components/schemas/FunctionTool'
+                image_generation: '#/components/schemas/ImageGenerationTool'
+                web_search: '#/components/schemas/WebSearchTool'
+                web_search_premium: '#/components/schemas/WebSearchPremiumTool'
+          type: array
+          title: Tools
+          description: List of tools which are available to the model during the conversation.
+        completion_args:
+          $ref: '#/components/schemas/CompletionArgs'
+          description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        model:
+          type: string
+          title: Model
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        handoffs:
+          anyOf:
+            - items:
+                type: string
+              type: array
+              minItems: 1
+            - type: 'null'
+          title: Handoffs
+      additionalProperties: false
+      type: object
+      required:
+        - model
+        - name
+      title: AgentCreationRequest
+    AgentHandoffEntry:
+      properties:
+        object:
+          type: string
+          enum:
+            - entry
+          title: Object
+          default: entry
+        type:
+          type: string
+          enum:
+            - agent.handoff
+          title: Type
+          default: agent.handoff
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Completed At
+        id:
+          type: string
+          title: Id
+        previous_agent_id:
+          type: string
+          title: Previous Agent Id
+        previous_agent_name:
+          type: string
+          title: Previous Agent Name
+        next_agent_id:
+          type: string
+          title: Next Agent Id
+        next_agent_name:
+          type: string
+          title: Next Agent Name
+      additionalProperties: false
+      type: object
+      required:
+        - previous_agent_id
+        - previous_agent_name
+        - next_agent_id
+        - next_agent_name
+      title: AgentHandoffEntry
+    AgentUpdateRequest:
+      properties:
+        instructions:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Instructions
+          description: Instruction prompt the model will follow during the conversation.
+        tools:
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FunctionTool'
+              - $ref: '#/components/schemas/WebSearchTool'
+              - $ref: '#/components/schemas/WebSearchPremiumTool'
+              - $ref: '#/components/schemas/CodeInterpreterTool'
+              - $ref: '#/components/schemas/ImageGenerationTool'
+              - $ref: '#/components/schemas/DocumentLibraryTool'
+            discriminator:
+              propertyName: type
+              mapping:
+                code_interpreter: '#/components/schemas/CodeInterpreterTool'
+                document_library: '#/components/schemas/DocumentLibraryTool'
+                function: '#/components/schemas/FunctionTool'
+                image_generation: '#/components/schemas/ImageGenerationTool'
+                web_search: '#/components/schemas/WebSearchTool'
+                web_search_premium: '#/components/schemas/WebSearchPremiumTool'
+          type: array
+          title: Tools
+          description: List of tools which are available to the model during the conversation.
+        completion_args:
+          $ref: '#/components/schemas/CompletionArgs'
+          description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Model
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        handoffs:
+          anyOf:
+            - items:
+                type: string
+              type: array
+              minItems: 1
+            - type: 'null'
+          title: Handoffs
+      additionalProperties: false
+      type: object
+      title: AgentUpdateRequest
+    BuiltInConnectors:
+      type: string
+      enum:
+        - web_search
+        - web_search_premium
+        - code_interpreter
+        - image_generation
+        - document_library
+      title: BuiltInConnectors
+    CodeInterpreterTool:
+      properties:
+        type:
+          type: string
+          enum:
+            - code_interpreter
+          title: Type
+          default: code_interpreter
+      additionalProperties: false
+      type: object
+      title: CodeInterpreterTool
+    CompletionArgs:
+      properties:
+        stop:
+          $ref: '#/components/schemas/CompletionArgsStop'
+        presence_penalty:
+          anyOf:
+            - type: number
+              maximum: 2
+              minimum: -2
+            - type: 'null'
+          title: Presence Penalty
+        frequency_penalty:
+          anyOf:
+            - type: number
+              maximum: 2
+              minimum: -2
+            - type: 'null'
+          title: Frequency Penalty
+        temperature:
+          type: number
+          maximum: 1
+          minimum: 0
+          title: Temperature
+          default: 0.3
+        top_p:
+          anyOf:
+            - type: number
+              maximum: 1
+              minimum: 0
+            - type: 'null'
+          title: Top P
+        max_tokens:
+          anyOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+          title: Max Tokens
+        random_seed:
+          anyOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
+          title: Random Seed
+        prediction:
+          anyOf:
+            - $ref: '#/components/schemas/Prediction'
+            - type: 'null'
+        response_format:
+          anyOf:
+            - $ref: '#/components/schemas/ResponseFormat'
+            - type: 'null'
+        tool_choice:
+          $ref: '#/components/schemas/ToolChoiceEnum'
+          default: auto
+      additionalProperties: false
+      type: object
+      title: CompletionArgs
+      description: White-listed arguments from the completion API
+    ConversationAppendRequest:
+      allOf:
+        - $ref: '#/components/schemas/ConversationAppendRequestBase'
+        - type: object
+          properties:
+            stream:
+              type: boolean
+              enum:
+                - false
+              default: false
+    ConversationHistory:
+      properties:
+        object:
+          type: string
+          enum:
+            - conversation.history
+          title: Object
+          default: conversation.history
+        conversation_id:
+          type: string
+          title: Conversation Id
+        entries:
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/MessageInputEntry'
+              - $ref: '#/components/schemas/MessageOutputEntry'
+              - $ref: '#/components/schemas/FunctionResultEntry'
+              - $ref: '#/components/schemas/FunctionCallEntry'
+              - $ref: '#/components/schemas/ToolExecutionEntry'
+              - $ref: '#/components/schemas/AgentHandoffEntry'
+          type: array
+          title: Entries
+      additionalProperties: false
+      type: object
+      required:
+        - conversation_id
+        - entries
+      title: ConversationHistory
+      description: Retrieve all entries in a conversation.
+    ConversationMessages:
+      properties:
+        object:
+          type: string
+          enum:
+            - conversation.messages
+          title: Object
+          default: conversation.messages
+        conversation_id:
+          type: string
+          title: Conversation Id
+        messages:
+          $ref: '#/components/schemas/MessageEntries'
+      additionalProperties: false
+      type: object
+      required:
+        - conversation_id
+        - messages
+      title: ConversationMessages
+      description: Similar to the conversation history but only keep the messages
+    ConversationRestartRequest:
+      allOf:
+        - $ref: '#/components/schemas/ConversationRestartRequestBase'
+        - type: object
+          properties:
+            stream:
+              type: boolean
+              enum:
+                - false
+              default: false
+    DocumentLibraryTool:
+      properties:
+        type:
+          type: string
+          enum:
+            - document_library
+          title: Type
+          default: document_library
+        library_ids:
+          items:
+            type: string
+          type: array
+          minItems: 1
+          title: Library Ids
+          description: Ids of the library in which to search.
+      additionalProperties: false
+      type: object
+      required:
+        - library_ids
+      title: DocumentLibraryTool
+    DocumentURLChunk:
+      properties:
+        document_url:
+          type: string
+          title: Document Url
+        document_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Document Name
+          description: The filename of the document
+        type:
+          type: string
+          enum:
+            - document_url
+          title: Type
+          default: document_url
+      additionalProperties: false
+      type: object
+      required:
+        - document_url
+      title: DocumentURLChunk
+    Function:
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          type: string
+          title: Description
+          default: ''
+        strict:
+          type: boolean
+          title: Strict
+          default: false
+        parameters:
+          type: object
+          title: Parameters
+          additionalProperties: true
+      additionalProperties: false
+      type: object
+      required:
+        - name
+        - parameters
+      title: Function
+    FunctionCallEntry:
+      properties:
+        object:
+          type: string
+          enum:
+            - entry
+          title: Object
+          default: entry
+        type:
+          type: string
+          enum:
+            - function.call
+          title: Type
+          default: function.call
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Completed At
+        id:
+          type: string
+          title: Id
+        tool_call_id:
+          type: string
+          title: Tool Call Id
+        name:
+          type: string
+          title: Name
+        arguments:
+          $ref: '#/components/schemas/FunctionCallEntryArguments'
+      additionalProperties: false
+      type: object
+      required:
+        - tool_call_id
+        - name
+        - arguments
+      title: FunctionCallEntry
+    FunctionResultEntry:
+      properties:
+        object:
+          type: string
+          enum:
+            - entry
+          title: Object
+          default: entry
+        type:
+          type: string
+          enum:
+            - function.result
+          title: Type
+          default: function.result
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Completed At
+        id:
+          type: string
+          title: Id
+        tool_call_id:
+          type: string
+          title: Tool Call Id
+        result:
+          type: string
+          title: Result
+      additionalProperties: false
+      type: object
+      required:
+        - tool_call_id
+        - result
+      title: FunctionResultEntry
+    FunctionTool:
+      properties:
+        type:
+          type: string
+          enum:
+            - function
+          title: Type
+          default: function
+        function:
+          $ref: '#/components/schemas/Function'
+      additionalProperties: false
+      type: object
+      required:
+        - function
+      title: FunctionTool
+    ImageGenerationTool:
+      properties:
+        type:
+          type: string
+          enum:
+            - image_generation
+          title: Type
+          default: image_generation
+      additionalProperties: false
+      type: object
+      title: ImageGenerationTool
+    ImageURLChunk:
+      properties:
+        image_url:
+          anyOf:
+            - $ref: '#/components/schemas/ImageURL'
+            - type: string
+          title: Image Url
+        type:
+          type: string
+          enum:
+            - image_url
+          title: Type
+          default: image_url
+      additionalProperties: false
+      type: object
+      required:
+        - image_url
+      title: ImageURLChunk
+      description: '{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0'
+    JsonSchema:
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        schema:
+          type: object
+          title: Schema
+          additionalProperties: true
+          x-speakeasy-name-override: schema_definition
+        strict:
+          type: boolean
+          title: Strict
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+        - name
+        - schema
+      title: JsonSchema
+    MessageInputEntry:
+      properties:
+        object:
+          type: string
+          enum:
+            - entry
+          title: Object
+          default: entry
+        type:
+          type: string
+          enum:
+            - message.input
+          title: Type
+          default: message.input
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Completed At
+        id:
+          type: string
+          title: Id
+        role:
+          type: string
+          enum:
+            - assistant
+            - user
+          title: Role
+        content:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/MessageInputContentChunks'
+          title: Content
+      additionalProperties: false
+      type: object
+      required:
+        - role
+        - content
+      title: MessageInputEntry
+      description: Representation of an input message inside the conversation.
+    MessageOutputEntry:
+      properties:
+        object:
+          type: string
+          enum:
+            - entry
+          title: Object
+          default: entry
+        type:
+          type: string
+          enum:
+            - message.output
+          title: Type
+          default: message.output
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Completed At
+        id:
+          type: string
+          title: Id
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Agent Id
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Model
+        role:
+          type: string
+          enum:
+            - assistant
+          title: Role
+          default: assistant
+        content:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/MessageOutputContentChunks'
+          title: Content
+      additionalProperties: false
+      type: object
+      required:
+        - content
+      title: MessageOutputEntry
+    ModelConversation:
+      properties:
+        instructions:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Instructions
+          description: Instruction prompt the model will follow during the conversation.
+        tools:
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FunctionTool'
+              - $ref: '#/components/schemas/WebSearchTool'
+              - $ref: '#/components/schemas/WebSearchPremiumTool'
+              - $ref: '#/components/schemas/CodeInterpreterTool'
+              - $ref: '#/components/schemas/ImageGenerationTool'
+              - $ref: '#/components/schemas/DocumentLibraryTool'
+            discriminator:
+              propertyName: type
+              mapping:
+                code_interpreter: '#/components/schemas/CodeInterpreterTool'
+                document_library: '#/components/schemas/DocumentLibraryTool'
+                function: '#/components/schemas/FunctionTool'
+                image_generation: '#/components/schemas/ImageGenerationTool'
+                web_search: '#/components/schemas/WebSearchTool'
+                web_search_premium: '#/components/schemas/WebSearchPremiumTool'
+          type: array
+          title: Tools
+          description: List of tools which are available to the model during the conversation.
+        completion_args:
+          $ref: '#/components/schemas/CompletionArgs'
+          description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+          description: Name given to the conversation.
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+          description: Description of the what the conversation is about.
+        object:
+          type: string
+          enum:
+            - conversation
+          title: Object
+          default: conversation
+        id:
+          type: string
+          title: Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        model:
+          type: string
+          title: Model
+      additionalProperties: false
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+        - model
+      title: ModelConversation
+    Prediction:
+      properties:
+        type:
+          type: string
+          const: content
+          title: Type
+          default: content
+        content:
+          type: string
+          title: Content
+          default: ''
+      additionalProperties: false
+      type: object
+      title: Prediction
+    ResponseFormat:
+      properties:
+        type:
+          $ref: '#/components/schemas/ResponseFormats'
+          default: text
+        json_schema:
+          anyOf:
+            - $ref: '#/components/schemas/JsonSchema'
+            - type: 'null'
+      additionalProperties: false
+      type: object
+      title: ResponseFormat
+    ResponseFormats:
+      type: string
+      enum:
+        - text
+        - json_object
+        - json_schema
+      title: ResponseFormats
+      description: 'An object specifying the format that the model must output. Setting to `{ "type": "json_object" }` enables JSON mode, which guarantees the message the model generates is in JSON. When using JSON mode you MUST also instruct the model to produce JSON yourself with a system or a user message.'
+    TextChunk:
+      properties:
+        text:
+          type: string
+          title: Text
+        type:
+          type: string
+          enum:
+            - text
+          title: Type
+          default: text
+      additionalProperties: false
+      type: object
+      required:
+        - text
+      title: TextChunk
+    ToolChoiceEnum:
+      type: string
+      enum:
+        - auto
+        - none
+        - any
+        - required
+      title: ToolChoiceEnum
+    ToolExecutionEntry:
+      properties:
+        object:
+          type: string
+          enum:
+            - entry
+          title: Object
+          default: entry
+        type:
+          type: string
+          enum:
+            - tool.execution
+          title: Type
+          default: tool.execution
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        completed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Completed At
+        id:
+          type: string
+          title: Id
+        name:
+          $ref: '#/components/schemas/BuiltInConnectors'
+        info:
+          $ref: '#/components/schemas/ToolExecutionInfo'
+      additionalProperties: false
+      type: object
+      required:
+        - name
+      title: ToolExecutionEntry
+    ToolFileChunk:
+      properties:
+        type:
+          type: string
+          enum:
+            - tool_file
+          title: Type
+          default: tool_file
+        tool:
+          $ref: '#/components/schemas/BuiltInConnectors'
+        file_id:
+          type: string
+          title: File Id
+        file_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: File Name
+        file_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: File Type
+      additionalProperties: false
+      type: object
+      required:
+        - tool
+        - file_id
+      title: ToolFileChunk
+    ToolReferenceChunk:
+      properties:
+        type:
+          type: string
+          enum:
+            - tool_reference
+          title: Type
+          default: tool_reference
+        tool:
+          $ref: '#/components/schemas/BuiltInConnectors'
+        title:
+          type: string
+          title: Title
+        url:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Url
+        source:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Source
+      additionalProperties: false
+      type: object
+      required:
+        - tool
+        - title
+      title: ToolReferenceChunk
+    WebSearchPremiumTool:
+      properties:
+        type:
+          type: string
+          enum:
+            - web_search_premium
+          title: Type
+          default: web_search_premium
+      additionalProperties: false
+      type: object
+      title: WebSearchPremiumTool
+    WebSearchTool:
+      properties:
+        type:
+          type: string
+          enum:
+            - web_search
+          title: Type
+          default: web_search
+      additionalProperties: false
+      type: object
+      title: WebSearchTool
+    ConversationUsageInfo:
+      additionalProperties: false
+      properties:
+        prompt_tokens:
+          default: 0
+          title: Prompt Tokens
+          type: integer
+        completion_tokens:
+          default: 0
+          title: Completion Tokens
+          type: integer
+        total_tokens:
+          default: 0
+          title: Total Tokens
+          type: integer
+        connector_tokens:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          default:
+          title: Connector Tokens
+        connectors:
+          anyOf:
+            - additionalProperties:
+                type: integer
+              propertyNames:
+                $ref: '#/components/schemas/BuiltInConnectors'
+              type: object
+            - type: 'null'
+          default:
+          title: Connectors
+      title: ConversationUsageInfo
+      type: object
+    ConversationResponse:
+      additionalProperties: false
+      description: The response after appending new entries to the conversation.
+      properties:
+        object:
+          default: conversation.response
+          enum:
+            - conversation.response
+          title: Object
+          type: string
+        conversation_id:
+          title: Conversation Id
+          type: string
+        outputs:
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/MessageOutputEntry'
+              - $ref: '#/components/schemas/ToolExecutionEntry'
+              - $ref: '#/components/schemas/FunctionCallEntry'
+              - $ref: '#/components/schemas/AgentHandoffEntry'
+          title: Outputs
+          type: array
+        usage:
+          $ref: '#/components/schemas/ConversationUsageInfo'
+      required:
+        - conversation_id
+        - outputs
+        - usage
+      title: ConversationResponse
+      type: object
+    ConversationRequest:
+      allOf:
+        - $ref: '#/components/schemas/ConversationRequestBase'
+        - type: object
+          properties:
+            stream:
+              type: boolean
+              enum:
+                - false
+              default: false
+    AgentHandoffDoneEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: agent.handoff.done
+          enum:
+            - agent.handoff.done
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        next_agent_id:
+          title: Next Agent Id
+          type: string
+        next_agent_name:
+          title: Next Agent Name
+          type: string
+      required:
+        - id
+        - next_agent_id
+        - next_agent_name
+      title: AgentHandoffDoneEvent
+      type: object
+    AgentHandoffStartedEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: agent.handoff.started
+          enum:
+            - agent.handoff.started
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        previous_agent_id:
+          title: Previous Agent Id
+          type: string
+        previous_agent_name:
+          title: Previous Agent Name
+          type: string
+      required:
+        - id
+        - previous_agent_id
+        - previous_agent_name
+      title: AgentHandoffStartedEvent
+      type: object
+    FunctionCallEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: function.call.delta
+          enum:
+            - function.call.delta
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        name:
+          title: Name
+          type: string
+        tool_call_id:
+          title: Tool Call Id
+          type: string
+        arguments:
+          title: Arguments
+          type: string
+      required:
+        - id
+        - name
+        - tool_call_id
+        - arguments
+      title: FunctionCallEvent
+      type: object
+    MessageOutputEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: message.output.delta
+          enum:
+            - message.output.delta
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        content_index:
+          default: 0
+          title: Content Index
+          type: integer
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Model
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Agent Id
+        role:
+          default: assistant
+          enum:
+            - assistant
+          title: Role
+          type: string
+        content:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/OutputContentChunks'
+          title: Content
+      required:
+        - id
+        - content
+      title: MessageOutputEvent
+      type: object
+    ResponseDoneEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: conversation.response.done
+          enum:
+            - conversation.response.done
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        usage:
+          $ref: '#/components/schemas/ConversationUsageInfo'
+      required:
+        - usage
+      title: ResponseDoneEvent
+      type: object
+    ResponseErrorEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: conversation.response.error
+          enum:
+            - conversation.response.error
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        message:
+          title: Message
+          type: string
+        code:
+          title: Code
+          type: integer
+      required:
+        - message
+        - code
+      title: ResponseErrorEvent
+      type: object
+    ResponseStartedEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: conversation.response.started
+          enum:
+            - conversation.response.started
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        conversation_id:
+          title: Conversation Id
+          type: string
+      required:
+        - conversation_id
+      title: ResponseStartedEvent
+      type: object
+    SSETypes:
+      description: Server side events sent when streaming a conversation response.
+      enum:
+        - conversation.response.started
+        - conversation.response.done
+        - conversation.response.error
+        - message.output.delta
+        - tool.execution.started
+        - tool.execution.done
+        - agent.handoff.started
+        - agent.handoff.done
+        - function.call.delta
+      title: SSETypes
+      type: string
+    ToolExecutionDoneEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: tool.execution.done
+          enum:
+            - tool.execution.done
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        name:
+          $ref: '#/components/schemas/BuiltInConnectors'
+        info:
+          $ref: '#/components/schemas/ToolExecutionInfo'
+      required:
+        - id
+        - name
+      title: ToolExecutionDoneEvent
+      type: object
+    ToolExecutionStartedEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: tool.execution.started
+          enum:
+            - tool.execution.started
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        name:
+          $ref: '#/components/schemas/BuiltInConnectors'
+      required:
+        - id
+        - name
+      title: ToolExecutionStartedEvent
+      type: object
+    ConversationEvents:
+      properties:
+        event:
+          $ref: '#/components/schemas/SSETypes'
+        data:
+          discriminator:
+            mapping:
+              agent.handoff.done: '#/components/schemas/AgentHandoffDoneEvent'
+              agent.handoff.started: '#/components/schemas/AgentHandoffStartedEvent'
+              conversation.response.done: '#/components/schemas/ResponseDoneEvent'
+              conversation.response.error: '#/components/schemas/ResponseErrorEvent'
+              conversation.response.started: '#/components/schemas/ResponseStartedEvent'
+              function.call.delta: '#/components/schemas/FunctionCallEvent'
+              message.output.delta: '#/components/schemas/MessageOutputEvent'
+              tool.execution.done: '#/components/schemas/ToolExecutionDoneEvent'
+              tool.execution.started: '#/components/schemas/ToolExecutionStartedEvent'
+            propertyName: type
+          oneOf:
+            - $ref: '#/components/schemas/ResponseStartedEvent'
+            - $ref: '#/components/schemas/ResponseDoneEvent'
+            - $ref: '#/components/schemas/ResponseErrorEvent'
+            - $ref: '#/components/schemas/ToolExecutionStartedEvent'
+            - $ref: '#/components/schemas/ToolExecutionDoneEvent'
+            - $ref: '#/components/schemas/MessageOutputEvent'
+            - $ref: '#/components/schemas/FunctionCallEvent'
+            - $ref: '#/components/schemas/AgentHandoffStartedEvent'
+            - $ref: '#/components/schemas/AgentHandoffDoneEvent'
+          title: Data
+      required:
+        - event
+        - data
+      title: ConversationEvents
+      type: object
+    MessageInputContentChunks:
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/TextChunk'
+          - $ref: '#/components/schemas/ImageURLChunk'
+          - $ref: '#/components/schemas/ToolFileChunk'
+          - $ref: '#/components/schemas/DocumentURLChunk'
+      type: array
+      title: MessageInputContentChunks
+    MessageOutputContentChunks:
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/TextChunk'
+          - $ref: '#/components/schemas/ImageURLChunk'
+          - $ref: '#/components/schemas/ToolFileChunk'
+          - $ref: '#/components/schemas/DocumentURLChunk'
+          - $ref: '#/components/schemas/ToolReferenceChunk'
+      type: array
+      title: MessageOutputContentChunks
+    OutputContentChunks:
+      anyOf:
+        - $ref: '#/components/schemas/TextChunk'
+        - $ref: '#/components/schemas/ImageURLChunk'
+        - $ref: '#/components/schemas/ToolFileChunk'
+        - $ref: '#/components/schemas/DocumentURLChunk'
+        - $ref: '#/components/schemas/ToolReferenceChunk'
+      title: OutputContentChunks
+    MessageEntries:
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/MessageInputEntry'
+          - $ref: '#/components/schemas/MessageOutputEntry'
+      type: array
+      title: MessageEntries
+    InputEntries:
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/MessageInputEntry'
+          - $ref: '#/components/schemas/FunctionResultEntry'
+      type: array
+      title: InputEntries
+    CompletionArgsStop:
+      anyOf:
+        - type: string
+        - items:
+            type: string
+          type: array
+        - type: 'null'
+      title: CompletionArgsStop
+    FunctionCallEntryArguments:
+      anyOf:
+        - type: object
+          additionalProperties: true
+        - type: string
+      title: FunctionCallEntryArguments
+    ConversationInputs:
+      anyOf:
+        - type: string
+        - $ref: '#/components/schemas/InputEntries'
+      title: ConversationInputs
+    ToolExecutionInfo:
+      type: object
+      additionalProperties: true
+      title: ToolExecutionInfo
+    ConversationRequestBase:
+      properties:
+        inputs:
+          $ref: '#/components/schemas/ConversationInputs'
+        stream:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          default:
+          title: Stream
+        store:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          default:
+          title: Store
+        handoff_execution:
+          anyOf:
+            - enum:
+                - client
+                - server
+              type: string
+            - type: 'null'
+          default:
+          title: Handoff Execution
+        instructions:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Instructions
+        tools:
+          anyOf:
+            - items:
+                discriminator:
+                  mapping:
+                    code_interpreter: '#/components/schemas/CodeInterpreterTool'
+                    document_library: '#/components/schemas/DocumentLibraryTool'
+                    function: '#/components/schemas/FunctionTool'
+                    image_generation: '#/components/schemas/ImageGenerationTool'
+                    web_search: '#/components/schemas/WebSearchTool'
+                    web_search_premium: '#/components/schemas/WebSearchPremiumTool'
+                  propertyName: type
+                oneOf:
+                  - $ref: '#/components/schemas/FunctionTool'
+                  - $ref: '#/components/schemas/WebSearchTool'
+                  - $ref: '#/components/schemas/WebSearchPremiumTool'
+                  - $ref: '#/components/schemas/CodeInterpreterTool'
+                  - $ref: '#/components/schemas/ImageGenerationTool'
+                  - $ref: '#/components/schemas/DocumentLibraryTool'
+              type: array
+            - type: 'null'
+          default:
+          title: Tools
+        completion_args:
+          anyOf:
+            - $ref: '#/components/schemas/CompletionArgs'
+            - type: 'null'
+          default:
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Description
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Agent Id
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Model
+      required:
+        - inputs
+      title: ConversationRequest
+      type: object
+    ConversationStreamRequest:
+      allOf:
+        - $ref: '#/components/schemas/ConversationRequestBase'
+        - type: object
+          properties:
+            stream:
+              type: boolean
+              enum:
+                - true
+              default: true
+    ConversationAppendRequestBase:
+      properties:
+        inputs:
+          $ref: '#/components/schemas/ConversationInputs'
+        stream:
+          type: boolean
+          title: Stream
+          description: Whether to stream back partial progress. Otherwise, the server will hold the request open until the timeout or until completion, with the response containing the full result as JSON.
+          default: false
+        store:
+          type: boolean
+          title: Store
+          description: Whether to store the results into our servers or not.
+          default: true
+        handoff_execution:
+          type: string
+          enum:
+            - client
+            - server
+          title: Handoff Execution
+          default: server
+        completion_args:
+          $ref: '#/components/schemas/CompletionArgs'
+          description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+      additionalProperties: false
+      type: object
+      required:
+        - inputs
+      title: ConversationAppendRequest
+    ConversationAppendStreamRequest:
+      allOf:
+        - $ref: '#/components/schemas/ConversationAppendRequestBase'
+        - type: object
+          properties:
+            stream:
+              type: boolean
+              enum:
+                - true
+              default: true
+    ConversationRestartRequestBase:
+      properties:
+        inputs:
+          $ref: '#/components/schemas/ConversationInputs'
+        stream:
+          type: boolean
+          title: Stream
+          description: Whether to stream back partial progress. Otherwise, the server will hold the request open until the timeout or until completion, with the response containing the full result as JSON.
+          default: false
+        store:
+          type: boolean
+          title: Store
+          description: Whether to store the results into our servers or not.
+          default: true
+        handoff_execution:
+          type: string
+          enum:
+            - client
+            - server
+          title: Handoff Execution
+          default: server
+        from_entry_id:
+          type: string
+          title: From Entry Id
+        completion_args:
+          $ref: '#/components/schemas/CompletionArgs'
+          description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+      additionalProperties: false
+      type: object
+      required:
+        - inputs
+        - from_entry_id
+      title: ConversationRestartRequest
+      description: Request to restart a new conversation from a given entry in the conversation.
+    ConversationRestartStreamRequest:
+      allOf:
+        - $ref: '#/components/schemas/ConversationRestartRequestBase'
+        - type: object
+          properties:
+            stream:
+              type: boolean
+              enum:
+                - true
+              default: true
     FilePurpose:
       title: FilePurpose
       type: string
@@ -3279,28 +5341,6 @@ components:
         - model
         - model
       title: ClassificationRequest
-    DocumentURLChunk:
-      properties:
-        document_url:
-          type: string
-          title: Document Url
-        document_name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Document Name
-          description: The filename of the document
-        type:
-          type: string
-          enum:
-            - document_url
-          title: Type
-          default: document_url
-      additionalProperties: false
-      type: object
-      required:
-        - document_url
-      title: DocumentURLChunk
     EmbeddingRequest:
       properties:
         model:
@@ -3404,29 +5444,6 @@ components:
         - prompt
         - model
       title: FIMCompletionRequest
-    Function:
-      properties:
-        name:
-          type: string
-          title: Name
-        description:
-          type: string
-          title: Description
-          default: ''
-        strict:
-          type: boolean
-          title: Strict
-          default: false
-        parameters:
-          type: object
-          title: Parameters
-          additionalProperties: true
-      additionalProperties: false
-      type: object
-      required:
-        - name
-        - parameters
-      title: Function
     FunctionCall:
       properties:
         name:
@@ -3470,25 +5487,6 @@ components:
       required:
         - url
       title: ImageURL
-    ImageURLChunk:
-      properties:
-        image_url:
-          anyOf:
-            - $ref: '#/components/schemas/ImageURL'
-            - type: string
-          title: Image Url
-        type:
-          type: string
-          enum:
-            - image_url
-          title: Type
-          default: image_url
-      additionalProperties: false
-      type: object
-      required:
-        - image_url
-      title: ImageURLChunk
-      description: '{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0'
     InstructRequest:
       properties:
         messages:
@@ -3512,31 +5510,6 @@ components:
       required:
         - messages
       title: InstructRequest
-    JsonSchema:
-      properties:
-        name:
-          type: string
-          title: Name
-        description:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Description
-        schema:
-          type: object
-          title: Schema
-          additionalProperties: true
-          x-speakeasy-name-override: schema_definition
-        strict:
-          type: boolean
-          title: Strict
-          default: false
-      additionalProperties: false
-      type: object
-      required:
-        - name
-        - schema
-      title: JsonSchema
     OCRImageObject:
       properties:
         id:
@@ -3577,6 +5550,12 @@ components:
             - type: 'null'
           title: Image Base64
           description: Base64 string of the extracted image
+        image_annotation:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Image Annotation
+          description: Annotation of the extracted image in json str
       additionalProperties: false
       type: object
       required:
@@ -3682,6 +5661,16 @@ components:
             - type: 'null'
           title: Image Min Size
           description: Minimum height and width of image to extract
+        bbox_annotation_format:
+          anyOf:
+            - $ref: '#/components/schemas/ResponseFormat'
+            - type: 'null'
+          description: Structured output class for extracting useful information from each extracted bounding box / image from document. Only json_schema is valid for this field
+        document_annotation_format:
+          anyOf:
+            - $ref: '#/components/schemas/ResponseFormat'
+            - type: 'null'
+          description: Structured output class for extracting useful information from the entire document. Only json_schema is valid for this field
       additionalProperties: false
       type: object
       required:
@@ -3700,6 +5689,12 @@ components:
           type: string
           title: Model
           description: The model used to generate the OCR.
+        document_annotation:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Document Annotation
+          description: Formatted response in the request_format if provided in json str
         usage_info:
           $ref: '#/components/schemas/OCRUsageInfo'
           description: Usage info for the OCR request.
@@ -3728,20 +5723,6 @@ components:
       required:
         - pages_processed
       title: OCRUsageInfo
-    Prediction:
-      properties:
-        type:
-          type: string
-          const: content
-          title: Type
-          default: content
-        content:
-          type: string
-          title: Content
-          default: ''
-      additionalProperties: false
-      type: object
-      title: Prediction
     ReferenceChunk:
       properties:
         reference_ids:
@@ -3760,26 +5741,6 @@ components:
       required:
         - reference_ids
       title: ReferenceChunk
-    ResponseFormat:
-      properties:
-        type:
-          $ref: '#/components/schemas/ResponseFormats'
-          default: text
-        json_schema:
-          anyOf:
-            - $ref: '#/components/schemas/JsonSchema'
-            - type: 'null'
-      additionalProperties: false
-      type: object
-      title: ResponseFormat
-    ResponseFormats:
-      type: string
-      enum:
-        - text
-        - json_object
-        - json_schema
-      title: ResponseFormats
-      description: 'An object specifying the format that the model must output. Setting to `{ "type": "json_object" }` enables JSON mode, which guarantees the message the model generates is in JSON. When using JSON mode you MUST also instruct the model to produce JSON yourself with a system or a user message.'
     SystemMessage:
       properties:
         content:
@@ -3799,22 +5760,6 @@ components:
       required:
         - content
       title: SystemMessage
-    TextChunk:
-      properties:
-        text:
-          type: string
-          title: Text
-        type:
-          type: string
-          enum:
-            - text
-          title: Type
-          default: text
-      additionalProperties: false
-      type: object
-      required:
-        - text
-      title: TextChunk
     Tool:
       properties:
         type:
@@ -3860,14 +5805,6 @@ components:
         - function
       title: ToolChoice
       description: ToolChoice is either a ToolChoiceEnum or a ToolChoice
-    ToolChoiceEnum:
-      type: string
-      enum:
-        - auto
-        - none
-        - any
-        - required
-      title: ToolChoiceEnum
     ToolMessage:
       properties:
         content:

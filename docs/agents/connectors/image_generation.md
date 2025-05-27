@@ -27,7 +27,7 @@ You can create an agent with access to image generation by providing it as one o
   <TabItem value="python" label="python" default>
 
 ```py
-image_agent = client.agents.create(
+image_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     name="Image Generation Agent",
     description="Agent used to generate images.",
@@ -91,7 +91,7 @@ Now that we have our image generation agent ready, we can create images on deman
   <TabItem value="python" label="python" default>
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=image_agent.id, inputs="Generate an orange cat in an office."
 )
 ```

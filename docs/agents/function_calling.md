@@ -49,7 +49,7 @@ def get_european_central_bank_interest_rate(date: str) -> Dict[str, str]:
 Once defined, we provide a Shema corresponding to the same function.
 
 ```py
-ecb_interest_rate_agent = client.agents.create(
+ecb_interest_rate_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="Can find the current interest rate of the European central bank",
     name="ecb-interest-rate-agent",
@@ -133,7 +133,7 @@ curl --location "https://api.mistral.ai/v1/agents" \
 Then, to use it, we start a conversation or continue a previously existing one.
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=ecb_interest_rate_agent.id,
     inputs=[{"role": "user", "content": "Whats the current 2025 real interest rate?"}]
 )
@@ -165,7 +165,7 @@ if response.outputs[-1].type == "function.call" and response.outputs[-1].name ==
     )
 
     # Retrieving the final response
-    response = client.conversations.append(
+    response = client.beta.conversations.append(
         conversation_id=response.conversation_id,
         inputs=[user_function_calling_entry]
     )

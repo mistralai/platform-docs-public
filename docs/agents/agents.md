@@ -42,7 +42,7 @@ from mistralai import Mistral
 api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key)
 
-simple_agent = client.agents.create(
+simple_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="A simple Agent with persistent state.",
     name="Simple Agent"
@@ -58,7 +58,7 @@ model='mistral-medium-2505' name='Simple Agent' description='A simple Agent with
 
 Here is an example of a Web Search Agent using our built-in tool:
 ```py
-websearch_agent = client.agents.create(
+websearch_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     description="Agent able to search information over the web, such as news, weather, sport results...",
     name="Websearch Agent",
@@ -108,7 +108,7 @@ The result is a new Agent with the new settings, you can this way have the previ
   <TabItem value="python" label="python" default>
 
 ```py
-simple_agent = client.agents.update(
+simple_agent = client.beta.agents.update(
     agent_id=simple_agent.id, 
     description="An edited simple agent.",
     completion_args={
@@ -169,13 +169,13 @@ For more information regarding handoffs visit [this section](../handoffs).
   <TabItem value="python" label="python" default>
   
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=simple_agent.id, inputs="Who is Albert Einstein?", #store=False
 )
 ```
 or...
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=simple_agent.id, inputs=[{"role": "user", "content": "Who is Albert Einstein?"}], #store=False
 )
 ```
@@ -183,7 +183,7 @@ Both options are equivalent.
 
 Without an Agent, querying Conversations could look like so:
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     model="mistral-medium-latest", inputs=[{"role": "user", "content": "Who is Albert Einstein?"}], tools=[], #store=False
 )
 ```
@@ -240,7 +240,7 @@ You can continue the conversation; the history is stored when using the correct 
   <TabItem value="python" label="python" default>
 
 ```py 
-response = client.conversations.append(
+response = client.beta.conversations.append(
     conversation_id=response.conversation_id, inputs="Translate to French."
 )
 ```
@@ -281,13 +281,13 @@ You can also stream the outputs, both when starting a conversation or continuing
 
 #### Start
 ```py
-response = client.conversations.start_stream(
+response = client.beta.conversations.start_stream(
     agent_id=websearch_agent.id, inputs="Who is Albert Einstein?"
 )
 ```
 #### Continue
 ```py
-response = client.conversations.append_stream(
+response = client.beta.conversations.append_stream(
     conversation_id=response.conversation_id, inputs="Translate to French."
 )
 ```

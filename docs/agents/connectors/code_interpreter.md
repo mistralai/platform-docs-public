@@ -27,7 +27,7 @@ Note that you can still add more tools to the agent, the model is free to run co
   <TabItem value="python" label="python" default>
 
 ```py
-code_agent = client.agents.create(
+code_agent = client.beta.agents.create(
     model="mistral-medium-2505",
     name="Coding Agent",
     description="Agent used to execute code using the interpreter tool.",
@@ -89,7 +89,7 @@ Now that we have our coding agent ready, we can at any point make use of it to r
   <TabItem value="python" label="python" default>
 
 ```py
-response = client.conversations.start(
+response = client.beta.conversations.start(
     agent_id=code_agent.id, inputs="Run a fibonacci function for the first 20 values."
 )
 ```

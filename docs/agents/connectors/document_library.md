@@ -66,12 +66,13 @@ curl --location "https://api.mistral.ai/v1/agents" \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
      "model": "mistral-medium-2505",
-     "name": "Websearch Agent",
-     "description": "Agent able to search information over the web, such as news, weather, sport results...",
-     "instructions": "You have the ability to perform web searches with `web_search` to find up-to-date information.",
+     "name": "Library Agent",
+     "description": "Agent able to search information in your library...",
+     "instructions": "You have the ability to perform searches with `document_library` to find relevant information.",
      "tools": [
        {
-         "type": "web_search"
+         "type": "document_library",
+         "library_ids" : ["<library_id>"]
        }
      ],
      "completion_args": {

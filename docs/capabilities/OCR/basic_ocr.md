@@ -58,7 +58,6 @@ ocr_response = client.ocr.process(
 Or passing a Base64 encoded pdf:
 ```python
 import base64
-import requests
 import os
 from mistralai import Mistral
 
@@ -781,7 +780,6 @@ ocr_response = client.ocr.process(
 Or passing a Base64 encoded image:
 ```python
 import base64
-import requests
 import os
 from mistralai import Mistral
 

@@ -86,7 +86,7 @@ model='mistral-medium-2505' name='ecb-interest-rate-agent' description='Can find
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -185,7 +185,7 @@ content='The current interest rate as of June 6, 2024, is 2.5%. This information
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">

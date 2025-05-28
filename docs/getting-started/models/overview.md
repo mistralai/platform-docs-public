@@ -19,12 +19,13 @@ Mistral provides two types of models: free models and premier models.
 | Mistral Medium | | :heavy_check_mark: | Our frontier-class multimodal model released May 2025. Learn more on our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2505` | 25.05|
 | Codestral | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more on our [blog post](https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-2501` | 25.01|
 | Mistral OCR | | :heavy_check_mark: | Our OCR service that enables our users to extract interleaved text and images |  | `mistral-ocr-2505` | 25.05|
-| Mistral Saba  | | :heavy_check_mark: | A powerfull and efficient model for languages from the Middle East and South Asia. Learn more on our [blog post](https://mistral.ai/news/mistral-saba/)| 32k   | `mistral-saba-2502`| 25.02|
+| Mistral Saba  | | :heavy_check_mark: | A powerful and efficient model for languages from the Middle East and South Asia. Learn more on our [blog post](https://mistral.ai/news/mistral-saba/)| 32k   | `mistral-saba-2502`| 25.02|
 | Mistral Large |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our top-tier reasoning model for high-complexity tasks with the lastest version released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/) | 128k   | `mistral-large-2411`| 24.11|
 | Pixtral Large |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Our frontier-class multimodal model released November 2024. Learn more on our [blog post](https://mistral.ai/news/pixtral-large/)| 128k   | `pixtral-large-2411`| 24.11|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-3b-2410` | 24.10|
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more on our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-8b-2410` | 24.10|
 | Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
+| Codestral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of code extracts | 8k  | `codestral-embed` | 25.05|
 | Mistral Moderation | | :heavy_check_mark: | Our moderation service that enables our users to detect harmful text content | 8k  | `mistral-moderation-2411` | 24.11|
 
 

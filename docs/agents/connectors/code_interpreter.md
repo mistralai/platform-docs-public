@@ -49,7 +49,7 @@ model='mistral-medium-2505' name='Coding Agent' description='Agent used to execu
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -104,7 +104,7 @@ conversation_id='conv_06835b9dc0c7749180001958779d13c5' outputs=[MessageOutputEn
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Comming soon...*
+  *Coming soon...*
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -123,7 +123,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
   </TabItem>
 </Tabs>
 
-For explanation purposes, lets restructure the previous output in a more readeable JSON format.
+For explanation purposes, lets restructure the previous output in a more readable JSON format.
 ```json
 {
   "conversation_id": "conv_06835b9dc0c7749180001958779d13c5",

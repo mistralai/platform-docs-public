@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 Embeddings are at the core of multiple enterprise use cases, such as **retrieval systems**, **clustering**, **code analytics**, **classification**, and a variety of search applications. With code embedings, you can embed **code databases** and **repositories**, and power **coding assistants** with state-of-the-art retrieval capabilities.
 
-<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/cde_embedding.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/code_embedding.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 

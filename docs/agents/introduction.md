@@ -49,7 +49,7 @@ For more information and guides on how to use our Agents, we have the following 
 - [Github Agent](https://github.com/mistralai/cookbook/tree/main/mistral/agents/github_agent)
 - [Linear Tickets](https://github.com/mistralai/cookbook/tree/main/mistral/agents/prd_linear_ticket)
 - [Financial Analyst](https://github.com/mistralai/cookbook/tree/main/mistral/agents/financial_analyst)
-- [Travel Assistant](https://github.com/mistralai/cookbook/tree/main/mistral/agents/travel_assisstant)
+- [Travel Assistant](https://github.com/mistralai/cookbook/tree/main/mistral/agents/travel_assistant)
 - [Food Diet Companion](https://github.com/mistralai/cookbook/tree/main/mistral/agents/food_diet_companion)
 
 ## FAQ

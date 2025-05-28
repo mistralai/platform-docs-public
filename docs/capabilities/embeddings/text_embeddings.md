@@ -1,13 +1,12 @@
 ---
-id: embeddings
-title: Embeddings
-sidebar_position: 5
+id: text_embeddings
+title: Text Embeddings
+slug: text_embeddings
+sidebar_position: 5.1
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
-Embeddings are vectorial representations of text that capture the semantic meaning of paragraphs through their position in a high dimensional vector space. Mistral AI Embeddings API offers cutting-edge, state-of-the-art embeddings for text, which can be used for many NLP tasks. In this guide, we will cover the fundamentals of the embeddings API, including how to measure the distance between text embeddings, and explore its main use cases: clustering and classification.
 
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/embeddings.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
@@ -15,7 +14,8 @@ Embeddings are vectorial representations of text that capture the semantic meani
 
 ## Mistral Embed API
 To generate text embeddings using Mistral AI's embeddings API, we can make a request to the API endpoint and specify the embedding model `mistral-embed`, along with providing a list of input texts. The API will then return the corresponding embeddings as numerical vectors, which can be used for further analysis or processing in NLP applications.
-
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 ```python
 import os
 from mistralai import Mistral
@@ -30,6 +30,40 @@ embeddings_batch_response = client.embeddings.create(
     inputs=["Embed this sentence.", "As well as this one."],
 )
 ```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function getEmbeddings() {
+
+    const embeddingsBatchResponse = await client.embeddings.create({
+        model: "mistral-embed",
+        inputs: ["Embed this sentence.", "As well as this one."],
+    });
+
+    console.log('Embeddings:', embeddingsBatchResponse.data);
+}
+
+// Call the async function
+getEmbeddings().catch(console.error);
+```
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+curl -X POST "https://api.mistral.ai/v1/embeddings" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer ${API_KEY}" \
+     -d '{"model": "mistral-embed", "input": ["Embed this sentence.", "As well as this one."]}' \
+     -o embedding.json
+
+```
+  </TabItem>
+</Tabs>
 
 The output `embeddings_batch_response` is an EmbeddingResponse object with the embeddings and the token usage information.
 
@@ -43,17 +77,32 @@ EmbeddingResponse(
 ```
 
 Let's take a look at the length of the first embedding:
-
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
 ```python
 len(embeddings_batch_response.data[0].embedding)
 ```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+console.log('Embedding Length:', embeddingsBatchResponse.data?.[0]?.embedding?.length)
+```
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+echo "Embedding Length: $(jq '.data[0].embedding | length' embedding.json)"
+```
+  </TabItem>
+</Tabs>
 
-It returns 1024, which means that our embedding dimension is 1024. The `mistral-embed` model generates embedding vectors of dimension 1024 for each text string, regardless of the text length. It's worth noting that while higher dimensional embeddings can better capture text information and improve the performance of NLP tasks, they may require more computational resources for hosting and inference, and may result in increased latency and memory usage for storing and processing these embeddings. This trade-off between performance and computational resources should be considered when designing NLP systems that rely on text embeddings.
 
-# Distance Measures
+It returns 1024, which means that our embedding dimension is 1024. The `mistral-embed` model generates embedding vectors of dimension 1024 for each text string, regardless of the text length. It's worth nothing that while higher dimensional embeddings can better capture text information and improve the performance of NLP tasks, they may require more computational resources for hosting and inference, and may result in increased latency and memory usage for storing and processing these embeddings. This trade-off between performance and computational resources should be considered when designing NLP systems that rely on text embeddings.
+
+## Distance Measures
 In the realm of text embeddings, texts with similar meanings or context tend to be located in closer proximity to each other within this space, as measured by the distance between their vectors. This is due to the fact that the model has learned to group semantically related texts together during the training process.
 
 Let's take a look at a simple example. To simplify working with text embeddings, we can wrap the embedding API in this function:
+
 
 ```python
 from sklearn.metrics.pairwise import euclidean_distances
@@ -113,6 +162,7 @@ for s, e in zip(sentence_pairs, sentence_embeddings_pairs):
     print(s, euclidean_distances([e[0]], [e[1]]))
 ```
 
+
 Output
 ```
 ('Have a safe happy Memorial Day weekend everyone', 'To all our friends at Whatsit Productions Films enjoy a safe happy Memorial Day weekend') [[0.54326686]]
@@ -124,6 +174,7 @@ Output
 The Mistral AI Embeddings API is designed to process text in batches for improved efficiency and speed. In this example, we will demonstrate this by loading the Symptom2Disease dataset from [Kaggle](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease), which contains 1200 rows with two columns: "label" and "text". The "label" column indicates the disease category, while the "text" column describes the symptoms associated with that disease.
 
 We wrote a function `get_embeddings_by_chunks` that splits data into chunks and then sends each chunk to the Mistral AI Embeddings API to get the embeddings. Then we saved the embeddings as a new column in the dataframe. Note that the API will provide auto-chunking in the future, so that users don't need to manually split the data into chunks before sending it.
+
 
 ```python
 import pandas as pd
@@ -143,9 +194,10 @@ def get_embeddings_by_chunks(data, chunk_size):
 df["embeddings"] = get_embeddings_by_chunks(df["text"].tolist(), 50)
 df.head()
 ```
+
 <img src="/img/guides/embeddings1.png" alt="drawing" width="700"/>
 
-# t-SNE embeddings visualization
+### t-SNE embeddings visualization
 We mentioned previously that our embeddings have 1024 dimensions, which makes them impossible to visualize directly. Thus, in order to visualize our embeddings, we can use a dimensionality reduction technique such as t-SNE to project our embeddings into a lower-dimensional space that is easier to visualize.
 
 In this example, we transform our embeddings to 2 dimensions and create a 2D scatter plot showing the relationships among embeddings of different diseases.

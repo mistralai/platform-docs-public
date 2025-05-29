@@ -32,7 +32,7 @@ The accepted dtypes are:
 ### Output Dimension
 `output_dimension` allows you to select a specific size for the embedding, enabling you to obtain an embedding of your chosen dimension, **defaults to 1536** and has a **maximum value of 3072**.
 
-For any integer target dimension n, you can choose to retain the first n dimensions. These dimensions are ordered using a PCA algorithm, and the first n are selected for a smooth trade-off between quality and cost.
+For any integer target dimension n, you can choose to retain the first n dimensions. These dimensions are ordered by relevance, and the first n are selected for a smooth trade-off between quality and cost.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>

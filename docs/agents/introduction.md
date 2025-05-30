@@ -46,11 +46,11 @@ Our Agents API allows developers to build such agents, leveraging multiple featu
 
 ## Cookbooks
 For more information and guides on how to use our Agents, we have the following cookbooks:
-- [Github Agent](https://github.com/mistralai/cookbook/tree/main/mistral/agents/github_agent)
-- [Linear Tickets](https://github.com/mistralai/cookbook/tree/main/mistral/agents/prd_linear_ticket)
-- [Financial Analyst](https://github.com/mistralai/cookbook/tree/main/mistral/agents/financial_analyst)
-- [Travel Assistant](https://github.com/mistralai/cookbook/tree/main/mistral/agents/travel_assistant)
-- [Food Diet Companion](https://github.com/mistralai/cookbook/tree/main/mistral/agents/food_diet_companion)
+- [Github Agent](https://github.com/mistralai/cookbook/tree/main/mistral/agents/agents_api/github_agent)
+- [Linear Tickets](https://github.com/mistralai/cookbook/tree/main/mistral/agents/agents_api/prd_linear_ticket)
+- [Financial Analyst](https://github.com/mistralai/cookbook/tree/main/mistral/agents/agents_api/financial_analyst)
+- [Travel Assistant](https://github.com/mistralai/cookbook/tree/main/mistral/agents/agents_api/travel_assistant)
+- [Food Diet Companion](https://github.com/mistralai/cookbook/tree/main/mistral/agents/agents_api/food_diet_companion)
 
 ## FAQ
 

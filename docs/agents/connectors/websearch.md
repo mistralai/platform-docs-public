@@ -23,7 +23,7 @@ Our built-in [connector](../connectors) tool for websearch allows any of our mod
 
 There are two versions:
 - `web_search`: A simple web search tool that enables access to a search engine.
-- `web_search_premium`: A more complex web search tool that enables access to both a search engine and two news agencies: AFP and AP.
+- `web_search_premium`: A more complex web search tool that enables access to both a search engine and to news articles via integrated news provider verification.
 
 ## Create a Websearch Agent
 You can create an agent with access to websearch by providing it as one of the tools.  

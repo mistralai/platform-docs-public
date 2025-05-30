@@ -21,7 +21,7 @@ the role "assistant" as output.
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
-### No streaming
+**No streaming**
 ```python
 import os
 from mistralai import Mistral
@@ -44,7 +44,7 @@ chat_response = client.chat.complete(
 print(chat_response.choices[0].message.content)
 ```
 
-### With streaming 
+**With streaming**
 ```python
 import os
 from mistralai import Mistral
@@ -68,7 +68,7 @@ for chunk in stream_response:
     print(chunk.data.choices[0].delta.content)
 ```
 
-### With async 
+**With async and with streaming**
 ```python
 import asyncio
 import os
@@ -78,7 +78,7 @@ from mistralai import Mistral
 
 async def main():
     api_key = os.environ["MISTRAL_API_KEY"]
-    model = "mistral-tiny"
+    model = "mistral-large-latest"
 
     client = Mistral(api_key=api_key)
 
@@ -100,6 +100,32 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+**With async and without streaming**
+```python
+import asyncio
+import os
+
+from mistralai import Mistral
+from mistralai.models import UserMessage
+
+
+async def main():
+    api_key = os.environ["MISTRAL_API_KEY"]
+    model = "mistral-large-latest"
+
+    client = Mistral(api_key=api_key)
+
+    chat_response = await client.chat.complete_async(
+        model=model,
+        messages=[UserMessage(content="What is the best French cheese?")],
+    )
+
+    print(chat_response.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
   </TabItem>
   <TabItem value="typescript" label="typescript">
@@ -107,38 +133,54 @@ if __name__ == "__main__":
 **No streaming**
 ```typescript
 import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const apiKey = process.env.MISTRAL_API_KEY;
 
 const client = new Mistral({apiKey: apiKey});
 
-const chatResponse = await client.chat.complete({
-    model: "mistral-large-latest",
-    messages: [{role: 'user', content: 'What is the best French cheese?'}]
-});
+async function main() {
+    const chatResponse = await client.chat.complete({
+        model: "mistral-large-latest",
+        messages: [{role: 'user', content: 'What is the best French cheese?'}]
+    });
 
-console.log('Chat:', chatResponse.choices[0].message.content);
+    console.log('Chat:', chatResponse.choices?.[0]?.message?.content);
+}
+
+main();
 ```
 
 **With streaming**
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
+import * as dotenv from 'dotenv';
 
-const apiKey = process.env.MISTRAL_API_KEY;
+dotenv.config();
 
-const client = new Mistral({apiKey: apiKey});
+const apiKey = process.env["MISTRAL_API_KEY"];
 
-const result = await client.chat.stream({
-    model: "mistral-small-latest",
-    messages: [{role: 'user', content: 'What is the best French cheese?'}],
-});
+const client = new Mistral({ apiKey: apiKey });
 
-for await (const chunk of result) {
-    const streamText = chunk.data.choices[0].delta.content;
-    process.stdout.write(streamText);
+async function main() {
+
+    const result = await client.chat.stream({
+        model: "mistral-large-latest",
+        messages: [{ role: "user", content: "What is the best French cheese?" }],
+    });
+
+    for await (const chunk of result) {
+        const streamText = chunk.data.choices[0].delta.content;
+        if (typeof streamText === "string") {
+            process.stdout.write(streamText);
+        }
+    }
 }
-```
 
+main()
+```
 
   </TabItem>
   <TabItem value="curl" label="curl">

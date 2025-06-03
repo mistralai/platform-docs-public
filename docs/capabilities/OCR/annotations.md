@@ -469,7 +469,7 @@ First, define the response formats for both `BBox Annotation` and `Document Anno
 ```python
 from pydantic import BaseModel
 
-# BBOX Annotation response formats
+# BBOX Annotation response format
 class Image(BaseModel):
   image_type: str
   short_description: str
@@ -487,17 +487,17 @@ You can also provide a description for each entry, the description will be used 
 ```python
 from pydantic import BaseModel, Field
 
-# BBOX Annotation response formats
+# BBOX Annotation response format with description
 class Image(BaseModel):
   image_type: str = Field(..., description="The type of the image.")
-  description: str = Field(..., description="A description in english describing the image.")
-  summary: str = str = Field(..., description="Summarize the image.")
+  short_description: str = Field(..., description="A description in english describing the image.")
+  summary: str = Field(..., description="Summarize the image.")
 
 # Document Annotation response format
 class Document(BaseModel):
   language: str
-  candidates_instructions: list[str]
-  questions: list[str]
+  chapter_titles: list[str]
+  urls: list[str]
 ```
 
 **Start the completion**
@@ -537,7 +537,7 @@ First, define the response formats for both `BBox Annotation` and `Document Anno
 ```typescript
 import { z } from 'zod';
 
-// BBOX Annotation response formats
+// BBOX Annotation response format
 const ImageSchema = z.object({
   image_type: z.string(),
   short_description: z.string(),

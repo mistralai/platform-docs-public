@@ -521,7 +521,7 @@ response = client.ocr.process(
       document_url="https://arxiv.org/pdf/2410.07073"
     ),
     bbox_annotation_format=response_format_from_pydantic_model(Image),
-    document_annotation_format=response_format_from_pydantic_model(Document)
+    document_annotation_format=response_format_from_pydantic_model(Document),
     include_image_base64=True
   )
 ```

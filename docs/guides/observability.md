@@ -260,9 +260,6 @@ Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/th
 
 Maxim AI provides comprehensive observability for your Mistral based AI applications. With Maxim's one-line integration, you can easily trace and analyse LLM calls, metrics, and more.
 
-<!-- <img src="/img/guides/obs_langchain0.png" alt="drawing" width="700"/> -->
-
-
 **Pros:**
 
 * Performance Analytics: Track latency, tokens consumed, and costs

@@ -275,4 +275,4 @@ Maxim AI provides comprehensive observability for your Mistral based AI applicat
 Maxim Documentation to use Mistral as an LLM Provider and Maxim as Logger - [Docs Link](https://www.getmaxim.ai/docs/sdk/python/integrations/mistral/mistral)
 
 
-<img src="/img/guides/maxim_traces.gif" alt="drawing" width="700"/>
+![Gif](https://raw.githubusercontent.com/akmadan/platform-docs-public/docs/observability-maxim-provider/static/img/guides/maxim_traces.gif)

@@ -255,3 +255,24 @@ MLflow is a unified, end-to-end, open source MLOps platform for both traditional
 Here is an [example notebook](https://github.com/mistralai/cookbook/blob/main/third_party/MLflow/mistral-mlflow-tracing.ipynb). 
 
 <img src="/img/guides/obs_mlflow.png" alt="drawing" width="700"/>
+
+### Integration with Maxim
+
+Maxim AI provides comprehensive observability for your Mistral based AI applications. With Maxim's one-line integration, you can easily trace and analyse LLM calls, metrics, and more.
+
+<!-- <img src="/img/guides/obs_langchain0.png" alt="drawing" width="700"/> -->
+
+
+**Pros:**
+
+* Performance Analytics: Track latency, tokens consumed, and costs
+* Advanced Visualisation: Understand agent trajectories through intuitive dashboards
+
+**Mistral integration Example:**
+
+* Learn how to integrate Maxim observability with the Mistral SDK in just one line of code - [Colab Notebook](https://colab.research.google.com/drive/1gqJkkLQQTtSdUla2oiIg-QyR6i5BpmvV?usp=sharing)
+
+Maxim Documentation to use Mistral as an LLM Provider and Maxim as Logger - [Docs Link](https://www.getmaxim.ai/docs/sdk/python/integrations/mistral/mistral)
+
+
+<img src="/img/guides/maxim_traces.gif" alt="drawing" width="700"/>

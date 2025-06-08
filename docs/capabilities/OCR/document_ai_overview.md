@@ -21,4 +21,4 @@ Mistral Document AI offers enterprise-level document processing, combining cutti
 
 - [Basic OCR](../basic_ocr): Discover our OCR model and its extensive capabilities.
 - [Annotations](../annotations): Annotate and extract data from your documents using our built-in Structured Outputs.
-- [Document Understanding](../document_understanding): Harness the power of our models in conjunction with our OCR technology.
+- [Document QnA](../document_qna): Harness the power of our models in conjunction with our OCR technology.

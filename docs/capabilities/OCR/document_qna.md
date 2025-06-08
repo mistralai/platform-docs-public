@@ -1,23 +1,23 @@
 ---
-id: document_understanding
-title: Document Understanding
-slug: document_understanding
+id: document_qna
+title: Document QnA
+slug: document_qna
 sidebar_position: 3.3
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Document understanding
+# Document QnA
 
-The Document understanding capability combines OCR with large language model capabilities to enable natural language interaction with document content. This allows you to extract information and insights from documents by asking questions in natural language.
+The Document QnA capability combines OCR with large language model capabilities to enable natural language interaction with document content. This allows you to extract information and insights from documents by asking questions in natural language.
 
 **The workflow consists of two main steps:**
 
 <div style={{ textAlign: 'center' }}>
   <img
-    src="/img/document_understanding.png"
-    alt="Document Understanding Graph"
+    src="/img/document_qna.png"
+    alt="Document QnA Graph"
     width="800"
     style={{ borderRadius: '15px' }}
   />
@@ -181,8 +181,8 @@ curl https://api.mistral.ai/v1/chat/completions \
 </Tabs>
 
 ## Cookbooks
-For more information on how to make use of Document Understanding, we have the following [Document Understanding Cookbook](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/ocr/document_understanding.ipynb) with a simple example.
+For more information on how to make use of Document QnA, we have the following [Document QnA Cookbook](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/ocr/document_understanding.ipynb) with a simple example.
 
 ## FAQ
-**Q: Are there any limits regarding the Document Understanding API?**\
-A: Yes, there are certain limitations for the Document Understanding API. Uploaded document files must not exceed 50 MB in size and should be no longer than 1,000 pages.
+**Q: Are there any limits regarding the Document QnA API?**\
+A: Yes, there are certain limitations for the Document QnA API. Uploaded document files must not exceed 50 MB in size and should be no longer than 1,000 pages.

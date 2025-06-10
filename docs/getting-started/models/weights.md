@@ -46,6 +46,7 @@ If you are interested in purchasing a commercial license for our models, please 
 | Mistral-Small-Base-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Base-2503)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 | Mistral-Small-Instruct-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 | Devstral-Small-2505  | [Hugging Face](https://huggingface.co/mistralai/Devstral-Small-2505)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
+| Magistral-Small-2506  | [Hugging Face](https://huggingface.co/mistralai/Magistral-Small-2506)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer |
 
 ## Sizes
 

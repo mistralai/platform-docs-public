@@ -1,7 +1,7 @@
 ---
 id: citations
 title: Citations and References
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 Citations enable models to ground their responses and provide references, making them a powerful feature for Retrieval-Augmented Generation (RAG) and agentic applications. This feature allows the model to provide the source of the information extracted from a document or chunk of data from a tool call.

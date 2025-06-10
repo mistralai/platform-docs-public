@@ -10,12 +10,14 @@ LLM (Large Language Model) benchmarks are standardized tests or datasets used to
 Mistral demonstrates top-tier reasoning capabilities and excels in advanced reasoning, multilingual tasks, math, and code generation. The company reports benchmark results on popular public benchmarks such as MMLU (Massive Multitask Language Understanding), MT-bench, and others.
 
 You can find the benchmark results in the following blog posts: 
+- [Magistral Medium](https://mistral.ai/news/magistral/): Our frontier-class reasoning model built on top of Mistral Medium 3, offering state-of-the-art reasoning capabilities for enterprise use cases.
+- [Magistral Small](https://mistral.ai/news/magistral/): Our small reasoning model built on top of Mistral Small 3, a compact open model with high-performance reasoning.
+- [Mistral Medium](https://mistral.ai/news/mistral-medium-3/): A cutting-edge multimodal model.
+It can be used for professional use cases, coding, function-calling and reasoning tasks.
 - [Pixtral Large](https://mistral.ai/news/pixtral-large/): Pixtral Large is a 124B open-weights multimodal model built on top of Mistral Large 2. It is the second model in our multimodal family and demonstrates frontier-level image understanding.
 - [Pixtral 12B](https://mistral.ai/news/pixtral-12b/): Pixtral 12B the first open-source model to demonstrate state-of-the-art multimodal understanding, without regressing on abilities in pure text. 
-- [Mistral Large](https://mistral.ai/news/mistral-large-2407/): a cutting-edge text generation model with top-tier reasoning capabilities.
+- [Mistral Large](https://mistral.ai/news/mistral-large-2407/): A cutting-edge text generation model with top-tier reasoning capabilities.
 It can be used for complex multilingual reasoning tasks, including text understanding, transformation, and code generation.
-- [Mistral Medium](https://mistral.ai/news/mistral-medium-3/): a cutting-edge multimodal model.
-It can be used for professional use cases, coding, function-calling and reasoning tasks.
 - [Mistral Small](https://mistral.ai/news/mistral-small-3-1/): A powerful and efficient multimodal model with high level conversational and translation capabilities.
 - [Devstral Small](https://mistral.ai/news/devstral/): A powerful and efficient 24B text model. Debuting as #1 open source model on SWE-bench. This model has high agentic capabilities, performing well with OpenHands and SWE-agent code agent frameworks.
 - [Mistral Saba](https://mistral.ai/news/mistral-saba/): A powerful and efficient text generation model trained extensively on languages from the Middle East and South Asia, achieving state-of-the-art quality comparable to much larger models.

@@ -47,7 +47,6 @@ Mistral provides two types of models: free models and premier models.
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
 | Mistral Nemo | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best multilingual open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-nemo/) | 128k  | `open-mistral-nemo`| 24.07|
-| Codestral Mamba | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first mamba 2 open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/codestral-mamba/) | 256k  | `open-codestral-mamba`| v0.1|
 | Mathstral | :heavy_check_mark: <br/> Apache2 |  | Our first math open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mathstral/) | 32k  | NA| v0.1|
 
 

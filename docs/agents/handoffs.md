@@ -148,19 +148,19 @@ Once all our Agents created, we update our previous defined Agents with a list o
 ```py
 # Allow the finance_agent to handoff the conversation to the ecb_interest_rate_agent or web_search_agent
 finance_agent = client.beta.agents.update(
-    agent_id=finance_agent.id, 
+    agent_id=finance_agent.id,
     handoffs=[ecb_interest_rate_agent.id, web_search_agent.id]
 )
 
 # Allow the ecb_interest_rate_agent to handoff the conversation to the graph_agent or calculator_agent
 ecb_interest_rate_agent = client.beta.agents.update(
-    agent_id=ecb_interest_rate_agent.id, 
+    agent_id=ecb_interest_rate_agent.id,
     handoffs=[graph_agent.id, calculator_agent.id]
 )
 
 # Allow the web_search_agent to handoff the conversation to the graph_agent or calculator_agent
 web_search_agent = client.beta.agents.update(
-    agent_id=web_search_agent.id, 
+    agent_id=web_search_agent.id,
     handoffs=[graph_agent.id, calculator_agent.id]
 )
 ```
@@ -291,8 +291,8 @@ response = client.beta.conversations.start(
     inputs="Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years"
 )
 if response.outputs[-1].type == "function.call" and response.outputs[-1].name == "get_european_central_bank_interest_rate":
-    
-    # Add a dummy result for the function call 
+
+    # Add a dummy result for the function call
     user_entry = FunctionResultEntry(
         tool_call_id=response.outputs[-1].tool_call_id,
         result="2.5%",

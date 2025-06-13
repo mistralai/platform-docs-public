@@ -398,7 +398,7 @@ curl --location 'https://api.mistral.ai/v1/ocr' \
 --header "Authorization: Bearer ${MISTRAL_API_KEY}" \
 --data '{
     "model": "mistral-ocr-latest",
-    "document": {"document_url": "https://arxiv.org/pdf/2410.07073},
+    "document": {"document_url": "https://arxiv.org/pdf/2410.07073"},
     "pages": [0, 1, 2, 3, 4, 5, 6, 7],
     "document_annotation_format": {
         "type": "json_schema",

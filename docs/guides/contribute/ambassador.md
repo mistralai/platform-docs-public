@@ -71,8 +71,29 @@ Thank you to each and every one of you, including those who prefer not to be nam
     </td>
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://www.linkedin.com/in/sprasadh/">
-        <figure>
-          <img src="https://media.licdn.com/dms/image/v2/D4E03AQHAN_JjW8kF5g/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1728704235733?e=1745452800&v=beta&t=o8KLmoaoglhHGkgnghweNQO0Kn5umawtAjvFNk-V6G8" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+        <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <svg width="41" height="29" viewBox="0 0 41 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.7053 0H5.85156V5.79928H11.7053V0Z" fill="black"></path>
+            <path d="M35.1272 0H29.2734V5.79928H35.1272V0Z" fill="black"></path>
+            <path d="M17.559 5.79883H5.85156V11.5981H17.559V5.79883Z" fill="black"></path>
+            <path d="M35.1293 5.79883H23.4219V11.5981H35.1293V5.79883Z" fill="black"></path>
+            <path d="M35.1239 11.5977H5.85156V17.3969H35.1239V11.5977Z" fill="black"></path>
+            <path d="M11.7053 17.3984H5.85156V23.1977H11.7053V17.3984Z" fill="black"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="black"></path>
+            <path d="M35.1272 17.3984H29.2734V23.1977H35.1272V17.3984Z" fill="black"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="black"></path>
+            <path d="M40.9867 23.2012H23.4219V29.0005H40.9867V23.2012Z" fill="black"></path>
+            <path d="M11.7072 0H5.85352V5.79928H11.7072V0Z" fill="#FFD800"></path>
+            <path d="M35.1252 0H29.2715V5.79928H35.1252V0Z" fill="#FFD800"></path>
+            <path d="M17.561 5.79883H5.85352V11.5981H17.561V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1254 5.79883H23.418V11.5981H35.1254V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1258 11.5977H5.85352V17.3969H35.1258V11.5977Z" fill="#FF8205"></path>
+            <path d="M11.7072 17.3984H5.85352V23.1977H11.7072V17.3984Z" fill="#FA500F"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="#FA500F"></path>
+            <path d="M35.1252 17.3984H29.2715V23.1977H35.1252V17.3984Z" fill="#FA500F"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="#E10500"></path>
+            <path d="M40.9828 23.2012H23.418V29.0005H40.9828V23.2012Z" fill="#E10500"></path>
+          </svg>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>R. Shyaam Prasadh</figcaption>
         </figure>
       </a>
@@ -81,8 +102,29 @@ Thank you to each and every one of you, including those who prefer not to be nam
   <tr>
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://www.youtube.com/allaboutai">
-        <figure>
-          <img src="https://media.licdn.com/dms/image/v2/D5603AQEbE78KZzsmEg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1729668765848?e=1745452800&v=beta&t=IukIoqTSBeF37kAU-4jtkuVa_omTiSOnq3mP2ByGnhc" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+        <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <svg width="41" height="29" viewBox="0 0 41 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.7053 0H5.85156V5.79928H11.7053V0Z" fill="black"></path>
+            <path d="M35.1272 0H29.2734V5.79928H35.1272V0Z" fill="black"></path>
+            <path d="M17.559 5.79883H5.85156V11.5981H17.559V5.79883Z" fill="black"></path>
+            <path d="M35.1293 5.79883H23.4219V11.5981H35.1293V5.79883Z" fill="black"></path>
+            <path d="M35.1239 11.5977H5.85156V17.3969H35.1239V11.5977Z" fill="black"></path>
+            <path d="M11.7053 17.3984H5.85156V23.1977H11.7053V17.3984Z" fill="black"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="black"></path>
+            <path d="M35.1272 17.3984H29.2734V23.1977H35.1272V17.3984Z" fill="black"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="black"></path>
+            <path d="M40.9867 23.2012H23.4219V29.0005H40.9867V23.2012Z" fill="black"></path>
+            <path d="M11.7072 0H5.85352V5.79928H11.7072V0Z" fill="#FFD800"></path>
+            <path d="M35.1252 0H29.2715V5.79928H35.1252V0Z" fill="#FFD800"></path>
+            <path d="M17.561 5.79883H5.85352V11.5981H17.561V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1254 5.79883H23.418V11.5981H35.1254V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1258 11.5977H5.85352V17.3969H35.1258V11.5977Z" fill="#FF8205"></path>
+            <path d="M11.7072 17.3984H5.85352V23.1977H11.7072V17.3984Z" fill="#FA500F"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="#FA500F"></path>
+            <path d="M35.1252 17.3984H29.2715V23.1977H35.1252V17.3984Z" fill="#FA500F"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="#E10500"></path>
+            <path d="M40.9828 23.2012H23.418V29.0005H40.9828V23.2012Z" fill="#E10500"></path>
+          </svg>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>Kristian Fagerlie</figcaption>
         </figure>
       </a>
@@ -90,7 +132,7 @@ Thank you to each and every one of you, including those who prefer not to be nam
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://x.com/guohao_li">
         <figure>
-          <img src="https://media.licdn.com/dms/image/v2/D4D03AQEbVlWgm1WrOQ/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1718273607436?e=1745452800&v=beta&t=Nv0xVvnWNAMa0N4sJ98rO69KbA32sIGZ2NzHf03nwFA" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+          <img src="https://ghli.org/authors/admin/avatar_hu9d9865ddbb26c633557596753f4b7710_2567527_250x250_fill_lanczos_center_2.png" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>Guohao Li</figcaption>
         </figure>
       </a>
@@ -98,7 +140,7 @@ Thank you to each and every one of you, including those who prefer not to be nam
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://github.com/deep-diver">
         <figure>
-          <img src="https://avatars.githubusercontent.com/u/26025527?v=4" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+          <img src="https://avatars.githubusercontent.com/u/26025527?v=4" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}/>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>Chansung Park</figcaption>
         </figure>
       </a>
@@ -107,20 +149,63 @@ Thank you to each and every one of you, including those who prefer not to be nam
   <tr>
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://www.linkedin.com/in/stephen-batifol/">
-        <figure>
-          <img src="https://media.licdn.com/dms/image/v2/C4D03AQFju8X__OfdUg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1561042811068?e=1745452800&v=beta&t=VWQNZh8bjmd2TUnCG4VxI0-SLigVel1ecnVmlU2o5r4" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+        <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <svg width="41" height="29" viewBox="0 0 41 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.7053 0H5.85156V5.79928H11.7053V0Z" fill="black"></path>
+            <path d="M35.1272 0H29.2734V5.79928H35.1272V0Z" fill="black"></path>
+            <path d="M17.559 5.79883H5.85156V11.5981H17.559V5.79883Z" fill="black"></path>
+            <path d="M35.1293 5.79883H23.4219V11.5981H35.1293V5.79883Z" fill="black"></path>
+            <path d="M35.1239 11.5977H5.85156V17.3969H35.1239V11.5977Z" fill="black"></path>
+            <path d="M11.7053 17.3984H5.85156V23.1977H11.7053V17.3984Z" fill="black"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="black"></path>
+            <path d="M35.1272 17.3984H29.2734V23.1977H35.1272V17.3984Z" fill="black"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="black"></path>
+            <path d="M40.9867 23.2012H23.4219V29.0005H40.9867V23.2012Z" fill="black"></path>
+            <path d="M11.7072 0H5.85352V5.79928H11.7072V0Z" fill="#FFD800"></path>
+            <path d="M35.1252 0H29.2715V5.79928H35.1252V0Z" fill="#FFD800"></path>
+            <path d="M17.561 5.79883H5.85352V11.5981H17.561V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1254 5.79883H23.418V11.5981H35.1254V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1258 11.5977H5.85352V17.3969H35.1258V11.5977Z" fill="#FF8205"></path>
+            <path d="M11.7072 17.3984H5.85352V23.1977H11.7072V17.3984Z" fill="#FA500F"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="#FA500F"></path>
+            <path d="M35.1252 17.3984H29.2715V23.1977H35.1252V17.3984Z" fill="#FA500F"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="#E10500"></path>
+            <path d="M40.9828 23.2012H23.418V29.0005H40.9828V23.2012Z" fill="#E10500"></path>
+          </svg>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>Stephen Batifol</figcaption>
         </figure>
       </a>
     </td>
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://youtube.com/@pierrebittner">
-        <figure>
-          <img src="https://media.licdn.com/dms/image/v2/C5603AQF6L6PvaHn3eA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1516336055100?e=1745452800&v=beta&t=d0RqIpf5-kCN_FmwWLYRvEuA9DyYne8YpkWfHzFIQ_E" alt="1" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}></img>
+        <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <svg width="41" height="29" viewBox="0 0 41 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.7053 0H5.85156V5.79928H11.7053V0Z" fill="black"></path>
+            <path d="M35.1272 0H29.2734V5.79928H35.1272V0Z" fill="black"></path>
+            <path d="M17.559 5.79883H5.85156V11.5981H17.559V5.79883Z" fill="black"></path>
+            <path d="M35.1293 5.79883H23.4219V11.5981H35.1293V5.79883Z" fill="black"></path>
+            <path d="M35.1239 11.5977H5.85156V17.3969H35.1239V11.5977Z" fill="black"></path>
+            <path d="M11.7053 17.3984H5.85156V23.1977H11.7053V17.3984Z" fill="black"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="black"></path>
+            <path d="M35.1272 17.3984H29.2734V23.1977H35.1272V17.3984Z" fill="black"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="black"></path>
+            <path d="M40.9867 23.2012H23.4219V29.0005H40.9867V23.2012Z" fill="black"></path>
+            <path d="M11.7072 0H5.85352V5.79928H11.7072V0Z" fill="#FFD800"></path>
+            <path d="M35.1252 0H29.2715V5.79928H35.1252V0Z" fill="#FFD800"></path>
+            <path d="M17.561 5.79883H5.85352V11.5981H17.561V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1254 5.79883H23.418V11.5981H35.1254V5.79883Z" fill="#FFAF00"></path>
+            <path d="M35.1258 11.5977H5.85352V17.3969H35.1258V11.5977Z" fill="#FF8205"></path>
+            <path d="M11.7072 17.3984H5.85352V23.1977H11.7072V17.3984Z" fill="#FA500F"></path>
+            <path d="M23.4162 17.3984H17.5625V23.1977H23.4162V17.3984Z" fill="#FA500F"></path>
+            <path d="M35.1252 17.3984H29.2715V23.1977H35.1252V17.3984Z" fill="#FA500F"></path>
+            <path d="M17.5648 23.2012H0V29.0005H17.5648V23.2012Z" fill="#E10500"></path>
+            <path d="M40.9828 23.2012H23.418V29.0005H40.9828V23.2012Z" fill="#E10500"></path>
+          </svg>
           <figcaption style={{ fontSize: '15px', textAlign: 'center' }}>Pierre Bittner</figcaption>
         </figure>
       </a>
     </td>
+
     <td style={{ width: '300px', height: '200px' }}>
       <a href="https://www.amayuelas.me/">
         <figure>

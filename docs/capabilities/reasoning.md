@@ -52,6 +52,12 @@ A user will ask you to solve a task. You should first draft your thinking proces
 ```
 </details>
 
+You can also opt out of the default system prompt by setting `prompt_mode` to `null` in the API. The `prompt_mode` has two possible values:
+- **`reasoning`**: the default behavior where the default system prompt will be used explicitly.
+- **`null`**: no system prompt will be used whatsoever.
+
+Providing your own system prompt will override the default system prompt with the new one.
+
 You can use our reasoning models in a similar way to how you would use our other text models, here is an example via our chat completions endpoint:
 
 <Tabs groupId="code">
@@ -73,7 +79,8 @@ chat_response = client.chat.complete(
             "role": "user",
             "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?",
         },
-    ]
+    ],
+    # prompt_mode = "reasoning" if you want to explicitly use the default system prompt, or None if you want to opt out of the default system prompt.
 )
 
 print(chat_response.choices[0].message.content)
@@ -95,7 +102,8 @@ const client = new Mistral({apiKey: apiKey});
 async function main() {
     const chatResponse = await client.chat.complete({
         model: "magistral-medium-2506",
-        messages: [{role: 'user', content: 'John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?'}]
+        messages: [{role: 'user', content: 'John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?'}],
+        // prompt_mode: "reasoning" if you want to explicitly use the default system prompt, or null if you want to opt out of the default system prompt.
     });
 
     console.log('Chat:', chatResponse.choices?.[0]?.message?.content);

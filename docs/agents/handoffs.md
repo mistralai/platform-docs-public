@@ -376,35 +376,3 @@ content=[ToolFileChunk(tool='code_interpreter', file_id='40420c94-5f99-477f-8891
 ```
   
 </details>
-
-A full code snippet to download all generated images and plots from the response could look like so:
-```py
-from mistralai.models import ToolFileChunk
-
-for i, chunk in enumerate(response.outputs[-1].content):
-    # Check if chunk corresponds to a ToolFileChunk
-    if isinstance(chunk, ToolFileChunk):
-
-      # Download using the ToolFileChunk ID
-      file_bytes = client.files.download(file_id=chunk.file_id).read()
-
-      # Save the file locally
-      with open(f"plot_generated_{i}.png", "wb") as file:
-          file.write(file_bytes)
-```
-  </TabItem>
-
-  <TabItem value="typescript" label="typescript">
-  *Coming soon...*
-  </TabItem>
-
-  <TabItem value="curl" label="curl">
-
-```bash
-curl --location "https://api.mistral.ai/v1/files/<file_id>/content" \
-     --header 'Accept: application/octet-stream' \
-     --header 'Accept-Encoding: gzip, deflate, zstd' \
-     --header "Authorization: Bearer $MISTRAL_API_KEY"
-```
-  </TabItem>
-</Tabs>

@@ -1,6 +1,6 @@
 ---
 id: document_ai_overview
-title: Document AI & OCR
+title: Document AI
 slug: document_ai_overview
 ---
 
@@ -17,7 +17,9 @@ slug: document_ai_overview
 
 Mistral Document AI offers enterprise-level document processing, combining cutting-edge OCR technology with advanced structured data extraction. Experience faster processing speeds, unparalleled accuracy, and cost-effective solutions, all scalable to meet your needs. Unlock the full potential of your documents with our multilingual support, annotations and adaptable workflows for all document types, enabling you to extract, comprehend, and analyze information with ease.
 
-## Services
+## Document AI Services
+
+Using `client.ocr.process` as the entry point, you can access the following services from our Document AI stack:
 
 - [Basic OCR](../basic_ocr): Discover our OCR model and its extensive capabilities.
 - [Annotations](../annotations): Annotate and extract data from your documents using our built-in Structured Outputs.

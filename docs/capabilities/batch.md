@@ -10,8 +10,8 @@ import TabItem from '@theme/TabItem';
 
 A batch is composed of a list of API requests. The structure of an individual request includes:
 
-- A unique `custom_id` for identifying each request and referencing results after completion 
-- A `body` object with message information 
+- A unique `custom_id` for identifying each request and referencing results after completion
+- A `body` object with message information
 
 Here's an example of how to structure a batch request:
 
@@ -20,7 +20,7 @@ Here's an example of how to structure a batch request:
 {"custom_id": "1", "body": {"max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French wine?"}]}}
 ```
 
-Save your batch into a .jsonl file. Once saved, you can upload your batch input file to ensure it is correctly referenced when initiating batch processes: 
+Save your batch into a .jsonl file. Once saved, you can upload your batch input file to ensure it is correctly referenced when initiating batch processes:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -77,10 +77,10 @@ curl https://api.mistral.ai/v1/files \
 </Tabs>
 
 
-## Create a new batch job 
+## Create a new batch job
 Create a new batch job, it will be queued for processing.
 
-- `input_files`: a list of the batch input file IDs. 
+- `input_files`: a list of the batch input file IDs.
 - `model`: you can only use one model (e.g., `codestral-latest`) per batch. However, you can run multiple batches on the same files with different models if you want to compare outputs.
 - `endpoint`: we currently support `/v1/embeddings`, `/v1/chat/completions`, `/v1/fim/completions`, `/v1/moderations`, `/v1/chat/moderations`.
 - `metadata`: optional custom metadata for the batch.
@@ -136,7 +136,7 @@ curl --location "https://api.mistral.ai/v1/batch/jobs" \
 </Tabs>
 
 
-## Get a batch job details 
+## Get a batch job details
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -149,7 +149,7 @@ retrieved_job = client.batch.jobs.get(job_id=created_job.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const retrievedJob = await client.batch.jobs.get({ jobId: createdJob.id}); 
+const retrievedJob = await client.batch.jobs.get({ jobId: createdJob.id});
 ```
 
   </TabItem>
@@ -157,8 +157,7 @@ const retrievedJob = await client.batch.jobs.get({ jobId: createdJob.id});
 
 ```bash
 curl https://api.mistral.ai/v1/batch/jobs/<jobid> \
---header "Authorization: Bearer $MISTRAL_API_KEY" \
---header 'Content-Type: application/json'
+--header "Authorization: Bearer $MISTRAL_API_KEY"
 ```
 
   </TabItem>
@@ -207,7 +206,7 @@ curl 'https://api.mistral.ai/v1/files/<uuid>/content' \
   </TabItem>
 </Tabs>
 
-## List batch jobs 
+## List batch jobs
 You can view a list of your batch jobs and filter them by various criteria, including:
 
 - Status: `QUEUED`,
@@ -219,7 +218,7 @@ You can view a list of your batch jobs and filter them by various criteria, incl
 
 ```python
 list_job = client.batch.jobs.list(
-    status="RUNNING",   
+    status="RUNNING",
     metadata={"job_type": "testing"}
 )
 ```
@@ -228,7 +227,7 @@ list_job = client.batch.jobs.list(
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-const listJob = await client.batch.jobs.list({ 
+const listJob = await client.batch.jobs.list({
     status: "RUNNING",
     metadata: {
         jobType: "testing"
@@ -241,8 +240,7 @@ const listJob = await client.batch.jobs.list({
 
 ```bash
 curl 'https://api.mistral.ai/v1/batch/jobs?status=RUNNING&job_type=testing'\
---header 'x-api-key: $MISTRAL_API_KEY' \
---header 'Content-Type: application/json'
+--header 'x-api-key: $MISTRAL_API_KEY'
 ```
 
   </TabItem>
@@ -272,8 +270,7 @@ const canceledJob = await mistral.batch.jobs.cancel({
 
 ```bash
 curl -X POST https://api.mistral.ai/v1/batch/jobs/<jobid>/cancel \
---header "Authorization: Bearer $MISTRAL_API_KEY" \
---header 'Content-Type: application/json'
+--header "Authorization: Bearer $MISTRAL_API_KEY"
 ```
 
   </TabItem>
@@ -440,7 +437,7 @@ if __name__ == "__main__":
 ## FAQ
 
 ### Is the batch API available for all models?
-Yes, batch API is available for all models including user fine-tuned models. 
+Yes, batch API is available for all models including user fine-tuned models.
 
 ### Does the batch API affect pricing?
 The batch API offers a discount on pricing. Please see details on our [pricing page](https://mistral.ai/technology/#pricing).
@@ -451,10 +448,10 @@ No
 ### What's the max number of requests in a batch?
 Currently, there is a maximum limit of 1 million pending requests per workspace. This means you cannot submit a job with more than 1 million requests. Additionally, you cannot submit two jobs with 600,000 requests each at the same time. You would need to wait until the first job has processed at least 200,000 requests, reducing its pending count to 400,000. At that point, the new job with 600,000 requests would fit within the limit.
 
-### What's the max number of batch jobs one can create? 
-Currently, there is no maximum limit. 
+### What's the max number of batch jobs one can create?
+Currently, there is no maximum limit.
 
-### How long does the batch API take to process? 
+### How long does the batch API take to process?
 Processing speeds may be adjusted based on current demand and the volume of your request. Your batch results will only be accessible once the entire batch processing is complete.
 
 Users can set `timeout_hours` when creating a job, which specifies the number of hours after which the job should expire. It defaults to 24 hours and should be lower than 7 days. A batch will expire if processing does not complete within the specified timeout.

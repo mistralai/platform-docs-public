@@ -38,7 +38,10 @@ Or call our conversations API directly:
 
 ```py
 response = client.beta.conversations.start(
-    model="...", inputs=[...], tools=[...], # store=False
+    model="...",
+    inputs=[...],
+    tools=[...],
+    # store=False
 )
 ```
   </TabItem>

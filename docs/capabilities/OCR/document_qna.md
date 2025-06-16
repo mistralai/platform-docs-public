@@ -8,7 +8,7 @@ sidebar_position: 3.3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Document QnA
+# Document AI QnA
 
 The Document QnA capability combines OCR with large language model capabilities to enable natural language interaction with document content. This allows you to extract information and insights from documents by asking questions in natural language.
 

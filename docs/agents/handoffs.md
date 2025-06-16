@@ -148,19 +148,19 @@ Once all our Agents created, we update our previous defined Agents with a list o
 ```py
 # Allow the finance_agent to handoff the conversation to the ecb_interest_rate_agent or web_search_agent
 finance_agent = client.beta.agents.update(
-    agent_id=finance_agent.id, 
+    agent_id=finance_agent.id,
     handoffs=[ecb_interest_rate_agent.id, web_search_agent.id]
 )
 
 # Allow the ecb_interest_rate_agent to handoff the conversation to the graph_agent or calculator_agent
 ecb_interest_rate_agent = client.beta.agents.update(
-    agent_id=ecb_interest_rate_agent.id, 
+    agent_id=ecb_interest_rate_agent.id,
     handoffs=[graph_agent.id, calculator_agent.id]
 )
 
 # Allow the web_search_agent to handoff the conversation to the graph_agent or calculator_agent
 web_search_agent = client.beta.agents.update(
-    agent_id=web_search_agent.id, 
+    agent_id=web_search_agent.id,
     handoffs=[graph_agent.id, calculator_agent.id]
 )
 ```
@@ -222,6 +222,16 @@ response = client.beta.conversations.start(
     inputs="Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y"
 )
 ```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+  *Coming soon...*
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+  *Coming soon...*
+  </TabItem>
+</Tabs>
 
 <details>
     <summary><b>Parsed Output</b></summary>
@@ -254,16 +264,6 @@ agent_id='ag_067f7fce017f71a580001bf69f2cc11e' agent_name='calculator-agent' obj
 content=' {"result": "The future value of the investment after 10 years is $1,540.10.", "reasoning": "To calculate the compounded effect of investing at the current US bank interest rate of 4.50% for the next 10 years, we use the formula for compound interest: A = P(1 + r/n)^(nt), where A is the amount of money accumulated after n years, including interest. P is the principal amount (the initial amount of money). r is the annual interest rate (decimal). n is the number of times that interest is compounded per year. t is the time the money is invested for, in years. Assuming an initial investment (P) of $1,000, an annual interest rate (r) of 4.50% (or 0.045 as a decimal), compounded annually (n = 1), over 10 years (t = 10): A = 1000(1 + 0.045/1)^(1*10) = 1000(1 + 0.045)^10 = 1000(1.045)^10 ≈ 1540.10. Therefore, the future value of the investment after 10 years is approximately $1,540.10."}' object='conversation.entry' type='message.output' created_at=datetime.datetime(2025, 4, 10, 17, 16, 30, 145207, tzinfo=TzInfo(UTC)) id='msg_067f7fcee2527cf08000744d983639dc' agent_id='ag_067f7fce017f71a580001bf69f2cc11e' model='mistral-medium-2505' role='assistant'
 ```
 </details>
-  </TabItem>
-
-  <TabItem value="typescript" label="typescript">
-  *Coming soon...*
-  </TabItem>
-
-  <TabItem value="curl" label="curl">
-  *Coming soon...*
-  </TabItem>
-</Tabs>
 
 ### Example B
 
@@ -291,8 +291,8 @@ response = client.beta.conversations.start(
     inputs="Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years"
 )
 if response.outputs[-1].type == "function.call" and response.outputs[-1].name == "get_european_central_bank_interest_rate":
-    
-    # Add a dummy result for the function call 
+
+    # Add a dummy result for the function call
     user_entry = FunctionResultEntry(
         tool_call_id=response.outputs[-1].tool_call_id,
         result="2.5%",
@@ -302,6 +302,38 @@ if response.outputs[-1].type == "function.call" and response.outputs[-1].name ==
         inputs=[user_entry]
     )
 ```
+
+A full code snippet to download all generated images and plots from the response could look like so:
+```py
+from mistralai.models import ToolFileChunk
+
+for i, chunk in enumerate(response.outputs[-1].content):
+    # Check if chunk corresponds to a ToolFileChunk
+    if isinstance(chunk, ToolFileChunk):
+
+      # Download using the ToolFileChunk ID
+      file_bytes = client.files.download(file_id=chunk.file_id).read()
+
+      # Save the file locally
+      with open(f"plot_generated_{i}.png", "wb") as file:
+          file.write(file_bytes)
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+  *Coming soon...*
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/files/<file_id>/content" \
+     --header 'Accept: application/octet-stream' \
+     --header 'Accept-Encoding: gzip, deflate, zstd' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+  </TabItem>
+</Tabs>
 
 <details>
     <summary><b>Parsed Output</b></summary>
@@ -342,36 +374,5 @@ name='code_interpreter' object='conversation.entry' type='tool.execution' create
 
 content=[ToolFileChunk(tool='code_interpreter', file_id='40420c94-5f99-477f-8891-943f0defbe3b', type='tool_file', file_name='plot_0.png', file_type='png'), TextChunk(text='![Image](__emitted_0.png)\n\nThe graph shows the compounded interest over 10 years with an annual interest rate of 2.5%. The principal amount is set to $1000, and the interest is compounded once per year. The y-axis represents the amount of money, and the x-axis represents the number of years.', type='text')] object='conversation.entry' type='message.output' created_at=datetime.datetime(2025, 4, 10, 15, 43, 39, 898738, tzinfo=TzInfo(UTC)) id='msg_067f7e72be6173f48000e85e9976305a' agent_id='ag_067f7e7147e077a280005b4ae524d317' model='mistral-medium-2505' role='assistant'
 ```
+  
 </details>
-
-A full code snippet to download all generated images and plots from the response could look like so:
-```py
-from mistralai.models import ToolFileChunk
-
-for i, chunk in enumerate(response.outputs[-1].content):
-    # Check if chunk corresponds to a ToolFileChunk
-    if isinstance(chunk, ToolFileChunk):
-
-      # Download using the ToolFileChunk ID
-      file_bytes = client.files.download(file_id=chunk.file_id).read()
-
-      # Save the file locally
-      with open(f"plot_generated_{i}.png", "wb") as file:
-          file.write(file_bytes)
-```
-  </TabItem>
-
-  <TabItem value="typescript" label="typescript">
-  *Coming soon...*
-  </TabItem>
-
-  <TabItem value="curl" label="curl">
-
-```bash
-curl --location "https://api.mistral.ai/v1/files/<file_id>/content" \
-     --header 'Accept: application/octet-stream' \
-     --header 'Accept-Encoding: gzip, deflate, zstd' \
-     --header "Authorization: Bearer $MISTRAL_API_KEY"
-```
-  </TabItem>
-</Tabs>

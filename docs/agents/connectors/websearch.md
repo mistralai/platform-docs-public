@@ -45,12 +45,6 @@ websearch_agent = client.beta.agents.create(
     }
 )
 ```
-<details>
-    <summary><b>Output</b></summary>
-```
-model='mistral-medium-2505' name='Websearch Agent' description='Agent able to search information over the web, such as news, weather, sport results...' id='ag_06835b734cc47dec8000b5f8f860b672' version=0 created_at=datetime.datetime(2025, 5, 27, 12, 59, 32, 803403, tzinfo=TzInfo(UTC)) updated_at=datetime.datetime(2025, 5, 27, 12, 59, 32, 803405, tzinfo=TzInfo(UTC)) instructions='You have the ability to perform web searches with `web_search` to find up-to-date information.' tools=[WebSearchTool(type='web_search')] completion_args=CompletionArgs(stop=None, presence_penalty=None, frequency_penalty=None, temperature=0.3, top_p=0.95, max_tokens=None, random_seed=None, prediction=None, response_format=None, tool_choice='auto') handoffs=None object='agent'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -83,6 +77,43 @@ curl --location "https://api.mistral.ai/v1/agents" \
   </TabItem>
 </Tabs>
 
+<details>
+    <summary><b>Output</b></summary>
+
+```json
+{
+  "model": "mistral-medium-2505",
+  "name": "Websearch Agent",
+  "description": "Agent able to search information over the web, such as news, weather, sport results...",
+  "id": "ag_06835b734cc47dec8000b5f8f860b672",
+  "version": 0,
+  "created_at": "2025-05-27T12:59:32.803403Z",
+  "updated_at": "2025-05-27T12:59:32.803405Z",
+  "instructions": "You have the ability to perform web searches with `web_search` to find up-to-date information.",
+  "tools": [
+    {
+      "type": "web_search"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+
+```
+</details>
+
 As for other agents, when creating one you will receive an agent id corresponding to the created agent that you can use to start a conversation.
 
 ## How it works
@@ -95,17 +126,10 @@ Now that we have our websearch agent ready, we can at any point make use of it t
 
 ```py
 response = client.beta.conversations.start(
-    agent_id=websearch_agent.id, inputs="Who won the last European Football cup?"
+    agent_id=websearch_agent.id,
+    inputs="Who won the last European Football cup?"
 )
 ```
-
-<details>
-    <summary><b>Output</b></summary>
-
-```
-conversation_id='conv_06835b734f2776bb80008fa7a309bf5a' outputs=[ToolExecutionEntry(name='web_search', object='entry', type='tool.execution', created_at=datetime.datetime(2025, 5, 27, 12, 59, 33, 171501, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 12, 59, 34, 828228, tzinfo=TzInfo(UTC)), id='tool_exec_06835b7352be74d38000b3523a0cce2e', info={}), MessageOutputEntry(content=[TextChunk(text='The last winner of the European Football Cup was Spain, who won the UEFA Euro 2024 by defeating England 2-1 in the final', type='text'), ToolReferenceChunk(tool='web_search', title='UEFA Euro Winners List from 1960 to today - MARCA in English', type='tool_reference', url='https://www.marca.com/en/football/uefa-euro/winners.html', source='brave'), ToolReferenceChunk(tool='web_search', title='UEFA Euro winners: Know the champions - full list', type='tool_reference', url='https://www.olympics.com/en/news/uefa-european-championships-euro-winners-list-champions', source='brave'), ToolReferenceChunk(tool='web_search', title='Full list of UEFA European Championship winners', type='tool_reference', url='https://www.givemesport.com/football-european-championship-winners/', source='brave'), TextChunk(text='.', type='text')], object='entry', type='message.output', created_at=datetime.datetime(2025, 5, 27, 12, 59, 35, 457474, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 12, 59, 36, 156233, tzinfo=TzInfo(UTC)), id='msg_06835b7377517a3680009b05207112ce', agent_id='ag_06835b734cc47dec8000b5f8f860b672', model='mistral-medium-2505', role='assistant')] usage=ConversationUsageInfo(prompt_tokens=188, completion_tokens=55, total_tokens=7355, connector_tokens=7112, connectors={'web_search': 1}) object='conversation.response'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -128,7 +152,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
   </TabItem>
 </Tabs>
 
-For explanation purposes, lets restructure the previous output in a more readable JSON format.
+For explanation purposes, lets take a look at the output in a readable JSON format.
 
 ```json
 {

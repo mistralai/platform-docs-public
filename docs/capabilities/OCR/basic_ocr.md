@@ -8,7 +8,7 @@ sidebar_position: 3.1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Document OCR processor 
+## Document AI OCR processor 
 
 Mistral Document AI API comes with a Document OCR (Optical Character Recognition) processor, powered by our latest OCR model `mistral-ocr-latest`, which enables you to extract text and structured content from PDF documents. 
 

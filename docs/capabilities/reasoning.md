@@ -52,7 +52,7 @@ A user will ask you to solve a task. You should first draft your thinking proces
 ```
 </details>
 
-You can also opt out of the default system prompt by setting `prompt_mode` to `null` in the API. The `prompt_mode` has two possible values:
+You can also opt out of the default system prompt by setting `prompt_mode` to **`null`** in the API. The `prompt_mode` has two possible values:
 - **`reasoning`**: the default behavior where the default system prompt will be used explicitly.
 - **`null`**: no system prompt will be used whatsoever.
 
@@ -81,6 +81,8 @@ chat_response = client.chat.complete(
         },
     ],
     # prompt_mode = "reasoning" if you want to explicitly use the default system prompt, or None if you want to opt out of the default system prompt.
+    ],
+    # prompt_mode = "reasoning" if you want to explicitly use the default system prompt, or None if you want to opt out of the default system prompt.
 )
 
 print(chat_response.choices[0].message.content)
@@ -102,6 +104,8 @@ const client = new Mistral({apiKey: apiKey});
 async function main() {
     const chatResponse = await client.chat.complete({
         model: "magistral-medium-2506",
+        messages: [{role: 'user', content: 'John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?'}],
+        // prompt_mode: "reasoning" if you want to explicitly use the default system prompt, or null if you want to opt out of the default system prompt.
         messages: [{role: 'user', content: 'John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?'}],
         // prompt_mode: "reasoning" if you want to explicitly use the default system prompt, or null if you want to opt out of the default system prompt.
     });
@@ -359,3 +363,4 @@ We are given that John is one of four children, with three sisters. The first si
 
 Therefore, John is 22 years old.
 </details>
+

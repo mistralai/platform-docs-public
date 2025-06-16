@@ -75,13 +75,6 @@ ecb_interest_rate_agent = client.beta.agents.create(
     ],
 )
 ```
-<details>
-    <summary><b>Output</b></summary>
-
-```
-model='mistral-medium-2505' name='ecb-interest-rate-agent' description='Can find the current interest rate of the European central bank' id='ag_06835a34f2c476518000c372a505c2c4' version=0 created_at=datetime.datetime(2025, 5, 27, 11, 34, 39, 175924, tzinfo=TzInfo(UTC)) updated_at=datetime.datetime(2025, 5, 27, 11, 34, 39, 175926, tzinfo=TzInfo(UTC)) instructions='You can provide interest rate and information regarding the European central bank.' tools=[FunctionTool(function=Function(name='get_european_central_bank_interest_rate', parameters={'type': 'object', 'properties': {'date': {'type': 'string'}}, 'required': ['date']}, description='Retrieve the real interest rate of European central bank.', strict=False), type='function')] completion_args=CompletionArgs(stop=None, presence_penalty=None, frequency_penalty=None, temperature=0.3, top_p=None, max_tokens=None, random_seed=None, prediction=None, response_format=None, tool_choice='auto') handoffs=None object='agent'
-```
-</details>
 
   </TabItem>
 
@@ -125,6 +118,58 @@ curl --location "https://api.mistral.ai/v1/agents" \
   </TabItem>
 </Tabs>
 
+<details>
+    <summary><b>Output</b></summary>
+
+```json
+{
+  "model": "mistral-medium-2505",
+  "name": "ecb-interest-rate-agent",
+  "description": "Can find the current interest rate of the European central bank",
+  "id": "ag_06835a34f2c476518000c372a505c2c4",
+  "version": 0,
+  "created_at": "2025-05-27T11:34:39.175924Z",
+  "updated_at": "2025-05-27T11:34:39.175926Z",
+  "instructions": "You can provide interest rate and information regarding the European central bank.",
+  "tools": [
+    {
+      "function": {
+        "name": "get_european_central_bank_interest_rate",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "date"
+          ]
+        },
+        "description": "Retrieve the real interest rate of European central bank.",
+        "strict": false
+      },
+      "type": "function"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": null,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+```
+</details>
+
 ### Using an Agent with Function Calling
 
 <Tabs groupId="code">
@@ -142,8 +187,31 @@ response = client.beta.conversations.start(
 <details>
     <summary><b>Output</b></summary>
 
-```
-conversation_id='conv_06835a34f58773bd8000f46c0d11e42c' outputs=[FunctionCallEntry(tool_call_id='6TI17yZkV', name='get_european_central_bank_interest_rate', arguments='{"date": "2024-06-06"}', object='entry', type='function.call', created_at=datetime.datetime(2025, 5, 27, 11, 34, 39, 610632, tzinfo=TzInfo(UTC)), completed_at=None, id='fc_06835a34f9c47fc88000e0370a295774')] usage=ConversationUsageInfo(prompt_tokens=91, completion_tokens=29, total_tokens=120, connector_tokens=Unset(), connectors=Unset()) object='conversation.response'
+```json
+{
+  "conversation_id": "conv_06835a34f58773bd8000f46c0d11e42c",
+  "outputs": [
+    {
+      "tool_call_id": "6TI17yZkV",
+      "name": "get_european_central_bank_interest_rate",
+      "arguments": "{\"date\": \"2024-06-06\"}",
+      "object": "entry",
+      "type": "function.call",
+      "created_at": "2025-05-27T11:34:39.610632Z",
+      "completed_at": null,
+      "id": "fc_06835a34f9c47fc88000e0370a295774"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 91,
+    "completion_tokens": 29,
+    "total_tokens": 120,
+    "connector_tokens": null,
+    "connectors": null
+  },
+  "object": "conversation.response"
+}
+
 ```
 </details>
 
@@ -175,13 +243,6 @@ else:
     # In case the model did not call our function
     print(response.outputs[-1])
 ```
-
-<details>
-    <summary><b>Output</b></summary>
-```
-content='The current interest rate as of June 6, 2024, is 2.5%. This information is relevant for understanding the economic conditions in 2025.' object='entry' type='message.output' created_at=datetime.datetime(2025, 5, 27, 11, 34, 40, 142767, tzinfo=TzInfo(UTC)) completed_at=datetime.datetime(2025, 5, 27, 11, 34, 40, 801117, tzinfo=TzInfo(UTC)) id='msg_06835a35024879bc80005b1bf9ab0f12' agent_id='ag_06835a34f2c476518000c372a505c2c4' model='mistral-medium-2505' role='assistant'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -232,3 +293,21 @@ curl --location "https://api.mistral.ai/v1/conversations/<conv_id>" \
 ```
   </TabItem>
 </Tabs>
+
+<details>
+    <summary><b>Output</b></summary>
+    
+```json
+{
+  "content": "The current interest rate as of June 6, 2024, is 2.5%. This information is relevant for understanding the economic conditions in 2025.",
+  "object": "entry",
+  "type": "message.output",
+  "created_at": "2025-05-27T11:34:40.142767Z",
+  "completed_at": "2025-05-27T11:34:40.801117Z",
+  "id": "msg_06835a35024879bc80005b1bf9ab0f12",
+  "agent_id": "ag_06835a34f2c476518000c372a505c2c4",
+  "model": "mistral-medium-2505",
+  "role": "assistant"
+}
+```
+</details>

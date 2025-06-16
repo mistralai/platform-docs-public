@@ -21,7 +21,7 @@ import TabItem from '@theme/TabItem';
 
 AI agents are autonomous systems powered by large language models (LLMs) that, given high-level instructions, can plan, use tools, carry out processing steps, and take actions to achieve specific goals. These agents leverage advanced natural language processing capabilities to understand and execute complex tasks efficiently and can even collaborate with each other to achieve more sophisticated outcomes.
 
-Our Agents API allows developers to build such agents, leveraging multiple features such as:
+Our Agents and Conversations API allows developers to build such agents, leveraging multiple features such as:
 - Multiple mutlimodal models available, **text and vision models**.
 - **Persistent state** across conversations.
 - Ability to have conversations with **base models**, **a single agent**, and **multiple agents**.
@@ -34,7 +34,7 @@ Our Agents API allows developers to build such agents, leveraging multiple featu
   - **Citations**
 
 ## More Information
-- [Agents Basics](../agents_basics): Basic explanations and code snippets around our Agents API.
+- [Agents & Conversations](../agents_basics): Basic explanations and code snippets around our Agents and Conversations API.
 - [Connectors](../connectors/connectors): Make your tools accessible directly to any Agents.
   - [Websearch](../connectors/websearch): In-depth explanation of our web search built-in connector tool.
   - [Code Interpreter](../connectors/code_interpreter): In-depth explanation of our code interpreter for code execution built-in connector tool.

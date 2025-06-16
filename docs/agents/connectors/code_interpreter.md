@@ -39,13 +39,6 @@ code_agent = client.beta.agents.create(
     }
 )
 ```
-<details>
-    <summary><b>Output</b></summary>
-
-```
-model='mistral-medium-2505' name='Coding Agent' description='Agent used to execute code using the interpreter tool.' id='ag_06830595b7ea7e70800087c4ec8a74e7' version=0 created_at=datetime.datetime(2025, 5, 23, 11, 17, 47, 497956, tzinfo=TzInfo(UTC)) updated_at=datetime.datetime(2025, 5, 23, 11, 17, 47, 497959, tzinfo=TzInfo(UTC)) instructions='Use the code interpreter tool when you have to run code.' tools=[CodeInterpreterTool(type='code_interpreter')] completion_args=CompletionArgs(stop=None, presence_penalty=None, frequency_penalty=None, temperature=0.3, top_p=0.95, max_tokens=None, random_seed=None, prediction=None, response_format=None, tool_choice='auto') handoffs=None object='agent'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -78,6 +71,43 @@ curl --location "https://api.mistral.ai/v1/agents" \
   </TabItem>
 </Tabs>
 
+<details>
+    <summary><b>Output</b></summary>
+
+```json
+{
+  "model": "mistral-medium-2505",
+  "name": "Coding Agent",
+  "description": "Agent used to execute code using the interpreter tool.",
+  "id": "ag_06830595b7ea7e70800087c4ec8a74e7",
+  "version": 0,
+  "created_at": "2025-05-23T11:17:47.497956Z",
+  "updated_at": "2025-05-23T11:17:47.497959Z",
+  "instructions": "Use the code interpreter tool when you have to run code.",
+  "tools": [
+    {
+      "type": "code_interpreter"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+
+```
+</details>
+
 As for other agents, when creating one you will receive an agent id corresponding to the created agent that you can use to start a conversation.
 
 ## How it works
@@ -90,17 +120,10 @@ Now that we have our coding agent ready, we can at any point make use of it to r
 
 ```py
 response = client.beta.conversations.start(
-    agent_id=code_agent.id, inputs="Run a fibonacci function for the first 20 values."
+    agent_id=code_agent.id,
+    inputs="Run a fibonacci function for the first 20 values."
 )
 ```
-
-<details>
-    <summary><b>Output</b></summary>
-
-```
-conversation_id='conv_06835b9dc0c7749180001958779d13c5' outputs=[MessageOutputEntry(content="Sure, I can help with that. Here's a simple Python function to generate the first 20 Fibonacci numbers.", object='entry', type='message.output', created_at=datetime.datetime(2025, 5, 27, 13, 10, 52, 208822, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 13, 10, 52, 470589, tzinfo=TzInfo(UTC)), id='msg_06835b9dc35772be800073298138bacc', agent_id='ag_06835b9dbded7f39800034281a63e4f0', model='mistral-medium-2505', role='assistant'), ToolExecutionEntry(name='code_interpreter', object='entry', type='tool.execution', created_at=datetime.datetime(2025, 5, 27, 13, 10, 52, 561656, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 13, 10, 54, 431304, tzinfo=TzInfo(UTC)), id='tool_exec_06835b9dc8fc763880004b7aa94286d8', info={'code': 'def fibonacci(n):\n    fib_sequence = [0, 1]\n    for i in range(2, n):\n        fib_sequence.append(fib_sequence[-1] + fib_sequence[-2])\n    return fib_sequence[:n]\n\nfibonacci_20 = fibonacci(20)\nfibonacci_20', 'code_output': '[0,\n 1,\n 1,\n 2,\n 3,\n 5,\n 8,\n 13,\n 21,\n 34,\n 55,\n 89,\n 144,\n 233,\n 377,\n 610,\n 987,\n 1597,\n 2584,\n 4181]\n'}), MessageOutputEntry(content='The first 20 values of the Fibonacci sequence are:\n\n\\[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181\\]', object='entry', type='message.output', created_at=datetime.datetime(2025, 5, 27, 13, 10, 54, 517935, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 13, 10, 55, 314698, tzinfo=TzInfo(UTC)), id='msg_06835b9de84974fa8000f1a97be62f2e', agent_id='ag_06835b9dbded7f39800034281a63e4f0', model='mistral-medium-2505', role='assistant')] usage=ConversationUsageInfo(prompt_tokens=95, completion_tokens=209, total_tokens=399, connector_tokens=95, connectors={'code_interpreter': 1}) object='conversation.response'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -123,7 +146,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
   </TabItem>
 </Tabs>
 
-For explanation purposes, lets restructure the previous output in a more readable JSON format.
+For explanation purposes, lets take a look at the output in a readable JSON format.
 ```json
 {
   "conversation_id": "conv_06835b9dc0c7749180001958779d13c5",

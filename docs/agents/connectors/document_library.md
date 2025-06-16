@@ -44,13 +44,6 @@ library_agent = client.beta.agents.create(
     }
 )
 ```
-<details>
-    <summary><b>Output</b></summary>
-
-```
-model='mistral-medium-2505' name='Document Library Agent' description='Agent used to access documents from the document library.' id='ag_06835bb196f9720680004fb1873efbae' version=0 created_at=datetime.datetime(2025, 5, 27, 13, 16, 9, 438785, tzinfo=TzInfo(UTC)) updated_at=datetime.datetime(2025, 5, 27, 13, 16, 9, 438787, tzinfo=TzInfo(UTC)) instructions='Use the  library tool to access external documents.' tools=[DocumentLibraryTool(library_ids=['06835a9c-262c-7e83-8000-594d29fe2948'], type='document_library')] completion_args=CompletionArgs(stop=None, presence_penalty=None, frequency_penalty=None, temperature=0.3, top_p=0.95, max_tokens=None, random_seed=None, prediction=None, response_format=None, tool_choice='auto') handoffs=None object='agent'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -84,6 +77,46 @@ curl --location "https://api.mistral.ai/v1/agents" \
   </TabItem>
 </Tabs>
 
+<details>
+    <summary><b>Output</b></summary>
+
+```json
+{
+  "model": "mistral-medium-2505",
+  "name": "Document Library Agent",
+  "description": "Agent used to access documents from the document library.",
+  "id": "ag_06835bb196f9720680004fb1873efbae",
+  "version": 0,
+  "created_at": "2025-05-27T13:16:09.438785Z",
+  "updated_at": "2025-05-27T13:16:09.438787Z",
+  "instructions": "Use the library tool to access external documents.",
+  "tools": [
+    {
+      "library_ids": [
+        "06835a9c-262c-7e83-8000-594d29fe2948"
+      ],
+      "type": "document_library"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+
+```
+</details>
+
 As with other agents, when creating one, you will receive an agent ID corresponding to the created agent. You can use this ID to start a conversation.
 
 ## How It Works
@@ -97,17 +130,10 @@ Now that we have our document library agent ready, we can search them on demand 
 
 ```py
 response = client.beta.conversations.start(
-    agent_id=image_agent.id, inputs="How does the vision encoder for pixtral 12b work"
+    agent_id=image_agent.id,
+    inputs="How does the vision encoder for pixtral 12b work"
 )
 ```
-
-<details>
-    <summary><b>Output</b></summary>
-
-```
-conversation_id='conv_06835bb1996079898000435d8a0b1afd' outputs=[ToolExecutionEntry(name='document_library', object='entry', type='tool.execution', created_at=datetime.datetime(2025, 5, 27, 13, 16, 9, 974925, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 13, 16, 10, 855373, tzinfo=TzInfo(UTC)), id='tool_exec_06835bb19f99716580001de8ab64d953', info={}), MessageOutputEntry(content='The vision encoder for Pixtral 12B, known as PixtralViT, is designed to process images at their natural resolution and aspect ratio. Here are the key details about how it works:\n\n1. **Architecture**: PixtralViT is a vision transformer with 400 million parameters. It is trained from scratch to support variable image sizes and aspect ratios, which is a significant departure from standard architectures that often require fixed image sizes.\n\n2. **Key Modifications**:\n   - **Break Tokens**: To help the model distinguish between images with the same number of patches but different aspect ratios, special tokens like [IMAGE BREAK] are inserted between image rows, and an [IMAGE END] token is added at the end of an image sequence.\n   - **Gating in FFN**: Instead of using a standard feedforward layer in the attention block, PixtralViT employs gating in the hidden layer, which enhances its performance.\n   - **Sequence Packing**: Images are flattened along the sequence dimension and concatenated to process multiple images efficiently within a single batch. A block-diagonal mask ensures no attention leakage between patches from different images.\n   - **RoPE-2D**: Traditional position embeddings are replaced with relative, rotary position encodings (RoPE-2D) in the self-attention layers. This allows the model to handle variable image sizes more effectively without the need for interpolation, which can degrade performance.\n\n3. **Integration with Multimodal Decoder**: The vision encoder is linked to the multimodal decoder via a two-layer fully connected network. This network transforms the output of the vision encoder into the input embedding size required by the decoder. The image tokens are treated similarly to text tokens by the multimodal decoder, which uses RoPE-1D positional encodings for all tokens.\n\n4. **Performance**: The Pixtral vision encoder significantly outperforms other models in tasks requiring fine-grained document understanding while maintaining parity for natural images. It is particularly effective in settings that require detailed visual comprehension, such as chart and document understanding.\n\nThese architectural choices and modifications enable Pixtral 12B to flexibly process images at various resolutions and aspect ratios, making it highly versatile for complex multimodal applications.', object='entry', type='message.output', created_at=datetime.datetime(2025, 5, 27, 13, 16, 11, 239496, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 13, 16, 17, 211241, tzinfo=TzInfo(UTC)), id='msg_06835bb1b3d47ca580001b213d836798', agent_id='ag_06835bb196f9720680004fb1873efbae', model='mistral-medium-2505', role='assistant')] usage=ConversationUsageInfo(prompt_tokens=196, completion_tokens=485, total_tokens=3846, connector_tokens=3165, connectors={'document_library': 1}) object='conversation.response'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -130,7 +156,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
   </TabItem>
 </Tabs>
 
-For explanation purposes, lets restructure the previous output in a more readable JSON format.
+For explanation purposes, lets take a look at the output in a readable JSON format.
 
 ```json
 {

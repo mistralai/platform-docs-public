@@ -39,13 +39,6 @@ image_agent = client.beta.agents.create(
     }
 )
 ```
-<details>
-    <summary><b>Output</b></summary>
-
-```
-model='mistral-medium-2505' name='Image Generation Agent' description='Agent used to generate images.' id='ag_068359b1d997713480003c77113b8119' version=0 created_at=datetime.datetime(2025, 5, 27, 10, 59, 41, 602844, tzinfo=TzInfo(UTC)) updated_at=datetime.datetime(2025, 5, 27, 10, 59, 41, 602846, tzinfo=TzInfo(UTC)) instructions='Use the image generation tool when you have to create images.' tools=[ImageGenerationTool(type='image_generation')] completion_args=CompletionArgs(stop=None, presence_penalty=None, frequency_penalty=None, temperature=0.3, top_p=0.95, max_tokens=None, random_seed=None, prediction=None, response_format=None, tool_choice='auto') handoffs=None object='agent'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -79,6 +72,43 @@ curl --location "https://api.mistral.ai/v1/agents" \
   </TabItem>
 </Tabs>
 
+<details>
+    <summary><b>Output</b></summary>
+
+```json
+{
+  "model": "mistral-medium-2505",
+  "name": "Image Generation Agent",
+  "description": "Agent used to generate images.",
+  "id": "ag_068359b1d997713480003c77113b8119",
+  "version": 0,
+  "created_at": "2025-05-27T10:59:41.602844Z",
+  "updated_at": "2025-05-27T10:59:41.602846Z",
+  "instructions": "Use the image generation tool when you have to create images.",
+  "tools": [
+    {
+      "type": "image_generation"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+
+```
+</details>
+
 As with other agents, when creating one, you will receive an agent ID corresponding to the created agent. You can use this ID to start a conversation.
 
 ## How It Works
@@ -92,17 +122,10 @@ Now that we have our image generation agent ready, we can create images on deman
 
 ```py
 response = client.beta.conversations.start(
-    agent_id=image_agent.id, inputs="Generate an orange cat in an office."
+    agent_id=image_agent.id,
+    inputs="Generate an orange cat in an office."
 )
 ```
-
-<details>
-    <summary><b>Output</b></summary>
-
-```
-conversation_id='conv_068359b1dc6f74658000000a358b2357' outputs=[ToolExecutionEntry(name='image_generation', object='entry', type='tool.execution', created_at=datetime.datetime(2025, 5, 27, 10, 59, 53, 92347, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 10, 59, 56, 436333, tzinfo=TzInfo(UTC)), id='tool_exec_068359b2917a7117800018b42bf8dc39', info={}), MessageOutputEntry(content=[TextChunk(text='Here is your image: an orange cat in an office.\n\n', type='text'), ToolFileChunk(tool='image_generation', file_id='933c5b5a-1c47-4cdd-84f6-f32526bd161b', type='tool_file', file_name='image_generated_0', file_type='png')], object='entry', type='message.output', created_at=datetime.datetime(2025, 5, 27, 10, 59, 57, 718377, tzinfo=TzInfo(UTC)), completed_at=datetime.datetime(2025, 5, 27, 10, 59, 58, 818205, tzinfo=TzInfo(UTC)), id='msg_068359b2db7e74eb8000d11444e03eb8', agent_id='ag_068359b1d997713480003c77113b8119', model='mistral-medium-2505', role='assistant')] usage=ConversationUsageInfo(prompt_tokens=129, completion_tokens=94, total_tokens=292, connector_tokens=69, connectors={'image_generation': 1}) object='conversation.response'
-```
-</details>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
@@ -125,7 +148,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
   </TabItem>
 </Tabs>
 
-For explanation purposes, lets restructure the previous output in a more readable JSON format.
+For explanation purposes, lets take a look at the output in a readable JSON format.
 
 ```json
 {

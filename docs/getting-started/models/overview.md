@@ -36,8 +36,8 @@ Mistral provides two types of models: free models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Magistral Small | :heavy_check_mark: | :heavy_check_mark: | Our small reasoning model released June 2025. Learn more on our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-small-2506` | 25.06|
-| Devstral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 24B text model, open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more on our [blog post](https://mistral.ai/news/devstral/) | 128k  | `devstral-small-2505` | 25.05|
+| Magistral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our small reasoning model released June 2025. Learn more on our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-small-2506` | 25.06|
+| Devstral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 24B text model, open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more on our [blog post](https://mistral.ai/news/devstral/) | 128k  | `devstral-small-2505` | 25.05 |
 | Mistral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category with image understanding capabilities, with the lastest version v3.1 released March 2025. Learn more on our [blog post](https://mistral.ai/news/mistral-small-3-1/) | 128k  | `mistral-small-2503` | 25.03|
 | Pixtral | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 12B model with image understanding capabilities in addition to text. Learn more on our [blog post](https://mistral.ai/news/pixtral-12b/)| 128k  | `pixtral-12b-2409` | 24.09|
 
@@ -47,7 +47,7 @@ Mistral provides two types of models: free models and premier models.
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
 | Mistral Nemo | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best multilingual open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mistral-nemo/) | 128k  | `open-mistral-nemo`| 24.07|
-| Codestral Mamba | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first mamba 2 open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/codestral-mamba/) | 256k  | `open-codestral-mamba`| v0.1|
+| Codestral Mamba | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first mamba 2 open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/codestral-mamba/) | 256k  | NA | v0.1|
 | Mathstral | :heavy_check_mark: <br/> Apache2 |  | Our first math open source model released July 2024. Learn more on our [blog post](https://mistral.ai/news/mathstral/) | 32k  | NA| v0.1|
 
 

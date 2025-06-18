@@ -25,7 +25,7 @@ const redocusaurus = [
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Mistral AI Large Language Models",
+  title: "Mistral AI",
   tagline: "Documentation for the deployment and usage of Mistral AI's LLMs",
   favicon: "img/favicon.ico",
 

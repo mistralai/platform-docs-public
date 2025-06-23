@@ -47,6 +47,7 @@ If you are interested in purchasing a commercial license for our models, please 
 | Mistral-Small-Instruct-2503  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 | Devstral-Small-2505  | [Hugging Face](https://huggingface.co/mistralai/Devstral-Small-2505)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
 | Magistral-Small-2506  | [Hugging Face](https://huggingface.co/mistralai/Magistral-Small-2506)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer |
+| Mistral-Small-Instruct-2506  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506)| - 128k vocabulary size <br/> - Supports v11 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 
 ## Sizes
 
@@ -70,6 +71,7 @@ If you are interested in purchasing a commercial license for our models, please 
 | Mistral-Small-Base-2503  | 24B | 24B | 60 |
 | Mistral-Small-Instruct-2503  | 24B | 24B | 60 |
 | Devstral-Small-2505  | 24B | 24B | 60 |
+| Mistral-Small-Instruct-2506  | 24B | 24B | 60 |
 
 ## How to run? 
 Check out [mistral-inference](https://github.com/mistralai/mistral-inference/), a Python package for running our models. You can install `mistral-inference` by

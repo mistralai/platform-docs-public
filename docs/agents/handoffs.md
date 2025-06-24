@@ -111,7 +111,77 @@ calculator_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+First, let's make the following import:
+
+```typescript
+import { z } from 'zod';
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js'
+```
+
+Then, we define and create our agents:
+
+```typescript
+const CalcResult = z.object({
+        reasoning: z.string(),
+        result: z.string(),
+    });
+
+let financeAgent = await client.beta.agents.create({
+    model: "mistral-large-latest",
+    description: "Agent used to answer financial related requests",
+    name: "finance-agent",
+});
+
+let webSearchAgent = await client.beta.agents.create({
+    model: "mistral-large-latest",
+    description: "Agent that can search online for any information if needed",
+    name: "websearch-agent",
+    tools: [{ type: "web_search" }],
+});
+
+let ecbInterestRateAgent = await client.beta.agents.create({
+    model: "mistral-large-latest",
+    description: "Can find the current interest rate of the European central bank",
+    name: "ecb-interest-rate-agent",
+    tools: [
+        {
+            type: "function",
+            function: {
+                name: "getEuropeanCentralBankInterestRate",
+                description: "Retrieve the real interest rate of European central bank.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        date: {
+                            type: "string",
+                        },
+                    },
+                    required: ["date"],
+                },
+            },
+        },
+    ],
+});
+
+const graphAgent = await client.beta.agents.create({
+    model: "mistral-large-latest",
+    name: "graph-drawing-agent",
+    description: "Agent used to create graphs using the code interpreter tool.",
+    instructions: "Use the code interpreter tool when you have to draw a graph.",
+    tools: [{ type: "code_interpreter" }],
+});
+
+const calculatorAgent = await client.beta.agents.create({
+    model: "mistral-large-latest",
+    name: "calculator-agent",
+    description: "Agent used to make detailed calculations",
+    instructions: "When doing calculations explain step by step what you are doing.",
+    completionArgs: {
+        responseFormat: responseFormatFromZodObject(CalcResult)
+    },
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -167,7 +237,32 @@ web_search_agent = client.beta.agents.update(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+// Allow the financeAgent to handoff the conversation to the ecbInterestRateAgent or webSearchAgent
+financeAgent = await client.beta.agents.update({
+    agentId: financeAgent.id,
+    agentUpdateRequest:{
+        handoffs: [ecbInterestRateAgent.id, webSearchAgent.id]
+    }
+});
+
+// Allow the ecbInterestRateAgent to handoff the conversation to the grapAgent or calculatorAgent
+ecbInterestRateAgent = await client.beta.agents.update({
+    agentId: ecbInterestRateAgent.id,
+    agentUpdateRequest:{
+        handoffs: [graphAgent.id, calculatorAgent.id]
+    }
+});
+
+// Allow the webSearchAgent to handoff the conversation to the graphAgent or calculatorAgent
+webSearchAgent = await client.beta.agents.update({
+    agentId: webSearchAgent.id,
+    agentUpdateRequest:{
+        handoffs: [graphAgent.id, calculatorAgent.id]
+    }
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -225,7 +320,13 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let response = await client.beta.conversations.start({
+    agentId:financeAgent.id,
+    inputs:"Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y"
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -321,7 +422,37 @@ for i, chunk in enumerate(response.outputs[-1].content):
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+First, let's add the following imports:
+```typescript
+import type { FunctionResultEntry, MessageOutputEntry } from "@mistralai/mistralai/models/components/index.js";
+```
+
+Then, let's start the conversation:
+
+```typescript
+response = await client.beta.conversations.start({
+    agentId:financeAgent.id,
+    inputs:"Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years"
+});
+
+let output = response.outputs[response.outputs.length - 1];
+
+if (output.type === "function.call" && output.name === "getEuropeanCentralBankInterestRate") {
+    // Add a dummy result for the function call
+    let userEntry: FunctionResultEntry = {
+        toolCallId: output.toolCallId,
+        result: "2.5%",
+    };
+
+    response = await client.beta.conversations.append({
+        conversationId:response.conversationId,
+        conversationAppendRequest:{
+            inputs:[userEntry]
+        }
+    });
+}
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

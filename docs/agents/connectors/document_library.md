@@ -47,7 +47,25 @@ library_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let libraryAgent = await client.beta.agents.create({
+    model:"mistral-medium-2505",
+    name:"Document Library Agent",
+    description:"Agent used to access documents from the document library.",
+    instructions:"Use the  library tool to access external documents.",
+    tools:[
+        {
+            type: "document_library", 
+            libraryIds: ["<library_id>"]
+        }
+    ],
+    completionArgs:{
+        temperature: 0.3,
+        topP: 0.95,
+    }
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -137,7 +155,13 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversation = await client.beta.conversations.start({
+    agentId: libraryAgent.id,
+    inputs: "How does the vision encoder for pixtral 12b work"
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

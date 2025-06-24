@@ -79,7 +79,63 @@ ecb_interest_rate_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+
+
+We need to define our function that we want our model to call when needed, in this case, the function is a dummy for demonstration purposes.
+
+```typescript
+async function getEuropeanentralBankInterestRate(date: str){
+    /*
+    Retrieve the real interest rate of the European Central Bank for a given date.
+
+    Parameters:
+    - date (str): The date for which to retrieve the interest rate in the format YYYY-MM-DD.
+
+    Returns:
+    - dict: A dictionary containing the date and the corresponding interest rate.
+    */
+    // This is a mock implementation. In a real scenario, you would fetch this data from an API or database.
+    // For demonstration, let's assume the interest rate is fixed at 2.5% for any date.
+    let interestRate = "2.5%";
+
+    return {
+        date: date,
+        interestRate: interestRate
+    }
+}
+```
+
+Once defined, we provide a Shema corresponding to the same function.
+
+
+```typescript
+let ecbInterestRateAgent = await client.beta.agents.create({
+    model:"mistral-medium-2505",
+    description:"Can find the current interest rate of the European central bank",
+    name:"ecb-interest-rate-agent",
+    tools:[
+        {
+            type: "function",
+            function: {
+                name: "getEuropeanCentralBankInterestRate",
+                description: "Retrieve the real interest rate of European central bank.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        date: {
+                            type: "string",
+                        },
+                    },
+                    required: [
+                        "date",
+                    ]
+                },
+            },
+        },
+    ],
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -174,7 +230,6 @@ curl --location "https://api.mistral.ai/v1/agents" \
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
-
 Then, to use it, we start a conversation or continue a previously existing one.
 
 ```py
@@ -217,6 +272,7 @@ response = client.beta.conversations.start(
 
 The model will output either an answer, or a function call, we need to detect and return the result of the expected function.
 
+
 ```py
 from mistralai import FunctionResultEntry
 import json
@@ -245,8 +301,88 @@ else:
 ```
   </TabItem>
 
+
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+Then, to use it, we start a conversation or continue a previously existing one.
+
+```typescript
+let response = await client.beta.conversations.start({
+    agentId: (await ecbInterestRateAgent).id,
+    inputs:[{role: "user", content: "Whats the current 2025 real interest rate?"}]
+});
+```
+
+<details>
+    <summary><b>Output</b></summary>
+
+```json
+{
+  "conversation_id": "conv_06835a34f58773bd8000f46c0d11e42c",
+  "outputs": [
+    {
+      "tool_call_id": "6TI17yZkV",
+      "name": "get_european_central_bank_interest_rate",
+      "arguments": "{\"date\": \"2024-06-06\"}",
+      "object": "entry",
+      "type": "function.call",
+      "created_at": "2025-05-27T11:34:39.610632Z",
+      "completed_at": null,
+      "id": "fc_06835a34f9c47fc88000e0370a295774"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 91,
+    "completion_tokens": 29,
+    "total_tokens": 120,
+    "connector_tokens": null,
+    "connectors": null
+  },
+  "object": "conversation.response"
+}
+
+```
+</details>
+
+The model will output either an answer, or a function call, we need to detect and return the result of the expected function.
+
+First, let's add the following imports:
+```typescript
+import type { FunctionResultEntry, MessageOutputEntry } from "@mistralai/mistralai/models/components/index.js";
+```
+
+Then, we check whether or not a function call was triggered:
+
+```typescript
+let output = response.outputs[response.outputs.length - 1];
+
+if (output.type === "function.call" && output.name === "getEuropeanCentralBankInterestRate") {
+    const args = output.arguments as unknown as string;
+    const parsedArgs = JSON.parse(args);
+    const date = parsedArgs.date;
+
+    const functionResult = JSON.stringify(await getEuropeanCentralBankInterestRate(date));
+
+    const toolCallId = output.toolCallId;
+
+    const userFunctionCallingEntry: FunctionResultEntry = {
+        toolCallId: toolCallId,
+        result: functionResult,
+    };
+
+    response = await client.beta.conversations.append({
+        conversationId: response.conversationId,
+        conversationAppendRequest:{
+            inputs: [userFunctionCallingEntry]
+        }
+    });
+
+    const finalEntry = response.outputs[response.outputs.length - 1];
+    const finalMessageOutputEntry = finalEntry as MessageOutputEntry;
+    console.log(finalMessageOutputEntry);
+} else {
+    console.log(output);
+}
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

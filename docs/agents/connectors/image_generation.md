@@ -42,7 +42,22 @@ image_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let imageAgent = await client.beta.agents.create({
+    model:"mistral-medium-2505",
+    name:"Image Generation Agent",
+    description:"Agent used to generate images.",
+    instructions:"Use the image generation tool when you have to create images.",
+    tools:[{
+        type: "image_generation"
+    }],
+    completionArgs:{
+        temperature: 0.3,
+        topP: 0.95,
+    }
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -129,7 +144,14 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversation = await client.beta.conversations.start({
+      agentId: imageAgent.id,
+      inputs:"Generate an orange cat in an office.",
+      //store:false
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -269,7 +291,71 @@ for i, chunk in enumerate(response.outputs[-1].content):
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+Add the following imports:
+
+```typescript
+import *  as fs from 'fs';
+import type { ToolFileChunk, MessageOutputEntry, ConversationResponse } from "@mistralai/mistralai/models/components/index.js";
+```
+
+Function used to save your image:
+
+```typescript
+async function saveStreamToFile(stream: ReadableStream<Uint8Array>, filePath: string): Promise<void> {
+    const reader = stream.getReader();
+    const writableStream = fs.createWriteStream(filePath);
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        writableStream.write(Buffer.from(value));
+    }
+
+    writableStream.end();
+}
+```
+
+Conversation content retrieval, and call the `saveStreamToFile` function.
+```typescript
+const entry = conversation.outputs[conversation.outputs.length - 1];
+const messageOutputEntry = entry as MessageOutputEntry;
+
+const chunk = messageOutputEntry.content[1];
+if (typeof(chunk) != "string" && 'fileId' in chunk) {
+    const fileChunk = chunk as ToolFileChunk;
+    const fileStream = await client.files.download({ fileId: fileChunk.fileId });
+    await saveStreamToFile(fileStream, `image_generated.png`);
+}
+```
+
+**Generated Image:**
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/agent_generated.png"
+    alt="generated_image"
+    width="600"
+    style={{ borderRadius: '15px' }}
+  />
+</div>
+
+
+A full code snippet to download all generated images from a response could look like so:<br></br>
+
+
+```typescript
+async function processFileChunks(conversation: ConversationResponse) {
+    const entry = conversation.outputs[conversation.outputs.length - 1];
+    const messageOutputEntry = entry as MessageOutputEntry;
+    for (let i = 0; i < messageOutputEntry.content.length; i++) {
+        const chunk = messageOutputEntry.content[i];
+        if (typeof(chunk) != "string" && 'fileId' in chunk) {
+            const fileChunk = chunk as ToolFileChunk;
+            const fileStream = await client.files.download({ fileId: fileChunk.fileId });
+            await saveStreamToFile(fileStream, `image_generated_${i}.png`);
+        }
+    }
+}
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

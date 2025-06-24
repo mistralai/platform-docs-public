@@ -42,7 +42,20 @@ code_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+const codeAgent = await client.beta.agents.create({
+    model: "mistral-medium-latest",
+    name: "Coding Agent",
+    instructions: "Use the code interpreter tool when you have to run code.",
+    description: "Agent used to execute code using the interpreter tool.",
+    tools: [{ type: "code_interpreter" }],
+    completionArgs:{
+        temperature: 0.3,
+        topP: 0.95,
+    }
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -127,7 +140,14 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversation = await client.beta.conversations.start({
+    agentId: codeAgent.id,
+    inputs:"Run a fibonacci function for the first 20 values.",
+    //store:false
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

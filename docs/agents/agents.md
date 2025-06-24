@@ -69,7 +69,28 @@ You can find more information [here](../connectors/websearch).
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+  let websearchAgent = await client.beta.agents.create({
+    model: "mistral-medium-latest",
+    name: "WebSearch Agent",
+    instructions: "Use your websearch abilities when answering requests you don't know.",
+    description: "Agent able to fetch new information on the web.",
+    tools: [{ type: "web_search" }],
+  });
+}
+```
+
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -145,7 +166,19 @@ simple_agent = client.beta.agents.update(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+websearchAgent = await client.beta.agents.update({
+    agentId: websearchAgent.id, 
+    agentUpdateRequest: {
+        completionArgs: {
+            temperature: 0.3,
+            topP: 0.95,
+        },
+        description: "An edited simple agent."
+    },
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -215,7 +248,13 @@ simple_agent = client.beta.agents.update_version(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+websearchAgent = await client.beta.agents.updateVersion({
+    agentId: websearchAgent.id, 
+    version: 0
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -319,7 +358,32 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversation = await client.beta.conversations.start({
+      agentId: websearchAgent.id,
+      inputs:"Who is Albert Einstein?",
+      //store:false
+});
+```
+or...
+```typescript
+let conversationMultipleEntries = await client.beta.conversations.start({
+    agentId: websearchAgent.id,
+    inputs:[{role: "user", content:"Who is Albert Einstein?"}],
+    //store:false
+});
+```
+Both options are equivalent.
+
+Without an Agent, querying Conversations could look like so:
+```typescript
+let conversationMultipleEntries = await client.beta.conversations.start({
+    model: "mistral-medium-latest",
+    inputs:[{role: "user", content:"Who is Albert Einstein?"}],
+    //store:false
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -403,7 +467,21 @@ response = client.beta.conversations.append(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+conversation = await client.beta.conversations.append({
+    conversationId: conversation.conversationId,
+    conversationAppendRequest:
+    {
+        inputs:[{role: "user", content:"Who is Albert Einstein?"}],
+        completionArgs: {
+            temperature: 0.3,
+            topP: 0.95,
+        }
+    },
+    //store:false
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -470,7 +548,13 @@ conversations_list = client.beta.conversations.list(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversationList = await client.beta.conversations.list({
+    page: 0,
+    pageSize: 100
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -627,7 +711,12 @@ conversation = client.beta.conversations.get(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversation = await client.beta.conversations.get({
+    conversationId: conversation.conversationId
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -670,7 +759,12 @@ conversation = client.beta.conversations.get_history(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversationHistory = await client.beta.conversations.getHistory({
+    conversationId: conversation.conversationId
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -750,7 +844,12 @@ conversation = client.beta.conversations.get_messages(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let conversationMessages = await client.beta.conversations.getMessages({
+    conversationId: conversation.conversationId,
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -834,7 +933,16 @@ conversation = client.beta.conversations.restart(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+let newConversation = await client.beta.conversations.restart({
+    conversationId: conversation.conversationId,
+    conversationRestartRequest: {
+        inputs: "Translate to portuguese.",
+        fromEntryId: conversationMessages.messages[conversationMessages.messages.length - 1 ].id?.toString() || ''
+    }
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -852,7 +960,6 @@ curl --location "https://api.mistral.ai/v1/conversations/<conv_id>/restart" \
      "handoff_execution": "server"
   }'
 ```
-
   </TabItem>
 </Tabs>
 
@@ -887,6 +994,8 @@ curl --location "https://api.mistral.ai/v1/conversations/<conv_id>/restart" \
 ```
 </details>
 
+**Note**: You can only restart conversations on which you used the `append()` method at least once.
+
 ### Streaming Output
 You can also stream the outputs, both when starting a conversation, continuing or restarting a previous one.
 <Tabs groupId="code">
@@ -917,7 +1026,41 @@ response = client.beta.conversations.restart_stream(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+#### Start
+```typescript
+let stream = await client.beta.conversations.startStream({
+    agentId: websearchAgent.id,
+    inputs: "Who is albert Enstein?"
+});
+```
+#### Continue
+```typescript
+let stream = await client.beta.conversations.appendStream({
+    conversationId: conversation.conversationId,
+    conversationAppendStreamRequest: {
+        inputs: "Who is albert Enstein?"
+    }
+});
+```
+#### Restart
+```typescript
+let stream = await client.beta.conversations.restartStream({
+    conversationId: conversation.conversationId,
+    conversationRestartStreamRequest: {
+        fromEntryId: conversationMessages.messages[conversationMessages.messages.length - 1 ].id?.toString() || '',
+        inputs: "Who is albert Enstein?"
+    }
+});
+```
+
+For each streaming operation, you should use the following snippet of code:
+```typescript
+for await (const chunk of stream) {
+    // The operation you want to make. In this example, we only choose to display each incoming streamed object.
+    console.log(chunk);
+}
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

@@ -47,7 +47,27 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+libraryAgent = client.beta.agents.create({
+    model:"...",
+    name:"...",
+    description:"...",
+    instructions:"...",
+    tools:[...]
+});
+```
+
+Or call our conversations API directly:
+
+```typescript
+response = client.beta.conversations.start({
+    model:"...",
+    inputs:[...],
+    tools:[...],
+    // store:False
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

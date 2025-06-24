@@ -48,7 +48,16 @@ websearch_agent = client.beta.agents.create(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+
+```typescript
+const websearchAgent = await client.beta.agents.create({
+  model: "mistral-medium-latest",
+  name: "WebSearch Agent",
+  instructions: "Use your websearch abilities when answering requests you don't know.",
+  description: "Agent able to fetch new information on the web.",
+  tools: [{ type: "web_search" }],
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">
@@ -133,7 +142,14 @@ response = client.beta.conversations.start(
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
-  *Coming soon...*
+  
+```typescript
+let conversation = await client.beta.conversations.start({
+      agentId: agent.id,
+      inputs:"Who is Albert Einstein?",
+      //store:false
+});
+```
   </TabItem>
 
   <TabItem value="curl" label="curl">

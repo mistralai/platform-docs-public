@@ -125,7 +125,7 @@ As for other agents, when creating one you will receive an agent id correspondin
 
 ## How it works
 
-### Conversations with Code Interpreter (WORKING)
+### Conversations with Code Interpreter
 Now that we have our coding agent ready, we can at any point make use of it to run code.
 
 <Tabs groupId="code">

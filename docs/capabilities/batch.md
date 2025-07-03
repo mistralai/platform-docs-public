@@ -440,7 +440,7 @@ if __name__ == "__main__":
 Yes, batch API is available for all models including user fine-tuned models.
 
 ### Does the batch API affect pricing?
-The batch API offers a discount on pricing. Please see details on our [pricing page](https://mistral.ai/technology/#pricing).
+We offer a 50% discount on batch API. Learn more about our [pricing](https://mistral.ai/pricing#api-pricing).
 
 ### Does the batch API affect rate limits?
 No

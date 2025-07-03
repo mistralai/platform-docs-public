@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 We introduce three new main objects that our API makes use of:
 - **Agents**: A set of pre-selected values to augment model abilities, such as tools, instructions, and completion parameters.
-- **Conversation**: A history of interactions and past events with an assistant, such as messages and tool executions.
+- **Conversation**: A history of interactions, past events and entries with an assistant, such as messages and tool executions, Conversations can be started by an Agent or a Model.
 - **Entry**: An action that can be created by the user or an assistant. It brings a more flexible and expressive representation of interactions between a user and one or multiple assistants. This allows for more control over describing events.
 
 *You can also leverage all the features of Agents and Conversations without the need to create an Agent. This means you can query our API without creating an Agent, from using the built-in Conversations features to the built-in Connectors.*
@@ -29,6 +29,7 @@ When creating an Agent, there are multiple parameters and values that need to be
   - `web_search`/`web_search_premium`: Our built-in tool for web search.
   - `code_interpreter`: Our built-in tool for code execution.
   - `image_generation`: Our built-in tool for image generation.
+  - `document_library`: Our built-in RAG tool for knowledge grounding and search on custom data.
 - `completion_args` *optional*: Standard chat completion sampler arguments. All chat completion arguments are accepted.
 
 ### Creating an Agent

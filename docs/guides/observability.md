@@ -267,7 +267,7 @@ Maxim AI provides comprehensive observability for your Mistral based AI applicat
 
 **Mistral integration Example:**
 
-* Learn how to integrate Maxim observability with the Mistral SDK in just one line of code - [Colab Notebook](https://colab.research.google.com/drive/1gqJkkLQQTtSdUla2oiIg-QyR6i5BpmvV?usp=sharing)
+* Learn how to integrate Maxim observability with the Mistral SDK in just one line of code - [Colab Notebook](https://github.com/mistralai/cookbook/blob/main/third_party/Maxim/cookbook_maxim_mistral_integration.ipynb)
 
 Maxim Documentation to use Mistral as an LLM Provider and Maxim as Logger - [Docs Link](https://www.getmaxim.ai/docs/sdk/python/integrations/mistral/mistral)
 

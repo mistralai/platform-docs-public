@@ -1,13 +1,13 @@
 ---
-id: text_finetuning
-title: Text Fine-tuning
-slug: text_finetuning
+id: text_vision_finetuning
+title: Text & Vision Fine-tuning
+slug: text_vision_finetuning
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Fine-tuning allows you to tailor a pre-trained language model to your specific needs by training it on your dataset. This guide explains how to fine-tune text models, from preparing your data to training, whether you aim to improve domain-specific understanding or adapt to a unique conversational style.
+Fine-tuning allows you to tailor a pre-trained language model to your specific needs by training it on your dataset. This guide explains how to fine-tune text and vision models, from preparing your data to training, whether you aim to improve domain-specific understanding or adapt to a unique conversational style.
 
 :::tip[ ]
 For detailed end-to-end fine-tuning examples and FAQ, check out our [fine-tuning guide](../../../guides/finetuning).
@@ -19,30 +19,32 @@ You can both finetune directly in [la plateforme](https://console.mistral.ai/bui
 
 Data must be stored in JSON Lines (`.jsonl`) files, which allow storing multiple JSON objects, each on a new line.
 
-Datasets should follow an instruction-following format representing a user-assistant conversation. Each JSON data sample should either consist of only user and assistant messages ("Default Instruct") or include function-calling logic ("Function-calling Instruct").
+SFT Datasets should follow an instruction-following format representing a user-assistant conversation. Each JSON data sample should either consist of only user and assistant messages or include function-calling logic.
 
 ### 1. Default Instruct
 
-Conversational data between user and assistant, which can be one-turn or multi-turn. Example:
+Conversational data between user and assistant, which can be one-turn or multi-turn. 
+
+#### Text only template
 
 ```json
 {
     "messages": [
         {
             "role": "user",
-            "content": "User interaction n°1 contained in document n°2"
+            "content": "User interaction n°1"
         },
         {
             "role": "assistant",
-            "content": "Bot interaction n°1 contained in document n°2"
+            "content": "Bot interaction n°1"
         },
         {
             "role": "user",
-            "content": "User interaction n°2 contained in document n°1"
+            "content": "User interaction n°2"
         },
         {
             "role": "assistant",
-            "content": "Bot interaction n°2 contained in document n°1"
+            "content": "Bot interaction n°2"
         }
     ]
 }
@@ -64,8 +66,55 @@ Note that the files must be in JSONL format, meaning every JSON object must be f
 </details>
 
 - Conversational data must be stored under the `"messages"` key as a list.
-- Each list item is a dictionary containing the `"content"` and `"role"` keys. `"role"` is a string: `"user"`, `"assistant"`, or `"system"`.
+- Each list item is a dictionary containing the `"content"` and `"role"` keys. `"role"` is a string: `"system"`, `"user"`, `"assistant"` or `"tool"`.
 - Loss computation is performed only on tokens corresponding to assistant messages (`"role" == "assistant"`).
+
+While text-only fine-tuning covers multiple use cases, you can also fine-tune the vision capabilities of our models. This allows you to create models that can understand and generate responses based on both text and image inputs.
+
+#### Vision template
+
+```json
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type":"image_url",
+                    "image_url":"User Image URL, usually in a base64 format." // "data:image/jpeg;base64,{image_base64}"
+                },
+                {
+                    "type":"text",
+                    "text":"User interaction n°1"
+                }
+            ]
+        },
+        {
+            "role": "assistant",
+            "content": "Bot interaction n°1"
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type":"image_url",
+                    "image_url":"User Image URL, usually in a base64 format." // "data:image/jpeg;base64,{image_base64}"
+                },
+                {
+                    "type":"text",
+                    "text":"User interaction n°2"
+                }
+            ]
+        },
+        {
+            "role": "assistant",
+            "content": "Bot interaction n°2"
+        }
+    ]
+}
+```
+
+- Content can be a list of dictionaries, each containing a `"type"` key and either `"text"` or `"image_url"` keys.
 
 ### 2. Function-calling Instruct
 
@@ -145,7 +194,7 @@ Conversational data with tool usage. Example:
 ```
 
 - Conversational data must be stored under the `"messages"` key as a list.
-- Each message is a dictionary containing the `"role"` and `"content"` or `"tool_calls"` keys. `"role"` should be one of `"user"`, `"assistant"`, `"system"`, or `"tool"`.
+- Each message is a dictionary containing the `"role"` and `"content"` or `"tool_calls"` keys. `"role"` should be one of `"system"`, `"user"`, `"assistant"` or `"tool"`.
 - Only messages of type `"assistant"` can have a `"tool_calls"` key, representing the assistant performing a call to an available tool.
 - An assistant message with a `"tool_calls"` key cannot have a `"content"` key and must be followed by a `"tool"` message, which in turn must be followed by another assistant message.
 - The `"tool_call_id"` of tool messages must match the `"id"` of at least one of the previous assistant messages.
@@ -231,8 +280,18 @@ curl https://api.mistral.ai/v1/files \
 </Tabs>
 
 ## Create a fine-tuning job
-The next step is to create a fine-tuning job.
-- model: the specific model you would like to fine-tune. The choices are `open-mistral-7b` (v0.3), `mistral-small-latest` (`mistral-small-2409`),  `codestral-latest` (`codestral-2405`), `open-mistral-nemo`, `mistral-large-latest` (`mistral-large-2411`), `ministral-8b-latest`(`ministral-3b-2410`) and `pixtral-12b-2409`.
+The next step is to create a fine-tuning job. 
+- model: the specific model you would like to fine-tune. The choices are:
+  - Text Only:
+    - `open-mistral-7b`
+    - `mistral-small-latest`
+    - `codestral-latest`
+    - `open-mistral-nemo`
+    - `mistral-large-latest`
+    - `ministral-8b-latest`
+    - `ministral-3b-latest`
+  - Vision:
+    - `pixtral-12b-latest`
 - training_files: a collection of training file IDs, which can consist of a single file or multiple files
 - validation_files: a collection of validation file IDs, which can consist of a single file or multiple files
 - hyperparameters:  two adjustable hyperparameters, "training_steps" and "learning_rate", that users can modify.
@@ -486,7 +545,6 @@ curl --location --request DELETE 'https://api.mistral.ai/v1/models/ft:open-mistr
   </TabItem>
 
 </Tabs>
-
 
 import FAQ from "../../guides/finetuning_sections/_04_faq.md";
 

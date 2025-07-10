@@ -73,7 +73,7 @@ In these examples, we will only consider the `OCR with pdf` format.
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
-Here is an example of how to use our Annotation functionnalities using the Mistral AI client and Pydantic:
+Here is an example of how to use our Annotation functionalities using the Mistral AI client and Pydantic:
 
 **Define the Data Model**
 
@@ -127,7 +127,7 @@ response = client.ocr.process(
   </TabItem>
    <TabItem value="typescript" label="typescript" default>
 
-Here is an example of how to use our Annotation functionnalities using the Mistral AI client and Zod:
+Here is an example of how to use our Annotation functionalities using the Mistral AI client and Zod:
 
 **Define the Data Model**
 
@@ -460,7 +460,7 @@ curl --location 'https://api.mistral.ai/v1/ocr' \
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
 
-Here is an example of how to use our Annotation functionnalities using the Mistral AI client and Pydantic:
+Here is an example of how to use our Annotation functionalities using the Mistral AI client and Pydantic:
 
 **Define the Data Model**
 
@@ -528,7 +528,7 @@ response = client.ocr.process(
   </TabItem>
    <TabItem value="typescript" label="typescript" default>
 
-Here is an example of how to use our Annotation functionnalities using the Mistral AI client and Zod:
+Here is an example of how to use our Annotation functionalities using the Mistral AI client and Zod:
 
 **Define the Data Model**
 

@@ -1,7 +1,7 @@
 ---
 id: predicted-outputs
 title: Predicted outputs
-sidebar_position: 14
+sidebar_position: 15
 ---
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';

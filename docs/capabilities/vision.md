@@ -6,11 +6,11 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Our latest Mistral Small and our Pixtral models possess vision capabilities, enabling them to analyze images and provide insights based on visual content in addition to text. This multimodal approach opens up new possibilities for applications that require both textual and visual understanding.
+Vision capabilities enable models to analyze images and provide insights based on visual content in addition to text. This multimodal approach opens up new possibilities for applications that require both textual and visual understanding.
 
 For more specific use cases regarding document parsing and data extraction we recommend taking a look at our Document AI stack [here](../OCR/document_ai_overview).
 
-## Models with Vision Capacilities:
+## Models with Vision Capabilities:
 - Pixtral 12B (`pixtral-12b-latest`)
 - Pixtral Large 2411 (`pixtral-large-latest`)
 - Mistral Medium 2505 (`mistral-medium-latest`)
@@ -390,7 +390,7 @@ Model output:
 
 
 <details>
-<summary><b>Transcribe old documents</b></summary>
+<summary><b>OCR old documents</b></summary>
 
 ![](https://ciir.cs.umass.edu/irdemo/hw-demo/page_example.jpg)
 

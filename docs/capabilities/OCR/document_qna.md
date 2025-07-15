@@ -152,6 +152,23 @@ console.log("JSON:", chatResponse.choices[0].message.content);
 ```
   </TabItem>
   <TabItem value="curl" label="curl">
+
+**Upload the Image File**
+```bash
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="ocr" \
+  -F file="@uploaded_file.pdf"
+```
+
+**Get the Signed URL**
+```bash
+  curl -X GET "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+**Chat Completion**
 ```bash
 curl https://api.mistral.ai/v1/chat/completions \
   -H "Content-Type: application/json" \
@@ -168,7 +185,7 @@ curl https://api.mistral.ai/v1/chat/completions \
           },
           {
             "type": "document_url",
-            "document_url": "https://arxiv.org/pdf/1805.04770"
+            "document_url": "<url>"
           }
         ]
       }

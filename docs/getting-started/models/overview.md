@@ -34,6 +34,8 @@ Mistral provides two types of models: open models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
+| Voxtral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first model with audio input capabilities for instruct use cases.  | 32k  | `voxtral-small-2507` | 25.07|
+| Voxtral Mini | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A mini version of our first audio input model.  | 32k | `voxtral-mini-2507` | 25.07|
 | Mistral Small 3.2 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | An update to our previous small model, released June 2025. | 128k  | `mistral-small-2506` | 25.06|
 | Magistral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our small reasoning model released June 2025. Learn more in our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-small-2506` | 25.06|
 | Devstral Small 1.1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | An update to our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral-2507) | 128k  | `devstral-small-2507` | 25.07|
@@ -68,6 +70,8 @@ Here are the details of the available versions:
 - `mistral-saba-latest`: currently points to `mistral-saba-2502`. 
 - `codestral-latest`: currently points to `codestral-2501`.
 - `mistral-ocr-latest`: currently points to `mistral-ocr-2505`.
+- `voxtral-small-latest`: currently points to `voxtral-small-2507`.
+- `voxtral-mini-latest`: currently points to `voxtral-mini-2507`.
 
 ## Model deprecation
 ### Overview

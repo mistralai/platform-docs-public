@@ -19,6 +19,8 @@ If you are interested in purchasing a commercial license for our models, please 
 
 | Model               |Download links|Features|
 |--------------------|:--------------------|:--------------------|
+| Voxtral-Small-Instruct-2507  | [Hugging Face](https://huggingface.co/mistralai/Voxtral-Small-24B-2507)| - 128k vocabulary size <br/> - Supports v11 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports audio |
+| Voxtral-Mini-Instruct-2507  | [Hugging Face](https://huggingface.co/mistralai/Voxtral-Mini-3B-2507)| - 128k vocabulary size <br/> - Supports v11 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports audio |
 | Devstral-Small-2507  | [Hugging Face](https://huggingface.co/mistralai/Devstral-Small-2507)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer <br/> - Supports function calling |
 | Mistral-Small-Instruct-2506  | [Hugging Face](https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506)| - 128k vocabulary size <br/> - Supports v11 tekken.json tokenizer <br/> - Supports function calling <br/> - Supports images |
 | Magistral-Small-2506  | [Hugging Face](https://huggingface.co/mistralai/Magistral-Small-2506)| - 128k vocabulary size <br/> - Supports v7 tekken.json tokenizer |
@@ -73,6 +75,8 @@ If you are interested in purchasing a commercial license for our models, please 
 | Devstral-Small-2505  | 24B | 24B | 60 |
 | Mistral-Small-Instruct-2506  | 24B | 24B | 60 |
 | Devstral-Small-2507  | 24B | 24B | 60 |
+| Voxtral-Small  | 24B | 24B | 60 |
+| Voxtral-Mini  | 3B | 3B | 8 |
 
 ## How to run? 
 Check out [mistral-inference](https://github.com/mistralai/mistral-inference/), a Python package for running our models. You can install `mistral-inference` by

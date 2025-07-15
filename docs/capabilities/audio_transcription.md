@@ -18,7 +18,9 @@ import TabItem from '@theme/TabItem';
 Audio input capabilities enable models to chat and understand audio directly, this can be used for both chat use cases via audio or for optimal transcription purposes.
 
 ### Models with Audio Capabilities
+
 Audio capable models:
+
 - Voxtral Small (`voxtral-small-latest`) with audio input for [chat](#chat-with-audio) use cases.
 - Voxtral Mini (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases and efficient [transcription](#transcription) only service.
 
@@ -30,16 +32,73 @@ Audio capable models:
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": {
+                    "data": "https://download.samplelib.com/mp3/sample-15s.mp3",
+                    "format": "mp3",
+                },
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?",
+            },
+        ],
+    }
+]
+
+chat_response = client.chat.complete(
+    model="voxtral-mini-2507",
+    messages=messages,
+)
+
+print(chat_response.choices[0].message.content)
+
 ```
-  </TabItem>
+
+</TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY!;
+const client = new Mistral({ apiKey });
+
+const chatResponse = await client.chat.complete({
+  model: "voxtral-mini-2507",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_audio",
+          inputAudio: {
+            data: "https://download.samplelib.com/mp3/sample-15s.mp3",
+            format: "mp3",
+          },
+        },
+        { type: "text", text: "What's in this file?" },
+      ],
+    },
+  ],
+});
+
+console.log(chatResponse.choices[0].message.content);
+
 ```
 
-  </TabItem>
+</TabItem>
   <TabItem value="curl" label="curl" default>
 
 ```bash
@@ -68,7 +127,8 @@ curl --location https://api.mistral.ai/v1/chat/completions \
     ]
   }'
 ```
-  </TabItem>
+
+</TabItem>
 </Tabs>
 
 ### Passing an Uploaded Audio File
@@ -77,33 +137,148 @@ curl --location https://api.mistral.ai/v1/chat/completions \
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+# 1️⃣ Upload the local audio file
+upload_resp = client.files.upload(
+    file={
+        "file_name": "local_audio.mp3",
+        "content": open("local_audio.mp3", "rb"),
+    },
+    purpose="audio",
+)
+file_id = upload_resp.id
+
+# 2️⃣ Get a temporary signed URL so the model can read the file
+signed_url = client.files.get_signed_url(file_id=file_id).url
+
+# 3️⃣ Run the chat completion using the signed URL
+chat_response = client.chat.complete(
+    model="voxtral-mini-2507",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_audio",
+                    "input_audio": {"data": signed_url, "format": "mp3"},
+                },
+                {
+                    "type": "text",
+                    "text": "Summarise the content of this audio.",
+                },
+            ],
+        }
+    ],
+)
+
+print(chat_response.choices[0].message.content)
+
 ```
-  </TabItem>
+
+</TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+import { openAsBlob } from "node:fs";
+
+const apiKey = process.env.MISTRAL_API_KEY!;
+const client = new Mistral({ apiKey });
+
+async function main() {
+  // 1️⃣ Upload
+  const upload = await client.files.upload({
+    file: await openAsBlob("local_audio.mp3"),
+    purpose: "audio",
+  });
+
+  // 2️⃣ Signed URL
+  const { url: signedUrl } = await client.files.getSignedUrl({
+    fileId: upload.id,
+  });
+
+  // 3️⃣ Chat completion
+  const chatResponse = await client.chat.complete({
+    model: "voxtral-mini-2507",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_audio",
+            inputAudio: { data: signedUrl, format: "mp3" },
+          },
+          { type: "text", text: "Summarise the content of this audio." },
+        ],
+      },
+    ],
+  });
+
+  console.log(chatResponse.choices[0].message.content);
+}
+
+main();
+
 ```
 
-  </TabItem>
+</TabItem>
   <TabItem value="curl" label="curl" default>
 
 **Upload the Audio File**
+
 ```bash
-Coming Soon...
+curl --location https://api.mistral.ai/v1/files \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --form "file=@/path/to/local_audio.mp3" \
+  --form "purpose=audio"
+
 ```
 
 **Get the Signed URL**
+
 ```bash
-Coming Soon...
+# Replace FILE_ID with the `id` from the previous response
+curl --location https://api.mistral.ai/v1/files/FILE_ID/signed_url \
+  --header "Authorization: Bearer $MISTRAL_API_KEY"
+
 ```
 
 **Send Completion Request**
+
 ```bash
-Coming Soon...
+curl --location https://api.mistral.ai/v1/chat/completions \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "model": "voxtral-mini-2507",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_audio",
+            "input_audio": {
+              "data": "PASTE_SIGNED_URL_HERE",
+              "format": "mp3"
+            }
+          },
+          {
+            "type": "text",
+            "text": "Summarise the content of this audio."
+          }
+        ]
+      }
+    ]
+  }'
+
 ```
-  </TabItem>
+
+</TabItem>
 </Tabs>
 
 <details>
@@ -111,78 +286,78 @@ Coming Soon...
   <Tabs>
     <TabItem value="chat" label="Chat" default>
 
-        **User**
+    **User**
 
-        <audio controls>
-          <source src="/audio/chat.wav" type="audio/wav"/>
-          Your browser does not support the audio element.
-        </audio>
+    <audio controls>
+      <source src="/audio/chat.wav" type="audio/wav"/>
+      Your browser does not support the audio element.
+    </audio>
 
-        **Assistant**
+    **Assistant**
 
-        Sure, here is the transcription of what you said:  
-        "Today on July 15th, 2025, Mistral AI is announcing the new Voxtral models."  
-        And here is the Python code to generate the first n digits of the Fibonacci sequence:  
-        ```python
-            def fibonacci(n):
-        if n <= 0:
-            return []
-        elif n == 1:
-            return [0]
-        elif n == 2:
-            return [0, 1]
+    Sure, here is the transcription of what you said:  
+    "Today on July 15th, 2025, Mistral AI is announcing the new Voxtral models."  
+    And here is the Python code to generate the first n digits of the Fibonacci sequence:  
+    ```python
+        def fibonacci(n):
+    if n <= 0:
+        return []
+    elif n == 1:
+        return [0]
+    elif n == 2:
+        return [0, 1]
 
-        fib_sequence = [0, 1]
-        for i in range(2, n):
-            next_value = fib_sequence[-1] + fib_sequence[-2]
-            fib_sequence.append(next_value)
+    fib_sequence = [0, 1]
+    for i in range(2, n):
+        next_value = fib_sequence[-1] + fib_sequence[-2]
+        fib_sequence.append(next_value)
 
-        return fib_sequence
+    return fib_sequence
 
-        # Example usage:
-        n = 10  # Change this value to get the first n digits of the Fibonacci sequence
-        print(fibonacci(n))
-        ```
-        This code defines a function `fibonacci` that takes an integer `n` and returns a list containing the first `n` digits of the Fibonacci sequence. You can change the value of `n` to get the desired number of Fibonacci digits.
+    # Example usage:
+    n = 10  # Change this value to get the first n digits of the Fibonacci sequence
+    print(fibonacci(n))
+    ```
+    This code defines a function `fibonacci` that takes an integer `n` and returns a list containing the first `n` digits of the Fibonacci sequence. You can change the value of `n` to get the desired number of Fibonacci digits.
 
-    </TabItem>
-    <TabItem value="music" label="Music">
-    
-        **User**
+</TabItem>
+<TabItem value="music" label="Music">
 
-        <audio controls>
-          <source src="/audio/music.mp3" type="audio/mp3"/>
-          Your browser does not support the audio element.
-        </audio>
-        What's in this file?
+    **User**
 
-        **Assistant**
+    <audio controls>
+      <source src="/audio/music.mp3" type="audio/mp3"/>
+      Your browser does not support the audio element.
+    </audio>
+    What's in this file?
 
-        The audio file contains music.
-    </TabItem>
-    <TabItem value="compare_speakers" label="Compare Speakers">
-    
-        **User**
+    **Assistant**
 
-        <audio controls>
-          <source src="/audio/obama.mp3" type="audio/mp3"/>
-          Your browser does not support the audio element.
-        </audio>
-        <audio controls>
-          <source src="/audio/bcn_weather.mp3" type="audio/mp3"/>
-          Your browser does not support the audio element.
-        </audio>
-        
-        Which speaker do you prefer between the two? Why? How are they different from each other?
+    The audio file contains music.
+</TabItem>
+<TabItem value="compare_speakers" label="Compare Speakers">
 
-        **Assistant**
+    **User**
 
-        The speaker who delivers the farewell address is more engaging and inspiring.  
-        They express gratitude and optimism, emphasizing the importance of self-government and citizenship.  
-        They also share personal experiences and observations, making the speech more relatable and heartfelt.  
-        In contrast, the second speaker provides factual information about the weather in Barcelona, which is less engaging and lacks the emotional depth of the first speaker's address.
-    </TabItem>
-  </Tabs>
+    <audio controls>
+      <source src="/audio/obama.mp3" type="audio/mp3"/>
+      Your browser does not support the audio element.
+    </audio>
+    <audio controls>
+      <source src="/audio/bcn_weather.mp3" type="audio/mp3"/>
+      Your browser does not support the audio element.
+    </audio>
+  
+    Which speaker do you prefer between the two? Why? How are they different from each other?
+
+    **Assistant**
+
+    The speaker who delivers the farewell address is more engaging and inspiring.  
+    They express gratitude and optimism, emphasizing the importance of self-government and citizenship.  
+    They also share personal experiences and observations, making the speech more relatable and heartfelt.  
+    In contrast, the second speaker provides factual information about the weather in Barcelona, which is less engaging and lacks the emotional depth of the first speaker's address.
+</TabItem>
+</Tabs>
 </details>
 
 ## Transcription
@@ -193,25 +368,46 @@ Coming Soon...
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+transcription = client.audio.transcriptions.create(
+    model="voxtral-mini-2507",
+    file_url="https://docs.mistral.ai/audio/obama.mp3",
+)
+
+print(transcription.text)
+
 ```
-  </TabItem>
+</TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
-```
+import { Mistral } from "@mistralai/mistralai";
 
-  </TabItem>
+const apiKey = process.env.MISTRAL_API_KEY!;
+const client = new Mistral({ apiKey });
+
+const transcription = await client.audio.transcriptions.create({
+  model: "voxtral-mini-2507",
+  fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
+});
+
+console.log(transcription.text);
+
+```
+</TabItem>
   <TabItem value="curl" label="curl" default>
 
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 --header "x-api-key: $MISTRAL_API_KEY" \
---form 'file_url="https://https://docs.mistral.ai/audio/obama.mp3"' \
---form 'model="voxtral-mini-2507"'
+--form 'file_url="https://
 ```
-  </TabItem>
+</TabItem>
 </Tabs>
 
 ### Passing an Uploaded Audio File
@@ -220,33 +416,91 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+# 1️⃣ Upload
+upload = client.files.upload(
+    file={
+        "file_name": "speech.mp3",
+        "content": open("speech.mp3", "rb"),
+    },
+    purpose="audio",
+)
+signed_url = client.files.get_signed_url(file_id=upload.id).url
+
+# 2️⃣ Transcribe
+transcription = client.audio.transcriptions.create(
+    model="voxtral-mini-2507",
+    file_url=signed_url,
+)
+
+print(transcription.text)
+
 ```
-  </TabItem>
+</TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
-```
+import { Mistral } from "@mistralai/mistralai";
+import { openAsBlob } from "node:fs";
 
-  </TabItem>
+const apiKey = process.env.MISTRAL_API_KEY!;
+const client = new Mistral({ apiKey });
+
+async function run() {
+  const upload = await client.files.upload({
+    file: await openAsBlob("speech.mp3"),
+    purpose: "audio",
+  });
+
+  const { url: signedUrl } = await client.files.getSignedUrl({
+    fileId: upload.id,
+  });
+
+  const transcription = await client.audio.transcriptions.create({
+    model: "voxtral-mini-2507",
+    fileUrl: signedUrl,
+  });
+
+  console.log(transcription.text);
+}
+
+run();
+
+```
+</TabItem>
   <TabItem value="curl" label="curl" default>
 
 **Upload the Audio File**
-```bash
-Coming Soon...
-```
 
+```bash
+curl --location https://api.mistral.ai/v1/files \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --form "file=@/path/to/speech.mp3" \
+  --form "purpose=audio"
+
+```
 **Get the Signed URL**
-```bash
-Coming Soon...
-```
 
-**Send Transcription Request**
 ```bash
-Coming Soon...
+curl --location https://api.mistral.ai/v1/files/FILE_ID/signed_url \
+  --header "Authorization: Bearer $MISTRAL_API_KEY"
+
 ```
-  </TabItem>
+**Send Transcription Request**
+
+```bash
+curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
+--header "x-api-key: $MISTRAL_API_KEY" \
+--form 'file_url="PASTE_SIGNED_URL_HERE"' \
+--form 'model="voxtral-mini-2507"'
+
+```
+</TabItem>
 </Tabs>
 
 <details>
@@ -278,13 +532,13 @@ Coming Soon...
           Your browser does not support the audio element.
         </audio>
 
-        **Transcription**  
-        This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American people, in living rooms, in schools, at farms and on factory floors, at diners and on distant military outposts, All these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers. And I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees. to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy. to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title – citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise. And I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you. And God bless the United States of America.  
+    **Transcription**  
+    This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American people, in living rooms, in schools, at farms and on factory floors, at diners and on distant military outposts, All these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers. And I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees. to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy. to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title – citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise. And I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you. And God bless the United States of America.  
 
-        **Language**
-        English
-     </TabItem>
-  </Tabs>
+    **Language**
+    English
+ </TabItem>
+</Tabs>
 </details>
 
 ## Transcription with Timestamps
@@ -296,26 +550,51 @@ It will return the start and end time of each segment in the audio file.
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.audio.transcriptions.create(
+    model="voxtral-mini-2507",
+    file_url="https://docs.mistral.ai/audio/obama.mp3",
+    timestamp_granularities=["segment"],
+)
+
+for seg in response.segments:
+    print(f"{seg['start']:.2f}s–{seg['end']:.2f}s: {seg['text']}")
+
 ```
-  </TabItem>
+</TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
-```
+import { Mistral } from "@mistralai/mistralai";
 
-  </TabItem>
+const apiKey = process.env.MISTRAL_API_KEY!;
+const client = new Mistral({ apiKey });
+
+const response = await client.audio.transcriptions.create({
+  model: "voxtral-mini-2507",
+  fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
+  timestampGranularities: ["segment"],
+});
+
+response.segments?.forEach((seg) => {
+  console.log(`${seg.start.toFixed(2)}s–${seg.end.toFixed(2)}s: ${seg.text}`);
+});
+
+```
+</TabItem>
   <TabItem value="curl" label="curl" default>
 
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 --header "x-api-key: $MISTRAL_API_KEY" \
---form 'file_url="https://https://docs.mistral.ai/audio/obama.mp3"' \
---form 'model="voxtral-mini-2507"'
---form 'timestamp_granularities="segment"'
+--form 'file_url="https://
 ```
-  </TabItem>
+</TabItem>
 </Tabs>
 
 <details>

@@ -27,7 +27,7 @@ Audio capable models:
 ### Passing an Audio URL
 
 <Tabs groupId="code">
-  <TabItem value="python" label="python" default>
+  <TabItem value="python" label="python">
 
 ```python
 Coming Soon...
@@ -40,7 +40,7 @@ Coming Soon...
 ```
 
   </TabItem>
-  <TabItem value="curl" label="curl">
+  <TabItem value="curl" label="curl" default>
 
 ```bash
 curl --location https://api.mistral.ai/v1/chat/completions \
@@ -74,7 +74,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 ### Passing an Uploaded Audio File
 
 <Tabs groupId="code">
-  <TabItem value="python" label="python" default>
+  <TabItem value="python" label="python">
 
 ```python
 Coming Soon...
@@ -87,7 +87,7 @@ Coming Soon...
 ```
 
   </TabItem>
-  <TabItem value="curl" label="curl">
+  <TabItem value="curl" label="curl" default>
 
 **Upload the Audio File**
 ```bash
@@ -190,7 +190,7 @@ Coming Soon...
 ### Passing an Audio URL
 
 <Tabs groupId="code">
-  <TabItem value="python" label="python" default>
+  <TabItem value="python" label="python">
 
 ```python
 Coming Soon...
@@ -203,7 +203,7 @@ Coming Soon...
 ```
 
   </TabItem>
-  <TabItem value="curl" label="curl">
+  <TabItem value="curl" label="curl" default>
 
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
@@ -217,7 +217,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 ### Passing an Uploaded Audio File
 
 <Tabs groupId="code">
-  <TabItem value="python" label="python" default>
+  <TabItem value="python" label="python">
 
 ```python
 Coming Soon...
@@ -230,7 +230,7 @@ Coming Soon...
 ```
 
   </TabItem>
-  <TabItem value="curl" label="curl">
+  <TabItem value="curl" label="curl" default>
 
 **Upload the Audio File**
 ```bash
@@ -293,7 +293,7 @@ You can request timestamps for the transcription by passing the `timestamp_granu
 It will return the start and end time of each segment in the audio file.
 
 <Tabs groupId="code">
-  <TabItem value="python" label="python" default>
+  <TabItem value="python" label="python">
 
 ```python
 Coming Soon...
@@ -306,7 +306,7 @@ Coming Soon...
 ```
 
   </TabItem>
-  <TabItem value="curl" label="curl">
+  <TabItem value="curl" label="curl" default>
 
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \

@@ -20,7 +20,7 @@ Audio input capabilities enable models to chat and understand audio directly, th
 ### Models with Audio Capabilities
 Audio capable models:
 - Voxtral Small (`voxtral-small-latest`) with audio input for [chat](#chat-with-audio) use cases.
-- Voxtral Mini (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases and efficient [transcription](#transcription) only service.
+- Voxtral Mini (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases and an efficient [transcription](#transcription) only service.
 
 ## Chat with Audio
 
@@ -208,7 +208,7 @@ Coming Soon...
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 --header "x-api-key: $MISTRAL_API_KEY" \
---form 'file_url="https://https://docs.mistral.ai/audio/obama.mp3"' \
+--form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
 --form 'model="voxtral-mini-2507"'
 ```
   </TabItem>
@@ -311,7 +311,7 @@ Coming Soon...
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 --header "x-api-key: $MISTRAL_API_KEY" \
---form 'file_url="https://https://docs.mistral.ai/audio/obama.mp3"' \
+--form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
 --form 'model="voxtral-mini-2507"'
 --form 'timestamp_granularities="segment"'
 ```

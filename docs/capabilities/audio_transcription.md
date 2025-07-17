@@ -19,12 +19,17 @@ Audio input capabilities enable models to chat and understand audio directly, th
 
 ### Models with Audio Capabilities
 Audio capable models:
-- Voxtral Small (`voxtral-small-latest`) with audio input for [chat](#chat-with-audio) use cases.
-- Voxtral Mini (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases and an efficient [transcription](#transcription) only service.
+- **Voxtral Small** (`voxtral-small-latest`) with audio input for [chat](#chat-with-audio) use cases.
+- **Voxtral Mini** (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases
+- And **Voxtral Mini Transcribe** (`voxtral-mini-latest` via `audio/transcriptions`), with an efficient [transcription](#transcription) only service.
 
 ## Chat with Audio
 
+Our Voxtral models are capable of being used for chat use cases with our chat completions endpoint.
+
 ### Passing an Audio URL
+
+To chat with any Audio, you can provide an url of a file in an audio format, an easy and straightforward approach.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -73,6 +78,8 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 
 ### Passing an Uploaded Audio File
 
+Alternatively, you can upload a local file to our cloud and then use a signed URL for the task.
+
 <Tabs groupId="code">
   <TabItem value="python" label="python">
 
@@ -91,17 +98,45 @@ Coming Soon...
 
 **Upload the Audio File**
 ```bash
-Coming Soon...
+curl --location https://api.mistral.ai/v1/files \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --form purpose="audio" \
+  --form file="@local_audio.mp3"
 ```
 
 **Get the Signed URL**
 ```bash
-Coming Soon...
+curl --location "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer $MISTRAL_API_KEY"
 ```
 
 **Send Completion Request**
 ```bash
-Coming Soon...
+curl --location https://api.mistral.ai/v1/chat/completions \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "model": "voxtral-mini-2507",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_audio",
+            "input_audio": {
+              "data": "<signed_url>",
+              "format": "mp3"
+            }
+          },
+          {
+            "type": "text",
+            "text": "What'\''s in this file?"
+          }
+        ]
+      }
+    ]
+  }'
 ```
   </TabItem>
 </Tabs>
@@ -187,21 +222,28 @@ Coming Soon...
 
 ## Transcription
 
-Transcription provides an optimized endpoint for transcription purposes only and currently supports `voxtral-mini-latest`.
+Transcription provides an optimized endpoint for transcription purposes and currently supports `voxtral-mini-latest`, which runs **Voxtral Mini Transcribe**.
+
+**Parameters**  
+We provide different settings and parameters for transcription, such as:
+- `timestamp_granularities`: This allows you to set timestamps to track not only "what" was said but also "when". You can find more about timestamps here.
+- `language`: Our transcription service also works as a language detection service. However, you can manually set the language of the transcription for better accuracy if the language of the audio is already known.
 
 ### Passing an Audio File
+
+Among the different methods to pass the audio, you can directly provide a path to a file to upload and transcribe it as follows:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
-Coming soon...
+Coming Soon...
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming soon...
+Coming Soon...
 ```
 
   </TabItem>
@@ -211,12 +253,23 @@ Coming soon...
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file=@"/path/to/file/audio.mp3"' \
-  --form 'model="voxtral-mini-2507"'
+  --form 'model="voxtral-mini-2507"' \
+```
+
+**With Language defined**  
+```bash
+curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
+  --header "x-api-key: $MISTRAL_API_KEY" \
+  --form 'file=@"/path/to/file/audio.mp3"' \
+  --form 'model="voxtral-mini-2507"' \
+  --form 'language="en"'
 ```
   </TabItem>
 </Tabs>
 
 ### Passing an Audio URL
+
+Similarly, you can provide an url of an audio file.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -236,14 +289,25 @@ Coming Soon...
 
 ```bash
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
---header "x-api-key: $MISTRAL_API_KEY" \
---form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
---form 'model="voxtral-mini-2507"'
+  --header "x-api-key: $MISTRAL_API_KEY" \
+  --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
+  --form 'model="voxtral-mini-2507"'
+```
+
+**With Language defined**  
+```bash
+curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
+  --header "x-api-key: $MISTRAL_API_KEY" \
+  --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
+  --form 'model="voxtral-mini-2507"' \
+  --form 'language="en"'
 ```
   </TabItem>
 </Tabs>
 
 ### Passing an Uploaded Audio File
+
+Alternatively, you can first upload the file to our cloud service and then pass the signed URL instead.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -263,17 +327,34 @@ Coming Soon...
 
 **Upload the Audio File**
 ```bash
-Coming Soon...
+curl --location https://api.mistral.ai/v1/files \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --form purpose="audio" \
+  --form file="@local_audio.mp3"
 ```
 
 **Get the Signed URL**
 ```bash
-Coming Soon...
+curl --location "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer $MISTRAL_API_KEY"
 ```
 
 **Send Transcription Request**
 ```bash
-Coming Soon...
+curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
+    --header "x-api-key: $MISTRAL_API_KEY" \
+    --form 'file_url="<signed_url>"' \
+    --form 'model="voxtral-mini-2507"'
+```
+
+**Send Transcription Request with Language defined**
+```bash
+curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
+    --header "x-api-key: $MISTRAL_API_KEY" \
+    --form 'file_url="<signed_url>"' \
+    --form 'model="voxtral-mini-2507"' \
+    --form 'language="en"'
 ```
   </TabItem>
 </Tabs>
@@ -318,7 +399,7 @@ Coming Soon...
 
 ## Transcription with Timestamps
 
-You can request timestamps for the transcription by passing the `timestamp_granularities` parameter, currently supporting `segment`.
+You can request timestamps for the transcription by passing the `timestamp_granularities` parameter, currently supporting `segment`.  
 It will return the start and end time of each segment in the audio file.
 
 <Tabs groupId="code">
@@ -341,7 +422,7 @@ Coming Soon...
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 --header "x-api-key: $MISTRAL_API_KEY" \
 --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
---form 'model="voxtral-mini-2507"'
+--form 'model="voxtral-mini-latest"'
 --form 'timestamp_granularities="segment"'
 ```
   </TabItem>

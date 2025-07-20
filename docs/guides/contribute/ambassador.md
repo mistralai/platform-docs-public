@@ -10,7 +10,7 @@ As our Mistral AI community continues to grow, we are looking for Mistral expert
 
 # ➡️ Apply  ➡️
 
-Applications for the Summer 2025 cohort are now open and will be accepted until July 1, 2025. If selected, you will be contacted by the end of July 2025 to discuss next steps and possibly participate in an interview with additional questions.
+Applications for the Summer 2025 cohort are now open and will be accepted until July 1, 2025. If selected, you will be contacted by the end of August 2025 to discuss next steps and possibly participate in an interview with additional questions.
 
 ### ✍ [fill out the application here](https://forms.gle/pTMchkVVPCxSVW5u5) ✍
 

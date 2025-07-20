@@ -433,216 +433,231 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```json
 {
-  "model": "voxtral-mini-2507",
-  "text": "This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American people, in living rooms, in schools, at farms and on factory floors, at diners and on distant military outposts. All these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers. And I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees. to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there's an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy. to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title, citizen. It has been the honor of my life to serve you as president. Eight years later, I am even more optimistic about our country's promise, and I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you, and God bless the United States of America.",
-  "language": null,
-  "segments": [
+  "model":"voxtral-mini-2507",
+  "text":"This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, My conversations with you, the American people, in living rooms, in schools, at farms, on factory floors, at diners, and on distant military outposts – all these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers. And I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship – not just when there is an election, not just when our own narrow interest is at stake, but over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title – citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise. And I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you. And God bless the United States of America.",
+  "language":"en",
+  "segments":[
     {
-      "text": "This week, I traveled to Chicago to deliver my final farewell address to the nation, following",
-      "start": 0.8,
-      "end": 6.2
+      "text":"This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me.",
+      "start":0.0,
+      "end":68.9
     },
     {
-      "text": "in the tradition of presidents before me.",
-      "start": 6.2,
-      "end": 9.0
+      "text":" It was an opportunity to say thank you.",
+      "start":68.9,
+      "end":71.7
     },
     {
-      "text": "It was an opportunity to say thank you.",
-      "start": 9.0,
-      "end": 11.8
+      "text":" Whether we've seen eye to eye or rarely agreed at all,",
+      "start":71.7,
+      "end":75.1
     },
     {
-      "text": "Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American",
-      "start": 11.8,
-      "end": 17.6
+      "text":" My conversations with you, the American people, in living rooms, in schools, at farms, on",
+      "start":75.1,
+      "end":81.8
     },
     {
-      "text": "people, in living rooms, in schools, at farms and on factory floors, at diners and on distant",
-      "start": 17.6,
-      "end": 24.9
+      "text":" factory floors, at diners, and on distant military outposts – all these conversations",
+      "start":81.8,
+      "end":88.3
     },
     {
-      "text": "military outposts.",
-      "start": 24.9,
-      "end": 26.6
+      "text":" are what have kept me honest, kept me inspired, and kept me going.",
+      "start":88.3,
+      "end":93.3
     },
     {
-      "text": "All these conversations are what have kept me honest, kept me inspired, and kept me going.",
-      "start": 26.6,
-      "end": 32.8
+      "text":" Every day, I learned from you.",
+      "start":93.3,
+      "end":95.4
     },
     {
-      "text": "Every day, I learned from you.",
-      "start": 32.8,
-      "end": 35.4
+      "text":" You made me a better President, and you made me a better man.",
+      "start":95.4,
+      "end":99.8
     },
     {
-      "text": "You made me a better President, and you made me a better man.",
-      "start": 35.4,
-      "end": 39.3
+      "text":" Over the course of these eight years, I've seen the goodness, the resilience, and the",
+      "start":99.8,
+      "end":104.1
     },
     {
-      "text": "Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people.",
-      "start": 39.3,
-      "end": 46.1
+      "text":" hope of the American people.",
+      "start":104.1,
+      "end":106.4
     },
     {
-      "text": "I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes.",
-      "start": 46.1,
-      "end": 51.3
+      "text":" I've seen neighbors looking out for each other as we rescued our economy from the worst",
+      "start":106.4,
+      "end":110.0
     },
     {
-      "text": "I've hugged cancer survivors who finally know the security of affordable health care.",
-      "start": 52.2,
-      "end": 56.5
+      "text":" crisis of our lifetimes.",
+      "start":110.0,
+      "end":112.2
     },
     {
-      "text": "I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit.",
-      "start": 57.1,
-      "end": 65.7
+      "text":" I've hugged cancer survivors who finally know the security of affordable health care.",
+      "start":112.2,
+      "end":117.1
     },
     {
-      "text": "I've seen the hopeful faces of young graduates and our newest military officers.",
-      "start": 66.5,
-      "end": 71.1
+      "text":" I've seen communities like Joplin rebuild from disaster, and cities like Boston show",
+      "start":117.1,
+      "end":122.0
     },
     {
-      "text": "I've mourned with grieving families searching for answers.",
-      "start": 71.7,
-      "end": 74.4
+      "text":" the world that no terrorist will ever break the American spirit.",
+      "start":122.0,
+      "end":127.0
     },
     {
-      "text": "And I found grace in a Charleston church.",
-      "start": 75.2,
-      "end": 77.7
+      "text":" I've seen the hopeful faces of young graduates and our newest military officers.",
+      "start":127.0,
+      "end":132.0
     },
     {
-      "text": "I've seen our scientists help a paralyzed man regain his sense of touch and our wounded warriors walk again.",
-      "start": 78.5,
-      "end": 85.2
+      "text":" I've mourned with grieving families searching for answers.",
+      "start":132.0,
+      "end":135.5
     },
     {
-      "text": "I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks.",
-      "start": 85.9,
-      "end": 91.9
+      "text":" And I found grace in a Charleston church.",
+      "start":135.5,
+      "end":138.5
     },
     {
-      "text": "I've learned from students who are building robots and curing diseases and who will change the world in ways we can't even imagine.",
-      "start": 92.6,
-      "end": 99.2
+      "text":" I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded",
+      "start":138.5,
+      "end":143.9
     },
     {
-      "text": "I've seen the youngest of children remind us of our obligations to care for our refugees.",
-      "start": 100.1,
-      "end": 105.8
+      "text":" warriors walk again.",
+      "start":143.9,
+      "end":146.3
     },
     {
-      "text": "to work in peace, and above all, to look out for each other.",
-      "start": 106.6,
-      "end": 111.6
+      "text":" I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their",
+      "start":146.3,
+      "end":151.6
     },
     {
-      "text": "That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government.",
-      "start": 111.6,
-      "end": 120.3
+      "text":" tracks.",
+      "start":151.6,
+      "end":152.6
     },
     {
-      "text": "But we can't take our democracy for granted.",
-      "start": 120.3,
-      "end": 123.4
+      "text":" I've learned from students who are building robots and curing diseases, and who will change",
+      "start":152.6,
+      "end":157.2
     },
     {
-      "text": "All of us, regardless of party, should throw ourselves into the work of citizenship.",
-      "start": 123.4,
-      "end": 129.2
+      "text":" the world in ways we can't even imagine.",
+      "start":157.2,
+      "end":160.0
     },
     {
-      "text": "Not just when there's an election.",
-      "start": 129.2,
-      "end": 131.2
+      "text":" I've seen the youngest of children remind us of our obligations to care for our refugees,",
+      "start":160.0,
+      "end":166.9
     },
     {
-      "text": "Not just when our own narrow interest is at stake.",
-      "start": 131.2,
-      "end": 134.7
+      "text":" to work in peace, and above all, to look out for each other.",
+      "start":166.9,
+      "end":172.0
     },
     {
-      "text": "But over the full span of a lifetime.",
-      "start": 134.7,
-      "end": 138.1
+      "text":" That's what's possible when we come together in the slow, hard, sometimes frustrating,",
+      "start":172.0,
+      "end":177.3
     },
     {
-      "text": "If you're tired of arguing with strangers on the Internet,",
-      "start": 138.1,
-      "end": 141.4
+      "text":" but always vital work of self-government.",
+      "start":177.3,
+      "end":180.3
     },
     {
-      "text": "try to talk with one in real life.",
-      "start": 141.4,
-      "end": 144.0
+      "text":" But we can't take our democracy for granted.",
+      "start":180.3,
+      "end":183.8
     },
     {
-      "text": "If something needs fixing,",
-      "start": 144.0,
-      "end": 146.0
+      "text":" All of us, regardless of party, should throw ourselves into the work of citizenship –",
+      "start":183.8,
+      "end":189.7
     },
     {
-      "text": "lace up your shoes and do some organizing.",
-      "start": 146.0,
-      "end": 149.3
+      "text":" not just when there is an election, not just when our own narrow interest is at stake,",
+      "start":189.7,
+      "end":195.3
     },
     {
-      "text": "If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself.",
-      "start": 149.3,
-      "end": 156.8
+      "text":" but over the full span of a lifetime.",
+      "start":195.3,
+      "end":198.1
     },
     {
-      "text": "Our success depends on our participation, regardless of which way the pendulum of power swings.",
-      "start": 156.8,
-      "end": 165.3
+      "text":" If you're tired of arguing with strangers on the Internet, try to talk with one in real life.",
+      "start":198.1,
+      "end":203.5
     },
     {
-      "text": "It falls on each of us to be guardians of our democracy.",
-      "start": 165.3,
-      "end": 168.5
+      "text":" If something needs fixing, lace up your shoes and do some organizing.",
+      "start":204.4,
+      "end":208.4
     },
     {
-      "text": "to embrace the joyous task we've been given to continually try to improve this great nation of ours.",
-      "start": 168.5,
-      "end": 174.6
+      "text":" If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself.",
+      "start":209.1,
+      "end":215.7
     },
     {
-      "text": "Because for all our outward differences, we all share the same proud title, citizen.",
-      "start": 175.4,
-      "end": 181.7
+      "text":" Our success depends on our participation, regardless of which way the pendulum of power swings.",
+      "start":216.5,
+      "end":224.4
     },
     {
-      "text": "It has been the honor of my life to serve you as president.",
-      "start": 182.7,
-      "end": 186.0
+      "text":" It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours.",
+      "start":225.2,
+      "end":234.6
     },
     {
-      "text": "Eight years later, I am even more optimistic about our country's promise,",
-      "start": 186.9,
-      "end": 190.3
+      "text":" Because for all our outward differences, we all share the same proud title – citizen.",
+      "start":235.3,
+      "end":241.7
     },
     {
-      "text": "and I look forward to working along your side as a citizen for all my days that remain.",
-      "start": 190.3,
-      "end": 197.3
+      "text":" It has been the honor of my life to serve you as President.",
+      "start":242.7,
+      "end":245.9
     },
     {
-      "text": "Thanks, everybody. God bless you, and God bless the United States of America.",
-      "start": 198.5,
-      "end": 203.4
+      "text":" Eight years later, I am even more optimistic about our country's promise.",
+      "start":246.9,
+      "end":250.3
+    },
+    {
+      "text":" And I look forward to working along your side as a citizen for all my days that remain.",
+      "start":250.9,
+      "end":257.3
+    },
+    {
+      "text":" Thanks, everybody. God bless you.",
+      "start":258.4,
+      "end":260.6
+    },
+    {
+      "text":" And God bless the United States of America.",
+      "start":261.2,
+      "end":263.4
     }
   ],
-  "usage": {
-    "prompt_audio_seconds": 203,
-    "prompt_tokens": 4,
-    "total_tokens": 3945,
-    "completion_tokens": 1316
+  "usage":{
+    "prompt_audio_seconds":203,
+    "prompt_tokens":5,
+    "total_tokens":4001,
+    "completion_tokens":1371
   }
 }
 ```

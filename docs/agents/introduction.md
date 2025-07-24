@@ -8,6 +8,8 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## What are AI agents?
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/agent_overview.png"
@@ -16,8 +18,6 @@ import TabItem from '@theme/TabItem';
     style={{ borderRadius: '15px' }}
   />
 </div>
-
-## What are AI agents?
 
 AI agents are autonomous systems powered by large language models (LLMs) that, given high-level instructions, can plan, use tools, carry out processing steps, and take actions to achieve specific goals. These agents leverage advanced natural language processing capabilities to understand and execute complex tasks efficiently and can even collaborate with each other to achieve more sophisticated outcomes.
 

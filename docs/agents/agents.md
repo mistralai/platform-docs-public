@@ -17,6 +17,8 @@ We introduce three new main objects that our API makes use of:
 
 *You can also leverage all the features of Agents and Conversations without the need to create an Agent. This means you can query our API without creating an Agent, from using the built-in Conversations features to the built-in Connectors.*
 
+To find all details visit our [Agents](https://docs.mistral.ai/api/#tag/beta.agents) and [Conversations](https://docs.mistral.ai/api/#tag/beta.conversations) API spec.
+
 ## Agent Creation
 
 When creating an Agent, there are multiple parameters and values that need to be set in advance. These are:

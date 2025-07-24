@@ -8,6 +8,8 @@ sidebar_position: 3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Code Interpreter adds the capability to safely execute code in an isolated container, this built-in [connector](../connectors) tool allows Agents to run code at any point on demand, practical to draw graphs, data analysis, mathematical operations, code validation, and much more.
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/code_interpreter_connector.png"
@@ -16,8 +18,6 @@ import TabItem from '@theme/TabItem';
     style={{ borderRadius: '15px' }}
   />
 </div>
-
-Code Interpreter adds the capability to safely execute code in an isolated container, this built-in [connector](../connectors) tool allows Agents to run code at any point on demand, practical to draw graphs, data analysis, mathematical operations, code validation, and much more.
 
 ## Create a Code Interpreter Agent
 You can create an agent with access to our code interpreter by providing it as one of the tools.  

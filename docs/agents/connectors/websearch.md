@@ -8,6 +8,8 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Websearch is the capability to browse the web in search of information, this tool does not only fix the limitations of models of not being up to date due to their training data, but also allows them to actually retrieve recent information or access specific websites.
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/websearch_connector.png"
@@ -16,8 +18,6 @@ import TabItem from '@theme/TabItem';
     style={{ borderRadius: '15px' }}
   />
 </div>
-
-Websearch is the capability to browse the web in search of information, this tool does not only fix the limitations of models of not being up to date due to their training data, but also allows them to actually retrieve recent information or access specific websites.
 
 Our built-in [connector](../connectors) tool for websearch allows any of our models to access the web at any point to search websites and sources for relevant information to answer the given query, but also open provided URLs from the user.
 

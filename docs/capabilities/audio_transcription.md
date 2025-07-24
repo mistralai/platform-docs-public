@@ -6,6 +6,8 @@ sidebar_position: 3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Audio input capabilities enable models to chat and understand audio directly, this can be used for both chat use cases via audio or for optimal transcription purposes.
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/audio.png"
@@ -14,8 +16,6 @@ import TabItem from '@theme/TabItem';
     style={{ borderRadius: '15px' }}
   />
 </div>
-
-Audio input capabilities enable models to chat and understand audio directly, this can be used for both chat use cases via audio or for optimal transcription purposes.
 
 ### Models with Audio Capabilities
 Audio capable models:
@@ -27,21 +27,202 @@ Audio capable models:
 
 Our Voxtral models are capable of being used for chat use cases with our chat completions endpoint.
 
-### Passing an Audio URL
+### Passing an Audio File
 
-To chat with any Audio, you can provide an url of a file in an audio format, an easy and straightforward approach.
+To pass a local audio file, you can encode it in base64 and pass it as a string.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import base64
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# Encode the audio file in base64
+with open("examples/files/bcn_weather.mp3", "rb") as f:
+    content = f.read()
+audio_base64 = base64.b64encode(content).decode('utf-8')
+
+# Get the chat response
+chat_response = client.chat.complete(
+    model=model,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": audio_base64,
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?"
+            },
+        ]
+    }],
+)
+
+# Print the content of the response
+print(chat_response.choices[0].message.content)
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+import fs from "fs";
+
+// Retrieve the API key from environment variables
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+// Initialize the Mistral client
+const client = new Mistral({ apiKey: apiKey });
+
+// Encode the audio file in base64
+const audio_file = fs.readFileSync('local_audio.mp3');
+const audio_base64 = audio_file.toString('base64');
+
+// Get the chat response
+const chatResponse = await client.chat.complete({
+  model: "voxtral-mini-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_audio",
+          input_audio: audio_base64,
+        },
+        {
+          type: "text",
+          text: "What's in this file?",
+        },
+      ],
+    },
+  ],
+});
+
+// Print the content of the response
+console.log(chatResponse.choices[0].message.content);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl --location https://api.mistral.ai/v1/chat/completions \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "model": "voxtral-mini-latest",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_audio",
+            "input_audio": "<audio_base64>",
+          },
+          {
+            "type": "text",
+            "text": "What'\''s in this file?"
+          }
+        ]
+      }
+    ]
+  }'
+```
+  </TabItem>
+</Tabs>
+
+### Passing an Audio URL
+
+You can also provide an url of a file.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+import os
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# Define the messages for the chat
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": "https://download.samplelib.com/mp3/sample-15s.mp3",
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?"
+            }
+        ]
+    }
+]
+
+# Get the chat response
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+
+# Print the content of the response
+print(chat_response.choices[0].message.content)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+// Retrieve the API key from environment variables
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+// Initialize the Mistral client
+const client = new Mistral({ apiKey: apiKey });
+
+// Get the chat response
+const chatResponse = await client.chat.complete({
+  model: "voxtral-mini-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_audio",
+          input_audio: "https://download.samplelib.com/mp3/sample-15s.mp3",
+        },
+        {
+          type: "text",
+          text: "What's in this file?",
+        },
+      ],
+    },
+  ],
+});
+
+// Print the content of the response
+console.log("JSON:", chatResponse.choices[0].message.content);
 ```
 
   </TabItem>
@@ -59,10 +240,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
         "content": [
           {
             "type": "input_audio",
-            "input_audio": {
-              "data": "https://download.samplelib.com/mp3/sample-15s.mp3",
-              "format": "mp3"
-            }
+            "input_audio": "https://download.samplelib.com/mp3/sample-15s.mp3"
           },
           {
             "type": "text",
@@ -84,13 +262,99 @@ Alternatively, you can upload a local file to our cloud and then use a signed UR
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# If local audio, upload and retrieve the signed url
+with open("music.mp3", "rb") as f:
+    uploaded_audio = client.files.upload(
+      file={
+          "content": f,
+          "file_name": f.name
+      },
+      purpose="audio"
+    )
+
+signed_url = client.files.get_signed_url(file_id=uploaded_audio.id)
+
+# Define the messages for the chat
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": signed_url.url,
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?"
+            }
+        ]
+    }
+]
+
+# Get the chat response
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+
+# Print the content of the response
+print(chat_response.choices[0].message.content)
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+import fs from "fs";
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+// If local document, upload and retrieve the signed url
+const audio_file = fs.readFileSync('local_audio.mp3');
+const uploaded_audio = await client.files.upload({
+  file: audio_file,
+  purpose: "audio",
+});
+const signedUrl = await client.files.getSignedUrl({
+    fileId: uploaded_audio.id,
+});
+
+// Get the chat response
+const chatResponse = await client.chat.complete({
+  model: "voxtral-mini-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_audio",
+          input_audio: signedUrl.url,
+        },
+        {
+          type: "text",
+          text: "What's in this file?",
+        },
+      ],
+    },
+  ],
+});
+
+// Print the content of the response
+console.log(chatResponse.choices[0].message.content);
 ```
 
   </TabItem>
@@ -124,10 +388,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
         "content": [
           {
             "type": "input_audio",
-            "input_audio": {
-              "data": "<signed_url>",
-              "format": "mp3"
-            }
+            "input_audio": "<signed_url>"
           },
           {
             "type": "text",
@@ -226,7 +487,7 @@ Transcription provides an optimized endpoint for transcription purposes and curr
 
 **Parameters**  
 We provide different settings and parameters for transcription, such as:
-- `timestamp_granularities`: This allows you to set timestamps to track not only "what" was said but also "when". You can find more about timestamps here.
+- `timestamp_granularities`: This allows you to set timestamps to track not only "what" was said but also "when". You can find more about timestamps [here](#transcription-with-timestamps).
 - `language`: Our transcription service also works as a language detection service. However, you can manually set the language of the transcription for better accuracy if the language of the audio is already known.
 
 ### Passing an Audio File
@@ -237,13 +498,58 @@ Among the different methods to pass the audio, you can directly provide a path t
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# Get the transcription
+with open("/path/to/file/audio.mp3", "rb") as f:
+    transcription_response = client.audio.transcriptions.complete(
+        model=model,
+        file={
+            "content": f,
+            "file_name": "audio.mp3",
+        },
+        ## language="en"
+    )
+
+# Print the content of the response
+print(transcription_response)
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+import fs from "fs";
+
+// Retrieve the API key from environment variables
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+// Initialize the Mistral client
+const client = new Mistral({ apiKey: apiKey });
+
+// Get the transcription
+const audio_file = fs.readFileSync('/path/to/file/audio.mp3');
+const transcriptionResponse = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-latest",
+  file: {
+    fileName: "audio.mp3",
+    content: audio_file,
+  },
+  // language: "en"
+});
+
+// Log the content of the response
+console.log(transcriptionResponse);
 ```
 
   </TabItem>
@@ -275,13 +581,49 @@ Similarly, you can provide an url of an audio file.
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# Get the transcription
+transcription_response = client.audio.transcriptions.complete(
+    model=model,
+    file_url="https://docs.mistral.ai/audio/obama.mp3",
+    ## language="en"
+)
+
+# Print the content of the response
+print(transcription_response)
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+
+// Retrieve the API key from environment variables
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+// Initialize the Mistral client
+const client = new Mistral({ apiKey: apiKey });
+
+// Get the transcription
+const transcriptionResponse = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-latest",
+  fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
+  // language: "en"
+});
+
+// Log the content of the response
+console.log(transcriptionResponse);
 ```
 
   </TabItem>
@@ -313,13 +655,75 @@ Alternatively, you can first upload the file to our cloud service and then pass 
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# If local audio, upload and retrieve the signed url
+with open("local_audio.mp3", "rb") as f:
+    uploaded_audio = client.files.upload(
+        file={
+            "content": f,
+            "file_name": "local_audio.mp3",
+            },
+        purpose="audio"
+    )
+
+signed_url = client.files.get_signed_url(file_id=uploaded_audio.id)
+
+# Get the transcription
+transcription_response = client.audio.transcriptions.complete(
+    model=model,
+    file_url=signed_url.url,
+    ## language="en"
+)
+
+# Print the content of the response
+print(transcription_response)
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+import fs from "fs";
+
+// Retrieve the API key from environment variables
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+// Initialize the Mistral client
+const client = new Mistral({ apiKey: apiKey });
+
+// If local document, upload and retrieve the signed url
+const uploaded_pdf = await client.files.upload({
+    file: {
+        fileName: "local_audio.mp3",
+        content: fs.readFileSync("local_audio.mp3"),
+        },
+    purpose: "audio",
+});
+
+const signedUrl = await client.files.getSignedUrl({
+    fileId: uploaded_pdf.id,
+});
+
+// Get the transcription
+const transcriptionResponse = await client.audio.transcriptions.complete({
+    model: "voxtral-mini-latest",
+    fileUrl: signedUrl.url,
+    // language: "en"
+});
+
+// Log the content of the response
+console.log(transcriptionResponse);
 ```
 
   </TabItem>
@@ -406,13 +810,49 @@ It will return the start and end time of each segment in the audio file.
   <TabItem value="python" label="python">
 
 ```python
-Coming Soon...
+import os
+from mistralai import Mistral
+
+# Retrieve the API key from environment variables
+api_key = os.environ["MISTRAL_API_KEY"]
+
+# Specify model
+model = "voxtral-mini-latest"
+
+# Initialize the Mistral client
+client = Mistral(api_key=api_key)
+
+# Transcribe the audio with timestamps
+transcription_response = client.audio.transcriptions.complete(
+    model=model,
+    file_url="https://docs.mistral.ai/audio/obama.mp3",
+    timestamp_granularities="segment"
+)
+
+# Print the contents
+print(transcription_response)
 ```
   </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-Coming Soon...
+import { Mistral } from "@mistralai/mistralai";
+
+// Retrieve the API key from environment variables
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+// Initialize the Mistral client
+const client = new Mistral({ apiKey: apiKey });
+
+// Transcribe the audio with timestamps
+const transcriptionResponse = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-latest",
+  fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
+  timestamp_granularities: "segment"
+});
+
+// Log the contents
+console.log(transcriptionResponse);
 ```
 
   </TabItem>
@@ -653,5 +1093,11 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 - **What's the maximum audio length?**
 
     The maximum length will depend on the endpoint used, currently the limits are as follows:
-    - ≈20 minutes for [Chat with Audio](#chat-with-audio) for both models
+    - ≈20 minutes for [Chat with Audio](#chat-with-audio) for both models.
     - ≈15 minutes for [Transcription](#transcription), longer transcriptions will be available soon.
+
+:::tip
+Here are some tips if you need to handle longer audio files:
+- **Divide the audio into smaller segments:** Transcribe each segment individually. However, be aware that this might lead to a loss of context, difficulties in splitting the audio at natural pauses (such as mid-sentence), and the need to combine the transcriptions afterward.
+- **Increase the playback speed:** Send the file at a faster pace by speeding up the audio. Keep in mind that this can reduce audio quality and require adjusting the transcription timestamps to align with the original audio file.
+:::

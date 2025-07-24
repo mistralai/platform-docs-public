@@ -7,6 +7,8 @@ slug: connectors
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Connectors are tools that Agents can call at any given point. They are deployed and ready for the agents to leverage to answer questions on demand.  
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/connectors_graph.png"
@@ -16,7 +18,6 @@ import TabItem from '@theme/TabItem';
   />
 </div>
 
-Connectors are tools that Agents can call at any given point. They are deployed and ready for the agents to leverage to answer questions on demand.  
 They are also available for users to use them directly via Conversations without the Agent creation step!
 
 ## General Usage
@@ -25,12 +26,12 @@ They are also available for users to use them directly via Conversations without
 You can either create an Agent with the desired tools:
 
 ```py
-library_agent = client.beta.agents.create(
-    model="...",
-    name="...",
-    description="...",
-    instructions="...",
-    tools=[...]
+agent = client.beta.agents.create(
+    model="<model>",
+    name="<name_of_the_agent>",
+    description="<description>",
+    instructions="<instructions_or_system_prompt>",
+    tools=[<list_of_tools>]
 )
 ```
 
@@ -38,23 +39,25 @@ Or call our conversations API directly:
 
 ```py
 response = client.beta.conversations.start(
-    model="...",
-    inputs=[...],
-    tools=[...],
+    model="<model>",
+    inputs=[<messages_or_question>],
+    tools=[<list_of_tools>],
     # store=False
 )
 ```
   </TabItem>
 
   <TabItem value="typescript" label="typescript">
+    
+You can either create an Agent with the desired tools:
 
 ```typescript
-libraryAgent = client.beta.agents.create({
-    model:"...",
-    name:"...",
-    description:"...",
-    instructions:"...",
-    tools:[...]
+agent = client.beta.agents.create({
+    model:"<model>",
+    name:"<name_of_the_agent>",
+    description:"<description>",
+    instructions:"<instructions_or_system_prompt>",
+    tools:[<list_of_tools>]
 });
 ```
 
@@ -62,9 +65,9 @@ Or call our conversations API directly:
 
 ```typescript
 response = client.beta.conversations.start({
-    model:"...",
-    inputs:[...],
-    tools:[...],
+    model:"<model>",
+    inputs:[<messages_or_question>],
+    tools:[<list_of_tools>],
     // store:False
 });
 ```
@@ -79,11 +82,11 @@ curl --location "https://api.mistral.ai/v1/agents" \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
-     "model": "...",
-     "name": "...",
-     "description": "...",
-     "instructions": "...",
-     "tools": [...]
+     "model": "<model>",
+     "name": "<name_of_the_agent>",
+     "description": "<description>",
+     "instructions": "<instructions_or_system_prompt>",
+     "tools": [<list_of_tools>]
   }'
 ```
 
@@ -95,10 +98,9 @@ curl --location "https://api.mistral.ai/v1/conversations" \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
-     "model": "...",
-     "inputs": [...],
-     "tools": [...],
-     "store": false
+     "model": "<model>",
+     "inputs": [<messages_or_question>],
+     "tools": [<list_of_tools>]
   }'
 ```
   </TabItem>
@@ -108,4 +110,4 @@ Currently, our API has 4 built-in Connector tools, here you can find how to use 
 - [Websearch](../websearch)
 - [Code Interpreter](../code_interpreter)
 - [Image Generation](../image_generation)
-- [Document Library (Beta)](../document_library)
+- [Document Library](../document_library)

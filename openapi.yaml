@@ -27,7 +27,7 @@ paths:
   /v1/models/{model_id}:
     get:
       summary: Retrieve Model
-      description: Retrieve a model information.
+      description: Retrieve information about a model.
       operationId: retrieve_model_v1_models__model_id__get
       parameters:
         - name: model_id
@@ -589,13 +589,10 @@ paths:
               title: MultiPartBodyParams
               type: object
               properties:
-                file:
-                  format: binary
-                  title: File
-                  type: string
-                  description: "The File object (not file name) to be uploaded.\n To upload a file and specify a custom file name you should format your request as such:\n ```bash\n file=@path/to/your/file.jsonl;filename=custom_name.jsonl\n ```\n Otherwise, you can just keep the original file name:\n ```bash\n file=@path/to/your/file.jsonl\n ```"
                 purpose:
                   $ref: '#/components/schemas/FilePurpose'
+                file:
+                  $ref: '#/components/schemas/File'
               required:
                 - file
         required: true
@@ -1447,6 +1444,614 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
         - classifiers
+  /v1/libraries:
+    get:
+      summary: List all libraries you have access to.
+      description: List all libraries that you have created or have been shared with you.
+      operationId: libraries_list_v1
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListLibraryOut'
+      tags:
+        - beta.libraries
+    post:
+      summary: Create a new Library.
+      description: Create a new Library, you will be marked as the owner and only you will have the possibility to share it with others. When first created this will only be accessible by you.
+      operationId: libraries_create_v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibraryIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries
+  /v1/libraries/{library_id}:
+    get:
+      summary: Detailed information about a specific Library.
+      description: Given a library id, details information about that Library.
+      operationId: libraries_get_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries
+    delete:
+      summary: Delete a library and all of it's document.
+      description: Given a library id, deletes it together with all documents that have been uploaded to that library.
+      operationId: libraries_delete_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries
+    put:
+      summary: Update a library.
+      description: Given a library id, you can update the name and description.
+      operationId: libraries_update_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LibraryInUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries
+  /v1/libraries/{library_id}/documents:
+    get:
+      summary: List document in a given library.
+      description: Given a library, lists the document that have been uploaded to that library.
+      operationId: libraries_documents_list_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: search
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Search
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            title: Page Size
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            title: Page
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            default: created_at
+            title: Sort By
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            default: desc
+            title: Sort Order
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+    post:
+      summary: Upload a new document.
+      description: Given a library, upload a new document to that library. It is queued for processing, it status will change it has been processed. The processing has to be completed in order be discoverable for the library search
+      operationId: libraries_documents_upload_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              title: DocumentUpload
+              type: object
+              properties:
+                file:
+                  $ref: '#/components/schemas/File'
+              required:
+                - file
+      responses:
+        '201':
+          description: Upload successful, returns the created document information's.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '200':
+          description: A document with the same hash was found in this library. Returns the existing document.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+  /v1/libraries/{library_id}/share:
+    get:
+      summary: List all of the access to this library.
+      description: Given a library, list all of the Entity that have access and to what level.
+      operationId: libraries_share_list_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSharingOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.accesses
+    put:
+      summary: Create or update an access level.
+      description: Given a library id, you can create or update the access level of an entity. You have to be owner of the library to share a library. An owner cannot change their own role. A library cannot be shared outside of the organization.
+      operationId: libraries_share_create_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharingIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharingOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.accesses
+    delete:
+      summary: Delete an access level.
+      description: Given a library id, you can delete the access level of an entity. An owner cannot delete it's own access. You have to be the owner of the library to delete an acces other than yours.
+      operationId: libraries_share_delete_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharingDelete'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharingOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.accesses
+  /v1/libraries/{library_id}/documents/{document_id}:
+    get:
+      summary: Retrieve the metadata of a specific document.
+      description: Given a library and a document in this library, you can retrieve the metadata of that document.
+      operationId: libraries_documents_get_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+    put:
+      summary: Update the metadata of a specific document.
+      description: Given a library and a document in that library, update the name of that document.
+      operationId: libraries_documents_update_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentUpdateIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+    delete:
+      summary: Delete a document.
+      description: Given a library and a document in that library, delete that document. The document will be deleted from the library and the search index.
+      operationId: libraries_documents_delete_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+  /v1/libraries/{library_id}/documents/{document_id}/text_content:
+    get:
+      summary: Retrieve the text content of a specific document.
+      description: Given a library and a document in that library, you can retrieve the text content of that document if it exists. For documents like pdf, docx and pptx the text content results from our processing using Mistral OCR.
+      operationId: libraries_documents_get_text_content_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentTextContent'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+  /v1/libraries/{library_id}/documents/{document_id}/status:
+    get:
+      summary: Retrieve the processing status of a specific document.
+      description: Given a library and a document in that library, retrieve the processing status of that document.
+      operationId: libraries_documents_get_status_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingStatusOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+  /v1/libraries/{library_id}/documents/{document_id}/signed-url:
+    get:
+      summary: Retrieve the signed URL of a specific document.
+      description: Given a library and a document in that library, retrieve the signed URL of a specific document.The url will expire after 30 minutes and can be accessed by anyone with the link.
+      operationId: libraries_documents_get_signed_url_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: string
+                title: Response V1 Libraries Documents Get Signed Url
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+  /v1/libraries/{library_id}/documents/{document_id}/extracted-text-signed-url:
+    get:
+      summary: Retrieve the signed URL of text extracted from a given document.
+      description: Given a library and a document in that library, retrieve the signed URL of text extracted. For documents that are sent to the OCR this returns the result of the OCR queries.
+      operationId: libraries_documents_get_extracted_text_signed_url_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: string
+                title: Response V1 Libraries Documents Get Extracted Text Signed Url
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
+  /v1/libraries/{library_id}/documents/{document_id}/reprocess:
+    post:
+      summary: Reprocess a document.
+      description: Given a library and a document in that library, reprocess that document, it will be billed again.
+      operationId: libraries_documents_reprocess_v1
+      parameters:
+        - name: library_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Library Id
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            title: Document Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.libraries.documents
 components:
   schemas:
     BaseModelCard:
@@ -1493,6 +2098,11 @@ components:
               format: date-time
             - type: 'null'
           title: Deprecation
+        deprecation_replacement_model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Deprecation Replacement Model
         default_model_temperature:
           anyOf:
             - type: number
@@ -1500,11 +2110,11 @@ components:
           title: Default Model Temperature
         type:
           type: string
-          enum:
-            - base
           const: base
           title: Type
           default: base
+          enum:
+            - base
       type: object
       required:
         - id
@@ -1578,6 +2188,11 @@ components:
               format: date-time
             - type: 'null'
           title: Deprecation
+        deprecation_replacement_model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Deprecation Replacement Model
         default_model_temperature:
           anyOf:
             - type: number
@@ -1585,11 +2200,11 @@ components:
           title: Default Model Temperature
         type:
           type: string
-          enum:
-            - fine-tuned
           const: fine-tuned
           title: Type
           default: fine-tuned
+          enum:
+            - fine-tuned
         job:
           type: string
           title: Job
@@ -1638,6 +2253,10 @@ components:
         vision:
           type: boolean
           title: Vision
+          default: false
+        classification:
+          type: boolean
+          title: Classification
           default: false
       type: object
       title: ModelCapabilities
@@ -2368,6 +2987,10 @@ components:
             - type: string
             - $ref: '#/components/schemas/MessageInputContentChunks'
           title: Content
+        prefix:
+          type: boolean
+          title: Prefix
+          default: false
       additionalProperties: false
       type: object
       required:
@@ -2587,12 +3210,16 @@ components:
           title: Id
         name:
           $ref: '#/components/schemas/BuiltInConnectors'
+        arguments:
+          type: string
+          title: Arguments
         info:
           $ref: '#/components/schemas/ToolExecutionInfo'
       additionalProperties: false
       type: object
       required:
         - name
+        - arguments
       title: ToolExecutionEntry
     ToolFileChunk:
       properties:
@@ -2641,11 +3268,16 @@ components:
             - type: string
             - type: 'null'
           title: Url
-        source:
+        favicon:
           anyOf:
             - type: string
             - type: 'null'
-          title: Source
+          title: Favicon
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
       additionalProperties: false
       type: object
       required:
@@ -2970,12 +3602,44 @@ components:
         - conversation.response.error
         - message.output.delta
         - tool.execution.started
+        - tool.execution.delta
         - tool.execution.done
         - agent.handoff.started
         - agent.handoff.done
         - function.call.delta
       title: SSETypes
       type: string
+    ToolExecutionDeltaEvent:
+      additionalProperties: false
+      properties:
+        type:
+          default: tool.execution.delta
+          enum:
+            - tool.execution.delta
+          title: Type
+          type: string
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        output_index:
+          default: 0
+          title: Output Index
+          type: integer
+        id:
+          title: Id
+          type: string
+        name:
+          $ref: '#/components/schemas/BuiltInConnectors'
+        arguments:
+          title: Arguments
+          type: string
+      required:
+        - id
+        - name
+        - arguments
+      title: ToolExecutionDeltaEvent
+      type: object
     ToolExecutionDoneEvent:
       additionalProperties: false
       properties:
@@ -3027,9 +3691,13 @@ components:
           type: string
         name:
           $ref: '#/components/schemas/BuiltInConnectors'
+        arguments:
+          title: Arguments
+          type: string
       required:
         - id
         - name
+        - arguments
       title: ToolExecutionStartedEvent
       type: object
     ConversationEvents:
@@ -3046,6 +3714,7 @@ components:
               conversation.response.started: '#/components/schemas/ResponseStartedEvent'
               function.call.delta: '#/components/schemas/FunctionCallEvent'
               message.output.delta: '#/components/schemas/MessageOutputEvent'
+              tool.execution.delta: '#/components/schemas/ToolExecutionDeltaEvent'
               tool.execution.done: '#/components/schemas/ToolExecutionDoneEvent'
               tool.execution.started: '#/components/schemas/ToolExecutionStartedEvent'
             propertyName: type
@@ -3054,6 +3723,7 @@ components:
             - $ref: '#/components/schemas/ResponseDoneEvent'
             - $ref: '#/components/schemas/ResponseErrorEvent'
             - $ref: '#/components/schemas/ToolExecutionStartedEvent'
+            - $ref: '#/components/schemas/ToolExecutionDeltaEvent'
             - $ref: '#/components/schemas/ToolExecutionDoneEvent'
             - $ref: '#/components/schemas/MessageOutputEvent'
             - $ref: '#/components/schemas/FunctionCallEvent'
@@ -3103,7 +3773,11 @@ components:
       items:
         anyOf:
           - $ref: '#/components/schemas/MessageInputEntry'
+          - $ref: '#/components/schemas/MessageOutputEntry'
           - $ref: '#/components/schemas/FunctionResultEntry'
+          - $ref: '#/components/schemas/FunctionCallEntry'
+          - $ref: '#/components/schemas/ToolExecutionEntry'
+          - $ref: '#/components/schemas/AgentHandoffEntry'
       type: array
       title: InputEntries
     CompletionArgsStop:
@@ -3286,12 +3960,12 @@ components:
             - server
           title: Handoff Execution
           default: server
-        from_entry_id:
-          type: string
-          title: From Entry Id
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        from_entry_id:
+          type: string
+          title: From Entry Id
       additionalProperties: false
       type: object
       required:
@@ -5509,6 +6183,22 @@ components:
         - prompt
         - model
       title: FIMCompletionRequest
+    FileChunk:
+      properties:
+        type:
+          type: string
+          const: file
+          title: Type
+          default: file
+        file_id:
+          type: string
+          format: uuid
+          title: File Id
+      additionalProperties: false
+      type: object
+      required:
+        - file_id
+      title: FileChunk
     FunctionCall:
       properties:
         name:
@@ -5701,6 +6391,7 @@ components:
           title: Id
         document:
           anyOf:
+            - $ref: '#/components/schemas/FileChunk'
             - $ref: '#/components/schemas/DocumentURLChunk'
             - $ref: '#/components/schemas/ImageURLChunk'
           title: Document
@@ -6107,6 +6798,7 @@ components:
         - $ref: '#/components/schemas/ImageURLChunk'
         - $ref: '#/components/schemas/DocumentURLChunk'
         - $ref: '#/components/schemas/ReferenceChunk'
+        - $ref: '#/components/schemas/FileChunk'
       discriminator:
         propertyName: type
         mapping:
@@ -6114,6 +6806,7 @@ components:
           document_url: '#/components/schemas/DocumentURLChunk'
           text: '#/components/schemas/TextChunk'
           reference: '#/components/schemas/ReferenceChunk'
+          file: '#/components/schemas/FileChunk'
       title: ContentChunk
     ChatClassificationRequest:
       properties:
@@ -6136,6 +6829,386 @@ components:
           type: array
       title: ChatClassificationRequestInputs
       description: Chat to classify
+    DocumentOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        library_id:
+          type: string
+          format: uuid
+          title: Library Id
+        hash:
+          type: string
+          title: Hash
+        mime_type:
+          type: string
+          title: Mime Type
+        extension:
+          type: string
+          title: Extension
+        size:
+          type: integer
+          title: Size
+        name:
+          type: string
+          title: Name
+        summary:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Summary
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_processed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Last Processed At
+        number_of_pages:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Number Of Pages
+        processing_status:
+          type: string
+        uploaded_by_id:
+          type: string
+          format: uuid
+          title: Uploaded By Id
+        uploaded_by_type:
+          type: string
+        tokens_processing_main_content:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Tokens Processing Main Content
+        tokens_processing_summary:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Tokens Processing Summary
+        tokens_processing_total:
+          type: integer
+          title: Tokens Processing Total
+          readOnly: true
+      type: object
+      required:
+        - id
+        - library_id
+        - hash
+        - mime_type
+        - extension
+        - size
+        - name
+        - created_at
+        - processing_status
+        - uploaded_by_id
+        - uploaded_by_type
+        - tokens_processing_total
+      title: DocumentOut
+    DocumentTextContent:
+      properties:
+        text:
+          type: string
+          title: Text
+      type: object
+      required:
+        - text
+      title: DocumentTextContent
+    DocumentUpdateIn:
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+      type: object
+      title: DocumentUpdateIn
+    LibraryIn:
+      properties:
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        chunk_size:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Chunk Size
+      type: object
+      required:
+        - name
+      title: LibraryIn
+    LibraryInUpdate:
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+      type: object
+      title: LibraryInUpdate
+    LibraryOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        owner_id:
+          type: string
+          format: uuid
+          title: Owner Id
+        owner_type:
+          type: string
+        total_size:
+          type: integer
+          title: Total Size
+        nb_documents:
+          type: integer
+          title: Nb Documents
+        chunk_size:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Chunk Size
+        emoji:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Emoji
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        generated_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Generated Name
+        generated_description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Generated Description
+        explicit_user_members_count:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Explicit User Members Count
+        explicit_workspace_members_count:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Explicit Workspace Members Count
+        org_sharing_role:
+          anyOf:
+            - type: string
+            - type: 'null'
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+        - owner_id
+        - owner_type
+        - total_size
+        - nb_documents
+        - chunk_size
+      title: LibraryOut
+    ListDocumentOut:
+      properties:
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+        data:
+          items:
+            $ref: '#/components/schemas/DocumentOut'
+          type: array
+          title: Data
+      type: object
+      required:
+        - pagination
+        - data
+      title: ListDocumentOut
+    ListLibraryOut:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/LibraryOut'
+          type: array
+          title: Data
+      type: object
+      required:
+        - data
+      title: ListLibraryOut
+    ListSharingOut:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/SharingOut'
+          type: array
+          title: Data
+      type: object
+      required:
+        - data
+      title: ListSharingOut
+    PaginationInfo:
+      properties:
+        total_items:
+          type: integer
+          title: Total Items
+        total_pages:
+          type: integer
+          title: Total Pages
+        current_page:
+          type: integer
+          title: Current Page
+        page_size:
+          type: integer
+          title: Page Size
+        has_more:
+          type: boolean
+          title: Has More
+      type: object
+      required:
+        - total_items
+        - total_pages
+        - current_page
+        - page_size
+        - has_more
+      title: PaginationInfo
+    ProcessingStatusOut:
+      properties:
+        document_id:
+          type: string
+          format: uuid
+          title: Document Id
+        processing_status:
+          type: string
+      type: object
+      required:
+        - document_id
+        - processing_status
+      title: ProcessingStatusOut
+    ShareEnum:
+      type: string
+      enum:
+        - Viewer
+        - Editor
+      title: ShareEnum
+      x-speakeasy-unknown-values: allow
+    SharingDelete:
+      properties:
+        org_id:
+          type: string
+          format: uuid
+          title: Org Id
+        share_with_uuid:
+          type: string
+          format: uuid
+          description: The id of the entity (user, workspace or organization) to share with
+        share_with_type:
+          $ref: '#/components/schemas/EntityType'
+      type: object
+      title: SharingDelete
+      required:
+        - share_with_uuid
+        - share_with_type
+        - org_id
+        - level
+    SharingIn:
+      properties:
+        org_id:
+          type: string
+          format: uuid
+          title: Org Id
+        level:
+          $ref: '#/components/schemas/ShareEnum'
+        share_with_uuid:
+          type: string
+          format: uuid
+          description: The id of the entity (user, workspace or organization) to share with
+        share_with_type:
+          $ref: '#/components/schemas/EntityType'
+      type: object
+      title: SharingIn
+      required:
+        - share_with_uuid
+        - share_with_type
+        - org_id
+        - level
+    SharingOut:
+      properties:
+        library_id:
+          type: string
+          format: uuid
+          title: Library Id
+        user_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+          title: User Id
+        org_id:
+          type: string
+          format: uuid
+          title: Org Id
+        role:
+          type: string
+        share_with_type:
+          type: string
+        share_with_uuid:
+          type: string
+          format: uuid
+          title: Share With Uuid
+      type: object
+      required:
+        - library_id
+        - org_id
+        - role
+        - share_with_type
+        - share_with_uuid
+      title: SharingOut
+    File:
+      type: string
+      format: binary
+      title: File
+      description: "The File object (not file name) to be uploaded.\n To upload a file and specify a custom file name you should format your request as such:\n ```bash\n file=@path/to/your/file.jsonl;filename=custom_name.jsonl\n ```\n Otherwise, you can just keep the original file name:\n ```bash\n file=@path/to/your/file.jsonl\n ```"
+    EntityType:
+      type: string
+      title: EntityType
+      description: The type of entity, used to share a library.
+      enum:
+        - User
+        - Workspace
+        - Org
+      x-speakeasy-unknown-values: allow
     CompletionEvent:
       title: CompletionEvent
       type: object
@@ -6377,16 +7450,26 @@ tags:
     x-displayName: Batch
     description: Batch API
   - name: ocr
-    x-displayName: Document AI
-    description: Our Document AI stack, with OCR and Annotations features.
+    x-displayName: OCR API
+    description: OCR API
   - name: beta.agents
     x-displayName: (beta) Agents API
     description: (beta) Agents API
   - name: beta.conversations
     x-displayName: (beta) Conversations API
     description: (beta) Conversations API
+  - name: beta.libraries
+    x-displayName: (beta) Libraries  API - Main
+    description: (beta) Libraries API to create and manage libraries - index your documents to enhance agent capabilities.
+  - name: beta.libraries.documents
+    x-displayName: (beta) Libraries  API - Documents
+    description: (beta) Libraries API - manage documents in a library.
+  - name: beta.libraries.accesses
+    x-displayName: (beta) Libraries  API - Access
+    description: (beta) Libraries API - manage access to a library.
 security:
   - ApiKey: []
 servers:
   - url: https://api.mistral.ai
     description: Production server
+

@@ -5,6 +5,11 @@ slug: handoffs
 sidebar_position: 6
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+When creating and using Agents, often with access to specific tools, there are moments where it is desired to call other Agents mid-action. To elaborate and engineer workflows for diverse tasks that you may want automated, this ability to give Agents tasks or hand over a conversation to other agents is called **Handoffs**.
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/handoffs.png"
@@ -13,11 +18,6 @@ sidebar_position: 6
     style={{ borderRadius: '15px' }}
   />
 </div>
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
-When creating and using Agents, often with access to specific tools, there are moments where it is desired to call other Agents mid-action. To elaborate and engineer workflows for diverse tasks that you may want automated, this ability to give Agents tasks or hand over a conversation to other agents is called **Handoffs**.
 
 ## Create an Agentic Workflow
 

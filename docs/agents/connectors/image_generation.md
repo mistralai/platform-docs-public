@@ -8,6 +8,8 @@ sidebar_position: 4
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Image Generation is a built-in [connector](../connectors) tool that enables agents to generate images of all kinds and forms.
+
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/image_generation_connector.png"
@@ -17,7 +19,7 @@ import TabItem from '@theme/TabItem';
   />
 </div>
 
-Image Generation is a built-in [connector](../connectors) tool that enables agents to generate images of all kinds and forms. Enabling this tool allows models to create images at any given moment.
+Enabling this tool allows models to create images at any given moment.
 
 ## Create an Image Generation Agent
 

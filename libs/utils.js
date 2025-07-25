@@ -179,7 +179,11 @@ function cleanTitle(title) {
   if (!title) return null;
   let cleaned = title.trim();
   cleaned = decodeHTMLEntities(cleaned); // Decode HTML entities
-  cleaned = cleaned.replace(/<[^>]*>/g, ''); // Remove HTML tags
+  let previous;
+  do {
+    previous = cleaned;
+    cleaned = cleaned.replace(/<[^>]*>/g, ''); // Remove HTML tags
+  } while (cleaned !== previous);
   cleaned = cleaned.replace(/[\*_]{1,2}(.*?)[\*_]{1,2}/g, '$1'); // Remove markdown formatting
   cleaned = cleaned.replace(/\s*align="[^"]*"/g, ''); // Remove align attributes
   cleaned = cleaned.replace(/[\[\]]/g, ''); // Remove brackets

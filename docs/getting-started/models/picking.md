@@ -41,7 +41,7 @@ Classify the following email to determine if it is spam or not. Only respond wit
 All of our models can accurately classify this email correctly as “Spam”. Mistral Nemo is capable to provide the correct classification as the larger models. So it is the most efficient and affordable choice for this kind of tasks. 
 
 ### Mistral Small: Intermediate tasks that require language transformation
-Mistral Small is the ideal for intermediate tasks that require moderate reasoning - like Data extraction, Summarizing a Document, Writing a Job Description, or Writing Product Descriptions. Mistral Small strikes a balance between performance and capability, making it suitable for a wide range of tasks that only require language transformaion. For example, Mistral Small can write an email:
+Mistral Small is the ideal for intermediate tasks that require moderate reasoning - like Data extraction, Summarizing a Document, Writing a Job Description, or Writing Product Descriptions. Mistral Small strikes a balance between performance and capability, making it suitable for a wide range of tasks that only require language transformation. For example, Mistral Small can write an email:
 
 **Prompt:**
 ```

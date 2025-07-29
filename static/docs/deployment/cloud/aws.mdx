@@ -1,0 +1,113 @@
+---
+id: aws
+title: AWS Bedrock
+sidebar_position: 3.22
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Introduction
+
+Mistral AI's open and commercial models can be deployed on the AWS Bedrock cloud platform as
+fully managed endpoints. AWS Bedrock is a serverless service so you don't have
+to manage any infrastructure.
+
+As of today, the following models are available:
+
+- Mistral Large (24.07, 24.02)
+- Mistral Small (24.02)
+- Mixtral 8x7B
+- Mistral 7B
+
+For more details, visit the [models](../../../getting-started/models/models_overview/) page.
+
+## Getting started
+
+The following sections outline the steps to deploy and query a Mistral model on the
+AWS Bedrock platform.
+
+The following items are required:
+
+- Access to an **AWS account** within a region that supports the AWS Bedrock service and 
+  offers access to your model of choice: see 
+  [the AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/models-regions.html) 
+  for model availability per region.
+- An AWS **IAM principal** (user, role) with sufficient permissions, see
+  [the AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html)
+  for more details.
+- A local **code environment** set up with the relevant AWS SDK components, namely:
+    - the AWS CLI: see [the AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+      for the installation procedure.
+    - the `boto3` Python library: see the [AWS documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) 
+      for the installation procedure.
+
+### Requesting access to the model
+
+Follow the instructions on
+[the AWS documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html)
+to unlock access to the Mistral model of your choice.
+
+### Querying the model
+
+AWS Bedrock models are accessible through the Converse API.
+
+Before running the examples below, make sure to sure to :
+
+- Properly configure the authentication
+credentials for your development environment. 
+[The AWS documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+provides an in-depth explanation on the required steps. 
+- Create a Python virtual environment with the `boto3` package (version >= `1.34.131`).
+- Set the following environment variables:
+    - `AWS_REGION`: The region where the model is deployed (e.g. `us-west-2`),
+    - `AWS_BEDROCK_MODEL_ID`: The model ID (e.g. `mistral.mistral-large-2407-v1:0`).
+
+<Tabs>
+    <TabItem value="python" label="Python">
+
+        ```python
+        import boto3
+        import os
+
+        region = os.environ.get("AWS_REGION")
+        model_id = os.environ.get("AWS_BEDROCK_MODEL_ID")
+
+        bedrock_client = boto3.client(service_name='bedrock-runtime', region_name=region)
+
+        user_msg = "Who is the best French painter? Answer in one short sentence."
+        messages = [{"role": "user", "content": [{"text": user_msg}]}]
+        temperature = 0.0
+        max_tokens = 1024
+
+        params = {"modelId": model_id,
+                  "messages": messages,
+                  "inferenceConfig": {"temperature": temperature,
+                                      "maxTokens": max_tokens}}
+
+        resp = bedrock_client.converse(**params)
+
+        print(resp["output"]["message"]["content"][0]["text"])
+        ```
+    </TabItem>
+        <TabItem value="cli" label="AWS CLI">
+            ```shell
+             aws bedrock-runtime converse \
+             --region $AWS_REGION \
+             --model-id $AWS_BEDROCK_MODEL_ID \
+             --messages '[{"role": "user", "content": [{"text": "Who is the best French painter? Answer in one short sentence."}]}]'
+            ```
+    </TabItem>
+</Tabs>
+
+## Going further
+
+For more details and examples, refer to the following resources:
+
+- [AWS GitHub repository with multiple examples and use-cases leveraging Mistral models](https://github.com/aws-samples/mistral-on-aws).
+- [AWS documentation on the Converse API](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html).
+- [AWS documentation on inference requests for Mistral models](https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-mistral.html#model-parameters-mistral-request-response).
+
+
+
+

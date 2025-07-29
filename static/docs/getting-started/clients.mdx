@@ -1,0 +1,108 @@
+---
+id: clients
+title: Clients
+sidebar_position: 1.5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+We provide client codes in both Python and Typescript.
+
+## Python 
+
+You can install our [Python Client](https://github.com/mistralai/client-python) by running:
+```bash
+pip install mistralai
+```
+
+Once installed, you can run the chat completion: 
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-large-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best French cheese?",
+        },
+    ]
+)
+
+print(chat_response.choices[0].message.content)
+
+```
+
+See more examples [here](https://github.com/mistralai/client-python/tree/main/examples).
+
+## Typescript
+
+You can install our [Typescript Client](https://github.com/mistralai/client-ts) in your project using:
+
+```bash
+npm install @mistralai/mistralai
+```
+
+Once installed, you can run the chat completion:
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY || 'your_api_key';
+
+const client = new Mistral({apiKey: apiKey});
+
+const chatResponse = await client.chat.complete({
+  model: 'mistral-tiny',
+  messages: [{role: 'user', content: 'What is the best French cheese?'}],
+});
+
+console.log('Chat:', chatResponse.choices[0].message.content);
+```
+
+See more examples [here](https://github.com/mistralai/client-js/tree/main/examples).
+
+## Third-party clients
+
+Here are some clients built by the community for various other languages:
+
+This section lists third-party clients in other languages provided by the community.
+Please note that these clients are not actively maintained or supported by Mistral AI.
+We recommend reaching out to the respective maintainers for any assistance or inquiries.
+
+### CLI
+[icebaker/nano-bots](https://github.com/icebaker/ruby-nano-bots)
+
+### Dart
+[nomtek/mistralai_client_dart](https://github.com/nomtek/mistralai_client_dart)
+
+### Elixir
+[axonzeta/mistral_elixir](https://github.com/axonzeta/mistral_elixir)
+
+### Go
+[Gage-Technologies](https://github.com/Gage-Technologies/mistral-go)
+
+### Java
+[langchain4j](https://github.com/langchain4j/langchain4j)
+[Spring AI](https://github.com/spring-projects/spring-ai)
+
+### JavaScript / TypeScript
+[Vercel AI SDK](https://github.com/vercel/ai)
+
+### PHP
+[HelgeSverre/mistral](https://github.com/HelgeSverre/mistral)
+[partITech/php-mistral](https://github.com/partITech/php-mistral)
+
+### Ruby
+[gbaptista/mistral-ai](https://github.com/gbaptista/mistral-ai)
+[wilsonsilva/mistral](https://github.com/wilsonsilva/mistral)
+
+### Rust
+[ivangabriele/mistralai-client-rs](https://github.com/ivangabriele/mistralai-client-rs)

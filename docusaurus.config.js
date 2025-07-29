@@ -1,6 +1,7 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
-const { themes } = require("prism-react-renderer");
+
+const {themes} = require('prism-react-renderer');
 const lightCodeTheme = themes.okaidia;
 const darkCodeTheme = themes.okaidia;
 
@@ -22,7 +23,7 @@ const redocusaurus = [
   },
 ];
 
-/** @type {import("@docusaurus/types").Config} */
+/** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "Mistral AI",
   tagline: "Documentation for the deployment and usage of Mistral AI's LLMs",
@@ -31,19 +32,19 @@ const config = {
   // Set the production url of your site here
   url: "https://docs.mistral.ai",
   // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often "/<projectName>/"
+  // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
   trailingSlash: true,
 
   // GitHub pages deployment config.
-  // If you aren"t using GitHub pages, you don"t need these.
+  // If you aren't using GitHub pages, you don't need these.
   organizationName: "mistralai", // Usually your GitHub org/user name.
   projectName: "platform-docs", // Usually your repo name.
 
-  onBrokenLinks: "throw", // we allow broken links because we have to render no '.mdx' files as dynamic routes.
+  onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
 
-  // Even if you don"t use internalization, you can use this field to set useful
+  // Even if you don't use internationalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
@@ -54,7 +55,7 @@ const config = {
   presets: [
     [
       "classic",
-      /** @type {import("@docusaurus/preset-classic").Options} */
+      /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
           routeBasePath: "/",
@@ -62,7 +63,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           // editUrl:
-          //   "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/",
+          //   'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         blog: false,
         theme: {
@@ -74,15 +75,15 @@ const config = {
   ],
 
   themeConfig:
-    /** @type {import("@docusaurus/preset-classic").ThemeConfig} */
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project"s social card
+      // Replace with your project's social card
       image: "img/mistral-social-banner.jpg",
       docs: {
-        sidebar: {
-          autoCollapseCategories: false,
-        },
+      sidebar: {
+        autoCollapseCategories: false,
       },
+    },
       navbar: {
         title: undefined,
         logo: {
@@ -107,12 +108,7 @@ const config = {
             to: "/",
             label: "Docs",
             position: "left",
-            activeBaseRegex: "^/(?!api|cookbooks)",
-          },
-          {
-            to: "/cookbooks/",
-            label: "Cookbooks (beta)",
-            position: "left",
+            activeBaseRegex: "^/(?!api)",
           },
           { to: "/api/", label: "API", position: "left" },
           {
@@ -167,7 +163,7 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
-        additionalLanguages: ["bash", "diff", "json"],
+        additionalLanguages: ['bash', 'diff', 'json'],
       },
       colorMode: {
         defaultMode: "light",
@@ -175,15 +171,7 @@ const config = {
         respectPrefersColorScheme: true,
       },
     }),
-  plugins: [
-    [require.resolve("@easyops-cn/docusaurus-search-local"), {
-      blogRouteBasePath: "src/pages/cookbooks/",
-      indexPages: true,
-    }],
-    "custom-loaders"
-  ],
-  //customFields: generateCustomFields(),
-  staticDirectories: ['static', 'static/cookbook', 'static/cookbook/mistral', 'static/cookbook/third_party']
+    plugins: [require.resolve('docusaurus-lunr-search')],
 };
 
 module.exports = config;

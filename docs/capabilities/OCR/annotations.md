@@ -225,7 +225,7 @@ curl --location 'https://api.mistral.ai/v1/ocr' \
 }'
 ```
 
-You can also add a `description` key in your `properties` object. The description will be used as detailed information and instructions during the annotation; for example:
+You can also add a `description` key in you `properties` object. The description will be used as detailed information and instructions during the annotation; for example:
 
 ```bash
 curl --location 'https://api.mistral.ai/v1/ocr' \

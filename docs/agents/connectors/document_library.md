@@ -43,7 +43,12 @@ for library in libraries:
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+let libraries = await client.beta.libraries.list();
+
+for (const library of libraries.data)
+{
+    console.log(`${library.name} with ${library.nbDocuments} documents`);
+}
 ```
   </TabItem>
 
@@ -91,7 +96,21 @@ else:
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+if (libraries.data.length === 0) 
+{
+    console.log("No libraries found.");
+} 
+else 
+{
+  const docList = await client.beta.libraries.documents.list({ 
+      libraryId: libraries.data[0].id 
+  });
+  for (const doc of docList.data) 
+  {
+      console.log(`${doc.name}: ${doc.extension} with ${doc.numberOfPages} pages.`);
+      console.log(`${doc.summary}`);
+  }
+}
 ```
   </TabItem>
 
@@ -123,7 +142,10 @@ new_library = client.beta.libraries.create(name="Mistral Models", description="A
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const newLibrary = await client.beta.libraries.create({
+    name: "Mistral Models",
+    description: "A simple library with information about Mistral models."
+});
 ```
   </TabItem>
 
@@ -188,7 +210,11 @@ for doc in doc_list:
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const docList = await client.beta.libraries.documents.list({ libraryId: newLibrary.id });
+for (const doc of docList.data) {
+    console.log(`${doc.name}: ${doc.extension} with ${doc.numberOfPages} pages.`);
+    console.log(`${doc.summary}`);
+}
 ```
   </TabItem>
 
@@ -229,7 +255,17 @@ with open(file_path, "rb") as file_content:
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const filePath = "~/path/to/doc.pdf";
+const fileContent = fs.readFileSync(filePath);
+const uploadedDoc = await client.beta.libraries.documents.upload({
+    libraryId: newLibrary.id,
+    requestBody: {
+        file: {
+            fileName: "mistral7b.pdf",
+            content: fileContent
+        }
+    }
+});
 ```
   </TabItem>
 
@@ -295,7 +331,25 @@ print(status)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+// Check status document
+const docStatus = await client.beta.libraries.documents.status({
+    libraryId: newLibrary.id,
+    documentId: uploadedDoc.id
+});
+console.log(docStatus);
+
+// Waiting for process to finish
+while (docStatus.processingStatus === "Running") {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+    const updatedStatus = await client.beta.libraries.documents.status({
+        libraryId: newLibrary.id,
+        documentId: uploadedDoc.id
+    });
+    console.log(updatedStatus);
+    Object.assign(docStatus, updatedStatus); // Update the status object
+}
+console.log(docStatus);
+
 ```
   </TabItem>
 
@@ -344,7 +398,11 @@ uploaded_doc = client.beta.libraries.documents.get(library_id=new_library.id, do
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+// Get document info once processed
+const processedDoc = await client.beta.libraries.documents.get({
+    libraryId: newLibrary.id,
+    documentId: uploadedDoc.id
+});
 ```
   </TabItem>
 
@@ -402,7 +460,11 @@ print(extracted_text)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const extractedText = await client.beta.libraries.documents.textContent({
+    libraryId: newLibrary.id,
+    documentId: uploadedDoc.id
+});
+console.log(extractedText);
 ```
   </TabItem>
 
@@ -444,7 +506,14 @@ deleted_library = client.beta.libraries.delete(library_id=new_library.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+// Get document info once processed
+const deletedLibrary = await client.beta.libraries.delete({
+    libraryId: newLibrary.id
+});
+// const deletedDocument = await client.beta.libraries.documents.delete({
+//    libraryId: newLibrary.id,
+//    documentId: uploadedDoc.id
+// });
 ```
   </TabItem>
 
@@ -523,7 +592,9 @@ accesses_list = client.beta.libraries.accesses.list(library_id=new_library.id)
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const accessesList = await client.beta.libraries.accesses.list({
+    libraryId: newLibrary.id
+});
 ```
   </TabItem>
 
@@ -559,7 +630,15 @@ access = client.beta.libraries.accesses.update_or_create(
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const access = await client.beta.libraries.accesses.updateOrCreate({
+    libraryId: newLibrary.id,
+    sharingIn:{
+        orgId: "<orgId>",
+        level: "<levelType>",
+        shareWithUuid: "<uuid>",
+        shareWithType: "<accountType>"
+    }
+});
 ```
   </TabItem>
 
@@ -601,7 +680,14 @@ access_deleted = client.beta.libraries.accesses.delete(
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-SDK Available - TS Docs Coming Soon...
+const accessDeleted = await client.beta.libraries.accesses.delete({
+    libraryId: newLibrary.id,
+    sharingDelete: {
+        orgId: "<orgId>",
+        shareWithUuid: "<uuid>",
+        shareWithType: "<accountType>"
+    }
+});
 ```
   </TabItem>
 
@@ -660,7 +746,7 @@ let libraryAgent = await client.beta.agents.create({
     tools:[
         {
             type: "document_library", 
-            libraryIds: ["<library_id>"]
+            libraryIds: [newLibrary.id]
         }
     ],
     completionArgs:{

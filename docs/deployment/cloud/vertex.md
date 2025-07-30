@@ -1,0 +1,236 @@
+---
+id: vertex
+title: Vertex AI
+sidebar_position: 3.23
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Introduction
+
+Mistral AI's open and commercial models can be deployed on the Google Cloud Vertex AI
+platform as fully managed endpoints. Mistral models on Vertex AI are serverless services
+so you don't have to manage any infrastructure.
+
+As of today, the following models are available:
+
+- Mistral Large (24.11, 24.07)
+- Codestral (24.05)
+- Mistral Nemo
+
+For more details, visit the [models](../../../getting-started/models/models_overview) page.
+
+## Getting started
+
+The following sections outline the steps to deploy and query a Mistral model on the
+Vertex AI platform.
+
+### Requesting access to the model
+
+The following items are required:
+
+- Access to a Google Cloud Project with the Vertex AI API enabled
+- Relevant IAM permissions to be able to enable the model and query endpoints through the following roles:
+  - [Vertex AI User IAM role](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user).
+  - Consumer Procurement Entitlement Manager role
+
+To enable the model of your choice, navigate to its card in the 
+[Vertex Model Garden catalog](https://cloud.google.com/vertex-ai/generative-ai/docs/model-garden/explore-models),
+then click on "Enable".
+
+
+### Querying the model (chat completion)
+
+Available models expose a REST API that you can query using Mistral's SDKs or plain HTTP calls.
+
+To run the examples below:
+
+- Install the `gcloud` CLI to authenticate against the Google Cloud APIs, please refer to
+[this page](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp)
+for more details.
+- Set the following environment variables:
+    - `GOOGLE_CLOUD_REGION`: The target cloud region.
+    - `GOOGLE_CLOUD_PROJECT_ID`: The name of your project.
+    - `VERTEX_MODEL_NAME`: The name of the model to query (e.g. `mistral-large`).
+    - `VERTEX_MODEL_VERSION`: The version of the model to query (e.g. `2407`).
+    
+
+<Tabs>
+    <TabItem value="curl" label="cURL">
+        ```bash
+        base_url="https://$GOOGLE_CLOUD_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_CLOUD_PROJECT_ID/locations/$GOOGLE_CLOUD_REGION/publishers/mistralai/models"
+        model_version="$VERTEX_MODEL_NAME@$VERTEX_MODEL_VERSION"
+        url="$base_url/$model_version:rawPredict"
+
+        curl --location $url\
+          --header "Content-Type: application/json" \
+          --header "Authorization: Bearer $(gcloud auth print-access-token)" \
+          --data '{
+              "model": "'"$VERTEX_MODEL_NAME"'",
+              "temperature": 0,
+              "messages": [
+                {"role": "user", "content": "Who is the best French painter? Answer in one short sentence."}
+              ],
+              "stream": false
+            }'
+        ```
+    </TabItem>
+    <TabItem value="python" label="Python">
+        This code requires a virtual environment with the following packages:
+        - `mistralai[gcp]>=1.0.0` 
+
+        ```python
+        import os
+        from mistralai_gcp import MistralGoogleCloud
+
+        region = os.environ.get("GOOGLE_CLOUD_REGION")
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_NAME")
+        model_name = os.environ.get("VERTEX_MODEL_NAME")
+        model_version = os.environ.get("VERTEX_MODEL_VERSION")
+
+        client = MistralGoogleCloud(region=region, project_id=project_id)
+
+        resp = client.chat.complete(
+            model = f"{model_name}-{model_version}",
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Who is the best French painter? Answer in one short sentence.",
+                }
+            ],
+        )
+
+        print(resp.choices[0].message.content)
+        ```
+    </TabItem>
+    <TabItem value="ts" label="TypeScript">
+    This code requires the following package:
+    - `@mistralai/mistralai-gcp` (version >= `1.0.0`)
+
+    ```typescript
+    import { MistralGoogleCloud } from "@mistralai/mistralai-gcp";
+
+    const client = new MistralGoogleCloud({
+        region: process.env.GOOGLE_CLOUD_REGION || "",
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || "",
+    });
+
+    const modelName = process.env.VERTEX_MODEL_NAME|| "";
+    const modelVersion = process.env.VERTEX_MODEL_VERSION || "";
+
+    async function chatCompletion(user_msg: string) {
+        const resp = await client.chat.complete({
+            model: modelName + "-" + modelVersion,
+            messages: [
+                {
+                    content: user_msg,
+                    role: "user",
+                },
+            ],
+        });
+        if (resp.choices && resp.choices.length > 0) {
+            console.log(resp.choices[0]);
+        }
+    }
+
+    chatCompletion("Who is the best French painter? Answer in one short sentence.");
+    ```
+    </TabItem>
+
+</Tabs>
+
+### Querying the model (FIM completion)
+
+Codestral can be queried using an additional completion mode called fill-in-the-middle (FIM).
+For more information, see the
+[code generation section](../../../capabilities/code_generation/#fill-in-the-middle-endpoint).
+
+
+<Tabs>
+    <TabItem value="curl" label="cURL">
+        ```bash
+        VERTEX_MODEL_NAME=codestral
+        VERTEX_MODEL_VERSION=2405
+
+        base_url="https://$GOOGLE_CLOUD_REGION-aiplatform.googleapis.com/v1/projects/$GOOGLE_CLOUD_PROJECT_ID/locations/$GOOGLE_CLOUD_REGION/publishers/mistralai/models"
+        model_version="$VERTEX_MODEL_NAME@$VERTEX_MODEL_VERSION"
+        url="$base_url/$model_version:rawPredict"
+
+        curl --location $url\
+          --header "Content-Type: application/json" \
+          --header "Authorization: Bearer $(gcloud auth print-access-token)" \
+          --data '{
+              "model":"'"$VERTEX_MODEL_NAME"'",
+              "prompt": "def count_words_in_file(file_path: str) -> int:",
+              "suffix": "return n_words",
+              "stream": false
+            }'
+        ```
+    </TabItem>
+    <TabItem value="python" label="Python">
+
+        ```python
+        import os
+        from mistralai_gcp import MistralGoogleCloud
+
+        region = os.environ.get("GOOGLE_CLOUD_REGION")
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_NAME")
+        model_name = "codestral"
+        model_version = "2405"
+
+        client = MistralGoogleCloud(region=region, project_id=project_id)
+
+        resp = client.fim.complete(
+            model = f"{model_name}-{model_version}",
+            prompt="def count_words_in_file(file_path: str) -> int:",
+            suffix="return n_words"
+        )
+
+        print(resp.choices[0].message.content)
+        ```
+
+    </TabItem>
+    <TabItem value="ts" label="TypeScript">
+
+        ```typescript
+        import { MistralGoogleCloud } from "@mistralai/mistralai-gcp";
+
+        const client = new MistralGoogleCloud({
+            region: process.env.GOOGLE_CLOUD_REGION || "",
+            projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || "",
+        });
+
+        const modelName = "codestral";
+        const modelVersion = "2405";
+
+        async function fimCompletion(prompt: string, suffix: string) {
+            const resp = await client.fim.complete({
+                model: modelName + "-" + modelVersion,
+                prompt: prompt,
+                suffix: suffix
+            });
+            if (resp.choices && resp.choices.length > 0) {
+                console.log(resp.choices[0]);
+            }
+        }
+
+        fimCompletion("def count_words_in_file(file_path: str) -> int:",
+                      "return n_words");
+        ```
+    </TabItem>
+</Tabs>
+
+
+## Going further
+
+For more information and examples, you can check:
+
+- The Google Cloud [Partner Models](https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/mistral)
+  documentation page.
+- The Vertex Model Cards for [Mistral Large](https://console.cloud.google.com/vertex-ai/publishers/mistralai/model-garden/mistral-large),
+  [Mistral-NeMo](https://console.cloud.google.com/vertex-ai/publishers/mistralai/model-garden/mistral-nemo) and
+  [Codestral](https://console.cloud.google.com/vertex-ai/publishers/mistralai/model-garden/codestral).
+- The [Getting Started Colab Notebook](https://colab.research.google.com/github/GoogleCloudPlatform/vertex-ai-samples/blob/main/notebooks/official/generative_ai/mistralai_intro.ipynb)
+  for Mistral models on Vertex, along with the [source file on GitHub](https://github.com/GoogleCloudPlatform/vertex-ai-samples/tree/main/notebooks/official/generative_ai/mistralai_intro.ipynb).
+  

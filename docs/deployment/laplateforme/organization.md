@@ -1,0 +1,41 @@
+---
+id: organization
+title: Workspaces
+sidebar_position: 3.11
+---
+A La Plateforme workspace is a collective of accounts, each with a designated set of rights and permissions. Creating a workspace for your team enables you to:
+- Manage access and costs
+- Share fine-tuneds models among team members 
+
+:::tip[ ]
+When you generate an API key from your organization's workspace and use it to create a fine-tuned model, 
+your team members will be able to use this model. 
+This ensures that the model is accessible and usable by all authorized team members.
+:::
+
+## Create a workspace 
+
+When you first join La Plateforme, you can either create or join a workspace. 
+Click on "Create workspace" to create and set up your workspace. 
+
+<img src="/img/org_join.png" width="80%"/>
+
+Alternatively, if you are already in La Plateforme, click on your name in the bottom left section, 
+followed by selecting "Create or join workspace".
+<img src="/img/org_create2.png" width="85%"/>
+
+You can create your workspace for your own or your organization. 
+
+## Switch to a workspace 
+You can switch between your personal workspace and your organization workspace. 
+<img src="/img/org_switch.png" width="85%"/>
+
+
+
+## Invite members to your organization 
+
+To invite members to your organization, navigate to "Workspace - Members"
+and click "Invite a new member". 
+
+
+<img src="/img/org_invite2.png" width="75%"/>

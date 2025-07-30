@@ -18,13 +18,14 @@ Mistral provides two types of models: open models and premier models.
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
 | Mistral Medium 3 | | :heavy_check_mark: | Our frontier-class multimodal model released May 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2505` | 25.05|
 | Magistral Medium 1.1 | | :heavy_check_mark: | Our frontier-class reasoning model released July 2025. | 40k | `magistral-medium-2507` | 25.07|
-| Codestral 2 | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-2501` | 25.01|
+| Codestral 2508 | | :heavy_check_mark: | Our cutting-edge language model for coding released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2508/) | 256k  | `codestral-2508` | 25.08|
 | Voxtral Mini Transcribe | | :heavy_check_mark: | An efficient audio input model, fine-tuned and optimized for transcription purposes only. | | `voxtral-mini-2507` via `audio/transcriptions` | 25.07|
 | Devstral Medium | | :heavy_check_mark: | An enterprise grade text model, that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral-2507) | 128k  | `devstral-medium-2507` | 25.07|
-| Mistral OCR 2 | | :heavy_check_mark: | Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images |  | `mistral-ocr-2505` | 25.05|
+| Mistral OCR 2505 | | :heavy_check_mark: | Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images |  | `mistral-ocr-2505` | 25.05|
 | Magistral Medium 1 | | :heavy_check_mark: | Our first frontier-class reasoning model released June 2025. Learn more in our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-medium-2506` | 25.06|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-3b-2410` | 24.10|
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-8b-2410` | 24.10|
+| Codestral 2501 | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-2501` | 25.01|
 | Mistral Large 2.1 |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our top-tier large model for high-complexity tasks with the lastest version released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `mistral-large-2411` | 24.11|
 | Pixtral Large |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our first frontier-class multimodal model released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `pixtral-large-2411` | 24.11|
 | Mistral Small 2| :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our updated small version, released September 2024. Learn more in our [blog post](https://mistral.ai/news/september-24-release) | 32k  | `mistral-small-2407` | 24.07|
@@ -71,7 +72,7 @@ Here are the details of the available versions:
 - `devstral-small-latest`: currently points to `devstral-small-2507`
 - `devstral-medium-latest`: currently points to `devstral-medium-2507`
 - `mistral-saba-latest`: currently points to `mistral-saba-2502`. 
-- `codestral-latest`: currently points to `codestral-2501`.
+- `codestral-latest`: currently points to `codestral-2508`.
 - `mistral-ocr-latest`: currently points to `mistral-ocr-2505`.
 - `voxtral-small-latest`: currently points to `voxtral-small-2507`.
 - `voxtral-mini-latest`: currently points to `voxtral-mini-2507`.

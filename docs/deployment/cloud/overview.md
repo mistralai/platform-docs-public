@@ -1,0 +1,16 @@
+---
+id: cloud_overview
+title: Cloud
+slug: overview
+---
+
+You can access Mistral AI models via your preferred cloud provider and use your cloud credits.
+In particular, Mistral's optimized commercial models are available on:
+
+- [Azure AI](../azure)
+- [AWS Bedrock](../aws)
+- [Google Cloud Vertex AI Model Garden](../vertex)
+- [Snowflake Cortex](../sfcortex)
+- [IBM watsonx](../ibm-watsonx)
+- [Outscale](../outscale)
+

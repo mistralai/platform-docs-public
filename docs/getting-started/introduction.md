@@ -1,0 +1,51 @@
+---
+id: introduction
+sidebar_label: Introduction
+title: Bienvenue to Mistral AI Documentation
+sidebar_position: 1.1
+slug: /
+---
+
+Mistral AI is a research lab building the best open source models in the world. La Plateforme enables developers and enterprises to build new products and applications, powered by Mistral’s open source and commercial LLMs. 
+
+## Mistral AI Large Language Models (LLMs)
+
+We release both premier models and free models, driving innovation and convenience for our developer community. Our models are state-of-the-art for their multilingual, code generation, maths, and advanced reasoning capabilities.
+
+### Premier models
+
+- Mistral Medium, a state-of-the-art model perfectly balancing frontier-class multimodal performance with size and pricing, was released [May 2025](https://mistral.ai/news/mistral-medium-3/)
+- Codestral, our cutting-edge language model for coding with the latest version released [January 2025](https://mistral.ai/news/codestral-2501/)
+- Mistral OCR, our OCR service that enables our users to extract interleaved text and images released [May 2025](https://mistral.ai/solutions/document-ai)
+- Mistral Saba, a leader in small models category trained extensively on languages from the Middle East and South Asia released [February 2025](https://mistral.ai/news/mistral-saba/)
+- Mistral Large, our top-tier reasoning model for high-complexity tasks with the lastest version released [November 2024](https://mistral.ai/news/pixtral-large/)
+- Pixtral Large, our frontier-class multimodal model released [November 2024](https://mistral.ai/news/pixtral-large/)
+- Ministral 3B, world’s best edge model released [October 2024](https://mistral.ai/news/ministraux/)
+- Ministral 8B, powerful edge model with extremely high performance/price ratio released [October 2024](https://mistral.ai/news/ministraux/)
+- Mistral Embed, our state-of-the-art semantic for extracting representation of text extracts
+- Mistral Moderation, our moderation service that enables our users to detect harmful text content
+
+### Free models
+- Mistral Small, a new multimodal leader in the small models category with the lastest version v3.1 released [March 2025](https://mistral.ai/news/mistral-small-3-1/)
+- Devstral Small, a new SOTA coding model that excels at using tools to explore codebases, editing multiple files and power software engineering agents released [May 2025](https://mistral.ai/news/devstral/)
+- Pixtral, a 12B model with image understanding capabilities in addition to text released [September 2024](https://mistral.ai/news/pixtral-12b/)
+- Mistral NeMo, a powerfull open source model released [July 2024](https://mistral.ai/news/mistral-nemo/)
+- Codestral Mamba, our first mamba 2 open source model released [July 2024](https://mistral.ai/news/codestral-mamba/)
+- Mathstral 7b, our first math open source model released [July 2024](https://mistral.ai/news/mathstral/)
+
+Learn more about our models [here](/getting-started/models/models_overview).
+
+## Explore the Mistral AI APIs
+
+The [Mistral AI APIs](https://console.mistral.ai/) empower LLM applications via:
+
+- [Text generation](/capabilities/completion), enables streaming and provides the ability to display partial model results in real-time
+- [Vision](/capabilities/vision), enables the analysis of images and provides insights based on visual content in addition to text.
+- [OCR](/capabilities/OCR/basic_ocr), allows the extraction of interleaved text and images from documents.
+- [Code generation](/capabilities/code_generation), enpowers code generation tasks, including fill-in-the-middle and code completion.
+- [Embeddings](/capabilities/embeddings/overview), useful for RAG where it represents the meaning of text as a list of numbers.
+- [Function calling](/capabilities/function_calling), enables Mistral models to connect to external tools.
+- [Citations](/capabilities/citations), allows the output of citations for RAG use cases.
+- [Structured Outputs](/capabilities/structured-output/structured_output_overview), enables Mistral models to have structured or json outputs.
+- [Fine-tuning](/capabilities/finetuning/finetuning_overview), enables developers to create customized and specialized models.
+- [Guardrailing](/capabilities/guardrailing), enables developers to enforce policies at the system level of Mistral models.

@@ -1,6 +1,6 @@
 ---
 id: agents_introduction
-title: Introduction
+title: Agents Introduction
 slug: agents_introduction
 sidebar_position: 1
 ---

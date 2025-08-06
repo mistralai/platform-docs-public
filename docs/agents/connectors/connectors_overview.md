@@ -1,6 +1,6 @@
 ---
 id: connectors
-title: Connectors
+title: Connectors Overview
 slug: connectors
 ---
 

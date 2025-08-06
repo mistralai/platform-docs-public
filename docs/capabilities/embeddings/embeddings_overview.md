@@ -1,6 +1,6 @@
 ---
 id: overview
-title: Embeddings
+title: Embeddings Overview
 slug: overview
 ---
 

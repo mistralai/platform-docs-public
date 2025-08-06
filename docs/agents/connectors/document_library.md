@@ -711,11 +711,9 @@ curl --location --request DELETE "https://api.mistral.ai/v1/libraries/<library_i
 
 You can create an agent with access to the document library by providing it as one of the tools. Note that you can still add more tools to the agent. The model is free to access and leverage the knowledge from the uploaded documents.
 
-You specify the libraries that the agent has access to with `library_ids`, you can create and manage these libraries via Le Chat and/or our API directly:
-- These IDs are visible in the URL of the corresponding library created on Le Chat, for example: `https://chat.mistral.ai/libraries/<library_id>`; To enable the Agent to access the library, you have to be an Org admin and share it with the Organization.
-- You can create and manage libraries directly via the libraries API.
+You specify the libraries that the agent has access to with `library_ids`, you can create and manage these libraries via API directly, seen [here](#manage-libraries).
 
-To enable the Agent to access the library, you have to be an Org admin and share it with the Organization.  
+It is also possible to specify libraries created via Le Chat; these IDs are visible in the URL of the corresponding library created on Le Chat, for example: `https://chat.mistral.ai/libraries/<library_id>`; To enable the Agent to access Le Chat library, you have to be an Org admin and share it with the Organization.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>

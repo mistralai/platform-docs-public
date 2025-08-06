@@ -46,10 +46,8 @@ Mistral provides two types of models: open models and premier models.
 | Mistral Small 3.1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category with image understanding capabilities, released March 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-small-3-1/) | 128k  | `mistral-small-2503` | 25.03|
 | Mistral Small 3| :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category, released January 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-small-3) | 32k  | `mistral-small-2501` | 25.01|
 | Devstral Small 1| :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 24B text model, open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral/) | 128k  | `devstral-small-2505` | 25.05|
-| Codestral Mamba | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first mamba 2 open source model released July 2024. Learn more in our [blog post](https://mistral.ai/news/codestral-mamba/) | 256k  | `open-codestral-mamba`| v0.1|
 | Pixtral 12B | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 12B model with image understanding capabilities in addition to text. Learn more in our [blog post](https://mistral.ai/news/pixtral-12b/)| 128k  | `pixtral-12b-2409` | 24.09|
 | Mistral Nemo 12B | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best multilingual open source model released July 2024. Learn more in our [blog post](https://mistral.ai/news/mistral-nemo/) | 128k  | `open-mistral-nemo`| 24.07|
-| Mathstral 7B | :heavy_check_mark: <br/> Apache2 |  | Our first math open source model released July 2024. Learn more in our [blog post](https://mistral.ai/news/mathstral/) | 32k  | | v0.1|
 
 ## API versioning 
 
@@ -102,3 +100,5 @@ To prepare for model retirements and version upgrades, we recommend that custome
 | Codestral 2405 |:heavy_check_mark: <br/> [Mistral Non-Production License](https://mistral.ai/licenses/MNPL-0.1.md) | `codestral-2405` | 24.05|2024/12/02|2025/06/16| `codestral-latest`|
 | Mistral OCR 2503 | | `mistral-ocr-2503` | 25.03| 2025/06/10|2026/03/31| `mistral-ocr-latest`|
 | Mistral Saba 2502 | | `mistral-saba-2502` | 25.02| 2025/06/10|2025/09/30| `mistral-small-latest`|
+| Mathstral 7B | :heavy_check_mark: <br/> Apache2 |  | v0.1| || `magistral-small-latest`|
+| Codestral Mamba | :heavy_check_mark: <br/> Apache2 |`open-codestral-mamba` | v0.1|2525/06/06 |2525/06/06| `codestral-latest`|

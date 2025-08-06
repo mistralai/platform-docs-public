@@ -1,6 +1,6 @@
 ---
 id: benchmark
-title: Benchmarks
+title: Models Benchmarks
 slug: benchmark
 ---
 

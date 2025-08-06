@@ -1,6 +1,6 @@
 ---
 id: function_calling
-title: Function Calling
+title: Agents Function Calling
 slug: function_calling
 sidebar_position: 5
 ---

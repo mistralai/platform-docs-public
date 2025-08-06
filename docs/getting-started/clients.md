@@ -1,6 +1,6 @@
 ---
 id: clients
-title: Clients
+title: SDK Clients
 sidebar_position: 1.5
 ---
 

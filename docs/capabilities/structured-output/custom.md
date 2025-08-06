@@ -1,6 +1,6 @@
 ---
 id: custom_structured_output
-title: Custom
+title: Custom Structured Output
 slug: custom_structured_output
 ---
 

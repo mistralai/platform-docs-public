@@ -1,6 +1,6 @@
 ---
 id: handoffs
-title: Handoffs
+title: Agents Handoffs
 slug: handoffs
 sidebar_position: 6
 ---

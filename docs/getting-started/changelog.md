@@ -4,6 +4,9 @@ title: Changelog
 sidebar_position: 1.8
 ---
 
+August 12, 2025
+- We released Mistral Medium 3.1 (`mistral-medium-2508`).
+
 July 30, 2025
 - We released Codestral 2508 (`codestral-2508`).
 
@@ -37,7 +40,7 @@ May 27, 2025
 - We released the new [Agents API](/agents/agents_introduction).
 
 May 22, 2025
-- We released Mistral OCR 2505 (`mistral-ocr-2505`) and [annotations](/capabilities/OCR/annotations).
+- We released Mistral OCR 2505 (`mistral-ocr-2505`) and [annotations](/capabilities/document_ai/annotations).
 
 May 21, 2025
 - We released Devstral Small (`devstral-small-2505`).
@@ -52,7 +55,7 @@ March 17, 2025
 - We released Mistral Small 3.1 (`mistral-small-2503`).
 
 March 6, 2025
-- We released Mistral OCR (`mistral-ocr-2503`) and [document understanding](/capabilities/OCR/basic_ocr).
+- We released Mistral OCR (`mistral-ocr-2503`) and [document understanding](/capabilities/document_ai/basic_ocr).
 
 February 17, 2025
 - We released Mistral Saba (`mistral-saba-2502`).

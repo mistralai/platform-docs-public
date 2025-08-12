@@ -114,7 +114,7 @@ To run the examples below you will need to set the following environment variabl
 
 Codestral can be queried using an additional completion mode called fill-in-the-middle (FIM).
 For more information, see the
-[code generation section](../../../capabilities/code_generation/#fill-in-the-middle-endpoint).
+[code generation section](../../../capabilities/code_generation).
 
 
 <Tabs>

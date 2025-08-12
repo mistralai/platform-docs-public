@@ -41,7 +41,7 @@ The [Mistral AI APIs](https://console.mistral.ai/) empower LLM applications via:
 
 - [Text generation](/capabilities/completion), enables streaming and provides the ability to display partial model results in real-time
 - [Vision](/capabilities/vision), enables the analysis of images and provides insights based on visual content in addition to text.
-- [OCR](/capabilities/OCR/basic_ocr), allows the extraction of interleaved text and images from documents.
+- [OCR](/capabilities/document_ai/basic_ocr), allows the extraction of interleaved text and images from documents.
 - [Code generation](/capabilities/code_generation), enpowers code generation tasks, including fill-in-the-middle and code completion.
 - [Embeddings](/capabilities/embeddings/overview), useful for RAG where it represents the meaning of text as a list of numbers.
 - [Function calling](/capabilities/function_calling), enables Mistral models to connect to external tools.

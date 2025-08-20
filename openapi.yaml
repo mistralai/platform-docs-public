@@ -1112,6 +1112,14 @@ paths:
             title: Model
           required: false
         - in: query
+          name: agent_id
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Agent Id
+          required: false
+        - in: query
           name: metadata
           schema:
             anyOf:
@@ -1444,6 +1452,44 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       tags:
         - classifiers
+  /v1/audio/transcriptions:
+    post:
+      summary: Create Transcription
+      operationId: audio_api_v1_transcriptions_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudioTranscriptionRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResponse'
+      tags:
+        - audio.transcriptions
+  /v1/audio/transcriptions#stream:
+    post:
+      summary: Create streaming transcription (SSE)
+      operationId: audio_api_v1_transcriptions_post_stream
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudioTranscriptionRequestStream'
+        required: true
+      responses:
+        '200':
+          description: Stream of transcription events
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/TranscriptionStreamEvents'
+      tags:
+        - audio.transcriptions
   /v1/libraries:
     get:
       summary: List all libraries you have access to.
@@ -2625,11 +2671,12 @@ components:
             - type: 'null'
           title: Frequency Penalty
         temperature:
-          type: number
-          maximum: 1
-          minimum: 0
+          anyOf:
+            - type: number
+              maximum: 1
+              minimum: 0
+            - type: 'null'
           title: Temperature
-          default: 0.3
         top_p:
           anyOf:
             - type: number
@@ -3217,10 +3264,10 @@ components:
           $ref: '#/components/schemas/ToolExecutionInfo'
       additionalProperties: false
       type: object
+      title: ToolExecutionEntry
       required:
         - name
         - arguments
-      title: ToolExecutionEntry
     ToolFileChunk:
       properties:
         type:
@@ -3634,12 +3681,12 @@ components:
         arguments:
           title: Arguments
           type: string
+      title: ToolExecutionDeltaEvent
+      type: object
       required:
         - id
         - name
         - arguments
-      title: ToolExecutionDeltaEvent
-      type: object
     ToolExecutionDoneEvent:
       additionalProperties: false
       properties:
@@ -3664,11 +3711,11 @@ components:
           $ref: '#/components/schemas/BuiltInConnectors'
         info:
           $ref: '#/components/schemas/ToolExecutionInfo'
+      title: ToolExecutionDoneEvent
+      type: object
       required:
         - id
         - name
-      title: ToolExecutionDoneEvent
-      type: object
     ToolExecutionStartedEvent:
       additionalProperties: false
       properties:
@@ -3694,12 +3741,12 @@ components:
         arguments:
           title: Arguments
           type: string
+      title: ToolExecutionStartedEvent
+      type: object
       required:
         - id
         - name
         - arguments
-      title: ToolExecutionStartedEvent
-      type: object
     ConversationEvents:
       properties:
         event:
@@ -4051,8 +4098,18 @@ components:
             - type: integer
             - type: 'null'
           title: Num Lines
+        mimetype:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Mimetype
         source:
           $ref: '#/components/schemas/Source'
+        signature:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Signature
       required:
         - id
         - object
@@ -4109,8 +4166,18 @@ components:
             - type: integer
             - type: 'null'
           title: Num Lines
+        mimetype:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Mimetype
         source:
           $ref: '#/components/schemas/Source'
+        signature:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Signature
       required:
         - id
         - object
@@ -4186,8 +4253,18 @@ components:
             - type: integer
             - type: 'null'
           title: Num Lines
+        mimetype:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Mimetype
         source:
           $ref: '#/components/schemas/Source'
+        signature:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Signature
         deleted:
           title: Deleted
           type: boolean
@@ -4239,6 +4316,12 @@ components:
         - url
       title: FileSignedURL
       type: object
+    FineTuneableModelType:
+      enum:
+        - completion
+        - classifier
+      title: FineTuneableModelType
+      type: string
     ClassifierJobOut:
       properties:
         id:
@@ -4576,13 +4659,15 @@ components:
       type: object
     FineTuneableModel:
       enum:
-        - open-mistral-7b
-        - mistral-small-latest
-        - codestral-latest
-        - mistral-large-latest
-        - open-mistral-nemo
         - ministral-3b-latest
         - ministral-8b-latest
+        - open-mistral-7b
+        - open-mistral-nemo
+        - mistral-small-latest
+        - mistral-medium-latest
+        - mistral-large-latest
+        - pixtral-12b-latest
+        - codestral-latest
       title: FineTuneableModel
       type: string
       description: The name of the model to fine-tune.
@@ -4943,12 +5028,6 @@ components:
         - single_class
         - multi_class
       title: FTClassifierLossFunction
-      type: string
-    FineTuneableModelType:
-      enum:
-        - completion
-        - classifier
-      title: FineTuneableModelType
       type: string
     GithubRepositoryIn:
       properties:
@@ -5461,8 +5540,14 @@ components:
         owned_by:
           title: Owned By
           type: string
+        workspace_id:
+          title: Workspace Id
+          type: string
         root:
           title: Root
+          type: string
+        root_version:
+          title: Root Version
           type: string
         archived:
           title: Archived
@@ -5508,7 +5593,9 @@ components:
         - id
         - created
         - owned_by
+        - workspace_id
         - root
+        - root_version
         - archived
         - capabilities
         - job
@@ -5532,8 +5619,14 @@ components:
         owned_by:
           title: Owned By
           type: string
+        workspace_id:
+          title: Workspace Id
+          type: string
         root:
           title: Root
+          type: string
+        root_version:
+          title: Root Version
           type: string
         archived:
           title: Archived
@@ -5574,7 +5667,9 @@ components:
         - id
         - created
         - owned_by
+        - workspace_id
         - root
+        - root_version
         - archived
         - capabilities
         - job
@@ -5707,8 +5802,15 @@ components:
           title: Endpoint
           type: string
         model:
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Model
-          type: string
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Agent Id
         output_file:
           anyOf:
             - format: uuid
@@ -5757,7 +5859,6 @@ components:
         - id
         - input_files
         - endpoint
-        - model
         - errors
         - status
         - created_at
@@ -5808,8 +5909,15 @@ components:
         endpoint:
           $ref: '#/components/schemas/ApiEndpoint'
         model:
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Model
-          type: string
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Agent Id
         metadata:
           anyOf:
             - additionalProperties:
@@ -5829,7 +5937,6 @@ components:
       required:
         - input_files
         - endpoint
-        - model
       title: BatchJobIn
       type: object
     AssistantMessage:
@@ -5863,6 +5970,25 @@ components:
       additionalProperties: false
       type: object
       title: AssistantMessage
+    AudioChunk:
+      properties:
+        input_audio:
+          anyOf:
+            - type: string
+            - type: string
+              format: binary
+          title: Input Audio
+        type:
+          type: string
+          enum:
+            - input_audio
+          title: Type
+          default: input_audio
+      additionalProperties: false
+      type: object
+      required:
+        - input_audio
+      title: AudioChunk
     ChatCompletionRequest:
       properties:
         model:
@@ -6521,6 +6647,31 @@ components:
       required:
         - content
       title: SystemMessage
+    ThinkChunk:
+      properties:
+        thinking:
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/ReferenceChunk'
+              - $ref: '#/components/schemas/TextChunk'
+          type: array
+          title: Thinking
+        closed:
+          type: boolean
+          title: Closed
+          description: Whether the thinking chunk is closed or not. Currently only used for prefixing.
+          default: true
+        type:
+          type: string
+          enum:
+            - thinking
+          title: Type
+          default: thinking
+      additionalProperties: false
+      type: object
+      required:
+        - thinking
+      title: ThinkChunk
     Tool:
       properties:
         type:
@@ -6601,6 +6752,84 @@ components:
       enum:
         - function
       title: ToolTypes
+    TranscriptionResponse:
+      properties:
+        model:
+          type: string
+          title: Model
+        text:
+          type: string
+          title: Text
+        language:
+          anyOf:
+            - type: string
+              pattern: ^\w{2}$
+            - type: 'null'
+          title: Language
+        segments:
+          items:
+            $ref: '#/components/schemas/TranscriptionSegmentChunk'
+          type: array
+          title: Segments
+        usage:
+          $ref: '#/components/schemas/UsageInfo'
+      additionalProperties: false
+      type: object
+      required:
+        - model
+        - text
+        - language
+        - usage
+      title: TranscriptionResponse
+    TranscriptionSegmentChunk:
+      properties:
+        text:
+          type: string
+          title: Text
+        start:
+          type: number
+          title: Start
+        end:
+          type: number
+          title: End
+        type:
+          type: string
+          default: transcription_segment
+          enum:
+            - transcription_segment
+      additionalProperties: false
+      type: object
+      required:
+        - text
+        - start
+        - end
+      title: TranscriptionSegmentChunk
+    UsageInfo:
+      properties:
+        prompt_tokens:
+          type: integer
+          title: Prompt Tokens
+          default: 0
+        completion_tokens:
+          title: Completion Tokens
+          default: 0
+          type: integer
+        total_tokens:
+          type: integer
+          title: Total Tokens
+          default: 0
+        prompt_audio_seconds:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Prompt Audio Seconds
+      additionalProperties: false
+      type: object
+      title: UsageInfo
+      required:
+        - prompt_tokens
+        - completion_tokens
+        - total_tokens
     UserMessage:
       properties:
         content:
@@ -6621,6 +6850,250 @@ components:
       required:
         - content
       title: UserMessage
+    File:
+      type: string
+      format: binary
+      title: File
+      description: "The File object (not file name) to be uploaded.\n To upload a file and specify a custom file name you should format your request as such:\n ```bash\n file=@path/to/your/file.jsonl;filename=custom_name.jsonl\n ```\n Otherwise, you can just keep the original file name:\n ```bash\n file=@path/to/your/file.jsonl\n ```"
+    TimestampGranularity:
+      type: string
+      enum:
+        - segment
+      title: TimestampGranularity
+    AudioTranscriptionRequest:
+      properties:
+        model:
+          title: Model
+          type: string
+        file:
+          anyOf:
+            - $ref: '#/components/schemas/File'
+            - type: 'null'
+          default:
+          title: File
+        file_url:
+          anyOf:
+            - format: uri
+              maxLength: 2083
+              minLength: 1
+              type: string
+            - type: 'null'
+          default:
+          description: Url of a file to be transcribed
+          title: File Url
+        file_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          description: ID of a file uploaded to /v1/files
+          title: File Id
+        language:
+          anyOf:
+            - pattern: ^\w{2}$
+              type: string
+            - type: 'null'
+          default:
+          description: Language of the audio, e.g. 'en'. Providing the language can boost accuracy.
+          title: Language
+        temperature:
+          anyOf:
+            - type: number
+            - type: 'null'
+          default:
+          title: Temperature
+        stream:
+          const: false
+          default: false
+          title: Stream
+          type: boolean
+        timestamp_granularities:
+          description: Granularities of timestamps to include in the response.
+          items:
+            $ref: '#/components/schemas/TimestampGranularity'
+          title: Timestamp Granularities
+          type: array
+      required:
+        - model
+      title: AudioTranscriptionRequest
+      type: object
+    AudioTranscriptionRequestStream:
+      properties:
+        model:
+          title: Model
+          type: string
+        file:
+          anyOf:
+            - $ref: '#/components/schemas/File'
+            - type: 'null'
+          default:
+          title: File
+        file_url:
+          anyOf:
+            - format: uri
+              maxLength: 2083
+              minLength: 1
+              type: string
+            - type: 'null'
+          default:
+          description: Url of a file to be transcribed
+          title: File Url
+        file_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          description: ID of a file uploaded to /v1/files
+          title: File Id
+        language:
+          anyOf:
+            - pattern: ^\w{2}$
+              type: string
+            - type: 'null'
+          default:
+          description: Language of the audio, e.g. 'en'. Providing the language can boost accuracy.
+          title: Language
+        temperature:
+          anyOf:
+            - type: number
+            - type: 'null'
+          default:
+          title: Temperature
+        stream:
+          const: true
+          default: true
+          title: Stream
+          type: boolean
+        timestamp_granularities:
+          description: Granularities of timestamps to include in the response.
+          items:
+            $ref: '#/components/schemas/TimestampGranularity'
+          title: Timestamp Granularities
+          type: array
+      required:
+        - model
+      title: AudioTranscriptionRequestStream
+      type: object
+    TranscriptionStreamLanguage:
+      additionalProperties: false
+      properties:
+        audio_language:
+          pattern: ^\w{2}$
+          title: Audio Language
+          type: string
+        type:
+          type: string
+          default: transcription.language
+          enum:
+            - transcription.language
+      required:
+        - audio_language
+      title: TranscriptionStreamLanguage
+      type: object
+    TranscriptionStreamSegmentDelta:
+      additionalProperties: false
+      properties:
+        text:
+          title: Text
+          type: string
+        start:
+          title: Start
+          type: number
+        end:
+          title: End
+          type: number
+        type:
+          type: string
+          default: transcription.segment
+          enum:
+            - transcription.segment
+      required:
+        - text
+        - start
+        - end
+      title: TranscriptionStreamSegmentDelta
+      type: object
+    TranscriptionStreamTextDelta:
+      additionalProperties: false
+      properties:
+        text:
+          title: Text
+          type: string
+        type:
+          type: string
+          default: transcription.text.delta
+          enum:
+            - transcription.text.delta
+      required:
+        - text
+      title: TranscriptionStreamTextDelta
+      type: object
+    TranscriptionStreamDone:
+      additionalProperties: false
+      properties:
+        model:
+          title: Model
+          type: string
+        text:
+          title: Text
+          type: string
+        language:
+          anyOf:
+            - pattern: ^\w{2}$
+              type: string
+            - type: 'null'
+          title: Language
+        segments:
+          items:
+            $ref: '#/components/schemas/TranscriptionSegmentChunk'
+          title: Segments
+          type: array
+        usage:
+          $ref: '#/components/schemas/UsageInfo'
+        type:
+          type: string
+          default: transcription.done
+          enum:
+            - transcription.done
+      required:
+        - model
+        - text
+        - language
+        - usage
+      title: TranscriptionStreamDone
+      type: object
+    TranscriptionStreamEvents:
+      additionalProperties: false
+      properties:
+        event:
+          $ref: '#/components/schemas/TranscriptionStreamEventTypes'
+        data:
+          discriminator:
+            mapping:
+              transcription.done: '#/components/schemas/TranscriptionStreamDone'
+              transcription.language: '#/components/schemas/TranscriptionStreamLanguage'
+              transcription.segment: '#/components/schemas/TranscriptionStreamSegmentDelta'
+              transcription.text.delta: '#/components/schemas/TranscriptionStreamTextDelta'
+            propertyName: type
+          oneOf:
+            - $ref: '#/components/schemas/TranscriptionStreamTextDelta'
+            - $ref: '#/components/schemas/TranscriptionStreamLanguage'
+            - $ref: '#/components/schemas/TranscriptionStreamSegmentDelta'
+            - $ref: '#/components/schemas/TranscriptionStreamDone'
+          title: Data
+      required:
+        - event
+        - data
+      title: TranscriptionStreamEvents
+      type: object
+    TranscriptionStreamEventTypes:
+      enum:
+        - transcription.language
+        - transcription.segment
+        - transcription.text.delta
+        - transcription.done
+      title: TranscriptionStreamEventTypes
+      type: string
     AgentsCompletionRequest:
       properties:
         max_tokens:
@@ -6799,6 +7272,8 @@ components:
         - $ref: '#/components/schemas/DocumentURLChunk'
         - $ref: '#/components/schemas/ReferenceChunk'
         - $ref: '#/components/schemas/FileChunk'
+        - $ref: '#/components/schemas/ThinkChunk'
+        - $ref: '#/components/schemas/AudioChunk'
       discriminator:
         propertyName: type
         mapping:
@@ -6807,6 +7282,8 @@ components:
           text: '#/components/schemas/TextChunk'
           reference: '#/components/schemas/ReferenceChunk'
           file: '#/components/schemas/FileChunk'
+          thinking: '#/components/schemas/ThinkChunk'
+          input_audio: '#/components/schemas/AudioChunk'
       title: ContentChunk
     ChatClassificationRequest:
       properties:
@@ -7195,11 +7672,6 @@ components:
         - share_with_type
         - share_with_uuid
       title: SharingOut
-    File:
-      type: string
-      format: binary
-      title: File
-      description: "The File object (not file name) to be uploaded.\n To upload a file and specify a custom file name you should format your request as such:\n ```bash\n file=@path/to/your/file.jsonl;filename=custom_name.jsonl\n ```\n Otherwise, you can just keep the original file name:\n ```bash\n file=@path/to/your/file.jsonl\n ```"
     EntityType:
       type: string
       title: EntityType
@@ -7261,23 +7733,6 @@ components:
             - error
             - tool_calls
             - null
-    UsageInfo:
-      title: UsageInfo
-      type: object
-      properties:
-        prompt_tokens:
-          type: integer
-          example: 16
-        completion_tokens:
-          type: integer
-          example: 34
-        total_tokens:
-          type: integer
-          example: 50
-      required:
-        - prompt_tokens
-        - completion_tokens
-        - total_tokens
     ResponseBase:
       type: object
       title: ResponseBase
@@ -7452,6 +7907,9 @@ tags:
   - name: ocr
     x-displayName: OCR API
     description: OCR API
+  - name: audio.transcriptions
+    x-displayName: Transcriptions API
+    description: API for audio transcription.
   - name: beta.agents
     x-displayName: (beta) Agents API
     description: (beta) Agents API
@@ -7472,4 +7930,3 @@ security:
 servers:
   - url: https://api.mistral.ai
     description: Production server
-

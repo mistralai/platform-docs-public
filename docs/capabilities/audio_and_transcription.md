@@ -826,7 +826,7 @@ client = Mistral(api_key=api_key)
 transcription_response = client.audio.transcriptions.complete(
     model=model,
     file_url="https://docs.mistral.ai/audio/obama.mp3",
-    timestamp_granularities="segment"
+    timestamp_granularities=["segment"]
 )
 
 # Print the contents
@@ -848,7 +848,7 @@ const client = new Mistral({ apiKey: apiKey });
 const transcriptionResponse = await client.audio.transcriptions.complete({
   model: "voxtral-mini-latest",
   fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
-  timestamp_granularities: "segment"
+  timestamp_granularities: ["segment"]
 });
 
 // Log the contents
@@ -862,7 +862,7 @@ console.log(transcriptionResponse);
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 --header "x-api-key: $MISTRAL_API_KEY" \
 --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
---form 'model="voxtral-mini-latest"'
+--form 'model="voxtral-mini-latest"' \
 --form 'timestamp_granularities="segment"'
 ```
   </TabItem>

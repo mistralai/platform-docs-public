@@ -4,6 +4,11 @@ title: Changelog
 sidebar_position: 1.8
 ---
 
+August 27, 2025
+- Added a new parameter `p` to the chunks streamed back by the Completion API.
+  - Implemented for security to prevent token-length side-channel attacks, as reported by Microsoft researchers.
+  - Note that this change may break applications relying on strict parsing of the chunks. Applications using the official SDK are unaffected, but users relying on the `mistral-common` package may need to update to `1.8.4` or higher.
+
 August 12, 2025
 - We released Mistral Medium 3.1 (`mistral-medium-2508`).
 

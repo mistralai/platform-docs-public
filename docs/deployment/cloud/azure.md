@@ -22,7 +22,10 @@ in two ways:
 This page focuses on the MaaS offering, where the following models are available:
 
 - Mistral Large (24.11, 24.07)
-- Mistral Small (24.09)
+- Mistral Medium (25.05)
+- Mistral Small (25.03)
+- Mistral Document AI (25.05)
+- Mistral OCR (25.05)
 - Ministral 3B (24.10)
 - Mistral Nemo 
 
@@ -127,7 +130,9 @@ To run the examples below, set the following environment variables:
 ## Going further
 
 For more details and examples, refer to the following resources:
+- [Release blog post for Mistral Document AI](https://techcommunity.microsoft.com/blog/aiplatformblog/deepening-our-partnership-with-mistral-ai-on-azure-ai-foundry/4434656)
 - [Release blog post for Mistral Large 2 and Mistral NeMo](https://techcommunity.microsoft.com/t5/ai-machine-learning-blog/ai-innovation-continues-introducing-mistral-large-2-and-mistral/ba-p/4200181).
 - [Azure documentation for MaaS deployment of Mistral models](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/deploy-models-mistral).
 - [Azure ML examples GitHub repository](https://github.com/Azure/azureml-examples/tree/main/sdk/python/foundation-models/mistral) with several Mistral-based samples.
+- [Azure AI Foundry GitHub repository](https://github.com/azure-ai-foundry/foundry-samples/tree/main/samples/mistral)
 

@@ -61,7 +61,7 @@ Here are the details of the available versions:
 - `magistral-medium-latest`: currently points to `magistral-medium-2507`. 
 - `magistral-small-latest`: currently points to `magistral-small-2507`. 
 - `mistral-medium-latest`: currently points to `mistral-medium-2508`. 
-- `mistral-large-latest`: currently points to `mistral-large-2411`. 
+- `mistral-large-latest`: currently points to `mistral-medium-2508`, previously `mistral-large-2411`. 
 - `pixtral-large-latest`: currently points to `pixtral-large-2411`. 
 - `mistral-moderation-latest`: currently points to `mistral-moderation-2411`.
 - `ministral-3b-latest`: currently points to `ministral-3b-2410`.

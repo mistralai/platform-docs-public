@@ -102,4 +102,4 @@ To prepare for model retirements and version upgrades, we recommend that custome
 | Mistral OCR 2503 | | `mistral-ocr-2503` | 25.03| 2025/06/10|2026/03/31| `mistral-ocr-latest`|
 | Mistral Saba 2502 | | `mistral-saba-2502` | 25.02| 2025/06/10|2025/09/30| `mistral-small-latest`|
 | Mathstral 7B | :heavy_check_mark: <br/> Apache2 |  | v0.1| || `magistral-small-latest`|
-| Codestral Mamba | :heavy_check_mark: <br/> Apache2 |`open-codestral-mamba` | v0.1|2525/06/06 |2525/06/06| `codestral-latest`|
+| Codestral Mamba | :heavy_check_mark: <br/> Apache2 |`open-codestral-mamba` | v0.1|2025/06/06 |2025/06/06| `codestral-latest`|

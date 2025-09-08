@@ -835,7 +835,7 @@ Now that we have our document library agent ready, we can search them on demand 
 
 ```py
 response = client.beta.conversations.start(
-    agent_id=image_agent.id,
+    agent_id=library_agent.id,
     inputs="How does the vision encoder for pixtral 12b work"
 )
 ```

@@ -11,10 +11,12 @@ Vision capabilities enable models to analyze images and provide insights based o
 For more specific use cases regarding document parsing and data extraction we recommend taking a look at our Document AI stack [here](../document_ai/document_ai_overview).
 
 ## Models with Vision Capabilities:
+- Mistral Medium 3.1 2508 (`mistral-medium-latest`)
+- Mistral Small 3.2 2506 (`mistral-small-latest`)
+- Magistral Small 1.2 2509 (`magistral-small-latest`)
+- Magistral Medium 1.2 2509 (`magistral-medium-latest`)
 - Pixtral 12B (`pixtral-12b-latest`)
 - Pixtral Large 2411 (`pixtral-large-latest`)
-- Mistral Medium 2505 (`mistral-medium-latest`)
-- Mistral Small 2503 (`mistral-small-latest`)
 
 ## Passing an Image URL
 If the image is hosted online, you can simply provide the URL of the image in the request. This method is straightforward and does not require any encoding.

@@ -26,11 +26,11 @@ Currently we have two reasoning models:
 - `magistral-medium-latest`: Our more powerful reasoning model balancing performance and cost.
 
 :::info
-Currently, `-latest` points to `-2507`, our most recent version of our reasoning models. If you were previously using `-2506`, a **migration** regarding the thinking chunks is required.
-- `-2507` **(new)**: Uses tokenized thinking chunks via control tokens, providing the thinking traces in different types of content chunks.
+Currently, `-latest` points to `-2509`, our most recent version of our reasoning models. If you were previously using `-2506`, a **migration** regarding the thinking chunks is required.
+- `-2507` & `-2509` **(new)**: Uses tokenized thinking chunks via control tokens, providing the thinking traces in different types of content chunks.
 - `-2506` **(old)**: Used `<think>\n` and `\n</think>\n` tags as strings to encapsulate the thinking traces for input and output within the same content type.  
 <Tabs groupId="version">
-  <TabItem value="2507" label="2507 (new)" default>
+  <TabItem value="2509" label="2507/2509 (new)" default>
 ```json
 [
   {
@@ -109,7 +109,33 @@ To have the best performance out of our models, we recommend having the followin
 <summary><b>System Prompt</b></summary>
 
 <Tabs groupId="version">
-  <TabItem value="2507" label="2507 (new)" default>
+  <TabItem value="2509" label="2509 (new)" default>
+```json
+{
+  "role": "system",
+  "content": [
+    {
+      "type": "text",
+      "text": "# HOW YOU SHOULD THINK AND ANSWER\n\nFirst draft your thinking process (inner monologue) until you arrive at a response. Format your response using Markdown, and use LaTeX for any mathematical equations. Write both your thoughts and the response in the same language as the input.\n\nYour thinking process must follow the template below:"
+    },
+    {
+      "type": "thinking",
+      "thinking": [
+        {
+          "type": "text",
+          "text": "Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate the response to the user."
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Here, provide a self-contained response."
+    }
+  ]
+}
+```
+  </TabItem>
+  <TabItem value="2507" label="2507" default>
 ```json
 {
   "role": "system",
@@ -231,7 +257,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 </Tabs>
 
 <Tabs groupId="version">
-  <TabItem value="2507" label="2507 (new)" default>
+  <TabItem value="2509" label="2507/2509 (new)" default>
 The output of the model will include different chunks of content, but mostly a `thinking` type with the reasoning traces and a `text` type with the answer like so:
 ```json
 "content": [

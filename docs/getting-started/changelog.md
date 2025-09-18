@@ -4,6 +4,9 @@ title: Changelog
 sidebar_position: 1.8
 ---
 
+September 18, 2025
+- We released Magistral Medium 1.2 (`magistral-medium-2509`) and Magistral Small 1.2 (`magistral-small-2509`).
+
 August 27, 2025
 - Added a new parameter `p` to the chunks streamed back by the Completion API.
   - Implemented for security to prevent token-length side-channel attacks, as reported by Microsoft researchers.

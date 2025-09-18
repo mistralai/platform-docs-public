@@ -17,7 +17,7 @@ Mistral provides two types of models: open models and premier models.
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
 | Mistral Medium 3.1 | | :heavy_check_mark: | Our frontier-class multimodal model released August 2025. Improving tone and performance. Read more about Medium 3 in our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2508` | 25.08|
-| Magistral Medium 1.1 | | :heavy_check_mark: | Our frontier-class reasoning model released July 2025. | 40k | `magistral-medium-2507` | 25.07|
+| Magistral Medium 1.2 | | :heavy_check_mark: | Our frontier-class reasoning model update released September 2025 with vision support. | 128k | `magistral-medium-2509` | 25.09|
 | Codestral 2508 | | :heavy_check_mark: | Our cutting-edge language model for coding released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-25-08/) | 256k  | `codestral-2508` | 25.08|
 | Voxtral Mini Transcribe | | :heavy_check_mark: | An efficient audio input model, fine-tuned and optimized for transcription purposes only. | | `voxtral-mini-2507` via `audio/transcriptions` | 25.07|
 | Devstral Medium | | :heavy_check_mark: | An enterprise grade text model, that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral-2507) | 128k  | `devstral-medium-2507` | 25.07|
@@ -25,6 +25,8 @@ Mistral provides two types of models: open models and premier models.
 | Magistral Medium 1 | | :heavy_check_mark: | Our first frontier-class reasoning model released June 2025. Learn more in our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-medium-2506` | 25.06|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-3b-2410` | 24.10|
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-8b-2410` | 24.10|
+| Magistral Medium 1.1 | | :heavy_check_mark: | Our frontier-class reasoning model released July 2025. | 40k | `magistral-medium-2507` | 25.07|
+| Magistral Medium 1.0 | | :heavy_check_mark: | Our frontier-class reasoning model released June 2025. Learn more in our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-medium-2506` | 25.06|
 | Mistral Medium 3 | | :heavy_check_mark: | Our frontier-class multimodal model released May 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2505` | 25.05|
 | Codestral 2501 | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-2501` | 25.01|
 | Mistral Large 2.1 |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our top-tier large model for high-complexity tasks with the lastest version released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `mistral-large-2411` | 24.11|
@@ -38,6 +40,7 @@ Mistral provides two types of models: open models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
+| Magistral Small 1.2 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our small reasoning model released September 2025 with vision support. | 128k | `magistral-small-2509` | 25.09|
 | Magistral Small 1.1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our small reasoning model released July 2025. | 40k | `magistral-small-2507` | 25.07|
 | Voxtral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first model with audio input capabilities for instruct use cases.  | 32k  | `voxtral-small-2507` | 25.07|
 | Voxtral Mini | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A mini version of our first audio input model.  | 32k | `voxtral-mini-2507` | 25.07|
@@ -58,8 +61,8 @@ it is recommended to use the dated versions of the Mistral AI API.
 Additionally, be prepared for the deprecation of certain endpoints in the coming months.
 
 Here are the details of the available versions:
-- `magistral-medium-latest`: currently points to `magistral-medium-2507`. 
-- `magistral-small-latest`: currently points to `magistral-small-2507`. 
+- `magistral-medium-latest`: currently points to `magistral-medium-2509`. 
+- `magistral-small-latest`: currently points to `magistral-small-2509`. 
 - `mistral-medium-latest`: currently points to `mistral-medium-2508`. 
 - `mistral-large-latest`: currently points to `mistral-medium-2508`, previously `mistral-large-2411`. 
 - `pixtral-large-latest`: currently points to `pixtral-large-2411`. 

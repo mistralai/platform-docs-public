@@ -26,6 +26,7 @@ Mistral provides two types of models: open models and premier models.
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-8b-2410` | 24.10|
 | Mistral Medium 3 | | :heavy_check_mark: | Our frontier-class multimodal model released May 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2505` | 25.05|
 | Mistral Large 2.1 |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our top-tier large model for high-complexity tasks with the lastest version released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `mistral-large-2411` | 24.11|
+| Codestral 2501 | | :heavy_check_mark: | Our cutting-edge language model for coding released in January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2501) | 256k  | `codestral-2501` | 25.01|
 | Pixtral Large |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our first frontier-class multimodal model released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `pixtral-large-2411` | 24.11|
 | Mistral Small 2| :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our updated small version, released September 2024. Learn more in our [blog post](https://mistral.ai/news/september-24-release) | 32k  | `mistral-small-2407` | 24.07|
 | Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
@@ -100,7 +101,6 @@ To prepare for model retirements and version upgrades, we recommend that custome
 | Mathstral 7B | :heavy_check_mark: <br/> Apache2 |  | v0.1| || `magistral-small-latest`|
 | Codestral Mamba | :heavy_check_mark: <br/> Apache2 |`open-codestral-mamba` | v0.1|2525/06/06 |2525/06/06| `codestral-latest`|
 | Devstral Small 1.0 | :heavy_check_mark: <br/> Apache2 | `devstral-small-2505` | 25.05|2025/10/31|2025/11/30| `devstral-small-latest`|
-| Codestral 2501 |  | `codestral-2501` | 25.01|2025/10/31|2026/01/31| `codestral-latest`|
 | Magistral Small 1.0 | :heavy_check_mark: <br/> Apache2 | `magistral-small-2506` | 25.06|2025/10/31|2025/11/30| `magistral-small-latest`|
 | Magistral Medium 1.0 | | `magistral-medium-2506` | 25.06|2025/10/31|2025/11/30| `magistral-medium-latest`|
 | Magistral Small 1.1 | :heavy_check_mark: <br/> Apache2 | `magistral-small-2507` | 25.07|2025/10/31|2025/11/30| `magistral-small-latest`|

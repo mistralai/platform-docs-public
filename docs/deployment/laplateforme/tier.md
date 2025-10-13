@@ -19,7 +19,7 @@ We offer two types of rate limits:
 
 Key points to note:
 
-- Rate limits are set at the workspace level.
+- Rate limits are set at the organization level.
 - Limits are defined by usage tier, where each tier is associated with a different set of rate limits.
 - In case you need to raise your usage limits, please feel free to contact us by utilizing the support button, providing details about your specific use case.
 

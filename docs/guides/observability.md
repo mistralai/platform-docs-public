@@ -114,7 +114,7 @@ LangSmith provides observability throughout the LLM application development life
 
 **Mistral integration Example:**
 
-* All of the [langchain notebooks](https://github.com/mistralai/cookbook/tree/main/third_party/langchain) in the Mistral cookbook include LangSmith integration. 
+* All of the [langchain notebooks](https://github.com/mistralai//tree/main/third_party/langchain) in the Mistral cookbook include LangSmith integration. 
 
 Here is an example tracking traces, input, output, documents, tokens, and status when we run the [corrective RAG example](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/corrective_rag_mistral.ipynb) from the Mistral cookbook. 
 
@@ -220,6 +220,46 @@ AgentOps is an open-source observability and DevTool platform for AI Agents. It 
 [https://github.com/mistralai/cookbook/blob/main/third\_party/CAMEL\_AI/camel\_roleplaying\_scraper.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb)
 
 <img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>
+
+
+### Integration with OpenLIT
+
+[OpenLIT](https://openlit.io/) is an open-source tool designed for complete LLM engineering, fully integrated with OpenTelemetry. It provides comprehensive OTel-native observability including GPU monitoring and exceptions monitoring, an experimentation playground, prompt management, and metrics for effective debugging.
+
+<img src="/img/guides/obs_openlit2.gif" alt="OpenLIT and Mistral Integration image" width="700"/>
+
+**Pros:**
+
+* Open-source ([Github](https://github.com/openlit/openlit)) and easy to self-host in your environment
+* OpenTelemetry-native & vendor-neutral SDKs
+* Complete Observability for GenAI Stack, from LLMs to GPUs
+* Cost tracking for custom and fine-tuned models
+* Natively support Mistral SDK
+* Integration with various frameworks
+
+**Mistral integration Example:** 
+
+<img src="/img/guides/obs_openlit1.png" alt="Image showing OpenTelemetry tracing for Mistral AI using OpenLIT" width="700"/>
+
+To get started, You can follow the below steps
+
+1. Install the OpenLIT SDK
+
+```shell
+pip install openlit
+```
+
+2. Add the following 2 lines to your application code automatically start collecting metrics and traces from Mistral AI usage in your Application
+
+```python
+import openlit
+
+openlit.init()
+```
+Here is an example tracking traces, input, output, documents, tokens, and status when we using Mistral AI Model (https://github.com/mistralai/cookbook/blob/main/third_party/openlit/cookbook_mistral_opentelemetry.ipynb) from the Mistral cookbook. 
+
+For more details, checkout the [official OpenLIT docs](https://docs.openlit.io/latest/integrations/mistral) for Mistral AI Integration.
+
 
 ### Integration with phospho
 

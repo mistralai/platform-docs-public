@@ -48,7 +48,7 @@ messages = [
             },
             {
                 "type": "image_url",
-                "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
+                "image_url": "https://docs.mistral.ai/img/eiffel-tower-paris.jpg"
             }
         ]
     }
@@ -83,7 +83,7 @@ const chatResponse = await client.chat.complete({
         { type: "text", text: "What's in this image?" },
         {
           type: "image_url",
-          imageUrl: "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg",
+          imageUrl: "https://docs.mistral.ai/img/eiffel-tower-paris.jpg",
         },
       ],
     },
@@ -112,7 +112,7 @@ curl https://api.mistral.ai/v1/chat/completions \
           },
           {
             "type": "image_url",
-            "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
+            "image_url": "https://docs.mistral.ai/img/eiffel-tower-paris.jpg"
           }
         ]
       }
@@ -309,51 +309,6 @@ The chart is a bar chart titled 'France's Social Divide,' comparing socio-econom
 </details>
 
 <details>
-<summary><b>Compare images</b></summary>
-
-![](https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg)
-
-![](https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg)
-
-```bash
-curl https://api.mistral.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $MISTRAL_API_KEY" \
-  -d '{
-    "model": "pixtral-12b-2409",
-    "messages": [
-      {
-        "role": "user",
-        "content": [
-          {
-            "type": "text",
-            "text": "what are the differences between two images?"
-          },
-          {
-            "type": "image_url",
-            "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
-          },
-          {
-            "type": "image_url",
-            "image_url": {
-              "url": "https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg"
-            }
-          }
-        ]
-      }
-    ],
-    "max_tokens": 300
-  }'
-```
-
-Model output: 
-```
-The first image features the Eiffel Tower surrounded by snow-covered trees and pathways, with a clear view of the tower's intricate iron lattice structure. The second image shows the Eiffel Tower in the background of a large, outdoor stadium filled with spectators, with a red tennis court in the center. The most notable differences are the setting - one is a winter scene with snow, while the other is a summer scene with a crowd at a sporting event. The mood of the first image is serene and quiet, whereas the second image conveys a lively and energetic atmosphere. These differences highlight the versatility of the Eiffel Tower as a landmark that can be enjoyed in various contexts and seasons.
-```
-
-</details>
-
-<details>
 <summary><b>Transcribe receipts</b></summary>
 
 ![](https://www.boredpanda.com/blog/wp-content/uploads/2022/11/interesting-receipts-102-6364c8d181c6a__700.jpg)
@@ -428,68 +383,6 @@ Model output:
 
 </details>
 
-<details>
-<summary><b>OCR with structured output</b></summary>
-
-![](https://i.imghippo.com/files/kgXi81726851246.jpg)
-
-```bash
-curl https://api.mistral.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $MISTRAL_API_KEY" \
-  -d '{
-    "model": "pixtral-12b-2409",
-    "messages": [
-            {
-                "role": "system",
-                "content": [
-                    {"type": "text",
-                     "text" : "Extract the text elements described by the user from the picture, and return the result formatted as a json in the following format : {name_of_element : [value]}"
-                    }
-                ]
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "From this restaurant bill, extract the bill number, item names and associated prices, and total price and return it as a string in a Json object"
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": "https://i.imghippo.com/files/kgXi81726851246.jpg"
-                    }
-                ]
-            }
-        ],
-    "response_format": 
-      {
-        "type": "json_object"
-      }
-  }'
-
-```
-
-Model output: 
-```json
-{'bill_number': '566548',
- 'items': [{'item_name': 'BURGER - MED RARE', 'price': 10},
-  {'item_name': 'WH/SUB POUTINE', 'price': 2},
-  {'item_name': 'BURGER - MED RARE', 'price': 10},
-  {'item_name': 'WH/SUB BSL - MUSH', 'price': 4},
-  {'item_name': 'BURGER - MED WELL', 'price': 10},
-  {'item_name': 'WH BREAD/NO ONION', 'price': 2},
-  {'item_name': 'SUB POUTINE - MUSH', 'price': 2},
-  {'item_name': 'CHK PESTO/BR', 'price': 9},
-  {'item_name': 'SUB POUTINE', 'price': 2},
-  {'item_name': 'SPEC OMELET/BR', 'price': 9},
-  {'item_name': 'SUB POUTINE', 'price': 2},
-  {'item_name': 'BSL', 'price': 8}],
- 'total_price': 68}
-```
-
-</details>
-
 ## FAQ
 
 - **What is the price per image?**
@@ -502,6 +395,8 @@ Model output:
 
     | Model | Max Resolution | ≈ Formula | ≈ N Max Tokens |
     | - | - | - | - |
+    | Magistral Medium 1.2 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
+    | Magistral Small 1.2 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
     | Mistral Small 3.2 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
     | Mistral Medium 3 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
     | Mistral Small 3.1 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |

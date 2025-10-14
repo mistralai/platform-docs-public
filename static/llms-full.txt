@@ -3117,7 +3117,7 @@ Now that we have our document library agent ready, we can search them on demand 
 
 ```py
 response = client.beta.conversations.start(
-    agent_id=image_agent.id,
+    agent_id=library_agent.id,
     inputs="How does the vision encoder for pixtral 12b work"
 )
 ```
@@ -11711,11 +11711,11 @@ Currently we have two reasoning models:
 - `magistral-medium-latest`: Our more powerful reasoning model balancing performance and cost.
 
 :::info
-Currently, `-latest` points to `-2507`, our most recent version of our reasoning models. If you were previously using `-2506`, a **migration** regarding the thinking chunks is required.
-- `-2507` **(new)**: Uses tokenized thinking chunks via control tokens, providing the thinking traces in different types of content chunks.
+Currently, `-latest` points to `-2509`, our most recent version of our reasoning models. If you were previously using `-2506`, a **migration** regarding the thinking chunks is required.
+- `-2507` & `-2509` **(new)**: Uses tokenized thinking chunks via control tokens, providing the thinking traces in different types of content chunks.
 - `-2506` **(old)**: Used `<think>\n` and `\n</think>\n` tags as strings to encapsulate the thinking traces for input and output within the same content type.  
 <Tabs groupId="version">
-  <TabItem value="2507" label="2507 (new)" default>
+  <TabItem value="2509" label="2507/2509 (new)" default>
 ```json
 [
   {
@@ -11794,7 +11794,33 @@ To have the best performance out of our models, we recommend having the followin
 <summary><b>System Prompt</b></summary>
 
 <Tabs groupId="version">
-  <TabItem value="2507" label="2507 (new)" default>
+  <TabItem value="2509" label="2509 (new)" default>
+```json
+{
+  "role": "system",
+  "content": [
+    {
+      "type": "text",
+      "text": "# HOW YOU SHOULD THINK AND ANSWER\n\nFirst draft your thinking process (inner monologue) until you arrive at a response. Format your response using Markdown, and use LaTeX for any mathematical equations. Write both your thoughts and the response in the same language as the input.\n\nYour thinking process must follow the template below:"
+    },
+    {
+      "type": "thinking",
+      "thinking": [
+        {
+          "type": "text",
+          "text": "Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate the response to the user."
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Here, provide a self-contained response."
+    }
+  ]
+}
+```
+  </TabItem>
+  <TabItem value="2507" label="2507" default>
 ```json
 {
   "role": "system",
@@ -11915,7 +11941,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 </Tabs>
 
 <Tabs groupId="version">
-  <TabItem value="2507" label="2507 (new)" default>
+  <TabItem value="2509" label="2507/2509 (new)" default>
 The output of the model will include different chunks of content, but mostly a `thinking` type with the reasoning traces and a `text` type with the answer like so:
 ```json
 "content": [
@@ -13101,10 +13127,12 @@ Vision capabilities enable models to analyze images and provide insights based o
 For more specific use cases regarding document parsing and data extraction we recommend taking a look at our Document AI stack [here](../document_ai/document_ai_overview).
 
 ## Models with Vision Capabilities:
+- Mistral Medium 3.1 2508 (`mistral-medium-latest`)
+- Mistral Small 3.2 2506 (`mistral-small-latest`)
+- Magistral Small 1.2 2509 (`magistral-small-latest`)
+- Magistral Medium 1.2 2509 (`magistral-medium-latest`)
 - Pixtral 12B (`pixtral-12b-latest`)
 - Pixtral Large 2411 (`pixtral-large-latest`)
-- Mistral Medium 2505 (`mistral-medium-latest`)
-- Mistral Small 2503 (`mistral-small-latest`)
 
 ## Passing an Image URL
 If the image is hosted online, you can simply provide the URL of the image in the request. This method is straightforward and does not require any encoding.
@@ -13136,7 +13164,7 @@ messages = [
             },
             {
                 "type": "image_url",
-                "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
+                "image_url": "https://docs.mistral.ai/img/eiffel-tower-paris.jpg"
             }
         ]
     }
@@ -13171,7 +13199,7 @@ const chatResponse = await client.chat.complete({
         { type: "text", text: "What's in this image?" },
         {
           type: "image_url",
-          imageUrl: "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg",
+          imageUrl: "https://docs.mistral.ai/img/eiffel-tower-paris.jpg",
         },
       ],
     },
@@ -13200,7 +13228,7 @@ curl https://api.mistral.ai/v1/chat/completions \
           },
           {
             "type": "image_url",
-            "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
+            "image_url": "https://docs.mistral.ai/img/eiffel-tower-paris.jpg"
           }
         ]
       }
@@ -13395,51 +13423,6 @@ The chart is a bar chart titled 'France's Social Divide,' comparing socio-econom
 </details>
 
 <details>
-<summary><b>Compare images</b></summary>
-
-![](https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg)
-
-![](https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg)
-
-```bash
-curl https://api.mistral.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $MISTRAL_API_KEY" \
-  -d '{
-    "model": "pixtral-12b-2409",
-    "messages": [
-      {
-        "role": "user",
-        "content": [
-          {
-            "type": "text",
-            "text": "what are the differences between two images?"
-          },
-          {
-            "type": "image_url",
-            "image_url": "https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg"
-          },
-          {
-            "type": "image_url",
-            "image_url": {
-              "url": "https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg"
-            }
-          }
-        ]
-      }
-    ],
-    "max_tokens": 300
-  }'
-```
-
-Model output: 
-```
-The first image features the Eiffel Tower surrounded by snow-covered trees and pathways, with a clear view of the tower's intricate iron lattice structure. The second image shows the Eiffel Tower in the background of a large, outdoor stadium filled with spectators, with a red tennis court in the center. The most notable differences are the setting - one is a winter scene with snow, while the other is a summer scene with a crowd at a sporting event. The mood of the first image is serene and quiet, whereas the second image conveys a lively and energetic atmosphere. These differences highlight the versatility of the Eiffel Tower as a landmark that can be enjoyed in various contexts and seasons.
-```
-
-</details>
-
-<details>
 <summary><b>Transcribe receipts</b></summary>
 
 ![](https://www.boredpanda.com/blog/wp-content/uploads/2022/11/interesting-receipts-102-6364c8d181c6a__700.jpg)
@@ -13514,68 +13497,6 @@ Model output:
 
 </details>
 
-<details>
-<summary><b>OCR with structured output</b></summary>
-
-![](https://i.imghippo.com/files/kgXi81726851246.jpg)
-
-```bash
-curl https://api.mistral.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $MISTRAL_API_KEY" \
-  -d '{
-    "model": "pixtral-12b-2409",
-    "messages": [
-            {
-                "role": "system",
-                "content": [
-                    {"type": "text",
-                     "text" : "Extract the text elements described by the user from the picture, and return the result formatted as a json in the following format : {name_of_element : [value]}"
-                    }
-                ]
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "From this restaurant bill, extract the bill number, item names and associated prices, and total price and return it as a string in a Json object"
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": "https://i.imghippo.com/files/kgXi81726851246.jpg"
-                    }
-                ]
-            }
-        ],
-    "response_format": 
-      {
-        "type": "json_object"
-      }
-  }'
-
-```
-
-Model output: 
-```json
-{'bill_number': '566548',
- 'items': [{'item_name': 'BURGER - MED RARE', 'price': 10},
-  {'item_name': 'WH/SUB POUTINE', 'price': 2},
-  {'item_name': 'BURGER - MED RARE', 'price': 10},
-  {'item_name': 'WH/SUB BSL - MUSH', 'price': 4},
-  {'item_name': 'BURGER - MED WELL', 'price': 10},
-  {'item_name': 'WH BREAD/NO ONION', 'price': 2},
-  {'item_name': 'SUB POUTINE - MUSH', 'price': 2},
-  {'item_name': 'CHK PESTO/BR', 'price': 9},
-  {'item_name': 'SUB POUTINE', 'price': 2},
-  {'item_name': 'SPEC OMELET/BR', 'price': 9},
-  {'item_name': 'SUB POUTINE', 'price': 2},
-  {'item_name': 'BSL', 'price': 8}],
- 'total_price': 68}
-```
-
-</details>
-
 ## FAQ
 
 - **What is the price per image?**
@@ -13588,6 +13509,8 @@ Model output:
 
     | Model | Max Resolution | ≈ Formula | ≈ N Max Tokens |
     | - | - | - | - |
+    | Magistral Medium 1.2 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
+    | Magistral Small 1.2 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
     | Mistral Small 3.2 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
     | Mistral Medium 3 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
     | Mistral Small 3.1 | 1540x1540 | `≈ (ResolutionX * ResolutionY) / 784` | ≈ 3025 |
@@ -14601,7 +14524,7 @@ We offer two types of rate limits:
 
 Key points to note:
 
-- Rate limits are set at the workspace level.
+- Rate limits are set at the organization level.
 - Limits are defined by usage tier, where each tier is associated with a different set of rate limits.
 - In case you need to raise your usage limits, please feel free to contact us by utilizing the support button, providing details about your specific use case.
 
@@ -16214,17 +16137,16 @@ Mistral provides two types of models: open models and premier models.
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
 | Mistral Medium 3.1 | | :heavy_check_mark: | Our frontier-class multimodal model released August 2025. Improving tone and performance. Read more about Medium 3 in our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2508` | 25.08|
-| Magistral Medium 1.1 | | :heavy_check_mark: | Our frontier-class reasoning model released July 2025. | 40k | `magistral-medium-2507` | 25.07|
+| Magistral Medium 1.2 | | :heavy_check_mark: | Our frontier-class reasoning model update released September 2025 with vision support. | 128k | `magistral-medium-2509` | 25.09|
 | Codestral 2508 | | :heavy_check_mark: | Our cutting-edge language model for coding released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-25-08/) | 256k  | `codestral-2508` | 25.08|
 | Voxtral Mini Transcribe | | :heavy_check_mark: | An efficient audio input model, fine-tuned and optimized for transcription purposes only. | | `voxtral-mini-2507` via `audio/transcriptions` | 25.07|
 | Devstral Medium | | :heavy_check_mark: | An enterprise grade text model, that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral-2507) | 128k  | `devstral-medium-2507` | 25.07|
 | Mistral OCR 2505 | | :heavy_check_mark: | Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images |  | `mistral-ocr-2505` | 25.05|
-| Magistral Medium 1 | | :heavy_check_mark: | Our first frontier-class reasoning model released June 2025. Learn more in our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-medium-2506` | 25.06|
 | Ministral 3B | | :heavy_check_mark: | World’s best edge model. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-3b-2410` | 24.10|
 | Ministral 8B | :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: |Powerful edge model with extremely high performance/price ratio. Learn more in our [blog post](https://mistral.ai/news/ministraux/) | 128k  | `ministral-8b-2410` | 24.10|
 | Mistral Medium 3 | | :heavy_check_mark: | Our frontier-class multimodal model released May 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-medium-3/) | 128k | `mistral-medium-2505` | 25.05|
-| Codestral 2501 | | :heavy_check_mark: | Our cutting-edge language model for coding with the second version released January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2501/) | 256k  | `codestral-2501` | 25.01|
 | Mistral Large 2.1 |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our top-tier large model for high-complexity tasks with the lastest version released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `mistral-large-2411` | 24.11|
+| Codestral 2501 | | :heavy_check_mark: | Our cutting-edge language model for coding released in January 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation. Learn more in our [blog post](https://mistral.ai/news/codestral-2501) | 256k  | `codestral-2501` | 25.01|
 | Pixtral Large |:heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md)| :heavy_check_mark: | Our first frontier-class multimodal model released November 2024. Learn more in our [blog post](https://mistral.ai/news/pixtral-large/) | 128k  | `pixtral-large-2411` | 24.11|
 | Mistral Small 2| :heavy_check_mark: <br/> [Mistral Research License](https://mistral.ai/licenses/MRL-0.1.md) | :heavy_check_mark: | Our updated small version, released September 2024. Learn more in our [blog post](https://mistral.ai/news/september-24-release) | 32k  | `mistral-small-2407` | 24.07|
 | Mistral Embed | | :heavy_check_mark: | Our state-of-the-art semantic for extracting representation of text extracts | 8k  | `mistral-embed` | 23.12|
@@ -16235,15 +16157,13 @@ Mistral provides two types of models: open models and premier models.
 
 | Model               | Weight availability|Available via API| Description | Max Tokens| API Endpoints|Version|
 |--------------------|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|:--------------------:|
-| Magistral Small 1.1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our small reasoning model released July 2025. | 40k | `magistral-small-2507` | 25.07|
+| Magistral Small 1.2 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our small reasoning model released September 2025 with vision support. | 128k | `magistral-small-2509` | 25.09|
 | Voxtral Small | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first model with audio input capabilities for instruct use cases.  | 32k  | `voxtral-small-2507` | 25.07|
 | Voxtral Mini | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A mini version of our first audio input model.  | 32k | `voxtral-mini-2507` | 25.07|
 | Mistral Small 3.2 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | An update to our previous small model, released June 2025. | 128k  | `mistral-small-2506` | 25.06|
-| Magistral Small 1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our first small reasoning model released June 2025. Learn more in our [blog post](https://mistral.ai/news/magistral/) | 40k | `magistral-small-2506` | 25.06|
 | Devstral Small 1.1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | An update to our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral-2507) | 128k  | `devstral-small-2507` | 25.07|
 | Mistral Small 3.1 | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category with image understanding capabilities, released March 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-small-3-1/) | 128k  | `mistral-small-2503` | 25.03|
 | Mistral Small 3| :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A new leader in the small models category, released January 2025. Learn more in our [blog post](https://mistral.ai/news/mistral-small-3) | 32k  | `mistral-small-2501` | 25.01|
-| Devstral Small 1| :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 24B text model, open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral/) | 128k  | `devstral-small-2505` | 25.05|
 | Pixtral 12B | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | A 12B model with image understanding capabilities in addition to text. Learn more in our [blog post](https://mistral.ai/news/pixtral-12b/)| 128k  | `pixtral-12b-2409` | 24.09|
 | Mistral Nemo 12B | :heavy_check_mark: <br/> Apache2 | :heavy_check_mark: | Our best multilingual open source model released July 2024. Learn more in our [blog post](https://mistral.ai/news/mistral-nemo/) | 128k  | `open-mistral-nemo`| 24.07|
 
@@ -16255,8 +16175,8 @@ it is recommended to use the dated versions of the Mistral AI API.
 Additionally, be prepared for the deprecation of certain endpoints in the coming months.
 
 Here are the details of the available versions:
-- `magistral-medium-latest`: currently points to `magistral-medium-2507`. 
-- `magistral-small-latest`: currently points to `magistral-small-2507`. 
+- `magistral-medium-latest`: currently points to `magistral-medium-2509`. 
+- `magistral-small-latest`: currently points to `magistral-small-2509`. 
 - `mistral-medium-latest`: currently points to `mistral-medium-2508`. 
 - `mistral-large-latest`: currently points to `mistral-medium-2508`, previously `mistral-large-2411`. 
 - `pixtral-large-latest`: currently points to `pixtral-large-2411`. 
@@ -16300,6 +16220,11 @@ To prepare for model retirements and version upgrades, we recommend that custome
 | Mistral Saba 2502 | | `mistral-saba-2502` | 25.02| 2025/06/10|2025/09/30| `mistral-small-latest`|
 | Mathstral 7B | :heavy_check_mark: <br/> Apache2 |  | v0.1| || `magistral-small-latest`|
 | Codestral Mamba | :heavy_check_mark: <br/> Apache2 |`open-codestral-mamba` | v0.1|2525/06/06 |2525/06/06| `codestral-latest`|
+| Devstral Small 1.0 | :heavy_check_mark: <br/> Apache2 | `devstral-small-2505` | 25.05|2025/10/31|2025/11/30| `devstral-small-latest`|
+| Magistral Small 1.0 | :heavy_check_mark: <br/> Apache2 | `magistral-small-2506` | 25.06|2025/10/31|2025/11/30| `magistral-small-latest`|
+| Magistral Medium 1.0 | | `magistral-medium-2506` | 25.06|2025/10/31|2025/11/30| `magistral-medium-latest`|
+| Magistral Small 1.1 | :heavy_check_mark: <br/> Apache2 | `magistral-small-2507` | 25.07|2025/10/31|2025/11/30| `magistral-small-latest`|
+| Magistral Medium 1.1 | | `magistral-medium-2507` | 25.07|2025/10/31|2025/11/30| `magistral-medium-latest`|
 
 
 [Model weights]

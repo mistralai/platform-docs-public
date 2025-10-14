@@ -34,10 +34,10 @@ Submit a PR to improve our Python client: [https://github.com/mistralai/client-p
 The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-python/issues) and see which one you might be interested in helping.  
 
 
-### JavaScript client
-Submit a PR to improve our JavaScript client: [https://github.com/mistralai/client-js](https://github.com/mistralai/client-js)
+### TypeScript client
+Submit a PR to improve our TypeScript client: [https://github.com/mistralai/client-ts](https://github.com/mistralai/client-ts)
 
-The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-js/issues) and see which one you might be interested in helping.  
+The easiest way to get started is to take a look at the [issue list](https://github.com/mistralai/client-ts/issues) and see which one you might be interested in helping.  
 
 
 ## Contributing to the community 

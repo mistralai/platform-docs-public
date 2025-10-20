@@ -1,0 +1,107 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+You can use the model for **pure code completion**, by only providing a `prompt` and no `suffix`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+model = "codestral-latest"
+prompt = "def is_odd(n):\n    return n % 2 == 1\ndef test_is_odd():"
+
+response = client.fim.complete(model=model, prompt=prompt, temperature=0)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+async function main() {
+    const response = await client.fim.complete({
+        model: "codestral-latest",
+        prompt: "def is_odd(n):\n    return n % 2 == 1\ndef test_is_odd():",
+        temperature: 0,
+        // minTokens: 1, // Uncomment to enforce completions to at least 1 token
+    });
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location 'https://api.mistral.ai/v1/fim/completions' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--data '{
+    "model": "codestral-latest",
+    "prompt": "def is_odd(n):\n    return n % 2 == 1\ndef test_is_odd():", 
+    "suffix": "",
+    "max_tokens": 64,
+    "temperature": 0
+}'
+``` 
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "be8c5eba61c148bf81652f7e9378e773",
+  "created": 1757439088,
+  "model": "codestral-latest",
+  "usage": {
+    "prompt_tokens": 26,
+    "total_tokens": 91,
+    "completion_tokens": 65
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "\n    assert is_odd(3) == True\n    assert is_odd(4) == False\n    assert is_odd(0) == False\n    assert is_odd(-1) == True\n    assert is_odd(-2) == False\n    print(\"All test cases pass\")"
+      }
+    }
+  ]
+}
+```
+    </TabItem>
+</Tabs>
+
+The `prefix` + `completion` will correspond to the full code.
+
+```python
+# prefix
+def is_odd(n): 
+  return n % 2 == 1 
+def test_is_odd():
+  # completion
+  assert is_odd(3) == True
+  assert is_odd(4) == False
+  assert is_odd(0) == False
+  assert is_odd(-1) == True
+  assert is_odd(-2) == False
+  print("All test cases pass")
+```

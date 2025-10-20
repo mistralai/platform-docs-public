@@ -1,0 +1,164 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Alternatively, you can upload a local file to our cloud and then use a signed URL for the task.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python">
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "voxtral-mini-latest"
+
+client = Mistral(api_key=api_key)
+
+# If local audio, upload and retrieve the signed url
+with open("music.mp3", "rb") as f:
+    uploaded_audio = client.files.upload(
+      file={
+          "content": f,
+          "file_name": f.name
+      },
+      purpose="audio"
+    )
+signed_url = client.files.get_signed_url(file_id=uploaded_audio.id)
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": signed_url.url,
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?"
+            }
+        ]
+    }
+]
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import fs from "fs";
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+// If local document, upload and retrieve the signed url
+const audio_file = fs.readFileSync('local_audio.mp3');
+const uploaded_audio = await client.files.upload({
+  file: audio_file,
+  purpose: "audio",
+});
+const signedUrl = await client.files.getSignedUrl({
+    fileId: uploaded_audio.id,
+});
+
+const chatResponse = await client.chat.complete({
+  model: "voxtral-mini-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_audio",
+          input_audio: signedUrl.url,
+        },
+        {
+          type: "text",
+          text: "What's in this file?",
+        },
+      ],
+    },
+  ],
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl" default>
+
+**Upload the Audio File**
+```bash
+curl --location https://api.mistral.ai/v1/files \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --form purpose="audio" \
+  --form file="@local_audio.mp3"
+```
+
+**Get the Signed URL**
+```bash
+curl --location "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+**Send Completion Request**
+```bash
+curl --location https://api.mistral.ai/v1/chat/completions \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "model": "voxtral-mini-2507",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_audio",
+            "input_audio": "<signed_url>"
+          },
+          {
+            "type": "text",
+            "text": "What'\''s in this file?"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "d719e752a0f845c895758933ea488cb0",
+  "created": 1756386611,
+  "model": "voxtral-mini-latest",
+  "usage": {
+    "prompt_audio_seconds": 19,
+    "prompt_tokens": 10,
+    "total_tokens": 452,
+    "completion_tokens": 67
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The audio file appears to be a compilation of music or sound effects, as indicated by the repeated, short, and varied sounds. However, without the context of the audio, it's challenging to determine what specific sounds or music are included. If you have more details or the audio itself, I could provide a more accurate analysis."
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>

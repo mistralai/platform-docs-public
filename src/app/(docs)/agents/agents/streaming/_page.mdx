@@ -1,0 +1,132 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+You can also stream the outputs, both when starting a conversation, continuing or restarting a previous one.
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+
+    <Tabs groupId="code">
+    <TabItem value="Start" label="Start" default>
+    ```py
+    response = client.beta.conversations.start_stream(
+        agent_id=websearch_agent.id,
+        inputs="Who is Albert Einstein?"
+    )
+    ```
+    </TabItem>
+    <TabItem value="Continue" label="Continue">
+    ```py
+    response = client.beta.conversations.append_stream(
+        conversation_id=response.conversation_id,
+        inputs="Translate to French."
+    )
+    ```
+    </TabItem>
+    <TabItem value="restart" label="restart">
+    ```py
+    response = client.beta.conversations.restart_stream(
+        conversation_id=response.conversation_id,
+        from_entry_id="msg_0684fe18d08278058000efa70b28fa5a",
+        inputs="Translate to Portuguese."
+    )
+    ```
+    </TabItem>
+    </Tabs>
+</TabItem>
+
+<TabItem value="typescript" label="typescript">
+    <Tabs groupId="typescript">
+    <TabItem value="start" label="start">
+```typescript
+let stream = await client.beta.conversations.startStream({
+    agentId: websearchAgent.id,
+    inputs: "Who is albert Enstein?"
+});
+```
+    </TabItem>
+    <TabItem value="continue" label="continue">
+```typescript
+let stream = await client.beta.conversations.appendStream({
+    conversationId: conversation.conversationId,
+    conversationAppendStreamRequest: {
+        inputs: "Who is albert Enstein?"
+    }
+});
+```
+    </TabItem>
+    <TabItem value="restart" label="restart">
+```typescript
+let stream = await client.beta.conversations.restartStream({
+    conversationId: conversation.conversationId,
+    conversationRestartStreamRequest: {
+        fromEntryId: conversationMessages.messages[conversationMessages.messages.length - 1 ].id?.toString() || '',
+        inputs: "Who is albert Enstein?"
+    }
+});
+```
+    </TabItem>
+    </Tabs>
+</TabItem>
+
+<TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: text/event-stream' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "inputs": "Who is Albert Einstein?",
+    "stream": true,
+    "agent_id": "ag_06811008e6e07cb48000fd3f133e1771"
+}'
+```
+</TabItem>
+</Tabs>
+
+When streaming, you will have specific indexes for specific content types during a stream. These include:
+- `conversation.response.started`: The start of a conversation response.
+- `conversation.response.done`: The response is done and finished.
+- `conversation.response.error`: An error occurred.
+- `message.output.delta`: Chunk of content, usually tokens corresponding to the model reply.
+- `tool.execution.started`: A tool execution has started.
+- `tool.execution.done`: A tool has finished executing.
+- `agent.handoff.started`: The handoff to a different agent has started.
+- `agent.handoff.done`: The handoff was concluded.
+- `function.call.delta`: Chunk of content, usually tokens corresponding to the function tool call.
+
+<SectionTab variant="secondary" sectionId="streaming-output">Streaming Output Example</SectionTab>
+
+```
+event: conversation.response.started
+data: {"type":"conversation.response.started","conversation_id":"conv_067f2a98c1a773678000ce73a36b785a"}
+
+event: tool.execution.started
+data: {"type":"tool.execution.started","output_index":0,"id":"tool_exec_067f2a98ca357c8b8000ea212104b290","name":"web_search"}
+
+event: tool.execution.done
+data: {"type":"tool.execution.done","output_index":0,"id":"tool_exec_067f2a98ca357c8b8000ea212104b290","name":"web_search"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-2505","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":"The"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-2505","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" last"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-2505","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" European"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-2505","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" Football"}
+
+...
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":2,"model":"mistral-medium-2505","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" tournament"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":2,"model":"mistral-medium-2505","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":"."}
+
+event: conversation.response.done
+data: {"type":"conversation.response.done","usage":{"prompt_tokens":18709,"total_tokens":18892,"completion_tokens":183}}
+```

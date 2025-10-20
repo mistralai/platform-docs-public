@@ -1,0 +1,116 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+You can create an agent with access to the document library by providing it as one of the tools. Note that you can still add more tools to the agent. The model is free to access and leverage the knowledge from the uploaded documents.
+
+You specify the libraries that the agent has access to with `library_ids`, you can create and manage these libraries via API directly, see more about how to create and manage libraries in the **Manage Libraries** tab.
+
+:::tip
+It is also possible to specify libraries created via Le Chat; these IDs are visible in the URL of the corresponding library created on Le Chat, for example: `https://chat.mistral.ai/libraries/<library_id>`; To enable the Agent to access Le Chat library, you have to be an Org admin and share it with the Organization.
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+library_agent = client.beta.agents.create(
+    model="mistral-medium-2505",
+    name="Document Library Agent",
+    description="Agent used to access documents from the document library.",
+    instructions="Use the  library tool to access external documents.",
+    tools=[{"type": "document_library", "library_ids": [new_library.id]}],
+    completion_args={
+        "temperature": 0.3,
+        "top_p": 0.95,
+    }
+)
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+let libraryAgent = await client.beta.agents.create({
+    model:"mistral-medium-2505",
+    name:"Document Library Agent",
+    description:"Agent used to access documents from the document library.",
+    instructions:"Use the  library tool to access external documents.",
+    tools:[
+        {
+            type: "document_library", 
+            libraryIds: [newLibrary.id]
+        }
+    ],
+    completionArgs:{
+        temperature: 0.3,
+        topP: 0.95,
+    }
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-medium-2505",
+     "name": "Library Agent",
+     "description": "Agent able to search information in your library...",
+     "instructions": "You have the ability to perform searches with `document_library` to find relevant information.",
+     "tools": [
+       {
+         "type": "document_library",
+         "library_ids" : ["<library_id>"]
+       }
+     ],
+     "completion_args": {
+       "temperature": 0.3,
+       "top_p": 0.95
+     }
+  }'
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "model": "mistral-medium-2505",
+  "name": "Document Library Agent",
+  "description": "Agent used to access documents from the document library.",
+  "id": "ag_06835bb196f9720680004fb1873efbae",
+  "version": 0,
+  "created_at": "2025-05-27T13:16:09.438785Z",
+  "updated_at": "2025-05-27T13:16:09.438787Z",
+  "instructions": "Use the library tool to access external documents.",
+  "tools": [
+    {
+      "library_ids": [
+        "06835a9c-262c-7e83-8000-594d29fe2948"
+      ],
+      "type": "document_library"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+
+```
+  </TabItem>
+</Tabs>
+
+As with other agents, when creating one, you will receive an agent ID corresponding to the created agent. You can use this ID to start a conversation.

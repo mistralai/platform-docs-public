@@ -1,0 +1,330 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+You can also upload a PDF file in our Cloud and get the QnA results from the uploaded PDF by retrieving a signed url. Document QnA is under the umbrela OCR, the method for uploading and handling files will hence be the same.
+
+<SectionTab as="h3" variant="secondary" sectionId="upload-a-file">Upload a File</SectionTab>
+
+First, you will have to upload your PDF file to our cloud, this file will be stored and only accessible via an API key.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+uploaded_pdf = client.files.upload(
+    file={
+        "file_name": "2201.04234v3.pdf",
+        "content": open("2201.04234v3.pdf", "rb"),
+    },
+    purpose="ocr"
+)  
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const uploadedFile = fs.readFileSync('2201.04234v3.pdf');
+const uploadedPdf = await client.files.upload({
+    file: {
+        fileName: "2201.04234v3.pdf",
+        content: uploadedFile,
+    },
+    purpose: "ocr"
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="ocr" \
+  -F file="@2201.04234v3.pdf"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "9a90b93c-0e7d-4dd7-8520-07d051404d11",
+  "object": "file",
+  "bytes": 560027,
+  "created_at": 1756754478,
+  "filename": "1805.04770v2.pdf",
+  "purpose": "ocr",
+  "sample_type": "ocr_input",
+  "num_lines": 0,
+  "mimetype": "application/pdf",
+  "source": "upload",
+  "signature": "..."
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="retrieve-file">Retrieve File</SectionTab>
+
+Once the file uploaded, you can retrieve it at any point.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+retrieved_file = client.files.retrieve(file_id=uploaded_pdf.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const retrievedFile = await client.files.retrieve({
+    fileId: uploadedPdf.id
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X GET "https://api.mistral.ai/v1/files/$id" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "9a90b93c-0e7d-4dd7-8520-07d051404d11",
+  "object": "file",
+  "bytes": 560027,
+  "created_at": 1756754478,
+  "filename": "1805.04770v2.pdf",
+  "purpose": "ocr",
+  "sample_type": "ocr_input",
+  "num_lines": 0,
+  "mimetype": "application/pdf",
+  "source": "upload",
+  "signature": "...",
+  "deleted": false
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="get-signed-url">Get Signed Url</SectionTab>
+
+For QnA with Documents, you can get a signed url to access the file. An optional `expiry` parameter allow you to automatically expire the signed url after n hours.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const signedUrl = await client.files.getSignedUrl({
+    fileId: uploadedPdf.id,
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X GET "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+
+  <TabItem value="output" label="output">
+
+```json
+{
+  "url": "https://mistralaifilesapiprodswe.blob.core.windows.net/fine-tune/.../.../9a90b93c0e7d4dd7852007d051404d11.pdf?se=2025-09-02T19%3A22%3A08Z&sp=r&sv=2025-01-05&sr=b&sig=..."
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="get-chat-completion-results">Get Chat Completion Result</SectionTab>
+
+You can now query any LLM with the signed url.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+model =  "mistral-small-latest"
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "what is the last sentence in the document"
+            },
+            {
+                "type": "document_url",
+                "document_url": signed_url.url
+            }
+        ]
+    }
+]
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const chatResponse = await client.chat.complete({
+  model: "mistral-small-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: "what is the last sentence in the document",
+        },
+        {
+          type: "document_url",
+          documentUrl: signedUrl.url,
+        },
+      ],
+    },
+  ],
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-small-latest",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "what is the last sentence in the document"
+          },
+          {
+            "type": "document_url",
+            "document_url": "https://mistralaifilesapiprodswe.blob.core.windows.net/fine-tune/.../.../22e2e88f167d4f3d982aadd977a54ec3.pdf?se=2025-08-30T10%3A53%3A22Z&sp=r&sv=2025-01-05&sr=b&sig=..."
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "4ccfdc97996241eb9fe4375d947c671b",
+  "created": 1756754528,
+  "model": "mistral-small-latest",
+  "usage": {
+    "prompt_tokens": 13707,
+    "total_tokens": 13764,
+    "completion_tokens": 57
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The last sentence in the document is:\n\n\"Zaremba, W., Sutskever, I., and Vinyals, O. Recurrent neural network regularization. arXiv:1409.2329, 2014.\""
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="delete-file">Delete File</SectionTab>
+
+Once everything done, you can optionally delete the pdf file from our cloud unless you wish to reuse it later.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+client.files.delete(file_id=file.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.files.delete(fileId=file.id);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X DELETE https://api.mistral.ai/v1/files/${file_id} \
+-H "Authorization: Bearer ${MISTRAL_API_KEY}"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "9a90b93c-0e7d-4dd7-8520-07d051404d11",
+  "object": "file",
+  "deleted": true
+}
+```
+
+  </TabItem>
+</Tabs>

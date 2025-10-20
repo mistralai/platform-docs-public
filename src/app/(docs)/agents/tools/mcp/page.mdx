@@ -1,0 +1,79 @@
+---
+id: mcp
+title: MCP
+slug: mcp
+sidebar_position: 4
+---
+
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { SectionTab } from '@/components/layout/section-tab';
+
+import LocalMCPTab from './local_mcp_tab/_page.mdx';
+import RemoteMCPTab from './remote_mcp_tab/_page.mdx';
+import RemoteAuthMCPTab from './remote_mcp_auth_tab/_page.mdx';
+
+# MCP
+
+The Model Context Protocol (MCP) is an open standard designed to **streamline the integration of AI models with various data sources and tools**. By providing a **standardized interface**, MCP enables seamless and secure connections, allowing AI systems to access and utilize contextual information efficiently. It simplifies the development process, making it easier to build robust and interconnected AI applications.
+
+By replacing fragmented integrations with a single protocol, MCP helps AI models produce better, more relevant responses by connecting them to live data and real-world systems.
+
+For more information on configuring and deploying your own MCP Server, refer to the [Model Context Protocol documentation](https://modelcontextprotocol.io/introduction).
+
+<Image
+  url={['/img/mcp_graph.png', '/img/mcp_graph_dark.png']}
+  alt="mcp_graph"
+  width="800px"
+  centered
+/>
+
+<SectionTab as="h1" sectionId="mcp-client-usage">MCP Client Usage</SectionTab>
+
+Our Python SDK enables seamless integration of our agents with MCP Clients.
+
+<SectionTab as="h2" variant="secondary" sectionId="mcp-setup">MCP Setup</SectionTab>
+
+Below you can find examples of how to set up and use the MCP Client with our Python SDK.
+
+<ExplorerTabs id="mcp-setup" groupId="code">
+  <ExplorerTab value="local-mcp" label="Local MCP Server" default>
+    <LocalMCPTab/>
+  </ExplorerTab>
+  <ExplorerTab value="remote-mcp" label="Remote MCP Server">
+    <RemoteMCPTab/>
+  </ExplorerTab>
+  <ExplorerTab value="remote-mcp-auth" label="Remote MCP Server with Auth">
+    <RemoteAuthMCPTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="streaming-conversations">Streaming Conversations</SectionTab>
+
+Streaming conversations with an agent using a local MCP server is similar to non-streaming, but instead of waiting for the entire response, you process the results as they arrive.
+
+Here is a brief example of how to stream conversations:
+
+```python
+    # Stream the agent's responses
+    events = await client.beta.conversations.run_stream_async(
+        run_ctx=run_ctx,
+        inputs="Tell me the weather in John's location currently.",
+    )
+
+    # Process the streamed events
+    run_result = None
+    async for event in events:
+        if isinstance(event, RunResult):
+            run_result = event
+        else:
+            print(event)
+
+    if not run_result:
+        raise RuntimeError("No run result found")
+
+    # Print the results
+    print("All run entries:")
+    for entry in run_result.output_entries:
+        print(f"{entry}")
+    print(f"Final model: {run_result.output_as_model}")
+```

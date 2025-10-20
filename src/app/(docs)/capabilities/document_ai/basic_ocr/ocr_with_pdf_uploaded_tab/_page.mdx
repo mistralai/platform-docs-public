@@ -1,0 +1,346 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+You can also upload a PDF file in our Cloud and get the OCR results from the uploaded PDF by retrieving a signed url.
+
+<SectionTab as="h3" variant="secondary" sectionId="upload-a-file">Upload a File</SectionTab>
+
+First, you will have to upload your PDF file to our cloud, this file will be stored and only accessible via an API key.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+uploaded_pdf = client.files.upload(
+    file={
+        "file_name": "2201.04234v3.pdf",
+        "content": open("2201.04234v3.pdf", "rb"),
+    },
+    purpose="ocr"
+)  
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const uploadedFile = fs.readFileSync('2201.04234v3.pdf');
+const uploadedPdf = await client.files.upload({
+    file: {
+        fileName: "2201.04234v3.pdf",
+        content: uploadedFile,
+    },
+    purpose: "ocr"
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="ocr" \
+  -F file="@2201.04234v3.pdf"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "22e2e88f-167d-4f3d-982a-add977a54ec3",
+  "object": "file",
+  "bytes": 3002783,
+  "created_at": 1756464781,
+  "filename": "2201.04234v3.pdf",
+  "purpose": "ocr",
+  "sample_type": "ocr_input",
+  "num_lines": 0,
+  "mimetype": "application/pdf",
+  "source": "upload",
+  "signature": "..."
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="retrieve-file">Retrieve File</SectionTab>
+
+Once the file uploaded, you can retrieve it at any point.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+retrieved_file = client.files.retrieve(file_id=uploaded_pdf.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const retrievedFile = await client.files.retrieve({
+    fileId: uploadedPdf.id
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X GET "https://api.mistral.ai/v1/files/$id" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "22e2e88f-167d-4f3d-982a-add977a54ec3",
+  "object": "file",
+  "bytes": 3002783,
+  "created_at": 1756464781,
+  "filename": "2201.04234v3.pdf",
+  "purpose": "ocr",
+  "sample_type": "ocr_input",
+  "num_lines": 0,
+  "mimetype": "application/pdf",
+  "source": "upload",
+  "signature": "...",
+  "deleted": false
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="get-signed-url">Get Signed Url</SectionTab>
+
+For OCR tasks, you can get a signed url to access the file. An optional `expiry` parameter allow you to automatically expire the signed url after n hours.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const signedUrl = await client.files.getSignedUrl({
+    fileId: uploadedPdf.id,
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X GET "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+
+  <TabItem value="output" label="output">
+
+```json
+{
+  "url": "https://mistralaifilesapiprodswe.blob.core.windows.net/fine-tune/.../.../22e2e88f167d4f3d982aadd977a54ec3.pdf?se=2025-08-30T10%3A53%3A22Z&sp=r&sv=2025-01-05&sr=b&sig=..."
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="get-ocr-results">Get OCR Results</SectionTab>
+
+You can now query the OCR endpoint with the signed url.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": signed_url.url,
+    },
+    include_image_base64=True
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "document_url",
+        documentUrl: signedUrl.url,
+    },
+    includeImageBase64: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "<signed_url>"
+    },
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Leveraging Unlabeled Data to Predict Out-of-Distribution Performance \n\nSaurabh Garg*<br>Carnegie Mellon University<br>sgarg2@andrew.cmu.edu Sivaraman Balakrishnan<br>Carnegie Mellon University<br>sbalakri@andrew.cmu.edu Zachary C. Lipton<br>Carnegie Mellon University<br>zlipton@andrew.cmu.edu\n\n## Behnam Neyshabur\n\nGoogle Research, Blueshift team neyshabur@google.com\n\n## Hanie Sedghi\n\nGoogle Research, Brain team hsedghi@google.com\n\n## ABSTRACT\n\nReal-world machine learning deployments are characterized by mismatches between the source (training) and target (test) distributions that may cause performance drops. In this work, we investigate methods for predicting the target domain accuracy using only labeled source data and unlabeled target data. We propose Average Thresholded Confidence (ATC), a practical method that learns a threshold on the model's confidence, predicting accuracy as the fraction of unlabeled examples for which model confidence exceeds that threshold. ATC outperforms previous methods across several model architectures, types of distribution shifts (e.g., due to synthetic corruptions, dataset reproduction, or novel subpopulations), and datasets (WILDS, ImageNet, BREEDS, CIFAR, and MNIST). In our experiments, ATC estimates target performance $2-4 \\times$ more accurately than prior methods. We also explore the theoretical foundations of the problem, proving that, in general, identifying the accuracy is just as hard as identifying the optimal predictor and thus, the efficacy of any method rests upon (perhaps unstated) assumptions on the nature of the shift. Finally, analyzing our method on some toy distributions, we provide insights concerning when it works ${ }^{1}$.\n\n## 1 INTRODUCTION\n\nMachine learning models deployed in the real world typically encounter examples from previously unseen distributions. While the IID assumption enables us to evaluate models using held-out data from the source distribution (from which training data is sampled), this estimate is no longer valid in presence of a distribution shift. Moreover, under such shifts, model accuracy tends to degrade (Szegedy et al., 2014; Recht et al., 2019; Koh et al., 2021). Commonly, the only data available to the practitioner are a labeled training set (source) and unlabeled deployment-time data which makes the problem more difficult. In this setting, detecting shifts in the distribution of covariates is known to be possible (but difficult) in theory (Ramdas et al., 2015), and in practice (Rabanser et al., 2018). However, producing an optimal predictor using only labeled source and unlabeled target data is well-known to be impossible absent further assumptions (Ben-David et al., 2010; Lipton et al., 2018).\n\nTwo vital questions that remain are: (i) the precise conditions under which we can estimate a classifier's target-domain accuracy; and (ii) which methods are most practically useful. To begin, the straightforward way to assess the performance of a model under distribution shift would be to collect labeled (target domain) examples and then to evaluate the model on that data. However, collecting fresh labeled data from the target distribution is prohibitively expensive and time-consuming, especially if the target distribution is non-stationary. Hence, instead of using labeled data, we aim to use unlabeled data from the target distribution, that is comparatively abundant, to predict model performance. Note that in this work, our focus is not to improve performance on the target but, rather, to estimate the accuracy on the target for a given classifier.\n\n[^0]\n[^0]:    * Work done in part while Saurabh Garg was interning at Google\n    ${ }^{1}$ Code is available at https://github.com/saurabhgarg1996/ATC_code.",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "![img-0.jpeg](img-0.jpeg)\n\nFigure 1: Illustration of our proposed method ATC. Left: using source domain validation data, we identify a threshold on a score (e.g. negative entropy) computed on model confidence such that fraction of examples above the threshold matches the validation set accuracy. ATC estimates accuracy on unlabeled target data as the fraction of examples with the score above the threshold. Interestingly, this threshold yields accurate estimates on a wide set of target distributions resulting from natural and synthetic shifts. Right: Efficacy of ATC over previously proposed approaches on our testbed with a post-hoc calibrated model. To obtain errors on the same scale, we rescale all errors with Average Confidence (AC) error. Lower estimation error is better. See Table 1 for exact numbers and comparison on various types of distribution shift. See Sec. 5 for details on our testbed.\n\nRecently, numerous methods have been proposed for this purpose (Deng & Zheng, 2021; Chen et al., 2021b; Jiang et al., 2021; Deng et al., 2021; Guillory et al., 2021). These methods either require calibration on the target domain to yield consistent estimates (Jiang et al., 2021; Guillory et al., 2021) or additional labeled data from several target domains to learn a linear regression function on a distributional distance that then predicts model performance (Deng et al., 2021; Deng & Zheng, 2021; Guillory et al., 2021). However, methods that require calibration on the target domain typically yield poor estimates since deep models trained and calibrated on source data are not, in general, calibrated on a (previously unseen) target domain (Ovadia et al., 2019). Besides, methods that leverage labeled data from target domains rely on the fact that unseen target domains exhibit strong linear correlation with seen target domains on the underlying distance measure and, hence, can be rendered ineffective when such target domains with labeled data are unavailable (in Sec. 5.1 we demonstrate such a failure on a real-world distribution shift problem). Therefore, throughout the paper, we assume access to labeled source data and only unlabeled data from target domain(s).\n\nIn this work, we first show that absent assumptions on the source classifier or the nature of the shift, no method of estimating accuracy will work generally (even in non-contrived settings). To estimate accuracy on target domain perfectly, we highlight that even given perfect knowledge of the labeled source distribution (i.e., $p_{s}(x, y)$) and unlabeled target distribution (i.e., $p_{t}(x)$), we need restrictions on the nature of the shift such that we can uniquely identify the target conditional $p_{t}(y | x)$. Thus, in general, identifying the accuracy of the classifier is as hard as identifying the optimal predictor.\n\nSecond, motivated by the superiority of methods that use maximum softmax probability (or logit) of a model for Out-Of-Distribution (OOD) detection (Hendrycks & Gimpel, 2016; Hendrycks et al., 2019), we propose a simple method that leverages softmax probability to predict model performance. Our method, Average Thresholded Confidence (ATC), learns a threshold on a score (e.g., maximum confidence or negative entropy) of model confidence on validation source data and predicts target domain accuracy as the fraction of unlabeled target points that receive a score above that threshold. ATC selects a threshold on validation source data such that the fraction of source examples that receive the score above the threshold match the accuracy of those examples. Our primary contribution in ATC is the proposal of obtaining the threshold and observing its efficacy on (practical) accuracy estimation. Importantly, our work takes a step forward in positively answering the question raised in Deng & Zheng (2021); Deng et al. (2021) about a practical strategy to select a threshold that enables accuracy prediction with thresholded model confidence.",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 220,
+          "bottom_right_x": 1404,
+          "bottom_right_y": 646,
+          "image_base64": "...",
+          "image_annotation": null
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 2,
+      "markdown": "ATC is simple to implement with existing frameworks, compatible with arbitrary model classes, and dominates other contemporary methods. Across several model architectures on a range of benchmark vision and language datasets, we verify that ATC outperforms prior methods by at least $2-4 \\times$ in predicting target accuracy on a variety of distribution shifts. In particular, we consider shifts due to common corruptions (e.g., ImageNet-C), natural distribution shifts due to dataset reproduction (e.g., ImageNet-v2, ImageNet-R), shifts due to novel subpopulations (e.g., BREEDS), and distribution shifts faced in the wild (e.g., WILDS).\n\nAs a starting point for theory development, we investigate ATC on a simple toy model that models distribution shift with varying proportions of the population with spurious features, as in Nagarajan et al. (2020). Finally, we note that although ATC achieves superior performance in our empirical evaluation, like all methods, it must fail (returns inconsistent estimates) on certain types of distribution shifts, per our impossibility result.\n\n# 2 Prior Work \n\nOut-of-distribution detection. The main goal of OOD detection is to identify previously unseen examples, i.e., samples out of the support of training distribution. To accomplish this, modern methods utilize confidence or features learned by a deep network trained on some source data. Hendrycks \\& Gimpel (2016); Geifman \\& El-Yaniv (2017) used the confidence score of an (already) trained deep model to identify OOD points. Lakshminarayanan et al. (2016) use entropy of an ensemble model to evaluate prediction uncertainty on OOD points. To improve OOD detection with model confidence, Liang et al. (2017) propose to use temperature scaling and input perturbations. Jiang et al. (2018) propose to use scores based on the relative distance of the predicted class to the second class. Recently, residual flow-based methods were used to obtain a density model for OOD detection (Zhang et al., 2020). Ji et al. (2021) proposed a method based on subfunction error bounds to compute unreliability per sample. Refer to Ovadia et al. (2019); Ji et al. (2021) for an overview and comparison of methods for prediction uncertainty on OOD data.\n\nPredicting model generalization. Understanding generalization capabilities of overparameterized models on in-distribution data using conventional machine learning tools has been a focus of a long line of work; representative research includes Neyshabur et al. (2015; 2017); Neyshabur (2017); Neyshabur et al. (2018); Dziugaite \\& Roy (2017); Bartlett et al. (2017); Zhou et al. (2018); Long \\& Sedghi (2019); Nagarajan \\& Kolter (2019a). At a high level, this line of research bounds the generalization gap directly with complexity measures calculated on the trained model. However, these bounds typically remain numerically loose relative to the true generalization error (Zhang et al., 2016; Nagarajan \\& Kolter, 2019b). On the other hand, another line of research departs from complexitybased approaches to use unseen unlabeled data to predict in-distribution generalization (Platanios et al., 2016; 2017; Garg et al., 2021; Jiang et al., 2021).\n\nRelevant to our work are methods for predicting the error of a classifier on OOD data based on unlabeled data from the target (OOD) domain. These methods can be characterized into two broad categories: (i) Methods which explicitly predict correctness of the model on individual unlabeled points (Deng \\& Zheng, 2021; Jiang et al., 2021; Deng et al., 2021; Chen et al., 2021a); and (ii) Methods which directly obtain an estimate of error with unlabeled OOD data without making a point-wise prediction (Chen et al., 2021b; Guillory et al., 2021; Chuang et al., 2020).\n\nTo achieve a consistent estimate of the target accuracy, Jiang et al. (2021); Guillory et al. (2021) require calibration on target domain. However, these methods typically yield poor estimates as deep models trained and calibrated on some source data are seldom calibrated on previously unseen domains (Ovadia et al., 2019). Additionally, Deng \\& Zheng (2021); Guillory et al. (2021) derive model-based distribution statistics on unlabeled target set that correlate with the target accuracy and propose to use a subset of labeled target domains to learn a (linear) regression function that predicts model performance. However, there are two drawbacks with this approach: (i) the correlation of these distribution statistics can vary substantially as we consider different nature of shifts (refer to Sec. 5.1, where we empirically demonstrate this failure); (ii) even if there exists a (hypothetical) statistic with strong correlations, obtaining labeled target domains (even simulated ones) with strong correlations would require significant a priori knowledge about the nature of shift that, in general, might not be available before models are deployed in the wild. Nonetheless, in our work, we only assume access to labeled data from the source domain presuming no access to labeled target domains or information about how to simulate them.",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    ...
+    {
+      "index": 27,
+      "markdown": "| Dataset | Shift | IM |  | AC |  | DOC |  | GDE | ATC-MC (Ours) |  | ATC-NE (Ours) |  |\n| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |\n|  |  | Pre T | Post T | Pre T | Post T | Pre T | Post T | Post T | Pre T | Post T | Pre T | Post T |\n| CIFAR10 | Natural | $\\begin{gathered} 6.60 \\\\ (0.35) \\end{gathered}$ | $\\begin{gathered} 5.74 \\\\ (0.30) \\end{gathered}$ | $\\begin{gathered} 9.88 \\\\ (0.16) \\end{gathered}$ | $\\begin{gathered} 6.89 \\\\ (0.13) \\end{gathered}$ | $\\begin{gathered} 7.25 \\\\ (0.15) \\end{gathered}$ | $\\begin{gathered} 6.07 \\\\ (0.16) \\end{gathered}$ | $\\begin{gathered} 4.77 \\\\ (0.13) \\end{gathered}$ | $\\begin{gathered} 3.21 \\\\ (0.49) \\end{gathered}$ | $\\begin{gathered} 3.02 \\\\ (0.40) \\end{gathered}$ | $\\begin{gathered} 2.99 \\\\ (0.37) \\end{gathered}$ | $\\begin{gathered} 2.85 \\\\ (0.29) \\end{gathered}$ |\n|  | Synthetic | $\\begin{gathered} 12.33 \\\\ (0.51) \\end{gathered}$ | $\\begin{gathered} 10.20 \\\\ (0.48) \\end{gathered}$ | $\\begin{gathered} 16.50 \\\\ (0.26) \\end{gathered}$ | $\\begin{gathered} 11.91 \\\\ (0.17) \\end{gathered}$ | $\\begin{gathered} 13.87 \\\\ (0.18) \\end{gathered}$ | $\\begin{gathered} 11.08 \\\\ (0.17) \\end{gathered}$ | $\\begin{gathered} 6.55 \\\\ (0.35) \\end{gathered}$ | $\\begin{gathered} 4.65 \\\\ (0.55) \\end{gathered}$ | $\\begin{gathered} 4.25 \\\\ (0.55) \\end{gathered}$ | $\\begin{gathered} 4.21 \\\\ (0.55) \\end{gathered}$ | $\\begin{gathered} 3.87 \\\\ (0.75) \\end{gathered}$ |\n| CIFAR100 | Synthetic | $\\begin{gathered} 13.69 \\\\ (0.55) \\end{gathered}$ | $\\begin{gathered} 11.51 \\\\ (0.41) \\end{gathered}$ | $\\begin{gathered} 23.61 \\\\ (1.16) \\end{gathered}$ | $\\begin{gathered} 13.10 \\\\ (0.80) \\end{gathered}$ | $\\begin{gathered} 14.60 \\\\ (0.77) \\end{gathered}$ | $\\begin{gathered} 10.14 \\\\ (0.64) \\end{gathered}$ | $\\begin{gathered} 9.85 \\\\ (0.57) \\end{gathered}$ | $\\begin{gathered} 5.50 \\\\ (0.70) \\end{gathered}$ | $\\begin{gathered} 4.75 \\\\ (0.73) \\end{gathered}$ | $\\begin{gathered} 4.72 \\\\ (0.74) \\end{gathered}$ | $\\begin{gathered} 4.94 \\\\ (0.74) \\end{gathered}$ |\n| ImageNet200 | Natural | $\\begin{gathered} 12.37 \\\\ (0.25) \\end{gathered}$ | $\\begin{gathered} 8.19 \\\\ (0.33) \\end{gathered}$ | $\\begin{gathered} 22.07 \\\\ (0.08) \\end{gathered}$ | $\\begin{gathered} 8.61 \\\\ (0.25) \\end{gathered}$ | $\\begin{gathered} 15.17 \\\\ (0.11) \\end{gathered}$ | $\\begin{gathered} 7.81 \\\\ (0.29) \\end{gathered}$ | $\\begin{gathered} 5.13 \\\\ (0.08) \\end{gathered}$ | $\\begin{gathered} 4.37 \\\\ (0.39) \\end{gathered}$ | $\\begin{gathered} 2.04 \\\\ (0.24) \\end{gathered}$ | $\\begin{gathered} 3.79 \\\\ (0.30) \\end{gathered}$ | $\\begin{gathered} 1.45 \\\\ (0.27) \\end{gathered}$ |\n|  | Synthetic | $\\begin{gathered} 19.86 \\\\ (1.38) \\end{gathered}$ | $\\begin{gathered} 12.94 \\\\ (1.81) \\end{gathered}$ | $\\begin{gathered} 32.44 \\\\ (1.00) \\end{gathered}$ | $\\begin{gathered} 13.35 \\\\ (1.30) \\end{gathered}$ | $\\begin{gathered} 25.02 \\\\ (1.10) \\end{gathered}$ | $\\begin{gathered} 12.38 \\\\ (1.38) \\end{gathered}$ | $\\begin{gathered} 5.41 \\\\ (0.89) \\end{gathered}$ | $\\begin{gathered} 5.93 \\\\ (1.38) \\end{gathered}$ | $\\begin{gathered} 3.09 \\\\ (0.87) \\end{gathered}$ | $\\begin{gathered} 5.00 \\\\ (1.28) \\end{gathered}$ | $\\begin{gathered} 2.68 \\\\ (0.45) \\end{gathered}$ |\n| ImageNet | Natural | $\\begin{gathered} 7.77 \\\\ (0.27) \\end{gathered}$ | $\\begin{gathered} 6.50 \\\\ (0.33) \\end{gathered}$ | $\\begin{gathered} 18.13 \\\\ (0.23) \\end{gathered}$ | $\\begin{gathered} 6.02 \\\\ (0.34) \\end{gathered}$ | $\\begin{gathered} 8.13 \\\\ (0.27) \\end{gathered}$ | $\\begin{gathered} 5.76 \\\\ (0.37) \\end{gathered}$ | $\\begin{gathered} 6.23 \\\\ (0.41) \\end{gathered}$ | $\\begin{gathered} 3.88 \\\\ (0.53) \\end{gathered}$ | $\\begin{gathered} 2.17 \\\\ (0.62) \\end{gathered}$ | $\\begin{gathered} 2.06 \\\\ (0.54) \\end{gathered}$ | $\\begin{gathered} 0.80 \\\\ (0.44) \\end{gathered}$ |\n|  | Synthetic | $\\begin{gathered} 13.39 \\\\ (0.53) \\end{gathered}$ | $\\begin{gathered} 10.12 \\\\ (0.63) \\end{gathered}$ | $\\begin{gathered} 24.62 \\\\ (0.64) \\end{gathered}$ | $\\begin{gathered} 8.51 \\\\ (0.71) \\end{gathered}$ | $\\begin{gathered} 13.55 \\\\ (0.61) \\end{gathered}$ | $\\begin{gathered} 7.90 \\\\ (0.72) \\end{gathered}$ | $\\begin{gathered} 6.32 \\\\ (0.33) \\end{gathered}$ | $\\begin{gathered} 3.34 \\\\ (0.53) \\end{gathered}$ | $\\begin{gathered} 2.53 \\\\ (0.36) \\end{gathered}$ | $\\begin{gathered} 2.61 \\\\ (0.33) \\end{gathered}$ | $\\begin{gathered} 4.89 \\\\ (0.83) \\end{gathered}$ |\n| FMoW-WILDS | Natural | $\\begin{gathered} 5.53 \\\\ (0.33) \\end{gathered}$ | $\\begin{gathered} 4.31 \\\\ (0.63) \\end{gathered}$ | $\\begin{gathered} 33.53 \\\\ (0.13) \\end{gathered}$ | $\\begin{gathered} 12.84 \\\\ (12.06) \\end{gathered}$ | $\\begin{gathered} 5.94 \\\\ (0.36) \\end{gathered}$ | $\\begin{gathered} 4.45 \\\\ (0.77) \\end{gathered}$ | $\\begin{gathered} 5.74 \\\\ (0.55) \\end{gathered}$ | $\\begin{gathered} 3.06 \\\\ (0.36) \\end{gathered}$ | $\\begin{gathered} 2.70 \\\\ (0.54) \\end{gathered}$ | $\\begin{gathered} 3.02 \\\\ (0.35) \\end{gathered}$ | $\\begin{gathered} 2.72 \\\\ (0.44) \\end{gathered}$ |\n| RxRx1-WILDS | Natural | $\\begin{gathered} 5.80 \\\\ (0.17) \\end{gathered}$ | $\\begin{gathered} 5.72 \\\\ (0.15) \\end{gathered}$ | $\\begin{gathered} 7.90 \\\\ (0.24) \\end{gathered}$ | $\\begin{gathered} 4.84 \\\\ (0.09) \\end{gathered}$ | $\\begin{gathered} 5.98 \\\\ (0.15) \\end{gathered}$ | $\\begin{gathered} 5.98 \\\\ (0.13) \\end{gathered}$ | $\\begin{gathered} 6.03 \\\\ (0.08) \\end{gathered}$ | $\\begin{gathered} 4.66 \\\\ (0.38) \\end{gathered}$ | $\\begin{gathered} 4.56 \\\\ (0.38) \\end{gathered}$ | $\\begin{gathered} 4.41 \\\\ (0.31) \\end{gathered}$ | $\\begin{gathered} 4.47 \\\\ (0.26) \\end{gathered}$ |\n| Amazon-WILDS | Natural | $\\begin{gathered} 2.40 \\\\ (0.08) \\end{gathered}$ | $\\begin{gathered} 2.29 \\\\ (0.09) \\end{gathered}$ | $\\begin{gathered} 8.01 \\\\ (0.53) \\end{gathered}$ | $\\begin{gathered} 2.38 \\\\ (0.17) \\end{gathered}$ | $\\begin{gathered} 2.40 \\\\ (0.09) \\end{gathered}$ | $\\begin{gathered} 2.28 \\\\ (0.09) \\end{gathered}$ | $\\begin{gathered} 17.87 \\\\ (0.18) \\end{gathered}$ | $\\begin{gathered} 1.65 \\\\ (0.06) \\end{gathered}$ | $\\begin{gathered} 1.62 \\\\ (0.05) \\end{gathered}$ | $\\begin{gathered} 1.60 \\\\ (0.14) \\end{gathered}$ | $\\begin{gathered} 1.59 \\\\ (0.15) \\end{gathered}$ |\n| CivilCom.-WILDS | Natural | $\\begin{gathered} 12.64 \\\\ (0.52) \\end{gathered}$ | $\\begin{gathered} 10.80 \\\\ (0.48) \\end{gathered}$ | $\\begin{gathered} 16.76 \\\\ (0.53) \\end{gathered}$ | $\\begin{gathered} 11.03 \\\\ (0.49) \\end{gathered}$ | $\\begin{gathered} 13.31 \\\\ (0.52) \\end{gathered}$ | $\\begin{gathered} 10.99 \\\\ (0.49) \\end{gathered}$ | $\\begin{gathered} 16.65 \\\\ (0.25) \\end{gathered}$ |  | $\\begin{gathered} 7.14 \\\\ (0.41) \\end{gathered}$ |  |  |\n| MNIST | Natural | $\\begin{gathered} 18.48 \\\\ (0.45) \\end{gathered}$ | $\\begin{gathered} 15.99 \\\\ (1.53) \\end{gathered}$ | $\\begin{gathered} 21.17 \\\\ (0.24) \\end{gathered}$ | $\\begin{gathered} 14.81 \\\\ (3.89) \\end{gathered}$ | $\\begin{gathered} 20.19 \\\\ (0.23) \\end{gathered}$ | $\\begin{gathered} 14.56 \\\\ (3.47) \\end{gathered}$ | $\\begin{gathered} 24.42 \\\\ (0.41) \\end{gathered}$ | $\\begin{gathered} 5.02 \\\\ (0.44) \\end{gathered}$ | $\\begin{gathered} 2.40 \\\\ (1.83) \\end{gathered}$ | $\\begin{gathered} 3.14 \\\\ (0.49) \\end{gathered}$ | $\\begin{gathered} 3.50 \\\\ (0.17) \\end{gathered}$ |\n| EnTITY-13 | Same | $\\begin{gathered} 16.23 \\\\ (0.77) \\end{gathered}$ | $\\begin{gathered} 11.14 \\\\ (0.65) \\end{gathered}$ | $\\begin{gathered} 24.97 \\\\ (0.70) \\end{gathered}$ | $\\begin{gathered} 10.88 \\\\ (0.77) \\end{gathered}$ | $\\begin{gathered} 19.08 \\\\ (0.65) \\end{gathered}$ | $\\begin{gathered} 10.47 \\\\ (0.72) \\end{gathered}$ | $\\begin{gathered} 10.71 \\\\ (0.74) \\end{gathered}$ | $\\begin{gathered} 5.39 \\\\ (0.92) \\end{gathered}$ | $\\begin{gathered} 3.88 \\\\ (0.61) \\end{gathered}$ | $\\begin{gathered} 4.58 \\\\ (0.85) \\end{gathered}$ | $\\begin{gathered} 4.19 \\\\ (0.16) \\end{gathered}$ |\n|  | Novel | $\\begin{gathered} 28.53 \\\\ (0.82) \\end{gathered}$ | $\\begin{gathered} 22.02 \\\\ (0.68) \\end{gathered}$ | $\\begin{gathered} 38.33 \\\\ (0.75) \\end{gathered}$ | $\\begin{gathered} 21.64 \\\\ (0.86) \\end{gathered}$ | $\\begin{gathered} 32.43 \\\\ (0.69) \\end{gathered}$ | $\\begin{gathered} 21.22 \\\\ (0.80) \\end{gathered}$ | $\\begin{gathered} 20.61 \\\\ (0.60) \\end{gathered}$ | $\\begin{gathered} 13.58 \\\\ (1.15) \\end{gathered}$ | $\\begin{gathered} 10.28 \\\\ (1.34) \\end{gathered}$ | $\\begin{gathered} 12.25 \\\\ (1.21) \\end{gathered}$ | $\\begin{gathered} 6.63 \\\\ (0.93) \\end{gathered}$ |\n| EnTITY-30 | Same | $\\begin{gathered} 18.59 \\\\ (0.51) \\end{gathered}$ | $\\begin{gathered} 14.46 \\\\ (0.52) \\end{gathered}$ | $\\begin{gathered} 28.82 \\\\ (0.43) \\end{gathered}$ | $\\begin{gathered} 14.30 \\\\ (0.71) \\end{gathered}$ | $\\begin{gathered} 21.63 \\\\ (0.37) \\end{gathered}$ | $\\begin{gathered} 13.46 \\\\ (0.59) \\end{gathered}$ | $\\begin{gathered} 12.92 \\\\ (0.14) \\end{gathered}$ | $\\begin{gathered} 9.12 \\\\ (0.62) \\end{gathered}$ | $\\begin{gathered} 7.75 \\\\ (0.72) \\end{gathered}$ | $\\begin{gathered} 8.15 \\\\ (0.68) \\end{gathered}$ | $\\begin{gathered} 7.64 \\\\ (0.88) \\end{gathered}$ |\n|  | Novel | $\\begin{gathered} 32.34 \\\\ (0.60) \\end{gathered}$ | $\\begin{gathered} 26.85 \\\\ (0.58) \\end{gathered}$ | $\\begin{gathered} 44.02 \\\\ (0.56) \\end{gathered}$ | $\\begin{gathered} 26.27 \\\\ (0.79) \\end{gathered}$ | $\\begin{gathered} 36.82 \\\\ (0.47) \\end{gathered}$ | $\\begin{gathered} 25.42 \\\\ (0.68) \\end{gathered}$ | $\\begin{gathered} 23.16 \\\\ (0.12) \\end{gathered}$ | $\\begin{gathered} 17.75 \\\\ (0.76) \\end{gathered}$ | $\\begin{gathered} 14.30 \\\\ (0.85) \\end{gathered}$ | $\\begin{gathered} 15.60 \\\\ (0.86) \\end{gathered}$ | $\\begin{gathered} 10.57 \\\\ (0.86) \\end{gathered}$ |\n| Nonliving-26 | Same | $\\begin{gathered} 18.66 \\\\ (0.76) \\end{gathered}$ | $\\begin{gathered} 17.17 \\\\ (0.74) \\end{gathered}$ | $\\begin{gathered} 26.39 \\\\ (0.82) \\end{gathered}$ | $\\begin{gathered} 16.14 \\\\ (0.81) \\end{gathered}$ | $\\begin{gathered} 19.86 \\\\ (0.67) \\end{gathered}$ | $\\begin{gathered} 15.58 \\\\ (0.76) \\end{gathered}$ | $\\begin{gathered} 16.63 \\\\ (0.45) \\end{gathered}$ | $\\begin{gathered} 10.87 \\\\ (0.98) \\end{gathered}$ | $\\begin{gathered} 10.24 \\\\ (0.83) \\end{gathered}$ | $\\begin{gathered} 10.07 \\\\ (0.92) \\end{gathered}$ | $\\begin{gathered} 10.26 \\\\ (1.18) \\end{gathered}$ |\n|  | Novel | $\\begin{gathered} 33.43 \\\\ (0.67) \\end{gathered}$ | $\\begin{gathered} 31.53 \\\\ (0.65) \\end{gathered}$ | $\\begin{gathered} 41.66 \\\\ (0.67) \\end{gathered}$ | $\\begin{gathered} 29.87 \\\\ (0.71) \\end{gathered}$ | $\\begin{gathered} 35.13 \\\\ (0.54) \\end{gathered}$ | $\\begin{gathered} 29.31 \\\\ (0.64) \\end{gathered}$ | $\\begin{gathered} 29.56 \\\\ (0.21) \\end{gathered}$ | $\\begin{gathered} 21.70 \\\\ (0.86) \\end{gathered}$ | $\\begin{gathered} 20.12 \\\\ (0.75) \\end{gathered}$ | $\\begin{gathered} 19.08 \\\\ (0.82) \\end{gathered}$ | $\\begin{gathered} 18.26 \\\\ (1.12) \\end{gathered}$ |\n| Living-17 | Same | $\\begin{gathered} 12.63 \\\\ (1.25) \\end{gathered}$ | $\\begin{gathered} 11.05 \\\\ (1.20) \\end{gathered}$ | $\\begin{gathered} 18.32 \\\\ (1.01) \\end{gathered}$ | $\\begin{gathered} 10.46 \\\\ (1.12) \\end{gathered}$ | $\\begin{gathered} 14.43 \\\\ (1.11) \\end{gathered}$ | $\\begin{gathered} 10.14 \\\\ (1.16) \\end{gathered}$ | $\\begin{gathered} 9.87 \\\\ (0.61) \\end{gathered}$ | $\\begin{gathered} 4.57 \\\\ (0.71) \\end{gathered}$ | $\\begin{gathered} 3.95 \\\\ (0.48) \\end{gathered}$ | $\\begin{gathered} 3.81 \\\\ (0.22) \\end{gathered}$ | $\\begin{gathered} 4.21 \\\\ (0.53) \\end{gathered}$ |\n|  | Novel | $\\begin{gathered} 29.03 \\\\ (1.44) \\end{gathered}$ | $\\begin{gathered} 26.96 \\\\ (1.38) \\end{gathered}$ | $\\begin{gathered} 35.67 \\\\ (1.09) \\end{gathered}$ | $\\begin{gathered} 26.11 \\\\ (1.27) \\end{gathered}$ | $\\begin{gathered} 31.73 \\\\ (1.19) \\end{gathered}$ | $\\begin{gathered} 25.73 \\\\ (1.35) \\end{gathered}$ | $\\begin{gathered} 23.53 \\\\ (0.52) \\end{gathered}$ | $\\begin{gathered} 16.15 \\\\ (1.36) \\end{gathered}$ | $\\begin{gathered} 14.49 \\\\ (1.46) \\end{gathered}$ | $\\begin{gathered} 12.97 \\\\ (1.52) \\end{gathered}$ | $\\begin{gathered} 11.39 \\\\ (1.72) \\end{gathered}$ |\n\nTable 3: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. For language datasets, we use DistilBERT-base-uncased, for vision dataset we report results with DenseNet model with the exception of MNIST where we use FCN. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e., $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 28,
+      "markdown": "| Dataset | Shift | IM |  | AC |  | DOC |  | GDE | ATC-MC (Ours) |  | ATC-NE (Ours) |  |\n| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |\n|  |  | Pre T | Post T | Pre T | Post T | Pre T | Post T | Post T | Pre T | Post T | Pre T | Post T |\n| CIFAR10 | Natural | 7.14 | 6.20 | 10.25 | 7.06 | 7.68 | 6.35 | 5.74 | 4.02 | 3.85 | 3.76 | 3.38 |\n|  |  | $(0.14)$ | $(0.11)$ | $(0.31)$ | $(0.33)$ | $(0.28)$ | $(0.27)$ | $(0.25)$ | $(0.38)$ | $(0.30)$ | $(0.33)$ | $(0.32)$ |\n|  | Synthetic | 12.62 | 10.75 | 16.50 | 11.91 | 13.93 | 11.20 | 7.97 | 5.66 | 5.03 | 4.87 | 3.63 |\n|  |  | $(0.76)$ | $(0.71)$ | $(0.28)$ | $(0.24)$ | $(0.29)$ | $(0.28)$ | $(0.13)$ | $(0.64)$ | $(0.71)$ | $(0.71)$ | $(0.62)$ |\n| CIFAR100 | Synthetic | 12.77 | 12.34 | 16.89 | 12.73 | 11.18 | 9.63 | 12.00 | 5.61 | 5.55 | 5.65 | 5.76 |\n|  |  | $(0.43)$ | $(0.68)$ | $(0.20)$ | $(2.59)$ | $(0.35)$ | $(1.25)$ | $(0.48)$ | $(0.51)$ | $(0.55)$ | $(0.35)$ | $(0.27)$ |\n| ImageNet200 | Natural | 12.63 | 7.99 | 23.08 | 7.22 | 15.40 | 6.33 | 5.00 | 4.60 | 1.80 | 4.06 | 1.38 |\n|  |  | $(0.59)$ | $(0.47)$ | $(0.31)$ | $(0.22)$ | $(0.42)$ | $(0.24)$ | $(0.36)$ | $(0.63)$ | $(0.17)$ | $(0.69)$ | $(0.29)$ |\n|  | Synthetic | 20.17 | 11.74 | 33.69 | 9.51 | 25.49 | 8.61 | 4.19 | 5.37 | 2.78 | 4.53 | 3.58 |\n|  |  | $(0.74)$ | $(0.80)$ | $(0.73)$ | $(0.51)$ | $(0.66)$ | $(0.50)$ | $(0.14)$ | $(0.88)$ | $(0.23)$ | $(0.79)$ | $(0.33)$ |\n| ImageNet | Natural | 8.09 | 6.42 | 21.66 | 5.91 | 8.53 | 5.21 | 5.90 | 3.93 | 1.89 | 2.45 | 0.73 |\n|  |  | $(0.25)$ | $(0.28)$ | $(0.38)$ | $(0.22)$ | $(0.26)$ | $(0.25)$ | $(0.44)$ | $(0.26)$ | $(0.21)$ | $(0.16)$ | $(0.10)$ |\n|  | Synthetic | 13.93 | 9.90 | 28.05 | 7.56 | 13.82 | 6.19 | 6.70 | 3.33 | 2.55 | 2.12 | 5.06 |\n|  |  | $(0.14)$ | $(0.23)$ | $(0.39)$ | $(0.13)$ | $(0.31)$ | $(0.07)$ | $(0.52)$ | $(0.25)$ | $(0.25)$ | $(0.31)$ | $(0.27)$ |\n| FMoW-WILDS | Natural | 5.15 | 3.55 | 34.64 | 5.03 | 5.58 | 3.46 | 5.08 | 2.59 | 2.33 | 2.52 | 2.22 |\n|  |  | $(0.19)$ | $(0.41)$ | $(0.22)$ | $(0.29)$ | $(0.17)$ | $(0.37)$ | $(0.46)$ | $(0.32)$ | $(0.28)$ | $(0.25)$ | $(0.30)$ |\n| RxRx1-WILDS | Natural | 6.17 | 6.11 | 21.05 | 5.21 | 6.54 | 6.27 | 6.82 | 5.30 | 5.20 | 5.19 | 5.63 |\n|  |  | $(0.20)$ | $(0.24)$ | $(0.31)$ | $(0.18)$ | $(0.21)$ | $(0.20)$ | $(0.31)$ | $(0.30)$ | $(0.44)$ | $(0.43)$ | $(0.55)$ |\n| ENTITY-13 | Same | 18.32 | 14.38 | 27.79 | 13.56 | 20.50 | 13.22 | 16.09 | 9.35 | 7.50 | 7.80 | 6.94 |\n|  |  | $(0.29)$ | $(0.53)$ | $(1.18)$ | $(0.58)$ | $(0.47)$ | $(0.58)$ | $(0.84)$ | $(0.79)$ | $(0.65)$ | $(0.62)$ | $(0.71)$ |\n|  | Novel | 28.82 | 24.03 | 38.97 | 22.96 | 31.66 | 22.61 | 25.26 | 17.11 | 13.96 | 14.75 | 9.94 |\n|  |  | $(0.30)$ | $(0.55)$ | $(1.32)$ | $(0.59)$ | $(0.54)$ | $(0.58)$ | $(1.08)$ | $(0.84)$ | $(0.93)$ | $(0.64)$ | $(0.78)$ |\n| ENTITY-30 | Same | 16.91 | 14.61 | 26.84 | 14.37 | 18.60 | 13.11 | 13.74 | 8.54 | 7.94 | 7.77 | 8.04 |\n|  |  | $(1.33)$ | $(1.11)$ | $(2.15)$ | $(1.34)$ | $(1.69)$ | $(1.30)$ | $(1.07)$ | $(1.47)$ | $(1.38)$ | $(1.44)$ | $(1.51)$ |\n|  | Novel | 28.66 | 25.83 | 39.21 | 25.03 | 30.95 | 23.73 | 23.15 | 15.57 | 13.24 | 12.44 | 11.05 |\n|  |  | $(1.16)$ | $(0.88)$ | $(2.03)$ | $(1.11)$ | $(1.64)$ | $(1.11)$ | $(0.51)$ | $(1.44)$ | $(1.15)$ | $(1.26)$ | $(1.13)$ |\n| NonLIVING-26 | Same | 17.43 | 15.95 | 27.70 | 15.40 | 18.06 | 14.58 | 16.99 | 10.79 | 10.13 | 10.05 | 10.29 |\n|  |  | $(0.90)$ | $(0.86)$ | $(0.90)$ | $(0.69)$ | $(1.00)$ | $(0.78)$ | $(1.25)$ | $(0.62)$ | $(0.32)$ | $(0.46)$ | $(0.79)$ |\n|  | Novel | 29.51 | 27.75 | 40.02 | 26.77 | 30.36 | 25.93 | 27.70 | 19.64 | 17.75 | 16.90 | 15.69 |\n|  |  | $(0.86)$ | $(0.82)$ | $(0.76)$ | $(0.82)$ | $(0.95)$ | $(0.80)$ | $(1.42)$ | $(0.68)$ | $(0.53)$ | $(0.60)$ | $(0.83)$ |\n| LIVING-17 | Same | 14.28 | 12.21 | 23.46 | 11.16 | 15.22 | 10.78 | 10.49 | 4.92 | 4.23 | 4.19 | 4.73 |\n|  |  | $(0.96)$ | $(0.93)$ | $(1.16)$ | $(0.90)$ | $(0.96)$ | $(0.99)$ | $(0.97)$ | $(0.57)$ | $(0.42)$ | $(0.35)$ | $(0.24)$ |\n|  | Novel | 28.91 | 26.35 | 38.62 | 24.91 | 30.32 | 24.52 | 22.49 | 15.42 | 13.02 | 12.29 | 10.34 |\n|  |  | $(0.66)$ | $(0.73)$ | $(1.01)$ | $(0.61)$ | $(0.59)$ | $(0.74)$ | $(0.85)$ | $(0.59)$ | $(0.53)$ | $(0.73)$ | $(0.62)$ |\n\nTable 4: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift for ResNet model. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e., $(-)$ ) denote standard deviation values.",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    }
+  ],
+  "model": "mistral-ocr-2505-completion",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 29,
+    "doc_size_bytes": 3002783
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="delete-file">Delete File</SectionTab>
+
+Once all OCR done, you can optionally delete the pdf file from our cloud unless you wish to reuse it later.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+client.files.delete(file_id=file.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.files.delete(fileId=file.id);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X DELETE https://api.mistral.ai/v1/files/${file_id} \
+-H "Authorization: Bearer ${MISTRAL_API_KEY}"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+"id": "22e2e88f-167d-4f3d-982a-add977a54ec3",
+"object": "file",
+"deleted": true
+}
+```
+
+  </TabItem>
+</Tabs>

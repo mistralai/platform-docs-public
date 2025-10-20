@@ -1,0 +1,143 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+You can perform QnA with any PDF by encoding them in base64 and sending them as part of the chat completion request.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+import base64
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-latest"
+
+client = Mistral(api_key=api_key)
+
+def encode_pdf(pdf_path):
+    with open(pdf_path, "rb") as pdf_file:
+        return base64.b64encode(pdf_file.read()).decode('utf-8')
+
+pdf_path = "path_to_your_pdf.pdf"
+base64_pdf = encode_pdf(pdf_path)
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "what is the last sentence in the document"
+            },
+            {
+                "type": "document_url",
+                "document_url": f"data:application/pdf;base64,{base64_pdf}" 
+            }
+        ]
+    }
+]
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+    
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function encodePdf(pdfPath) {
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    const base64Pdf = pdfBuffer.toString('base64');
+    return base64Pdf;
+}
+
+const pdfPath = "path_to_your_pdf.pdf";
+const base64Pdf = await encodePdf(pdfPath);
+
+const chatResponse = await client.chat.complete({
+  model: "mistral-small-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: "what is the last sentence in the document",
+        },
+        {
+          type: "document_url",
+          documentUrl: "data:application/pdf;base64," + base64Pdf,
+        },
+      ],
+    },
+  ],
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-small-latest",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "what is the last sentence in the document"
+          },
+          {
+            "type": "document_url",
+            "document_url": "data:application/pdf;base64,<base64_pdf>"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+    
+```json
+{
+  "id": "7b98be65bb7b475ca2456a92f9ed0049",
+  "created": 1756753708,
+  "model": "mistral-small-latest",
+  "usage": {
+    "prompt_tokens": 13707,
+    "total_tokens": 13764,
+    "completion_tokens": 57
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The last sentence in the document is:\n\n\"Zaremba, W., Sutskever, I., and Vinyals, O. Recurrent neural network regularization. arXiv:1409.2329, 2014.\""
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>

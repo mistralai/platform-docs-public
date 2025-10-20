@@ -1,0 +1,211 @@
+---
+id: code_embeddings
+title: Code Embeddings
+slug: code_embeddings
+sidebar_position: 2
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { CollabButton } from '@/components/common/collab-button';
+
+import SimilarityTab from './similarity_tab/_page.mdx';
+import BatchingTab from './batching_tab/_page.mdx';
+import RetrievalTab from './retrieval_tab/_page.mdx';
+
+# Code Embeddings
+
+Embeddings are at the core of multiple enterprise use cases, such as **retrieval systems**, **clustering**, **code analytics**, **classification**, and a variety of search applications. With code embedings, you can embed **code databases** and **repositories**, and power **coding assistants** with state-of-the-art retrieval capabilities.
+
+<SectionTab as="h1" sectionId="codestral-embed">Codestral Embed API</SectionTab>
+
+<CollabButton colabUrl="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/code_embedding.ipynb" />
+
+To generate code embeddings using Mistral AI's embeddings API, we can make a request to the API endpoint and specify the embedding model `codestral-embed`, along with providing a list of input texts. The API will then return the corresponding embeddings as numerical vectors, which can be used for further analysis or processing in NLP applications.
+
+We also provide `output_dtype` and `output_dimension` parameters that allow you to control the type and dimensional size of your embeddings.
+
+<SectionTab as="h2" variant="secondary" sectionId="output-dtype">Output DType</SectionTab>
+
+`output_dtype` allows you to select the precision and format of the embeddings, enabling you to obtain embeddings with your desired level of numerical accuracy and representation.
+
+The accepted dtypes are:
+- **float** (default): A list of 32-bit (4-byte) single-precision floating-point numbers. Provides the highest precision and retrieval accuracy.
+- **int8**: A list of 8-bit (1-byte) integers ranging from -128 to 127.
+- **uint8**: A list of 8-bit (1-byte) integers ranging from 0 to 255.
+- **binary**: A list of 8-bit integers that represent bit-packed, quantized single-bit embedding values using the `int8` type. The length of the returned list of integers is 1/8 of `output_dimension`. This type uses the offset binary method.
+- **ubinary**: Similar to `binary`, but uses the `uint8` type for bit-packed, quantized single-bit embedding values.
+
+<SectionTab as="h2" variant="secondary" sectionId="output-dimension">Output Dimension</SectionTab>
+
+`output_dimension` allows you to select a specific size for the embedding, enabling you to obtain an embedding of your chosen dimension, **defaults to 1536** and has a **maximum value of 3072**.
+
+For any integer target dimension n, you can choose to retain the first n dimensions. These dimensions are ordered by relevance, and the first n are selected for a smooth trade-off between quality and cost.
+
+<SectionTab variant="secondary" sectionId="usage">Usage</SectionTab>
+
+Below is an example of how to use the embeddings API to generate embeddings for a list of input texts code related.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "codestral-embed"
+
+client = Mistral(api_key=api_key)
+
+embeddings_batch_response = client.embeddings.create(
+    model=model,
+    # output_dtype="binary",
+    # output_dimension=512,
+    inputs=[
+        "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order. Example 1: Input: nums = [2,7,11,15], target = 9 Output: [0,1] Explanation: Because nums[0] + nums[1] == 9, we return [0, 1]. Example 2: Input: nums = [3,2,4], target = 6 Output: [1,2] Example 3: Input: nums = [3,3], target = 6 Output: [0,1] Constraints: 2 <= nums.length <= 104 -109 <= nums[i] <= 109 -109 <= target <= 109 Only one valid answer exists.", 
+        "class Solution: def twoSum(self, nums: List[int], target: int) -> List[int]: d = {} for i, x in enumerate(nums): if (y := target - x) in d: return [d[y], i] d[x] = i"
+      ],
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const model = "codestral-embed";
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function getEmbeddings() {
+
+    const embeddingsBatchResponse = await client.embeddings.create({
+        model: model,
+        // output_dtype: "binary",
+        // output_dimension: 512,
+        inputs: [
+            "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order. Example 1: Input: nums = [2,7,11,15], target = 9 Output: [0,1] Explanation: Because nums[0] + nums[1] == 9, we return [0, 1]. Example 2: Input: nums = [3,2,4], target = 6 Output: [1,2] Example 3: Input: nums = [3,3], target = 6 Output: [0,1] Constraints: 2 <= nums.length <= 104 -109 <= nums[i] <= 109 -109 <= target <= 109 Only one valid answer exists.", 
+            "class Solution: def twoSum(self, nums: List[int], target: int) -> List[int]: d = {} for i, x in enumerate(nums): if (y := target - x) in d: return [d[y], i] d[x] = i"
+          ],
+    });
+}
+
+// Call the async function
+getEmbeddings().catch(console.error);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+problem_description="Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order. Example 1: Input: nums = [2,7,11,15], target = 9 Output: [0,1] Explanation: Because nums[0] + nums[1] == 9, we return [0, 1]. Example 2: Input: nums = [3,2,4], target = 6 Output: [1,2] Example 3: Input: nums = [3,3], target = 6 Output: [0,1] Constraints: 2 <= nums.length <= 104 -109 <= nums[i] <= 109 -109 <= target <= 109 Only one valid answer exists."
+
+solution="class Solution: def twoSum(self, nums: List[int], target: int) -> List[int]: d = {} for i, x in enumerate(nums): if (y := target - x) in d: return [d[y], i] d[x] = i"
+
+curl -X POST "https://api.mistral.ai/v1/embeddings" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer ${API_KEY}" \
+     -d '{"model": "codestral-embed", "output_dimension": 10, "output_dtype": "binary", "input": ["'"$problem_description"'", "'"$solution"'"]}' \
+     -o embedding.json
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "id": "e49d725673554aa480eb639cfc3bd7b1",
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        0.03143310546875,
+        -0.001312255859375,
+        -0.048126220703125,
+        0.18017578125,
+        ...
+        -0.0146026611328125,
+        0.0020160675048828125,
+        -0.00493621826171875,
+        0.0023822784423828125
+      ],
+      "index": 0
+    },
+    {
+      "object": "embedding",
+      "embedding": [
+        -0.0616455078125,
+        -0.1959228515625,
+        0.060791015625,
+        0.206298828125,
+        ...
+        -0.0045013427734375,
+        0.002071380615234375,
+        -0.003078460693359375,
+        0.004718780517578125
+      ],
+      "index": 1
+    }
+  ],
+  "model": "codestral-embed",
+  "usage": {
+    "prompt_audio_seconds": null,
+    "prompt_tokens": 263,
+    "total_tokens": 263,
+    "completion_tokens": 0,
+    "request_count": null,
+    "prompt_token_details": null
+  }
+}
+```
+
+   </TabItem>
+</Tabs>
+
+Let's take a look at the length of the first embedding:
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+```python
+len(embeddings_batch_response.data[0].embedding)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+console.log('Embedding Length:', embeddingsBatchResponse.data?.[0]?.embedding?.length)
+```
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+echo "Embedding Length: $(jq '.data[0].embedding | length' embedding.json)"
+```
+  </TabItem>
+</Tabs>
+
+It returns 1553, which means that our embedding dimension is 1553. The `codestral-embed` model generates embedding vectors up to dimensions of 3072 for each text string, regardless of the text length, you can reduce the dimension using `output_dimension` if needed. It's worth nothing that while higher dimensional embeddings can better capture text information and improve the performance of NLP tasks, they may require more resources and may result in increased latency and memory usage for storing and processing these embeddings. This trade-off between performance and computational resources should be considered when designing NLP systems that rely on text embeddings.
+
+<SectionTab as="h1" sectionId="services">Usage Examples</SectionTab>
+
+Below you will find some examples of how to use the Codestral Embeddings API and different use cases.
+
+<ExplorerTabs id="code-embeddings-services" mode="close">
+  <ExplorerTab value="similarity" label="Similarity">
+    <SimilarityTab/>
+  </ExplorerTab>
+  <ExplorerTab value="batching" label="Batching">
+    <BatchingTab/>
+  </ExplorerTab>
+  <ExplorerTab value="retrieval" label="Retrieval">
+    <RetrievalTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
+
+For more information and guides on how to make use of our embedding sdk, we have the following cookbooks:
+- [Embedding Cookbook](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/code_embedding.ipynb)
+- [Dequantization Cookbook](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/dequantization.ipynb)

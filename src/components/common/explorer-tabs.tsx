@@ -8,6 +8,7 @@ import {
   TabsTrigger as UITabsTrigger,
   TabsContent as UITabsContent,
 } from '@/components/ui/tabs';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { CopyButton } from '../ui/copy-button';
 import { CheckIcon, CopyIcon } from '@/components/icons/pixel';
@@ -30,6 +31,7 @@ export function ExplorerTabs({
   children,
   mode = 'default',
 }: ExplorerTabsProps) {
+  const pathname = usePathname();
   const parentContext = useExplorerTabsContext();
   const items = React.Children.toArray(children).filter((child: any) =>
     React.isValidElement(child)
@@ -65,14 +67,18 @@ export function ExplorerTabs({
   const handleTabChange = (newValue: string | undefined) => {
     setValue(newValue);
 
-    const url = new URL(window.location.href);
-    url.searchParams.delete('tab');
-    window.history.replaceState({}, '', url.toString());
+    if (pathname) {
+      const url = new URL(pathname, window.location.origin);
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url.toString());
+    }
   };
 
   const makeUrlForTab = (tab: string) => {
-    if (typeof window === 'undefined' || !rootExplorerId) return '';
-    const url = new URL(window.location.href);
+    if (typeof window === 'undefined' || !rootExplorerId || !pathname) return '';
+    
+    // Create a new URL using the current pathname from Next.js router
+    const url = new URL(pathname, window.location.origin);
 
     // Build the comma-separated tab path using context information
     const fullTabPath = [...currentTabPath, tab];

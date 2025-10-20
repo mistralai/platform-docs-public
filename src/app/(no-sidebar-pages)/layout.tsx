@@ -7,7 +7,7 @@ export default function NoSidebarLayout({
   children: React.ReactNode;
 }) {
   return (
-    <PageContent className="flex-1 mx-sides px-inner-sides" as="main">
+    <PageContent className="flex-1 mx-sides" as="main">
       <DocsVariantProvider variant="docs">{children}</DocsVariantProvider>
     </PageContent>
   );

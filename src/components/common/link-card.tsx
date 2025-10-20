@@ -41,7 +41,7 @@ function LinkCard({
       {pixelEffect && <PixelGrid pixelSize={8} opacity={0.35} />}
 
       <div className="flex items-center gap-2.5 z-10">
-        <span className="text-foreground/50">{icon}</span>
+        <span className="text-foreground">{icon}</span>
         <h3
           className={cn(
             'font-bold text-base 2xl:text-lg dark:group-hover:text-black/70 transition-colors duration-100'

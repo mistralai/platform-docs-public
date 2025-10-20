@@ -1,3 +1,5 @@
+'use client';
+
 import { SectionTab } from '@/components/layout/section-tab';
 import {
   Heading,
@@ -16,7 +18,6 @@ import { ColorBulbIcon } from '@/components/icons/pixel';
 import { AirBalloonIcon } from '@/components/icons/pixel/air-balloom';
 import { MagnifyingGlassIcon } from '@/components/icons/pixel/magnifying-glass';
 import Image from 'next/image';
-import type { Metadata } from 'next';
 import {
   currentAmbassadors,
   placeholderAmbassador,
@@ -27,34 +28,10 @@ import {
   applicationCriteria,
 } from '@/schema/ambassadors';
 import { AmbassadorYouImage } from './components/ambassador-you-image';
-import { getOGImageUrl } from '@/components/og/helpers';
 import NoSidebarPageLayout from '@/components/layout/no-sidebar-page-layout';
 
-const ogImageUrl = getOGImageUrl({
-  path: 'generic',
-  eyebraw: 'AMBASSADOR',
-  title: 'Ambassadors',
-  description: 'Welcome our community of AI advocates and leaders',
-  image: '/ogs/ambassadors.png',
-});
-
-const title = 'Ambassadors - Mistral AI';
-const description =
-  'Join our community of AI advocates and leaders. Apply to become a Mistral AI Ambassador and help grow our global AI community.';
-
-export const metadata: Metadata = {
-  title,
-  description,
-  openGraph: {
-    title,
-    description,
-    images: [ogImageUrl],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    images: [ogImageUrl],
-  },
-};
+// Import metadata to ensure it's included in the build
+import './metadata';
 
 const getAmbassadorColor = (index: number): ModelColor => {
   const colors: ModelColor[] = [
@@ -194,7 +171,7 @@ export default function AmbassadorsPage() {
         <div className="flex flex-col gap-4">
           <h3 className="font-bold text-2xl">Apply to join the team</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <p className="text-foreground/50">
+            <p className="text-foreground">
               Applications for the {applicationInfo.cohort} cohort are now open
               and will be accepted until {applicationInfo.deadline}. If
               selected, you will be contacted by the{' '}
@@ -202,7 +179,7 @@ export default function AmbassadorsPage() {
               participate in an interview with additional questions.
             </p>
             <div className="flex flex-col gap-4 justify-between">
-              <p className="text-foreground/50">
+              <p className="text-foreground">
                 Our team will review each application, evaluating candidates
                 based on the following criteria. We accept applications on a{' '}
                 {applicationInfo.frequency}.
@@ -210,6 +187,9 @@ export default function AmbassadorsPage() {
               <Button
                 variant="tertiary"
                 className="font-mono uppercase text-sm md:w-fit gap-3 cursor-pointer"
+                onClick={() => {
+                  window.open('https://docs.google.com/forms/d/e/1FAIpQLSdBSiRzm2xBpMszB_9fBixJNyKdGnPMj99DtZbagHMdHgkGUg/viewform', '_blank', 'noopener,noreferrer');
+                }}
               >
                 <Bullet />
                 Fill out your application ↗
@@ -223,7 +203,7 @@ export default function AmbassadorsPage() {
                 className="border border-border/50 p-4 rounded-lg flex gap-2 justify-between"
               >
                 <div className="max-w-[70%]">
-                  <h4 className="text-foreground/50">
+                  <h4 className="text-foreground">
                     <span className="font-bold">{criterion.title}: </span>
                     {criterion.description}
                   </h4>
@@ -244,7 +224,7 @@ export default function AmbassadorsPage() {
             {ambassadorBenefits.map(benefit => (
               <li key={benefit.id} className="flex gap-3 items-center">
                 <Bullet />
-                <span className="w-fit text-foreground/60">
+                <span className="w-fit text-foreground">
                   <span className="font-bold">{benefit.title}:</span>{' '}
                   {benefit.description}
                 </span>
@@ -267,7 +247,7 @@ export default function AmbassadorsPage() {
             {ambassadorResponsibilities.map(responsibility => (
               <li key={responsibility.id} className="flex gap-3 items-center">
                 <Bullet />
-                <span className="w-fit text-foreground/60">
+                <span className="w-fit text-foreground">
                   <span className="font-bold">{responsibility.title}:</span>{' '}
                   {responsibility.description}
                 </span>
@@ -290,7 +270,7 @@ export default function AmbassadorsPage() {
             {ambassadorRequirements.map(requirement => (
               <li key={requirement.id} className="flex gap-3 items-center">
                 <Bullet />
-                <span className="w-fit text-foreground/60">
+                <span className="w-fit text-foreground">
                   <span className="font-bold">{requirement.title}:</span>{' '}
                   {requirement.description}
                 </span>
@@ -304,6 +284,9 @@ export default function AmbassadorsPage() {
         <Button
           variant="tertiary"
           className="font-mono uppercase text-sm lg:w-fit gap-3 cursor-pointer"
+          onClick={() => {
+            window.open('https://docs.google.com/forms/d/e/1FAIpQLSdBSiRzm2xBpMszB_9fBixJNyKdGnPMj99DtZbagHMdHgkGUg/viewform', '_blank', 'noopener,noreferrer');
+          }}
         >
           <Bullet />
           Fill out your application ↗

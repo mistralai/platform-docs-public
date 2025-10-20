@@ -39,7 +39,7 @@ export const tbody = ({ children, className, ...props }: any) => (
 export const tr = ({ children, className, ...props }: any) => (
   <tr
     className={cn(
-      'border-b transition-colors border-foreground/30 data-[state=selected]:bg-muted text-sm',
+      'border-b transition-colors border-foreground data-[state=selected]:bg-muted text-sm',
       className
     )}
     {...props}
@@ -63,7 +63,7 @@ export const th = ({ children, className, ...props }: any) => (
 export const td = ({ children, className, ...props }: any) => (
   <td
     className={cn(
-      'px-4 py-4 align-middle dark:text-foreground/50 [&:has([role=checkbox])]:pr-0',
+      'px-4 py-4 align-middle dark:text-foreground [&:has([role=checkbox])]:pr-0',
       className
     )}
     {...props}

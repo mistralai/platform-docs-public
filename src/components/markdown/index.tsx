@@ -83,7 +83,7 @@ const baseComponents = {
   },
   p: ({ children, className, ref: _r, ...props }: ParagraphProps) => {
     return (
-      <p {...props} className={cn(className)}>
+      <p {...props} className={cn('text-secondary-foreground/93', className)}>
         {children}
       </p>
     );
@@ -92,7 +92,7 @@ const baseComponents = {
     return (
       <strong
         {...props}
-        className={cn('font-semibold text-foreground/80', className)}
+        className={cn('font-semibold text-foreground', className)}
       >
         {children}
       </strong>
@@ -107,7 +107,7 @@ const baseComponents = {
       return (
         <code
           className={cn(
-            'relative mx-1 bg-background ring-1 ring-offset-3 ring-offset-background ring-border font-mono after:hidden before:hidden inline-flex items-center justify-center gap-2  rounded text-xs font-semibold text-foreground/80 px-1',
+            'relative mx-1 bg-background ring-1 ring-offset-3 ring-offset-background ring-border font-mono after:hidden before:hidden inline-flex items-center justify-center gap-2  rounded text-xs font-semibold text-foreground px-1',
             className
           )}
           {...props}

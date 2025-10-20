@@ -2,9 +2,13 @@ import React, { Suspense } from 'react';
 import { PixelGrid } from '@/components/common/pixel-grid';
 import { CollabButton } from '@/components/common/collab-button';
 import {
-  GenericBreadcrumb,
+  Breadcrumb,
   BreadcrumbItem,
-} from '@/components/layout/breadcrumb';
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import { BreadcrumbHome } from '@/components/layout/breadcrumb';
 import { HeadingTitle } from '@/components/layout/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -64,27 +68,24 @@ export default function CookbookHeader({
 
   const remainingCount = allTags.length - displayTags.length;
 
-  const breadcrumbItems: BreadcrumbItem[] = [
-    {
-      label: 'Cookbook',
-      href: '/cookbook',
-    },
-  ];
-
   return (
     <div className="not-prose">
       <div className="flex items-center gap-6 font-mono mb-4 w-full">
         <div className="flex items-center gap-3 flex-1">
           <Suspense>
-            <GenericBreadcrumb
-              items={breadcrumbItems}
-              showHome={true}
-              className="shrink-0"
-            />
+            <Breadcrumb className="shrink-0">
+              <BreadcrumbList>
+                <BreadcrumbHome />
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/cookbook">Cookbook</BreadcrumbLink>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </Suspense>
 
           <Separator orientation="horizontal" className="shrink" />
-          <p className="text-xs lg:text-sm text-foreground/30 shrink-0 tracking-wide uppercase font-medium">
+          <p className="text-xs lg:text-sm text-foreground shrink-0 tracking-wide uppercase font-medium">
             [{readingTime.text}]
           </p>
         </div>
@@ -119,7 +120,7 @@ export default function CookbookHeader({
         <div className="z-10 flex flex-col">
           {/* Only show date if displayDate is true and date exists */}
           {cookbook.displayDate && date && (
-            <span className="text-foreground/50 font-mono uppercase font-semibold text-xs">
+            <span className="text-foreground font-mono uppercase font-semibold text-xs">
               {formateDateMonthYear(date)}
             </span>
           )}

@@ -1,0 +1,347 @@
+---
+id: batch
+title: Batch Inference
+sidebar_position: 14
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+
+import EndExampleTab from './end_example_tab/_page.mdx';
+
+# Batch Inference
+
+Batching allows you to run inference on large inputs in parallel, reducing costs while running large workloads.
+
+<SectionTab as="h1" sectionId="prepare-and-upload-your-batch">Prepare and upload your batch</SectionTab>
+
+A batch is composed of a list of API requests. The structure of an individual request includes:
+
+- A unique `custom_id` for identifying each request and referencing results after completion
+- A `body` object with message information
+
+Here's an example of how to structure a batch request:
+
+```bash
+{"custom_id": "0", "body": {"max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French cheese?"}]}}
+{"custom_id": "1", "body": {"max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French wine?"}]}}
+```
+
+A bacth `body` object can be any **valid request body for the endpoint** you are using.
+
+Save your batch into a .jsonl file. Once saved, you can upload your batch input file to ensure it is correctly referenced when initiating batch processes:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+batch_data = client.files.upload(
+    file={
+        "file_name": "test.jsonl",
+        "content": open("test.jsonl", "rb")
+    },
+    purpose = "batch"
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const batchFile = fs.readFileSync('batch_input_file.jsonl');
+const batchData = await client.files.upload({
+    file: {
+        fileName: "batch_input_file.jsonl",
+        content: batchFile,
+    },
+    purpose: "batch"
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```curl
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="batch" \
+  -F file="@batch_input_file.jsonl"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="create-a-new-batch-job">Create a new batch job</SectionTab>
+
+Create a new batch job, it will be queued for processing.
+
+- `input_files`: a list of the batch input file IDs.
+- `model`: you can only use one model (e.g., `codestral-latest`) per batch. However, you can run multiple batches on the same files with different models if you want to compare outputs.
+- `endpoint`: we currently support `/v1/embeddings`, `/v1/chat/completions`, `/v1/fim/completions`, `/v1/moderations`, `/v1/chat/moderations`, `/v1/ocr`, `/v1/classifications`, `/v1/conversations`, `/v1/audio/transcriptions`.
+- `metadata`: optional custom metadata for the batch.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+```python
+created_job = client.batch.jobs.create(
+    input_files=[batch_data.id],
+    model="mistral-small-latest",
+    endpoint="/v1/chat/completions",
+    metadata={"job_type": "testing"}
+)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const createdJob = await client.batch.jobs.create({
+    inputFiles: [batchData.id],
+    model: "mistral-small-latest",
+    endpoint: "/v1/chat/completions",
+    metadata: {jobType: "testing"}
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/batch/jobs" \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header "Content-Type: application/json" \
+--header "Accept: application/json" \
+--data '{
+    "model": "mistral-small-latest",
+    "input_files": [
+        "<uuid>"
+    ],
+    "endpoint": "/v1/chat/completions",
+    "metadata": {
+        "job_type": "testing"
+    }
+}'
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="get-retrieve">Get/Retrieve</SectionTab>
+
+Once batch sent, you will want to retrieve a lot of information such as:
+- The status of the batch job
+- The results of the batch job
+- The list of batch jobs
+
+<SectionTab as="h2" variant="secondary" sectionId="get-a-batch-job-details">Get a batch job details</SectionTab>
+
+You can retrieve the details of a batch job by its ID.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+retrieved_job = client.batch.jobs.get(job_id=created_job.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const retrievedJob = await client.batch.jobs.get({ jobId: createdJob.id});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/batch/jobs/<jobid> \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+
+<SectionTab as="h2" variant="secondary" sectionId="get-batch-job-results">Get batch job results</SectionTab>
+
+Once the batch job is completed, you can easily download the results.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+output_file_stream = client.files.download(file_id=retrieved_job.output_file)
+
+# Write and save the file
+with open('batch_results.jsonl', 'wb') as f:
+    f.write(output_file_stream.read())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import fs from 'fs';
+
+const outputFileStream = await client.files.download({ fileId: retrievedJob.outputFile });
+
+// Write the stream to a file
+const writeStream = fs.createWriteStream('batch_results.jsonl');
+outputFileStream.pipeTo(new WritableStream({
+    write(chunk) {
+      writeStream.write(chunk);
+    },
+    close() {
+      writeStream.end();
+    }
+}));
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl 'https://api.mistral.ai/v1/files/<uuid>/content' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="list-batch-jobs">List batch jobs</SectionTab>
+
+You can view a list of your batch jobs and filter them by various criteria, including:
+
+- Status: `QUEUED`,
+`RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT_EXCEEDED`, `CANCELLATION_REQUESTED` and `CANCELLED`
+- Metadata: custom metadata key and value for the batch
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+list_job = client.batch.jobs.list(
+    status="RUNNING",
+    metadata={"job_type": "testing"}
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const listJob = await client.batch.jobs.list({
+    status: "RUNNING",
+    metadata: {
+        jobType: "testing"
+    }
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl 'https://api.mistral.ai/v1/batch/jobs?status=RUNNING&job_type=testing'\
+--header 'x-api-key: $MISTRAL_API_KEY'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="request-the-cancellation">Request Cancellation</SectionTab>
+
+If you want to cancel a batch job, you can do so by sending a cancellation request.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+canceled_job = client.batch.jobs.cancel(job_id=created_job.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const canceledJob = await mistral.batch.jobs.cancel({
+  jobId: createdJob.id,
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/batch/jobs/<jobid>/cancel \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="an-end-to-end-example">An end-to-end example</SectionTab>
+
+Below is an end-to-end example of how to use the batch API from start to finish.
+
+<ExplorerTabs mode="close">
+  <ExplorerTab value="example" label="End-to-End Example">
+    <EndExampleTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Is the batch API available for all models?">
+Yes, batch API is available for all models including user fine-tuned models.
+  </FaqItem>
+  <FaqItem question="Does the batch API affect pricing?">
+
+We offer a 50% discount on batch API. Learn more about our [pricing](https://mistral.ai/pricing#api-pricing).
+  </FaqItem>
+  <FaqItem question="Does the batch API affect rate limits?">
+No
+  </FaqItem>
+  <FaqItem question="What's the max number of requests in a batch?">
+Currently, there is a maximum limit of 1 million pending requests per workspace. This means you cannot submit a job with more than 1 million requests. Additionally, you cannot submit two jobs with 600,000 requests each at the same time. You would need to wait until the first job has processed at least 200,000 requests, reducing its pending count to 400,000. At that point, the new job with 600,000 requests would fit within the limit.
+  </FaqItem>
+  <FaqItem question="What's the max number of batch jobs one can create?">
+Currently, there is no maximum limit.
+  </FaqItem>
+  <FaqItem question="How long does the batch API take to process?">  
+Processing speeds may be adjusted based on current demand and the volume of your request. Your batch results will only be accessible once the entire batch processing is complete.
+
+Users can set `timeout_hours` when creating a job, which specifies the number of hours after which the job should expire. It defaults to 24 hours and should be lower than 7 days. A batch will expire if processing does not complete within the specified timeout.
+  </FaqItem>
+  <FaqItem question="Can I view batch results from my workspace?">  
+Yes, batches are specific to a workspace. You can see all batches and their results that were created within the workspace associated with your API key.
+  </FaqItem>  
+  <FaqItem question="Will batch results ever expire?">  
+No, the results do not expire at this time.
+  </FaqItem>
+  <FaqItem question="Can batches exceed the spend limit?">  
+Yes, due to high throughput and concurrent processing, batches may slightly exceed your workspace's configured spend limit.
+  </FaqItem>
+</Faq>

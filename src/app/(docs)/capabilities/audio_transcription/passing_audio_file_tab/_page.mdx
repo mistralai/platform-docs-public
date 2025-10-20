@@ -1,0 +1,132 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+To pass a local audio file, you can encode it in base64 and pass it as a string.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python">
+
+```python
+import base64
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "voxtral-mini-latest"
+
+client = Mistral(api_key=api_key)
+
+# Encode the audio file in base64
+with open("examples/files/bcn_weather.mp3", "rb") as f:
+    content = f.read()
+audio_base64 = base64.b64encode(content).decode('utf-8')
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": audio_base64,
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?"
+            },
+        ]
+    }],
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import fs from "fs";
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+// Encode the audio file in base64
+const audio_file = fs.readFileSync('local_audio.mp3');
+const audio_base64 = audio_file.toString('base64');
+
+const chatResponse = await client.chat.complete({
+  model: "voxtral-mini-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "input_audio",
+          input_audio: audio_base64,
+        },
+        {
+          type: "text",
+          text: "What's in this file?",
+        },
+      ],
+    },
+  ],
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl" default>
+
+```bash
+curl --location https://api.mistral.ai/v1/chat/completions \
+  --header "Authorization: Bearer $MISTRAL_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "model": "voxtral-mini-latest",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_audio",
+            "input_audio": "<audio_base64>",
+          },
+          {
+            "type": "text",
+            "text": "What'\''s in this file?"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+  ```json
+{
+  "id": "d719e752a0f845c895758933ea488cb0",
+  "created": 1756386611,
+  "model": "voxtral-mini-latest",
+  "usage": {
+    "prompt_audio_seconds": 19,
+    "prompt_tokens": 10,
+    "total_tokens": 452,
+    "completion_tokens": 67
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The audio file appears to be a compilation of music or sound effects, as indicated by the repeated, short, and varied sounds. However, without the context of the audio, it's challenging to determine what specific sounds or music are included. If you have more details or the audio itself, I could provide a more accurate analysis."
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>

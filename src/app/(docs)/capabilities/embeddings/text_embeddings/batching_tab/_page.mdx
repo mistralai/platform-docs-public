@@ -1,0 +1,82 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+The Mistral AI Embeddings API is designed to process text in batches for improved efficiency and speed. In this example, we will demonstrate this by loading the Symptom2Disease dataset from [Kaggle](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease), which contains 1200 rows with two columns: "label" and "text". The "label" column indicates the disease category, while the "text" column describes the symptoms associated with that disease.
+
+We wrote a function `get_embeddings_by_chunks` that splits data into chunks and then sends each chunk to the Mistral AI Embeddings API to get the embeddings. Then we saved the embeddings as a new column in the dataframe. Note that the API will provide auto-chunking in the future, so that users don't need to manually split the data into chunks before sending it.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import pandas as pd
+
+df = pd.read_csv(
+    "https://raw.githubusercontent.com/mistralai/cookbook/main/data/Symptom2Disease.csv",
+    index_col=0,
+)
+
+def get_embeddings_by_chunks(data, chunk_size):
+    chunks = [data[x : x + chunk_size] for x in range(0, len(data), chunk_size)]
+    embeddings_response = [
+        client.embeddings.create(model=model, inputs=c) for c in chunks
+    ]
+    return [d.embedding for e in embeddings_response for d in e.data]
+
+df["embeddings"] = get_embeddings_by_chunks(df["text"].tolist(), 50)
+df.head()
+```
+
+  </TabItem>
+</Tabs>
+
+<img src="/img/guides/embeddings1.png" alt="drawing" width="700" className='mx-auto' />
+
+<SectionTab as="h3" variant="secondary" sectionId="t-sne-embeddings-visualization">t-SNE embeddings visualization</SectionTab>
+
+We mentioned previously that our embeddings have 1024 dimensions, which makes them impossible to visualize directly. Thus, in order to visualize our embeddings, we can use a dimensionality reduction technique such as t-SNE to project our embeddings into a lower-dimensional space that is easier to visualize.
+
+In this example, we transform our embeddings to 2 dimensions and create a 2D scatter plot showing the relationships among embeddings of different diseases.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import seaborn as sns
+from sklearn.manifold import TSNE
+import numpy as np
+
+tsne = TSNE(n_components=2, random_state=0).fit_transform(np.array(df['embeddings'].to_list()))
+ax = sns.scatterplot(x=tsne[:, 0], y=tsne[:, 1], hue=np.array(df['label'].to_list()))
+sns.move_legend(ax, 'upper left', bbox_to_anchor=(1, 1))
+```
+
+  </TabItem>
+</Tabs>
+
+<img src="/img/guides/embeddings2.png" alt="drawing" width="600" className='mx-auto' />
+
+<SectionTab as="h3" variant="secondary" sectionId="comparison-with-fasttext">Comparison with fastText</SectionTab>
+
+We can compare it with fastText, a popular open-source embeddings model. However, when examining the t-SNE embeddings plot, we notice that fastText embeddings fail to create clear separations between data points with matching labels.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import fasttext.util
+
+fasttext.util.download_model('en', if_exists='ignore')  # English
+ft = fasttext.load_model('cc.en.300.bin')
+
+df['fasttext_embeddings'] = df['text'].apply(lambda x: ft.get_word_vector(x).tolist())
+
+tsne = TSNE(n_components=2, random_state=0).fit_transform(np.array(df['fasttext_embeddings'].to_list()))
+ax = sns.scatterplot(x=tsne[:, 0], y=tsne[:, 1], hue=np.array(df['label'].to_list()))
+sns.move_legend(ax, 'upper left', bbox_to_anchor=(1, 1))
+```
+
+  </TabItem>
+</Tabs>
+
+<img src="/img/guides/embeddings3.png" alt="drawing" width="600" className='mx-auto' />

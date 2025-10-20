@@ -1,0 +1,56 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+The Mistral AI Embeddings API is designed to process text in batches for improved efficiency and speed. In this example, we will demonstrate this by loading a LeetCodeTSNE dataset, which contains 37 rows with two columns: "Name" and "Code". The "Name" column indicates the problem name, while the "Code" column corresponds to an implementation of this problem.
+
+We wrote a function `get_embeddings_by_chunks` that splits data into chunks and then sends each chunk to the Mistral AI Embeddings API to get the embeddings. Then we saved the embeddings as a new column in the dataframe. Note that the API will provide auto-chunking in the future, so that users don't need to manually split the data into chunks before sending it.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+import pandas as pd
+
+df = pd.read_csv(
+    "https://raw.githubusercontent.com/mistralai/cookbook/main/data/LeetCodeTSNE.csv"
+)
+
+def get_embeddings_by_chunks(data, chunk_size):
+    chunks = [data[x : x + chunk_size] for x in range(0, len(data), chunk_size)]
+    embeddings_response = [
+        client.embeddings.create(model=model, inputs=c) for c in chunks
+    ]
+    return [d.embedding for e in embeddings_response for d in e.data]
+
+df["embeddings"] = get_embeddings_by_chunks(df["Code"].tolist(), 50)
+display(df.head())
+```
+
+    </TabItem>
+</Tabs>
+
+<img src="/img/guides/tsne_dataset-codestral-embed.png" alt="drawing" width="700" className='mx-auto' />
+
+<SectionTab as="h3" variant="secondary" sectionId="t-sne-embeddings-visualization">t-SNE embeddings visualization</SectionTab>
+
+We mentioned previously that our embeddings have 1536 dimensions, which makes them impossible to visualize directly. Thus, in order to visualize our embeddings, we can use a dimensionality reduction technique such as t-SNE to project our embeddings into a lower-dimensional space that is easier to visualize.
+
+In this example, we transform our embeddings to 2 dimensions and create a 2D scatter plot showing the relationships among embeddings of different problems.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+import seaborn as sns
+from sklearn.manifold import TSNE
+import numpy as np
+
+tsne = TSNE(n_components=2, random_state=0).fit_transform(np.array(df['embeddings'].to_list()))
+ax = sns.scatterplot(x=tsne[:, 0], y=tsne[:, 1], hue=np.array(df['Name'].to_list()))
+sns.move_legend(ax, 'upper left', bbox_to_anchor=(1, 1))
+```
+
+    </TabItem>
+</Tabs>
+
+<img src="/img/guides/tsne_codestral-embed.png" alt="drawing" width="600"/>

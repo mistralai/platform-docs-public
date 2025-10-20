@@ -1,0 +1,162 @@
+
+There are many ways to evaluate LLM outputs. Here are three approaches for your reference: include a confidence score, introduce an evaluation step, or employ another LLM for evaluation.
+
+### Include a confidence score
+
+We can include a confidence score along with the generated output.
+
+<table class="prompt-example">
+    <tr>
+        <td>Assistant</td>
+        <td>
+
+```
+{
+  "Summaries": [
+    {
+      "Summary": "The author discusses their early experiences with programming and writing, starting with writing short stories and programming on an IBM 1401 in 9th grade. They then moved on to working with microcomputers, building their own from a Heathkit, and eventually convincing their father to buy a TRS-80 in 1980. They wrote simple games, a program to predict rocket flight trajectories, and a word processor.",
+      "Confidence": 0.9
+    },
+    {
+      "Summary": "The author began college as a philosophy major, but found it to be unfulfilling and switched to AI. They were inspired by a novel and a PBS documentary, as well as the potential for AI to create intelligent machines like those in the novel. Despite this excitement, they eventually realized that the traditional approach to AI was flawed and shifted their focus to Lisp.",
+      "Confidence": 0.85
+    },
+    {
+      "Summary": "The author briefly worked at Interleaf, where they found that their Lisp skills were highly valued. They eventually left Interleaf to return to RISD, but continued to work as a freelance Lisp hacker. While at RISD, they started painting still lives in their bedroom at night, which led to them applying to art schools and eventually attending the Accademia di Belli Arti in Florence.",
+      "Confidence": 0.9
+    }
+  ]
+}
+```
+
+</td>
+    </tr>
+</table>
+
+<details>
+<summary><b>Prompt</b></summary>
+
+```
+You are a summarization system that can provide summaries with associated confidence scores.
+In clear and concise language, provide three short summaries of the following essay, along with their confidence scores.
+You will only respond with a JSON object with the key Summary and Confidence. Do not provide explanations.
+
+# Essay:
+{insert essay text here}
+```
+
+</details>
+
+#### Strategies we used:
+
+- **JSON output**: For facilitating downstream tasks, JSON format output is frequently preferred. We can enable the JSON mode by setting the response_format to `{"type": "json_object"}` and specify in the prompt that "You will only respond with a JSON object with the key Summary and Confidence." Specifying these keys within the JSON object is beneficial for clarity and consistency.
+- **Higher Temperature**: In this example, we increase the temperature score to encourage the model to be more creative and output three generated summaries that are different from each other.
+
+### Introduce an evaluation step
+
+We can also add a second step in the prompt for evaluation. We ask the LLM to generate three summaries and evaluate these three summaries.
+
+<table class="prompt-example">
+    <tr>
+        <td>Assistant</td>
+        <td>
+
+```
+Summary 1: The essay discusses the author's experiences with writing and programming before college, his initial struggles with learning Fortran on an IBM 1401, and the shift towards microcomputers that led to his interest in AI. He also touches on his decision to pursue a degree in AI and the disillusionment he felt when he realized that AI as practiced at the time was a hoax.
+
+Summary 2: The author tells the story of his journey into programming, starting with writing short stories before discovering the world of computers. He describes his early experiences with an IBM 1401 and how it was like a mini Bond villain's lair. He also talks about his fascination with microcomputers and how it led him to learn Lisp and become interested in AI. However, he eventually became disillusioned with AI and decided to focus on Lisp instead.
+
+Summary 3: The essay recounts the author's experiences with writing and programming before college, including his early attempts at writing short stories and his struggles with learning to program on an IBM 1401. He discusses how the arrival of microcomputers changed everything and sparked his interest in AI. However, he eventually realized that AI, as practiced at the time, was a hoax, and he turned his attention to Lisp. He also touches on his decision to pursue a degree in AI despite his disillusionment with the field.
+
+Evaluation: I believe that Summary 1 is the best summary because it provides a clear and concise overview of the author's experiences with writing and programming before college, the shift towards microcomputers, and his eventual disillusionment with AI. It covers the key points of the essay without getting bogged down in unnecessary details. Summary 2 is also good, but it focuses more on the author's early experiences with computers and less on his later experiences with AI. Summary 3 is the weakest summary because it does not capture the full scope of the author's experiences and does not mention his decision to pursue a degree in AI despite his disillusionment with the field.
+```
+
+</td>
+    </tr>
+</table>
+
+<details>
+<summary><b>Prompt</b></summary>
+
+```
+You are given an essay text and need to provide summaries and evaluate them.
+
+# Essay:
+{insert essay text here}
+
+Step 1: In this step, provide three short summaries of the given essay. Each summary should be clear, concise, and capture the key points of the speech. Aim for around 2-3 sentences for each summary.
+Step 2: Evaluate the three summaries from Step 1 and rate which one you believe is the best. Explain your choice by pointing out specific reasons such as clarity, completeness, and relevance to the speech content.
+```
+
+</details>
+
+### Employ another LLM for evaluation
+
+In production systems, it is common to employ another LLM for evaluation so that the evaluation step can be separate from the generation summaries.
+
+- **Step 1**: use the first LLM to generate three summaries
+
+<table class="prompt-example">
+    <tr>
+        <td>Assistant</td>
+        <td>
+
+```
+Summary 1: The author writes about their experiences with programming and writing before college. They started programming using Fortran on an IBM 1401 and wrote short stories. They later got into AI, but became disillusioned with it while in graduate school. The author then turned their focus to Lisp, eventually writing a book about it called "On Lisp". They also tried pursuing art, but found it difficult to make a living from it.
+
+Summary 2: The author describes their experiences with programming in college and later in the workforce. They learned Lisp while in college, which expanded their concept of what a program could do. After graduation, the author worked at Interleaf, a company that made document creation software. They also did some consulting and writing on the side, eventually writing a book called "On Lisp". The author enjoyed working at Interleaf, but found that the Lisp they used was just a thin layer on top of a larger C cake.
+
+Summary 3: The author tells the story of their early experiences with programming and writing. They started writing short stories before college, but they were not very good. The first programs they wrote were on an IBM 1401 using Fortran. In college, they got into AI, but found it disappointing. The author then turned their focus to Lisp, which they found to be more interesting. They also tried pursuing art, but found it difficult to make a living from it. The author eventually wrote a book called "On Lisp" and worked at Interleaf, a company that made document creation software. They enjoyed their time at Interleaf, but found that the Lisp they used was just a thin layer on top of a larger C cake.
+```
+
+</td>
+    </tr>
+</table>
+
+<details>
+<summary><b>Prompt</b></summary>
+
+```
+Provide three short summaries of the given essay. Each summary should be clear, concise, and capture the key points of the essay.
+Aim for around 2-3 sentences for each summary.
+
+# essay:
+{insert essay text here}
+```
+
+</details>
+
+- **Step 2**: use another LLM to rate the generated summaries
+
+<table class="prompt-example">
+    <tr>
+        <td>Assistant</td>
+        <td>
+
+```
+Summary 3 provides the most complete and accurate summary of the essay. It covers the author's experiences with writing and programming before college, their disappointment with AI in college, and their eventual focus on Lisp and work at Interleaf. Summary 1 is missing some key details, such as the author's work at Interleaf and their writing of "On Lisp". Summary 2 focuses too much on the author's time at Interleaf and neglects their early experiences with writing and programming before college. Overall, Summary 3 is the best choice as it is the most complete and accurate summary of the essay.
+```
+
+</td>
+    </tr>
+</table>
+
+<details>
+<summary><b>Prompt</b></summary>
+
+```
+You are given an essay and three summaries of the essay. Evaluate the three summaries and rate which one you believe is the best.
+Explain your choice by pointing out specific reasons such as clarity, completeness, and relevance to the essay content.
+
+# Essay:
+{insert essay text here}
+
+# Summaries
+{insert the previous output}
+```
+
+</details>
+
+#### Strategies we used:
+
+- **LLM chaining**: In this example, we chain two LLMs in a sequence, where the output from the first LLM serves as the input for the second LLM. The method of chaining LLMs can be adapted to suit your specific use cases. For instance, you might choose to employ three LLMs in a chain, where the output of two LLMs is funneled into the third LLM. While LLM chaining offers flexibility, it's important to consider that it may result in additional API calls and potentially increased costs.

@@ -1,0 +1,268 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+We also provide the instruct chat endpoint of Codestral with the same model `codestral-latest`.  
+The only difference is the endpoint used; so you can leverage powerfull code completion with instruct and chat use cases.
+
+However we also provide `devstral-small-latest` and `devstral-medium-latest` for agentic tool use for software development, this family of models is specifically trained to navigate code bases and leverage tool usage for diverse tasks.
+
+:::tip
+Before continuing, we recommend reading the [Chat Competions](completion) documentation to learn more about the chat completions API and how to use it before proceeding.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="instruct-codestral">Codestral</SectionTab>
+
+Here is an example of how to use the instruct endpoint of Codestral, it's perfect for specific **code generation** of specific snippets or **code completion** while **following instructions**; so you can better guide generation and exchange with a powerfull coding model.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+model = "codestral-latest"
+message = [{"role": "user", "content": "Write a function for fibonacci"}]
+chat_response = client.chat.complete(
+    model = model,
+    messages = message
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+async function main() {
+    const response = await client.chat.complete({
+        model: "codestral-latest",
+        messages: [{role: "user", content: "Write a function for fibonacci"}]
+    });
+}
+
+main();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "codestral-latest",
+    "messages": [{"role": "user", "content": "Write a function for fibonacci"}]
+  }'
+``` 
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "93803125293c475f867b09e337433a0b",
+  "created": 1757439506,
+  "model": "codestral-latest",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 441,
+    "completion_tokens": 432
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "# Fibonacci Function\n\nHere's a Python function to calculate the nth Fibonacci number:\n\n```python\ndef fibonacci(n):\n    \"\"\"\n    Calculate the nth Fibonacci number.\n\n    Args:\n        n (int): The position in the Fibonacci sequence (0-based index)\n\n    Returns:\n        int: The nth Fibonacci number\n\n    Raises:\n        ValueError: If n is negative\n    \"\"\"\n    if n < 0:\n        raise ValueError(\"Input must be a non-negative integer\")\n\n    # Base cases\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n\n    # Initialize variables for iterative approach\n    a, b = 0, 1\n\n    # Iterate from 2 to n\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n\n    return b\n```\n\n## Alternative Implementations\n\n### Recursive Approach (less efficient for large n)\n```python\ndef fibonacci_recursive(n):\n    if n < 0:\n        raise ValueError(\"Input must be a non-negative integer\")\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    else:\n        return fibonacci_recursive(n-1) + fibonacci_recursive(n-2)\n```\n\n### Using Memoization (optimized recursive approach)\n```python\ndef fibonacci_memo(n, memo={}):\n    if n < 0:\n        raise ValueError(\"Input must be a non-negative integer\")\n    if n in memo:\n        return memo[n]\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    memo[n] = fibonacci_memo(n-1, memo) + fibonacci_memo(n-2, memo)\n    return memo[n]\n```\n\nThe iterative approach is generally preferred for performance reasons, especially for larger values of n, as it runs in O(n) time with O(1) space complexity."
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="devstral">Devstral</SectionTab>
+
+While Codestral is designed for code generation and FIM, Devstral is a cutting-edge generative model that has been specifically designed and optimized for **agentic tool use for software development**, it can leverage function calling to navigate code bases and call the right tools to perform specific tasks for semi-automated software development.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+model = "devstral-medium-latest"
+message = [{"role": "user", "content": "Create a new file called test.py and write a function for fibonacci"}]
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "create_file",
+            "description": "Create a new file with the given name and content",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "description": "The name of the file to create",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "The content to write to the file",
+                    },
+                },
+                "required": ["filename", "content"],
+            },
+        },
+    }
+]
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = message,
+    tools = tools
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+async function main() {
+    const response = await client.chat.complete({
+        model: "devstral-medium-latest",
+        messages: [{role: "user", content: "Create a new file called test.py and write a function for fibonacci"}],
+        tools: [
+            {
+                "type": "function",
+                "function": {
+                    "name": "create_file",
+                    "description": "Create a new file with the given name and content",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filename": {
+                                "type": "string",
+                                "description": "The name of the file to create"
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "The content to write to the file"
+                            }
+                        },
+                        "required": ["filename", "content"]
+                    }
+                }
+            }
+        ]
+    });
+}
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "devstral-medium-latest",
+    "messages": [{"role": "user", "content": "Create a new file called test.py and write a function for fibonacci"}],
+    "tools": [
+        {
+            "type": "function",
+            "function": {
+                "name": "create_file",
+                "description": "Create a new file with the given name and content",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "filename": {
+                            "type": "string",
+                            "description": "The name of the file to create"
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "The content to write to the file"
+                        }
+                    },
+                    "required": ["filename", "content"]
+                }
+            }
+        }
+    ]
+  }'
+``` 
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "519df29e0aad49318796114e3926b1d3",
+  "created": 1757439690,
+  "model": "devstral-medium-latest",
+  "usage": {
+    "prompt_tokens": 117,
+    "total_tokens": 329,
+    "completion_tokens": 212
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "OC1g0C1a1",
+            "function": {
+              "name": "create_file",
+              "arguments": "{\"filename\": \"test.py\", \"content\": \"def fibonacci(n):\\n    \\\"\\\"\\\"\\n    Calculate the nth Fibonacci number.\\n\\n    :param n: The position in the Fibonacci sequence.\\n    :return: The nth Fibonacci number.\\n    \\\"\\\"\\\"\\n    if n <= 0:\\n        return \\\"Input should be a positive integer.\\\"\\n    elif n == 1:\\n        return 0\\n    elif n == 2:\\n        return 1\\n    else:\\n        a, b = 0, 1\\n        for _ in range(2, n):\\n            a, b = b, a + b\\n        return b\\n\\n# Example usage\\nif __name__ == \\\"__main__\\\":\\n    n = 10  # Change this value to test other cases\\n    print(f\\\"The {n}th Fibonacci number is: {fibonacci(n)}\\\")\"}"
+            },
+            "index": 0
+          }
+        ],
+        "content": ""
+      }
+    }
+  ]
+}
+```
+
+     </TabItem>
+</Tabs>

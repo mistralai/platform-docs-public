@@ -1,0 +1,94 @@
+import { SectionTab } from '@/components/layout/section-tab';
+
+**Temperature** in Large Language Models (LLMs) controls output diversity. Lower values make the model more deterministic, focusing on likely responses for accuracy. Higher values increase creativity and diversity. During text generation, LLMs predict tokens with associated probabilities using a softmax function. Temperature scales these probabilities: higher temperatures flatten the distribution, making outputs more varied, while lower temperatures amplify differences, favoring more likely tokens.
+
+<SectionTab as="h2" variant="secondary" sectionId="visualization">Visualization</SectionTab>
+
+To better understand the underlying principle and impact it has on the probability distribution, here is a visualisation of the Temperature with a simple prompt:
+_"What is the best mythical creature? Answer with a single word."_
+
+<div style={{ textAlign: 'center' }}>
+  <img src="/img/barplot.png" alt="Example Image" width="800"/>
+
+<sub><sup>Barplot example comparing the distribution with different `Temperature` values and the top 5 tokens using Mistral 7B at 4 bits precision.</sup></sub>
+
+</div>
+
+**Temperature** significantly affects the probability distribution in LLMs. At a Temperature of 0, the model always outputs the most likely token, e.g., "**Dragon**". Increasing the Temperature to 0.2 introduces variability, allowing for tokens like "**Un**" (as in "**Un**icorn"). Further increases reveal more diverse tokens: the third token might still be "**Drag**" (for "**Drag**on"), but the fourth could start "**Peg**asus", and the fifth, "**Phoenix**". Higher Temperatures make less likely tokens more probable, enhancing the diversity of the model's output.
+
+<SectionTab as="h2" variant="secondary" sectionId="api">API</SectionTab>
+
+You can set a temperature value easily via our clients, let's experiment with our API.
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 0.1,
+    n = 10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+```
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+```
+
+The model answered mostly with Dragon! Lets try with a higher temperature to try to have more diverse outputs, let's set it to `temperature = 1`.
+
+```
+Unicorn
+Dragon
+Phoenix
+Unicorn
+Dragon
+Phoenix.
+Dragon.
+Phoenix
+Dragon
+Unicorn.
+```
+
+The outputs ended much more diverse, the model answering with a different creature more frequently, we have "Dragon", "Unicorn" and "Phoenix".
+
+<SectionTab as="h2" variant="secondary" sectionId="best-temperature">The Best Temperature</SectionTab>
+
+There's no one-size-fits-all Temperature for all use cases, but some guidelines can help you find the best for your applications.
+
+<SectionTab as="h3" variant="tertiary" sectionId="determinism">Determinism</SectionTab>
+
+- **Requirements**: Tasks needing consistent, accurate responses, such as Mathematics, Classification, Healthcare, or Reasoning.
+- **Temperature**: Use very low values, sometimes not null to add slight uniqueness.
+
+For example, a classification agent should use a Temperature of 0 to always pick the best token. A math chat assistant might use very low Temperature values to avoid repetition while maintaining accuracy.
+
+<SectionTab as="h3" variant="tertiary" sectionId="creativity">Creativity</SectionTab>
+
+- **Requirements**: Tasks needing diverse, unique text, like brainstorming, writing novels, creating slogans, or roleplaying.
+- **Temperature**: Use high values, but avoid excessively high Temperatures to prevent randomness and nonsense outputs.
+
+Consider the trade-off: higher Temperatures increase creativity but may decrease quality and accuracy.

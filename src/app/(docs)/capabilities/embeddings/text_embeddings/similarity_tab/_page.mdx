@@ -1,0 +1,54 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+In the realm of text embeddings, texts with similar meanings or context tend to be located in closer proximity to each other within this space, as measured by the distance between their vectors. This is due to the fact that the model has learned to group semantically related texts together during the training process.
+
+Let's take a look at a simple example. To simplify working with text embeddings, we can wrap the embedding API in this function:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from sklearn.metrics.pairwise import euclidean_distances
+
+def get_text_embedding(inputs):
+    embeddings_batch_response = client.embeddings.create(
+        model=model,
+        inputs=inputs
+    )
+    return embeddings_batch_response.data[0].embedding
+```
+
+  </TabItem>
+</Tabs>
+
+Suppose we have two sentences: one about cats and the other about books. We want to find how similar each sentence is to the reference sentence "Books are mirrors: You only see in them what you already have inside you". We can see that the distance between the reference sentence embeddings and the book sentence embeddings is smaller than the distance between the reference sentence embeddings and the cat sentence embeddings.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+sentences = [
+    "A home without a cat — and a well-fed, well-petted and properly revered cat — may be a perfect home, perhaps, but how can it prove title?",
+    "I think books are like people, in the sense that they'll turn up in your life when you most need them"
+]
+embeddings = [get_text_embedding([t]) for t in sentences]
+
+reference_sentence = "Books are mirrors: You only see in them what you already have inside you"
+reference_embedding = get_text_embedding([reference_sentence])
+
+for t, e in zip(sentences, embeddings):
+    distance = euclidean_distances([e], [reference_embedding])
+    print(t, distance)
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```
+A home without a cat — and a well-fed, well-petted and properly revered cat — may be a perfect home, perhaps, but how can it prove title? [[0.80094257]]
+I think books are like people, in the sense that they'll turn up in your life when you most need them [[0.58162089]]
+```
+
+  </TabItem>
+</Tabs>
+In our example above, we used the Euclidean distance to measure the distance between embedding vectors (note that since Mistral AI embeddings are norm 1, cosine similarity, dot product or Euclidean distance are all equivalent).

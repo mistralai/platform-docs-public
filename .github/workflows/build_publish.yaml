@@ -18,7 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PUBLIC_DOCS_WRITE_TOKEN }}
-
+          fetch-depth: 0
+          submodules: true
 
       - name: Pull public updates
         env: # We cannot use the github bot token to push to the public repo, we have to use one with more permissions
@@ -31,6 +32,7 @@ jobs:
 
           git remote add public https://github.com/mistralai/platform-docs-public.git
           git remote update
+          git status
 
           # Create a diff of the changes, ignoring the ci workflow
           git merge public/main --no-commit --no-ff --no-edit --allow-unrelated-histories
@@ -57,7 +59,7 @@ jobs:
           git commit -m "Bump version file"
 
           # create a diff of this ref and the public repo
-          git diff doc/${{github.ref_name}} ${{github.ref_name}} --binary -- . ':!.github' > changes.diff
+          git diff doc/${{github.ref_name}} ${{github.ref_name}} --binary --ignore-submodules=none -- . ':!.github' > changes.diff
 
           # apply the diff to the current branch
           git apply changes.diff

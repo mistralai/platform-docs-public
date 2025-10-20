@@ -1,0 +1,258 @@
+---
+id: custom_structured_output
+title: Custom
+slug: custom_structured_output
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import RawJSONOutputTab from './raw_json_output_tab/_page.mdx';
+import ParsedOutputTab from './parsed_output_tab/_page.mdx';
+
+# Custom Structured Outputs
+
+Custom Structured Outputs allow you to ensure the model provides an answer in a very specific JSON format by supplying a clear JSON schema. This approach allows the model to consistently deliver responses with the correct typing and keywords.
+
+<SectionTab as="h1" sectionId="usage">Usage</SectionTab>
+
+Here is an example of how to achieve this using the Mistral AI client and Pydantic/Zod/JSON Schemas:
+
+<SectionTab as="h2" variant="secondary" sectionId="define-the-data-model">Define the Data Model</SectionTab>
+
+First, define the structure of the output using a Pydantic, Zod or a JSON Schema:
+
+<Tabs> 
+  <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel
+
+class Book(BaseModel):
+    name: str
+    authors: list[str]
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { z } from 'zod';
+
+const Book = z.object({
+  name: z.string(),
+  authors: z.array(z.string()),
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl json schema">
+
+```json
+{
+  "type": "json_schema",
+  "json_schema": {
+    "schema": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "authors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "required": ["name", "authors"],
+      "title": "Book",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "name": "book",
+    "strict": true
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="start-the-completion">Start the completion</SectionTab>
+
+Next, make a request and ensure the response adheres to the defined structure using `response_format` set to the corresponding model:
+
+<Tabs> 
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-8b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.parse(
+    model=model,
+    messages=[
+        {
+            "role": "system",
+            "content": "Extract the books information."
+        },
+        {
+            "role": "user",
+            "content": "I recently read 'To Kill a Mockingbird' by Harper Lee."
+        },
+    ],
+    response_format=Book,
+    max_tokens=256,
+    temperature=0
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+const chatResponse = await client.chat.parse({
+  model: 'ministral-8b-latest',
+  messages: [
+    {
+      role: 'system',
+      content: 'Extract the books information.',
+    },
+    {
+      role: 'user',
+      content: "I recently read 'To Kill a Mockingbird' by Harper Lee.",
+    },
+  ],
+  responseFormat: Book,
+  maxTokens: 256,
+  temperature: 0,
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "ministral-8b-latest",
+    "messages": [
+     {
+        "role": "system",
+        "content": "Extract the books information."
+      },
+     {
+        "role": "user",
+        "content": "I recently read To Kill a Mockingbird by Harper Lee."
+      }
+    ],
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "schema": {
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "authors": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Authors",
+              "type": "array"
+            }
+          },
+          "required": ["name", "authors"],
+          "title": "Book",
+          "type": "object",
+          "additionalProperties": false
+        },
+        "name": "book",
+        "strict": true
+      }
+    },
+    "max_tokens": 256,
+    "temperature": 0
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "feaa11fd78fc4e6584d233c045ffe138",
+  "created": 1757442515,
+  "model": "ministral-8b-latest",
+  "usage": {
+    "prompt_tokens": 23,
+    "total_tokens": 47,
+    "completion_tokens": 24
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "{\n  \"name\": \"To Kill a Mockingbird\",\n  \"authors\": [\"Harper Lee\"]\n}"
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+In this example, the `Book` class defines the structure of the output, ensuring that the model's response adheres to the specified format.
+
+There are two types of possible outputs that are easily accessible via our SDK.
+
+<ExplorerTabs mode="close">
+  <ExplorerTab value="raw-json-output" label="Raw JSON Output">
+    <RawJSONOutputTab/>
+  </ExplorerTab>
+  <ExplorerTab value="parsed-output" label="Parsed Output">
+    <ParsedOutputTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+:::note
+To better guide the model, the following is being always prepended to the System Prompt when using this method:
+
+```
+Your output should be an instance of a JSON object following this schema: {{ json_schema }}
+```
+
+However, it is recommended to add more explanations and iterate on your system prompt to better clarify the expected schema and behavior.
+:::
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Which models support custom Structured Outputs?">
+    All currently available models except for `codestral-mamba` are supported.
+  </FaqItem>
+</Faq>

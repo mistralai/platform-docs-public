@@ -1,0 +1,140 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+If you have an image or a set of images stored locally, you can pass them to the model in **base64 encoded format**. Base64 encoding is a common method for converting binary data into a text format that can be easily transmitted over the internet. This is particularly useful when you need to include images in API requests.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```py
+import base64
+import requests
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-2506"
+
+client = Mistral(api_key=api_key)
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+image_path = "eiffel-tower-paris.jpg" # path to your image
+base64_image = encode_image(image_path)
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "What's in this image?"
+            },
+            {
+                "type": "image_url",
+                "image_url": f"data:image/jpeg;base64,{base64_image}"
+            }
+        ]
+    }
+]
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```ts
+import { Mistral } from "@mistralai/mistralai";
+import fs from 'fs';
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function encodeImage(imagePath) {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const base64Image = imageBuffer.toString('base64');
+    return base64Image;
+}
+
+const imagePath = "eiffel-tower-paris.jpg"; // path to your image
+const base64Image = await encodeImage(imagePath)
+
+const chatResponse = await client.chat.complete({
+  model: "mistral-small-2506",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "What's in this image?" },
+        {
+          type: "image_url",
+          imageUrl: f"data:image/jpeg;base64," + base64Image,
+        },
+      ],
+    },
+  ],
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-small-2506",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "What’s in this image?"
+          },
+          {
+            "type": "image_url",
+            "image_url": "data:image/jpeg;base64,<base64_image>"
+          }
+        ]
+      }
+    ]
+  }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "fc486ba226804d92b07d1b5ba8f18ee7",
+  "created": 1756318720,
+  "model": "mistral-small-2506",
+  "usage": {
+    "prompt_tokens": 2099,
+    "total_tokens": 2214,
+    "completion_tokens": 115
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The image showcases the Eiffel Tower, an iconic landmark located in Paris, France. The photograph is taken from a low angle, emphasizing the tower's impressive height and intricate iron lattice structure. The sky is clear and blue, providing a striking contrast to the brownish hue of the Eiffel Tower. The base of the tower is visible, with its characteristic arches and detailed ironwork. In the background, some trees and buildings can be seen, adding depth to the image. The overall composition highlights the architectural beauty and grandeur of the Eiffel Tower."
+      }
+    }
+  ]
+}
+```
+    </TabItem>
+</Tabs>

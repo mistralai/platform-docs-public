@@ -51,6 +51,12 @@ pnpm start
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
 
+
+To build in autocompile mode, run the following command:
+```bash
+npm run dev
+```
+
 ### Build
 
 ```bash
@@ -87,7 +93,6 @@ If the title is empty, the title will be extracted from the cookbook.
 
 - Make sure URLs start with `https://` or `http://`, otherwise, it will look for the relative paths in the repo.
 - Images can be saved in the [img](https://github.com/mistralai/platform-docs-public/tree/main/static/img) folder. Please reference the images with `/img/your_added_image.svg`.
-
 This documentation is built using [Docusaurus](https://docusaurus.io/).
 
 # How to contribute?

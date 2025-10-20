@@ -1,0 +1,170 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+**"Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years"**
+
+The second example asks for the European central bank interest rate and to plot a graph of the compounded interest. Now we require a local function call since the `ecb-interest-rate-agent` will surelly be required.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/exampleb_handoffs.png"
+    alt="handoffs_graph_exampleb"
+    width="800"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+from mistralai import FunctionResultEntry
+
+response = client.beta.conversations.start(
+    agent_id=finance_agent.id,
+    inputs="Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years"
+)
+if response.outputs[-1].type == "function.call" and response.outputs[-1].name == "get_european_central_bank_interest_rate":
+
+    # Add a dummy result for the function call
+    user_entry = FunctionResultEntry(
+        tool_call_id=response.outputs[-1].tool_call_id,
+        result="2.5%",
+    )
+    response = client.beta.conversations.append(
+        conversation_id=response.conversation_id,
+        inputs=[user_entry]
+    )
+
+# A full code snippet to download all generated images and plots from the response could look like so:
+from mistralai.models import ToolFileChunk
+
+for i, chunk in enumerate(response.outputs[-1].content):
+    # Check if chunk corresponds to a ToolFileChunk
+    if isinstance(chunk, ToolFileChunk):
+
+      # Download using the ToolFileChunk ID
+      file_bytes = client.files.download(file_id=chunk.file_id).read()
+
+      # Save the file locally
+      with open(f"plot_generated_{i}.png", "wb") as file:
+          file.write(file_bytes)
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// First, let's add the following imports:
+import type {
+  FunctionResultEntry,
+  MessageOutputEntry,
+} from '@mistralai/mistralai/models/components/index.js';
+
+// Then, let's start the conversation:
+response = await client.beta.conversations.start({
+  agentId: financeAgent.id,
+  inputs:
+    'Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years',
+});
+
+let output = response.outputs[response.outputs.length - 1];
+
+if (
+  output.type === 'function.call' &&
+  output.name === 'getEuropeanCentralBankInterestRate'
+) {
+  // Add a dummy result for the function call
+  let userEntry: FunctionResultEntry = {
+    toolCallId: output.toolCallId,
+    result: '2.5%',
+  };
+
+  response = await client.beta.conversations.append({
+    conversationId: response.conversationId,
+    conversationAppendRequest: {
+      inputs: [userEntry],
+    },
+  });
+}
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "inputs": "Given the interest rate of the European Central Bank as of jan 2025, plot a graph of the compounded interest rate over the next 10 years",
+     "stream": false,
+     "agent_id": "<agent_id>"
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "inputs": [
+        {
+            "type": "function.result",
+            "tool_call_id": "<tool_call_id>",
+            "result": "2.5%"
+        }
+     ],
+     "stream": false,
+     "agent_id": "<agent_id>"
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="output-events">Output Events</SectionTab>
+
+Below, you can see the output events of the conversation in order of appearance for the example above.
+
+```shell
+Conversation started: conv_067f7e71523d7be3800005c4ac560a7b
+
+## Event type: agent.handoff
+
+agent_id='ag_067f7e714f6e751480002beb3bfe0779' agent_name='ecb-interest-rate-agent' object='conversation.entry' type='agent.handoff' created_at=datetime.datetime(2025, 4, 10, 15, 43, 18, 590169, tzinfo=TzInfo(UTC)) id='handoff_067f7e71697176098000aa403030a74e'
+
+
+## Event type: function.call
+
+tool_call_id='NqCFiwvSV' name='get_european_central_bank_interest_rate' arguments='{"date": "2025-01-01"}' object='conversation.entry' type='function.call' created_at=datetime.datetime(2025, 4, 10, 15, 43, 20, 173505, tzinfo=TzInfo(UTC)) id='fc_067f7e7182c67b9c80006f27131026a8'
+
+
+## User added event function.result:
+
+tool_call_id='NqCFiwvSV' result='2.5%' object='conversation.entry' type='function.result' created_at=None id=None
+
+## Event type: agent.handoff:
+
+agent_id='ag_067f7e7147e077a280005b4ae524d317' agent_name='graph-drawing-agent' object='conversation.entry' type='agent.handoff' created_at=datetime.datetime(2025, 4, 10, 15, 43, 26, 261436, tzinfo=TzInfo(UTC)) id='handoff_067f7e71e42e7e2080009fc4fd68164a'
+
+
+## Event type: message.output:
+
+content="To plot the graph of the compounded interest rate over the next 10 years, we can use the formula for compound interest:\n\n\\[ A = P \\left(1 + \\frac{r}{n}\\right)^{nt} \\]\n\nwhere:\n- \\( A \\) is the amount of money accumulated after n years, including interest.\n- \\( P \\) is the principal amount (the initial amount of money).\n- \\( r \\) is the annual interest rate (decimal).\n- \\( n \\) is the number of times that interest is compounded per year.\n- \\( t \\) is the time the money is invested for, in years.\n\nGiven:\n- The annual interest rate \\( r = 2.5\\% = 0.025 \\).\n- Assuming the interest is compounded annually (\\( n = 1 \\)).\n- We will calculate the compounded amount for each year over the next 10 years.\n\nLet's assume the principal amount \\( P = 1000 \\) (you can choose any amount as it will not affect the rate plot).\n\nWe will calculate the compounded amount for each year and plot it." object='conversation.entry' type='message.output' created_at=datetime.datetime(2025, 4, 10, 15, 43, 39, 385339, tzinfo=TzInfo(UTC)) id='msg_067f7e72b62a768f800022b2504adfc9' agent_id='ag_067f7e7147e077a280005b4ae524d317' model='mistral-medium-2505' role='assistant'
+
+
+## Event type: tool.execution:
+
+name='code_interpreter' object='conversation.entry' type='tool.execution' created_at=datetime.datetime(2025, 4, 10, 15, 43, 39, 385463, tzinfo=TzInfo(UTC)) id='tool_exec_067f7e72b62a7e3a800072733a6a57f2'
+
+
+## Event type: message.output:
+
+content=[ToolFileChunk(tool='code_interpreter', file_id='40420c94-5f99-477f-8891-943f0defbe3b', type='tool_file', file_name='plot_0.png', file_type='png'), TextChunk(text='![Image](__emitted_0.png)\n\nThe graph shows the compounded interest over 10 years with an annual interest rate of 2.5%. The principal amount is set to $1000, and the interest is compounded once per year. The y-axis represents the amount of money, and the x-axis represents the number of years.', type='text')] object='conversation.entry' type='message.output' created_at=datetime.datetime(2025, 4, 10, 15, 43, 39, 898738, tzinfo=TzInfo(UTC)) id='msg_067f7e72be6173f48000e85e9976305a' agent_id='ag_067f7e7147e077a280005b4ae524d317' model='mistral-medium-2505' role='assistant'
+```

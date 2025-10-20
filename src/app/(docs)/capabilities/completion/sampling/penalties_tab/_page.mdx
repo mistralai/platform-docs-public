@@ -1,0 +1,198 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+Presence and Frequency Penalties are parameters that repetition, it allows you to control the diversity of the generated text.
+
+<SectionTab as="h2" variant="secondary" sectionId="presence-penalty">Presence Penalty</SectionTab>
+
+**Presence Penalty** determines how much the model penalizes the repetition of words or phrases. It encourages the model to use a wider variety of words and phrases, making the output more diverse and creative.
+
+- **Range**: [-2, 2]
+- **Default**: 0
+
+A higher presence penalty encourages the model to avoid repeating words or phrases that have already appeared in the output, ensuring a more varied and creative text.
+
+The presence penalty specifically is a **one-time adjustment** applied to all tokens that have been used at least once. It reduces the likelihood of repeating any token that has already appeared. This encourages the model to use a diverse range of tokens, promoting creativity and variety in the output.
+
+<SectionTab as="h2" variant="secondary" sectionId="frequency-penalty">Frequency Penalty</SectionTab>
+
+**Frequency Penalty** is a parameter that penalizes the repetition of words based on their frequency in the generated text. It helps to promote diversity and reduce repetition in the output.
+
+- **Range**: [-2, 2]
+- **Default**: 0
+
+A higher frequency penalty discourages the model from repeating words that have already appeared frequently in the output. This ensures that the generated text is more varied and less repetitive.
+
+The frequency penalty specifically is a value that increases with the frequency of a token's appearance in the generated text, **an accumulative penalty**, the more the token is sampled the higher the penalty. It reduces the likelihood of repeating any token that has already appeared frequently. This ensures that the generated text is more varied and less repetitive.
+
+<SectionTab as="h2" variant="secondary" sectionId="differences-between-presence-penalty-and-frequency-penalty">Presence and Frequency Penalties Differences</SectionTab>
+
+- **Presence Penalty**: This is a one-off additive contribution that applies to all tokens that have been sampled at least once. It encourages the model to include a diverse range of tokens in the generated text.
+- **Frequency Penalty**: This is a contribution that is proportional to how often a particular token has already been sampled. It discourages the model from repeating the same words or phrases too frequently within the generated text.
+
+Both parameters can be tweaked to shape the quality and diversity of the generated text. The best values for these parameters can differ based on the specific task and the desired outcome.
+
+<ExplorerTabs>
+  <ExplorerTab value="no-penalty" label="No-Penalty">
+
+Here's an example of how the output looks without any penalty parameter:
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```text
+1. "The Shattered Crown"
+2. "Whispers of the Old Magic"
+3. "Echoes of the Forgotten Realm"
+4. "The Chronicles of the Silver Moon"
+5. "The Enchanted Forest's Secret"
+6. "The Last Dragon's Legacy"
+7. "The Shadowed Path"
+8. "The Song of the Siren's Call"
+9. "The Lost City of the Stars"
+10. "The Whispering Winds of Destiny"
+```
+
+    </TabItem>
+</Tabs>
+
+    </ExplorerTab>
+    <ExplorerTab value="presence-penalty" label="Presence Penalty">
+
+Here's an example of how to use the `Presence Penalty` parameter in the API:
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0,
+    presence_penalty=2
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```text
+1. "The Shattered Crown"
+2. "Whispers of the Old Magic"
+3. "Echoes of Eternity"
+4. "Shadows of the Forgotten Realm"
+5. "Chronicles of the Enchanted Forest"
+6. "The Last Dragon's Roar"
+7. "Mysteries of the Hidden City"
+8. "Legends of the Lost Kingdom"
+9. "The Whispering Winds"
+10. "The Unseen War"
+```
+
+     </TabItem>
+</Tabs>
+
+> The output list is already slightly different than the first one, being impacted by the presence penalty of present tokens. For instance we have less `The` as a token compared to without presence penalty.
+
+    </ExplorerTab>
+    <ExplorerTab value="frequency-penalty" label="Frequency Penalty">
+
+Here's an example of how to use the `Frequency Penalty` parameter in the API:
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0,
+    frequency_penalty=2
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+     </TabItem>
+     <TabItem value="output" label="output">
+
+```
+1. "The Shattered Crown"
+2. "Whispers of the Old Magic"
+3. "Echoes of Eternity"
+4. "The Forgotten Realm"
+5. "Shadows of the Lost City"
+6. "Chronicles of the Enchanted Forest"
+7. The Last Dragon's Roar
+8."The Veil Between Worlds"
+9."The Song of the Siren's Call"
+10."Legends in Stone"
+```
+
+     </TabItem>
+</Tabs>
+
+> The output is already more diverse than previously, however notice that after the 7th value of the list tokens such as `_"` and single quotation marks start to also be heavily affected, this shows how stronger the impact of frequency penalty is in the long term as an accumulative penalty.
+
+    </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="side-by-side-comparison">Side by Side Comparison</SectionTab>
+
+A table with the 3 different outputs side by side in a table for comparison:
+
+| **Penalties**| No Presence/Frequency Penalty | Presence Penalty (presence_penalty=2) | Frequency Penalty (frequency_penalty=2) |
+|--------------|------------|------------------|-------------------|
+| **Output**   | 1. "The Shattered Crown" <br></br> 2. "Whispers of the Old Magic" <br></br> 3. "Echoes of the Forgotten Realm" <br></br> 4. "The Chronicles of the Silver Moon" <br></br> 5. "The Enchanted Forest's Secret" <br></br> 6. "The Last Dragon's Legacy" <br></br> 7. "The Shadowed Path" <br></br> 8. "The Song of the Siren's Call" <br></br> 9. "The Lost City of the Stars" <br></br> 10. "The Whispering Winds of Destiny" | 1. "The Shattered Crown" <br></br> 2. "Whispers of the Old Magic" <br></br> 3. "Echoes of Eternity" <br></br> 4. "Shadows of the Forgotten Realm" <br></br> 5. "Chronicles of the Enchanted Forest" <br></br> 6. "The Last Dragon's Roar" <br></br> 7. "Mysteries of the Hidden City" <br></br> 8. "Legends of the Lost Kingdom" <br></br> 9. "The Whispering Winds" <br></br> 10. "The Unseen War" | 1. "The Shattered Crown" <br></br> 2. "Whispers of the Old Magic" <br></br> 3. "Echoes of Eternity" <br></br> 4. "The Forgotten Realm" <br></br> 5. "Shadows of the Lost City" <br></br> 6. "Chronicles of the Enchanted Forest" <br></br> 7. The Last Dragon's Roar <br></br> 8. "The Veil Between Worlds" <br></br> 9. "The Song of the Siren's Call" <br></br> 10. "Legends in Stone" |
+| **Comment**  | The output is consistent, but you can see the model repeating similar structures often. | The output is more diverse, with fewer repetitions of similar structures. For instance, we have less `The` as a token compared to without presence penalty. | The output is more diverse, with fewer repetitions of similar structures. However, notice that after the 7th value of the list tokens such as `_"` and single quotation marks start to also be heavily affected, this shows how stronger the impact of frequency penalty is in the long term as an accumulative penalty. |
+
+Penalties are a sensible parameter that can have a significant impact on long context and long output queries, both negatively and positively. They can also help avoid highly repetitive loops that the model may otherwise fall into, making them a valuable parameter.

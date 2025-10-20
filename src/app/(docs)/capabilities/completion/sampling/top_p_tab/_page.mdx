@@ -1,0 +1,114 @@
+import { SectionTab } from '@/components/layout/section-tab';
+
+**Top P** is a setting that limits the tokens considered by a language model based on a probability threshold. It helps focus on the most likely tokens, improving output quality.
+
+<SectionTab as="h2" variant="secondary" sectionId="visualization">Visualization</SectionTab>
+
+For these examples, we set the Temperature first, then apply a Top P of 50%. Note that a Temperature of 0 is deterministic, making Top P irrelevant in that case.
+
+The process is as follows:
+
+1. Apply the Temperature.
+2. Use Top P (0.5) to keep only the most likely tokens.
+3. Adjust the probabilities of the remaining tokens.
+
+We will visualize the token probability distribution across different temperature values for the question:
+
+- "What is the best mythical creature? Answer with a single word."
+
+<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <img src="/img/top_barplot.png" alt="Example Image" style={{ width: '85%' }} />
+    <br/><sub><sup>Different Temperature values and the top 5 tokens using Mistral 7B at 4 bits precision.</sup></sub>
+    </div>
+
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <span style={{ fontSize: '24px' }}>&darr;</span>
+    </div>
+
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <img src="/img/top_barplot_black.png" alt="Example Image" style={{ width: '85%' }} />
+    <br/><sub><sup>Top P considers only the top tokens until reaching 50% probability.</sup></sub>
+    </div>
+
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <span style={{ fontSize: '24px' }}>&darr;</span>
+    </div>
+
+    <div style={{ textAlign: 'center' }}>
+    <img src="/img/top_barplot_final.png" alt="Example Image" style={{ width: '85%' }} />
+    <br/><sub><sup>Other tokens' probabilities are set to 0, and the remaining tokens' probabilities are adjusted.</sup></sub>
+    </div>
+
+</div>
+
+Top P ensures that only high-quality tokens are considered, maintaining output quality by excluding unlikely tokens. It's challenging to balance Temperature and Top P, so it's recommended to fix one and adjust the other. However you should experiment to find the best settings for your use case!
+
+<SectionTab as="h2" variant="secondary" sectionId="to-summarize">To Summarize</SectionTab>
+
+1. **Role of Top P**: Top P limits the tokens considered based on a probability threshold, focusing on the most likely tokens to improve output quality.
+2. **Interaction with Temperature**: Top P is applied after Temperature.
+3. **Impact on Outputs**: Top P avoids considering very unlikely tokens, maintaining output quality and coherence.
+4. **Balancing Temperature and Top P**: It's challenging to balance both. Start by fixing one parameter and adjust the other, experiment to find optimal settings.
+
+<SectionTab as="h2" variant="secondary" sectionId="example">Example</SectionTab>
+
+Here's an example of how to use the `Top P` parameter with our python client:
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature=1,
+    top_p=0.5,
+    n=10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="output">Output</SectionTab>
+
+```py
+Unicorn
+Unicorn
+Unicorn
+Unicorn
+Dragon
+Unicorn
+Dragon
+Dragon
+Dragon
+Dragon
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="output-table">Output Table</SectionTab>
+
+| Temperature 0.1 | Temperature 1 | Temperature 1 & Top P 50% |
+| :-------------: | :-----------: | :-----------------------: |
+|     Dragon      |    Unicorn    |          Unicorn          |
+|     Dragon      |    Dragon     |          Unicorn          |
+|     Dragon      |    Phoenix    |          Unicorn          |
+|     Dragon      |    Unicorn    |          Unicorn          |
+|     Dragon      |    Dragon     |          Dragon           |
+|     Dragon      |   Phoenix.    |          Unicorn          |
+|     Dragon      |    Dragon.    |          Dragon           |
+|     Dragon      |    Phoenix    |          Dragon           |
+|     Dragon      |    Dragon     |          Dragon           |
+|     Dragon      |   Unicorn.    |          Dragon           |
+
+In this example, the model generates a response considering only the top tokens that cumulatively reach a 50% probability threshold. This ensures that the output keeps some uniform diversity while still taking only the best tokens, in this case only 2 tokens reach the 50% threshold.

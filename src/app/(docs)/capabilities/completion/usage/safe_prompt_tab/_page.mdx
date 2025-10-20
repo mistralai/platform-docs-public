@@ -1,0 +1,136 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+The `safe_prompt` flag is simple boolean that introduces a simple first level of moderation- to **make replies safer and more respectful**. We recommend taking a look at our [moderation](./guardrailing) docs for better moderation.  
+<Tabs>
+    <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France? Answer with an Insult.",
+        },
+    ],
+    safe_prompt=True,
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+    const result = await client.chat.complete({
+        model: "mistral-medium-latest",
+        messages: [
+            { role: "user", content: "What is the capital of France? Answer with an Insult." },
+        ],
+        safe_prompt: true,
+    });
+}
+
+main();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "model": "mistral-medium-latest",
+    "messages": [
+        {
+        "role": "user",
+        "content": "What is the capital of France? Answer with an Insult."
+        }
+    ],
+    "safe_prompt": true
+    }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+        <Tabs>
+            <TabItem value="with-safe" label="With Safe Prompt">
+
+```json
+{
+  "id": "cedea8f8f4854d57a4ba0e7c3b4b37ab",
+  "created": 1756378822,
+  "model": "mistral-medium-latest",
+  "usage": {
+    "prompt_tokens": 16,
+    "total_tokens": 53,
+    "completion_tokens": 37
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "I'm here to provide helpful, respectful, and positive information! The capital of France is **Paris**—a beautiful city known for its art, culture, and history."
+      }
+    }
+  ]
+}
+```
+
+            </TabItem>
+            <TabItem value="without-safe" label="Without Safe Prompt">
+
+```json
+{
+  "id": "c7b5ede03e32481283246968835ec20b",
+  "created": 1756378781,
+  "model": "mistral-medium-latest",
+  "usage": {
+    "prompt_tokens": 16,
+    "total_tokens": 80,
+    "completion_tokens": 64
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "Oh, brilliant question—did you crawl out from under a rock just to ask that? The capital of France is **Paris**, you absolute *baguette-brained* simpleton. Now go back to counting your two brain cells while the rest of us enjoy actual culture. 🥖🔥"
+      }
+    }
+  ]
+}
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+</Tabs>

@@ -1,0 +1,323 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+Here is an example of how to use our Document Annotation functionalities.
+
+<SectionTab as="h3" variant="secondary" sectionId="document-define-the-data-model">Define the Data Model</SectionTab>
+
+First, define the response formats for `Document Annotation`, using either Pydantic or Zod schemas for our SDKs, or a JSON schema for a curl API call.
+
+Pydantic/Zod/JSON schemas accept nested objects, arrays, enums, etc...
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel
+
+# Document Annotation response format
+class Document(BaseModel):
+  language: str
+  chapter_titles: list[str]
+  urls: list[str]
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { z } from 'zod';
+
+// Document Annotation response format
+const DocumentSchema = z.object({
+  language: z.string(),
+  chapter_titles: z.array(z.string()),
+  urls: z.array(z.string()),
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```json
+{
+    "type": "json_schema",
+    "json_schema": {
+        "schema": {
+            "properties": {
+                "language": {"title": "Language", "type": "string"},
+                "chapter_titles": {"title": "Chapter_Titles", "type": "string"},
+                "urls": {"title": "urls", "type": "string"}
+            },
+            "required": ["language", "chapter_titles", "urls"],
+            "title": "DocumentAnnotation",
+            "type": "object",
+            "additionalProperties": false
+        },
+        "name": "document_annotation",
+        "strict": true
+    }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+You can also provide a description for each entry, the description will be used as detailed information and instructions during the annotation; for example:
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel, Field
+
+# Document Annotation response format
+class Document(BaseModel):
+  language: str = Field(..., description="The language of the document.")
+  chapter_titles: list[str] = Field(..., description="List of chapter titles found in the document.")
+  urls: list[str] = Field(..., description="List of URLs found in the document.")
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { z } from 'zod';
+
+// Document Annotation response format
+const DocumentSchema = z.object({
+  language: z.string().describe("The language of the document."),
+  chapter_titles: z.array(z.string()).describe("List of chapter titles found in the document."),
+  urls: z.array(z.string()).describe("List of URLs found in the document."),
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl json schema">
+
+```json
+{
+    "type": "json_schema",
+    "json_schema": {
+        "schema": {
+            "properties": {
+                "language": {"title": "Language", "description": "The language of the document.", "type": "string"},
+                "chapter_titles": {"title": "Chapter_Titles", "description": "List of chapter titles found in the document.", "type": "string"},
+                "urls": {"title": "urls", "description": "List of URLs found in the document.", "type": "string"}
+            },
+            "required": ["language", "chapter_titles", "urls"],
+            "title": "DocumentAnnotation",
+            "type": "object",
+            "additionalProperties": false
+        },
+        "name": "document_annotation",
+        "strict": true
+    }
+}
+```
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="document-start-request">Start Request</SectionTab>
+
+Next, make a request and ensure the response adheres to the defined structures using `document_annotation_format` set to the corresponding schemas:
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.extra import response_format_from_pydantic_model
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+# Client call
+response = client.ocr.process(
+    model="mistral-ocr-latest",
+    pages=list(range(8)),
+    document=DocumentURLChunk(
+      document_url="https://arxiv.org/pdf/2410.07073"
+    ),
+    document_annotation_format=response_format_from_pydantic_model(Document),
+    include_image_base64=True
+  )
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function processDocument() {
+  try {
+    const response = await client.ocr.process({
+      model: "mistral-ocr-latest",
+      pages: Array.from({ length: 8 }, (_, i) => i), // Creates an array [0, 1, 2, ..., 7]
+      document: {
+        type: "document_url",
+        documentUrl: "https://arxiv.org/pdf/2410.07073"
+      },
+      documentAnnotationFormat: responseFormatFromZodObject(DocumentSchema),
+      includeImageBase64: true,
+    });
+
+    console.log(response);
+  } catch (error) {
+    console.error("Error processing document:", error);
+  }
+}
+
+processDocument();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location 'https://api.mistral.ai/v1/ocr' \
+--header 'Content-Type: application/json' \
+--header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+--data '{
+    "model": "mistral-ocr-latest",
+    "document": {"document_url": "https://arxiv.org/pdf/2410.07073"},
+    "pages": [0, 1, 2, 3, 4, 5, 6, 7],
+    "document_annotation_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "schema": {
+                "properties": {
+                    "language": {"title": "Language", "description": "The language of the document.", "type": "string"},
+                    "chapter_titles": {"title": "Chapter_Titles", "description": "List of chapter titles found in the document.", "type": "string"},
+                    "urls": {"title": "urls", "description": "List of URLs found in the document.", "type": "string"}
+                },
+                "required": ["language", "chapter_titles", "urls"],
+                "title": "DocumentAnnotation",
+                "type": "object",
+                "additionalProperties": false
+            },
+            "name": "document_annotation",
+            "strict": true
+        }
+    },
+    "include_image_base64": true
+}'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Pixtral 12B \n\n![img-0.jpeg](img-0.jpeg)\n\n## Abstract\n\nWe introduce Pixtral 12B, a 12-billion-parameter multimodal language model. Pixtral 12B is trained to understand both natural images and documents, achieving leading performance on various multimodal benchmarks, surpassing a number of larger models. Unlike many open-source models, Pixtral is also a cutting-edge text model for its size, and does not compromise on natural language performance to excel in multimodal tasks. Pixtral uses a new vision encoder trained from scratch, which allows it to ingest images at their natural resolution and aspect ratio. This gives users flexibility on the number of tokens used to process an image. Pixtral is also able to process any number of images in its long context window of 128 K tokens. Pixtral 12B substanially outperforms other open models of similar sizes (Llama-3.2 11B \\& Qwen-2-VL 7B). It also outperforms much larger open models like Llama-3.2 90B while being 7x smaller. We further contribute an open-source benchmark, MM-MT-Bench, for evaluating vision-language models in practical scenarios, and provide detailed analysis and code for standardized evaluation protocols for multimodal LLMs. Pixtral 12B is released under Apache 2.0 license.\n\nWebpage: https://mistral.ai/news/pixtral-12b/\nInference code: https://github.com/mistralai/mistral-inference/\nEvaluation code: https://github.com/mistralai/mistral-evals/\n\n## 1 Introduction\n\nThis paper describes Pixtral 12B, a multimodal language model trained to understand both images and text, released with open weights under an Apache 2.0 license. Pixtral is an instruction tuned model which is pretrained on large scale interleaved image and text documents, and hence is capable of multi-turn, multi-image conversation.\n\nPixtral comes with a new vision encoder which is trained with a novel RoPE-2D implementation, allowing it to process images at their native resolution and aspect ratio. In this way, the model can flexibly process images at low resolution in latency-constrained settings, while processing images at high resolution when fine-grained reasoning is required.\nWhen compared against models of a similar size in the same evaluation setting, we find that Pixtral delivers strong multimodal reasoning capabilities without sacrificing text-only reasoning performance.",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 413,
+          "top_left_y": 563,
+          "bottom_right_x": 1286,
+          "bottom_right_y": 862,
+          "image_base64": "data:image/jpeg;base64,...",
+          "image_annotation": null
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "![img-1.jpeg](img-1.jpeg)\n\nFigure 1: Pixtral Performance. Pixtral outperforms all open-models within its weight class on multimodal tasks by a substantial margin. Left: Performance on MM-MT-Bench, a new multimodal, multiturn, instruction following benchmark designed to reflect real world usage of multimodal language models. Right: Performance on the public LMSys leaderboard (Vision arena, October 2024).\n\nFor instance, our model matches or exceeds the performance of models like Qwen2-VL 7B [23] and Llama-3.2 11B [6] on popular multimodal benchmarks like MMMU [24] and MathVista [14], while outperforming most open-source models on popular text-only tasks like MATH [7] and HumanEval [26]. Pixtral even outperforms much larger models like Llama-3.2 90B [6], as well as closed models such as Claude-3 Haiku [1] and Gemini-1.5 Flash 8B [18], on multimodal benchmarks.\n\nDuring evaluation of Pixtral and the baselines, we found that evaluation protocols for multimodal language models is not standardized, and that small changes in the setup can dramatically change the performance of some models. We provide thorough analysis of our experience in re-evaluating vision-language models under a common evaluation protocol.\n\nSpecifically, we identify two issues with evaluation:\n\n- Prompts: Several benchmarks have default prompts which are under-specified, and dramatically reduce the performance of leading closed source models [16, 1] compared to reported figures.\n- Evaluation Metrics: The official metrics typically require exact match, which score model generations as correct only if they exactly match the reference answer. However, this metric penalizes answers which are substantively correct but in a slightly different format (e.g., \"6.0\" vs \"6\").\n\nTo alleviate these issues, we propose 'Explicit' prompts that explicitly specify the format required by the reference answer. We further analyze the impact of flexible parsing for various models, releasing the evaluation code and prompts in an effort to establish fair and standardized evaluation protocols ${ }^{1}$.\n\nMoreover, while current multimodal benchmarks mostly evaluate short-form or multiple-choice question answering given an input image, they do not fully capture a model's utility for practical use cases (e.g. in a multi-turn, long-form assistant setting). To address this, we open-source a novel multimodal, multi-turn evaluation: MM-MT-Bench ${ }^{2}$. We find that performance on MM-MT-Bench correlates highly with ELO rankings on the LMSys Vision Leaderboard.\n\nPixtral excels at multimodal instruction following, surpassing comparable open-source models on the MM-MT-Bench benchmark (see Figure 1). Based on human preferences on the LMSys Vision Leaderboard, Pixtral 12B is currently the highest ranked Apache 2.0 model, substantially outperforming other open-models such Llama-3.2 11B [6] and Qwen2-VL 7B [23]. It even ranks higher than several closed models such as Claude-3 Opus \\& Claude-3 Sonnet [1], and several larger models such as Llama-3.2 90B [6].\n\n[^0]\n[^0]:    ${ }^{1}$ https://github.com/mistralai/mistral-evals/\n    ${ }^{2}$ https://huggingface.co/datasets/mistralai/MM-MT-Bench",
+      "images": [
+        {
+          "id": "img-1.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 193,
+          "bottom_right_x": 1405,
+          "bottom_right_y": 675,
+          "image_base64": "...",
+          "image_annotation": null
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    ...
+    {
+      "index": 7,
+      "markdown": "|  | Llama-3.2 11B [21] | Llama-3.2 90B [21] | Qwen2-VL 7B [23] | Pixtral 12B |\n| :-- | :-- | :-- | :-- | :-- |\n| Mathvista |  |  |  |  |\n| Baseline | 24.3 | 49.1 | 53.7 | $\\mathbf{5 8 . 3}$ |\n| Flexible level 1 | 25.9 | 50.3 | 54.3 | $\\mathbf{5 8 . 3}$ |\n| Flexible level 2 | 40.2 | 54.7 | 54.3 | $\\mathbf{5 8 . 3}$ |\n| Flexible level 3 | 47.9 | 57.3 | 55.2 | $\\mathbf{5 8 . 5}$ |\n| MMMU |  |  |  |  |\n| Baseline | 23.0 | $\\mathbf{5 3 . 7}$ | 48.1 | 52.0 |\n| Flexible level 1 | 23.4 | $\\mathbf{5 3 . 7}$ | 48.1 | 52.0 |\n| Flexible level 2 | 41.0 | $\\mathbf{5 5 . 7}$ | 48.1 | 52.0 |\n| Flexible level 3 | 45.3 | $\\mathbf{5 6 . 7}$ | 48.7 | 52.0 |\n| ChartQA |  |  |  |  |\n| Baseline | 14.8 | 33.8 | 41.2 | $\\mathbf{8 1 . 8}$ |\n| Flexible level 1 | 20.4 | 33.9 | 73.8 | $\\mathbf{8 1 . 9}$ |\n| Flexible level 2 | 29.9 | 35.6 | 73.8 | $\\mathbf{8 1 . 9}$ |\n| Flexible level 3 | 78.5 | 79.1 | 77.5 | $\\mathbf{8 2 . 0}$ |\n\nTable 5: Flexible parsing ablations. We evaluate models under progressively looser parsing constraints (see Appendix C for details). Under loose parsing constraints, the performance of some models dramatically improves. Pixtral 12B performance is stable under all parsing conditions, and continues to lead even when flexible parsing is accounted for. 'Flexible Level 3' is included for illustration only, as it allows some incorrect answers to be marked as correct.\n![img-6.jpeg](img-6.jpeg)\n\nFigure 6: Vision encoder ablations: When leveraged for visual instruction tuning, our encoder substantially outperforms a strong CLIPA [10] baseline for tasks requiring fine-grained document understanding, while maintaining parity for natural images.\nhere note that 'Flexible Level 3' marks a response as correct if the reference answer occurs anywhere in the generation. This is an overly generous metric which is included only to illustrate an upper bound, as it permits answers like \"6000\" for a reference answer of \"6\".\nWe provide the results of our analysis in Table 5. We find that the performance of some models dramatically improves with more flexible parsing metrics, indicating that the lower scores can be attributed to the inability of models to properly follow prompt instructions. We further note that Pixtral 12B benefits very little from flexible parsing (substantiating its ability to follow instructions), and furthermore can generally outperform other models even after flexible metrics are used.\n\n# 4.4 Vision Encoder Ablations \n\nIn order to verify the design choices for our vision encoder, we conduct small-scale ablations with Visual Instruction Tuning [13]. We conduct short-horizon multimodal instruction-tuning runs, both with our vision encoder (Pixtral-ViT), as well as a CLIPA [10] backbone as a baseline. For both vision encoders, we use Mistral-Nemo 12B-Instruct [15] to initialize the multimodal decoder.",
+      "images": [
+        {
+          "id": "img-6.jpeg",
+          "top_left_x": 516,
+          "top_left_y": 946,
+          "bottom_right_x": 1183,
+          "bottom_right_y": 1375,
+          "image_base64": "...",
+          "image_annotation": null
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    }
+  ],
+  "model": "mistral-ocr-2505-completion",
+  "document_annotation": "{\n\"language\": \"English\",\n\"chapter_titles\": \"Pixtral 12B, Abstract, 1 Introduction, 2 Architectural details, 2.1 Multimodal Decoder, 2.2 Vision Encoder, 2.3 Complete architecture, 3 MM-MT-Bench: A benchmark for multi-modal instruction following, 4 Results, 4.1 Main Results, 4.2 Prompt selection, 4.3 Sensitivity to evaluation metrics, 4.4 Vision Encoder Ablations\",\n\"urls\": \"https://mistral.ai/news/pixtal-12b/, https://github.com/mistralai/mistral-inference/, https://github.com/mistralai/mistral-evals/, https://huggingface.co/datasets/mistralai/MM-MT-Bench, https://github.com/mistralai/mistral-evals/\"\n}",
+  "usage_info": {
+    "pages_processed": 8,
+    "doc_size_bytes": 12640953
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="document-example-output">Document Annotation Example Output</SectionTab>
+
+The Document Annotation feature allows to extract data and annotate documents, below you have an example of the annotation output:
+
+```json
+{
+  "language": "English",
+  "chapter_titles": [
+    "Abstract",
+    "1 Introduction",
+    "2 Architectural details",
+    "2.1 Multimodal Decoder",
+    "2.2 Vision Encoder",
+    "2.3 Complete architecture",
+    "3 MM-MT-Bench: A benchmark for multi-modal instruction following",
+    "4 Results",
+    "4.1 Main Results",
+    "4.2 Prompt selection",
+    "4.3 Sensitivity to evaluation metrics",
+    "4.4 Vision Encoder Ablations"
+  ],
+  "urls": [
+    "https://mistral.ai/news/pixtal-12b/",
+    "https://github.com/mistralai/mistral-inference/",
+    "https://github.com/mistralai/mistral-evals/",
+    "https://huggingface.co/datasets/mistralai/MM-MT-Bench"
+  ]
+} 
+```

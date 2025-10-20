@@ -1,0 +1,106 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock'; 
+
+The `stop` flag is a list of strings that will **stop the model from generating more tokens once one of the strings is encountered**.
+If a string in the list is generated, the model will stop and answer with the current generated text before the stop string.
+The output will hence not contain the stop string.
+
+<Tabs>
+    <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France?",
+        },
+    ],
+    stop=["."],
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+    const result = await client.chat.complete({
+        model: "mistral-medium-latest",
+        messages: [
+            { role: "user", content: "What is the capital of France?" },
+        ],
+        stop: ["."],
+    });
+}
+
+main();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "model": "mistral-medium-latest",
+    "messages": [
+        {
+        "role": "user",
+        "content": "What is the capital of France?"
+        }
+    ],
+    "stop": ["."]
+    }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "ce42f12c1bbd46299947ce77bc0d892c",
+  "created": 1757436077,
+  "model": "mistral-medium-latest",
+  "usage": {
+    "prompt_tokens": 10,
+    "total_tokens": 18,
+    "completion_tokens": 8
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The capital of France is **Paris**"
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>

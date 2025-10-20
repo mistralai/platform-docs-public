@@ -1,0 +1,123 @@
+---
+id: vllm
+title: vLLM
+sidebar_position: 3.31
+---
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import BatchNemoTab from './batch_nemo_tab/_page.mdx';
+import BatchSmallTab from './batch_small_tab/_page.mdx';
+import BatchPixtralTab from './batch_pixtral_tab/_page.mdx';
+import ServerNemoTab from './server_nemo_tab/_page.mdx';
+import ServerSmallTab from './server_small_tab/_page.mdx';
+import ServerPixtralTab from './server_pixtral_tab/_page.mdx';
+
+# vLLM
+[vLLM](https://github.com/vllm-project/vllm) is an open-source LLM inference and serving engine. It is particularly appropriate as a target platform for self-deploying Mistral models on-premise.
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+- The hardware requirements for vLLM are listed on its [installation documentation page](https://docs.vllm.ai/en/latest/getting_started/installation.html).
+- By default, vLLM sources the model weights from Hugging Face. To access Mistral model repositories, you need to be authenticated on Hugging Face, so an access token `HF_TOKEN` with the `READ` permission will be required. You should also ensure that you have accepted the conditions of access on each model card page.
+- If you already have the model artifacts on your infrastructure, you can use them directly by pointing vLLM to their local path instead of a Hugging Face model ID. In this scenario, you will be able to skip all Hugging Face-related setup steps.
+
+<SectionTab as="h1" sectionId="getting-started">Getting Started</SectionTab>
+
+The following sections will guide you through the process of deploying and querying Mistral models on vLLM.
+
+<SectionTab as="h2" variant="secondary" sectionId="installing-vllm">Installing vLLM</SectionTab>
+
+- Create a Python virtual environment and install the `vllm` package (version `>=0.6.1.post1` to ensure maximum compatibility with all Mistral models).
+- Authenticate on the HuggingFace Hub using your access token `$HF_TOKEN`:
+  ```bash
+  huggingface-cli login --token $HF_TOKEN
+  ```
+
+<SectionTab as="h2" variant="secondary" sectionId="offline-mode-inference">Offline Mode Inference</SectionTab>
+
+When using vLLM in **offline mode**, the model is loaded and used for one-off batch inference workloads.
+
+<ExplorerTabs groupId="code">
+  <ExplorerTab value="vllm-batch-nemo" label="Text input (Mistral NeMo)" default>
+    <BatchNemoTab/>
+  </ExplorerTab>
+  <ExplorerTab value="vllm-batch-small" label="Text input (Mistral Small)">
+    <BatchSmallTab/>
+  </ExplorerTab>
+  <ExplorerTab value="vllm-batch-pixtral" label="Image + text input (Pixtral-12B)">
+    <BatchPixtralTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="server-mode-inference">Server Mode Inference</SectionTab>
+
+In **server mode**, vLLM spawns an HTTP server that continuously waits for clients to connect and send requests concurrently. The server exposes a REST API that implements the OpenAI protocol, allowing you to directly reuse existing code relying on the OpenAI API.
+
+<ExplorerTabs>
+    <ExplorerTab value="vllm-server-text-nemo" label="Text input (Mistral NeMo)">
+        <ServerNemoTab/>
+    </ExplorerTab>
+    <ExplorerTab value="vllm-server-text-small" label="Text input (Mistral Small)">
+        <ServerSmallTab/>
+    </ExplorerTab>
+    <ExplorerTab value="vllm-server-mm" label="Image + text input (Pixtral-12B)">
+        <ServerPixtralTab/>
+    </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="deploying-with-docker">Deploying with Docker</SectionTab>
+
+If you are looking to deploy vLLM as a containerized inference server, you can leverage the project's official Docker image (see more details in the [vLLM Docker documentation](https://docs.vllm.ai/en/latest/serving/deploying_with_docker.html)).
+
+- Set the HuggingFace access token environment variable in your shell:
+  ```bash
+  export HF_TOKEN=your-access-token
+  ```
+- Run the Docker command to start the container:
+  <Tabs>
+      <TabItem value="vllm-docker-nemo" label="Mistral NeMo">
+          ```bash
+          docker run --runtime nvidia --gpus all \
+              -v ~/.cache/huggingface:/root/.cache/huggingface \
+              --env "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}" \
+              -p 8000:8000 \
+              --ipc=host \
+              vllm/vllm-openai:latest \
+              --model mistralai/Mistral-NeMo-Instruct-2407 \
+              --tokenizer_mode mistral \
+              --load_format mistral \
+              --config_format mistral
+          ```
+      </TabItem>
+      <TabItem value="vllm-docker-small" label="Mistral Small">
+          ```bash
+          docker run --runtime nvidia --gpus all \
+              -v ~/.cache/huggingface:/root/.cache/huggingface \
+              --env "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}" \
+              -p 8000:8000 \
+              --ipc=host \
+              vllm/vllm-openai:latest \
+              --model mistralai/Mistral-Small-Instruct-2409 \
+              --tokenizer_mode mistral \
+              --load_format mistral \
+              --config_format mistral
+          ```
+      </TabItem>
+      <TabItem value="vllm-docker-pixtral" label="Pixtral-12B">
+          ```bash
+          docker run --runtime nvidia --gpus all \
+              -v ~/.cache/huggingface:/root/.cache/huggingface \
+              --env "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}" \
+              -p 8000:8000 \
+              --ipc=host \
+              vllm/vllm-openai:latest \
+              --model mistralai/Pixtral-12B-2409 \
+              --tokenizer_mode mistral \
+              --load_format mistral \
+              --config_format mistral
+          ```
+      </TabItem>
+  </Tabs>
+Once the container is up and running, you will be able to run inference on your model using the same code as in a standalone deployment.

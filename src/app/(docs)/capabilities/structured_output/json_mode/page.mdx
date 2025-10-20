@@ -1,0 +1,145 @@
+---
+id: json_mode
+title: JSON mode
+slug: json_mode
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# JSON Mode
+
+Users have the option to set `response_format` to `{"type": "json_object"}` to enable JSON mode.
+
+This mode ensures that the model's response is formatted as a valid JSON object regardless of the content of the prompt, however we still recommend to explicitly ask the model to return a JSON object and the format.
+
+<SectionTab as="h1" sectionId="usage">Usage</SectionTab>
+
+Below is an example of how to use JSON mode with the Mistral API.
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-large-latest"
+
+client = Mistral(api_key=api_key)
+messages = [
+    {
+        "role": "user",
+        "content": "What is the best French meal? Return the name and the ingredients in short JSON object.",
+    }
+]
+chat_response = client.chat.complete(
+      model = model,
+      messages = messages,
+      response_format = {
+          "type": "json_object",
+      }
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const mistral = new Mistral({apiKey: apiKey});
+
+const chatResponse = await mistral.chat.complete({
+model: "mistral-large-latest",
+messages: [{role: 'user', content: 'What is the best French meal? Return the name and the ingredients in JSON format.'}],
+responseFormat: {type: 'json_object'},
+}
+);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "mistral-large-latest",
+    "messages": [
+     {
+        "role": "user",
+        "content": "What is the best French cheese? Return the product and produce location in JSON format"
+      }
+    ],
+    "response_format": {"type": "json_object"}
+  }'
+```
+
+  </TabItem>
+   <TabItem value="output" label="output">
+
+```json
+{
+  "id": "794c015f82ca47808c28a80c42e73145",
+  "created": 1756819745,
+  "model": "mistral-large-latest",
+  "usage": {
+    "prompt_tokens": 21,
+    "total_tokens": 112,
+    "completion_tokens": 91
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "{\n  \"name\": \"Boeuf Bourguignon\",\n  \"ingredients\": [\n    \"beef\",\n    \"red wine\",\n    \"onions\",\n    \"carrots\",\n    \"garlic\",\n    \"mushrooms\",\n    \"bacon\",\n    \"beef broth\",\n    \"tomato paste\",\n    \"thyme\",\n    \"bay leaves\",\n    \"butter\",\n    \"flour\"\n  ]\n}"
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+The output will always be enforced to be valid JSON, and the `content` field will be a stringified JSON object. In this case:
+
+```json
+{
+  "name": "Boeuf Bourguignon",
+  "ingredients": [
+    "beef",
+    "red wine",
+    "onions",
+    "carrots",
+    "garlic",
+    "mushrooms",
+    "bacon",
+    "beef broth",
+    "tomato paste",
+    "thyme",
+    "bay leaves",
+    "butter",
+    "flour"
+  ]
+}
+```
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Which models support JSON Mode?">
+    All currently available models except for `codestral-mamba` are supported.
+  </FaqItem>
+</Faq>

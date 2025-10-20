@@ -1,0 +1,185 @@
+---
+id: prompting_capabilities
+title: Prompting
+sidebar_position: 2
+---
+
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+import ClassificationTab from './classification_tab/_page.mdx';
+import SummarizationTab from './summarization_tab/_page.mdx';
+import PersonalizationTab from './personalization_tab/_page.mdx';
+import EvaluationTab from './evaluation_tab/_page.mdx';
+
+# Prompting
+When you first start using Mistral models, your initial interaction will revolve around **prompts**. Mastering the art of crafting effective prompts is essential for generating high-quality responses from Mistral models or other LLMs.
+
+<SectionTab as="h1" sectionId="main-concepts">Main Concepts</SectionTab>
+
+Below, we cover the core concepts of prompting and how to craft effective prompts to maximize the capabilities of our models.
+
+<SectionTab as="h2" variant="secondary" sectionId="system-prompt">System Prompt</SectionTab>
+
+When providing instructions, there are two levels of input you can give the model: `system` and `user`.
+
+- The **`system` prompt** is provided at the beginning of the conversation. It sets the general context and instructions for the model’s behavior and is typically managed by the developer.
+- The **`user` prompt** is provided during the conversation to give the model specific context or instructions for the current interaction.
+
+:::note
+As a developer, you can still use `user` prompts to provide additional context or instructions during the conversation if needed.
+If you cannot control the `system` prompt, you can still include the general context and instructions in the `user` prompt by concatenating them with the actual query.
+
+**Role-Separated Example:**
+```json
+{
+    "role": "system",
+    "content": "system_prompt"
+},
+{
+    "role": "user",
+    "content": "user_prompt"
+}
+```
+
+**Concatenated Example:**
+```json
+{
+    "role": "user",
+    "content": "system_prompt\n\nUser: user_prompt"
+}
+```
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="purpose">Providing a Purpose</SectionTab>
+
+Also called Roleplaying, it's the first step in crafting a prompt and corresponds to defining a **clear purpose**. A common approach is to start with a concise role and task definition, such as:
+*"You are a \<role\>, your task is to \<task\>."*
+
+This simple yet powerful technique helps steer the model toward a specific vertical and task, ensuring it quickly understands the context and expected output.
+
+<SectionTab as="h2" variant="secondary" sectionId="structure">Structure</SectionTab>
+
+When giving instructions, **organize them hierarchically or with a clear structure**, such as dividing them into clear sections and subsections. **The prompt should be clear and complete.**
+
+A useful rule of thumb is to **imagine you’re writing for someone with no prior context**—they should be able to understand and execute the task solely by reading the prompt.
+
+Example of a Well-Structured Prompt:
+```
+You are a language detection model, your task is to detect the language of the given text.
+
+# Available Languages
+Select the language from the following list:
+- English: "en"
+- French: "fr"
+- Spanish: "es"
+- German: "de"
+Any language not listed must be classified as "other" with the code "on".
+
+# Response Format
+Your answer must follow this format:
+{"language_iso": <language_code>}
+
+# Examples
+Below are sample inputs and expected outputs:
+
+## English
+User: Hello, how are you?
+Answer: {"language_iso": "en"}
+
+## French
+User: Bonjour, comment allez-vous?
+Answer: {"language_iso": "fr"}
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="formatting">Formatting</SectionTab>
+
+Formatting is critical for crafting effective prompts. It allows you to **explicitly highlight** different sections, making the structure intuitive for both the model and developers. **Markdown** and/or **XML-style tags** are ideal because they are:
+- **Readable**: Easy for humans to scan.
+- **Parsable**: Simple to extract information programmatically.
+- **Familiar**: Likely seen massively during the model’s training.
+
+Good formatting not only helps the model understand the prompt but also makes it **easier for developers to iterate and maintain** the application.
+
+<SectionTab as="h2" variant="secondary" sectionId="example-prompting">Example Prompting</SectionTab>
+Example prompting is a technique where you provide a **few task examples** to improve the model’s understanding, accuracy and specially the **output format**.
+
+<SectionTab as="h3" variant="secondary" sectionId="few-shot">Few-Shot Prompting</SectionTab>
+A specific example of this is **few-shot prompting**, where artificial interactions between the user and model are included in the conversation history. In contrast, **zero-shot prompting** involves no examples.
+
+Direct Example in a Prompt:
+```
+[...]
+# Examples
+Input: Hello, how are you?
+Output: {"language_iso": "en"}
+[...]
+```
+
+Standard Few-Shot Prompting Structure:
+```json
+[
+    {
+        "role": "system",
+        "content": "You are a language detection model. Your task is to detect the language of the given text.\n[...]"
+    },
+    {
+        "role": "user",
+        "content": "Hello, how are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "{\"language_iso\": \"en\"}"
+    },
+    {
+        "role": "user",
+        "content": "Bonjour, comment allez-vous?"
+    },
+    {
+        "role": "assistant",
+        "content": "{\"language_iso\": \"fr\"}"
+    }
+]
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="structured-outputs">Structured Outputs</SectionTab>
+
+With your prompt ready, you can now focus on the output. To ensure the model generates structured and predictable responses, we provide the ability of enforcing a specific JSON output format. This is particularly useful for tasks requiring a **consistent structure** that can be easily parsed and processed programmatically.
+
+If used in the example above, this technique would ensure that the model’s responses are consistent in terms of formating and also allows to enforce the categories to be used.
+
+If you are interested, for more details on how to use structured outputs, you can refer to the [Structured Outputs](./structured_output) docs.
+
+<SectionTab as="h2" variant="secondary" sectionId="advice">Advice</SectionTab>
+
+When building a prompt, it is important to stay flexible and experiment, different models from different labs, and even a simple update, can change the model behaviour and a consistent prompt may be impacted by these changes.
+
+Hence, do not hesitate to revisit your prompts and see the impact, similar to how you would iterate on your code and model training, you should iterate on your prompts and evaluate the impact of your changes.
+
+<SectionTab as="h1" sectionId="prompting-examples">Prompting Examples</SectionTab>
+
+Below we walk you through example prompts showing four different prompting capabilities:
+- Classification
+- Summarization
+- Personalization
+- Evaluation
+
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/prompting/prompting_capabilities.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+<ExplorerTabs mode="close">
+    <ExplorerTab value="classification" label="Classification">
+        <ClassificationTab/>
+    </ExplorerTab>
+    <ExplorerTab value="summarization" label="Summarization">
+        <SummarizationTab/>
+    </ExplorerTab>
+    <ExplorerTab value="personalization" label="Personalization">
+        <PersonalizationTab/>
+    </ExplorerTab>
+    <ExplorerTab value="evaluation" label="Evaluation">
+         <EvaluationTab/>
+    </ExplorerTab>
+</ExplorerTabs>

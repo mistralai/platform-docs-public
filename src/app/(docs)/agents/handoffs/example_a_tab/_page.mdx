@@ -1,0 +1,89 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+**"Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y"**
+
+The first example asks for the US central bank interest rate, so we expect to involve the `websearch-agent` and then to calculate the compounded interest over 10 years. This should use the `calculator-agent` to do this.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/examplea_handoffs.png"
+    alt="handoffs_graph_examplea"
+    width="800"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+response = client.beta.conversations.start(
+    agent_id=finance_agent.id,
+    inputs="Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y"
+)
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+let response = await client.beta.conversations.start({
+  agentId: financeAgent.id,
+  inputs:
+    'Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y',
+});
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "inputs": "Fetch the current US bank interest rate and calculate the compounded effect if investing for the next 10y",
+     "stream": false,
+     "agent_id": "<agent_id>"
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="output-events">Output Events</SectionTab>
+
+Below, you can see the output events of the conversation in order of appearance for the example above.
+
+```shell
+Conversation started: conv_067f7fce0aba70728000b32dcb0ac7e5
+
+## Event type: agent.handoff
+
+agent_id='ag_067f7fce04517b60800013b213ff2acb' agent_name='websearch-agent' object='conversation.entry' type='agent.handoff' created_at=datetime.datetime(2025, 4, 10, 17, 16, 18, 952817, tzinfo=TzInfo(UTC)) id='handoff_067f7fce2f3f7423800094104f3e3589'
+
+
+## Event type: tool.execution
+
+name='web_search' object='conversation.entry' type='tool.execution' created_at=datetime.datetime(2025, 4, 10, 17, 16, 23, 12996, tzinfo=TzInfo(UTC)) id='tool_exec_067f7fce7035747e800085153507b345'
+
+
+## Event type: message.output
+
+content=[TextChunk(text='The current US bank interest rate is 4.50 percent', type='text'), ToolReferenceChunk(tool='web_search', title='United States Fed Funds Interest Rate', type='tool_reference', url='https://tradingeconomics.com/united-states/interest-rate'), TextChunk(text='.\n\nI will now handoff the conversation to the calculator agent to calculate the compounded effect if investing for the next 10 years.', type='text')] object='conversation.entry' type='message.output' created_at=datetime.datetime(2025, 4, 10, 17, 16, 23, 14612, tzinfo=TzInfo(UTC)) id='msg_067f7fce703b7e01800045b2309a0750' agent_id='ag_067f7fce04517b60800013b213ff2acb' model='mistral-medium-2505' role='assistant'
+
+
+## Event type: agent.handoff
+
+agent_id='ag_067f7fce017f71a580001bf69f2cc11e' agent_name='calculator-agent' object='conversation.entry' type='agent.handoff' created_at=datetime.datetime(2025, 4, 10, 17, 16, 23, 14726, tzinfo=TzInfo(UTC)) id='handoff_067f7fce703c753680006aedb42ba7b7'
+
+
+## Event type: message.output
+
+content=' {"result": "The future value of the investment after 10 years is $1,540.10.", "reasoning": "To calculate the compounded effect of investing at the current US bank interest rate of 4.50% for the next 10 years, we use the formula for compound interest: A = P(1 + r/n)^(nt), where A is the amount of money accumulated after n years, including interest. P is the principal amount (the initial amount of money). r is the annual interest rate (decimal). n is the number of times that interest is compounded per year. t is the time the money is invested for, in years. Assuming an initial investment (P) of $1,000, an annual interest rate (r) of 4.50% (or 0.045 as a decimal), compounded annually (n = 1), over 10 years (t = 10): A = 1000(1 + 0.045/1)^(1*10) = 1000(1 + 0.045)^10 = 1000(1.045)^10 ≈ 1540.10. Therefore, the future value of the investment after 10 years is approximately $1,540.10."}' object='conversation.entry' type='message.output' created_at=datetime.datetime(2025, 4, 10, 17, 16, 30, 145207, tzinfo=TzInfo(UTC)) id='msg_067f7fcee2527cf08000744d983639dc' agent_id='ag_067f7fce017f71a580001bf69f2cc11e' model='mistral-medium-2505' role='assistant'
+```

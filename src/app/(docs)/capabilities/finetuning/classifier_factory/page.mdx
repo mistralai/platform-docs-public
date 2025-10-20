@@ -1,0 +1,157 @@
+---
+id: classifier_factory
+title: Classifier Factory
+slug: classifier_factory
+sidebar_position: 2
+---
+
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import DatasetFormatTab from './dataset_format_tab/_page.mdx';
+import UploadFileTab from './upload_file_tab/_page.mdx';
+import FinetuningJobTab from './finetuning_job_tab/_page.mdx';
+import ListRetrieveCancelJobsTab from './list_retrieve_cancel_jobs_tab/_page.mdx';
+
+# Classifier Factory
+
+In various domains and enterprises, classification models play a crucial role in enhancing efficiency, improving user experience, and ensuring compliance. These models serve diverse purposes, including but not limited to:
+
+- Moderation: Classification models are essential for moderating services and classifying unwanted content. For instance, our [moderation service](../../guardrailing/#moderation-api) helps in identifying and filtering inappropriate or harmful content in real-time, ensuring a safe and respectful environment for users.
+- **Intent Detection**: These models help in understanding user intent and behavior. By analyzing user interactions, they can predict the user's next actions or needs, enabling personalized recommendations and improved customer support.
+- **Sentiment Analysis**: Emotion and sentiment detection models analyze text data to determine the emotional tone behind words. This is particularly useful in social media monitoring, customer feedback analysis, and market research, where understanding public sentiment can drive strategic decisions.
+- **Data Clustering**: Classification models can group similar data points together, aiding in data organization and pattern recognition. This is beneficial in market segmentation, where businesses can identify distinct customer groups for targeted marketing campaigns.
+- **Fraud Detection**: In the financial sector, classification models help in identifying fraudulent transactions by analyzing patterns and anomalies in transaction data. This ensures the security and integrity of financial systems.
+- **Spam Filtering**: Email services use classification models to filter out spam emails, ensuring that users receive only relevant and safe communications.
+- **Recommendation Systems**: Classification models power recommendation engines by categorizing user preferences and suggesting relevant products, movies, or content based on past behavior and preferences.
+
+By leveraging classification models, organizations can make data-driven decisions, improve operational efficiency, and deliver better products and services to their customers.
+
+For this reason, we designed a friendly and easy way to make your own classifiers. Leveraging our small but highly efficient models and training methods, the Classifier Factory is both available directly in the [AI Studio](https://console.mistral.ai/build/finetuned-models) and our API.
+
+<SectionTab as="h1" sectionId="dataset">Dataset</SectionTab>
+
+To fine-tune a model, you need to provide a dataset that contains the data you want to train on, it is also recommended to have a validation dataset and a test dataset.
+
+The dataset must be in a specific format, and you can upload it to the Mistral Cloud before launching the fine-tuning job.
+
+<ExplorerTabs>
+  <ExplorerTab value="dataset-format" label="Dataset Format">
+    <DatasetFormatTab/>
+  </ExplorerTab>
+  <ExplorerTab value="upload-a-file" label="Upload a file">
+    <UploadFileTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="jobs-management">Jobs Management</SectionTab>
+
+To create your custom model, you need to create a fine-tuning job. You can fully manage jobs via our API, from creation, to starting, monitoring and cancellation.
+
+<ExplorerTabs>
+  <ExplorerTab value="fine-tuning-job" label="Fine-tuning Job">
+    <FinetuningJobTab/>
+  </ExplorerTab>
+  <ExplorerTab value="List/retrieve/cancel-jobs" label="List/retrieve/cancel jobs">
+     <ListRetrieveCancelJobsTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="fine-tuned-models">Fine-tuned Model</SectionTab>
+
+Once your fine-tuning job is done, you can use your fine-tuned custom model to classify your data and use it in your applications.
+
+<SectionTab as="h2" variant="secondary" sectionId="use-finetuned-model">Use a fine-tuned model</SectionTab>
+
+Below is an example of how to use a fine-tuned model to classify your data.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+# You will be able to see the fine-tuned model name via `retrieved_job.fine_tuned_model`
+classifier_response = client.classifiers.classify(
+    model=retrieved_job.fine_tuned_model,
+    inputs=["It's nice", "It's terrible", "Why not"],
+)
+# Use `classify_chat` to classify chats and multiturn interactions.
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// You will be able to see the fine-tuned model name via `retrievedJob.fine_tuned_model`
+const classifierResponse = await client.classifiers.classify({
+  model: retrievedJob.fine_tuned_model,
+  inputs: ["It's nice", "It's terrible", 'Why not'],
+});
+// Use `classifyChat` to classify chats and multiturn interactions.
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl "https://api.mistral.ai/v1/classifications" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "ft:classifier:ministral-3b-latest:XXX:20250401:XXX",
+    "input": ["It's nice", "It's terrible", "Why not"]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="delete-finetuned-model">Delete a fine-tuned model</SectionTab>
+
+You can delete a fine-tuned model if you no longer need it.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+client.models.delete(model_id=retrieved_job.fine_tuned_model)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.models.delete({ modelId: retrieved_job.fine_tuned_model });
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location --request DELETE 'https://api.mistral.ai/v1/models/ft:classifier:ministral-3b-latest:XXX:20250401:XXX' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab sectionId="cookbooks">Cookbooks</SectionTab>
+Explore our guides and [cookbooks](https://github.com/mistralai/cookbook) leveraging the Classifier Factory:
+
+- [Intent Classification](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/classifier_factory/intent_classification.ipynb): Creating a single-target, single-label, intent classification model to predict user actions and improve customer interactions.
+- [Moderation Classifier](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/classifier_factory/moderation_classifier.ipynb): Build a single-target, multi-label, simple moderation model to label public comments.
+- [Product Classification](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/classifier_factory/product_classification.ipynb): Create a multi-target, single-label and multi-label, food classification model to categorize dishes and their country of origin and compare to classic LLM solutions, enhancing recipe recommendations and dietary planning.
+
+<SectionTab sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Which models can we fine-tune to create our own classifiers?">
+Currently, the classifier factory supports `ministral-3b`.
+  </FaqItem>
+  <FaqItem question="Where can I find the pricing?">
+You can find it on our [pricing page](https://mistral.ai/pricing#api-pricing) in the "fine-tunable models" section of our API Pricing.
+  </FaqItem>
+</Faq>

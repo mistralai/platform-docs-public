@@ -1,0 +1,183 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+When creating an Agent, there are multiple parameters and values that need to be set in advance. These are:
+- `model`: The model your agent will use among our available models for chat completion.
+- `description`: The agent description, related to the task it must accomplish or the use case at stake.
+- `name`: The name of your agent.
+- `instructions` *optional*: The main instructions of the agent, also known as the system prompt. This must accurately describe the main task of your agent.
+- `tools` *optional*: A list of tools the model can make use of. There are currently different `types` of tools:
+  - `function`: User-defined tools, with similar usage to the standard function calling used with chat completion.
+  - `web_search`/`web_search_premium`: Our built-in tool for web search.
+  - `code_interpreter`: Our built-in tool for code execution.
+  - `image_generation`: Our built-in tool for image generation.
+  - `document_library`: Our built-in RAG tool for knowledge grounding and search on custom data.
+- `completion_args` *optional*: Standard chat completion sampler arguments. All chat completion arguments are accepted.
+
+<SectionTab as="h2" variant="secondary" sectionId="creating-agent">Creating an Agent</SectionTab>
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key)
+
+simple_agent = client.beta.agents.create(
+    model="mistral-medium-2505",
+    description="A simple Agent with persistent state.",
+    name="Simple Agent"
+)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+  let simpleAgent = await client.beta.agents.create({
+      model: "mistral-medium-latest",
+      description: "A simple Agent with persistent state.",
+      name: "Simple Agent",
+  });
+}
+```
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "model": "mistral-medium-latest",
+    "name": "Simple Agent",
+    "description": "A simple Agent with persistent state."
+  }'
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+  ```json
+  {
+    "model": "mistral-medium-2505",
+    "name": "Simple Agent",
+    "id": "ag_0684fe0e0b98773e8000323fc71a3986",
+    "version": 0,
+    "created_at": "2025-06-16T09:16:16.726715Z",
+    "updated_at": "2025-06-16T09:16:16.726718Z",
+    "instructions": null,
+    "tools": [],
+    "completion_args": {
+      "stop": null,
+      "presence_penalty": null,
+      "frequency_penalty": null,
+      "temperature": 0.3,
+      "top_p": null,
+      "max_tokens": null,
+      "random_seed": null,
+      "prediction": null,
+      "response_format": null,
+      "tool_choice": "auto"
+    },
+    "description": "A simple Agent with persistent state.",
+    "handoffs": null,
+    "object": "agent"
+  }
+  ```
+  </TabItem>
+</Tabs>
+When creating an agent, you will receive an Agent object with an agent ID. You can then use that ID to have conversations.
+
+Here is an example of a Web Search Agent using our built-in tool:
+<Tabs>  
+  <TabItem value="python" label="python">
+```py
+websearch_agent = client.beta.agents.create(
+    model="mistral-medium-2505",
+    description="Agent able to search information over the web, such as news, weather, sport results...",
+    name="Websearch Agent",
+    instructions="You have the ability to perform web searches with `web_search` to find up-to-date information.",
+    tools=[{"type": "web_search"}],
+    completion_args={
+        "temperature": 0.3,
+        "top_p": 0.95,
+    }
+)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+let websearchAgent = await client.beta.agents.create({
+  model: "mistral-medium-latest",
+  name: "WebSearch Agent",
+  instructions: "Use your websearch abilities when answering requests you don't know.",
+  description: "Agent able to fetch new information on the web.",
+  tools: [{ type: "web_search" }],
+});
+```
+  </TabItem>
+  <TabItem value="curl" value="curl">
+```bash
+curl -X POST "https://api.mistral.ai/v1/agents" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-medium-latest",
+    "name": "WebSearch Agent",
+    "instructions": "Use your websearch abilities when answering requests you do not know.",
+    "description": "Agent able to fetch new information on the web.",
+    "tools": [
+      {
+        "type": "web_search"
+      }
+    ]
+  }'
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+```json
+{
+  "instructions": "Use your websearch abilities when answering requests you don't know.",
+  "tools": [
+    {
+      "type": "web_search"
+    }
+  ],
+  "completionArgs": {
+    "stop": null,
+    "presencePenalty": null,
+    "frequencyPenalty": null,
+    "temperature": null,
+    "topP": null,
+    "maxTokens": null,
+    "randomSeed": null,
+    "prediction": null,
+    "responseFormat": null,
+    "toolChoice": "auto"
+  },
+  "model": "mistral-medium-latest",
+  "name": "WebSearch Agent",
+  "description": "Agent able to fetch new information on the web.",
+  "handoffs": null,
+  "object": "agent",
+  "id": "ag_019905c63b247447a97586fd6184ba5d",
+  "version": 0,
+  "createdAt": "2025-09-01T14:55:01.417Z",
+  "updatedAt": "2025-09-01T14:55:01.417Z"
+}
+```
+  </TabItem>
+</Tabs>
+
+You can find more information [here](../connectors/websearch).

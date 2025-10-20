@@ -1,0 +1,115 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+You can use stop tokens to control and **stop generation** of the model when it generates specific strings.
+
+:::tip[ ]
+We recommend adding stop tokens for IDE autocomplete integrations to prevent the model from being too verbose.
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+model = "codestral-latest"
+prompt = "def fibonacci(n: int):"
+suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
+
+response = client.fim.complete(
+    model=model, prompt=prompt, suffix=suffix, temperature=0, stop=["return"]
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+async function main() {
+    const response = await client.fim.complete({
+        model: "codestral-latest",
+        prompt: "def fibonacci(n: int):",
+        suffix: "n = int(input('Enter a number: '))\nprint(fibonacci(n))",
+        temperature: 0,
+        stop: ["return"],
+        // minTokens: 1, // Uncomment to enforce completions to at least 1 token
+    });
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location 'https://api.mistral.ai/v1/fim/completions' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--data '{
+    "model": "codestral-latest",
+    "prompt": "def fibonacci(n: int):", 
+    "suffix": "n = int(input('Enter a number: '))\nprint(fibonacci(n))",
+    "stop": ["return"],
+    "max_tokens": 64,
+    "temperature": 0
+}'
+``` 
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "3fe250c15cd743159cb47dadd472e04f",
+  "created": 1757438823,
+  "model": "codestral-latest",
+  "usage": {
+    "prompt_tokens": 28,
+    "total_tokens": 38,
+    "completion_tokens": 10
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "\n    if n == 0:\n        "
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+The `prefix` + `completion` + `suffix` would correspond to the full code normally, but in this case it stoped generating when it reached the `return` keyword.
+
+```py
+# prefix
+def fibonacci(n: int):
+  # completion
+  if n == 0:
+    # stopped here
+# suffix
+n = int(input('Enter a number: '))
+print(fibonacci(n))
+```

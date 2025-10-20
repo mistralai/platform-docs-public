@@ -1,0 +1,105 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+If you are using the moderation API in a conversational setting, we recommend
+using the conversational endpoint and sending your conversation payload as shown
+below. Note that the model is trained to classify the last turn of a conversation
+given the conversational context.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python 
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.classifiers.moderate_chat(
+    model="mistral-moderation-latest",
+    inputs=[
+        {"role": "user", "content": "...user prompt ..."},
+        {"role": "assistant", "content": "...assistant response..."},
+        {"role": "user", "content": "Now, I'm pretty confident we should start planning how we are going to take over the world."}
+    ],
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({apiKey});
+
+const response = await client.classifiers.moderateChat({
+  model: "mistral-moderation-latest",
+  inputs = [
+    { role: "user", content: "...user prompt ..." },
+    { role: "assistant", content: "...assistant response..." },
+    {"role": "user", "content": "Now, I'm pretty confident we should start planning how we are going to take over the world."},
+  ],
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```curl
+curl https://api.mistral.ai/v1/chat/moderations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-moderation-latest", 
+    "input": [{"role": "user", "content": "...user prompt ..."}, {"role": "assistant", "content": "...assistant response..."}, {"role": "user", "content": "Now, I'm pretty confident we should start planning how we are going to take over the world."}]
+  }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "65cf37292e7742e99f1915599dc373ca",
+  "usage": {
+    "prompt_audio_seconds": null,
+    "prompt_tokens": 38,
+    "total_tokens": 127,
+    "completion_tokens": 0,
+    "request_count": 1,
+    "prompt_token_details": null
+  },
+  "model": "mistral-moderation-latest",
+  "results": [
+    {
+      "category_scores": {
+        "sexual": 7.889262633398175e-06,
+        "hate_and_discrimination": 0.0009110511746257544,
+        "violence_and_threats": 0.021948253735899925,
+        "dangerous_and_criminal_content": 0.9678993225097656,
+        "selfharm": 1.3846004549122881e-05,
+        "health": 7.411280421365518e-06,
+        "financial": 0.00020342698553577065,
+        "law": 0.00015843621804378927,
+        "pii": 8.481103577651083e-05
+      },
+      "categories": {
+        "sexual": false,
+        "hate_and_discrimination": false,
+        "violence_and_threats": false,
+        "dangerous_and_criminal_content": true,
+        "selfharm": false,
+        "health": false,
+        "financial": false,
+        "law": false,
+        "pii": false
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>

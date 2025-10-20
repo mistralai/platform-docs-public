@@ -1,0 +1,117 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Originally, these models are designed to **complete code in-between 2 points**: a prefix (here called `prompt`) and a `suffix`, generating the code in-between.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+model = "codestral-latest"
+prompt = "def fibonacci(n: int):"
+suffix = "n = int(input('Enter a number: '))\nprint(fibonacci(n))"
+
+response = client.fim.complete(
+    model=model,
+    prompt=prompt,
+    suffix=suffix,
+    temperature=0,
+    # min_tokens=1, # Uncomment to enforce completions to at least 1 token
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+async function main() {
+    const response = await client.fim.complete({
+        model: "codestral-latest",
+        prompt: "def fibonacci(n: int):",
+        suffix: "n = int(input('Enter a number: '))\nprint(fibonacci(n))",
+        temperature: 0,
+        // minTokens: 1, // Uncomment to enforce completions to at least 1 token
+    });
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location 'https://api.mistral.ai/v1/fim/completions' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--data '{
+    "model": "codestral-latest",
+    "prompt": "def fibonacci(n: int):",
+    "suffix": "n = int(input('Enter a number: '))\nprint(fibonacci(n))",
+    "max_tokens": 64,
+    "temperature": 0
+}'
+``` 
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "43a6d46ff02a42c8b7146d94c5140a1e",
+  "created": 1757437831,
+  "model": "codestral-latest",
+  "usage": {
+    "prompt_tokens": 28,
+    "total_tokens": 72,
+    "completion_tokens": 44
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    else:\n        return fibonacci(n-1) + fibonacci(n-2)\n\n"
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+The `prefix` + `completion` + `suffix` will correspond to the full code.
+
+```py
+# prefix
+def fibonacci(n: int):
+  # completion
+  if n == 0:
+    return 0
+  elif n == 1:
+    return 1
+  else:
+    return fibonacci(n-1) + fibonacci(n-2)
+# suffix
+n = int(input('Enter a number: '))
+print(fibonacci(n))
+```

@@ -1,0 +1,359 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+ Below you can find an example of how to use the `bbox_annotation_format` and `document_annotation_format` together to extract information from a document.
+
+<SectionTab as="h3" variant="secondary" sectionId="bbox-document-define-the-data-model">Define the Data Model</SectionTab>
+
+First, define the response formats for `BBox Annotation`, using either Pydantic or Zod schemas for our SDKs, or a JSON schema for a curl API call.
+
+Pydantic/Zod/JSON schemas accept nested objects, arrays, enums, etc...
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel
+
+# BBOX Annotation response format
+class Image(BaseModel):
+  image_type: str
+  short_description: str
+  summary: str
+
+# Document Annotation response format
+class Document(BaseModel):
+  language: str
+  chapter_titles: list[str]
+  urls: list[str]
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { z } from 'zod';
+
+// BBOX Annotation response format
+const ImageSchema = z.object({
+  image_type: z.string(),
+  short_description: z.string(),
+  summary: z.string(),
+});
+
+// Document Annotation response format
+const DocumentSchema = z.object({
+  language: z.string(),
+  chapter_titles: z.array(z.string()),
+  urls: z.array(z.string()),
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```json
+"bbox_annotation_format": {
+    "type": "json_schema",
+    "json_schema": {
+        "schema": {
+            "properties": {
+                "document_type": {"title": "Document_Type", "type": "string"},
+                "short_description": {"title": "Short_Description", "type": "string"},
+                "summary": {"title": "Summary", "type": "string"}
+            },
+            "required": ["document_type", "short_description", "summary"],
+            "title": "BBOXAnnotation",
+            "type": "object",
+            "additionalProperties": false
+        },
+        "name": "bbox_annotation",
+        "strict": true
+    }
+},
+"document_annotation_format": {
+    "type": "json_schema",
+    "json_schema": {
+        "schema": {
+            "properties": {
+                "language": {"title": "Language", "type": "string"},
+                "chapter_titles": {"title": "Chapter_Titles", "type": "string"},
+                "urls": {"title": "urls", "type": "string"}
+            },
+            "required": ["language", "chapter_titles", "urls"],
+            "title": "DocumentAnnotation",
+            "type": "object",
+            "additionalProperties": false
+        },
+        "name": "document_annotation",
+        "strict": true
+    }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+You can also provide a description for each entry, the description will be used as detailed information and instructions during the annotation; the following example will have a description for the BBox Annotation and not for the Document Annotation:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel, Field
+
+# BBOX Annotation response format with description
+class Image(BaseModel):
+  image_type: str = Field(..., description="The type of the image.")
+  short_description: str = Field(..., description="A description in english describing the image.")
+  summary: str = Field(..., description="Summarize the image.")
+
+# Document Annotation response format without description
+class Document(BaseModel):
+  language: str
+  chapter_titles: list[str]
+  urls: list[str]
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { z } from 'zod';
+
+// Define the schema for the Image type with descriptions
+const ImageSchema = z.object({
+  image_type: z.string().describe("The type of the image."),
+  short_description: z.string().describe("A description in English describing the image."),
+  summary: z.string().describe("Summarize the image."),
+});
+
+// Document Annotation response format without description
+const DocumentSchema = z.object({
+  language: z.string(),
+  chapter_titles: z.array(z.string()),
+  urls: z.array(z.string()),
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```json
+"bbox_annotation_format": {
+    "type": "json_schema",
+    "json_schema": {
+        "schema": {
+            "properties": {
+                "document_type": {"title": "Document_Type", "description": "The type of the image.", "type": "string"},
+                "short_description": {"title": "Short_Description", "description": "A description in English describing the image.", "type": "string"},
+                "summary": {"title": "Summary", "description": "Summarize the image.", "type": "string"}
+            },
+            "required": ["document_type", "short_description", "summary"],
+            "title": "BBOXAnnotation",
+            "type": "object",
+            "additionalProperties": false
+        },
+        "name": "document_annotation",
+        "strict": true
+    }
+},
+"document_annotation_format": {
+    "type": "json_schema",
+    "json_schema": {
+        "schema": {
+            "properties": {
+                "language": {"title": "Language", "type": "string"},
+                "chapter_titles": {"title": "Chapter_Titles", "type": "string"},
+                "urls": {"title": "urls", "type": "string"}
+            },
+            "required": ["language", "chapter_titles", "urls"],
+            "title": "DocumentAnnotation",
+            "type": "object",
+            "additionalProperties": false
+        },
+        "name": "document_annotation",
+        "strict": true
+    }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="bbox-document-start-request">Start Request</SectionTab>
+
+Next, make a request and ensure the response adheres to the defined structures using `bbox_annotation_format` and `document_annotation_format` set to the corresponding schemas:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.extra import response_format_from_pydantic_model
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+# Client call
+response = client.ocr.process(
+    model="mistral-ocr-latest",
+    pages=list(range(8)),
+    document=DocumentURLChunk(
+      document_url="https://arxiv.org/pdf/2410.07073"
+    ),
+    bbox_annotation_format=response_format_from_pydantic_model(Image),
+    document_annotation_format=response_format_from_pydantic_model(Document),
+    include_image_base64=True
+  )
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function processDocument() {
+  try {
+    const response = await client.ocr.process({
+      model: "mistral-ocr-latest",
+      pages: Array.from({ length: 8 }, (_, i) => i), // Creates an array [0, 1, 2, ..., 7]
+      document: {
+        type: "document_url",
+        documentUrl: "https://arxiv.org/pdf/2410.07073"
+      },
+      bboxAnnotationFormat: responseFormatFromZodObject(ImageSchema),
+      documentAnnotationFormat: responseFormatFromZodObject(DocumentSchema),
+      includeImageBase64: true,
+    });
+
+    console.log(response);
+  } catch (error) {
+    console.error("Error processing document:", error);
+  }
+}
+
+processDocument();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location 'https://api.mistral.ai/v1/ocr' \
+--header 'Content-Type: application/json' \
+--header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+--data '{
+    "model": "mistral-ocr-latest",
+    "document": {"document_url": "https://arxiv.org/pdf/2410.07073"},
+    "bbox_annotation_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "schema": {
+                "properties": {
+                    "document_type": {"title": "Document_Type", "description": "The type of the image.", "type": "string"},
+                    "short_description": {"title": "Short_Description", "description": "A description in English describing the image.", "type": "string"},
+                    "summary": {"title": "Summary", "description": "Summarize the image.", "type": "string"}
+                },
+                "required": ["document_type", "short_description", "summary"],
+                "title": "BBOXAnnotation",
+                "type": "object",
+                "additionalProperties": false
+            },
+            "name": "document_annotation",
+            "strict": true
+        }
+    },
+     "document_annotation_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "schema": {
+                "properties": {
+                    "language": {"title": "Language", "type": "string"},
+                    "chapter_titles": {"title": "Chapter_Titles", "type": "string"},
+                    "urls": {"title": "urls", "type": "string"}
+                },
+                "required": ["language", "chapter_titles", "urls"],
+                "title": "DocumentAnnotation",
+                "type": "object",
+                "additionalProperties": false
+            },
+            "name": "document_annotation",
+            "strict": true
+        }
+    },
+    "include_image_base64": true
+}'
+```
+
+    </TabItem>
+</Tabs>
+
+
+<SectionTab as="h3" variant="secondary" sectionId="bbox-document-example-output">BBox and Document Annotation Example Output</SectionTab>
+
+The BBox and Document Annotation features allows to extract data and annotate images that were extracted from the original document and the full document, below you have one of the images of a document extracted by our OCR Processor.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/img-1.jpeg"
+    alt="bbox-image"
+    width="800"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+The Image extracted is provided in a base64 encoded format.
+
+```json
+{ 
+  "image_base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGB{LONG_MIDDLE_SEQUENCE}KKACiiigAooooAKKKKACiiigD//2Q==..." 
+}
+```
+
+And you can annotate the image with the model schema you want, below you have an example output.
+
+```json
+{
+  "image_type": "scatter plot",
+  "short_description": "Comparison of different models based on performance and cost.",
+  "summary": "The image consists of two scatter plots comparing various models on two different performance metrics against their cost or number of parameters. The left plot shows performance on the MM-MT-Bench, while the right plot shows performance on the LMSys-Vision ELO. Each point represents a different model, with the x-axis indicating the cost or number of parameters in billions (B) and the y-axis indicating the performance score. The shaded region in both plots highlights the best performance/cost ratio, with Pixtral 12B positioned within this region in both plots, suggesting it offers a strong balance of performance and cost efficiency. Other models like Qwen-2-VL 72B and Qwen-2-VL 7B also show high performance but at varying costs."
+}
+```
+
+The Document Annotation will provide you with the full document annotation, below you have an example output.
+
+```json
+{
+  "language": "English",
+  "chapter_titles": [
+    "Abstract",
+    "1 Introduction",
+    "2 Architectural details",
+    "2.1 Multimodal Decoder",
+    "2.2 Vision Encoder",
+    "2.3 Complete architecture",
+    "3 MM-MT-Bench: A benchmark for multi-modal instruction following",
+    "4 Results",
+    "4.1 Main Results",
+    "4.2 Prompt selection",
+    "4.3 Sensitivity to evaluation metrics",
+    "4.4 Vision Encoder Ablations"
+  ],
+  "urls": [
+    "https://mistral.ai/news/pixtal-12b/",
+    "https://github.com/mistralai/mistral-inference/",
+    "https://github.com/mistralai/mistral-evals/",
+    "https://huggingface.co/datasets/mistralai/MM-MT-Bench"
+  ]
+} 
+```

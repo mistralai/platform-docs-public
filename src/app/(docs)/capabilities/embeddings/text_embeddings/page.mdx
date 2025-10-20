@@ -1,0 +1,185 @@
+---
+id: text_embeddings
+title: Text Embeddings
+slug: text_embeddings
+sidebar_position: 1
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { CollabButton } from '@/components/common/collab-button';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import SimilarityTab from './similarity_tab/_page.mdx';
+import ParaphraseDetectionTab from './paraphrase_detection_tab/_page.mdx';
+import BatchingTab from './batching_tab/_page.mdx';
+import ClassificationTab from './classification_tab/_page.mdx';
+import ClusteringTab from './clustering_tab/_page.mdx';
+import RetrievalTab from './retrieval_tab/_page.mdx';
+
+# Text Embeddings
+
+Embeddings are at the core of multiple enterprise use cases, such as **retrieval systems**, **clustering**, **code analytics**, **classification**, and a variety of search applications. Embedding content, allows you to perform semantic search and diverse NLP tasks for your applications.
+
+<CollabButton colabUrl="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/embeddings.ipynb" />
+
+<SectionTab as="h1" sectionId="mistral-embed">Mistral Embed API</SectionTab>
+
+To generate text embeddings using Mistral AI's embeddings API, we can make a request to the API endpoint and specify the embedding model `mistral-embed`, along with providing a list of input texts. The API will then return the corresponding embeddings as numerical vectors, which can be used for further analysis or processing in NLP applications.
+
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-embed"
+
+client = Mistral(api_key=api_key)
+
+embeddings_batch_response = client.embeddings.create(
+    model=model,
+    inputs=["Embed this sentence.", "As well as this one."],
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function getEmbeddings() {
+
+    const embeddingsBatchResponse = await client.embeddings.create({
+        model: "mistral-embed",
+        inputs: ["Embed this sentence.", "As well as this one."],
+    });
+
+    console.log('Embeddings:', embeddingsBatchResponse.data);
+
+}
+
+// Call the async function
+getEmbeddings().catch(console.error);
+
+````
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+curl -X POST "https://api.mistral.ai/v1/embeddings" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer ${API_KEY}" \
+     -d '{"model": "mistral-embed", "input": ["Embed this sentence.", "As well as this one."]}' \
+     -o embedding.json
+
+````
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "48d491390f5e4bedb796f69b36ae7f36",
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        -0.016632080078125,
+        0.0701904296875,
+        0.03143310546875,
+        0.01309967041015625,
+        ...
+        0.01270294189453125,
+        -0.02801513671875,
+        0.004329681396484375,
+        -0.036895751953125
+      ],
+      "index": 0
+    },
+    {
+      "object": "embedding",
+      "embedding": [
+        -0.0230560302734375,
+        0.039337158203125,
+        0.0521240234375,
+        -0.0184783935546875,
+        ...
+        0.0169830322265625,
+        -0.0017080307006835938,
+        0.00049591064453125,
+        -0.010345458984375
+      ],
+      "index": 1
+    }
+  ],
+  "model": "mistral-embed",
+  "usage": {
+    "prompt_audio_seconds": null,
+    "prompt_tokens": 15,
+    "total_tokens": 15,
+    "completion_tokens": 0,
+    "request_count": null,
+    "prompt_token_details": null
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+The output is an embedding object with the embeddings and the token usage information.
+
+Let's take a look at the length of the first embedding:
+
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+
+```python
+len(embeddings_batch_response.data[0].embedding)
+````
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+console.log('Embedding Length:', embeddingsBatchResponse.data?.[0]?.embedding?.length)
+```
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+echo "Embedding Length: $(jq '.data[0].embedding | length' embedding.json)"
+```
+  </TabItem>
+</Tabs>
+
+It returns 1024, which means that our embedding dimension is 1024. The `mistral-embed` model generates embedding vectors of dimension 1024 for each text string, regardless of the text length. It's worth nothing that while higher dimensional embeddings can better capture text information and improve the performance of NLP tasks, they may require more computational resources for hosting and inference, and may result in increased latency and memory usage for storing and processing these embeddings. This trade-off between performance and computational resources should be considered when designing NLP systems that rely on text embeddings.
+
+<SectionTab as="h1" sectionId="services">Usage Examples</SectionTab>
+
+Below you will find some examples of how to use the Mistral Embeddings API and different use cases.
+
+<ExplorerTabs mode="close">
+  <ExplorerTab value="similarity" label="Similarity">
+    <SimilarityTab/>
+  </ExplorerTab>
+  <ExplorerTab value="paraphrase-detection" label="Paraphrase Detection">
+    <ParaphraseDetectionTab/>
+  </ExplorerTab>
+  <ExplorerTab value="batching" label="Batching">
+    <BatchingTab/>
+  </ExplorerTab>
+  <ExplorerTab value="classification" label="Classification">
+    <ClassificationTab/>
+  </ExplorerTab>
+  <ExplorerTab value="clustering" label="Clustering">
+    <ClusteringTab/>
+  </ExplorerTab>
+  <ExplorerTab value="retrieval" label="Retrieval">
+    <RetrievalTab/>
+  </ExplorerTab>
+</ExplorerTabs>

@@ -1,0 +1,12 @@
+---
+id: other_resources
+title: Other resources
+slug: resources
+sidebar_position: 1.9
+---
+
+Visit the [Mistral AI Cookbook](https://github.com/mistralai/cookbook) for additional inspiration,
+where you'll find example code, community contributions, and demonstrations of integrations with third-party tools, including:
+
+- [LlamaIndex \<\> MistralAI Cookbooks on agents and advanced RAG](https://github.com/mistralai/cookbook/tree/main/third_party/LlamaIndex)
+- [LangChain \<\> MistralAI Cookbooks on advanced RAG](https://github.com/mistralai/cookbook/tree/main/third_party/langchain)

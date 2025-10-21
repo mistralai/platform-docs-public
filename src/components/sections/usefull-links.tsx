@@ -67,7 +67,7 @@ export const usefullLinks = [
   },
   {
     title: 'AI Studio',
-    href: `${MISTRAL_URL}/products/la-platforme`,
+    href: `${MISTRAL_URL}/products/la-plateforme`,
     icon: (
       <RockIcon className="transition-colors duration-100 dark:group-hover:text-black/70" />
     ),

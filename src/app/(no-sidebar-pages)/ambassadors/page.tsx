@@ -294,6 +294,9 @@ export default function AmbassadorsPage() {
         <Button
           variant="outline"
           className="font-mono uppercase text-sm lg:w-fit gap-3 cursor-pointer"
+          onClick={() => {
+            window.open('https://discord.com/invite/mistralai', '_blank', 'noopener,noreferrer');
+          }}
         >
           <Bullet />
           Join our discord ↗

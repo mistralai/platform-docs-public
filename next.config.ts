@@ -12,6 +12,7 @@ import {
   remarkAudioToComponent,
 } from './src/lib/frontmatter';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
+import { redirects } from './redirect';
 
 const nextConfig: NextConfig = {
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
@@ -31,18 +32,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  redirects: async () => [
-    {
-      source: '/models',
-      destination: '/getting-started/models',
-      permanent: true,
-    },
-    {
-      source: '/deployment/laplateforme/pricing',
-      destination: 'https://mistral.ai/pricing',
-      permanent: true,
-    },
-  ],
+   async redirects() {
+    return redirects;
+  },
 };
 
 const withMDX = createMDX({

@@ -100,7 +100,7 @@ export function CookbookCard({
 
   return (
     <Link
-      href={`/cookbook/${cookbook.slug}`}
+      href={`/cookbooks/${cookbook.slug}`}
       className={cn(cookbookCardVariants({ variant, size }), className)}
       {...props}
     >

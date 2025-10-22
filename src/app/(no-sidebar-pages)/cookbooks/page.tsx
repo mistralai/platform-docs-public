@@ -13,21 +13,21 @@ import { ShowAllCookbooksInlineScript } from './sections/show-all-cookbooks-inli
 const ogImageUrl = getOGImageUrl({
   path: 'generic',
   image: '/ogs/cookbook.png',
-  eyebraw: 'COOKBOOK',
-  title: 'Cookbook',
+  eyebraw: 'COOKBOOKS',
+  title: 'Cookbooks',
   description:
-    'Learn how to get up and running with Mistral through tutorials, APIs and platform resources.',
+    'Discover Mistral AI technologies capabilities from basic tutorials to advanced use cases',
 });
 
 export const metadata: Metadata = {
-  title: 'Cookbook - Mistral AI',
+  title: 'Cookbooks - Mistral AI',
   description:
-    "Explore practical examples, tutorials, and code snippets to get the most out of Mistral AI's Large Language Models.",
+    "Discover Mistral AI technologies capabilities from basic tutorials to advanced use cases",
   openGraph: {
-    title: 'Mistral AI Cookbook',
+    title: 'Mistral AI Cookbooks',
     description:
-      "Explore practical examples, tutorials, and code snippets to get the most out of Mistral AI's Large Language Models.",
-    url: 'https://docs.mistral.ai/cookbook',
+      "Discover Mistral AI technologies capabilities from basic tutorials to advanced use cases",
+    url: 'https://docs.mistral.ai/cookbooks',
     images: [
       {
         url: ogImageUrl,

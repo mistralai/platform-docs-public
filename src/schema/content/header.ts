@@ -15,7 +15,7 @@ export const headerLinks = [
   },
   {
     label: 'Cookbooks',
-    href: '/cookbook',
+    href: '/cookbooks',
   },
   {
     label: 'Ambassadors',

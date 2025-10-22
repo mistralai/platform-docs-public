@@ -1,5 +1,3 @@
-'use client';
-
 import { SectionTab } from '@/components/layout/section-tab';
 import {
   Heading,
@@ -29,9 +27,35 @@ import {
 } from '@/schema/ambassadors';
 import { AmbassadorYouImage } from './components/ambassador-you-image';
 import NoSidebarPageLayout from '@/components/layout/no-sidebar-page-layout';
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { getOGImageUrl } from '@/components/og/helpers';
 
-// Import metadata to ensure it's included in the build
-import './metadata';
+const ogImageUrl = getOGImageUrl({
+  path: 'generic',
+  eyebraw: 'AMBASSADORS',
+  title: 'Ambassadors',
+  description: 'Discover the Mistral AI Ambassadors family!',
+  image: '/ogs/ambassadors.png',
+});
+
+const title = 'Ambassadors';
+const description =
+  'Discover the Mistral AI Ambassadors family!';
+
+export const metadata: Metadata = {
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    images: [ogImageUrl],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [ogImageUrl],
+  },
+};
 
 const getAmbassadorColor = (index: number): ModelColor => {
   const colors: ModelColor[] = [
@@ -187,12 +211,16 @@ export default function AmbassadorsPage() {
               <Button
                 variant="tertiary"
                 className="font-mono uppercase text-sm md:w-fit gap-3 cursor-pointer"
-                onClick={() => {
-                  window.open('https://docs.google.com/forms/d/e/1FAIpQLSdBSiRzm2xBpMszB_9fBixJNyKdGnPMj99DtZbagHMdHgkGUg/viewform', '_blank', 'noopener,noreferrer');
-                }}
+                asChild
               >
-                <Bullet />
-                Fill out your application ↗
+                <Link
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdBSiRzm2xBpMszB_9fBixJNyKdGnPMj99DtZbagHMdHgkGUg/viewform"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <Bullet />
+                  Fill out your application ↗
+                </Link>
               </Button>
             </div>
           </div>
@@ -284,22 +312,30 @@ export default function AmbassadorsPage() {
         <Button
           variant="tertiary"
           className="font-mono uppercase text-sm lg:w-fit gap-3 cursor-pointer"
-          onClick={() => {
-            window.open('https://docs.google.com/forms/d/e/1FAIpQLSdBSiRzm2xBpMszB_9fBixJNyKdGnPMj99DtZbagHMdHgkGUg/viewform', '_blank', 'noopener,noreferrer');
-          }}
+          asChild
         >
-          <Bullet />
-          Fill out your application ↗
+          <Link
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdBSiRzm2xBpMszB_9fBixJNyKdGnPMj99DtZbagHMdHgkGUg/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Bullet />
+            Fill out your application ↗
+          </Link>
         </Button>
         <Button
           variant="outline"
           className="font-mono uppercase text-sm lg:w-fit gap-3 cursor-pointer"
-          onClick={() => {
-            window.open('https://discord.com/invite/mistralai', '_blank', 'noopener,noreferrer');
-          }}
+          asChild
         >
-          <Bullet />
-          Join our discord ↗
+          <Link
+            href="https://discord.com/invite/mistralai"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Bullet />
+            Join our discord ↗
+          </Link>
         </Button>
       </section>
     </NoSidebarPageLayout>

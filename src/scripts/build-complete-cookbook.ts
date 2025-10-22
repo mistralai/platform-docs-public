@@ -91,7 +91,7 @@ async function main() {
         useCases: cookbook.labels.useCases,
         featured: cookbook.mainSection.featured === 'True',
         latest: cookbook.mainSection.latest === 'True',
-        link: `/cookbook/${slug}`,
+        link: `/cookbooks/${slug}`,
         type,
         date: cookbook.date ?? firstCommitDate ?? undefined,
         displayDate: cookbook.displayDate !== false,

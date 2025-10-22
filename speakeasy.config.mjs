@@ -1,6 +1,7 @@
 import { join, resolve } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
 import yaml from 'js-yaml';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 import { getSettings } from '@speakeasy-api/docs-md';
 const OPENAPI_YAML = './openapi.yaml';
@@ -17,8 +18,13 @@ const framework = {
     return resolve(join(settings.output.pageOutDir, `${slug}/page.mdx`));
   },
 
-  buildPagePreamble() {
-    return '';
+  buildPagePreamble(frontmatter) {
+    const yamlFrontmatter = `---
+type: api
+title: ${frontmatter.sidebarLabel || frontmatter.title || 'Api Reference'}
+description: Bienvenue to Mistral AI's Api Reference
+---`;
+    return yamlFrontmatter;
   },
 
   postProcess(metadata) {

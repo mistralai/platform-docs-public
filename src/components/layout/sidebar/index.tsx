@@ -18,7 +18,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { SearchInput } from './search-input';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { ActiveIndicator } from '@/components/ui/active-indicator';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
@@ -327,6 +327,36 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
 }) => {
   const UsedSidebarItem = renderItem ? SidebarItem<T> : SidebarFileItem<T>;
+  const [hasScrollDown, setHasScrollDown] = React.useState(false);
+
+  React.useEffect(() => {
+    const element = document.querySelector(
+      '[data-slot="sidebar"]'
+    ) as HTMLElement;
+
+    const handleScroll = () => {
+      if (!element) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = element;
+
+      setHasScrollDown(scrollTop + clientHeight < scrollHeight - 32);
+    };
+
+    if (element) {
+      handleScroll();
+
+      element.addEventListener('scroll', handleScroll);
+
+      const resizeObserver = new ResizeObserver(handleScroll);
+      resizeObserver.observe(element);
+
+      return () => {
+        element.removeEventListener('scroll', handleScroll);
+        resizeObserver.disconnect();
+      };
+    }
+  }, []);
+
   return (
     <>
       <SidebarHeader className="max-lg:hidden">
@@ -348,11 +378,21 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
           return <SidebarFirstLevelCategoryItem key={index} item={item as T} />;
         })}
       </SidebarContent>
-      {/* small fade out at the bottom of the sidebar */}
+
+      {/* Bottom gradient with down arrow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none h-10 w-full bg-gradient-to-t from-background lg:from-muted to-transparent shrink-0 sticky bottom-0"
-      />
+        className="pointer-events-none h-14 w-full bg-gradient-to-t from-background lg:from-muted to-transparent shrink-0 sticky bottom-0 flex justify-center items-center"
+      >
+        <div
+          className={cn(
+            'p-1 rounded-lg border border-border bg-background transition-opacity duration-300',
+            hasScrollDown ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <ChevronDown className="size-4 text-foreground/50" />
+        </div>
+      </div>
     </>
   );
 };

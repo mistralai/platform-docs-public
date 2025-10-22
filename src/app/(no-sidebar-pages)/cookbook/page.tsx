@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import type { Metadata } from 'next';
 import CookbookHeroSection from './sections/hero';
 import CookbookTopicsSection from './sections/topics';

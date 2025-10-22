@@ -107,6 +107,11 @@ export const redirects = [
     destination: "/capabilities/structured_output/custom",
     permanent: true,
   },
+  {
+    source: "/capabilities/audio",
+    destination: "/capabilities/audio_transcription",
+    permanent: true,
+  },
   // Tools redirects
   {
     source: "/tools/bult-in/websearch",

@@ -24,7 +24,6 @@ export const remarkOgFromPath: Plugin<[Options?]> = (opts = {}) => {
     const abs = String(file.path || '').replace(/\\/g, '/');
     const i = abs.indexOf(appDocsRoot);
 
-    // Derive slug from file path
     let slug = '';
     if (i >= 0) {
       const rel = abs.slice(i + appDocsRoot.length);
@@ -37,43 +36,73 @@ export const remarkOgFromPath: Plugin<[Options?]> = (opts = {}) => {
 
     slug = slug.replace(/\//g, ' > ').replace('_', ' ');
 
-    // Build the MD/MDX → metadata export using _fm and query params
     const code = /* ts */ `
       const __fm = (typeof _fm === 'object' && _fm) ? _fm : {};
 
-      const __title = __fm.title ? (${clamp.toString()}(String(__fm.title), ${MAX_TITLE})) : '';
-      const __description = __fm.description ? (${clamp.toString()}(String(__fm.description), ${MAX_DESC})) : '';
-      const __author = __fm.author ? String(__fm.author) : '';
-      const __tags = Array.isArray(__fm.tags) ? __fm.tags.map(String) : (typeof __fm.tags === 'string' ? [__fm.tags] : []);
-      const __date = __fm.date ? String(__fm.date) : '';
+      let __metadata;
 
-      const __params = new URLSearchParams();
-      if (${JSON.stringify(slug)} ) __params.set('eyebraw', ${JSON.stringify(
-      slug
-    )});
-      if (__title) __params.set('title', __title);
-      __params.set('type', 'generic');
-      __params.set('description', __description || 'Bienvenue to Mistral AI’s Documentation');
+      if (__fm.type === 'api') {
+        const __title = __fm.title || __fm.sidebarLabel || 'Api Reference';
+        const __description = __fm.description || 'Bienvenue to Mistral AI\\'s Api Reference';
 
+        const __params = new URLSearchParams();
+        __params.set('type', 'generic');
+        if (__title) __params.set('title', __title);
+        __params.set('description', __description);
 
-      const __ogUrl = \`${
-        new URL(BASE_URL).origin
-      }${apiBase}?\${__params.toString()}\`;
+        const __ogUrl = \`${
+          new URL(BASE_URL).origin
+        }${apiBase}?\${__params.toString()}\`;
 
-      export const metadata = {
-        ...__fm,
-        openGraph: {
-          ...(__fm.openGraph || {}),
-          images: [{ url: __ogUrl, width: ${
-            OG_IMAGE_DIMENSIONS.width
-          }, height: ${OG_IMAGE_DIMENSIONS.height} }],
-        },
-        twitter: {
-          ...(__fm.twitter || {}),
-          card: 'summary_large_image',
-          images: [__ogUrl],
-        },
-      };
+        __metadata = {
+          title: __title,
+          description: __description,
+          openGraph: {
+            images: [{ url: __ogUrl, width: ${
+              OG_IMAGE_DIMENSIONS.width
+            }, height: ${OG_IMAGE_DIMENSIONS.height} }],
+          },
+          twitter: {
+            card: 'summary_large_image',
+            images: [__ogUrl],
+          },
+        };
+      } else {
+        const __title = __fm.title ? (${clamp.toString()}(String(__fm.title), ${MAX_TITLE})) : '';
+        const __description = __fm.description ? (${clamp.toString()}(String(__fm.description), ${MAX_DESC})) : '';
+        const __author = __fm.author ? String(__fm.author) : '';
+        const __tags = Array.isArray(__fm.tags) ? __fm.tags.map(String) : (typeof __fm.tags === 'string' ? [__fm.tags] : []);
+        const __date = __fm.date ? String(__fm.date) : '';
+
+        const __params = new URLSearchParams();
+        if (${JSON.stringify(slug)} ) __params.set('eyebraw', ${JSON.stringify(
+          slug
+        )});
+        if (__title) __params.set('title', __title);
+        __params.set('type', 'generic');
+        __params.set('description', __description || 'Bienvenue to Mistral AI\\'s Documentation');
+
+        const __ogUrl = \`${
+          new URL(BASE_URL).origin
+        }${apiBase}?\${__params.toString()}\`;
+
+        __metadata = {
+          ...__fm,
+          openGraph: {
+            ...(__fm.openGraph || {}),
+            images: [{ url: __ogUrl, width: ${
+              OG_IMAGE_DIMENSIONS.width
+            }, height: ${OG_IMAGE_DIMENSIONS.height} }],
+          },
+          twitter: {
+            ...(__fm.twitter || {}),
+            card: 'summary_large_image',
+            images: [__ogUrl],
+          },
+        };
+      }
+
+      export const metadata = __metadata;
     `;
 
     const program = acorn.parse(code, {

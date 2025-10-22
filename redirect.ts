@@ -2,7 +2,7 @@ export const redirects = [
   // Guide redirects
   {
     source: "/guides/tokenization",
-    destination: "/cookbook/concept-deep-dive-tokenization-readme",
+    destination: "/cookbooks/concept-deep-dive-tokenization-readme",
     permanent: true,
   },
   {
@@ -52,7 +52,7 @@ export const redirects = [
   },
   {
     source: "/guides/prefix",
-    destination: "/cookbook/mistral-prompting-prefix_use_cases",
+    destination: "/cookbooks/mistral-prompting-prefix_use_cases",
     permanent: true,
   },
   {
@@ -129,10 +129,15 @@ export const redirects = [
     destination: "https://mistral.ai/fr/news/magistral",
     permanent: true,
   },
-  // Cookbook redirects
+  // Cookbooks redirects
   {
     source: "/cookbook/image.png",
-    destination: "/cookbook",
+    destination: "/cookbooks",
+    permanent: true,
+  },  
+  {
+    source: "/cookbook/",
+    destination: "/cookbooks",
     permanent: true,
   },
   // Agents redirects

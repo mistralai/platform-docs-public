@@ -283,7 +283,7 @@ function MarkdownCell({
       const slug = generateCookbookSlug(fullPath);
       return (
         <Link
-          href={`/cookbook/${slug}`}
+          href={`/cookbooks/${slug}`}
           className={cn('text-primary-soft hover:text-primary', className)}
           {...props}
         >

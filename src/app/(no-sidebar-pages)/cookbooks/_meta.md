@@ -1,6 +1,6 @@
 ---
-id: cookbook
+id: cookbooks
 sidebar_label: Cookbook
 title: Cookbooks
-link: /cookbook
+link: /cookbooks
 ---

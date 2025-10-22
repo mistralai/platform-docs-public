@@ -1,5 +1,3 @@
-'use client';
-
 import sidebarMetadata from '../components/sidebar-metadata.json';
 import { Sidebar, SidebarProvider } from '@/components/ui/sidebar';
 import PageContent from '@/components/layout/page-content';

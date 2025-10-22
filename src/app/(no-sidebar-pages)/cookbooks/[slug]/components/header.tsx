@@ -78,7 +78,7 @@ export default function CookbookHeader({
                 <BreadcrumbHome />
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/cookbook">Cookbook</BreadcrumbLink>
+                  <BreadcrumbLink href="/cookbooks">Cookbooks</BreadcrumbLink>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

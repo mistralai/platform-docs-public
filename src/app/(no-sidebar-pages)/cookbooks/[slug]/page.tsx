@@ -70,7 +70,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://docs.mistral.ai/cookbook/${slug}`,
+      url: `https://docs.mistral.ai/cookbooks/${slug}`,
       images: [
         {
           url: ogImageUrl,
@@ -152,7 +152,7 @@ export default async function CookbookDetailPage({
 
                       return (
                         <Link
-                          href={`/cookbook/${slug}`}
+                          href={`/cookbooks/${slug}`}
                           className={cn('text-primary-soft hover:text-primary', className)}
                           target={isExternal ? '_blank' : undefined}
                           rel={isExternal ? 'noopener noreferrer' : undefined}

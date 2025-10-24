@@ -9,7 +9,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-small', backgroundColor: 'pink' },
+  avatar: { icon: 'mistral-small', backgroundColor: 'blue' },
   weights: [
     {
       name: 'Instruct Weights',

@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-embed', backgroundColor: 'blue' },
+  avatar: { icon: 'mistral-embed', backgroundColor: 'green' },
   weights: [],
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
@@ -26,7 +26,7 @@ export default {
   identifiers: { apiNames: ['mistral-embed'] },
   capabilities: {
     input: ['text'],
-    output: ['embeddings'],
+    output: [],
     features: ['embeddings', 'batching'],
     finetuning: [],
   },

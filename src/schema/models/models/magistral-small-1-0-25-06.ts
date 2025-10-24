@@ -9,7 +9,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'magistral', backgroundColor: 'purple' },
+  avatar: { icon: 'magistral', backgroundColor: 'orange' },
   weights: [
     {
       name: 'Weights',

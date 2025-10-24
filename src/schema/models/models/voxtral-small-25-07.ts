@@ -43,7 +43,7 @@ export default {
   capabilities: {
     input: ['audio', 'text'],
     output: ['text'],
-    features: ['structured-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching'],
+    features: ['structured-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching', 'function-calling'],
     finetuning: [],
   },
   metadata: {},

@@ -164,7 +164,7 @@ export const redirects = [
   },
   // Connectors redirects
   {
-    source: "/connectors/websearch",
+    source: "/agents/connectors/websearch",
     destination: "/agents/tools/built-in/websearch",
     permanent: true,
   },

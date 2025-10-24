@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'ocr', backgroundColor: 'gray' },
+  avatar: { icon: 'ocr', backgroundColor: 'green' },
   weights: [],
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

@@ -168,4 +168,10 @@ export const redirects = [
     destination: "/agents/tools/built-in/websearch",
     permanent: true,
   },
+  // OCR
+  {
+    source: "/capabilities/OCR/basic_ocr",
+    destination: "/capabilities/document_ai/basic_ocr",
+    permanent: true,
+  },
 ]

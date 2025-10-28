@@ -1,0 +1,82 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+A batch file for structured outputs, with `v1/chat/completions` as the Endpoint and `ministral-3b-latest` as the Model, would look like the following:
+
+<Tabs groupId="code">
+    <TabItem value="file" label="Batch File" default>
+
+```bash
+{"custom_id": "0", "body": {"messages": [{"role": "user", "content": "What's 1+1?"}],"response_format": {"type": "json_schema","json_schema": {"schema": {"properties": {"result": {"title": "Result","type": "integer"}},"required": ["result"],"title": "Math","type": "object","additionalProperties": false},"name": "math","strict": true}},"max_tokens": 256,"temperature": 0}}
+{"custom_id": "1", "body": {"messages": [{"role": "user", "content": "What is the best French wine?"}],"response_format": {"type": "json_schema","json_schema": {"schema": {"properties": {"name": {"title": "Name","type": "string"},"region": {"title": "Region","type": "string"},"year": {"title": "Year","type": "integer"}},"required": ["name", "region", "year"],"title": "Wine","type": "object","additionalProperties": false},"name": "wine","strict": true}},"max_tokens": 256,"temperature": 0}}
+{"custom_id": "2", "body": {"messages": [{"role": "system","content": "Extract the books information."},{"role": "user","content": "I recently read To Kill a Mockingbird by Harper Lee."}],"response_format": {"type": "json_schema","json_schema": {"schema": {"properties": {"name": {"title": "Name","type": "string"},"authors": {"items": {"type": "string"},"title": "Authors","type": "array"}},"required": ["name", "authors"],"title": "Book","type": "object","additionalProperties": false},"name": "book","strict": true}},"max_tokens": 256,"temperature": 0}}
+```
+
+    </TabItem>
+    <TabItem value="output" label="Result File">
+
+```bash
+{"id":"batch-987bdeb0-1-b0a976ba-2a4f-4584-a4fa-9b140abdcd52","custom_id":"0","response":{"status_code":200,"body":{"id":"bf1b188307c2437587de243f5f715663","object":"chat.completion","model":"ministral-3b-latest","usage":{"prompt_tokens":10,"completion_tokens":7,"total_tokens":17},"created":1761577783,"choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"{\"result\": 2}","tool_calls":null}}]}},"error":null}
+{"id":"batch-987bdeb0-2-6bc67f66-34be-4db3-a9ea-a437d882dce0","custom_id":"1","response":{"status_code":200,"body":{"id":"afd9bc37072a4d3e8a01999e8822984a","object":"chat.completion","model":"ministral-3b-latest","usage":{"prompt_tokens":10,"completion_tokens":28,"total_tokens":38},"created":1761577783,"choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"{\"name\": \"Château Lafite Rothschild\", \"region\": \"Bordeaux\", \"year\": 2018}","tool_calls":null}}]}},"error":null}
+{"id":"batch-987bdeb0-3-f8edcc0f-728f-49e7-9cd8-c8c18422ed02","custom_id":"2","response":{"status_code":200,"body":{"id":"01d5ee676f2c4c389e1f2346a2c5f934","object":"chat.completion","model":"ministral-3b-latest","usage":{"prompt_tokens":21,"completion_tokens":24,"total_tokens":45},"created":1761577783,"choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"{\n  \"name\": \"To Kill a Mockingbird\",\n  \"authors\": [\"Harper Lee\"]\n}","tool_calls":null}}]}},"error":null}
+```
+
+    </TabItem>
+</Tabs>
+
+As a JSONL file, each line represents a request to the API Endpoint and Model.
+
+<SectionTab as="h2" variant="secondary" sectionId="structured-outputs-explained">Explanation</SectionTab>
+
+The body request will follow the same format as the endpoint you want to run your batching, except the model id that will be provided only during the job creation to start the batch run. Below we provide an example of row with structured outputs:
+
+```py
+{
+    "custom_id": "2", # An ID as metadata that will be returned in the output file to identify the request
+    "body": { # The body of the request
+        "max_tokens": 256, # Max tokens corresponding to the max generated tokens for chat completions
+        "temperature": 0, # The temperature to use for sampling
+        "messages": [ # The messages to generate chat completions for with structured outputs
+            {
+                "role": "system", # The role of the messages author
+                "content": "Extract the books information." # The content of the message
+            },
+            {
+                "role": "user", # The role of the messages author
+                "content": "I recently read To Kill a Mockingbird by Harper Lee." # The content of the message, here we want to extract the book information
+            }
+        ],
+        "response_format": { # The response format to use for the chat completion
+            "type": "json_schema", # Set the type to json_schema to use custom structured outputs, "json_mode" if you want to use the default json only mode
+            "json_schema": { # The json schema to use for the structured outputs
+                "schema": { # The corresponding schema
+                    "properties": { # The properties of the schema
+                        "name": { # The name of the book
+                            "title": "Name",
+                            "type": "string"
+                        },
+                        "authors": { # The authors of the book
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Authors",
+                            "type": "array"
+                        }
+                    },
+                    "required": [ # The required properties
+                        "name", 
+                        "authors"
+                    ],
+                    "title": "Book", # The title of the schema
+                    "type": "object", # The type of the schema
+                    "additionalProperties": false # Whether to allow additional properties
+                },
+                "name": "book", # The name of the schema
+                "strict": true # Whether to use strict mode, always recommended to set as true for structured outputs
+            }
+        }
+    }
+}
+```
+
+For more information regarding sructured outputs, visit the [Structured Outputs](structured_output) docs and the corresponding chat completions [API Spec](../api/endpoint/chat#operation-chat_completion_v1_chat_completions_post).

@@ -314,7 +314,7 @@ export const AMBASSADORS_DATA = [
   {
     id: 'doa',
     name: 'Doaa Serageldin',
-    image: "/ambassadors/m-rainbow.svg",
+    image: "/ambassadors/doaa-serageldin.png",
     link: "",
     bio: '',
     specialties: ['', '', ''],
@@ -329,6 +329,32 @@ export const AMBASSADORS_DATA = [
     name: 'José Iranzo',
     image: "/ambassadors/jose-iranzo.jpg",
     link: "https://www.reddit.com/user/Nefhis/",
+    bio: '',
+    specialties: ['', '', ''],
+    social: {
+      twitter: '#',
+      linkedin: '#',
+      github: '#',
+    },
+  },
+  {
+    id: 'saumya-gautam',
+    name: 'Saumya Gautam',
+    image: "/ambassadors/m-rainbow.svg",
+    link: "",
+    bio: '',
+    specialties: ['', '', ''],
+    social: {
+      twitter: '#',
+      linkedin: '#',
+      github: '#',
+    },
+  },
+  {
+    id: 'boris-kharitontsev',
+    name: 'Boris Kharitontsev',
+    image: "/ambassadors/m-rainbow.svg",
+    link: "",
     bio: '',
     specialties: ['', '', ''],
     social: {

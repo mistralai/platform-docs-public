@@ -41,7 +41,7 @@ function ModelRowResponsive({ data, isDeprecated }: ModelRowProps) {
 
   const rowClassName = cn(
     'transition-opacity duration-200',
-    (isDeprecated || isRetired || isDeprecationSoon) && 'opacity-60'
+    (isDeprecated || isRetired || isDeprecationSoon) && 'opacity-85'
   );
 
   const badgeClassName = cn(
@@ -133,40 +133,28 @@ export function ModelTable({
   forceDeprecated = false,
   defaultVisible = 6,
 }: ModelTableProps) {
-  const [internalShowAll, setInternalShowAll] = React.useState(showAll);
-  const shouldShowAll = onToggleShowAll ? showAll : internalShowAll;
-  const visibleData = shouldShowAll ? data : data.slice(0, defaultVisible);
-  const hasMore = data.length > defaultVisible;
-
-  const handleToggle = () => {
-    if (onToggleShowAll) {
-      onToggleShowAll();
-    } else {
-      setInternalShowAll(!internalShowAll);
-    }
-  };
-
   return (
     <div className={cn('w-full space-y-4', className)}>
       <div className="relative">
-        <div className="overflow-x-auto">
+        {/* Fixed header */}
+        <div className="bg-background rounded-t-md">
           <Table className="border-spacing-x-2">
             <TableHeader>
-              <TableRow className="ga">
-                <TableHead className="min-w-[180px] sm:w-[200px] font-bold text-foreground/50 text-xs 2xl:text-sm">
+              <TableRow className="border-none">
+                <TableHead className="min-w-[180px] sm:w-[190px] font-bold text-foreground text-xs 2xl:text-sm border-none">
                   Model
                 </TableHead>
-                <TableHead className="min-w-[60px] sm:w-[80px] font-bold text-foreground/50 text-xs 2xl:text-sm text-end">
+                <TableHead className="min-w-[60px] sm:w-[80px] font-bold text-foreground text-xs 2xl:text-sm border-none">
                   Version
                 </TableHead>
-                <TableHead className="min-w-[140px] sm:w-[180px] font-bold text-foreground/50 text-xs 2xl:text-sm">
+                <TableHead className="min-w-[140px] sm:w-[190px] font-bold text-foreground text-xs 2xl:text-sm border-none text-center">
                   API
                 </TableHead>
-                <TableHead className="min-w-[180px] sm:w-[220px] hidden sm:table-cell font-bold text-foreground/50 text-xs 2xl:text-sm">
+                <TableHead className="min-w-[180px] sm:w-[220px] hidden sm:table-cell font-bold text-foreground text-xs 2xl:text-sm border-none">
                   <div className="flex items-center justify-between gap-2">
                     Deprecation
                     <svg
-                      className="w-8 h-4 text-foreground/20"
+                      className="w-8 h-4 text-foreground"
                       viewBox="0 0 32 6"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -179,51 +167,80 @@ export function ModelTable({
                     Retirement
                   </div>
                 </TableHead>
-                <TableHead className="hidden lg:table-cell min-w-[140px] sm:min-w-[180px] font-bold text-foreground/50 text-xs 2xl:text-sm text-end">
+                <TableHead className="hidden lg:table-cell min-w-[140px] sm:min-w-[180px] font-bold text-foreground text-xs 2xl:text-sm text-end border-none">
                   Alternative
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {visibleData.map((item, index) => {
-                const isDeprecated =
-                  !!item.metadata?.deprecationDate &&
-                  new Date(item.metadata.deprecationDate) < new Date();
-
-                return (
-                  <ModelRowResponsive
-                    key={`${item.name}-${index}`}
-                    data={item}
-                    isDeprecated={forceDeprecated || isDeprecated}
-                  />
-                );
-              })}
-            </TableBody>
           </Table>
         </div>
 
-        {hasMore && (
-          <div className="flex justify-center pt-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggle}
-              className="gap-2 text-muted-foreground hover:text-foreground text-xs 2xl:text-sm flex items-center justify-center"
-            >
-              {shouldShowAll ? (
-                <>
-                  <ChevronUpIcon className="h-4 w-4" />
-                  <span className="block">Show less</span>
-                </>
-              ) : (
-                <>
-                  <span className="block">See all</span>
-                  <ChevronsUpDownIcon className="h-4 w-4 rotate-180" />
-                </>
-              )}
-            </Button>
+        {/* Scrollable container wrapper */}
+        <div className="relative rounded-b-md group">
+          {/* Scroll hint - appears on hover, disappears at bottom */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-6 flex items-end justify-center pb-1 pointer-events-none opacity-0 transition-opacity z-10"
+            style={{ display: 'none' }} // Will be controlled by JavaScript
+            id="scroll-hint"
+          >
+            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-t-sm">
+              <span>Scroll for more</span>
+              <ChevronUpIcon className="w-3 h-3 rotate-180" />
+            </div>
           </div>
-        )}
+          
+          {/* Actual scrollable content */}
+          <div
+            className="max-h-[400px] overflow-y-auto scrollable-container relative z-0"
+            onScroll={(e) => {
+              const target = e.target as HTMLElement;
+              const scrollHint = document.getElementById('scroll-hint');
+              if (scrollHint) {
+                if (target.scrollTop + target.clientHeight >= target.scrollHeight - 1) {
+                  scrollHint.style.opacity = '0';
+                  setTimeout(() => scrollHint.style.display = 'none', 300);
+                } else {
+                  scrollHint.style.display = 'flex';
+                  scrollHint.style.opacity = '1';
+                }
+              }
+            }}
+            onMouseEnter={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              const scrollHint = document.getElementById('scroll-hint');
+              if (scrollHint && target.scrollTop + target.clientHeight < target.scrollHeight - 1) {
+                scrollHint.style.display = 'flex';
+                scrollHint.style.opacity = '1';
+              }
+            }}
+            onMouseLeave={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              const scrollHint = document.getElementById('scroll-hint');
+              if (scrollHint) {
+                scrollHint.style.opacity = '0';
+                setTimeout(() => scrollHint.style.display = 'none', 300);
+              }
+            }}
+          >
+            <Table className="border-spacing-x-2 group/model-table min-w-full">
+              <TableBody>
+                {data.map((item, index) => {
+                  const isDeprecated =
+                    !!item.metadata?.deprecationDate &&
+                    new Date(item.metadata.deprecationDate) < new Date();
+
+                  return (
+                    <ModelRowResponsive
+                      key={`${item.name}-${index}`}
+                      data={item}
+                      isDeprecated={forceDeprecated || isDeprecated}
+                    />
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -593,28 +593,3 @@ const filterAndSortCookbooks = (
  * Manager for the cookbook show all state.
  */
 const COOKBOOK_SHOW_ALL_STORAGE_KEY = 'cookbook-showAll';
-const cookbookShowAllManager = {
-  getInitialState: () => {
-    if (typeof window !== 'undefined') {
-      return window.SHOW_ALL_COOKBOOKS;
-    }
-    return false;
-  },
-  getCurrentState: () => {
-    try {
-      return sessionStorage.getItem(COOKBOOK_SHOW_ALL_STORAGE_KEY) === '1';
-    } catch (e) {
-      return false;
-    }
-  },
-  setCookbookShowAll: (value: boolean) => {
-    try {
-      sessionStorage.setItem(COOKBOOK_SHOW_ALL_STORAGE_KEY, value ? '1' : '0');
-    } catch (e) {
-      /* ignore storage errors */
-    }
-    if (typeof window !== 'undefined') {
-      window.SHOW_ALL_COOKBOOKS = value;
-    }
-  },
-};

@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { models, findModelBySlug, getModelSlug, isLegacyModel } from '@/schema';
+import { models, findModelBySlug, isLegacyModel } from '@/schema';
 import { ThunderIcon, LampIcon } from '@/components/icons/pixel';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { getModelColorFallback, MODEL_COLORS } from '@/lib/colors';
@@ -10,7 +10,6 @@ import {
   HeadingSubtitle,
   HeadingTitle,
 } from '@/components/layout/heading';
-import { Badge } from '@/components/ui/badge';
 import { SectionLabel } from './components/section-label';
 import { StatRating } from './components/stat-rating';
 import { Modalities } from './components/modalities';
@@ -33,7 +32,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { HubIcon } from '@/components/icons/hub';
 import { Prose } from '@/components/common/prose';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { markdownComponents } from '@/components/markdown';

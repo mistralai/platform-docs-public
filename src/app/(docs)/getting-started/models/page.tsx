@@ -95,7 +95,7 @@ export default function ModelsPage() {
 
         <Heading align="between">
           <HeadingTitle as="h3">Frontier Models</HeadingTitle>
-          <HeadingSubtitle>
+          <HeadingSubtitle className='text-secondary-foreground/85'>
             Frontier and Commercial-Grade AI Solutions for Advanced Applications
           </HeadingSubtitle>
         </Heading>
@@ -116,7 +116,7 @@ export default function ModelsPage() {
       <section id="open-models" className="flex flex-col gap-6">
         <Heading align="between">
           <HeadingTitle as="h3">Open Models</HeadingTitle>
-          <HeadingSubtitle>
+          <HeadingSubtitle className='text-secondary-foreground/85'>
             Open-Source AI Models for Community and Research Use
           </HeadingSubtitle>
         </Heading>
@@ -142,7 +142,7 @@ export default function ModelsPage() {
           <HeadingTitle as="h3" className="text-2xl 2xl:text-3xl">
             Legacy Models
           </HeadingTitle>
-          <HeadingSubtitle className="md:text-right">
+          <HeadingSubtitle className="md:text-right text-secondary-foreground/85">
             Our model offering is continuously refreshed with newer, better
             models. As part of this process, we deprecate and retire older
             models.

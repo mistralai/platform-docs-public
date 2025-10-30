@@ -124,7 +124,7 @@ export function ModelCard({
           <h3 className="font-bold 2xl:text-lg text-foreground line-clamp-1 text-ellipsis overflow-hidden">
             {model.name}
           </h3>
-          <span className="text-xs text-foreground/20 font-mono">
+          <span className="text-xs text-foreground font-mono">
             v{model.version}
           </span>
         </div>
@@ -164,11 +164,11 @@ export function ModelCard({
           {model.name}
         </h3>
         <div className="flex gap-2 justify-between items-baseline">
-          <p className="text-sm text-foreground/50 line-clamp-1 text-ellipsis overflow-hidden">
+          <p className="text-sm text-foreground/70 line-clamp-1 text-ellipsis overflow-hidden">
             {model.shortDescription || model.description}
           </p>
           {showParameters && (
-            <div className="text-xs text-foreground/20 font-mono">
+            <div className="text-xs text-foreground/80 font-mono font-bold">
               v{model.version}
             </div>
           )}

@@ -37,7 +37,7 @@ function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
     <tbody
       data-slot="table-body"
       className={cn(
-        '[&_tr:first-child]:!border-t-0 [&_tr]:border-t [&_tr]:border-dashed [&_tr]:border-foreground/10',
+        '[&_tr:first-child]:!border-t-0 [&_tr]:border-t [&_tr]:border-dashed [&_tr]:border-foreground/40',
         className
       )}
       {...props}

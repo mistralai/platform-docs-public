@@ -146,6 +146,11 @@ export const redirects = [
     destination: "/agents/tools/built-in/image_generation",
     permanent: true,
   },
+  {
+    source: "/capabilities/agents",
+    destination: "/agents/introduction",
+    permanent: true,
+  },
   // Completion redirects
   {
     source: "/capabilities/completion/prompting",

@@ -6,7 +6,8 @@ import { CodeBlock } from '@/components/common/code-block';
 import * as MultiCodeBlock from '@/components/common/multi-codeblock';
 import { Prose } from '@/components/common/prose';
 import { getRemarkPluginsForReactMarkdown } from '@/lib/markdown/plugins';
-import Link from 'next/link'
+import { rehypeHeadingId } from '@/lib/markdown/plugins';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 type NBCell = {
@@ -221,31 +222,26 @@ function MarkdownCell({
         const parentParts = currentDir.split('/').slice(0, -upLevels);
         const parentDir = parentParts.join('/');
         return `${parentDir}/${remainingPath}/${dirName}.ipynb`;
-      }
-      else if (cleanHref.startsWith('./')) {
+      } else if (cleanHref.startsWith('./')) {
         const dirPath = cleanHref.substring(2);
         const dirParts = dirPath.split('/');
         const dirName = dirParts[dirParts.length - 1];
         return `${currentDir}/${dirPath}/${dirName}.ipynb`;
-      }
-      else {
+      } else {
         const dirParts = cleanHref.split('/');
         const dirName = dirParts[dirParts.length - 1];
         return `${currentDir}/${cleanHref}/${dirName}.ipynb`;
       }
-    }
-    else {
+    } else {
       if (cleanHref.startsWith('../')) {
         const upLevels = (cleanHref.match(/\.\.\//g) || []).length;
         const remainingPath = cleanHref.replace(/(\.\.\/)+/, '');
         const parentParts = currentDir.split('/').slice(0, -upLevels);
         const parentDir = parentParts.join('/');
         return `${parentDir}/${remainingPath}`;
-      }
-      else if (cleanHref.startsWith('./')) {
+      } else if (cleanHref.startsWith('./')) {
         return `${currentDir}/${cleanHref.substring(2) || currentFilename}`;
-      }
-      else {
+      } else {
         return `${currentDir}/${cleanHref || currentFilename}`;
       }
     }
@@ -260,7 +256,9 @@ function MarkdownCell({
           <a
             href={href}
             className={cn('text-primary-soft hover:text-primary', className)}
-            {...(href.startsWith('http') ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            {...(href.startsWith('http')
+              ? { target: '_blank', rel: 'noopener noreferrer' }
+              : {})}
             {...props}
           >
             {children}
@@ -272,8 +270,7 @@ function MarkdownCell({
       let fullPath;
       if (href.endsWith('/')) {
         fullPath = resolveNotebookPath(cookbookPath, href);
-      }
-      else {
+      } else {
         fullPath = resolveNotebookPath(cookbookPath, href);
         if (!fullPath.endsWith('.ipynb') && !fullPath.endsWith('.md')) {
           fullPath += '.ipynb';
@@ -291,7 +288,8 @@ function MarkdownCell({
         </Link>
       );
     },
-    img: ({ src, ...props }: any) => {  // Restored image handling
+    img: ({ src, ...props }: any) => {
+      // Restored image handling
       // If it's a base64 attachment, return the img directly
       if (src.startsWith('data:image/')) {
         return <img {...props} src={src} />;
@@ -304,7 +302,13 @@ function MarkdownCell({
           const keys = Object.keys(attachment);
           const key = keys[0];
           const base64Data = attachment[key];
-          return <img {...props} src={`data:image/png;base64,${base64Data}`} alt={key} />;
+          return (
+            <img
+              {...props}
+              src={`data:image/png;base64,${base64Data}`}
+              alt={key}
+            />
+          );
         }
       }
       // Handle regular image paths
@@ -325,7 +329,7 @@ function MarkdownCell({
       options={{
         mdxOptions: {
           remarkPlugins: getRemarkPluginsForReactMarkdown(),
-          rehypePlugins: [],
+          rehypePlugins: [rehypeHeadingId],
           format: 'md',
         },
       }}

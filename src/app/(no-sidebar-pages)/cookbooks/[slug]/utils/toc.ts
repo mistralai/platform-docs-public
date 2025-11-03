@@ -1,5 +1,5 @@
 import { TocItem } from '@/schema';
-import { uniqueHeadingId } from '@/lib/heading-utils';
+import { slugify, uniqueHeadingId } from '@/lib/heading-utils';
 
 // Function to generate TOC from markdown or IPython notebook content
 function extractMarkdownText(content: string): string {
@@ -9,11 +9,22 @@ function extractMarkdownText(content: string): string {
   return String(content || '');
 }
 
-function processLines(lines: string[], usedIds: Set<string>): TocItem[] {
+function processLines(
+  lines: string[],
+  usedIds: Set<string>,
+  ignoreH1: boolean = false
+): TocItem[] {
+  let h1Found = false;
   const toc: TocItem[] = [];
   let inCodeBlock = false;
 
   for (const line of lines) {
+    if (ignoreH1 && line.trim().startsWith('# ')) continue;
+    if (!h1Found && line.trim().startsWith('# ')) {
+      h1Found = true;
+      continue;
+    }
+    if (ignoreH1 && h1Found) continue;
     if (line.trim().startsWith('```')) {
       inCodeBlock = !inCodeBlock;
       continue;
@@ -25,7 +36,8 @@ function processLines(lines: string[], usedIds: Set<string>): TocItem[] {
     if (headingMatch) {
       const depth = headingMatch[1].length;
       const value = headingMatch[2].trim();
-      const id = uniqueHeadingId(value, usedIds);
+      const slug = slugify(value);
+      const id = uniqueHeadingId(slug, usedIds);
       toc.push({ id, value, depth });
     }
   }
@@ -35,9 +47,12 @@ function processLines(lines: string[], usedIds: Set<string>): TocItem[] {
 
 export function generateCookbookToc(
   content: string | undefined | null,
-  isNotebook: boolean
+  isNotebook: boolean,
+  options: { ignoreH1?: boolean } = {}
 ): TocItem[] {
   if (!content) return [];
+
+  const { ignoreH1 = true } = options;
 
   const usedIds = new Set<string>();
 
@@ -53,10 +68,10 @@ export function generateCookbookToc(
         }
       }
 
-      return processLines(allLines, usedIds);
+      return processLines(allLines, usedIds, ignoreH1);
     } else {
       const lines = content.split(/\r?\n/);
-      return processLines(lines, usedIds);
+      return processLines(lines, usedIds, ignoreH1);
     }
   } catch (error) {
     console.error('Error generating TOC:', error);

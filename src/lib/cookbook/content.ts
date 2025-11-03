@@ -29,8 +29,8 @@ function extractH1FromNotebook(notebookJson: string): string | null {
         const source = Array.isArray(cell.source)
           ? cell.source.join('')
           : typeof cell.source === 'string'
-          ? cell.source
-          : '';
+            ? cell.source
+            : '';
         const title = extractH1FromMarkdown(source);
         if (title) return title;
       }
@@ -68,10 +68,14 @@ function isInCodeBlock(lines: string[], currentIndex: number): boolean {
   }
   return inCodeBlock;
 }
-function extractTitleFromMarkdownContent(content: string): {
+function extractTitleFromMarkdownContent(
+  content: string,
+  options: { preferH1Only?: boolean } = {}
+): {
   title: string | null;
   contentWithoutTitle: string;
 } {
+  const { preferH1Only = false } = options;
   let title: string | null = null;
   const original = content;
   let bodyStartIndex = 0;
@@ -95,39 +99,70 @@ function extractTitleFromMarkdownContent(content: string): {
       title = htmlTitle;
       lines.splice(i, 1);
       // Remove related HTML tags if they span multiple lines
-      while (i > 0 && (lines[i-1].includes('<center') || lines[i-1].includes('<p'))) {
-        lines.splice(i-1, 1);
+      while (
+        i > 0 &&
+        (lines[i - 1].includes('<center') || lines[i - 1].includes('<p'))
+      ) {
+        lines.splice(i - 1, 1);
         i--;
       }
-      while (i < lines.length && lines[i].includes('</center') || lines[i].includes('</p')) {
+      while (
+        (i < lines.length && lines[i].includes('</center')) ||
+        lines[i].includes('</p')
+      ) {
         lines.splice(i, 1);
       }
       break;
     }
 
     // Check for markdown headings
-    const atxMatch = lines[i].match(/^\s{0,3}[#]{1,2}\s+(.+?)(\s+#+\s*)?$/);
+    const atxMatch = lines[i].match(
+      preferH1Only
+        ? /^\s{0,3}#\s+(.+?)(\s+#+\s*)?$/
+        : /^\s{0,3}[#]{1,2}\s+(.+?)(\s+#+\s*)?$/
+    );
     if (atxMatch && atxMatch[1]) {
       title = cleanInlineMarkdown(atxMatch[1]);
-      const removeCount = 1 + (lines[i + 1] !== undefined && lines[i + 1].trim() === '' ? 1 : 0);
-      lines.splice(i, removeCount);
+      // Remove the H1 line
+      lines.splice(i, 1);
+      // Remove immediate blank lines or HR separators (---, ***, ___) that follow
+      while (i < lines.length) {
+        const t = lines[i].trim();
+        if (t === '' || /^[-*_]{3,}$/.test(t)) {
+          lines.splice(i, 1);
+          continue;
+        }
+        break;
+      }
       break;
     }
 
-    // Check for setext-style headings
+    // Check for setext-style headings (H1 only)
     if (i < lines.length - 1) {
       const textLine = lines[i];
       const underline = lines[i + 1];
       if (/^\s{0,3}={2,}\s*$/.test(underline) && textLine.trim().length > 0) {
         title = cleanInlineMarkdown(textLine);
-        const removeCount = 2 + (lines[i + 2] !== undefined && lines[i + 2].trim() === '' ? 1 : 0);
-        lines.splice(i, removeCount);
+        // Remove the text line and underline
+        lines.splice(i, 2);
+        // Remove immediate blank lines or HR separators (---, ***, ___) that follow
+        while (i < lines.length) {
+          const t = lines[i].trim();
+          if (t === '' || /^[-*_]{3,}$/.test(t)) {
+            lines.splice(i, 1);
+            continue;
+          }
+          break;
+        }
         break;
       }
     }
   }
 
-  const contentWithoutTitle = before + lines.join('\n');
+  let contentWithoutTitle = before + lines.join('\n');
+  if (!before && contentWithoutTitle.startsWith('---')) {
+    contentWithoutTitle = '\n' + contentWithoutTitle;
+  }
   return { title, contentWithoutTitle };
 }
 
@@ -147,9 +182,7 @@ function cleanHtmlTitle(html: string): string | null {
   }
 
   // Match simple paragraph titles
-  const pTitleMatch = html.match(
-    /<p[^>]*>(.*?)<\/p>/i
-  );
+  const pTitleMatch = html.match(/<p[^>]*>(.*?)<\/p>/i);
   if (pTitleMatch) {
     const content = cleanInlineMarkdown(pTitleMatch[1]);
     // Only return if it looks like a title (not too long, no multiple sentences)
@@ -210,72 +243,34 @@ function extractTitleFromNotebookContent(content: string): {
     const nb = JSON.parse(content);
     const cells: any[] = Array.isArray(nb?.cells) ? nb.cells : [];
     let title: string | null = null;
-
     for (let i = 0; i < cells.length && !title; i++) {
       const cell = cells[i];
-      if (cell?.cell_type === 'markdown') {
-        const source = Array.isArray(cell.source)
-          ? cell.source.join('')
-          : typeof cell.source === 'string'
+      if (cell?.cell_type !== 'markdown') continue;
+      const sourceText = Array.isArray(cell.source)
+        ? cell.source.join('')
+        : typeof cell.source === 'string'
           ? cell.source
           : '';
-
-        // Try to extract and remove title from this cell
-        const htmlTitle = cleanHtmlTitle(source);
-        if (htmlTitle) {
-          title = htmlTitle;
-          // Remove the entire cell containing HTML title
+      const { title: extracted, contentWithoutTitle } =
+        extractTitleFromMarkdownContent(sourceText, { preferH1Only: true });
+      if (extracted) {
+        title = extracted;
+        const newSource = contentWithoutTitle;
+        if (Array.isArray(cell.source)) {
+          cell.source = newSource
+            .split('\n')
+            .map((line: string) => line + '\n');
+          if (cell.source.length > 0) {
+            cell.source[cell.source.length - 1] = cell.source[
+              cell.source.length - 1
+            ].replace(/\n$/, '');
+          }
+        } else {
+          cell.source = newSource;
+        }
+        if (!newSource.trim()) {
           cells.splice(i, 1);
-          i--; // Adjust index after removal
-          continue;
-        }
-
-        const lines = source.split(/\r?\n/);
-        let cellModified = false;
-
-        for (let j = 0; j < lines.length; j++) {
-          if (isInCodeBlock(lines, j)) continue;
-
-          // Check for markdown headings
-          const atxMatch = lines[j].match(/^\s{0,3}[#]{1,2}\s+(.+?)(\s+#+\s*)?$/);
-          if (atxMatch && atxMatch[1]) {
-            title = cleanInlineMarkdown(atxMatch[1]);
-            const removeCount = 1 + (lines[j + 1] !== undefined && lines[j + 1].trim() === '' ? 1 : 0);
-            lines.splice(j, removeCount);
-            cellModified = true;
-            break;
-          }
-
-          // Check for setext-style headings
-          if (j < lines.length - 1) {
-            const textLine = lines[j];
-            const underline = lines[j + 1];
-            if (/^\s{0,3}={2,}\s*$/.test(underline) && textLine.trim().length > 0) {
-              title = cleanInlineMarkdown(textLine);
-              const removeCount = 2 + (lines[j + 2] !== undefined && lines[j + 2].trim() === '' ? 1 : 0);
-              lines.splice(j, removeCount);
-              cellModified = true;
-              break;
-            }
-          }
-        }
-
-        if (cellModified) {
-          const newSource = lines.join('\n');
-          if (Array.isArray(cell.source)) {
-            cell.source = newSource.split('\n').map((line: string) => line + '\n');
-            if (cell.source.length > 0) {
-              cell.source[cell.source.length - 1] = cell.source[cell.source.length - 1].replace(/\n$/, '');
-            }
-          } else {
-            cell.source = newSource;
-          }
-
-          // Remove cell if empty after title removal
-          if (!newSource.trim()) {
-            cells.splice(i, 1);
-            i--; // Adjust index after removal
-          }
+          i--;
         }
       }
     }
@@ -309,7 +304,7 @@ function extractTitleFromContent(
 
   const result = isNotebook
     ? extractTitleFromNotebookContent(content)
-    : extractTitleFromMarkdownContent(content);
+    : extractTitleFromMarkdownContent(content, { preferH1Only: true });
 
   return {
     title: result.title,

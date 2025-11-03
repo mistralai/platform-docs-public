@@ -8,6 +8,10 @@ const CLOUDFLARE_URL = process.env.CF_PAGES_URL
   ? `https://${process.env.CF_PAGES_URL}`
   : undefined;
 
+const VERCEL_ORIGIN_URL = new URL(
+  process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+).origin;
+
 export const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ||
   VERCEL_URL ||
@@ -36,7 +40,8 @@ export const MISTRAL_STUDIO_URL = process.env.MISTRAL_STUDIO_URL
   ? new URL(process.env.MISTRAL_STUDIO_URL)
   : new URL('https://console.mistral.ai/home');
 
-export const MISTRAL_BRAND_GUIDELINES_URL = process.env.MISTRAL_BRAND_GUIDELINES_URL
+export const MISTRAL_BRAND_GUIDELINES_URL = process.env
+  .MISTRAL_BRAND_GUIDELINES_URL
   ? new URL(process.env.MISTRAL_BRAND_GUIDELINES_URL)
   : new URL('https://mistral.ai/brand');
 

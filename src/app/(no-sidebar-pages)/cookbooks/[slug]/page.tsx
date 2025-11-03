@@ -141,15 +141,58 @@ export default async function CookbookDetailPage({
               />
             ) : (
               <article className="prose prose-neutral max-w-none">
-              <MDXRemote
-                components={{
-                  ...markdownComponents,
-                  a: ({ children, className, href, ...props }: AnchorProps) => {
-                    if (href && !href.startsWith('http') && !href.startsWith('#')) {
-                      // Handle internal markdown links
-                      const slug = generateCookbookSlug(`${entry.path.split('/').slice(0, -1).join('/')}/${href}`);
-                      const isExternal = false; // We're making it internal
+                <MDXRemote
+                  components={{
+                    ...markdownComponents,
+                    a: ({
+                      children,
+                      className,
+                      href,
+                      ...props
+                    }: AnchorProps) => {
+                      if (
+                        href &&
+                        !href.startsWith('http') &&
+                        !href.startsWith('#')
+                      ) {
+                        // Handle internal markdown links
+                        const slug = generateCookbookSlug(
+                          `${entry.path.split('/').slice(0, -1).join('/')}/${href}`
+                        );
+                        const isExternal = false; // We're making it internal
 
+                        return (
+                          <Link
+                            href={`/cookbook/${slug}`}
+                            className={cn(
+                              'text-primary-soft hover:text-primary',
+                              className
+                            )}
+                            target={isExternal ? '_blank' : undefined}
+                            rel={isExternal ? 'noopener noreferrer' : undefined}
+                            {...props}
+                          >
+                            {children}
+                          </Link>
+                        );
+                      }
+
+                      // For external links or anchors, use the original markdownComponents.a behavior
+                      if (!href) {
+                        return (
+                          <span
+                            className={cn(
+                              'text-primary-soft hover:text-primary',
+                              className
+                            )}
+                            {...props}
+                          >
+                            {children}
+                          </span>
+                        );
+                      }
+
+                      const isExternal = href.startsWith('http');
                       return (
                         <Link
                           href={`/cookbooks/${slug}`}
@@ -161,49 +204,26 @@ export default async function CookbookDetailPage({
                           {children}
                         </Link>
                       );
-                    }
-
-                    // For external links or anchors, use the original markdownComponents.a behavior
-                    if (!href) {
-                      return (
-                        <span className={cn('text-primary-soft hover:text-primary', className)} {...props}>
-                          {children}
-                        </span>
-                      );
-                    }
-
-                    const isExternal = href.startsWith('http');
-                    return (
-                      <Link
-                        className={cn('text-primary-soft hover:text-primary', className)}
-                        href={href}
-                        target={isExternal ? '_blank' : undefined}
-                        rel={isExternal ? 'noopener noreferrer' : undefined}
-                        {...props}
-                      >
-                        {children}
-                      </Link>
-                    );
-                  }
-                }}
-                source={content}
-                options={{
-                  mdxOptions: {
-                    remarkPlugins: [
-                      ...getRemarkPluginsForReactMarkdown(),
-                      [
-                        remarkCookbookImageBase,
-                        {
-                          basePrefix: `/${entry.path.split('/').slice(0, -1).join('/')}`,
-                        },
+                    },
+                  }}
+                  source={content}
+                  options={{
+                    mdxOptions: {
+                      remarkPlugins: [
+                        ...getRemarkPluginsForReactMarkdown(),
+                        [
+                          remarkCookbookImageBase,
+                          {
+                            basePrefix: `/${entry.path.split('/').slice(0, -1).join('/')}`,
+                          },
+                        ],
                       ],
-                    ],
-                    rehypePlugins: [rehypeHeadingId],
-                    format: 'md',
-                  },
-                  parseFrontmatter: true,
-                }}
-              />
+                      rehypePlugins: [rehypeHeadingId],
+                      format: 'md',
+                    },
+                    parseFrontmatter: true,
+                  }}
+                />
               </article>
             )}
           </div>

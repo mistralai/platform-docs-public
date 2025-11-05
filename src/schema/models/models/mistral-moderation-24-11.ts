@@ -11,6 +11,7 @@ export default {
   status: 'Active',
   avatar: { icon: 'mistral-embed', backgroundColor: 'lime' },
   weights: [],
+  contextLength: '8k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

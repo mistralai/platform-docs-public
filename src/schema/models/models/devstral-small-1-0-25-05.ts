@@ -9,7 +9,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'devstral', backgroundColor: 'yellow' },
+  avatar: { icon: 'devstral', backgroundColor: 'pink' },
   weights: [
     {
       name: 'Weights',
@@ -23,9 +23,10 @@ export default {
         fp4: '20',
       },
       active: '24',
-      contextSize: '128',
+      contextSize: '',
     }
   ],
+  contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

@@ -9,7 +9,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'codestral-mamba', backgroundColor: 'yellow' },
+  avatar: { icon: 'codestral-mamba', backgroundColor: 'red' },
   weights: [
     {
       name: 'Weights',
@@ -23,9 +23,10 @@ export default {
         fp4: '5',
       },
       active: '7',
-      contextSize: '256',
+      contextSize: '',
     }
   ],
+  contextLength: '256k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },
     performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

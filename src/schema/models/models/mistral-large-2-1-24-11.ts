@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-large', backgroundColor: 'pink' },
+  avatar: { icon: 'mistral-large', backgroundColor: 'blue' },
   weights: [
     {
       name: 'Weights',
@@ -23,9 +23,10 @@ export default {
         fp4: '75',
       },
       active: '123',
-      contextSize: '128',
+      contextSize: '',
     }
   ],
+  contextLength: '128k',
   ratings: { 
     speed: { stars: 1.0, label: 'Slow' },
     performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

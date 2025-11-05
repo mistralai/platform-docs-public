@@ -9,8 +9,9 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'magistral', backgroundColor: 'orange' },
+  avatar: { icon: 'magistral', backgroundColor: 'yellow' },
   weights: [],
+  contextLength: '40k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

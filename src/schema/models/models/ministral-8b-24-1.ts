@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'ministral', backgroundColor: 'purple' },
+  avatar: { icon: 'ministral', backgroundColor: 'pink' },
   weights: [
     {
       name: 'Weights',
@@ -23,9 +23,10 @@ export default {
         fp4: '11',
       },
       active: '8',
-      contextSize: '128',
+      contextSize: '128k',
     }
   ],
+  contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

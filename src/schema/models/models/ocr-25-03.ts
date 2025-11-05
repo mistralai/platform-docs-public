@@ -11,6 +11,7 @@ export default {
   status: 'Deprecated',
   avatar: { icon: 'ocr', backgroundColor: 'blue' },
   weights: [],
+  contextLength: null,
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },
     performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

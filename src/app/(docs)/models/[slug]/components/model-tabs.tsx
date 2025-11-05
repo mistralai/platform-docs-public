@@ -187,7 +187,7 @@ export function ModelTabs({ model }: ModelTabsProps) {
               Reach out to get access to{' '}
               <Link
                 className="underline text-primary"
-                href={MISTRAL_CONTACT_URL}
+                href={MISTRAL_CONTACT_URL.toString()}
               >
                 {model.name} weights
               </Link>

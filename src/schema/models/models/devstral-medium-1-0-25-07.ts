@@ -11,6 +11,7 @@ export default {
   status: 'Active',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [],
+  contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

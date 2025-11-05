@@ -23,9 +23,10 @@ export default {
         fp4: '4',
       },
       active: '4',
-      contextSize: '32',
+      contextSize: '32k',
     }
   ],
+  contextLength: '32k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
     performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

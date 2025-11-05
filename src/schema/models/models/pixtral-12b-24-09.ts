@@ -9,7 +9,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'pixtral', backgroundColor: 'red' },
+  avatar: { icon: 'pixtral', backgroundColor: 'green' },
   weights: [
     {
       name: 'Instruct Weights',
@@ -23,7 +23,7 @@ export default {
         fp4: '14',
       },
       active: '12',
-      contextSize: '128',
+      contextSize: '128k',
     },    {
       name: 'Base Weights',
       license: 'Apache 2.0',
@@ -36,9 +36,10 @@ export default {
         fp4: '14',
       },
       active: '12',
-      contextSize: '128',
+      contextSize: '128k',
     }
   ],
+  contextLength: '128k',
   ratings: { 
     speed: { stars: 2.0, label: 'Slow' },
     performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

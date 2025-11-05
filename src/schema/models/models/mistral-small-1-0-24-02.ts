@@ -9,8 +9,9 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mistral-small', backgroundColor: 'blue' },
+  avatar: { icon: 'mistral-small', backgroundColor: 'red' },
   weights: [],
+  contextLength: '32k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },
     performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

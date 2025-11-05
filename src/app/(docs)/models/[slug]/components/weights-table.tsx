@@ -33,7 +33,7 @@ export function WeightsTable({ weights, className }: WeightsTableProps) {
               'Parameters (B)',
               'Active (B)',
               '≈ Min GPU RAM (GB)',
-              'Context Size (k tokens)',
+              'Context Size (tokens)',
             ].map((header, i) => (
               <TableHead
                 key={header}

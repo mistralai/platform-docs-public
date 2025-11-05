@@ -5,11 +5,7 @@ import { ThunderIcon, LampIcon } from '@/components/icons/pixel';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { getModelColorFallback, MODEL_COLORS } from '@/lib/colors';
 import { ModelAvatar } from '@/components/model/avatar';
-import {
-  Heading,
-  HeadingSubtitle,
-  HeadingTitle,
-} from '@/components/layout/heading';
+import { Heading, HeadingTitle } from '@/components/layout/heading';
 import { SectionLabel } from './components/section-label';
 import { StatRating } from './components/stat-rating';
 import { Modalities } from './components/modalities';
@@ -93,6 +89,21 @@ export async function generateMetadata({
     },
   };
 }
+
+const ContextTooltip = () => {
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <InfoHint />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[230px]">
+        <p>
+          Context window size in tokens. This is the maximum number of input plus output tokens the model can process at once.
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 const MAX_API_NAMES = 1;
 
@@ -216,6 +227,21 @@ export default async function ModelPage({ params }: ModelPageProps) {
                     />
                   </SectionBlock>
                 </ModelCardInner>
+                {model.contextLength && (
+                  <ModelCardInner className="border-l border-dashed pt-6 px-4 shrink ml-auto">
+                    {/* Context Length */}
+                    <SectionBlock>
+                      <SectionLabel>
+                        <span>Context</span>
+                        <ContextTooltip />
+                      </SectionLabel>
+                      <div className="text-lg font-bold font-mono text-primary-soft">
+                        {model.contextLength}
+                      </div>
+                      <span />
+                    </SectionBlock>
+                  </ModelCardInner>
+                )}
 
                 {/* right side */}
                 <ModelCardInner className="ml-auto border-l border-dashed pb-3 pt-3 px-4">

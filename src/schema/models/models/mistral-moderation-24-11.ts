@@ -9,8 +9,9 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-embed', backgroundColor: 'lime' },
+  avatar: { icon: 'mistral-embed', backgroundColor: 'blue' },
   weights: [],
+  contextLength: '8k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

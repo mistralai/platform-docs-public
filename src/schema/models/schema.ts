@@ -83,8 +83,8 @@ export const AVAILABLE_FEATURES = {
     endpoints: ['agents', 'conversations'],
   },
   connectors: {
-    name: 'Connectors',
-    link: '/agents/connectors',
+    name: 'Built-In Tools',
+    link: '/agents/tools',
     endpoints: ['agents', 'conversations'],
   },
   'structured-outputs': {
@@ -97,7 +97,11 @@ export const AVAILABLE_FEATURES = {
     link: '/capabilities/predicted_outputs',
     endpoints: ['chat-completions', 'conversations'],
   },
-  prefix: { name: 'Prefix', link: '/capabilities/completion/usage#other-useful-features', endpoints: ['chat-completions', 'conversations'] },
+  prefix: {
+    name: 'Prefix',
+    link: '/capabilities/completion/usage#other-useful-features',
+    endpoints: ['chat-completions', 'conversations'],
+  },
   ocr: { name: 'OCR', link: '/capabilities/document_ai', endpoints: ['ocr'] },
   'annotations-structured-ocr': {
     name: 'Annotations - Structured',
@@ -114,7 +118,11 @@ export const AVAILABLE_FEATURES = {
     link: '/capabilities/document_ai/document_qna',
     endpoints: ['chat-completions', 'conversations'],
   },
-  fim: { name: 'FIM', link: '/capabilities/fim', endpoints: ['fim-completions'] },
+  fim: {
+    name: 'FIM',
+    link: '/capabilities/fim',
+    endpoints: ['fim-completions'],
+  },
   embeddings: {
     name: 'Embeddings',
     link: '/capabilities/embeddings',
@@ -140,7 +148,11 @@ export const AVAILABLE_FEATURES = {
     link: '/capabilities/audio_transcription#transcription-with-timestamps',
     endpoints: ['audio-transcriptions'],
   },
-  batching: { name: 'Batching', link: '/capabilities/batch', endpoints: ['batch'] },
+  batching: {
+    name: 'Batching',
+    link: '/capabilities/batch',
+    endpoints: ['batch'],
+  },
 } as const satisfies Features;
 export type FeatureKey = keyof typeof AVAILABLE_FEATURES;
 
@@ -193,7 +205,7 @@ export interface ModelAvatar {
 }
 export interface ModelTemplate<
   K extends string = string,
-  S extends string = string
+  S extends string = string,
 > {
   name: K;
   description: string;
@@ -207,6 +219,7 @@ export interface ModelTemplate<
   status: 'Deprecated' | 'Retired' | 'Active';
   avatar?: ModelAvatar;
   weights: ModelWeight[];
+  contextLength?: string | undefined | null;
   ratings: {
     speed: ModelRating;
     performance: ModelRating;
@@ -245,7 +258,7 @@ export type Slugs<T> = T extends readonly any[]
 
 // factory function to define models
 export const defineModels = <
-  T extends readonly ModelTemplate<Names<T>, Slugs<T>>[]
+  T extends readonly ModelTemplate<Names<T>, Slugs<T>>[],
 >(
   t: T
 ) => t;

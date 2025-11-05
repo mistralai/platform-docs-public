@@ -8,8 +8,8 @@ export default {
   version: '24.09',
   type: 'Frontier',
   compliance: '',
-  status: 'Active',
-  avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
+  status: 'Deprecated',
+  avatar: { icon: 'mistral-small', backgroundColor: 'beige' },
   weights: [
     {
       name: 'Weights',
@@ -23,9 +23,10 @@ export default {
         fp4: '13',
       },
       active: '22',
-      contextSize: '32',
+      contextSize: '32k',
     }
   ],
+  contextLength: '32k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
@@ -45,7 +46,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'November 1, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

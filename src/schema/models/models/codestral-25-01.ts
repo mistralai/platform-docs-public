@@ -8,8 +8,8 @@ export default {
   version: '25.01',
   type: 'Frontier',
   compliance: '',
-  status: 'Active',
-  avatar: { icon: 'codestral', backgroundColor: 'pink' },
+  status: 'Deprecated',
+  avatar: { icon: 'codestral', backgroundColor: 'red' },
   weights: [],
   contextLength: '128k',
   ratings: { 
@@ -31,7 +31,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching', 'fim'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Codestral'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

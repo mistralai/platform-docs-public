@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mistral-saba', backgroundColor: 'lime' },
+  avatar: { icon: 'mistral-saba', backgroundColor: 'red' },
   weights: [],
   contextLength: '32k',
   ratings: { 

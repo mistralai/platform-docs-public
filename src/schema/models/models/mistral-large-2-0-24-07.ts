@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mistral-large', backgroundColor: 'yellow' },
+  avatar: { icon: 'mistral-large', backgroundColor: 'blue' },
   weights: [
     {
       name: 'Weights',

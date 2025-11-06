@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'ministral', backgroundColor: 'red' },
+  avatar: { icon: 'ministral', backgroundColor: 'yellow' },
   weights: [],
   contextLength: '128k',
   ratings: { 

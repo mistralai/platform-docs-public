@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'magistral', backgroundColor: 'orange' },
+  avatar: { icon: 'magistral', backgroundColor: 'red' },
   weights: [],
   contextLength: '40k',
   ratings: { 

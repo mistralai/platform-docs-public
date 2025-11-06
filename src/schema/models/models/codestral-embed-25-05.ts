@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'codestral-embed', backgroundColor: 'yellow' },
+  avatar: { icon: 'codestral-embed', backgroundColor: 'beige' },
   weights: [],
   contextLength: '8k',
   ratings: { 

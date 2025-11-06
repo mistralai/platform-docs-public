@@ -9,7 +9,7 @@ export default {
   type: 'Frontier',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'ocr', backgroundColor: 'blue' },
+  avatar: { icon: 'ocr', backgroundColor: 'pink' },
   weights: [],
   contextLength: null,
   ratings: { 
@@ -31,7 +31,7 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'June 10, 2025', retirementDate: 'March 31, 2026', replacement: 'OCR'},
+  metadata: {deprecationDate: 'June 10, 2025', retirementDate: 'December 31, 2025', replacement: 'OCR'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

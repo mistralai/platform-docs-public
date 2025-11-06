@@ -8,8 +8,8 @@ export default {
   version: '25.03',
   type: 'Open',
   compliance: '',
-  status: 'Active',
-  avatar: { icon: 'mistral-small', backgroundColor: 'green' },
+  status: 'Deprecated',
+  avatar: { icon: 'mistral-small', backgroundColor: 'beige' },
   weights: [
     {
       name: 'Instruct Weights',
@@ -59,7 +59,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'connectors', 'batching', 'predicted-outputs'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

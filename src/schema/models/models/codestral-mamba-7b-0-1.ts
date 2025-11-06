@@ -9,7 +9,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'codestral-mamba', backgroundColor: 'green' },
+  avatar: { icon: 'codestral-mamba', backgroundColor: 'yellow' },
   weights: [
     {
       name: 'Weights',

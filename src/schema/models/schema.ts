@@ -213,7 +213,9 @@ export interface ModelTemplate<
   slug: S;
   releaseDate?: string;
   version?: string;
-  type: 'Frontier' | 'Open';
+  frontier: boolean;
+  class: 'Generalist' | 'Specialist';
+  type: 'Premier' | 'Open';
   compliance: string;
   legacy?: boolean;
   status: 'Deprecated' | 'Retired' | 'Active';

@@ -6,10 +6,12 @@ export default {
   slug: 'mistral-small-2-0-24-09',
   releaseDate: 'September 17, 2024',
   version: '24.09',
-  type: 'Frontier',
+  frontier: false,
+  class: 'Generalist',
+  type: 'Premier',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'mistral-small', backgroundColor: 'beige' },
+  avatar: { icon: 'mistral-small', backgroundColor: 'gray' },
   weights: [
     {
       name: 'Weights',

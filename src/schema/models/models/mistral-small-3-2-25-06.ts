@@ -6,6 +6,8 @@ export default {
   slug: 'mistral-small-3-2-25-06',
   releaseDate: 'June 20, 2025',
   version: '25.06',
+  frontier: true,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Active',

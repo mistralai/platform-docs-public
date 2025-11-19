@@ -9,6 +9,11 @@ import { PixelGrid } from '@/components/common/pixel-grid';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import {
+  ENABLE_MODEL_TYPE_TOOLTIP,
+  MODEL_TYPE_TOOLTIP_CONTENT,
+} from '@/schema/models/copyright/type-tooltip';
 
 export interface ModelCardProps extends React.ComponentProps<'a'> {
   model: Model;
@@ -132,6 +137,7 @@ export function ModelCard({
     );
   }
 
+  // compact
   return (
     <Link
       href={modelUrl}
@@ -160,9 +166,30 @@ export function ModelCard({
         style={cardStyle}
       />
       <div className="z-2 px-4 py-2 flex-1 flex flex-col">
-        <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
-          {model.name}
-        </h3>
+        <div className="flex items-center gap-2 justify-between">
+          <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
+            {model.name}
+          </h3>
+          {model.type && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge
+                  variant={model.type === 'Premier' ? 'other' : 'type-enum'}
+                  className="font-mono uppercase text-[11px]"
+                  size="xs"
+                >
+                  {model.type}
+                </Badge>
+              </TooltipTrigger>
+              {ENABLE_MODEL_TYPE_TOOLTIP &&
+                MODEL_TYPE_TOOLTIP_CONTENT[model.type] && (
+                  <TooltipContent>
+                    {MODEL_TYPE_TOOLTIP_CONTENT[model.type]}
+                  </TooltipContent>
+                )}
+            </Tooltip>
+          )}
+        </div>
         <div className="flex gap-2 justify-between items-baseline">
           <p className="text-sm text-foreground/70 line-clamp-1 text-ellipsis overflow-hidden">
             {model.shortDescription || model.description}

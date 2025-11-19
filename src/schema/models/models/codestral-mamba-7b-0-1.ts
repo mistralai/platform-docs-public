@@ -6,10 +6,12 @@ export default {
   slug: 'codestral-mamba-7b-0-1',
   releaseDate: 'July 16, 2024',
   version: '0.1',
+  frontier: false,
+  class: 'Specialist',
   type: 'Open',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'codestral-mamba', backgroundColor: 'yellow' },
+  avatar: { icon: 'codestral-mamba', backgroundColor: 'beige' },
   weights: [
     {
       name: 'Weights',

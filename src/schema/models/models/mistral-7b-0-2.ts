@@ -6,10 +6,12 @@ export default {
   slug: 'mistral-7b-0-2',
   releaseDate: 'December 11, 2023',
   version: '0.2',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mistral-7b', backgroundColor: 'purple' },
+  avatar: { icon: 'mistral-7b', backgroundColor: 'gray' },
   weights: [
     {
       name: 'Instruct Weights',

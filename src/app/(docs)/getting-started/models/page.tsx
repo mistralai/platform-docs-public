@@ -20,22 +20,23 @@ import ArrowRightIcon from '@/components/icons/pixel/arrow-right';
 import { MISTRAL_URL } from '@/lib/constants';
 
 export default function ModelsPage() {
-  // Filter models by type
-
-  const frontierModels = nonLegacyModels.filter(
-    model => model.type === 'Frontier'
-  );
-
-  const openModels = nonLegacyModels.filter(model => model.type === 'Open');
-
+  // Featured models
   const featuredModels = FEATURED_MODEL_NAMES_MODELS_PAGE.map(
     slug => models.find(model => model.slug === slug)!
   ).filter(Boolean);
 
-  // Legacy/Deprecated models
+  // Legacy / deprecated models
   const legacyModels = models.filter(
     model => model.status === 'Deprecated' || model.status === 'Retired'
   );
+
+  // Separate SOTA models (state-of-the-art)
+  const frontierModels = nonLegacyModels.filter(model => model.frontier);
+  const otherModels = nonLegacyModels.filter(model => !model.frontier);
+
+  // Split SOTA models by class
+  const generalistFrontier = frontierModels.filter(m => m.class === 'Generalist');
+  const specialistFrontier = frontierModels.filter(m => m.class === 'Specialist');
 
   return (
     <div className="mx-auto space-y-14 w-full md:pt-8 not-prose">
@@ -44,10 +45,7 @@ export default function ModelsPage() {
         <Heading align="center">
           <HeadingTitle as="h1">Models</HeadingTitle>
           <HeadingSubtitle>
-            This guide will explore the performance and cost trade-offs, and
-            discuss how to select the appropriate model for different use cases.
-            We will delve into various factors to consider, offering guidance on
-            choosing the right model for your specific needs.
+            A list of all our available models, helping you explore their capabilities, performance, trade-offs, and more.
           </HeadingSubtitle>
           <HeadingCTAs>
             <Button
@@ -71,7 +69,7 @@ export default function ModelsPage() {
         </Heading>
       </div>
 
-      {/* Featured Models Section */}
+      {/* Featured Models */}
       <section id="featured-models" className="flex flex-col gap-6">
         <SectionTab sectionId="featured-models">Featured Models</SectionTab>
 
@@ -88,52 +86,76 @@ export default function ModelsPage() {
         </div>
       </section>
 
-      {/* Frontier Models Section */}
+      {/* STATE OF THE ART MODELS */}
+      <section id="sota-models" className="flex flex-col gap-8">
+        <SectionTab sectionId="frontier-models">Frontier Models</SectionTab>
 
-      <section id="frontier-models" className="flex flex-col gap-6">
-        <SectionTab>All Models</SectionTab>
+        {/* Generalist SOTA */}
+        <div className="flex flex-col gap-4">
+          <Heading align="between">
+            <HeadingTitle as="h3">Generalist</HeadingTitle>
+            <HeadingSubtitle className="text-secondary-foreground/85">
+              Versatile, high-performing models suitable for a broad range of
+              tasks.
+            </HeadingSubtitle>
+          </Heading>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {generalistFrontier.map(model => (
+              <ModelCard
+                key={model.name}
+                model={model}
+                variant="compact"
+                showParameters
+              />
+            ))}
+          </div>
+        </div>
 
+        {/* Specialist SOTA */}
+        <div className="flex flex-col gap-4">
+          <Heading align="between">
+            <HeadingTitle as="h3">Specialist</HeadingTitle>
+            <HeadingSubtitle className="text-secondary-foreground/85">
+              Models fine-tuned for specific domains or optimized for a given
+              purpose.
+            </HeadingSubtitle>
+          </Heading>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {specialistFrontier.map(model => (
+              <ModelCard
+                key={model.name}
+                model={model}
+                variant="compact"
+                showParameters
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* OTHER MODELS */}
+      <section id="other-models" className="flex flex-col gap-6">
+        <SectionTab sectionId="other-models">Other Models</SectionTab>
         <Heading align="between">
-          <HeadingTitle as="h3">Frontier Models</HeadingTitle>
-          <HeadingSubtitle className='text-secondary-foreground/85'>
-            Frontier and Commercial-Grade AI Solutions for Advanced Applications
+          <HeadingTitle as="h3">Other Models</HeadingTitle>
+          <HeadingSubtitle className="text-secondary-foreground/85">
+            Other supported models available.
           </HeadingSubtitle>
         </Heading>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {frontierModels.map(model => (
+          {otherModels.map(model => (
             <ModelCard
               key={model.name}
               model={model}
               variant="compact"
-              showParameters={true}
+              showParameters
             />
           ))}
         </div>
       </section>
 
-      {/* Open Models Section */}
-      <section id="open-models" className="flex flex-col gap-6">
-        <Heading align="between">
-          <HeadingTitle as="h3">Open Models</HeadingTitle>
-          <HeadingSubtitle className='text-secondary-foreground/85'>
-            Open-Source AI Models for Community and Research Use
-          </HeadingSubtitle>
-        </Heading>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {openModels.map(model => (
-            <ModelCard
-              key={model.name}
-              model={model}
-              variant="compact"
-              showParameters={true}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Deprecated Models Section */}
+      {/* LEGACY MODELS */}
       <section id="legacy-models" className="flex flex-col gap-6">
         <SectionTab variant="secondary" sectionId="legacy-models">
           Legacy/Deprecated
@@ -143,15 +165,13 @@ export default function ModelsPage() {
             Legacy Models
           </HeadingTitle>
           <HeadingSubtitle className="md:text-right text-secondary-foreground/85">
-            Our model offering is continuously refreshed with newer, better
-            models. As part of this process, we deprecate and retire older
-            models.
+            Older models that have been deprecated or retired.
           </HeadingSubtitle>
         </Heading>
         <ModelTable data={legacyModels} forceDeprecated />
       </section>
 
-      {/* Usefull Links */}
+      {/* Useful Links */}
       <UsefullLinksSection />
     </div>
   );

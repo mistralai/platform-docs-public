@@ -6,10 +6,12 @@ export default {
   slug: 'pixtral-12b-24-09',
   releaseDate: 'September 11, 2024',
   version: '24.09',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'pixtral', backgroundColor: 'red' },
+  avatar: { icon: 'pixtral', backgroundColor: 'orange' },
   weights: [
     {
       name: 'Instruct Weights',

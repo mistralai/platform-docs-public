@@ -6,6 +6,8 @@ export default {
   slug: 'mistral-7b-0-3',
   releaseDate: 'May 22, 2024',
   version: '0.3',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Retired',

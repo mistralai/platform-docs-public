@@ -6,10 +6,12 @@ export default {
   slug: 'pixtral-large-24-11',
   releaseDate: 'November 18, 2024',
   version: '24.11',
-  type: 'Frontier',
+  frontier: false,
+  class: 'Generalist',
+  type: 'Premier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-large', backgroundColor: 'green' },
+  avatar: { icon: 'mistral-large', backgroundColor: 'orange' },
   weights: [
     {
       name: 'Weights',

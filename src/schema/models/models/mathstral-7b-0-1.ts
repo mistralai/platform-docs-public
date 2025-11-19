@@ -6,10 +6,12 @@ export default {
   slug: 'mathstral-7b-0-1',
   releaseDate: 'July 16, 2024',
   version: '0.1',
+  frontier: false,
+  class: 'Specialist',
   type: 'Open',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mathstral', backgroundColor: 'orange' },
+  avatar: { icon: 'mathstral', backgroundColor: 'beige' },
   weights: [
     {
       name: 'Weights',

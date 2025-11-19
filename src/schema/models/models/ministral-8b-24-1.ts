@@ -6,10 +6,12 @@ export default {
   slug: 'ministral-8b-24-1',
   releaseDate: 'October 9, 2024',
   version: '24.1',
-  type: 'Frontier',
+  frontier: true,
+  class: 'Generalist',
+  type: 'Premier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'ministral', backgroundColor: 'gray' },
+  avatar: { icon: 'ministral', backgroundColor: 'purple' },
   weights: [
     {
       name: 'Weights',

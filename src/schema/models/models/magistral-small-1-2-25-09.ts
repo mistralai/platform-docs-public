@@ -6,6 +6,8 @@ export default {
   slug: 'magistral-small-1-2-25-09',
   releaseDate: 'September 18, 2025',
   version: '25.09',
+  frontier: true,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Active',

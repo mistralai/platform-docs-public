@@ -6,10 +6,12 @@ export default {
   slug: 'mistral-nemo-12b-24-07',
   releaseDate: 'July 18, 2024',
   version: '24.07',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-nemo', backgroundColor: 'yellow' },
+  avatar: { icon: 'mistral-nemo', backgroundColor: 'red' },
   weights: [
     {
       name: 'Instruct Weights',

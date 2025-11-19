@@ -275,7 +275,7 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
               <Collapsible.Trigger asChild>
                 <button
                   onClick={e => e.stopPropagation()}
-                  className="p-1 pr-2 hover:text-foreground text-foreground/50 rounded-md ml-1 absolute right-0 top-1/2 -translate-y-1/2"
+                  className="py-0.5 pl-1 pr-2 hover:text-foreground text-foreground/50 rounded-md ml-1 absolute right-0 top-1/2 -translate-y-1/2"
                 >
                   <ChevronRight
                     className={cn(

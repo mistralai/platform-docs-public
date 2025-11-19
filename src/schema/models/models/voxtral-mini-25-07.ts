@@ -6,6 +6,8 @@ export default {
   slug: 'voxtral-mini-25-07',
   releaseDate: 'July 15, 2025',
   version: '25.07',
+  frontier: true,
+  class: 'Specialist',
   type: 'Open',
   compliance: '',
   status: 'Active',

@@ -6,10 +6,12 @@ export default {
   slug: 'magistral-small-1-0-25-06',
   releaseDate: 'June 10, 2025',
   version: '25.06',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'magistral', backgroundColor: 'purple' },
+  avatar: { icon: 'magistral', backgroundColor: 'orange' },
   weights: [
     {
       name: 'Weights',

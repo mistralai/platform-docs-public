@@ -6,6 +6,8 @@ export default {
   slug: 'devstral-small-1-1-25-07',
   releaseDate: 'July 10, 2025',
   version: '25.07',
+  frontier: true,
+  class: 'Specialist',
   type: 'Open',
   compliance: '',
   status: 'Active',

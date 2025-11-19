@@ -6,10 +6,12 @@ export default {
   slug: 'mistral-small-3-1-25-03',
   releaseDate: 'March 17, 2025',
   version: '25.03',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'mistral-small', backgroundColor: 'beige' },
+  avatar: { icon: 'mistral-small', backgroundColor: 'gray' },
   weights: [
     {
       name: 'Instruct Weights',

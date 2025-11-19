@@ -6,10 +6,12 @@ export default {
   slug: 'codestral-24-05',
   releaseDate: 'May 29, 2024',
   version: '24.05',
-  type: 'Frontier',
+  frontier: false,
+  class: 'Specialist',
+  type: 'Premier',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'codestral', backgroundColor: 'purple' },
+  avatar: { icon: 'codestral', backgroundColor: 'yellow' },
   weights: [
     {
       name: 'Weights',

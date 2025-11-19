@@ -6,10 +6,12 @@ export default {
   slug: 'mistral-large-2-0-24-07',
   releaseDate: 'July 24, 2024',
   version: '24.07',
-  type: 'Frontier',
+  frontier: false,
+  class: 'Generalist',
+  type: 'Premier',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mistral-large', backgroundColor: 'blue' },
+  avatar: { icon: 'mistral-large', backgroundColor: 'red' },
   weights: [
     {
       name: 'Weights',

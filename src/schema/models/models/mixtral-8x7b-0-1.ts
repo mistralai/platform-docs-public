@@ -6,10 +6,12 @@ export default {
   slug: 'mixtral-8x7b-0-1',
   releaseDate: 'December 11, 2023',
   version: '0.1',
+  frontier: false,
+  class: 'Generalist',
   type: 'Open',
   compliance: '',
   status: 'Retired',
-  avatar: { icon: 'mistral-7b', backgroundColor: 'lime' },
+  avatar: { icon: 'mistral-7b', backgroundColor: 'green' },
   weights: [
     {
       name: 'Instruct Weights',

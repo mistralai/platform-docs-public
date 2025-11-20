@@ -179,4 +179,15 @@ export const redirects = [
     destination: "/capabilities/document_ai/basic_ocr",
     permanent: true,
   },
+  // Models
+  {
+    source: "/getting-started/open_weight_models",
+    destination: "/getting-started/models",
+    permanent: true,
+  },
+  {
+    source: "/platform/endpoints",
+    destination: "/getting-started/models",
+    permanent: true,
+  }
 ]

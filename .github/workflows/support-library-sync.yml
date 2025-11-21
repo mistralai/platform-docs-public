@@ -1,0 +1,41 @@
+name: Sync Docs to Support Library
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/app/(api)/**'
+      - 'src/app/(docs)/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Convert & Sync API docs
+        env:
+          MISTRAL_API_KEY: ${{ secrets.SUPPORT_LIBRARY_API_KEY }}
+          LIBRARY_ID: ${{ secrets.SUPPORT_LIBRARY_ID_API }}
+        run: |
+          python .github/scripts/support_library_convert.py --source api
+          python .github/scripts/support_library_sync.py ./output --full-sync
+          rm -rf ./output
+
+      - name: Convert & Sync General docs
+        env:
+          MISTRAL_API_KEY: ${{ secrets.SUPPORT_LIBRARY_API_KEY }}
+          LIBRARY_ID: ${{ secrets.SUPPORT_LIBRARY_ID_DOCS }}
+        run: |
+          python .github/scripts/support_library_convert.py --source docs
+          python .github/scripts/support_library_sync.py ./output --full-sync
+          rm -rf ./output

@@ -214,7 +214,7 @@ class LibrarySyncClient:
         successful: list[tuple[Path, str]] = []
         failed: list[Path] = []
 
-        for path, result in zip(file_paths, results):
+        for path, result in zip(file_paths, results, strict=True):
             if isinstance(result, str):
                 successful.append((path, result))
                 logger.info(f"Uploaded: {path.name} -> {result}")

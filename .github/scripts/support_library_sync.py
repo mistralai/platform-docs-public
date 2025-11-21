@@ -29,7 +29,7 @@ RETRY_DELAY = 2.0
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SyncConfig:
     """Configuration for library synchronization."""
+
     api_key: str
     library_id: str
     source_dir: Path
@@ -50,6 +51,7 @@ class SyncConfig:
 @dataclass
 class SyncStats:
     """Statistics for sync operation."""
+
     uploaded: int = 0
     deleted: int = 0
     skipped: int = 0
@@ -65,6 +67,7 @@ class SyncStats:
 @dataclass
 class DocumentInfo:
     """Document metadata container."""
+
     id: str
     file_name: str
     processing_status: str | None = None
@@ -86,9 +89,9 @@ class LibrarySyncClient:
             base_url=self.BASE_URL,
             headers={
                 "Authorization": f"Bearer {self._config.api_key}",
-                "Accept": "application/json"
+                "Accept": "application/json",
             },
-            timeout=httpx.Timeout(60.0)
+            timeout=httpx.Timeout(60.0),
         )
         return self
 
@@ -97,10 +100,7 @@ class LibrarySyncClient:
             await self._client.aclose()
 
     async def _request_with_retry(
-        self,
-        method: str,
-        url: str,
-        **kwargs
+        self, method: str, url: str, **kwargs
     ) -> httpx.Response:
         """Execute HTTP request with exponential backoff retry for transient errors."""
         last_exception: Exception | None = None
@@ -119,8 +119,10 @@ class LibrarySyncClient:
                 last_exception = e
 
             if attempt < self._config.max_retries - 1:
-                delay = self._config.retry_delay * (2 ** attempt)
-                logger.debug(f"Retry {attempt + 1}/{self._config.max_retries} after {delay}s")
+                delay = self._config.retry_delay * (2**attempt)
+                logger.debug(
+                    f"Retry {attempt + 1}/{self._config.max_retries} after {delay}s"
+                )
                 await asyncio.sleep(delay)
 
         raise last_exception
@@ -135,7 +137,7 @@ class LibrarySyncClient:
             response = await self._request_with_retry(
                 "GET",
                 f"/libraries/{self._config.library_id}/documents",
-                params={"page": page, "page_size": page_size}
+                params={"page": page, "page_size": page_size},
             )
 
             data = response.json()
@@ -145,11 +147,13 @@ class LibrarySyncClient:
                 break
 
             for doc in items:
-                documents.append(DocumentInfo(
-                    id=doc["id"],
-                    file_name=doc["name"],
-                    processing_status=doc.get("processing_status")
-                ))
+                documents.append(
+                    DocumentInfo(
+                        id=doc["id"],
+                        file_name=doc["name"],
+                        processing_status=doc.get("processing_status"),
+                    )
+                )
 
             if len(items) < page_size:
                 break
@@ -163,7 +167,7 @@ class LibrarySyncClient:
         try:
             await self._request_with_retry(
                 "DELETE",
-                f"/libraries/{self._config.library_id}/documents/{document_id}"
+                f"/libraries/{self._config.library_id}/documents/{document_id}",
             )
             return True
         except httpx.HTTPStatusError as e:
@@ -189,9 +193,7 @@ class LibrarySyncClient:
             files = {"file": (file_path.name, content, "text/markdown")}
 
             response = await self._request_with_retry(
-                "POST",
-                f"/libraries/{self._config.library_id}/documents",
-                files=files
+                "POST", f"/libraries/{self._config.library_id}/documents", files=files
             )
 
             return response.json()["id"]
@@ -200,8 +202,7 @@ class LibrarySyncClient:
             return None
 
     async def upload_documents_batch(
-        self,
-        file_paths: list[Path]
+        self, file_paths: list[Path]
     ) -> tuple[list[tuple[Path, str]], list[Path]]:
         """Upload multiple documents concurrently."""
         if not file_paths:
@@ -249,7 +250,9 @@ class LibrarySyncClient:
             to_upload = md_files
 
         if to_upload:
-            logger.info(f"Uploading {len(to_upload)} files (concurrency: {self._config.concurrency})")
+            logger.info(
+                f"Uploading {len(to_upload)} files (concurrency: {self._config.concurrency})"
+            )
             successful, failed = await self.upload_documents_batch(to_upload)
             stats.uploaded = len(successful)
             stats.failed = len(failed)
@@ -288,12 +291,18 @@ def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
         description="Sync MD files to Mistral Document Library",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("source_dir", type=Path, help="Directory containing MD files")
-    parser.add_argument("--full-sync", action="store_true", help="Delete existing docs before upload")
-    parser.add_argument("--dry-run", action="store_true", help="Preview without executing")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
+    parser.add_argument(
+        "--full-sync", action="store_true", help="Delete existing docs before upload"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview without executing"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable debug logging"
+    )
     args = parser.parse_args()
 
     if args.verbose:
@@ -320,13 +329,14 @@ def main() -> int:
         library_id=LIBRARY_ID,
         source_dir=args.source_dir,
         full_sync=args.full_sync,
-        dry_run=args.dry_run
+        dry_run=args.dry_run,
     )
 
     logger.info(f"Syncing {config.source_dir} -> Library {config.library_id}")
     logger.info("-" * 60)
 
     try:
+
         async def run() -> SyncStats:
             async with LibrarySyncClient(config) as client:
                 return await client.sync()

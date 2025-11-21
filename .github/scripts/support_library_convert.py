@@ -15,14 +15,14 @@ import logging
 import re
 import sys
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SourceConfig:
     """Configuration for a documentation source."""
+
     name: str
     path: Path
 
@@ -37,6 +38,7 @@ class SourceConfig:
 @dataclass
 class ConversionStats:
     """Statistics for conversion operation."""
+
     converted: int = 0
     skipped: int = 0
     failed: int = 0
@@ -45,7 +47,7 @@ class ConversionStats:
         return ConversionStats(
             converted=self.converted + other.converted,
             skipped=self.skipped + other.skipped,
-            failed=self.failed + other.failed
+            failed=self.failed + other.failed,
         )
 
     def __str__(self) -> str:
@@ -58,22 +60,33 @@ class MDXCleaner:
     PATTERNS: ClassVar[list[tuple[re.Pattern, str]]] = [
         (re.compile(r"^---\n.*?^---\n", re.MULTILINE | re.DOTALL), ""),
         (re.compile(r"^import\s+.*?;\s*$", re.MULTILINE), ""),
-        (re.compile(r"^import\s+\{[^}]*\}\s+from\s+['\"].*?['\"];\s*$", re.MULTILINE | re.DOTALL), ""),
+        (
+            re.compile(
+                r"^import\s+\{[^}]*\}\s+from\s+['\"].*?['\"];\s*$",
+                re.MULTILINE | re.DOTALL,
+            ),
+            "",
+        ),
         (re.compile(r"^export\s+.*?;\s*$", re.MULTILINE), ""),
         (re.compile(r"<[A-Z][a-zA-Z]*[^>]*/>\s*"), ""),
         (re.compile(r"<[A-Z][a-zA-Z]*[^>]*>\s*"), ""),
         (re.compile(r"</[A-Z][a-zA-Z]*>\s*"), ""),
         (re.compile(r"^\s*\{/\*.*?\*/\}\s*$", re.MULTILINE | re.DOTALL), ""),
-        (re.compile(r"\s+\w+(?:Annotations|SubTypes|Content)=\{[^}]*(?:\{[^}]*\}[^}]*)*\}"), ""),
-        (re.compile(r'\s+\w+=\{\{[^}]*\}\}'), ""),
-        (re.compile(r'\s+\w+=\{[^}]*\}'), ""),
-        (re.compile(r'\s+\w+="[^"]*"'), ""),
+        (
+            re.compile(
+                r"\s+\w+(?:Annotations|SubTypes|Content)=\{[^}]*(?:\{[^}]*\}[^}]*)*\}"
+            ),
+            "",
+        ),
+        (re.compile(r"\s+\w+=\{\{[^}]*\}\}"), ""),
+        (re.compile(r"\s+\w+=\{[^}]*\}"), ""),
+        (re.compile(r"\s+\w+=\"[^\"]*\""), ""),
         (re.compile(r"^\s*>\s*$", re.MULTILINE), ""),
-        (re.compile(r'\{"[^"]*"\}'), ""),
-        (re.compile(r'^.*"breakoutSubTypes".*$', re.MULTILINE), ""),
-        (re.compile(r'^.*"linkedLabel".*$', re.MULTILINE), ""),
-        (re.compile(r'^.*"children":\[\].*$', re.MULTILINE), ""),
-        (re.compile(r'[A-Za-z]+</a>'), ""),
+        (re.compile(r"\{\"[^\"]*\"\}"), ""),
+        (re.compile(r"^.*\"breakoutSubTypes\".*$", re.MULTILINE), ""),
+        (re.compile(r"^.*\"linkedLabel\".*$", re.MULTILINE), ""),
+        (re.compile(r"^.*\"children\":\[\].*$", re.MULTILINE), ""),
+        (re.compile(r"[A-Za-z]+</a>"), ""),
         (re.compile(r"\n{3,}"), "\n\n"),
     ]
 
@@ -93,14 +106,16 @@ class MDXConverter:
         self._output_dir = output_dir
         self._max_files = max_files
 
-    def convert_file(self, source_name: str, source_dir: Path, mdx_path: Path) -> Path | None:
+    def convert_file(
+        self, source_name: str, source_dir: Path, mdx_path: Path
+    ) -> Path | None:
         """Convert a single MDX file to Markdown."""
         try:
             content = mdx_path.read_text(encoding="utf-8")
             cleaned_content = MDXCleaner.clean(content)
 
             rel_path = mdx_path.relative_to(source_dir)
-            parts = list(rel_path.parts[:-1]) + [rel_path.stem]
+            parts = [*list(rel_path.parts[:-1]), rel_path.stem]
             md_filename = f"{source_name}_{'_'.join(parts)}.md"
             md_path = self._output_dir / md_filename
 
@@ -133,7 +148,9 @@ class MDXConverter:
 
         return stats
 
-    def _convert_with_merge(self, source: SourceConfig, mdx_files: list[Path]) -> ConversionStats:
+    def _convert_with_merge(
+        self, source: SourceConfig, mdx_files: list[Path]
+    ) -> ConversionStats:
         """Convert MDX files with merging to stay under max_files limit."""
         stats = ConversionStats()
 
@@ -143,7 +160,7 @@ class MDXConverter:
                 content = mdx_path.read_text(encoding="utf-8")
                 cleaned = MDXCleaner.clean(content)
                 rel_path = mdx_path.relative_to(source.path)
-                parts = list(rel_path.parts[:-1]) + [rel_path.stem]
+                parts = [*list(rel_path.parts[:-1]), rel_path.stem]
                 file_data.append((parts, cleaned))
             except Exception as e:
                 logger.error(f"Failed to convert {mdx_path}: {e}")
@@ -168,7 +185,9 @@ class MDXConverter:
 
         return stats
 
-    def _group_files(self, source_name: str, file_data: list[tuple[list[str], str]]) -> dict[str, list[str]]:
+    def _group_files(
+        self, source_name: str, file_data: list[tuple[list[str], str]]
+    ) -> dict[str, list[str]]:
         """Group files by path prefix to reduce total count under max_files."""
         max_depth = max(len(parts) for parts, _ in file_data)
 
@@ -179,8 +198,12 @@ class MDXConverter:
                 if depth >= len(parts):
                     key = f"{source_name}_{'_'.join(parts)}"
                 else:
-                    key_parts = parts[:len(parts) - depth] if depth > 0 else []
-                    key = f"{source_name}_{'_'.join(key_parts)}" if key_parts else source_name
+                    key_parts = parts[: len(parts) - depth] if depth > 0 else []
+                    key = (
+                        f"{source_name}_{'_'.join(key_parts)}"
+                        if key_parts
+                        else source_name
+                    )
 
                 header = f"# {'/'.join(parts)}\n\n"
                 sections[key].append(header + cleaned)
@@ -207,14 +230,8 @@ REPO_ROOT = SCRIPT_DIR.parent.parent
 MAX_FILES = 100
 
 SOURCES: dict[str, SourceConfig] = {
-    "api": SourceConfig(
-        name="api",
-        path=REPO_ROOT / "src/app/(api)"
-    ),
-    "docs": SourceConfig(
-        name="docs",
-        path=REPO_ROOT / "src/app/(docs)"
-    ),
+    "api": SourceConfig(name="api", path=REPO_ROOT / "src/app/(api)"),
+    "docs": SourceConfig(name="docs", path=REPO_ROOT / "src/app/(docs)"),
 }
 
 OUTPUT_DIR = REPO_ROOT / "output"
@@ -222,10 +239,18 @@ OUTPUT_DIR = REPO_ROOT / "output"
 
 def main() -> int:
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Convert MDX documentation to Markdown")
-    parser.add_argument("--source", choices=list(SOURCES.keys()), help="Convert only specified source")
-    parser.add_argument("--dry-run", action="store_true", help="Preview changes without executing")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
+    parser = argparse.ArgumentParser(
+        description="Convert MDX documentation to Markdown"
+    )
+    parser.add_argument(
+        "--source", choices=list(SOURCES.keys()), help="Convert only specified source"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Preview changes without executing"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable debug logging"
+    )
     args = parser.parse_args()
 
     if args.verbose:

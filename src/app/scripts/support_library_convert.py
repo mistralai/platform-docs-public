@@ -17,7 +17,6 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar
 
 logging.basicConfig(
     level=logging.INFO,
@@ -57,45 +56,44 @@ class ConversionStats:
 class MDXCleaner:
     """Handles cleaning of MDX-specific syntax from content."""
 
-    PATTERNS: ClassVar[list[tuple[re.Pattern, str]]] = [
-        (re.compile(r"^---\n.*?^---\n", re.MULTILINE | re.DOTALL), ""),
-        (re.compile(r"^import\s+.*?;\s*$", re.MULTILINE), ""),
-        (
-            re.compile(
-                r"^import\s+\{[^}]*\}\s+from\s+['\"].*?['\"];\s*$",
-                re.MULTILINE | re.DOTALL,
-            ),
-            "",
-        ),
-        (re.compile(r"^export\s+.*?;\s*$", re.MULTILINE), ""),
-        (re.compile(r"<[A-Z][a-zA-Z]*[^>]*/>\s*"), ""),
-        (re.compile(r"<[A-Z][a-zA-Z]*[^>]*>\s*"), ""),
-        (re.compile(r"</[A-Z][a-zA-Z]*>\s*"), ""),
-        (re.compile(r"^\s*\{/\*.*?\*/\}\s*$", re.MULTILINE | re.DOTALL), ""),
-        (
-            re.compile(
-                r"\s+\w+(?:Annotations|SubTypes|Content)=\{[^}]*(?:\{[^}]*\}[^}]*)*\}"
-            ),
-            "",
-        ),
-        (re.compile(r"\s+\w+=\{\{[^}]*\}\}"), ""),
-        (re.compile(r"\s+\w+=\{[^}]*\}"), ""),
-        (re.compile(r"\s+\w+=\"[^\"]*\""), ""),
-        (re.compile(r"^\s*>\s*$", re.MULTILINE), ""),
-        (re.compile(r"\{\"[^\"]*\"\}"), ""),
-        (re.compile(r"^.*\"breakoutSubTypes\".*$", re.MULTILINE), ""),
-        (re.compile(r"^.*\"linkedLabel\".*$", re.MULTILINE), ""),
-        (re.compile(r"^.*\"children\":\[\].*$", re.MULTILINE), ""),
-        (re.compile(r"[A-Za-z]+</a>"), ""),
-        (re.compile(r"\n{3,}"), "\n\n"),
-    ]
+    _FRONTMATTER = re.compile(r"^---\n.*?^---\n", re.MULTILINE | re.DOTALL)
+
+    _IMPORTS = re.compile(r"^import\s+.*?(?:;|from\s+['\"][^'\"]+['\"];?)\s*$", re.MULTILINE)
+    _EXPORTS = re.compile(r"^export\s+.*?;\s*$", re.MULTILINE)
+
+    _JSX_SELF_CLOSING = re.compile(r"<[A-Z][a-zA-Z0-9]*(?:\s+[^>]*)?/>\s*", re.DOTALL)
+    _JSX_OPEN = re.compile(r"<[A-Z][a-zA-Z0-9]*(?:\s+[^>]*)?>", re.DOTALL)
+    _JSX_CLOSE = re.compile(r"</[A-Z][a-zA-Z0-9]*>")
+
+    _JSX_COMMENT = re.compile(r"\{/\*.*?\*/\}", re.DOTALL)
+    _JSX_EXPRESSION = re.compile(r"\{[^{}]*\}")
+
+    _JSON_ARTIFACTS = re.compile(r'^.*"(?:breakoutSubTypes|linkedLabel|children)".*$', re.MULTILINE)
+
+    _EMPTY_BLOCKQUOTE = re.compile(r"^\s*>\s*$", re.MULTILINE)
+    _MULTIPLE_NEWLINES = re.compile(r"\n{3,}")
 
     @classmethod
     def clean(cls, content: str) -> str:
         """Clean MDX content to standard Markdown."""
         result = content
-        for pattern, replacement in cls.PATTERNS:
-            result = pattern.sub(replacement, result)
+
+        result = cls._FRONTMATTER.sub("", result)
+        result = cls._IMPORTS.sub("", result)
+        result = cls._EXPORTS.sub("", result)
+
+        result = cls._JSX_COMMENT.sub("", result)
+        result = cls._JSX_SELF_CLOSING.sub("", result)
+        result = cls._JSX_OPEN.sub("", result)
+        result = cls._JSX_CLOSE.sub("", result)
+
+        for _ in range(3):
+            result = cls._JSX_EXPRESSION.sub("", result)
+
+        result = cls._JSON_ARTIFACTS.sub("", result)
+        result = cls._EMPTY_BLOCKQUOTE.sub("", result)
+        result = cls._MULTIPLE_NEWLINES.sub("\n\n", result)
+
         return result.strip() + "\n"
 
 
@@ -226,7 +224,7 @@ class MDXConverter:
 
 
 SCRIPT_DIR = Path(__file__).parent
-REPO_ROOT = SCRIPT_DIR.parent.parent
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent
 MAX_FILES = 100
 
 SOURCES: dict[str, SourceConfig] = {

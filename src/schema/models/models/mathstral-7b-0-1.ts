@@ -26,20 +26,19 @@ export default {
       },
       active: '7',
       contextSize: '32k',
-    }
+    },
   ],
   contextLength: '32k',
-  ratings: { 
+  ratings: {
     speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 0.0, label: 'Basic' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      
-    ],
-    output: [
-      
-    ]
+    input: [],
+    output: [],
   },
   identifiers: { apiNames: [] },
   capabilities: {
@@ -48,7 +47,11 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {deprecationDate: '', retirementDate: '', replacement: 'Magistral Small 1.2'},
+  metadata: {
+    deprecationDate: '',
+    retirementDate: '',
+    replacement: 'Magistral Small 1.2',
+  },
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

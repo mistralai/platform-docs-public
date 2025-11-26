@@ -14,17 +14,16 @@ export default {
   avatar: { icon: 'codestral-embed', backgroundColor: 'orange' },
   weights: [],
   contextLength: '8k',
-  ratings: { 
+  ratings: {
     speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 4.0, label: 'Very Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'flat', price: 0.15, denominator: '/M Tokens' }
-    ],
-    output: [
-      
-    ]
+    input: [{ type: 'flat', price: 0.15, denominator: '/M Tokens' }],
+    output: [],
   },
   identifiers: { apiNames: ['codestral-embed'] },
   capabilities: {

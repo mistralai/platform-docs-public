@@ -11,6 +11,7 @@ import { EndpointIcon } from '@/schema/models';
 export const AVATAR_ICONS = {
   'mistral-small': '/assets/models/Mistral_Small_3.1.svg',
   'mistral-medium': '/assets/models/Mistral_Medium_3.svg',
+  moderation: '/assets/models/Moderation.svg',
   'mistral-7b': '/assets/models/Mistral_7B.svg',
   'mistral-large': '/assets/models/Mistral_Large_2.svg',
   'mistral-nemo': '/assets/models/Mistral_Nemo.svg',

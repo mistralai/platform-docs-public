@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 interface PixelGridProps {
   pixelSize?: number;
@@ -125,6 +126,7 @@ export function PixelGrid({
   const noiseRef = useRef<PerlinNoise>(new PerlinNoise());
   const startTimeRef = useRef<number>(Date.now());
   const [isVisible, setIsVisible] = useState(false);
+  const { theme } = useTheme();
 
   // Listen to parent hover events
   useEffect(() => {
@@ -222,7 +224,7 @@ export function PixelGrid({
           const adjustedNoise = noiseValue + randomFactor;
 
           // Normalize noise value to 0-1 range
-          const intensity = (adjustedNoise + 1) * 0.5;
+          const intensity = (adjustedNoise + 1) * 0.75;
 
           // Simple wave from center when component is visible
           const pixelX = (x + 0.5) / cols;
@@ -303,7 +305,7 @@ export function PixelGrid({
     <div
       ref={containerRef}
       className={cn(
-        'absolute inset-0 pointer-events-none mix-blend-overlay',
+        'absolute inset-0 pointer-events-none mix-blend-luminosity dark:mix-blend-overlay',
         className
       )}
     >
@@ -311,7 +313,7 @@ export function PixelGrid({
         {isVisible && (
           <motion.canvas
             ref={canvasRef}
-            initial={{ opacity: opacity }}
+            initial={{ opacity: theme === 'dark' ? opacity : opacity / 2 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             className={cn('absolute inset-0')}

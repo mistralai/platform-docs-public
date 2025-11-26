@@ -26,20 +26,19 @@ export default {
       },
       active: '123',
       contextSize: '128k',
-    }
+    },
   ],
   contextLength: '128k',
-  ratings: { 
+  ratings: {
     speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 0.0, label: 'Basic' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      
-    ],
-    output: [
-      
-    ]
+    input: [],
+    output: [],
   },
   identifiers: { apiNames: ['mistral-large-2407'] },
   capabilities: {
@@ -48,7 +47,11 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'November 30, 2024', retirementDate: 'March 30, 2025', replacement: 'Mistral Medium 3.1'},
+  metadata: {
+    deprecationDate: 'November 30, 2024',
+    retirementDate: 'March 30, 2025',
+    replacement: 'Mistral Medium 3.1',
+  },
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

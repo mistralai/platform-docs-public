@@ -26,20 +26,19 @@ export default {
       },
       active: '7',
       contextSize: '256k',
-    }
+    },
   ],
   contextLength: '256k',
-  ratings: { 
+  ratings: {
     speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 0.0, label: 'Basic' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      
-    ],
-    output: [
-      
-    ]
+    input: [],
+    output: [],
   },
   identifiers: { apiNames: ['open-codestral-mamba'] },
   capabilities: {
@@ -48,7 +47,11 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'June 6, 2025', retirementDate: 'June 6, 2025', replacement: 'Codestral'},
+  metadata: {
+    deprecationDate: 'June 6, 2025',
+    retirementDate: 'June 6, 2025',
+    replacement: 'Codestral',
+  },
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

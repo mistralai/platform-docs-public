@@ -11,7 +11,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Deprecated',
-  avatar: { icon: 'magistral', backgroundColor: 'yellow' },
+  avatar: { icon: 'magistral', backgroundColor: 'beige' },
   weights: [
     {
       name: 'Weights',
@@ -26,29 +26,37 @@ export default {
       },
       active: '24',
       contextSize: '40k',
-    }
+    },
   ],
   contextLength: '40k',
-  ratings: { 
+  ratings: {
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 3.0, label: 'Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.5, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 1.5, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.5, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 1.5, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['magistral-small-2507'] },
   capabilities: {
     input: ['text'],
     output: ['reasoning', 'text'],
-    features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
+    features: [
+      'function-calling',
+      'document-qna',
+      'chat-completions',
+      'batching',
+    ],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'October 31, 2025', retirementDate: 'November 30, 2025', replacement: 'Magistral Small 1.2'},
+  metadata: {
+    deprecationDate: 'October 31, 2025',
+    retirementDate: 'November 30, 2025',
+    replacement: 'Magistral Small 1.2',
+  },
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

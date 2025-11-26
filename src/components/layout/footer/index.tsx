@@ -9,6 +9,7 @@ import AnimatedStarsBackground from './animated-stars';
 import { MISTRAL_API_REFERENCE_URL, MISTRAL_URL } from '@/lib/constants';
 import { SOCIALS } from '@/schema/content/socials';
 import CookieTrigger from './cookie-trigger';
+import { ThemeToggle } from '../header/theme-toggle';
 
 // Footer schema definition
 type CookieLink = { label: string; type: 'cookie' };
@@ -201,16 +202,12 @@ export default function Footer() {
             ))}
           </div>
 
-          {/* App Store Badges */}
-          <div className="mb-8">
-            <AppStoreBadges />
-          </div>
-
           {/* Copyright */}
-          <div className="text-center">
-            <p className="text-sm font-mono uppercase text-foreground/50">
-              COPYRIGHT © {new Date().getFullYear()} MISTRAL AI
+          <div className="flex justify-between items-center">
+            <p className="text-sm  text-foreground/50">
+              Mistral AI © {new Date().getFullYear()}
             </p>
+            <ThemeToggle />
           </div>
         </div>
 

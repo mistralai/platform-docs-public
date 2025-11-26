@@ -11,20 +11,19 @@ export default {
   type: 'Premier',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'voxtral', backgroundColor: 'purple' },
+  avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [],
   contextLength: '32k',
-  ratings: { 
+  ratings: {
     speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 3.0, label: 'Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'flat', price: 0.002, denominator: '/Min' }
-    ],
-    output: [
-      
-    ]
+    input: [{ type: 'flat', price: 0.002, denominator: '/Min' }],
+    output: [],
   },
   identifiers: { apiNames: ['voxtral-mini-2507', 'voxtral-mini-latest'] },
   capabilities: {

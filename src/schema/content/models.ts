@@ -20,8 +20,8 @@ export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
 ];
 
 export const FEATURED_MODELS_COLOR_OVERRIDES = [
-  'var(--mistral-color-1)',
-  'var(--mistral-color-2)',
-  'var(--mistral-color-3)',
-  'var(--mistral-color-4)',
+  'var(--color-mistral-color-1)',
+  'var(--color-mistral-color-2)',
+  'var(--color-mistral-color-3)',
+  'var(--color-mistral-color-4)',
 ];

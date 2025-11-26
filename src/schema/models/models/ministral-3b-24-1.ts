@@ -14,23 +14,29 @@ export default {
   avatar: { icon: 'ministral', backgroundColor: 'lime' },
   weights: [],
   contextLength: '128k',
-  ratings: { 
+  ratings: {
     speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 1.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 1.0, label: 'Basic' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.04, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 0.04, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.04, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 0.04, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['ministral-3b-2410', 'ministral-3b-latest'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
+    features: [
+      'structured-outputs',
+      'function-calling',
+      'document-qna',
+      'prefix',
+      'chat-completions',
+      'batching',
+    ],
     finetuning: ['text', 'classifier'],
   },
   metadata: {},

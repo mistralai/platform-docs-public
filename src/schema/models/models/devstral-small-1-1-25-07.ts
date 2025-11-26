@@ -11,7 +11,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'devstral', backgroundColor: 'lime' },
+  avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [
     {
       name: 'Weights',
@@ -26,26 +26,32 @@ export default {
       },
       active: '24',
       contextSize: '128k',
-    }
+    },
   ],
   contextLength: '128k',
-  ratings: { 
+  ratings: {
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 3.0, label: 'Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.1, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 0.3, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 0.3, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['devstral-small-2507', 'devstral-small-latest'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
+    features: [
+      'structured-outputs',
+      'function-calling',
+      'document-qna',
+      'prefix',
+      'chat-completions',
+      'batching',
+    ],
     finetuning: [],
   },
   metadata: {},

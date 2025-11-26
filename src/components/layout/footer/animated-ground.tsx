@@ -182,9 +182,9 @@ const Sun = () => {
 
 const AnimatedCat = () => {
   return (
-    <div className="size-28 md:size-40 lg:size-48 rotate-y-180 absolute left-1/12 md:left-1/6 lg:left-1/3 bottom-9 md:bottom-12 lg:bottom-16 z-0">
+    <div className="size-28 md:size-40 lg:size-48 absolute left-1/12 md:left-1/6 lg:left-1/3 -bottom-px md:-bottom-1 lg:bottom-px z-0">
       <Image
-        src="/assets/sprites/cat_walk.gif"
+        src="/assets/sprites/cat-walking-white.gif"
         unoptimized
         alt="Cat"
         className="pixelated"

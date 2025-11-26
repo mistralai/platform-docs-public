@@ -189,5 +189,11 @@ export const redirects = [
     source: "/platform/endpoints",
     destination: "/getting-started/models",
     permanent: true,
+  },
+  // Cloud
+  {
+    source: "/deployment/cloud/aws",
+    destination: "/deployment/cloud/amazon_bedrock",
+    permanent: true,
   }
 ]

@@ -11,7 +11,7 @@ export default {
   type: 'Open',
   compliance: '',
   status: 'Active',
-  avatar: { icon: 'mistral-small', backgroundColor: 'pink' },
+  avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
   weights: [
     {
       name: 'Weights',
@@ -26,26 +26,35 @@ export default {
       },
       active: '24',
       contextSize: '128k',
-    }
+    },
   ],
   contextLength: '128k',
-  ratings: { 
+  ratings: {
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 3.0, label: 'Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.1, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 0.3, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 0.3, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['mistral-small-2506', 'mistral-small-latest'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'batching', 'connectors', 'predicted-outputs'],
+    features: [
+      'structured-outputs',
+      'function-calling',
+      'document-qna',
+      'prefix',
+      'chat-completions',
+      'agents-conversations',
+      'batching',
+      'connectors',
+      'predicted-outputs',
+    ],
     finetuning: ['text'],
   },
   metadata: {},

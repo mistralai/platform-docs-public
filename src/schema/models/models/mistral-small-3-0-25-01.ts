@@ -10,8 +10,8 @@ export default {
   class: 'Generalist',
   type: 'Open',
   compliance: '',
-  status: 'Deprecated',
-  avatar: { icon: 'mistral-small', backgroundColor: 'blue' },
+  status: 'Active',
+  avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
   weights: [
     {
       name: 'Instruct Weights',
@@ -26,7 +26,8 @@ export default {
       },
       active: '24',
       contextSize: '32k',
-    },    {
+    },
+    {
       name: 'Base Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
@@ -39,29 +40,41 @@ export default {
       },
       active: '24',
       contextSize: '32k',
-    }
+    },
   ],
   contextLength: '32k',
-  ratings: { 
+  ratings: {
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 3.0, label: 'Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.1, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 0.3, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 0.3, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['mistral-small-2501'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'connectors', 'batching'],
+    features: [
+      'structured-outputs',
+      'function-calling',
+      'document-qna',
+      'prefix',
+      'chat-completions',
+      'agents-conversations',
+      'connectors',
+      'batching',
+    ],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
+  metadata: {
+    deprecationDate: 'November 6, 2025',
+    retirementDate: 'November 30, 2025',
+    replacement: 'Mistral Small 3.2',
+  },
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

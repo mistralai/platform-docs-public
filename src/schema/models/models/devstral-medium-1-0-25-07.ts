@@ -14,23 +14,29 @@ export default {
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [],
   contextLength: '128k',
-  ratings: { 
+  ratings: {
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 4.0, label: 'Very Smart' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.4, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 2.0, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.4, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 2.0, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['devstral-medium-2507', 'devstral-medium-latest'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
+    features: [
+      'structured-outputs',
+      'function-calling',
+      'document-qna',
+      'prefix',
+      'chat-completions',
+      'batching',
+    ],
     finetuning: [],
   },
   metadata: {},

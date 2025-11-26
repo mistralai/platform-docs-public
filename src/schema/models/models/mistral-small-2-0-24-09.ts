@@ -26,29 +26,39 @@ export default {
       },
       active: '22',
       contextSize: '32k',
-    }
+    },
   ],
   contextLength: '32k',
-  ratings: { 
+  ratings: {
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    performance: { stars: 2.0, label: 'Moderate' },
+    input: { stars: 4.0, label: 'Fast' },
+    output: { stars: 2.0, label: 'Moderate' },
+  },
   pricing: {
     type: 'custom',
-    input: [
-      { type: 'range', price: 0.1, denominator: '/M Tokens' }
-    ],
-    output: [
-      { type: 'range', price: 0.3, denominator: '/M Tokens' }
-    ]
+    input: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
+    output: [{ type: 'range', price: 0.3, denominator: '/M Tokens' }],
   },
   identifiers: { apiNames: ['mistral-small-2409'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
+    features: [
+      'structured-outputs',
+      'function-calling',
+      'document-qna',
+      'prefix',
+      'chat-completions',
+      'batching',
+    ],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
+  metadata: {
+    deprecationDate: 'November 1, 2025',
+    retirementDate: 'November 30, 2025',
+    replacement: 'Mistral Small 3.2',
+  },
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

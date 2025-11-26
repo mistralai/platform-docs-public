@@ -58,7 +58,9 @@ class MDXCleaner:
 
     _FRONTMATTER = re.compile(r"^---\n.*?^---\n", re.MULTILINE | re.DOTALL)
 
-    _IMPORTS = re.compile(r"^import\s+.*?(?:;|from\s+['\"][^'\"]+['\"];?)\s*$", re.MULTILINE)
+    _IMPORTS = re.compile(
+        r"^import\s+.*?(?:;|from\s+['\"][^'\"]+['\"];?)\s*$", re.MULTILINE
+    )
     _EXPORTS = re.compile(r"^export\s+.*?;\s*$", re.MULTILINE)
 
     _JSX_SELF_CLOSING = re.compile(r"<[A-Z][a-zA-Z0-9]*(?:\s+[^>]*)?/>\s*", re.DOTALL)
@@ -68,7 +70,9 @@ class MDXCleaner:
     _JSX_COMMENT = re.compile(r"\{/\*.*?\*/\}", re.DOTALL)
     _JSX_EXPRESSION = re.compile(r"\{[^{}]*\}")
 
-    _JSON_ARTIFACTS = re.compile(r'^.*"(?:breakoutSubTypes|linkedLabel|children)".*$', re.MULTILINE)
+    _JSON_ARTIFACTS = re.compile(
+        r'^.*"(?:breakoutSubTypes|linkedLabel|children)".*$', re.MULTILINE
+    )
 
     _EMPTY_BLOCKQUOTE = re.compile(r"^\s*>\s*$", re.MULTILINE)
     _MULTIPLE_NEWLINES = re.compile(r"\n{3,}")

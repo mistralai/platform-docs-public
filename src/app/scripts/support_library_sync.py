@@ -17,6 +17,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 import httpx
 
@@ -76,8 +77,8 @@ class DocumentInfo:
 class LibrarySyncClient:
     """Async client for synchronizing documents to Mistral Document Library."""
 
-    BASE_URL = "https://api.mistral.ai/v1"
-    RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+    BASE_URL: ClassVar[str] = "https://api.mistral.ai/v1"
+    RETRYABLE_STATUS_CODES: ClassVar[set[int]] = {429, 500, 502, 503, 504}
 
     def __init__(self, config: SyncConfig) -> None:
         self._config = config
@@ -105,6 +106,7 @@ class LibrarySyncClient:
         """Execute HTTP request with exponential backoff retry for transient errors."""
         last_exception: Exception | None = None
 
+        assert self._client is not None
         for attempt in range(self._config.max_retries):
             try:
                 async with self._semaphore:
@@ -125,7 +127,7 @@ class LibrarySyncClient:
                 )
                 await asyncio.sleep(delay)
 
-        raise last_exception
+        raise last_exception  # type: ignore[misc]
 
     async def list_documents(self) -> list[DocumentInfo]:
         """Retrieve all documents from the library with pagination."""

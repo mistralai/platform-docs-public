@@ -1,0 +1,38 @@
+name: Sync Docs to Support Library
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/app/(api)/**'
+      - 'src/app/(docs)/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+
+      - name: Convert & Sync API docs
+        env:
+          MISTRAL_API_KEY: ${{ secrets.SUPPORT_LIBRARY_API_KEY }}
+          LIBRARY_ID: ${{ secrets.SUPPORT_LIBRARY_ID_API }}
+        run: |
+          ./src/app/scripts/support_library_convert.py --source api
+          ./src/app/scripts/support_library_sync.py ./output --full-sync
+          rm -rf ./output
+
+      - name: Convert & Sync General docs
+        env:
+          MISTRAL_API_KEY: ${{ secrets.SUPPORT_LIBRARY_API_KEY }}
+          LIBRARY_ID: ${{ secrets.SUPPORT_LIBRARY_ID_DOCS }}
+        run: |
+          ./src/app/scripts/support_library_convert.py --source docs
+          ./src/app/scripts/support_library_sync.py ./output --full-sync
+          rm -rf ./output

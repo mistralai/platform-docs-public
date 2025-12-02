@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mathstral-7b',
   status: 'Retired',
   avatar: { icon: 'mathstral', backgroundColor: 'beige' },
   weights: [
@@ -23,6 +23,7 @@ export default {
         bf16: '20',
         fp8: '10',
         fp4: '5',
+        fp4_16: null,
       },
       active: '7',
       contextSize: '32k',

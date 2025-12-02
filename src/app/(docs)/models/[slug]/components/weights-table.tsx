@@ -32,7 +32,7 @@ export function WeightsTable({ weights, className }: WeightsTableProps) {
               'License',
               'Parameters (B)',
               'Active (B)',
-              '≈ Min GPU RAM (GB)',
+              '≈ GPU RAM at bf16 - fp4 (GB)',
               'Context Size (tokens)',
             ].map((header, i) => (
               <TableHead
@@ -126,11 +126,24 @@ const MinGpuRam = ({
   className?: string;
 }) => {
   return (
-    <div
-      className={cn('flex gap-2 items-center justify-end text-end', className)}
-    >
+    <div className={cn('flex gap-2 items-center justify-end text-end', className)}>
       <span className={cn('font-mono text-sm text-foreground font-semibold')}>
-        {minGpuRam.bf16}
+        {(() => {
+          // Extract all non-null values from minGpuRam and convert them to numbers
+          const values = [
+            minGpuRam.bf16 !== null ? parseFloat(minGpuRam.bf16) : null,
+            minGpuRam.fp8 !== null ? parseFloat(minGpuRam.fp8) : null,
+            minGpuRam.fp4 !== null ? parseFloat(minGpuRam.fp4) : null,
+            minGpuRam.fp4_16 !== null ? parseFloat(minGpuRam.fp4_16) : null,
+          ].filter((val): val is number => val !== null); // Type guard to ensure only numbers remain
+
+          if (values.length === 0) return "N/A"; // Fallback if all values are null
+
+          const max = Math.max(...values);
+          const min = Math.min(...values);
+
+          return `${max} - ${min}`;
+        })()}
       </span>
       <Tooltip>
         <TooltipTrigger className="flex items-center gap-1 justify-end">
@@ -139,16 +152,28 @@ const MinGpuRam = ({
         <TooltipContent align="end" side="top" arrowClassName="">
           <div className="flex flex-col gap-1 max-w-[160px]">
             <p className="mt-3">
-              Approximate minimum required for{' '}
-              <strong className="font-bold text-">BF16</strong> & <strong className="font-bold text-">Full</strong> context.
+              Approximate minimum required for different quantization formats.
             </p>
-            <p>Other formats:</p>
-            <p>
-              <strong> - FP8 & 1/2 Context:</strong> {minGpuRam.fp8}GB
-            </p>
-            <p>
-              <strong> - FP4 & 1/4 context:</strong> {minGpuRam.fp4}GB
-            </p>
+            {minGpuRam.bf16 !== null && (
+              <p>
+                <strong> - BF16 & Full Context:</strong> {minGpuRam.bf16}GB
+              </p>
+            )}
+            {minGpuRam.fp8 !== null && (
+              <p>
+                <strong> - FP8 & 1/2 Context:</strong> {minGpuRam.fp8}GB
+              </p>
+            )}
+            {minGpuRam.fp4 !== null && (
+              <p>
+                <strong> - FP4 & 1/4 context:</strong> {minGpuRam.fp4}GB
+              </p>
+            )}
+            {minGpuRam.fp4_16 !== null && (
+              <p>
+                <strong> - FP4 & 16k context:</strong> {minGpuRam.fp4_16}GB
+              </p>
+            )}
           </div>
         </TooltipContent>
       </Tooltip>

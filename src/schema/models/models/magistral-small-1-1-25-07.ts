@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Generalist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/magistral-small-1',
   status: 'Deprecated',
   avatar: { icon: 'magistral', backgroundColor: 'beige' },
   weights: [
@@ -23,6 +23,7 @@ export default {
         bf16: '56',
         fp8: '28',
         fp4: '14',
+        fp4_16: null,
       },
       active: '24',
       contextSize: '40k',

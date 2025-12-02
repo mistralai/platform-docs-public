@@ -1,22 +1,22 @@
 import { ModelSlug } from '@/schema/models';
 
 export const FEATURED_MODEL_NAMES: ModelSlug[] = [
-  'codestral-25-08',
+  'mistral-large-3-25-12',
   'mistral-medium-3-1-25-08',
-  'mistral-small-3-2-25-06',
+  'codestral-25-08',
 ];
 
 export const LATEST_MODEL_NAMES: ModelSlug[] = [
-  'magistral-medium-1-2-25-09',
-  'mistral-small-3-2-25-06',
-  'codestral-25-08',
-  'voxtral-small-25-07',
+  'mistral-large-3-25-12',
+  'ministral-3-14b-25-12',
+  'ministral-3-8b-25-12',
+  'ministral-3-3b-25-12',
 ];
 
 export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
-  'codestral-25-08',
+  'mistral-large-3-25-12',
   'mistral-medium-3-1-25-08',
-  'mistral-small-3-2-25-06',
+  'codestral-25-08',
 ];
 
 export const FEATURED_MODELS_COLOR_OVERRIDES = [

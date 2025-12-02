@@ -9,7 +9,7 @@ export default {
   frontier: true,
   class: 'Generalist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-medium-3',
   status: 'Active',
   avatar: { icon: 'mistral-medium', backgroundColor: 'blue' },
   weights: [],
@@ -25,13 +25,7 @@ export default {
     input: [{ type: 'range', price: 0.4, denominator: '/M Tokens' }],
     output: [{ type: 'range', price: 2.0, denominator: '/M Tokens' }],
   },
-  identifiers: {
-    apiNames: [
-      'mistral-medium-2508',
-      'mistral-medium-latest',
-      'mistral-large-latest',
-    ],
-  },
+  identifiers: { apiNames: ['mistral-medium-2508', 'mistral-medium-latest'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],

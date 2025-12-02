@@ -110,7 +110,10 @@ function Tabs({ children, className, tabsClassName }: TabsProps) {
                 <TabsTrigger
                   data-type="multi-codeblock-tab"
                   value={'output'}
-                  className="text-sm flex-1 text-center"
+                  className={cn(
+                    'text-sm flex-1 text-center data-[state=active]:bg-code-background data-[state=active]:text-foreground',
+                    tabsClassName
+                  )}
                   variant="code"
                   size="sm"
                 >

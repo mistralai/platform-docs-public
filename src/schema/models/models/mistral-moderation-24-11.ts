@@ -9,9 +9,9 @@ export default {
   frontier: true,
   class: 'Specialist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-moderation',
   status: 'Active',
-  avatar: { icon: 'mistral-embed', backgroundColor: 'beige' },
+  avatar: { icon: 'moderation', backgroundColor: 'beige' },
   weights: [],
   contextLength: '8k',
   ratings: {

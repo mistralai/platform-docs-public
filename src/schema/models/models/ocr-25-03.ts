@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-ocr',
   status: 'Deprecated',
   avatar: { icon: 'ocr', backgroundColor: 'gray' },
   weights: [],
@@ -32,11 +32,7 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {
-    deprecationDate: 'June 10, 2025',
-    retirementDate: 'March 31, 2026',
-    replacement: 'OCR',
-  },
+  metadata: {deprecationDate: 'December 1, 2025', retirementDate: 'December 31, 2025', replacement: 'OCR'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

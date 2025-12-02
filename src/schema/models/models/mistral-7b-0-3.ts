@@ -9,8 +9,9 @@ export default {
   frontier: false,
   class: 'Generalist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-7-b',
   status: 'Retired',
+  avatar: { icon: 'mistral-7b', backgroundColor: 'fuschia' },
   avatar: { icon: 'mistral-7b', backgroundColor: 'fuschia' },
   weights: [
     {
@@ -23,6 +24,7 @@ export default {
         bf16: '20',
         fp8: '10',
         fp4: '5',
+        fp4_16: null,
       },
       active: '7',
       contextSize: '32k',
@@ -37,6 +39,7 @@ export default {
         bf16: '20',
         fp8: '10',
         fp4: '5',
+        fp4_16: null,
       },
       active: '7',
       contextSize: '32k',
@@ -61,11 +64,7 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {
-    deprecationDate: 'November 30, 2024',
-    retirementDate: 'March 30, 2025',
-    replacement: 'Ministral 8B',
-  },
+  metadata: {deprecationDate: 'November 30, 2024', retirementDate: 'March 30, 2025', replacement: 'Ministral 3 8B'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

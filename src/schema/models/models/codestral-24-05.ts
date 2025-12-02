@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/codestral',
   status: 'Retired',
   avatar: { icon: 'codestral', backgroundColor: 'yellow' },
   weights: [
@@ -22,7 +22,8 @@ export default {
       minGpuRam: {
         bf16: '52',
         fp8: '26',
-        fp4: '',
+        fp4: null,
+        fp4_16: null,
       },
       active: '22',
       contextSize: '32k',

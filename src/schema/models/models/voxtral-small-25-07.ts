@@ -9,7 +9,7 @@ export default {
   frontier: true,
   class: 'Specialist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/voxtral-small',
   status: 'Active',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [
@@ -23,6 +23,7 @@ export default {
         bf16: '54',
         fp8: '27',
         fp4: '14',
+        fp4_16: null,
       },
       active: '24',
       contextSize: '32k',

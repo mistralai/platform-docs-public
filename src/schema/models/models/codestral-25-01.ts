@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/codestral',
   status: 'Deprecated',
   avatar: { icon: 'codestral', backgroundColor: 'orange' },
   weights: [],

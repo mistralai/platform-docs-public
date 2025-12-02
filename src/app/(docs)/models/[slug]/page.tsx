@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { models, findModelBySlug, isLegacyModel } from '@/schema';
-import { ThunderIcon, LampIcon } from '@/components/icons/pixel';
+import { models, findModelBySlug, isLegacyModel, Model } from '@/schema';
+import { ThunderIcon, LampIcon, FlagIcon } from '@/components/icons/pixel';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { getModelColorFallback, MODEL_COLORS } from '@/lib/colors';
 import { ModelAvatar } from '@/components/model/avatar';
@@ -21,7 +21,11 @@ import { ModelCard, ModelCardInner } from './components/model-card';
 import { ApiNamesBadges } from './components/api-names-badges';
 import InfoHint from '@/components/icons/info-hint';
 import Link from 'next/link';
-import { MISTRAL_API_PRICING_URL } from '@/lib/constants';
+import {
+  MISTRAL_API_PRICING_URL,
+  MISTRAL_API_REFERENCE_URL,
+  MISTRAL_LEGAL_URL,
+} from '@/lib/constants';
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +35,7 @@ import {
 import { Prose } from '@/components/common/prose';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { markdownComponents } from '@/components/markdown';
+import { Button } from '@/components/ui/button';
 
 interface ModelPageProps {
   params: Promise<{ slug: string }>;
@@ -98,7 +103,8 @@ const ContextTooltip = () => {
       </TooltipTrigger>
       <TooltipContent className="max-w-[230px]">
         <p>
-          Context window size in tokens. This is the maximum number of input plus output tokens the model can process at once.
+          Context window size in tokens. This is the maximum number of input
+          plus output tokens the model can process at once.
         </p>
       </TooltipContent>
     </Tooltip>
@@ -135,17 +141,22 @@ export default async function ModelPage({ params }: ModelPageProps) {
   return (
     <div className="md:pt-8 text-foreground not-prose relative flex flex-col md:gap-24 gap-16 flex-1 w-full min-h-[calc(100%_-_64px)]">
       <div className="flex flex-col xl:flex-row gap-4 w-full flex-1">
-        <div className="rounded-md self-start p-1 border">
-          <ModelAvatar
-            pixelEffect={!isLegacy}
-            size="3xl"
-            src={iconPath}
-            alt={`${model.name} icon`}
-            className="z-2"
-            style={{
-              backgroundColor: modelColorVar,
-            }}
-          />
+        <div className="flex flex-col gap-2">
+          <div className="rounded-md self-start p-1 border">
+            <ModelAvatar
+              pixelEffect={!isLegacy}
+              size="3xl"
+              src={iconPath}
+              alt={`${model.name} icon`}
+              className="z-2"
+              style={{
+                backgroundColor: modelColorVar,
+              }}
+            />
+          </div>
+          <div className="flex flex-col">
+            <LegalButton legal={model.legalButton} />
+          </div>
         </div>
 
         <div className="space-y-8 flex-1">
@@ -361,5 +372,24 @@ const PriceTooltip = () => {
         </p>
       </TooltipContent>
     </Tooltip>
+  );
+};
+
+const isLegalButtonPresent = ({ legal }: { legal: Model['legalButton'] }) => {
+  return typeof legal === 'string' && legal !== '';
+};
+const LegalButton = ({ legal }: { legal: Model['legalButton'] }) => {
+  if (!isLegalButtonPresent({ legal })) return null;
+
+  const url = legal === 'DEFAULT' ? MISTRAL_LEGAL_URL : legal!;
+  return (
+    <Button variant="outline" size="sm" asChild>
+      <Link href={url} target="_blank" rel="noopener noreferrer">
+        <span className="flex items-center justify-center gap-1">
+          <FlagIcon className="size-4 relative" />
+          <span>Legal</span>
+        </span>
+      </Link>
+    </Button>
   );
 };

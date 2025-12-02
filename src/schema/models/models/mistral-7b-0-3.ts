@@ -12,7 +12,6 @@ export default {
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-7-b',
   status: 'Retired',
   avatar: { icon: 'mistral-7b', backgroundColor: 'fuschia' },
-  avatar: { icon: 'mistral-7b', backgroundColor: 'fuschia' },
   weights: [
     {
       name: 'Instruct Weights',

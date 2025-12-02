@@ -9,7 +9,7 @@ export default {
   frontier: true,
   class: 'Generalist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-small-3',
   status: 'Active',
   avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
   weights: [
@@ -23,6 +23,7 @@ export default {
         bf16: '78',
         fp8: '39',
         fp4: '20',
+        fp4_16: '16',
       },
       active: '24',
       contextSize: '128k',

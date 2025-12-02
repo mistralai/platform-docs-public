@@ -43,6 +43,8 @@ export interface ModelIdentifier {
   aliases?: string[];
 }
 
+export type ModelLegalButton = null | undefined | 'DEFAULT' | string;
+
 // ------------------------------------------------------------
 // AVAILABLES: Modality, Feature, Finetuning
 // ------------------------------------------------------------
@@ -168,9 +170,10 @@ export type FinetuningKey = keyof typeof AVAILABLE_FINETUNING;
 // ------------------------------------------------------------
 
 export type MinGpuRam = {
-  bf16: string;
-  fp8: string;
-  fp4: string;
+  bf16: string|null;
+  fp8: string|null;
+  fp4: string|null;
+  fp4_16: string|null;
 };
 
 export const isMinGpuRam = (value: unknown): value is MinGpuRam => {
@@ -179,7 +182,8 @@ export const isMinGpuRam = (value: unknown): value is MinGpuRam => {
     value !== null &&
     'bf16' in value &&
     'fp4' in value &&
-    'fp8' in value
+    'fp8' in value &&
+    'fp4_16' in value
   );
 };
 export interface ModelWeight {
@@ -216,7 +220,6 @@ export interface ModelTemplate<
   frontier: boolean;
   class: 'Generalist' | 'Specialist';
   type: 'Premier' | 'Open';
-  compliance: string;
   legacy?: boolean;
   status: 'Deprecated' | 'Retired' | 'Active';
   avatar?: ModelAvatar;
@@ -240,6 +243,7 @@ export interface ModelTemplate<
     replacement?: K;
   };
   playground?: string | undefined;
+  legalButton?: ModelLegalButton;
 }
 
 // dup detector

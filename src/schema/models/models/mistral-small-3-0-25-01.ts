@@ -9,8 +9,8 @@ export default {
   frontier: false,
   class: 'Generalist',
   type: 'Open',
-  compliance: '',
-  status: 'Active',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-small-3',
+  status: 'Deprecated',
   avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
   weights: [
     {
@@ -23,6 +23,7 @@ export default {
         bf16: '54',
         fp8: '27',
         fp4: '14',
+        fp4_16: null,
       },
       active: '24',
       contextSize: '32k',
@@ -37,6 +38,7 @@ export default {
         bf16: '54',
         fp8: '27',
         fp4: '14',
+        fp4_16: null,
       },
       active: '24',
       contextSize: '32k',

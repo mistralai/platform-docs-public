@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-small-1',
   status: 'Deprecated',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [
@@ -23,6 +23,7 @@ export default {
         bf16: '78',
         fp8: '39',
         fp4: '20',
+        fp4_16: '16',
       },
       active: '24',
       contextSize: '128k',

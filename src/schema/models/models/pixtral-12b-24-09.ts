@@ -9,8 +9,8 @@ export default {
   frontier: false,
   class: 'Generalist',
   type: 'Open',
-  compliance: '',
-  status: 'Active',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/pixtral-12b',
+  status: 'Deprecated',
   avatar: { icon: 'pixtral', backgroundColor: 'orange' },
   weights: [
     {
@@ -23,6 +23,7 @@ export default {
         bf16: '56',
         fp8: '28',
         fp4: '14',
+        fp4_16: null,
       },
       active: '12',
       contextSize: '128k',
@@ -37,6 +38,7 @@ export default {
         bf16: '56',
         fp8: '28',
         fp4: '14',
+        fp4_16: null,
       },
       active: '12',
       contextSize: '128k',
@@ -68,7 +70,7 @@ export default {
     ],
     finetuning: ['text', 'vision'],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'December 1, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 14B'},
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

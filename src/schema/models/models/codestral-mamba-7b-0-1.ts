@@ -9,9 +9,9 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Open',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/codestral',
   status: 'Retired',
-  avatar: { icon: 'codestral-mamba', backgroundColor: 'beige' },
+  avatar: { icon: 'codestral-mamba', backgroundColor: 'orange' },
   weights: [
     {
       name: 'Weights',
@@ -23,6 +23,7 @@ export default {
         bf16: '20',
         fp8: '10',
         fp4: '5',
+        fp4_16: null,
       },
       active: '7',
       contextSize: '256k',

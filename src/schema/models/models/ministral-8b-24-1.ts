@@ -9,8 +9,8 @@ export default {
   frontier: true,
   class: 'Generalist',
   type: 'Premier',
-  compliance: '',
-  status: 'Active',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/ministral-1-8b',
+  status: 'Deprecated',
   avatar: { icon: 'ministral', backgroundColor: 'purple' },
   weights: [
     {
@@ -23,6 +23,7 @@ export default {
         bf16: '42',
         fp8: '21',
         fp4: '11',
+        fp4_16: '8',
       },
       active: '8',
       contextSize: '128k',
@@ -40,7 +41,7 @@ export default {
     input: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
     output: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
   },
-  identifiers: { apiNames: ['ministral-8b-2410', 'ministral-8b-latest'] },
+  identifiers: { apiNames: ['ministral-8b-2410'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
@@ -54,7 +55,7 @@ export default {
     ],
     finetuning: ['text'],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'December 1, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 8B'},
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

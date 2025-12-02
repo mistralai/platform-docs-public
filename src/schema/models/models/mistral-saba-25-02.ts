@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Specialist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-saba',
   status: 'Retired',
   avatar: { icon: 'mistral-saba', backgroundColor: 'amber' },
   weights: [],

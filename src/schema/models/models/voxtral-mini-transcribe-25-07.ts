@@ -9,7 +9,7 @@ export default {
   frontier: true,
   class: 'Specialist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/voxtral-small',
   status: 'Active',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [],

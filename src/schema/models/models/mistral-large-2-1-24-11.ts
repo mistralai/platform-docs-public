@@ -9,7 +9,7 @@ export default {
   frontier: false,
   class: 'Generalist',
   type: 'Premier',
-  compliance: '',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-large-2',
   status: 'Active',
   avatar: { icon: 'mistral-large', backgroundColor: 'orange' },
   weights: [
@@ -23,6 +23,7 @@ export default {
         bf16: '297',
         fp8: '149',
         fp4: '75',
+        fp4_16: '66',
       },
       active: '123',
       contextSize: '128k',

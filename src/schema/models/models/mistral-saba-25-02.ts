@@ -14,16 +14,17 @@ export default {
   avatar: { icon: 'mistral-saba', backgroundColor: 'amber' },
   weights: [],
   contextLength: '32k',
-  ratings: {
+  ratings: { 
     speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [],
-    output: [],
+    input: [
+      
+    ],
+    output: [
+      
+    ]
   },
   identifiers: { apiNames: ['mistral-saba-2502', 'mistral-saba-latest'] },
   capabilities: {
@@ -32,11 +33,7 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {
-    deprecationDate: 'June 10, 2025',
-    retirementDate: 'September 30, 2025',
-    replacement: 'Mistral Small 3.2',
-  },
+  metadata: {deprecationDate: 'June 10, 2025', retirementDate: 'September 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

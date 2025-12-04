@@ -27,35 +27,29 @@ export default {
       },
       active: '8',
       contextSize: '128k',
-    },
+    }
   ],
   contextLength: '128k',
-  ratings: {
+  ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 2.0, label: 'Moderate' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
-    output: [{ type: 'range', price: 0.1, denominator: '/M Tokens' }],
+    input: [
+      { type: 'range', price: 0.1, denominator: '/M Tokens' }
+    ],
+    output: [
+      { type: 'range', price: 0.1, denominator: '/M Tokens' }
+    ]
   },
   identifiers: { apiNames: ['ministral-8b-2410'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: [
-      'structured-outputs',
-      'function-calling',
-      'document-qna',
-      'prefix',
-      'chat-completions',
-      'batching',
-    ],
+    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
     finetuning: ['text'],
   },
-  metadata: {deprecationDate: 'December 1, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 8B'},
+  metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 8B'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

@@ -10,42 +10,30 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/codestral',
-  status: 'Deprecated',
+  status: 'Retired',
   avatar: { icon: 'codestral', backgroundColor: 'orange' },
   weights: [],
   contextLength: '128k',
-  ratings: {
+  ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [{ type: 'range', price: 0.3, denominator: '/M Tokens' }],
-    output: [{ type: 'range', price: 0.9, denominator: '/M Tokens' }],
+    input: [
+      { type: 'range', price: 0.3, denominator: '/M Tokens' }
+    ],
+    output: [
+      { type: 'range', price: 0.9, denominator: '/M Tokens' }
+    ]
   },
   identifiers: { apiNames: ['codestral-2501'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: [
-      'structured-outputs',
-      'function-calling',
-      'predicted-outputs',
-      'document-qna',
-      'prefix',
-      'chat-completions',
-      'batching',
-      'fim',
-    ],
+    features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching', 'fim'],
     finetuning: [],
   },
-  metadata: {
-    deprecationDate: 'November 6, 2025',
-    retirementDate: 'November 30, 2025',
-    replacement: 'Codestral',
-  },
+  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Codestral'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

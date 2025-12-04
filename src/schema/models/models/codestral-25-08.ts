@@ -14,31 +14,23 @@ export default {
   avatar: { icon: 'codestral', backgroundColor: 'yellow' },
   weights: [],
   contextLength: '128k',
-  ratings: {
+  ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 4.0, label: 'Very Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [{ type: 'range', price: 0.3, denominator: '/M Tokens' }],
-    output: [{ type: 'range', price: 0.9, denominator: '/M Tokens' }],
+    input: [
+      { type: 'range', price: 0.3, denominator: '/M Tokens' }
+    ],
+    output: [
+      { type: 'range', price: 0.9, denominator: '/M Tokens' }
+    ]
   },
   identifiers: { apiNames: ['codestral-2508', 'codestral-latest'] },
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: [
-      'structured-outputs',
-      'function-calling',
-      'predicted-outputs',
-      'document-qna',
-      'prefix',
-      'batching',
-      'chat-completions',
-      'fim',
-    ],
+    features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'batching', 'chat-completions', 'fim'],
     finetuning: ['text'],
   },
   metadata: {},

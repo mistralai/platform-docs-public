@@ -27,30 +27,26 @@ export default {
       },
       active: '24',
       contextSize: '128k',
-    },
+    }
   ],
   contextLength: '128k',
-  ratings: {
+  ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [{ type: 'range', price: 0.5, denominator: '/M Tokens' }],
-    output: [{ type: 'range', price: 1.5, denominator: '/M Tokens' }],
+    input: [
+      { type: 'range', price: 0.5, denominator: '/M Tokens' }
+    ],
+    output: [
+      { type: 'range', price: 1.5, denominator: '/M Tokens' }
+    ]
   },
   identifiers: { apiNames: ['magistral-small-2509', 'magistral-small-latest'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['reasoning', 'text'],
-    features: [
-      'function-calling',
-      'document-qna',
-      'chat-completions',
-      'batching',
-    ],
+    features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
     finetuning: [],
   },
   metadata: {},

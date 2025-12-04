@@ -14,30 +14,24 @@ export default {
   avatar: { icon: 'ocr', backgroundColor: 'red' },
   weights: [],
   contextLength: null,
-  ratings: {
+  ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.0, label: 'Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
     input: [
       { type: 'flat', price: 1.0, denominator: '/1000 Pages' },
-      { type: 'flat', price: 3.0, denominator: '/1000 Annotated Pages' },
+      { type: 'flat', price: 3.0, denominator: '/1000 Annotated Pages' }
     ],
-    output: [],
+    output: [
+      
+    ]
   },
   identifiers: { apiNames: ['mistral-ocr-2505', 'mistral-ocr-latest'] },
   capabilities: {
     input: ['image', 'document'],
     output: ['text', 'image'],
-    features: [
-      'bbox-extraction',
-      'ocr',
-      'annotations-structured-ocr',
-      'batching',
-    ],
+    features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
     finetuning: [],
   },
   metadata: {},

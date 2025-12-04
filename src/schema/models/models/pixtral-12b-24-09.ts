@@ -27,8 +27,7 @@ export default {
       },
       active: '12',
       contextSize: '128k',
-    },
-    {
+    },    {
       name: 'Base Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
@@ -42,35 +41,29 @@ export default {
       },
       active: '12',
       contextSize: '128k',
-    },
+    }
   ],
   contextLength: '128k',
-  ratings: {
+  ratings: { 
     speed: { stars: 2.0, label: 'Slow' },
-    performance: { stars: 2.0, label: 'Moderate' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [{ type: 'range', price: 0.15, denominator: '/M Tokens' }],
-    output: [{ type: 'range', price: 0.15, denominator: '/M Tokens' }],
+    input: [
+      { type: 'range', price: 0.15, denominator: '/M Tokens' }
+    ],
+    output: [
+      { type: 'range', price: 0.15, denominator: '/M Tokens' }
+    ]
   },
   identifiers: { apiNames: ['pixtral-12b-2409'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],
-    features: [
-      'structured-outputs',
-      'function-calling',
-      'document-qna',
-      'prefix',
-      'chat-completions',
-      'batching',
-    ],
+    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
     finetuning: ['text', 'vision'],
   },
-  metadata: {deprecationDate: 'December 1, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 14B'},
+  metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 14B'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

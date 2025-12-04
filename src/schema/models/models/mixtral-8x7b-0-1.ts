@@ -27,8 +27,7 @@ export default {
       },
       active: '13',
       contextSize: '32k',
-    },
-    {
+    },    {
       name: 'Base Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
@@ -42,19 +41,20 @@ export default {
       },
       active: '13',
       contextSize: '32k',
-    },
+    }
   ],
   contextLength: '32k',
-  ratings: {
+  ratings: { 
     speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [],
-    output: [],
+    input: [
+      
+    ],
+    output: [
+      
+    ]
   },
   identifiers: { apiNames: ['open-mixtral-8x7b'] },
   capabilities: {
@@ -63,11 +63,7 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {
-    deprecationDate: 'November 30, 2024',
-    retirementDate: 'March 30, 2025',
-    replacement: 'Mistral Small 3.2',
-  },
+  metadata: {deprecationDate: 'November 30, 2024', retirementDate: 'March 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

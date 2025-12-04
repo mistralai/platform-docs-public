@@ -14,20 +14,19 @@ export default {
   avatar: { icon: 'moderation', backgroundColor: 'beige' },
   weights: [],
   contextLength: '8k',
-  ratings: {
+  ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.0, label: 'Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 2.0, label: 'Moderate' },
-  },
+    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    input: [{ type: 'flat', price: 0.1, denominator: '/M Tokens' }],
-    output: [],
+    input: [
+      { type: 'flat', price: 0.1, denominator: '/M Tokens' }
+    ],
+    output: [
+      
+    ]
   },
-  identifiers: {
-    apiNames: ['mistral-moderation-2411', 'mistral-moderation-latest'],
-  },
+  identifiers: { apiNames: ['mistral-moderation-2411', 'mistral-moderation-latest'] },
   capabilities: {
     input: ['text'],
     output: [],

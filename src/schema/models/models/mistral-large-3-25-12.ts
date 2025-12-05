@@ -46,7 +46,7 @@ export default {
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],
-    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching', 'agents-conversations'],
+    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching', 'agents-conversations', 'connectors'],
     finetuning: [],
   },
   metadata: {},

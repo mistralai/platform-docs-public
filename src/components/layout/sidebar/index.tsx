@@ -34,6 +34,9 @@ export type SideBarTreeNode = {
   clickable: boolean;
   label: string;
   href?: string;
+  download?: {
+    filename: string;
+  };
   children: SideBarTreeNode[];
   pagination: {
     prev?: {
@@ -152,7 +155,11 @@ const SidebarFileItem = <T extends SideBarTreeNode>({
         isActive={isActive}
         className={cn('group', className)}
       >
-        <Link href={href} onClick={() => setOpenMobile(false)}>
+        <Link
+          href={href}
+          onClick={() => setOpenMobile(false)}
+          {...(item.download ? { download: item.download.filename } : {})}
+        >
           <Content item={item as T} isActive={isActive} />
           <ActiveIndicator className="group-data-[state=on]:block hidden ml-auto pr-1" />
         </Link>
@@ -322,9 +329,11 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
 const DocsSidebarContent = <T extends SideBarTreeNode>({
   sidebar,
   renderItem,
+  children,
 }: {
   sidebar: T[];
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
+  children?: React.ReactNode;
 }) => {
   const UsedSidebarItem = renderItem ? SidebarItem<T> : SidebarFileItem<T>;
   const [hasScrollDown, setHasScrollDown] = React.useState(false);
@@ -363,6 +372,7 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
         <SearchInput />
       </SidebarHeader>
       <SidebarContent>
+        {children}
         {sidebar.map((item, index) => {
           if (!item.children.length) {
             return (
@@ -458,11 +468,13 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
   expandedCategoriesOptions,
   renderItem,
   hashResponsive = false,
+  children,
 }: {
   sidebar: T[];
   expandedCategoriesOptions?: ExpandedCategoriesOptions;
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
   hashResponsive?: boolean;
+  children?: React.ReactNode;
 }) => {
   return (
     <DocsSidebarProvider<T>
@@ -471,7 +483,9 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
       expandedCategoriesOptions={expandedCategoriesOptions}
       hashResponsive={hashResponsive}
     >
-      <DocsSidebarContent<T> sidebar={sidebar as T[]} renderItem={renderItem} />
+      <DocsSidebarContent<T> sidebar={sidebar as T[]} renderItem={renderItem}>
+        {children}
+      </DocsSidebarContent>
     </DocsSidebarProvider>
   );
 };

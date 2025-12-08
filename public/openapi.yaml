@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Mistral AI API
-  description: Our Chat Completion and Embeddings APIs specification. Create your account on [La Plateforme](https://console.mistral.ai) to get access and read the [docs](https://docs.mistral.ai) to learn how to use it.
   version: 1.0.0
+  description: Our Chat Completion and Embeddings APIs specification. Create your account on [La Plateforme](https://console.mistral.ai) to get access and read the [docs](https://docs.mistral.ai) to learn how to use it.
 paths:
   /v1/models:
     get:
@@ -41,12 +41,6 @@ paths:
                       default_model_temperature: null
                       TYPE: fine-tuned
                       archived: false
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
       tags:
         - models
   /v1/models/{model_id}:
@@ -438,6 +432,48 @@ paths:
             type: integer
             default: 20
             title: Page Size
+        - name: deployment_chat
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: boolean
+              - type: 'null'
+            title: Deployment Chat
+        - name: sources
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: array
+                items:
+                  $ref: '#/components/schemas/RequestSource'
+              - type: 'null'
+            title: Sources
+        - name: name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Name
+        - name: id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Id
+        - name: metadata
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/MetadataDict'
+              - type: 'null'
+            title: Metadata
       responses:
         '200':
           description: Successful Response
@@ -730,6 +766,13 @@ paths:
             default: 100
             title: Page Size
             type: integer
+          required: false
+        - in: query
+          name: include_total
+          schema:
+            default: true
+            title: Include Total
+            type: boolean
           required: false
         - in: query
           name: sample_type
@@ -1291,8 +1334,8 @@ paths:
           name: metadata
           schema:
             anyOf:
-              - type: object
-                additionalProperties: true
+              - additionalProperties: true
+                type: object
               - type: 'null'
             title: Metadata
           required: false
@@ -1496,7 +1539,6 @@ paths:
                       completion_tokens: 27
                       total_tokens: 51
                       prompt_audio_seconds: {}
-                      __pydantic_extra__: {}
                     created: 1759500534
                     choices:
                       - index: 0
@@ -2041,7 +2083,7 @@ paths:
         - beta.libraries
   /v1/libraries/{library_id}/documents:
     get:
-      summary: List document in a given library.
+      summary: List documents in a given library.
       description: Given a library, lists the document that have been uploaded to that library.
       operationId: libraries_documents_list_v1
       parameters:
@@ -2065,6 +2107,8 @@ paths:
           required: false
           schema:
             type: integer
+            maximum: 100
+            minimum: 1
             default: 100
             title: Page Size
         - name: page
@@ -2072,8 +2116,17 @@ paths:
           required: false
           schema:
             type: integer
+            minimum: 0
             default: 0
             title: Page
+        - name: filters_attributes
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Filters Attributes
         - name: sort_by
           in: query
           required: false
@@ -2444,7 +2497,7 @@ paths:
             application/json:
               schema:
                 type: string
-                title: Response V1 Libraries Documents Get Signed Url
+                title: Response Libraries Documents Get Signed Url V1
         '422':
           description: Validation Error
           content:
@@ -2480,7 +2533,7 @@ paths:
             application/json:
               schema:
                 type: string
-                title: Response V1 Libraries Documents Get Extracted Text Signed Url
+                title: Response Libraries Documents Get Extracted Text Signed Url V1
         '422':
           description: Validation Error
           content:
@@ -2705,15 +2758,15 @@ components:
         completion_chat:
           type: boolean
           title: Completion Chat
-          default: true
-        completion_fim:
-          type: boolean
-          title: Completion Fim
           default: false
         function_calling:
           type: boolean
           title: Function Calling
-          default: true
+          default: false
+        completion_fim:
+          type: boolean
+          title: Completion Fim
+          default: false
         fine_tuning:
           type: boolean
           title: Fine Tuning
@@ -2722,9 +2775,21 @@ components:
           type: boolean
           title: Vision
           default: false
+        ocr:
+          type: boolean
+          title: Ocr
+          default: false
         classification:
           type: boolean
           title: Classification
+          default: false
+        moderation:
+          type: boolean
+          title: Moderation
+          default: false
+        audio:
+          type: boolean
+          title: Audio
           default: false
       type: object
       title: ModelCapabilities
@@ -2820,6 +2885,10 @@ components:
               minItems: 1
             - type: 'null'
           title: Handoffs
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/MetadataDict'
+            - type: 'null'
         object:
           type: string
           enum:
@@ -2832,6 +2901,11 @@ components:
         version:
           type: integer
           title: Version
+        versions:
+          items:
+            type: integer
+          type: array
+          title: Versions
         created_at:
           type: string
           format: date-time
@@ -2840,6 +2914,12 @@ components:
           type: string
           format: date-time
           title: Updated At
+        deployment_chat:
+          type: boolean
+          title: Deployment Chat
+        source:
+          type: string
+          title: Source
       additionalProperties: false
       type: object
       required:
@@ -2847,8 +2927,11 @@ components:
         - name
         - id
         - version
+        - versions
         - created_at
         - updated_at
+        - deployment_chat
+        - source
       title: Agent
     AgentConversation:
       properties:
@@ -2943,6 +3026,10 @@ components:
               minItems: 1
             - type: 'null'
           title: Handoffs
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/MetadataDict'
+            - type: 'null'
       additionalProperties: false
       type: object
       required:
@@ -3051,6 +3138,15 @@ components:
               minItems: 1
             - type: 'null'
           title: Handoffs
+        deployment_chat:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Deployment Chat
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/MetadataDict'
+            - type: 'null'
       additionalProperties: false
       type: object
       title: AgentUpdateRequest
@@ -3520,6 +3616,11 @@ components:
       required:
         - content
       title: MessageOutputEntry
+    MetadataDict:
+      additionalProperties: true
+      type: object
+      title: MetadataDict
+      description: Custom type for metadata with embedded validation.
     ModelConversation:
       properties:
         instructions:
@@ -3607,6 +3708,14 @@ components:
       type: object
       title: Prediction
       description: Enable users to specify an expected completion, optimizing response times by leveraging known or predictable content.
+    RequestSource:
+      type: string
+      enum:
+        - api
+        - playground
+        - agent_builder_v1
+        - deep_research
+      title: RequestSource
     ResponseFormat:
       properties:
         type:
@@ -4680,12 +4789,13 @@ components:
           title: Object
           type: string
         total:
+          anyOf:
+            - type: integer
+            - type: 'null'
           title: Total
-          type: integer
       required:
         - data
         - object
-        - total
       title: ListFilesOut
       type: object
     RetrieveFileOut:
@@ -5973,8 +6083,8 @@ components:
           description: The name of the event.
         data:
           anyOf:
-            - type: object
-              additionalProperties: true
+            - additionalProperties: true
+              type: object
             - type: 'null'
           title: Data
         created_at:
@@ -6277,8 +6387,8 @@ components:
           type: array
         metadata:
           anyOf:
-            - type: object
-              additionalProperties: true
+            - additionalProperties: true
+              type: object
             - type: 'null'
           title: Metadata
         endpoint:
@@ -7282,6 +7392,16 @@ components:
         end:
           type: number
           title: End
+        score:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Score
+        speaker_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Speaker Id
         type:
           type: string
           default: transcription_segment
@@ -7349,6 +7469,7 @@ components:
       type: string
       enum:
         - segment
+        - word
       title: TimestampGranularity
     AudioTranscriptionRequest:
       properties:
@@ -7401,6 +7522,18 @@ components:
           default: false
           title: Stream
           type: boolean
+        diarize:
+          const: false
+          default: false
+          title: Diarize
+          type: boolean
+        context_bias:
+          default: []
+          items:
+            pattern: ^\w+$
+            type: string
+          title: Context Bias
+          type: array
         timestamp_granularities:
           description: Granularities of timestamps to include in the response.
           items:
@@ -7458,6 +7591,18 @@ components:
           default: true
           title: Stream
           type: boolean
+        diarize:
+          const: false
+          default: false
+          title: Diarize
+          type: boolean
+        context_bias:
+          default: []
+          items:
+            pattern: ^\w+$
+            type: string
+          title: Context Bias
+          type: array
         timestamp_granularities:
           description: Granularities of timestamps to include in the response.
           items:
@@ -7496,6 +7641,12 @@ components:
         end:
           title: End
           type: number
+        speaker_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default:
+          title: Speaker Id
         type:
           type: string
           default: transcription.segment
@@ -7821,16 +7972,24 @@ components:
           format: uuid
           title: Library Id
         hash:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Hash
         mime_type:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Mime Type
         extension:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Extension
         size:
-          type: integer
+          anyOf:
+            - type: integer
+            - type: 'null'
           title: Size
         name:
           type: string
@@ -7858,8 +8017,10 @@ components:
         processing_status:
           type: string
         uploaded_by_id:
-          type: string
-          format: uuid
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
           title: Uploaded By Id
         uploaded_by_type:
           type: string
@@ -7873,6 +8034,17 @@ components:
             - type: integer
             - type: 'null'
           title: Tokens Processing Summary
+        url:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Url
+        attributes:
+          anyOf:
+            - additionalProperties: true
+              type: object
+            - type: 'null'
+          title: Attributes
         tokens_processing_total:
           type: integer
           title: Tokens Processing Total
@@ -7908,6 +8080,31 @@ components:
             - type: string
             - type: 'null'
           title: Name
+        attributes:
+          anyOf:
+            - additionalProperties:
+                anyOf:
+                  - type: boolean
+                  - type: string
+                  - type: integer
+                  - type: number
+                  - type: string
+                    format: date-time
+                  - items:
+                      type: string
+                    type: array
+                  - items:
+                      type: integer
+                    type: array
+                  - items:
+                      type: number
+                    type: array
+                  - items:
+                      type: boolean
+                    type: array
+              type: object
+            - type: 'null'
+          title: Attributes
       type: object
       title: DocumentUpdateIn
     LibraryIn:
@@ -7961,8 +8158,10 @@ components:
           format: date-time
           title: Updated At
         owner_id:
-          type: string
-          format: uuid
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
           title: Owner Id
         owner_type:
           type: string
@@ -7987,11 +8186,6 @@ components:
             - type: string
             - type: 'null'
           title: Description
-        generated_name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Generated Name
         generated_description:
           anyOf:
             - type: string
@@ -8011,6 +8205,11 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+        generated_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Generated Name
       type: object
       required:
         - id
@@ -8107,8 +8306,10 @@ components:
     SharingDelete:
       properties:
         org_id:
-          type: string
-          format: uuid
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
           title: Org Id
         share_with_uuid:
           type: string
@@ -8121,13 +8322,14 @@ components:
       required:
         - share_with_uuid
         - share_with_type
-        - org_id
         - level
     SharingIn:
       properties:
         org_id:
-          type: string
-          format: uuid
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
           title: Org Id
         level:
           $ref: '#/components/schemas/ShareEnum'
@@ -8142,7 +8344,6 @@ components:
       required:
         - share_with_uuid
         - share_with_type
-        - org_id
         - level
     SharingOut:
       properties:
@@ -8165,8 +8366,10 @@ components:
         share_with_type:
           type: string
         share_with_uuid:
-          type: string
-          format: uuid
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
           title: Share With Uuid
       type: object
       required:

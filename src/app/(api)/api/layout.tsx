@@ -7,6 +7,9 @@ import { ApiBreadcrumb } from '@/components/layout/api-breadcrumb';
 import { ActiveElementHashProvider } from '../components/hash-auto-change';
 import { DocsVariantProvider } from '@/contexts/docs-variant';
 import { ApiPagination } from '../components/pagination';
+import { Button } from '@/components/ui/button';
+import { DownloadIcon } from '@/components/icons/pixel';
+import Link from 'next/link';
 
 export default function DocsLayout({
   children,
@@ -23,7 +26,14 @@ export default function DocsLayout({
             collapsible="none"
           >
             <div>
-              <ApiDocsSidebar sidebar={flattenedSidebar} />
+              <ApiDocsSidebar sidebar={flattenedSidebar}>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/openapi.yaml" download="mistral-openapi.yaml">
+                    <DownloadIcon className="size-4" />
+                    Download OpenAPI Spec
+                  </Link>
+                </Button>
+              </ApiDocsSidebar>
             </div>
           </Sidebar>
           <div className="flex flex-1 gap-8 min-w-0 lg:pr-sides">
@@ -111,9 +121,12 @@ const flattenSidebar = (sidebar: typeof sidebarMetadata): ApiSidebarItem[] => {
   gettingStartedCategory.children = stableEndpoints;
   betaCategory.children = betaEndpoints;
 
-  const result = [gettingStartedCategory, betaCategory];
+  const result = [
+    gettingStartedCategory,
+    betaCategory,
+  ] satisfies ApiSidebarItem[];
 
-  const allItems: ApiSidebarItem[] = [];
+  const allItems: ApiSidebarItem[] = [] satisfies ApiSidebarItem[];
 
   for (const item of result) {
     if (item.children && item.children.length > 0) {

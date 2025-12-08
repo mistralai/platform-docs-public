@@ -399,7 +399,7 @@ function SidebarContent({ className, ...props }: React.ComponentProps<'div'>) {
       data-slot="sidebar-content"
       data-sidebar="content"
       className={cn(
-        'flex flex-col gap-2 group-data-[collapsible=icon]:overflow-hidden',
+        'space-y-2 group-data-[collapsible=icon]:overflow-hidden',
         className
       )}
       {...props}

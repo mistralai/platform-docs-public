@@ -17,4 +17,16 @@ interface ApiSidebarCategory extends SideBarTreeNode {
   children: ApiSidebarItem[];
 }
 
-export type ApiSidebarItem = ApiSidebarEndpoint | ApiSidebarCategory;
+interface ApiSidebarAction extends SideBarTreeNode {
+  type: 'action';
+  label: string;
+  href: string;
+  download?: {
+    filename: string;
+  };
+}
+
+export type ApiSidebarItem =
+  | ApiSidebarEndpoint
+  | ApiSidebarCategory
+  | ApiSidebarAction;

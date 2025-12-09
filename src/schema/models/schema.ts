@@ -11,11 +11,13 @@ export interface ModelRating {
 
 export interface ModelPricingFlat {
   type: 'flat';
+  free: boolean;
   price: number;
   denominator: string;
 }
 export interface ModelPricingRange {
   type: 'range';
+  free: boolean;
   input: number;
   denominator: string;
   output: number;
@@ -23,6 +25,7 @@ export interface ModelPricingRange {
 
 export interface ModelPricingCustom {
   type: 'custom';
+  free: boolean;
   input: { type: 'range' | 'flat'; price: number; denominator: string }[];
   output: { type: 'range' | 'flat'; price: number; denominator: string }[];
 }
@@ -219,7 +222,7 @@ export interface ModelTemplate<
   version?: string;
   frontier: boolean;
   class: 'Generalist' | 'Specialist';
-  type: 'Premier' | 'Open';
+  type: 'Premier' | 'Open' | 'Labs';
   legacy?: boolean;
   status: 'Deprecated' | 'Retired' | 'Active';
   avatar?: ModelAvatar;

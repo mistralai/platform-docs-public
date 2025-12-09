@@ -6,7 +6,7 @@ export default {
   slug: 'codestral-embed-25-05',
   releaseDate: 'May 28, 2025',
   version: '25.05',
-  frontier: false,
+  frontier: true,
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/codestral',
@@ -19,6 +19,7 @@ export default {
     performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
+    free: false,
     input: [
       { type: 'flat', price: 0.15, denominator: '/M Tokens' }
     ],

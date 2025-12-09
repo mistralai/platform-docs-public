@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ModelAvatar } from '@/components/model/avatar';
 import type { Metadata } from 'next';
 
-import { getModelUrl, models, nonLegacyModels } from '@/schema';
+import { getModelUrl, nonLegacyModels } from '@/schema';
 import { MODEL_COLORS } from '@/lib/colors';
 import { AVATAR_ICONS } from '@/lib/icons';
 import ArrowRightIcon from '@/components/icons/pixel/arrow-right';

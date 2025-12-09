@@ -1,5 +1,4 @@
 import * as React from 'react';
-
 import { cn } from '@/lib/utils';
 import { getModelUrl, Model } from '@/schema/models';
 import { MODEL_COLORS, getModelColorFallback } from '@/lib/colors';
@@ -8,12 +7,7 @@ import { ModelAvatar } from './avatar';
 import { PixelGrid } from '@/components/common/pixel-grid';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Badge } from '../ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import {
-  ENABLE_MODEL_TYPE_TOOLTIP,
-  MODEL_TYPE_TOOLTIP_CONTENT,
-} from '@/schema/models/copyright/type-tooltip';
+import { ModelTypeBadge } from './type-badge';
 
 export interface ModelCardProps extends React.ComponentProps<'a'> {
   model: Model;
@@ -33,10 +27,8 @@ export function ModelCard({
   ...props
 }: ModelCardProps) {
   const isLegacy = model.status === 'Deprecated' || model.status === 'Retired';
-
   // Get color and icon from avatar or fallback based on model name
   const modelIcon = model.avatar?.icon || getModelIconFallback(model.name);
-
   const modelColorVar =
     overrideColor ||
     MODEL_COLORS[
@@ -44,17 +36,13 @@ export function ModelCard({
         ? 'gray'
         : model.avatar?.backgroundColor || getModelColorFallback(model.name)
     ];
-
   // Get the icon path
   const iconPath = AVATAR_ICONS[modelIcon];
-
   // Create style object to set the CSS custom properties
   const cardStyle = {
     '--model-color': modelColorVar,
   } as React.CSSProperties;
-
   const modelUrl = getModelUrl(model);
-
   if (!modelUrl) return null;
 
   if (variant === 'card') {
@@ -70,7 +58,6 @@ export function ModelCard({
         {...props}
       >
         {pixelEffect && <PixelGrid pixelSize={8} opacity={0.35} />}
-
         <div className="size-16 relative z-10 max-lg:mb-14">
           <Image
             src={iconPath}
@@ -117,7 +104,6 @@ export function ModelCard({
             randomness={0.3}
           />
         )}
-
         <ModelAvatar
           src={iconPath}
           alt={`${model.name} icon`}
@@ -157,7 +143,6 @@ export function ModelCard({
           randomness={0.3}
         />
       )}
-
       <ModelAvatar
         src={iconPath}
         alt={`${model.name} icon`}
@@ -170,25 +155,7 @@ export function ModelCard({
           <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
             {model.name}
           </h3>
-          {model.type && (
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant={model.type === 'Premier' ? 'other' : 'type-enum'}
-                  className="font-mono uppercase text-[11px]"
-                  size="xs"
-                >
-                  {model.type}
-                </Badge>
-              </TooltipTrigger>
-              {ENABLE_MODEL_TYPE_TOOLTIP &&
-                MODEL_TYPE_TOOLTIP_CONTENT[model.type] && (
-                  <TooltipContent>
-                    {MODEL_TYPE_TOOLTIP_CONTENT[model.type]}
-                  </TooltipContent>
-                )}
-            </Tooltip>
-          )}
+          {model.type && <ModelTypeBadge type={model.type} />}
         </div>
         <div className="flex gap-2 justify-between items-baseline">
           <p className="text-sm text-foreground/70 line-clamp-1 text-ellipsis overflow-hidden">

@@ -35,6 +35,7 @@ export default {
     performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
+    free: false,
     input: [
       
     ],

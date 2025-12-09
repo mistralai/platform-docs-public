@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { models, findModelBySlug, isLegacyModel, Model } from '@/schema';
-import { ThunderIcon, LampIcon, FlagIcon } from '@/components/icons/pixel';
+import { models, findModelBySlug, isLegacyModel } from '@/schema';
+import { ThunderIcon, LampIcon } from '@/components/icons/pixel';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { getModelColorFallback, MODEL_COLORS } from '@/lib/colors';
 import { ModelAvatar } from '@/components/model/avatar';
@@ -21,21 +21,22 @@ import { ModelCard, ModelCardInner } from './components/model-card';
 import { ApiNamesBadges } from './components/api-names-badges';
 import InfoHint from '@/components/icons/info-hint';
 import Link from 'next/link';
-import {
-  MISTRAL_API_PRICING_URL,
-  MISTRAL_API_REFERENCE_URL,
-  MISTRAL_LEGAL_URL,
-} from '@/lib/constants';
+import { MISTRAL_API_PRICING_URL } from '@/lib/constants';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import {
+  ENABLE_MODEL_TYPE_TOOLTIP,
+  MODEL_TYPE_TOOLTIP_CONTENT,
+} from '@/schema/models/copyright/type-tooltip';
 
 import { Prose } from '@/components/common/prose';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { markdownComponents } from '@/components/markdown';
-import { Button } from '@/components/ui/button';
+import { ModelTypeBadge } from '@/components/model/type-badge';
 
 interface ModelPageProps {
   params: Promise<{ slug: string }>;
@@ -141,22 +142,17 @@ export default async function ModelPage({ params }: ModelPageProps) {
   return (
     <div className="md:pt-8 text-foreground not-prose relative flex flex-col md:gap-24 gap-16 flex-1 w-full min-h-[calc(100%_-_64px)]">
       <div className="flex flex-col xl:flex-row gap-4 w-full flex-1">
-        <div className="flex flex-col gap-2">
-          <div className="rounded-md self-start p-1 border">
-            <ModelAvatar
-              pixelEffect={!isLegacy}
-              size="3xl"
-              src={iconPath}
-              alt={`${model.name} icon`}
-              className="z-2"
-              style={{
-                backgroundColor: modelColorVar,
-              }}
-            />
-          </div>
-          <div className="flex flex-col">
-            <LegalButton legal={model.legalButton} />
-          </div>
+        <div className="rounded-md self-start p-1 border">
+          <ModelAvatar
+            pixelEffect={!isLegacy}
+            size="3xl"
+            src={iconPath}
+            alt={`${model.name} icon`}
+            className="z-2"
+            style={{
+              backgroundColor: modelColorVar,
+            }}
+          />
         </div>
 
         <div className="space-y-8 flex-1">
@@ -174,9 +170,12 @@ export default async function ModelPage({ params }: ModelPageProps) {
                 <span className="text-sm text-foreground/50">
                   {model.releaseDate}
                 </span>
-                <span className="text-xs font-mono text-foreground/20">
-                  v{model.version}
-                </span>
+                <div className="flex items-center gap-2">
+                  {model.type && <ModelTypeBadge type={model.type} />}
+                  <span className="text-xs font-mono text-foreground/20">
+                    v{model.version}
+                  </span>
+                </div>
               </div>
 
               <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-6 lg:gap-10 items-start md:items-end">
@@ -372,24 +371,5 @@ const PriceTooltip = () => {
         </p>
       </TooltipContent>
     </Tooltip>
-  );
-};
-
-const isLegalButtonPresent = ({ legal }: { legal: Model['legalButton'] }) => {
-  return typeof legal === 'string' && legal !== '';
-};
-const LegalButton = ({ legal }: { legal: Model['legalButton'] }) => {
-  if (!isLegalButtonPresent({ legal })) return null;
-
-  const url = legal === 'DEFAULT' ? MISTRAL_LEGAL_URL : legal!;
-  return (
-    <Button variant="outline" size="sm" asChild>
-      <Link href={url} target="_blank" rel="noopener noreferrer">
-        <span className="flex items-center justify-center gap-1">
-          <FlagIcon className="size-4 relative" />
-          <span>Legal</span>
-        </span>
-      </Link>
-    </Button>
   );
 };

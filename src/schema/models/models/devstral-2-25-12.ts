@@ -1,25 +1,41 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'Devstral Medium 1.0',
+  name: 'Devstral 2',
   description: `An enterprise grade text model, that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
   shortDescription: `An enterprise grade text model, that excels at SWE use cases.`,
-  slug: 'devstral-medium-1-0-25-07',
-  releaseDate: 'July 10, 2025',
-  version: '25.07',
-  frontier: false,
+  slug: 'devstral-2-25-12',
+  releaseDate: 'December 9, 2025',
+  version: '25.12',
+  frontier: true,
   class: 'Specialist',
-  type: 'Premier',
+  type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-medium-1',
   status: 'Active',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
-  weights: [],
-  contextLength: '128k',
+  weights: [
+    {
+      name: 'Weights',
+      license: 'Modified MIT',
+      licenseUrl: 'https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512/blob/main/LICENSE',
+      url: 'https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512',
+      parameters: '123',
+      minGpuRam: {
+        bf16: '297',
+        fp8: '149',
+        fp4: '75',
+        fp4_16: '66',
+      },
+      active: '123',
+      contextSize: '256k',
+    }
+  ],
+  contextLength: '256k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    free: false,
+    free: true,
     input: [
       { type: 'range', price: 0.4, denominator: '/M Tokens' }
     ],
@@ -27,7 +43,7 @@ export default {
       { type: 'range', price: 2.0, denominator: '/M Tokens' }
     ]
   },
-  identifiers: { apiNames: ['devstral-medium-2507'] },
+  identifiers: { apiNames: ['devstral-2512', 'devstral-latest', 'devstral-medium-latest'] },
   capabilities: {
     input: ['text'],
     output: ['text'],

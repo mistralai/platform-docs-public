@@ -7,10 +7,10 @@ export const FEATURED_MODEL_NAMES: ModelSlug[] = [
 ];
 
 export const LATEST_MODEL_NAMES: ModelSlug[] = [
+  'devstral-2-25-12',
+  'devstral-small-2-25-12',
   'mistral-large-3-25-12',
   'ministral-3-14b-25-12',
-  'ministral-3-8b-25-12',
-  'ministral-3-3b-25-12',
 ];
 
 export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [

@@ -35,6 +35,7 @@ export default {
     performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
+    free: false,
     input: [
       { type: 'range', price: 0.1, denominator: '/M Tokens' }
     ],

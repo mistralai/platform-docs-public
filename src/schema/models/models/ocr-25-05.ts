@@ -19,6 +19,7 @@ export default {
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
+    free: false,
     input: [
       { type: 'flat', price: 1.0, denominator: '/1000 Pages' },
       { type: 'flat', price: 3.0, denominator: '/1000 Annotated Pages' }

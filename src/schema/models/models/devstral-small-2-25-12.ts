@@ -1,14 +1,14 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'Devstral Small 1.1',
-  description: `An update to our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents. Learn more in our [blog post](https://mistral.ai/news/devstral-2507)`,
-  shortDescription: `An update to our open source model that excels at SWE use cases.`,
-  slug: 'devstral-small-1-1-25-07',
-  releaseDate: 'July 10, 2025',
-  version: '25.07',
+  name: 'Devstral Small 2',
+  description: `Our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
+  shortDescription: `Model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
+  slug: 'devstral-small-2-25-12',
+  releaseDate: 'December 9, 2025',
+  version: '25.12',
   frontier: false,
   class: 'Specialist',
-  type: 'Open',
+  type: 'Labs',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-small-1',
   status: 'Active',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
@@ -17,7 +17,7 @@ export default {
       name: 'Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
-      url: 'https://huggingface.co/mistralai/Devstral-Small-2507',
+      url: 'https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512',
       parameters: '24',
       minGpuRam: {
         bf16: '78',
@@ -26,16 +26,16 @@ export default {
         fp4_16: '16',
       },
       active: '24',
-      contextSize: '128k',
+      contextSize: '256k',
     }
   ],
-  contextLength: '128k',
+  contextLength: '256k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
   pricing: {
     type: 'custom',
-    free: false,
+    free: true,
     input: [
       { type: 'range', price: 0.1, denominator: '/M Tokens' }
     ],
@@ -43,9 +43,9 @@ export default {
       { type: 'range', price: 0.3, denominator: '/M Tokens' }
     ]
   },
-  identifiers: { apiNames: ['devstral-small-2507'] },
+  identifiers: { apiNames: ['labs-devstral-small-2512', 'devstral-small-latest'] },
   capabilities: {
-    input: ['text'],
+    input: ['text', 'image'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
     finetuning: [],

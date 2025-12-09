@@ -5,8 +5,10 @@ import mistralSmall322506 from './mistral-small-3-2-25-06';
 import ocr2505 from './ocr-25-05';
 import voxtralMiniTranscribe2507 from './voxtral-mini-transcribe-25-07';
 import codestral2508 from './codestral-25-08';
-import devstralMedium102507 from './devstral-medium-1-0-25-07';
+import devstral22512 from './devstral-2-25-12';
 import magistralMedium112507 from './magistral-medium-1-1-25-07';
+import codestralEmbed2505 from './codestral-embed-25-05';
+import devstralSmall22512 from './devstral-small-2-25-12';
 import ministral314b2512 from './ministral-3-14b-25-12';
 import ministral38b2512 from './ministral-3-8b-25-12';
 import ministral33b2512 from './ministral-3-3b-25-12';
@@ -15,10 +17,10 @@ import magistralSmall122509 from './magistral-small-1-2-25-09';
 import magistralSmall112507 from './magistral-small-1-1-25-07';
 import voxtralMini2507 from './voxtral-mini-25-07';
 import voxtralSmall2507 from './voxtral-small-25-07';
+import devstralMedium102507 from './devstral-medium-1-0-25-07';
 import devstralSmall112507 from './devstral-small-1-1-25-07';
 import magistralMedium102506 from './magistral-medium-1-0-25-06';
 import magistralSmall102506 from './magistral-small-1-0-25-06';
-import codestralEmbed2505 from './codestral-embed-25-05';
 import devstralSmall102505 from './devstral-small-1-0-25-05';
 import mistralMedium32505 from './mistral-medium-3-25-05';
 import mistralSmall312503 from './mistral-small-3-1-25-03';
@@ -55,8 +57,10 @@ export const MODELS = defineModels([
   ocr2505,
   voxtralMiniTranscribe2507,
   codestral2508,
-  devstralMedium102507,
+  devstral22512,
   magistralMedium112507,
+  codestralEmbed2505,
+  devstralSmall22512,
   ministral314b2512,
   ministral38b2512,
   ministral33b2512,
@@ -65,10 +69,10 @@ export const MODELS = defineModels([
   magistralSmall112507,
   voxtralMini2507,
   voxtralSmall2507,
+  devstralMedium102507,
   devstralSmall112507,
   magistralMedium102506,
   magistralSmall102506,
-  codestralEmbed2505,
   devstralSmall102505,
   mistralMedium32505,
   mistralSmall312503,

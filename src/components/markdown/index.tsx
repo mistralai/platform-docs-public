@@ -107,7 +107,7 @@ const baseComponents = {
       return (
         <code
           className={cn(
-            'relative mx-1 bg-background ring-1 ring-offset-3 ring-offset-background ring-border font-mono after:hidden before:hidden inline-flex items-center justify-center gap-2  rounded text-xs font-semibold text-foreground px-1',
+            'relative mx-1 bg-background !text-[0.765em] ring-1 ring-offset-1 ring-offset-background ring-border font-mono after:hidden before:hidden inline-flex items-center justify-center gap-2 rounded text-xs font-semibold text-foreground px-1',
             className
           )}
           {...props}

@@ -1,0 +1,223 @@
+---
+id: vibe_configuration
+title: Configuration
+slug: vibe_configuration
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Configuration
+Vibe is configured via a `config.toml` file. It looks for this file first in `./.vibe/config.toml` and then falls back to `~/.vibe/config.toml`.
+For `~/.vibe/config.toml`, you can open the configuration file with, for example:
+
+<Tabs groupId="os">
+    <TabItem value="mac" label="Mac/Linux" default>
+```
+open ~/.vibe/config.toml
+```
+    </TabItem>
+    <TabItem value="linux" label="Linux">
+```
+xdg-open ~/.vibe/config.toml
+```
+    </TabItem>
+    <TabItem value="windows" label="Windows (PowerShell)">
+```
+Invoke-Item ~\.vibe\config.toml
+```
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="get-started">API Key Configuration</SectionTab>
+
+### Mistral API Key
+
+:::tip
+You can get your Mistral API key from [here](https://console.mistral.ai/codestral/vibe).  
+Devstral 2 is currently **free to use**; create an account with either the Experiment or Scale Up (recommended) plan, and you will be free to use it with Mistral Vibe.
+:::
+
+Vibe supports multiple ways to configure your API keys:
+1. **Interactive Setup (Recommended for first-time users)**: When you run Vibe for the first time or if your API key is missing, Vibe will prompt you to enter it. The key will be securely saved to `~/.vibe/.env` for future sessions.
+2. **Environment Variables**: Set your API key as an environment variable:
+   ```bash
+   export MISTRAL_API_KEY="your_mistral_api_key"
+   ```
+3. **`.env` File**: Create a `.env` file in `~/.vibe/` and add your API keys:
+   ```bash
+   MISTRAL_API_KEY=your_mistral_api_key
+   ```
+   Vibe automatically loads API keys from `~/.vibe/.env` on startup. Environment variables take precedence over the `.env` file if both are set.
+
+:::note
+The `.env` file is specifically for API keys and other provider credentials. General Vibe configuration should be done in `config.toml`.
+:::
+
+<SectionTab as="h1" sectionId="customize-behaviour">Customize Behaviour</SectionTab>
+
+### Custom System Prompts and Agent Configurations
+
+You can customize Vibe's behavior by modifying prompts and agent configurations.
+
+<SectionTab as="h2" variant="secondary" sectionId="custom-system-prompts">Custom System Prompts</SectionTab>
+
+You can create custom system prompts to replace the default one (`prompts/cli.md`). Create a markdown file in the `~/.vibe/prompts/` directory with your custom prompt content.
+
+To use a custom system prompt, set the `system_prompt_id` in your configuration to match the filename (without the `.md` extension):
+```python
+# Use a custom system prompt
+system_prompt_id = "my_custom_prompt"
+```
+
+This will load the prompt from `~/.vibe/prompts/my_custom_prompt.md`.
+
+<SectionTab as="h2" variant="secondary" sectionId="custom-agent-configurations">Custom Agent Configurations</SectionTab>
+
+You can create custom agent configurations for specific use cases (e.g., red-teaming, specialized tasks) by adding agent-specific TOML files in the `~/.vibe/agents/` directory.
+To use a custom agent, run Vibe with the `--agent` flag:
+```bash
+vibe --agent my_custom_agent
+```
+
+Vibe will look for a file named `my_custom_agent.toml` in the agents directory and apply its configuration.
+
+Example custom agent configuration (`~/.vibe/agents/redteam.toml`):
+```python
+# Custom agent configuration for red-teaming
+active_model = "devstral-2"
+system_prompt_id = "redteam"
+# Disable some tools for this agent
+disabled_tools = ["search_replace", "write_file"]
+# Override tool permissions for this agent
+[tools.bash]
+permission = "always"
+[tools.read_file]
+permission = "always"
+```
+
+:::note
+This implies that you have set up a redteam prompt named `~/.vibe/prompts/redteam.md`.
+:::
+
+<SectionTab as="h1" sectionId="change-providers">Change Providers and Models</SectionTab>
+
+We allow users to change providers and models behind Vibe, for this you need to edit the `config.toml` file as follows:
+
+- Create a new Provider preset in the config file:
+   ```python
+   [[providers]]
+   name = "openrouter" # the name of the provider for the Vibe config
+   api_base = "https://openrouter.ai/api/v1" # base url of the api
+   api_key_env_var = "OPENROUTER_API_KEY" # env var to get the api key
+   api_style = "openai"
+   backend = "generic"
+   ```
+- Create a new Model preset:
+   ```python
+   [[models]]
+   name = "mistralai/devstral-2512:free" # id name of the model in the api 
+   provider = "openrouter" # name of the provider
+   alias = "devstral-openrouter" # the alias for Vibe to use the model
+   temperature = 0.2
+   input_price = 0.0
+   output_price = 0.0
+   ```
+- Set the `active_model` in the config file to the alias:
+   ```python
+   active_model =  "devstral-openrouter" # alias of the model to be used
+   ```
+
+Models created are also accessible via Vibe directly with the `/config` command, allowing you to change the model on the fly.
+
+<SectionTab as="h1" sectionId="mcp-server-configuration">MCP Server Configuration</SectionTab>
+
+### Configuring MCP Servers
+
+You can configure MCP (Model Context Protocol) servers to extend Vibe's capabilities. Add MCP server configurations under the `mcp_servers` section:
+```python
+# Example MCP server configurations
+[[mcp_servers]]
+name = "my_http_server"
+transport = "http"
+url = "http://localhost:8000"
+headers = { "Authorization" = "Bearer my_token" }
+api_key_env = "MY_API_KEY_ENV_VAR"
+api_key_header = "Authorization"
+api_key_format = "Bearer {token}"
+[[mcp_servers]]
+name = "my_streamable_server"
+transport = "streamable-http"
+url = "http://localhost:8001"
+headers = { "X-API-Key" = "my_api_key" }
+[[mcp_servers]]
+name = "fetch_server"
+transport = "stdio"
+command = "uvx"
+args = ["mcp-server-fetch"]
+```
+
+Supported transports:
+- `http`: Standard HTTP transport
+- `streamable-http`: HTTP transport with streaming support
+- `stdio`: Standard input/output transport (for local processes)
+Key fields:
+- `name`: A short alias for the server (used in tool names)
+- `transport`: The transport type
+- `url`: Base URL for HTTP transports
+- `headers`: Additional HTTP headers
+- `api_key_env`: Environment variable containing the API key
+- `command`: Command to run for stdio transport
+- `args`: Additional arguments for stdio transport
+
+MCP tools are named using the pattern `{server_name}_{tool_name}` and can be configured with permissions like built-in tools:
+```python
+# Configure permissions for specific MCP tools
+[tools.fetch_server_get]
+permission = "always"
+[tools.my_http_server_query]
+permission = "ask"
+```
+
+<SectionTab as="h1" sectionId="enable-disable-tools">Enable/Disable Tools with Patterns</SectionTab>
+
+### Controlling Tool Availability
+
+You can control which tools are active using `enabled_tools` and `disabled_tools`.
+These fields support exact names, glob patterns, and regular expressions.
+
+Examples:
+```python
+# Only enable tools that start with "serena_" (glob)
+enabled_tools = ["serena_*"]
+# Regex (prefix with re:) — matches full tool name (case-insensitive)
+enabled_tools = ["re:^serena_.*$"]
+# Heuristic regex support (patterns like `serena.*` are treated as regex)
+enabled_tools = ["serena.*"]
+# Disable a group with glob; everything else stays enabled
+disabled_tools = ["mcp_*", "grep"]
+```
+
+:::note
+- MCP tool names use underscores, e.g., `serena_list` not `serena.list`.
+- Regex patterns are matched against the full tool name using fullmatch.
+:::
+
+<SectionTab as="h1" sectionId="custom-vibe-home-directory">Custom Vibe Home Directory</SectionTab>
+
+### Customize Home Directory
+
+By default, Vibe stores its configuration in `~/.vibe/`. You can override this by setting the `VIBE_HOME` environment variable:
+```bash
+export VIBE_HOME="/path/to/custom/vibe/home"
+```
+This affects where Vibe looks for:
+- `config.toml` - Main configuration
+- `.env` - API keys
+- `agents/` - Custom agent configurations
+- `prompts/` - Custom system prompts
+- `tools/` - Custom tools
+- `logs/` - Session logs
+
+To run code, enable code execution and file creation in Settings > Capabilities.

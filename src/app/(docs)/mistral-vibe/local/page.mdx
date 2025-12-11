@@ -1,0 +1,60 @@
+---
+id: vibe_local
+title: Offline
+slug: vibe_local
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Offline
+Vibe supports local models, meaning you can deploy Devstral on your own infrastructure and use it without an internet connection - your own personal coding assistant CLI stack.
+
+<SectionTab as="h1" sectionId="run-devstral-locally">Run Devstral Locally</SectionTab>
+We provide weights for some Devstral models that you can use to run a server. As long as the server API is compatible, you can run any model you want.
+We recommend using **[Devstral Small 2](https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512)** for local usage, as it is an efficient and open-source option.
+
+<SectionTab as="h2" variant="secondary" sectionId="pre-requisites">Prerequisites</SectionTab>
+Due to the nature of the models and their use cases, we recommend having a GPU to run Devstral locally. For decent performance with long contexts, we recommend deploying at **FP8 precision** with a context length of around **128k**. You can adjust the context length based on your use case and hardware.
+
+Under these conditions, you will need at least an **H100** or **A100 GPU** to run Devstral locally efficiently.
+You can also run the model at lower precision and context to reduce requirements. For example, at **4-bits precision** with a **32k context length**, you will need at least an **RTX 4090 GPU** or **24GB of VRAM**.
+
+Alternatively, you can run Devstral by offloading the model to the CPU, though it will be significantly slower - this approach allows you to run Devstral on any machine, provided it has enough RAM.
+
+<SectionTab as="h2" variant="secondary" sectionId="deploying">Deploying</SectionTab>
+:::note
+As long as your server API is compatible with the OpenAI API, you can use any model you want.  
+Once the server is running locally on port **8080**, you can quickly switch from the Devstral API to your local server by using `/config` in Vibe and changing the model to **"local"**. By default, Vibe uses port **8080** as the local server.  
+For more information on configuring Vibe, please refer to the [configuration page](introduction/configuration).
+:::
+
+We recommend running Devstral with **[vLLM](https://github.com/vllm-project/vllm)**, as it is the most efficient and reliable way to deploy Devstral locally.
+
+To run **Devstral Small 2**, use the following command:
+```bash
+vllm serve mistralai/Devstral-Small-2-24B-Instruct-2512 --tool-call-parser mistral --enable-auto-tool-choice --port 8080
+```
+Here, `--port` specifies the port for the server. We recommend using **8080**, as it is the default port for Vibe. Otherwise, you will need to configure Vibe to use the correct port.
+
+Depending on your hardware, you may want to include the following flags:
+- `--tensor-parallel-size`: To use multiple GPUs
+- `--dtype`: To use a lower precision
+- `--max-model-len`: To reduce the context length
+
+Once the server is up and running, you can use Vibe to interact with your local model by typing `/config` and selecting the **"local"** model.
+
+<SectionTab as="h2" variant="secondary" sectionId="create-model-preset">Create a Model Preset</SectionTab>
+
+Once it's running, we recommend creating a specific preset for your local model. This way, you can easily switch between your local model and the Mistral AI API, or even have different models and providers for different use cases.
+
+To learn how to create a preset or change providers and models, please refer to the [Change Providers and Models](introduction/configuration#change-providers) configuration section.
+
+<SectionTab as="h2" variant="secondary" sectionId="deploy-anywhere">Deploy Anywhere</SectionTab>
+
+As mentionned preeviously, you can run Devstral anywhere you want. Below is a list of inference frameworks you can explore to deploy Devstral locally:
+- [vLLM (recommended)](https://github.com/vllm-project/vllm)
+- [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- [LM Studio](https://lmstudio.ai/)
+- [Ollama](https://ollama.com)
+- ...

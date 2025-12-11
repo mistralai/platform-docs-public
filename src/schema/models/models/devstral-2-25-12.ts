@@ -9,7 +9,7 @@ export default {
   frontier: true,
   class: 'Specialist',
   type: 'Open',
-  legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-medium-1',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-2',
   status: 'Active',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [

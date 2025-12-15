@@ -1,8 +1,8 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Codestral',
-  description: `Our cutting-edge language model for coding released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation.`,
-  shortDescription: `Our cutting-edge language model for coding released end of July 2025.`,
+  description: `Our cutting-edge language model for code completion released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM) and code generation.`,
+  shortDescription: `Our cutting-edge language model for code completion released end of July 2025.`,
   slug: 'codestral-25-08',
   releaseDate: 'July 30, 2025',
   version: '25.08',

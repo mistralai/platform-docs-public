@@ -1,8 +1,8 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Devstral 2',
-  description: `An enterprise grade text model, that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
-  shortDescription: `An enterprise grade text model, that excels at SWE use cases.`,
+  description: `Our frontier code agents model for solving software engineering tasks; excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
+  shortDescription: `Our frontier code agents model for solving software engineering tasks.`,
   slug: 'devstral-2-25-12',
   releaseDate: 'December 9, 2025',
   version: '25.12',

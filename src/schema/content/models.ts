@@ -2,8 +2,8 @@ import { ModelSlug } from '@/schema/models';
 
 export const FEATURED_MODEL_NAMES: ModelSlug[] = [
   'mistral-large-3-25-12',
+  'devstral-2-25-12',
   'mistral-medium-3-1-25-08',
-  'codestral-25-08',
 ];
 
 export const LATEST_MODEL_NAMES: ModelSlug[] = [
@@ -15,8 +15,8 @@ export const LATEST_MODEL_NAMES: ModelSlug[] = [
 
 export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
   'mistral-large-3-25-12',
+  'devstral-2-25-12',
   'mistral-medium-3-1-25-08',
-  'codestral-25-08',
 ];
 
 export const FEATURED_MODELS_COLOR_OVERRIDES = [

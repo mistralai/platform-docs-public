@@ -54,7 +54,7 @@ export const BUILDING_FEATURES = [
 ] as const;
 
 export const HERO_AVATAR_CARDS: ModelSlug[] = [
-  'devstral-medium-1-0-25-07',
+  'ministral-3-14b-25-12',
   'ocr-25-05',
   'magistral-medium-1-2-25-09',
 ] as const;

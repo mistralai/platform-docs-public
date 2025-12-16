@@ -7,8 +7,8 @@ export const FEATURED_MODEL_NAMES: ModelSlug[] = [
 ];
 
 export const LATEST_MODEL_NAMES: ModelSlug[] = [
+  'mistral-small-creative-25-12',
   'devstral-2-25-12',
-  'devstral-small-2-25-12',
   'mistral-large-3-25-12',
   'ministral-3-14b-25-12',
 ];

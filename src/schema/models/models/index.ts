@@ -8,6 +8,7 @@ import codestral2508 from './codestral-25-08';
 import devstral22512 from './devstral-2-25-12';
 import magistralMedium112507 from './magistral-medium-1-1-25-07';
 import codestralEmbed2505 from './codestral-embed-25-05';
+import mistralSmallCreative2512 from './mistral-small-creative-25-12';
 import devstralSmall22512 from './devstral-small-2-25-12';
 import ministral314b2512 from './ministral-3-14b-25-12';
 import ministral38b2512 from './ministral-3-8b-25-12';
@@ -60,6 +61,7 @@ export const MODELS = defineModels([
   devstral22512,
   magistralMedium112507,
   codestralEmbed2505,
+  mistralSmallCreative2512,
   devstralSmall22512,
   ministral314b2512,
   ministral38b2512,

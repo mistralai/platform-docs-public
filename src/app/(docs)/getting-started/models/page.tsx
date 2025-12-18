@@ -54,7 +54,7 @@ export default function ModelsPage() {
               size="sm"
               className="font-semibold font-mono uppercase text-xs"
             >
-              <Link href="https://discord.gg/mistral" target="_blank">
+              <Link href="https://discord.gg/mistralai" target="_blank">
                 <Bullet />
                 Join our Discord ↗
               </Link>

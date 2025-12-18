@@ -20,28 +20,34 @@ import OCRWithPDFUploadedTab from './ocr_with_pdf_uploaded_tab/_page.mdx';
 
 Mistral Document AI API comes with a Document OCR (Optical Character Recognition) processor, powered by our latest OCR model `mistral-ocr-latest`, which enables you to extract text and structured content from PDF documents. 
 
-<div style={{ textAlign: 'center' }}>
-  <img
-    src="/img/basic_ocr_graph.png"
-    alt="Basic OCR Graph"
-    width="600"
-    style={{ borderRadius: '15px' }}
-    className='mx-auto' 
-  />
-</div>
+<Image
+  url={['/img/basic_ocr_graph.png', '/img/basic_ocr_graph_dark.png']}
+  alt="Basic OCR Graph"
+  width="600px"
+  centered
+/>
 
 <SectionTab as="h1" sectionId="before-you-start">Before You Start</SectionTab>
 
 ### Key Features
 
-- Extracts text content while maintaining document structure and hierarchy
-- Preserves formatting like headers, paragraphs, lists and tables
-- Returns results in markdown format for easy parsing and rendering
-- Handles complex layouts including multi-column text and mixed content
+- **Extracts text** in content while maintaining document structure and hierarchy.
+- Preserves formatting like headers, paragraphs, lists and tables.
+  - **Table formatting** can be toggled between `markdown` and `html` via the `table_format` parameter.
+- Option to **extract headers and footers** via the `extract_header` and the `extract_footer` parameter, when used, the headers and footers content will be provided in the `header` and `footer` fields. By default, headers and footers are considered as part of the main content output.
+- Returns results in markdown format for easy parsing and rendering.
+- Handles complex layouts including multi-column text and mixed content and returns hyperlinks when available.
 - Processes documents at scale with high accuracy
 - Supports multiple document formats including:
     - `image_url`: png, jpeg/jpg, avif and more...
     - `document_url`: pdf, pptx, docx and more...
+    - For a non-exaustive more comprehensive list, visit our [FAQ](#faq).
+
+Learn more about our API [here](https://docs.mistral.ai/api/endpoint/ocr).
+
+:::info
+Table formatting as well as header and footer extraction is only available for OCR 2512 or newer.
+:::
 
 The OCR processor returns the extracted **text content**, **images bboxes** and metadata about the document structure, making it easy to work with the recognized content programmatically.
 
@@ -67,6 +73,36 @@ Among the PDF methods, you can use a **public available URL**, a **base64 encode
     </ExplorerTab>
 </ExplorerTabs>
 
+The output will be a JSON object containing the extracted text content, images bboxes, metadata and other information about the document structure.
+
+```py
+{
+  "pages": [ # The content of each page
+    {
+      "index": int, # The index of the corresponding page
+      "markdown": str, # The main output and raw markdown content
+      "images": list, # Image information when images are extracted
+      "tables": list, # Table information when using `table_format=html`
+      "hyperlinks": list, # Hyperlinks detected
+      "header": str|null, # Header content when using `extract_header=True`
+      "footer": str|null, # Footer content when using `extract_footer=True`
+      "dimensions": dict # The dimensions of the page
+    }
+  ],
+  "model": str, # The model used for the OCR
+  "document_annotation": dict|null, # Document annotation information when used, visit the Annotations documentation for more information
+  "usage_info": dict # Usage information
+}
+```
+
+:::note
+When extracting images, and tables using HTML, they will be replaced with placeholders, such as:
+- `![img-0.jpeg](img-0.jpeg)`
+- `[tbl-3.html](tbl-3.html)`
+
+You can map them to the actual images and tables by using the `images` and `tables` fields.
+:::
+
 <SectionTab as="h2" variant="secondary" sectionId="ocr-images">Images</SectionTab>
 
 To perform OCR on an image, you can either pass a URL to the image or directly use a Base64 encoded image.
@@ -80,6 +116,36 @@ To perform OCR on an image, you can either pass a URL to the image or directly u
     </ExplorerTab>
 </ExplorerTabs>
 
+The output will be a JSON object containing the extracted text content, images bboxes, metadata and other information about the document structure.
+
+```py
+{
+  "pages": [ # The content of each page
+    {
+      "index": int, # The index of the corresponding page
+      "markdown": str, # The main output and raw markdown content
+      "images": list, # Image information when images are extracted
+      "tables": list, # Table information when using `table_format=html`
+      "hyperlinks": list, # Hyperlinks detected
+      "header": str|null, # Header content when using `extract_header=True`
+      "footer": str|null, # Footer content when using `extract_footer=True`
+      "dimensions": dict # The dimensions of the page
+    }
+  ],
+  "model": str, # The model used for the OCR
+  "document_annotation": dict|null, # Document annotation information when used, visit the Annotations documentation for more information
+  "usage_info": dict # Usage information
+}
+```
+
+:::note
+When extracting images, and tables using HTML, they will be replaced with placeholders, such as:
+- `![img-0.jpeg](img-0.jpeg)`
+- `[tbl-3.html](tbl-3.html)`
+
+You can map them to the actual images and tables by using the `images` and `tables` fields.
+:::
+
 <SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
 
 For more information and guides on how to make use of OCR, we have the following cookbooks:
@@ -91,5 +157,25 @@ For more information and guides on how to make use of OCR, we have the following
 <Faq>
   <FaqItem question="Are there any limits regarding the OCR API?">
     Yes, there are certain limitations for the OCR API. Uploaded document files must not exceed 50 MB in size and should be no longer than 1,000 pages.
+  </FaqItem>
+  <FaqItem question="What document types are supported?">
+Our Document AI OCR Processor supports a vast range of document and image types. Below you can find a non-exhaustive list of the supported formats:
+| Documents                          | Images               |
+|------------------------------------|----------------------|
+| **PDF** (.pdf)                     | **JPEG** (.jpg, .jpeg) |
+| **Word Documents** (.docx)         | **PNG** (.png)       |
+| **PowerPoint** (.pptx)             | **AVIF** (.avif)     |
+| **Text Files** (.txt)              | **TIFF** (.tiff)     |
+| **EPUB** (.epub)                   | **GIF** (.gif)       |
+| **XML/DocBook** (.xml)             | **HEIC/HEIF** (.heic, .heif) |
+| **RTF** (.rtf)                     | **BMP** (.bmp)       |
+| **OpenDocument Text** (.odt)       | **WebP** (.webp)     |
+| **BibTeX/BibLaTeX** (.bib)         |                      |
+| **FictionBook** (.fb2)             |                      |
+| **Jupyter Notebooks** (.ipynb)     |                      |
+| **JATS XML** (.xml)                |                      |
+| **LaTeX** (.tex)                   |                      |
+| **OPML** (.opml)                   |                      |
+| **Troff** (.1, .man)               |                      |
   </FaqItem>
 </Faq>

@@ -1,11 +1,11 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'OCR',
+  name: 'OCR 3',
   description: `Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`,
   shortDescription: `Our OCR service powering our Document AI stack.`,
-  slug: 'ocr-25-05',
-  releaseDate: 'May 22, 2025',
-  version: '25.05',
+  slug: 'ocr-3-25-12',
+  releaseDate: 'December 15, 2025',
+  version: '25.12',
   frontier: true,
   class: 'Specialist',
   type: 'Premier',
@@ -21,14 +21,14 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 1.0, denominator: '/1000 Pages' },
+      { type: 'flat', price: 2.0, denominator: '/1000 Pages' },
       { type: 'flat', price: 3.0, denominator: '/1000 Annotated Pages' }
     ],
     output: [
       
     ]
   },
-  identifiers: { apiNames: ['mistral-ocr-2505', 'mistral-ocr-latest'] },
+  identifiers: { apiNames: ['mistral-ocr-2512', 'mistral-ocr-latest'] },
   capabilities: {
     input: ['image', 'document'],
     output: ['text', 'image'],

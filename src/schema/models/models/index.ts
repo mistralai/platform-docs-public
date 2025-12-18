@@ -2,7 +2,7 @@ import { defineModels } from '../schema';
 import mistralLarge32512 from './mistral-large-3-25-12';
 import mistralMedium312508 from './mistral-medium-3-1-25-08';
 import mistralSmall322506 from './mistral-small-3-2-25-06';
-import ocr2505 from './ocr-25-05';
+import ocr32512 from './ocr-3-25-12';
 import voxtralMiniTranscribe2507 from './voxtral-mini-transcribe-25-07';
 import codestral2508 from './codestral-25-08';
 import devstral22512 from './devstral-2-25-12';
@@ -22,6 +22,7 @@ import devstralMedium102507 from './devstral-medium-1-0-25-07';
 import devstralSmall112507 from './devstral-small-1-1-25-07';
 import magistralMedium102506 from './magistral-medium-1-0-25-06';
 import magistralSmall102506 from './magistral-small-1-0-25-06';
+import ocr22505 from './ocr-2-25-05';
 import devstralSmall102505 from './devstral-small-1-0-25-05';
 import mistralMedium32505 from './mistral-medium-3-25-05';
 import mistralSmall312503 from './mistral-small-3-1-25-03';
@@ -55,7 +56,7 @@ export const MODELS = defineModels([
   mistralLarge32512,
   mistralMedium312508,
   mistralSmall322506,
-  ocr2505,
+  ocr32512,
   voxtralMiniTranscribe2507,
   codestral2508,
   devstral22512,
@@ -75,6 +76,7 @@ export const MODELS = defineModels([
   devstralSmall112507,
   magistralMedium102506,
   magistralSmall102506,
+  ocr22505,
   devstralSmall102505,
   mistralMedium32505,
   mistralSmall312503,

@@ -6,7 +6,7 @@ export default {
   slug: 'ministral-3b-24-1',
   releaseDate: 'October 9, 2024',
   version: '24.1',
-  frontier: true,
+  frontier: false,
   class: 'Generalist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/ministral-1-3b',

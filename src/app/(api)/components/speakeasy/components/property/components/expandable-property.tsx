@@ -18,6 +18,11 @@ import type {
   ExpandablePropertyProps,
   ExpandablePropertyTitleProps,
 } from '@speakeasy-api/docs-md-react';
+
+// Extend the imported type to include the missing property
+type ExtendedExpandablePropertyBreakoutsProps = ExpandablePropertyBreakoutsProps & {
+  ConnectingCell?: typeof DefaultConnectingCell;
+};
 import { PropertyProvider } from '@/contexts/property-context';
 import { Prose } from '@/components/common/prose';
 
@@ -85,7 +90,7 @@ export function ExpandablePropertyBreakouts({
   children,
   slot,
   ConnectingCell = DefaultConnectingCell,
-}: ExpandablePropertyBreakoutsProps) {
+}: ExtendedExpandablePropertyBreakoutsProps) {
   return (
     <div slot={slot} className="flex flex-col">
       {Children.map(children, (child, index) => {

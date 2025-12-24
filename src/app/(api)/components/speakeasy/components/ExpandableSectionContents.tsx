@@ -1,14 +1,20 @@
-import { Children, isValidElement } from 'react';
+import { Children, isValidElement, ReactNode } from 'react';
 import { ConnectingCell as DefaultConnectingCell } from './property/components/cells';
 import type { ExpandableSectionProps } from '@speakeasy-api/docs-md-react';
 import { InternalError } from '../util/internalError';
 import { ExpandableTreeTopper as DefaultExpandableTreeTopper } from './section/tree-topper';
 
+// Extend the imported type to include the missing properties
+type ExtendedExpandableSectionProps = ExpandableSectionProps & {
+  ExpandableTreeTopper?: typeof DefaultExpandableTreeTopper;
+  ConnectingCell?: typeof DefaultConnectingCell;
+};
+
 export function ExpandableSectionContents({
   children,
   ExpandableTreeTopper = DefaultExpandableTreeTopper,
   ConnectingCell = DefaultConnectingCell,
-}: ExpandableSectionProps) {
+}: ExtendedExpandableSectionProps) {
   return (
     <>
       <ExpandableTreeTopper />

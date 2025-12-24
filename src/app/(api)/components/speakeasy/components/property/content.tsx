@@ -16,6 +16,13 @@ import {
   ConnectingCell as DefaultConnectingCell,
 } from './components/cells';
 import { ExpandablePropertyProps } from '@speakeasy-api/docs-md-react';
+
+// Extend the imported type to include the missing properties
+type ExtendedExpandablePropertyProps = ExpandablePropertyProps & {
+  ExpandableCell?: typeof DefaultExpandableCell;
+  NonExpandableCell?: typeof DefaultNonExpandableCell;
+  ConnectingCell?: typeof DefaultConnectingCell;
+};
 import {
   PROPERTY_PATH_SEPARATOR,
   useIsNestedProperty,
@@ -35,7 +42,7 @@ export function PropertyContents({
   ExpandableCell = DefaultExpandableCell,
   NonExpandableCell = DefaultNonExpandableCell,
   ConnectingCell = DefaultConnectingCell,
-}: ExpandablePropertyProps) {
+}: ExtendedExpandablePropertyProps) {
   const [highlight, setHighlight] = useState(false);
   const propCtx = usePropertyContext();
 

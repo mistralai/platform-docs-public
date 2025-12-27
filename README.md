@@ -97,4 +97,4 @@ This documentation is built using [Docusaurus](https://docusaurus.io/).
 
 # How to contribute?
 
-Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our [contribution guideline](https://docs.mistral.ai/guides/contribute/). 
+Mistral AI is committed to open source software development and welcomes external contributions. Please head on to our [contribution guideline](https://platform-docs-public.pages.dev/guides/contribute/overview/). 

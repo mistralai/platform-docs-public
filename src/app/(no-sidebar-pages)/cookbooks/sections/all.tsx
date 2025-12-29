@@ -415,14 +415,18 @@ function CookbookTags({
 
 // Cookbook all section component with search persistence
 function _CookbookAllSection() {
-  // Initialize search query from sessionStorage if available
-  const [searchQuery, setSearchQuery] = useState(() => {
+  // Initialize search query
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Hydrate search query from sessionStorage
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedQuery = sessionStorage.getItem('cookbookSearchQuery');
-      return savedQuery || '';
+      if (savedQuery) {
+        setSearchQuery(savedQuery);
+      }
     }
-    return '';
-  });
+  }, []);
 
   // Query state for filtering from topics
   const [useCaseFilter, setUseCaseFilter] = useQueryState(
@@ -463,6 +467,23 @@ function _CookbookAllSection() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Scroll to section when filters are present on mount or change
+  useEffect(() => {
+    if (useCaseFilter || integrationFilter) {
+      const element = document.getElementById('all-cookbooks');
+      if (element) {
+        // Use a small timeout to ensure the DOM is ready and layout has occurred
+        const timeoutId = setTimeout(() => {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }, 100);
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [useCaseFilter, integrationFilter]);
 
   return (
     <section id="all-cookbooks" className="space-y-8">

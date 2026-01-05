@@ -17,7 +17,7 @@ import { Bullet } from '@/components/ui/bullet';
 import Link from 'next/link';
 import UsefullLinksSection from '@/components/sections/usefull-links';
 import ArrowRightIcon from '@/components/icons/pixel/arrow-right';
-import { MISTRAL_URL } from '@/lib/constants';
+import { MISTRAL_URL_ORIGIN } from '@/lib/constants';
 
 export default function ModelsPage() {
   // Featured models
@@ -35,8 +35,12 @@ export default function ModelsPage() {
   const otherModels = nonLegacyModels.filter(model => !model.frontier);
 
   // Split SOTA models by class
-  const generalistFrontier = frontierModels.filter(m => m.class === 'Generalist');
-  const specialistFrontier = frontierModels.filter(m => m.class === 'Specialist');
+  const generalistFrontier = frontierModels.filter(
+    m => m.class === 'Generalist'
+  );
+  const specialistFrontier = frontierModels.filter(
+    m => m.class === 'Specialist'
+  );
 
   return (
     <div className="mx-auto space-y-14 w-full md:pt-8 not-prose">
@@ -45,7 +49,8 @@ export default function ModelsPage() {
         <Heading align="center">
           <HeadingTitle as="h1">Models</HeadingTitle>
           <HeadingSubtitle>
-            A list of all our available models, helping you explore their capabilities, performance, trade-offs, and more.
+            A list of all our available models, helping you explore their
+            capabilities, performance, trade-offs, and more.
           </HeadingSubtitle>
           <HeadingCTAs>
             <Button
@@ -60,7 +65,7 @@ export default function ModelsPage() {
               </Link>
             </Button>
             <Button size="sm" asChild>
-              <Link href={`${MISTRAL_URL}/contact`}>
+              <Link href={`${MISTRAL_URL_ORIGIN}/contact`}>
                 Reach out
                 <ArrowRightIcon className="size-5" />
               </Link>

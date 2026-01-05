@@ -6,7 +6,7 @@ import appStoreBadge from '@/../public/assets/badges/Download_on_the_App_Store_B
 import AnimatedGround from './animated-ground';
 import BackgroundGradient from './background';
 import AnimatedStarsBackground from './animated-stars';
-import { MISTRAL_API_REFERENCE_URL, MISTRAL_URL } from '@/lib/constants';
+import { MISTRAL_API_REFERENCE_URL, MISTRAL_URL_ORIGIN } from '@/lib/constants';
 import { SOCIALS } from '@/schema/content/socials';
 import CookieTrigger from './cookie-trigger';
 import { ThemeToggle } from '../header/theme-toggle';
@@ -31,18 +31,21 @@ const footerSchema: { sections: FooterSection[] } = {
     {
       title: 'WHY MISTRAL',
       links: [
-        { label: 'About us', href: `${MISTRAL_URL}/about` },
-        { label: 'Our customers', href: `${MISTRAL_URL}/customers` },
-        { label: 'Careers', href: `${MISTRAL_URL}/careers` },
-        { label: 'Contact us', href: `${MISTRAL_URL}/contact` },
+        { label: 'About us', href: `${MISTRAL_URL_ORIGIN}/about` },
+        { label: 'Our customers', href: `${MISTRAL_URL_ORIGIN}/customers` },
+        { label: 'Careers', href: `${MISTRAL_URL_ORIGIN}/careers` },
+        { label: 'Contact us', href: `${MISTRAL_URL_ORIGIN}/contact` },
       ],
     },
     {
       title: 'EXPLORE',
       links: [
-        { label: 'AI Solutions', href: `${MISTRAL_URL}/solutions` },
-        { label: 'Partners', href: `${MISTRAL_URL}/partners` },
-        { label: 'Research', href: `${MISTRAL_URL}/news?category=Research` },
+        { label: 'AI Solutions', href: `${MISTRAL_URL_ORIGIN}/solutions` },
+        { label: 'Partners', href: `${MISTRAL_URL_ORIGIN}/partners` },
+        {
+          label: 'Research',
+          href: `${MISTRAL_URL_ORIGIN}/news?category=Research`,
+        },
       ],
     },
     {
@@ -58,13 +61,16 @@ const footerSchema: { sections: FooterSection[] } = {
       links: [
         {
           label: 'AI Studio',
-          href: `${MISTRAL_URL}/products/la-plateforme`,
+          href: `${MISTRAL_URL_ORIGIN}/products/la-plateforme`,
         },
-        { label: 'Le Chat', href: `${MISTRAL_URL}/products/le-chat` },
-        { label: 'Mistral Code', href: `${MISTRAL_URL}/products/mistral-code` },
+        { label: 'Le Chat', href: `${MISTRAL_URL_ORIGIN}/products/le-chat` },
+        {
+          label: 'Mistral Code',
+          href: `${MISTRAL_URL_ORIGIN}/products/mistral-code`,
+        },
         {
           label: 'Mistral Compute',
-          href: `${MISTRAL_URL}/products/mistral-compute`,
+          href: `${MISTRAL_URL_ORIGIN}/products/mistral-compute`,
         },
         { label: 'Try the API', href: `${MISTRAL_API_REFERENCE_URL}` },
       ],
@@ -72,20 +78,20 @@ const footerSchema: { sections: FooterSection[] } = {
     {
       title: 'LEGAL',
       links: [
-        { label: 'Terms of service', href: `${MISTRAL_URL}/terms` },
+        { label: 'Terms of service', href: `${MISTRAL_URL_ORIGIN}/terms` },
         {
           label: 'Privacy policy',
-          href: `${MISTRAL_URL}/terms#privacy-policy`,
+          href: `${MISTRAL_URL_ORIGIN}/terms#privacy-policy`,
         },
-        // { label: 'Privacy choices', href: `${MISTRAL_URL}/privacy-choices` }, TODO: This displays a cookie modal
-        { label: 'Legal notice', href: `${MISTRAL_URL}/legal` },
+        // { label: 'Privacy choices', href: `${MISTRAL_URL_ORIGIN}/privacy-choices` }, TODO: This displays a cookie modal
+        { label: 'Legal notice', href: `${MISTRAL_URL_ORIGIN}/legal` },
         {
           label: 'Privacy Choices',
           type: 'cookie',
         },
         {
           label: 'Brand',
-          href: `${MISTRAL_URL}/brand`,
+          href: `${MISTRAL_URL_ORIGIN}/brand`,
         },
       ],
     },

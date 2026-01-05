@@ -32,6 +32,8 @@ export const MISTRAL_URL = process.env.MISTRAL_URL
   ? new URL(process.env.MISTRAL_URL)
   : new URL('https://mistral.ai');
 
+export const MISTRAL_URL_ORIGIN = MISTRAL_URL.origin;
+
 export const MISTRAL_CHAT_URL = process.env.MISTRAL_CHAT_URL
   ? new URL(process.env.MISTRAL_CHAT_URL)
   : new URL('https://chat.mistral.ai/chat');

@@ -62,7 +62,7 @@ export default function CookbookHeroSection() {
           <Button variant="default" asChild>
             <Link
               target="_blank"
-              href="https://github.com/mistralai/cookbook/blob/main/CONTRIBUTING.md"
+              href="https://github.com/mistralai/cookbook/blob/main/CONTRIBUTING_GUIDE.md"
             >
               Contribute
               <ArrowRightIcon />
@@ -71,7 +71,7 @@ export default function CookbookHeroSection() {
           <Button variant="outline" asChild>
             <Link
               target="_blank"
-              href="https://github.com/mistralai/cookbook/blob/main/CONTRIBUTING.md"
+              href="https://github.com/mistralai/cookbook/blob/main/CONTRIBUTING_GUIDE.md"
               className="font-mono text-xs uppercase"
             >
               <Bullet />

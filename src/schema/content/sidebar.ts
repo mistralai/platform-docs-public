@@ -20,6 +20,8 @@ export type SidebarItemBase = {
       href: string;
     };
   };
+  /** If the page is a markdown file */
+  isMarkdownFile: boolean;
 };
 
 /* The sidebar item, is basically an abstraction of DocsMetadata and DocsCategoryMetadata*/

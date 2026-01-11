@@ -18,12 +18,13 @@ import {
   getSlugOrOverridedSlug,
 } from '@/lib/content/breadcrumb-stuff';
 import { SidebarItem } from '@/schema';
-
 import HomeIcon from '@/components/icons/home';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Bullet } from '@/components/ui/bullet';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useCopyButton } from '@/components/ui/copy-button';
+import { CheckIcon, CopyIcon } from '@/components/icons/pixel';
 
 export interface BreadcrumbItem {
   label: string;
@@ -410,6 +411,12 @@ export const BreadcrumbHome = ({ homePath = '/' }: { homePath?: string }) => {
   );
 };
 
+const isDownloadable = (item: SidebarItem) => {
+  return (
+    (item.type === 'file' && item.isMarkdownFile) ||
+    (item.type === 'category' && item.hasPage && item.isMarkdownFile)
+  );
+};
 export const TopCategoryCta = ({
   topCategory,
   lastItem,
@@ -440,6 +447,10 @@ export const TopCategoryCta = ({
     );
   }
 
+  if (isDownloadable(lastItem)) {
+    return <CopyMarkdownButton lastItem={lastItem} />;
+  }
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <p className="text-xs 2xl:text-sm text-foreground/30 shrink-0 tracking-wide uppercase">
@@ -450,5 +461,46 @@ export const TopCategoryCta = ({
         ]
       </p>
     </div>
+  );
+};
+
+const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
+  const handleCopyMarkdown = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isDownloadable(lastItem)) return;
+
+    const slugPath = lastItem.slug.join('/');
+    const filePath = `/${slugPath}.md`;
+
+    try {
+      const response = await fetch(filePath);
+      if (response.ok) {
+        const content = await response.text();
+        await navigator.clipboard.writeText(content);
+      }
+    } catch (error) {
+      console.error('Failed to copy markdown:', error);
+    }
+  };
+  const { copyState, handleCopy } = useCopyButton({
+    handleCopy: handleCopyMarkdown,
+    value: '',
+  });
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      className="font-medium"
+      onClick={handleCopy}
+    >
+      {copyState === 'copied' ? (
+        <CheckIcon className="size-3 text-primary-soft" />
+      ) : (
+        <CopyIcon className="size-3" />
+      )}
+      <span className="font-medium">Copy markdown</span>
+    </Button>
   );
 };

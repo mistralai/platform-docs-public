@@ -26,7 +26,7 @@ const FilterTrigger = React.forwardRef<HTMLButtonElement, FilterTriggerProps>(
   ({ children, icon, ...props }, ref) => (
     <button
       ref={ref}
-      className="group flex min-w-44 max-md:flex-1 items-center pl-4 pr-2 justify-between text-muted-foreground hover:text-foreground h-8 transition-colors bg-background border border-[#1C19174D] rounded-sm overflow-hidden data-[state=open]:text-foreground"
+      className="group flex min-w-44 max-md:flex-1 items-center pl-4 pr-2 justify-between text-muted-foreground hover:text-foreground h-8 transition-colors bg-background border border-border rounded-sm overflow-hidden data-[state=open]:text-foreground"
       {...props}
     >
       <span className="text-xs font-semibold uppercase tracking-wide font-mono group-data-[state=open]:text-foreground">
@@ -138,8 +138,8 @@ const TagFilterContent = ({
           <label
             htmlFor={type}
             className={cn(
-              'text-sm font-medium capitalize cursor-pointer leading-none text-black/50 hover:text-black/80 peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-colors',
-              selectedFilters.includes(type) && 'font-bold text-black'
+              'text-sm font-medium capitalize cursor-pointer leading-none text-foreground/50 hover:text-foreground/80 peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-colors',
+              selectedFilters.includes(type) && 'font-bold text-foreground'
             )}
           >
             {type}

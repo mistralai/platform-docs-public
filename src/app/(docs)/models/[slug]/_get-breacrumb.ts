@@ -22,6 +22,7 @@ export function getModelsBreadcrumb(prevSlug: string[]): SidebarItem[] {
         pagination: { prev: undefined, next: undefined },
         slug: [...prevSlug, getModelSlug(model)],
         clickable: true,
+        isMarkdownFile: false,
       }) satisfies SidebarItem
   );
 }

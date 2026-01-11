@@ -6,7 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export const tabsListVariants = cva(
-  'w-full group/tabs flex gap-1 justify-start items-end overflow-x-auto',
+  'w-full group/tabs flex gap-1 justify-start items-end overflow-x-auto  not-has-touch-screen:scrollbar-none',
   {
     variants: {
       variant: {

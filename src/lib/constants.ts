@@ -29,8 +29,8 @@ export const OG_IMAGE_DIMENSIONS = { width: 1200, height: 630 };
 // --------------------
 
 export const MISTRAL_URL = process.env.MISTRAL_URL
-  ? new URL(process.env.MISTRAL_URL)
-  : new URL('https://mistral.ai');
+  ? new URL(process.env.MISTRAL_URL).origin
+  : 'https://mistral.ai';
 
 export const MISTRAL_CHAT_URL = process.env.MISTRAL_CHAT_URL
   ? new URL(process.env.MISTRAL_CHAT_URL)
@@ -60,7 +60,6 @@ export const MISTRAL_PRICING_URL = new URL('/pricing', MISTRAL_URL);
 const _MISTRAL_API_PRICING_URL = new URL('', MISTRAL_PRICING_URL);
 _MISTRAL_API_PRICING_URL.hash = 'api-pricing';
 export const MISTRAL_API_PRICING_URL = _MISTRAL_API_PRICING_URL.toString();
-export const MISTRAL_CONTACT_URL = new URL('/contact', MISTRAL_URL);
 
 export const MISTRAL_LEGAL_URL = new URL(
   process.env.MISTRAL_LEGAL_URL || 'https://legal.mistral.ai/'

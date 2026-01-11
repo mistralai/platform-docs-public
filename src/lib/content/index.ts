@@ -45,7 +45,8 @@ export async function getSidebar(
 
     const pageFile = resolvePageFile(subPath);
     const hasPage = Boolean(pageFile);
-    const pageIsMdx = pageFile?.endsWith('.mdx') || pageFile?.endsWith('.md');
+    const pageIsMdx =
+      (pageFile?.endsWith('.mdx') || pageFile?.endsWith('.md')) ?? false;
 
     const metaFile = resolveMetaFile(subPath);
     const hasMetaMd = Boolean(metaFile);
@@ -102,6 +103,7 @@ export async function getSidebar(
         hidden: shouldHideCategory(dirent.name),
         clickable: hasPage || categoryMeta.link !== undefined,
         hasPage,
+        isMarkdownFile: hasPage && pageIsMdx,
       };
 
       items.push(categoryItem);
@@ -133,6 +135,7 @@ export async function getSidebar(
         toc,
         pagination: { prev: undefined, next: undefined },
         clickable: true,
+        isMarkdownFile: pageIsMdx,
       };
       items.push(fileItem);
       continue;
@@ -148,6 +151,7 @@ export async function getSidebar(
         toc: [],
         pagination: { prev: undefined, next: undefined },
         clickable: true,
+        isMarkdownFile: pageIsMdx,
       };
       items.push(fileItem);
       continue;

@@ -36,6 +36,6 @@ export default {
     finetuning: [],
   },
   metadata: {},
-  playground: '',
+  playground: 'https://console.mistral.ai/build/document-ai/ocr-playground',
   legacy: false,
 } as const satisfies StaticModel;

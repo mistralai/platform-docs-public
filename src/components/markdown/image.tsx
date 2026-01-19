@@ -1,8 +1,4 @@
-'use client';
-
-import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { useTheme } from 'next-themes';
 import NextImage from 'next/image';
 
 interface ImageProps {
@@ -13,6 +9,53 @@ interface ImageProps {
   className?: string;
 }
 
+function ImageElement({
+  src,
+  alt,
+  width,
+  className,
+}: {
+  src: string;
+  alt: string;
+  width?: number | string;
+  className?: string;
+}) {
+  const useNextImage = typeof width === 'number' && !src.startsWith('data:');
+  const baseClassName = cn(
+    'rounded-lg border border-border max-w-full h-auto',
+    className
+  );
+
+  if (useNextImage) {
+    return (
+      <NextImage
+        src={src}
+        alt={alt}
+        width={width}
+        height={0}
+        className={baseClassName}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      style={
+        width
+          ? {
+              width: typeof width === 'number' ? `${width}px` : width,
+              maxWidth: '100%',
+              height: 'auto',
+            }
+          : undefined
+      }
+      className={baseClassName}
+    />
+  );
+}
+
 export function Image({
   url,
   alt = '',
@@ -21,64 +64,24 @@ export function Image({
   className,
   ...props
 }: ImageProps) {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
+  const hasThemeVariants = Array.isArray(url);
 
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const getImageSrc = () => {
-    if (Array.isArray(url)) {
-      if (!mounted) return url[0];
-      return resolvedTheme === 'dark' ? url[1] : url[0];
-    }
-    return url;
-  };
-
-  const imageSrc = getImageSrc();
-  const isDataUrl = imageSrc.startsWith('data:');
-
-  const imageStyle: React.CSSProperties = {};
-
-  if (width) {
-    if (typeof width === 'number') {
-      imageStyle.width = `${width}px`;
-      imageStyle.maxWidth = '100%';
-      imageStyle.height = 'auto';
-    } else {
-      imageStyle.width = width;
-      imageStyle.maxWidth = '100%';
-      imageStyle.height = 'auto';
-    }
-  }
-
-  if (isDataUrl) {
+  if (hasThemeVariants) {
+    const [lightSrc, darkSrc] = url;
     return (
       <div className={cn('my-4', centered && 'flex justify-center', className)}>
-        <img
-          src={imageSrc}
-          alt={alt}
-          style={imageStyle}
-          className={cn(
-            'rounded-lg border border-border',
-            width && 'max-w-full h-auto'
-          )}
-          {...props}
-        />
-      </div>
-    );
-  }
-
-  if (width && typeof width === 'number') {
-    return (
-      <div className={cn('my-4', centered && 'flex justify-center', className)}>
-        <NextImage
-          src={imageSrc}
+        <ImageElement
+          src={lightSrc}
           alt={alt}
           width={width}
-          height={0}
-          className={cn('rounded-lg border border-border h-auto max-w-full')}
+          className="dark:hidden"
+          {...props}
+        />
+        <ImageElement
+          src={darkSrc}
+          alt={alt}
+          width={width}
+          className="hidden dark:block"
           {...props}
         />
       </div>
@@ -87,13 +90,7 @@ export function Image({
 
   return (
     <div className={cn('my-4', centered && 'flex justify-center', className)}>
-      <img
-        src={imageSrc}
-        alt={alt}
-        style={imageStyle}
-        className={cn('rounded-lg border border-border max-w-full h-auto')}
-        {...props}
-      />
+      <ImageElement src={url} alt={alt} width={width} {...props} />
     </div>
   );
 }

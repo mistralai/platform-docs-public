@@ -22,9 +22,9 @@ import TranscriptionsTab from './transcriptions_tab/_page.mdx';
 
 Batching allows you to run inference on large inputs in parallel, reducing costs while running large workloads.
 
-<SectionTab as="h1" sectionId="prepare-batch-file">Prepare batch file</SectionTab>
+<SectionTab as="h1" sectionId="prepare-batch-file">Prepare Batch</SectionTab>
 
-### Prepare and Upload your Batch File
+### Prepare and Upload your Batch
 
 A batch is composed of a list of API requests. The structure of an individual request includes:
 
@@ -38,7 +38,7 @@ Here's an example of how to structure a batch request:
 {"custom_id": "1", "body": {"max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French wine?"}]}}
 ```
 
-A batch `body` object can be any **valid request body for the endpoint** you are using. Below are examples of batch files for different endpoints, they have their `body` match the endpoint's request body.
+A batch `body` object can be any **valid request body for the endpoint** you are using. Below are examples of batches for different endpoints, they have their `body` match the endpoint's request body.
 
 <ExplorerTabs id="batch-examples" mode="close">
   <ExplorerTab value="chat-completion" label="Chat Completion">
@@ -61,11 +61,15 @@ A batch `body` object can be any **valid request body for the endpoint** you are
   </ExplorerTab>
 </ExplorerTabs>
 
-Save your batch into a .jsonl file. Once saved, you can upload your batch input file to ensure it is correctly referenced when initiating batch processes.
+For large batches of up to 1M requests, you would create a .jsonl file with the above data. Once saved, you can upload your batch input file to ensure it is correctly referenced when initiating batch processes.
 
-There are 2 main ways of uploading and running a batch:
+:::tip
+For batches with less than 10k requests, we support [inline batching](#inline-batching).
+:::
 
-**A.** Via AI Studio ( Recommended ):
+There are 2 main methods of uploading a batch file:
+
+**A.** Via AI Studio:
   - Upload your files here: https://console.mistral.ai/build/files 
     - Upload the file in the format described previously.
     - Set `purpose` to Batch Processing.
@@ -73,7 +77,7 @@ There are 2 main ways of uploading and running a batch:
     - Create and start a job by providing the `files`, `endpoint` and `model`.
 You wont need to use the API to upload your files and/or create batching jobs.
 
-**B.** Via the API, explained below.
+**B.** Via the API, explained below:
 
 To upload your batch file, you need to use the `files` endpoint.
 
@@ -137,11 +141,17 @@ curl https://api.mistral.ai/v1/files \
 
 Create a new batch job, it will be queued for processing.
 
-- `input_files`: a list of the batch input file IDs.
+- Requests Data: The data for the requests to be batched. There are two options:
+  - `input_files`: a list of the batch input file IDs, see how to use [file-batching](#file-batching).
+  - `requests`: a list of the requests to be batched, see how to use [inline batching](#inline-batching).
 - `model`: you can only use one model (e.g., `codestral-latest`) per batch. However, you can run multiple batches on the same files with different models if you want to compare outputs.
 - `endpoint`: we currently support `/v1/embeddings`, `/v1/chat/completions`, `/v1/fim/completions`, `/v1/moderations`, `/v1/chat/moderations`, `/v1/ocr`, `/v1/classifications`, `/v1/conversations`, `/v1/audio/transcriptions`.
 - `metadata`: optional custom metadata for the batch.
 -
+
+<SectionTab as="h2" variant="secondary" sectionId="file-batching">File Batching</SectionTab>
+
+The standard batching approach relies on batch files containing all the requests to be processed. We support up to 1 million requests in a single batch, enabling efficient handling of large volumes of requests at a reduced cost. This is ideal for tasks with high throughput requirements but low latency sensitivity or priority.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -157,12 +167,6 @@ created_job = client.batch.jobs.create(
   <TabItem value="typescript" label="typescript">
 
 ```typescript
-import { Mistral } from '@mistralai/mistralai';
-
-const apiKey = process.env.MISTRAL_API_KEY;
-
-const client = new Mistral({apiKey: apiKey});
-
 const createdJob = await client.batch.jobs.create({
     inputFiles: [batchData.id],
     model: "mistral-small-latest",
@@ -183,6 +187,121 @@ curl --location "https://api.mistral.ai/v1/batch/jobs" \
     "model": "mistral-small-latest",
     "input_files": [
         "<uuid>"
+    ],
+    "endpoint": "/v1/chat/completions",
+    "metadata": {
+        "job_type": "testing"
+    }
+}'
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="inline-batching">Inline-Batching</SectionTab>
+
+For batches of fewer than 10,000 requests, we support inline batching. Instead of creating and uploading a `.jsonl` file with all the request data, you can include the request body directly in the job creation request. This is convenient for smaller-scale or less bulk-intensive tasks.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+inline_batch_data = [
+    {
+        "custom_id": "0", 
+        "body": {
+            "max_tokens": 128, 
+            "messages": [{"role": "user", "content": "What is the best French cheese?"}]
+        }
+    },
+    {
+        "custom_id": "1", 
+        "body": {
+            "max_tokens": 512, 
+            "temperature": 0.2, 
+            "messages": [{"role": "user", "content": "What is the best French wine?"}]
+        }
+    },
+    {
+        "custom_id": "2", 
+        "body": {
+            "max_tokens": 256, 
+            "temperature": 0.8, 
+            "messages": [{"role": "user", "content": "What is the best French pastry?"}]
+        }
+    },
+]
+
+created_job = client.batch.jobs.create(
+    requests=inline_batch_data,
+    model="mistral-small-latest",
+    endpoint="/v1/chat/completions",
+    metadata={"job_type": "testing"}
+)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const inlineBatchData = [
+    {
+        "custom_id": "0", 
+        "body": {
+            "max_tokens": 128, 
+            "messages": [{"role": "user", "content": "What is the best French cheese?"}]
+        }
+    },
+    {
+        "custom_id": "1", 
+        "body": {
+            "max_tokens": 512, 
+            "temperature": 0.2, 
+            "messages": [{"role": "user", "content": "What is the best French wine?"}]
+        }
+    },
+    {
+        "custom_id": "2", 
+        "body": {
+            "max_tokens": 256, 
+            "temperature": 0.8, 
+            "messages": [{"role": "user", "content": "What is the best French pastry?"}]
+        }
+    },
+]
+
+const createdJob = await client.batch.jobs.create({
+    requests: inlineBatchData,
+    model: "mistral-small-latest",
+    endpoint: "/v1/chat/completions",
+    metadata: {jobType: "testing"}
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/batch/jobs" \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header "Content-Type: application/json" \
+--header "Accept: application/json" \
+--data '{
+    "model": "mistral-small-latest",
+    "requests": [
+      {"custom_id": "0", "body": {"max_tokens": 128, "messages": [{"role": "user", "content": "What is the best French cheese?"}]}},
+      {"custom_id": "1", "body": {"max_tokens": 512, "temperature": 0.2, "messages": [{"role": "user", "content": "What is the best French wine?"}]}},
+      {"custom_id": "2", "body": {"max_tokens": 256, "temperature": 0.8, "messages": [{"role": "user", "content": "What is the best French pastry?"}]}}
     ],
     "endpoint": "/v1/chat/completions",
     "metadata": {

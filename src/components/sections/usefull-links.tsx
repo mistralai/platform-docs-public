@@ -9,7 +9,7 @@ import {
 } from '@/components/icons/pixel';
 import { cn } from '@/lib/utils';
 import { SOCIALS } from '@/schema/content/socials';
-import { MISTRAL_HELP_CENTER_URL, MISTRAL_URL } from '@/lib/constants';
+import { MISTRAL_HELP_CENTER_URL, MISTRAL_URL_ORIGIN } from '@/lib/constants';
 
 interface UsefullLinksSectionProps {
   links?: {
@@ -67,7 +67,7 @@ export const usefullLinks = [
   },
   {
     title: 'AI Studio',
-    href: `${MISTRAL_URL}/products/la-plateforme`,
+    href: `${MISTRAL_URL_ORIGIN}/products/la-plateforme`,
     icon: (
       <RockIcon className="transition-colors duration-100 dark:group-hover:text-black/70" />
     ),

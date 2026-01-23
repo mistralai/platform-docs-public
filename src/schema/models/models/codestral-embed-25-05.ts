@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'codestral-embed', backgroundColor: 'orange' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/codestral-embed',
+  paperlink: null,
   contextLength: '8k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
@@ -27,10 +29,10 @@ export default {
       
     ]
   },
-  identifiers: { apiNames: ['codestral-embed'] },
+  identifiers: { apiNames: ['codestral-embed-2505', 'codestral-embed'] },
   capabilities: {
     input: ['text'],
-    output: [],
+    output: ['embeddings'],
     features: ['embeddings', 'batching'],
     finetuning: [],
   },

@@ -21,27 +21,19 @@ import { ModelCard, ModelCardInner } from './components/model-card';
 import { ApiNamesBadges } from './components/api-names-badges';
 import InfoHint from '@/components/icons/info-hint';
 import Link from 'next/link';
-import {
-  MISTRAL_API_PRICING_URL,
-  MISTRAL_API_REFERENCE_URL,
-  MISTRAL_LEGAL_URL,
-} from '@/lib/constants';
+import { MISTRAL_API_PRICING_URL, MISTRAL_LEGAL_URL } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import {
-  ENABLE_MODEL_TYPE_TOOLTIP,
-  MODEL_TYPE_TOOLTIP_CONTENT,
-} from '@/schema/models/copyright/type-tooltip';
 
 import { Prose } from '@/components/common/prose';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { markdownComponents } from '@/components/markdown';
 import { ModelTypeBadge } from '@/components/model/type-badge';
+import { ArrowRightLeftIcon, ExternalLinkIcon } from 'lucide-react';
 
 interface ModelPageProps {
   params: Promise<{ slug: string }>;
@@ -160,7 +152,11 @@ export default async function ModelPage({ params }: ModelPageProps) {
               }}
             />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
+            <CompareModelButton
+              modelSlug={model.slug}
+              modelsToCompare={model.modelsToCompare}
+            />
             <LegalButton legal={model.legalButton} />
           </div>
         </div>
@@ -179,6 +175,26 @@ export default async function ModelPage({ params }: ModelPageProps) {
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-foreground/50">
                   {model.releaseDate}
+                  {model.bloglink && (
+                    <Link
+                      href={model.bloglink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-orange-500 underline hover:text-orange-600"
+                    >
+                      Blog
+                    </Link>
+                  )}
+                  {model.paperlink && (
+                    <Link
+                      href={model.paperlink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-orange-500 underline hover:text-orange-600"
+                    >
+                      Technical Report
+                    </Link>
+                  )}
                 </span>
                 <div className="flex items-center gap-2">
                   {model.type && <ModelTypeBadge type={model.type} />}
@@ -321,17 +337,34 @@ export default async function ModelPage({ params }: ModelPageProps) {
                 </SectionBlock>
               </ModelCardInner>
             </ModelCard>
-
+            {model.contextLength && (
+              <ModelCard
+                className={cn(hasLargePricing ? 'xl:hidden' : 'lg:hidden')}
+                isLegacy={isLegacy}
+              >
+                <ModelCardInner>
+                  <SectionBlock>
+                    <SectionLabel>Context</SectionLabel>
+                    <div className="text-lg font-bold font-mono text-primary-soft">
+                      {model.contextLength}
+                    </div>
+                  </SectionBlock>
+                </ModelCardInner>
+              </ModelCard>
+            )}
             {!isLegacy && (
               <ModelCard
                 className={cn(hasLargePricing ? 'xl:hidden' : 'lg:hidden')}
                 isLegacy={isLegacy}
               >
-                <ModelCardInner className="items-start flex flex-col gap-1">
-                  <Price
-                    pricing={model.pricing}
-                    isRetired={model.status === 'Retired'}
-                  />
+                <ModelCardInner>
+                  <SectionBlock>
+                    <SectionLabel>Price</SectionLabel>
+                    <Price
+                      pricing={model.pricing}
+                      isRetired={model.status === 'Retired'}
+                    />
+                  </SectionBlock>
                 </ModelCardInner>
               </ModelCard>
             )}
@@ -398,6 +431,29 @@ const LegalButton = ({ legal }: { legal: Model['legalButton'] }) => {
           <FlagIcon className="size-4 relative" />
           <span>Legal</span>
         </span>
+      </Link>
+    </Button>
+  );
+};
+
+const getCompareUrl = (models: string[]) => {
+  const searchParams = new URLSearchParams();
+  searchParams.set('models', models.join(','));
+  return `/getting-started/models/compare?${searchParams.toString()}`;
+};
+
+const CompareModelButton = ({
+  modelSlug,
+  modelsToCompare = [],
+}: {
+  modelSlug: string;
+  modelsToCompare?: string[];
+}) => {
+  return (
+    <Button variant="default" size="sm" asChild>
+      <Link href={getCompareUrl([modelSlug, ...modelsToCompare])}>
+        <ArrowRightLeftIcon className="size-4" />
+        <span>Compare</span>
       </Link>
     </Button>
   );

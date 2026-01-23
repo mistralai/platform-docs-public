@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 const sectionTabContainerVariants = cva(
-  'w-full group/section-tab flex items-end not-prose section-tab-container mt-6 mb-2 justify-between gap-1',
+  'w-full group/section-tab flex items-end not-prose section-tab-container mt-6 mb-2 justify-between gap-1 scroll-mt-[calc(var(--header)+2rem)]',
   {
     variants: {
       variant: {
@@ -38,7 +38,8 @@ export const sectionTabVariants = cva(
 );
 
 export interface SectionTabProps
-  extends Omit<React.ComponentProps<'div'>, 'id'>,
+  extends
+    Omit<React.ComponentProps<'div'>, 'id'>,
     VariantProps<typeof sectionTabVariants> {
   children: React.ReactNode;
   sectionId?: string;

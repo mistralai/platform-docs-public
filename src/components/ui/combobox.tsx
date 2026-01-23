@@ -43,8 +43,8 @@ export interface ComboboxProps {
   className?: string;
   /** Width of the trigger button */
   width?: string;
-  /** Width of the popover content */
-  popoverWidth?: string;
+  /** Class name for the popover content */
+  popoverClassName?: string;
   /** Alignment of the popover */
   align?: 'start' | 'center' | 'end';
   /** Whether to show the chevron icon */
@@ -53,6 +53,8 @@ export interface ComboboxProps {
   trigger?: React.ReactNode;
   /** Whether the trigger should match the selected option styling */
   matchTriggerWidth?: boolean;
+  /** Custom render function for items - returns the complete CommandItem */
+  renderItem?: (props: ItemProps) => React.ReactNode;
 }
 
 export function Combobox({
@@ -64,12 +66,14 @@ export function Combobox({
   emptyText = 'No option found.',
   disabled = false,
   className,
-  width = 'w-[200px]',
-  popoverWidth = 'w-[200px]',
+  width,
+  popoverClassName = '',
   align = 'start',
   showChevron = true,
   trigger,
   matchTriggerWidth = true,
+
+  renderItem,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -103,13 +107,19 @@ export function Combobox({
     </Button>
   );
 
+  const Item = renderItem || DefaultRenderItem;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled}>
         {triggerContent}
       </PopoverTrigger>
       <PopoverContent
-        className={cn(popoverWidth, 'p-0')}
+        className={cn(
+          'p-0',
+          matchTriggerWidth && '!w-[var(--radix-popover-trigger-width)]',
+          !matchTriggerWidth && popoverClassName
+        )}
         align={align}
         side="bottom"
         sideOffset={4}
@@ -121,23 +131,14 @@ export function Combobox({
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map(option => (
-                <CommandItem
+                <Item
                   key={option.value}
                   value={option.value}
-                  disabled={option.disabled}
                   onSelect={handleSelect}
-                  className={cn(
-                    option.disabled && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  <span className="truncate">{option.label}</span>
-                  <Check
-                    className={cn(
-                      'ml-auto h-4 w-4',
-                      value === option.value ? 'opacity-100' : 'opacity-0'
-                    )}
-                  />
-                </CommandItem>
+                  option={option}
+                  isSelected={value === option.value}
+                  disabled={!!option.disabled}
+                />
               ))}
             </CommandGroup>
           </CommandList>
@@ -147,27 +148,43 @@ export function Combobox({
   );
 }
 
-// Convenience component for basic usage
-export function ComboboxDemo() {
-  const [value, setValue] = React.useState<string | null>(null);
-
-  const frameworks = [
-    { value: 'next.js', label: 'Next.js' },
-    { value: 'sveltekit', label: 'SvelteKit' },
-    { value: 'nuxt.js', label: 'Nuxt.js' },
-    { value: 'remix', label: 'Remix' },
-    { value: 'astro', label: 'Astro' },
-  ];
-
-  return (
-    <Combobox
-      options={frameworks}
-      value={value}
-      onValueChange={setValue}
-      placeholder="Select framework..."
-      searchPlaceholder="Search framework..."
-    />
-  );
-}
-
 export default Combobox;
+
+type ItemProps = {
+  option: ComboboxOption;
+  isSelected: boolean;
+  disabled: boolean;
+  onSelect: (value: string) => void;
+  className?: string;
+} & React.ComponentProps<typeof CommandItem>;
+
+const DefaultRenderItem = ({
+  option,
+  isSelected,
+  disabled,
+  onSelect,
+  className,
+  ...props
+}: ItemProps) => {
+  return (
+    <CommandItem
+      key={option.value}
+      value={option.value}
+      disabled={disabled}
+      onSelect={onSelect}
+      className={cn(
+        option.disabled && 'opacity-50 cursor-not-allowed',
+        className
+      )}
+      {...props}
+    >
+      <span className="truncate">{option.label}</span>
+      <Check
+        className={cn(
+          'ml-auto h-4 w-4',
+          isSelected ? 'opacity-100' : 'opacity-0'
+        )}
+      />
+    </CommandItem>
+  );
+};

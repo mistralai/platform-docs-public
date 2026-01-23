@@ -126,7 +126,7 @@ function FilterTabsUI({
             !!integrationFilter
           )}
           matchTriggerWidth={false}
-          popoverWidth="w-[220px]"
+          popoverClassName="w-[220px]"
           width="w-auto"
           align="center"
         />
@@ -145,7 +145,7 @@ function FilterTabsUI({
           )}
           matchTriggerWidth={false}
           width="w-auto"
-          popoverWidth="w-[220px]"
+          popoverClassName="w-[220px]"
           align="center"
         />
       </ScrollGradient>

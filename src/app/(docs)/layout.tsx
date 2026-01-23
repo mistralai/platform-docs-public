@@ -50,7 +50,10 @@ export default async function SidebarLayout({
         </Sidebar>
         <div className="flex flex-1 gap-8 min-w-0 lg:pr-sides">
           <div className="flex flex-col flex-1 min-w-0">
-            <PageContent as="main" className="max-lg:contents lg:px-inner-sides">
+            <PageContent
+              as="main"
+              className="max-lg:contents lg:px-inner-sides"
+            >
               <div className="flex-1 min-w-0 w-full flex justify-center lg:py-6 relative">
                 <div
                   className={cn(
@@ -89,6 +92,7 @@ const sidebarTreeData = (sidebar: SidebarItem[]): SideBarTreeNode[] => {
     if (item.hidden) {
       continue;
     }
+
     switch (item.type) {
       /* File --- */
       case 'file': {

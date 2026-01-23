@@ -26,7 +26,7 @@ export type LocalStorageOptions<T> = {
     parse: (value: string) => unknown;
   };
   dependencies?: any[];
-  storage?: StorageInterface;
+  storage?: StorageInterface | null;
 };
 
 // - `useLocalStorageState()` return type

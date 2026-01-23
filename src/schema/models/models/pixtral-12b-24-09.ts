@@ -43,6 +43,8 @@ export default {
       contextSize: '128k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/pixtral-12b',
+  paperlink: 'https://arxiv.org/pdf/2410.07073',
   contextLength: '128k',
   ratings: { 
     speed: { stars: 2.0, label: 'Slow' },

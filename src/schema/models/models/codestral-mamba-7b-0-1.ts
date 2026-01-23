@@ -29,6 +29,8 @@ export default {
       contextSize: '256k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/codestral-mamba',
+  paperlink: null,
   contextLength: '256k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

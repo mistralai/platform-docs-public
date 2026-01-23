@@ -29,6 +29,8 @@ export default {
       contextSize: '256k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/mistral-3',
+  paperlink: null,
   contextLength: '256k',
   ratings: { 
     speed: { stars: 2.0, label: 'Slow' },

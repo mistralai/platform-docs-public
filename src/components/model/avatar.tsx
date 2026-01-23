@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PixelGrid } from '../common/pixel-grid';
 
-const avatarVariants = cva(
+export const avatarVariants = cva(
   'relative overflow-clip flex items-center justify-center rounded bg-model shadow-inner-ring',
   {
     variants: {
@@ -14,7 +14,7 @@ const avatarVariants = cva(
         xs: 'size-8', // 32x32px container
         default: 'size-12', // 48x48px container
         lg: 'size-16', // 64x64px container (current model card size)
-        xl: 'size-14', // 56x56px container (current model card size)
+        xl: 'size-18', // 56x56px container (current model card size)
         '2xl': 'size-20', // 80x80px container
         '3xl': 'size-24', // 96x96px container
         '4xl': 'size-32', // 128x128px container

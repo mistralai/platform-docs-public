@@ -13,6 +13,8 @@ export default {
   status: 'Retired',
   avatar: { icon: 'codestral', backgroundColor: 'orange' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/codestral-2501',
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

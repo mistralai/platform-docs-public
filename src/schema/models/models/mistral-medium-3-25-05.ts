@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'mistral-medium', backgroundColor: 'blue' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/mistral-medium-3/',
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 2.0, label: 'Slow' },

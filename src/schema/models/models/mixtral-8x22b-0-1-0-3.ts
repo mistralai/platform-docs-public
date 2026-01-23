@@ -43,6 +43,8 @@ export default {
       contextSize: '64k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/mixtral-8x22b',
+  paperlink: null,
   contextLength: '64k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

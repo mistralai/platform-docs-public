@@ -29,6 +29,8 @@ export default {
       contextSize: '256k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/devstral-2-vibe-cli',
+  paperlink: null,
   contextLength: '256k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

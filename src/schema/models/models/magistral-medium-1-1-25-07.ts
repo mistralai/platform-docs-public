@@ -13,6 +13,8 @@ export default {
   status: 'Retired',
   avatar: { icon: 'magistral', backgroundColor: 'beige' },
   weights: [],
+  bloglink: null,
+  paperlink: null,
   contextLength: '40k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

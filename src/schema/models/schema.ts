@@ -60,6 +60,7 @@ export const AVAILABLE_MODALITIES = {
   document: { name: 'Document', description: 'Document' },
   reasoning: { name: 'Reasoning', description: 'Reasoning' },
   embeddings: { name: 'Embeddings', description: 'Embeddings' },
+  scores: { name: 'Scores', description: 'Scores' },
 } as const;
 export type ModalityKey = keyof typeof AVAILABLE_MODALITIES;
 
@@ -173,10 +174,10 @@ export type FinetuningKey = keyof typeof AVAILABLE_FINETUNING;
 // ------------------------------------------------------------
 
 export type MinGpuRam = {
-  bf16: string|null;
-  fp8: string|null;
-  fp4: string|null;
-  fp4_16: string|null;
+  bf16: string | null;
+  fp8: string | null;
+  fp4: string | null;
+  fp4_16: string | null;
 };
 
 export const isMinGpuRam = (value: unknown): value is MinGpuRam => {
@@ -226,6 +227,8 @@ export interface ModelTemplate<
   legacy?: boolean;
   status: 'Deprecated' | 'Retired' | 'Active';
   avatar?: ModelAvatar;
+  bloglink?: string | null;
+  paperlink?: string | null;
   weights: ModelWeight[];
   contextLength?: string | undefined | null;
   ratings: {
@@ -247,6 +250,10 @@ export interface ModelTemplate<
   };
   playground?: string | undefined;
   legalButton?: ModelLegalButton;
+  /**
+   * Usefull to override the default behaviour in the compare model button
+   */
+  modelsToCompare?: [string] | [string, string];
 }
 
 // dup detector

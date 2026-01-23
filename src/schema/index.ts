@@ -10,3 +10,4 @@ export * from './cookbook/data';
 export * from './content/sidebar';
 export * from './models';
 export * from './cookbook';
+export * from './feedback';

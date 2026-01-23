@@ -2,8 +2,9 @@ import React from 'react';
 import {
   ChatIcon,
   ComputerIcon,
-  CutIcon,
+  ScanIcon,
   MusicIcon,
+  CalculatorIcon,
 } from '@/components/icons/pixel';
 import { EndpointIcon } from '@/schema/models';
 
@@ -50,9 +51,11 @@ export const resolveIcon = (iconType: EndpointIcon): React.ElementType => {
   switch (iconType) {
     case EndpointIcon.CHAT:
       return ChatIcon;
-    case EndpointIcon.CUT:
-      return CutIcon;
-    case EndpointIcon.MUSIC:
+    case EndpointIcon.EMBEDDING:
+      return ScanIcon;
+    case EndpointIcon.CALCULATOR:
+      return CalculatorIcon;
+    case EndpointIcon.AUDIO:
       return MusicIcon;
     case EndpointIcon.COMPUTER:
     default:

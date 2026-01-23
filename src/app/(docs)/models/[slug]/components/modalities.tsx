@@ -4,8 +4,9 @@ import {
   PictureIcon,
   LampIcon,
   PageIcon,
+  CalculatorIcon,
   ChevronRightIcon,
-  CutIcon,
+  ScanIcon,
 } from '@/components/icons/pixel';
 import MicrophoneIcon from '@/components/icons/pixel/microphone';
 import { ModalityKey, AVAILABLE_MODALITIES } from '@/schema/models';
@@ -38,7 +39,8 @@ export function Modalities({
     audio: MicrophoneIcon,
     document: PageIcon,
     reasoning: LampIcon,
-    embeddings: CutIcon,
+    embeddings: ScanIcon,
+    scores: CalculatorIcon
   };
 
   const renderModalityIcon = (

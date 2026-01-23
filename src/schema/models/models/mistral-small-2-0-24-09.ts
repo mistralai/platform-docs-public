@@ -29,6 +29,8 @@ export default {
       contextSize: '32k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/september-24-release',
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

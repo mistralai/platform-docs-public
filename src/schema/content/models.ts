@@ -25,3 +25,9 @@ export const FEATURED_MODELS_COLOR_OVERRIDES = [
   'var(--color-mistral-color-3)',
   'var(--color-mistral-color-4)',
 ];
+
+export const DEFAULT_BENCHMARK_MODELS: ModelSlug[] = [
+  'codestral-25-08',
+  'mistral-medium-3-1-25-08',
+  'mistral-small-3-2-25-06',
+];

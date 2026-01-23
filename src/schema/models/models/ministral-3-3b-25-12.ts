@@ -57,6 +57,8 @@ export default {
       contextSize: '256k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/mistral-3',
+  paperlink: 'https://arxiv.org/abs/2601.08584',
   contextLength: '256k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

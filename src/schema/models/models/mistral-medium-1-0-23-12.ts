@@ -13,6 +13,8 @@ export default {
   status: 'Retired',
   avatar: { icon: 'mistral-medium', backgroundColor: 'blue' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/la-plateforme',
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

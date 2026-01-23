@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'moderation', backgroundColor: 'beige' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/mistral-moderation',
+  paperlink: null,
   contextLength: '8k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
@@ -30,7 +32,7 @@ export default {
   identifiers: { apiNames: ['mistral-moderation-2411', 'mistral-moderation-latest'] },
   capabilities: {
     input: ['text'],
-    output: [],
+    output: ['scores'],
     features: ['moderations', 'batching'],
     finetuning: [],
   },

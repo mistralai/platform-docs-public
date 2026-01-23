@@ -13,6 +13,8 @@ export default {
   status: 'Retired',
   avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/mistral-large',
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

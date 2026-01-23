@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/voxtral',
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

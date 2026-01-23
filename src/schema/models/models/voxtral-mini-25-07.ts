@@ -29,6 +29,8 @@ export default {
       contextSize: '32k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/voxtral',
+  paperlink: 'https://arxiv.org/pdf/2507.13264',
   contextLength: '32k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

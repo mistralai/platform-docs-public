@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'mistral-embed', backgroundColor: 'beige' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/la-plateforme',
+  paperlink: null,
   contextLength: '8k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
@@ -27,10 +29,10 @@ export default {
       
     ]
   },
-  identifiers: { apiNames: ['mistral-embed'] },
+  identifiers: { apiNames: ['mistral-embed-2312', 'mistral-embed'] },
   capabilities: {
     input: ['text'],
-    output: [],
+    output: ['embeddings'],
     features: ['embeddings', 'batching'],
     finetuning: [],
   },

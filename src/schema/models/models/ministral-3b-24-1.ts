@@ -13,6 +13,8 @@ export default {
   status: 'Deprecated',
   avatar: { icon: 'ministral', backgroundColor: 'lime' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/ministraux',
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

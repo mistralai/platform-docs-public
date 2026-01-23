@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'magistral', backgroundColor: 'beige' },
   weights: [],
+  bloglink: null,
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

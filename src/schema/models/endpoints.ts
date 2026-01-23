@@ -1,8 +1,9 @@
 export enum EndpointIcon {
   CHAT = 'chat',
-  CUT = 'cut',
-  MUSIC = 'music',
-  COMPUTER = 'computer',
+  EMBEDDING = 'embedding',
+  CALCULATOR = 'calculator',
+  AUDIO = 'audio',
+  COMPUTER = 'computer'
 }
 
 export const AVAILABLE_ENDPOINTS = {
@@ -24,14 +25,14 @@ export const AVAILABLE_ENDPOINTS = {
     name: 'Moderations',
     path: '/v1/moderations',
     type: 'moderation' as const,
-    icon: EndpointIcon.CUT,
+    icon: EndpointIcon.CALCULATOR,
     href: '#',
   },
   'chat-moderations': {
     name: 'Chat / Moderations',
     path: '/v1/chat/moderations',
     type: 'moderation' as const,
-    icon: EndpointIcon.CUT,
+    icon: EndpointIcon.CALCULATOR,
     href: '#',
   },
   ocr: {
@@ -66,14 +67,14 @@ export const AVAILABLE_ENDPOINTS = {
     name: 'Embeddings',
     path: '/v1/embeddings',
     type: 'embeddings' as const,
-    icon: EndpointIcon.CUT,
+    icon: EndpointIcon.EMBEDDING,
     href: '#',
   },
   'audio-transcriptions': {
     name: 'Audio Transcriptions',
     path: '/v1/audio/transcriptions',
     type: 'transcription' as const,
-    icon: EndpointIcon.MUSIC,
+    icon: EndpointIcon.AUDIO,
     href: '#',
   },
 } as const;

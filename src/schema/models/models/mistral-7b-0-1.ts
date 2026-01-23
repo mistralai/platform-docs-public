@@ -43,6 +43,8 @@ export default {
       contextSize: '8k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/announcing-mistral-7b',
+  paperlink: 'https://arxiv.org/pdf/2310.06825',
   contextLength: '8k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

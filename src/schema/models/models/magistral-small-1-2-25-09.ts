@@ -29,6 +29,8 @@ export default {
       contextSize: '128k',
     }
   ],
+  bloglink: null,
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

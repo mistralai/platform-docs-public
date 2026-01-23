@@ -43,6 +43,8 @@ export default {
       contextSize: '32k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/mixtral-of-experts',
+  paperlink: 'https://arxiv.org/pdf/2401.04088',
   contextLength: '32k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

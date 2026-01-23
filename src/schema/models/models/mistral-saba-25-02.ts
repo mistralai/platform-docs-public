@@ -13,6 +13,8 @@ export default {
   status: 'Retired',
   avatar: { icon: 'mistral-saba', backgroundColor: 'amber' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/mistral-saba',
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },

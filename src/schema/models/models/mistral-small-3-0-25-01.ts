@@ -43,6 +43,8 @@ export default {
       contextSize: '32k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/mistral-small-3',
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

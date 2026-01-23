@@ -4,7 +4,7 @@ export default {
   description: `Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`,
   shortDescription: `Our OCR service powering our Document AI stack.`,
   slug: 'ocr-3-25-12',
-  releaseDate: 'December 15, 2025',
+  releaseDate: 'December 18, 2025',
   version: '25.12',
   frontier: true,
   class: 'Specialist',
@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'ocr', backgroundColor: 'red' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/mistral-ocr-3',
+  paperlink: null,
   contextLength: null,
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

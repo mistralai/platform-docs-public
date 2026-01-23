@@ -9,6 +9,19 @@ export interface DocsMetadata {
   sidebar_label?: string;
   /* This field is injected in content/index.ts */
   table_of_contents?: boolean;
+  /* Custom TOC items to override auto-generated TOC */
+  custom_toc?: Array<{
+    id: string;
+    value: string;
+    depth: number;
+  }>;
+  /* Template TOC with placeholder for default items. Use { __default: true } as placeholder */
+  template_custom_toc?: Array<{
+    id?: string;
+    value?: string;
+    depth?: number;
+    __default?: boolean;
+  }>;
   /* Used to override the breadcrumb label at right of the page */
   cta?: {
     label: string;

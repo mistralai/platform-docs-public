@@ -13,6 +13,8 @@ export default {
   status: 'Deprecated',
   avatar: { icon: 'ocr', backgroundColor: 'gray' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/mistral-ocr',
+  paperlink: null,
   contextLength: null,
   ratings: { 
     speed: { stars: 0.0, label: 'Slow' },
@@ -34,7 +36,7 @@ export default {
     features: [],
     finetuning: [],
   },
-  metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'OCR'},
+  metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'OCR 3'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

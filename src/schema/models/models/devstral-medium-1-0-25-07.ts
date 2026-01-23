@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/devstral-2507',
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

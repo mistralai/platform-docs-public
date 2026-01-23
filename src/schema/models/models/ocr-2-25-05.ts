@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'ocr', backgroundColor: 'red' },
   weights: [],
+  bloglink: 'https://mistral.ai/solutions/document-ai',
+  paperlink: null,
   contextLength: null,
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },

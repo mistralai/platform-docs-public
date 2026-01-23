@@ -11,8 +11,10 @@ export default {
   type: 'Labs',
   legalButton: 'DEFAULT',
   status: 'Active',
-  avatar: { icon: 'mistral-small', backgroundColor: 'pink' },
+  avatar: { icon: 'mistral-small', backgroundColor: 'yellow' },
   weights: [],
+  bloglink: null,
+  paperlink: null,
   contextLength: '32k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

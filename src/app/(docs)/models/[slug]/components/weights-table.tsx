@@ -152,26 +152,26 @@ const MinGpuRam = ({
         <TooltipContent align="end" side="top" arrowClassName="">
           <div className="flex flex-col gap-1 max-w-[160px]">
             <p className="mt-3">
-              Approximate minimum required for different quantization formats.
+              Approximate minimum required GB for different quantization formats.
             </p>
             {minGpuRam.bf16 !== null && (
               <p>
-                <strong> - BF16 & Full Context:</strong> {minGpuRam.bf16}GB
+                <strong> - BF16 & Full Context:</strong> {minGpuRam.bf16}
               </p>
             )}
             {minGpuRam.fp8 !== null && (
               <p>
-                <strong> - FP8 & 1/2 Context:</strong> {minGpuRam.fp8}GB
+                <strong> - FP8 & 1/2 Context:</strong> {minGpuRam.fp8}
               </p>
             )}
             {minGpuRam.fp4 !== null && (
               <p>
-                <strong> - FP4 & 1/4 context:</strong> {minGpuRam.fp4}GB
+                <strong> - FP4 & 1/4 context:</strong> {minGpuRam.fp4}
               </p>
             )}
             {minGpuRam.fp4_16 !== null && (
               <p>
-                <strong> - FP4 & 16k context:</strong> {minGpuRam.fp4_16}GB
+                <strong> - FP4 & 16k context:</strong> {minGpuRam.fp4_16}
               </p>
             )}
           </div>

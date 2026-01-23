@@ -13,6 +13,8 @@ export default {
   status: 'Active',
   avatar: { icon: 'codestral', backgroundColor: 'yellow' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/codestral-25-08',
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

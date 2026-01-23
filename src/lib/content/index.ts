@@ -58,6 +58,7 @@ export async function getSidebar(
       subPath,
       path.join(basePath, dirent.name)
     );
+
     const hasChildren = children.length > 0;
 
     // PAGE / META data
@@ -93,6 +94,7 @@ export async function getSidebar(
         else overridedSlug = categoryMeta.link.split('/');
       }
 
+      const shouldHide = shouldHideCategory(overridedSlug?.join('/') || '');
       const categoryItem: SidebarItem = {
         slug,
         overridedSlug,
@@ -100,7 +102,7 @@ export async function getSidebar(
         metadata: categoryMeta,
         children,
         pagination: { prev: undefined, next: undefined },
-        hidden: shouldHideCategory(dirent.name),
+        hidden: shouldHide,
         clickable: hasPage || categoryMeta.link !== undefined,
         hasPage,
         isMarkdownFile: hasPage && pageIsMdx,
@@ -116,7 +118,18 @@ export async function getSidebar(
         pageData.metadata,
         metaMdData.metadata
       );
-      const toc = mergedMeta?.table_of_contents === false ? [] : pageData.toc;
+
+      let toc: TocItem[] = [];
+      if (mergedMeta?.template_custom_toc) {
+        const defaultToc = pageData.toc;
+        toc = processTemplateTOC(mergedMeta.template_custom_toc, defaultToc);
+      } else if (mergedMeta?.custom_toc) {
+        toc = mergedMeta.custom_toc;
+      } else if (mergedMeta?.table_of_contents === false) {
+        toc = [];
+      } else {
+        toc = pageData.toc;
+      }
 
       // 2.1) if is a dynamic route, for example /[slug]/page.tsx, we need to push many items
       if (isDynamicRoute(dirent.name)) {
@@ -246,7 +259,8 @@ function loadFileMetadataAndToc(filePath: string): {
     const skipToc =
       metadata &&
       'table_of_contents' in metadata &&
-      (metadata as any).table_of_contents === false;
+      (metadata as any).table_of_contents === false &&
+      !(metadata as any).template_custom_toc;
     const toc = skipToc
       ? []
       : extractHeadingsFromContent(markdownContent, {
@@ -327,6 +341,9 @@ function mergeFileMetadata(
     sidebar_position: metaMd?.sidebar_position ?? pageMeta?.sidebar_position,
     sidebar_label: metaMd?.sidebar_label ?? pageMeta?.sidebar_label,
     table_of_contents: pageMeta?.table_of_contents ?? metaMd?.table_of_contents,
+    custom_toc: pageMeta?.custom_toc ?? metaMd?.custom_toc,
+    template_custom_toc:
+      pageMeta?.template_custom_toc ?? metaMd?.template_custom_toc,
   } as DocsMetadata;
 
   return out;
@@ -441,6 +458,32 @@ function isDynamicRoute(path: string): boolean {
 function shouldHideCategory(dirName: string): boolean {
   const HIDDEN_DIRS = new Set(['models']);
   return HIDDEN_DIRS.has(dirName);
+}
+
+function processTemplateTOC(
+  template: Array<{
+    id?: string;
+    value?: string;
+    depth?: number;
+    __default?: boolean;
+  }>,
+  defaultToc: TocItem[]
+): TocItem[] {
+  const result: TocItem[] = [];
+
+  for (const item of template) {
+    if (item.__default === true) {
+      result.push(...defaultToc);
+    } else if (item.id && item.value && item.depth !== undefined) {
+      result.push({
+        id: item.id,
+        value: item.value,
+        depth: item.depth,
+      });
+    }
+  }
+
+  return result;
 }
 
 type BreadcrumbProvider = (

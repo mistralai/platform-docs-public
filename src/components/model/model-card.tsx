@@ -146,11 +146,10 @@ export function ModelCard({
       <ModelAvatar
         src={iconPath}
         alt={`${model.name} icon`}
-        className="z-2"
         size="lg"
         style={cardStyle}
       />
-      <div className="z-2 px-4 py-2 flex-1 flex flex-col">
+      <div className="z-2 px-4 py-2 flex-1 flex flex-col  gap-0.5">
         <div className="flex items-center gap-2 justify-between">
           <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
             {model.name}

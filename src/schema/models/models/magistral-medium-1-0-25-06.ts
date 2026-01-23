@@ -13,6 +13,8 @@ export default {
   status: 'Retired',
   avatar: { icon: 'magistral', backgroundColor: 'beige' },
   weights: [],
+  bloglink: 'https://mistral.ai/news/magistral',
+  paperlink: 'https://arxiv.org/pdf/2506.10910',
   contextLength: '40k',
   ratings: { 
     speed: { stars: 3.0, label: 'Moderate' },

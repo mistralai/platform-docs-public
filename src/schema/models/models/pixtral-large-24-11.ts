@@ -29,6 +29,8 @@ export default {
       contextSize: '128k',
     }
   ],
+  bloglink: 'https://mistral.ai/news/pixtral-large',
+  paperlink: null,
   contextLength: '128k',
   ratings: { 
     speed: { stars: 1.0, label: 'Slow' },

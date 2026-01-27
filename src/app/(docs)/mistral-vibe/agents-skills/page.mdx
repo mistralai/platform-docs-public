@@ -1,0 +1,141 @@
+---
+id: agents_and_skills
+title: Agents & Skills
+slug: agents_and_skills
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Agents & Skills
+
+Build custom Agents for your specific use cases and leverage Skills to extend their capabilities.
+
+<SectionTab as="h1" sectionId="agents">Agents</SectionTab>
+
+Agents are the core actors in Vibe. They are autonomous entities capable of performing tasks, making decisions, and interacting with the environment. Agents can be customized for specific use cases and extended with Skills to enhance their capabilities.  
+
+:::note
+Vibe also has [AGENTS.md](https://agents.md/) support. This feature is currently only functional when an AGENTS.md file is in the root of the workspace.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="agent-selection">Agent Selection</SectionTab>
+
+Agents can be selected using the `--agent` flag when starting vibe:
+```bash
+vibe --agent plan
+vibe --agent auto-approve
+```
+Or with `Shift+Tab` in the Interactive mode.
+
+We provide a set of **built-in** agents you can leverage out of the box:
+- Agents:
+    - `default`: Requires approval for tool executions.
+    - `plan`: Read-only agent for exploration and planning (auto-approve).
+    - `accept-edits`: Auto-approves file edits only.
+    - `auto-approve`: Auto-approves all tool executions.
+- Subagents:
+    - `explore`: Read-only subagent for codebase exploration.
+
+<SectionTab as="h2" variant="secondary" sectionId="agent-selection">Custom Agents</SectionTab>
+
+Create custom agent profiles in `~/.vibe/agents/` by creating a `.toml` file, learn more about Vibe configuration [here](introduction/configuration):
+```toml
+# ~/.vibe/agents/custom.toml
+display_name = "Custom Agent"
+description = "My custom agent description."
+safety = "neutral"  # Options: "safe" | "neutral" | "destructive" | "yolo"
+auto_approve = true
+enabled_tools = ["read_file", "grep"]
+```
+The `safety` field changes the user input border color to indicate the agent's safety level and currently has 4 choices. Their only purpose is to visually inform the user of the safety level of the agent, but **does not implement safety measures**.  
+We recommend using this field together with appropriate tool permissions, such as Agents capable of editing/deleting files being classified as `destructive`, or Agents restricted to read-only tool calls being classified as `safe`. 
+
+<SectionTab as="h2" variant="secondary" sectionId="agent-selection">Subagents - Task Delegation</SectionTab>
+
+Vibe supports subagents for delegating tasks. Subagents run independently and can perform specialized work without user interaction.  
+The `task` tool allows you to delegate work to subagents:
+- The agent uses the `task` tool to delegate work to a subagent.
+- Subagents run independently and return results as text to the agent.
+
+Subagents are useful for:
+- **Parallel work**: Run exploration or research tasks in the background
+- **Specialized tasks**: Use different agent profiles for specific work
+- **Safety**: Subagents run in-memory without saving session logs
+
+Custom subagents can be created in `~/.vibe/agents/`:
+```toml
+# ~/.vibe/agents/research.toml
+display_name = "Research"
+description = "Read-only subagent for research tasks"
+safety = "safe"
+agent_type = "subagent"
+enabled_tools = ["grep", "read_file"]
+```
+
+:::note
+Subagents possess a few limitations:
+- Subagents cannot ask questions.
+- Results are returned as text only.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="interactive-user-input">Interactive User Input</SectionTab>
+
+Agents can ask questions interactively using the `ask_user_question` tool:
+- Supports multiple-choice or free-text input.
+- Displays questions as tabs for multi-question scenarios.
+- Automatically used when the agent needs clarification or validation.
+
+<SectionTab as="h1" sectionId="skills">Skills</SectionTab>
+
+Vibe's skills system allows you to extend functionality through reusable components. Skills can add new tools, slash commands, and specialized behaviors.
+
+Vibe follows the [Agent Skills specification](https://agentskills.io/specification) for skill format and structure.
+
+<SectionTab as="h2" variant="secondary" sectionId="creating-skills">Creating Skills</SectionTab>
+
+Skills are defined in directories with a `SKILL.md` file containing metadata in YAML frontmatter. For example, `~/.vibe/skills/code-review/SKILL.md`:
+
+```markdown
+---
+name: code-review
+description: Perform automated code reviews
+license: MIT
+compatibility: Python 3.12+
+user-invocable: true
+allowed-tools:
+  - read_file
+  - grep
+  - ask_user_question
+---
+
+# Code Review Skill
+
+This skill helps analyze code quality and suggest improvements.
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="skill-discovert">Skill Discovery</SectionTab>
+
+Vibe discovers skills from multiple locations:
+
+1. **Global skills directory**: `~/.vibe/skills/`
+2. **Local project skills**: `.vibe/skills/` in your project
+3. **Custom paths**: Configured in `config.toml`
+
+```toml
+skill_paths = ["/path/to/custom/skills"]
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="managing-skills">Managing Skills</SectionTab>
+
+Enable or disable skills using patterns in your configuration:
+
+```toml
+# Enable specific skills
+enabled_skills = ["code-review", "test-*"]
+
+# Disable specific skills
+disabled_skills = ["experimental-*"]
+```
+
+Skills support the same pattern matching as tools (exact names, glob patterns, and regex when using the `re:` prefix).

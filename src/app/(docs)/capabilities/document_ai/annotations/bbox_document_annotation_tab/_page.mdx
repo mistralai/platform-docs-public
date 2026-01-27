@@ -236,6 +236,49 @@ const DocumentSchema = z.object({
     </TabItem>
 </Tabs>
 
+<SectionTab as="h3" variant="secondary" sectionId="bbox-document-annotation-prompt">Document Annotation Prompt (Optional)</SectionTab>
+
+After defining your document annotation schema, you may need to provide more context and instructions around the annotation and document at stake. We allow the passing of a `document_annotation_prompt` that will be used as a high level system prompt for the annotation step, providing further context and instructions on how the annotation should be done. An example of prompt would be:
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+document_annotation_prompt = """
+Extract the following from the provided PDF document:
+- Language (e.g., "English")
+- All chapter/section titles (e.g., ["Abstract", "1 Introduction"])
+- All URLs (e.g., ["https://example.com"])
+Be precise and include only exact matches.
+"""
+
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+const documentAnnotationPrompt = `
+Extract the following from the provided PDF document:
+- Language (e.g., "English")
+- All chapter/section titles (e.g., ["Abstract", "1 Introduction"])
+- All URLs (e.g., ["https://example.com"])
+Be precise and include only exact matches.
+`;
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+"document_annotation_prompt": "Extract the following from the provided PDF document:\n- Language (e.g., \"English\")\n- All chapter/section titles (e.g., [\"Abstract\", \"1 Introduction\"])\n- All URLs (e.g., [\"https://example.com\"])\nBe precise and include only exact matches."
+```
+
+    </TabItem>
+</Tabs>
+
+In production, you may want to provide context about the use case and refine instructions further if the output doesn’t match expectations exactly.
+
 <SectionTab as="h3" variant="secondary" sectionId="bbox-document-start-request">Start Request</SectionTab>
 
 Next, make a request and ensure the response adheres to the defined structures using `bbox_annotation_format` and `document_annotation_format` set to the corresponding schemas:
@@ -261,6 +304,7 @@ response = client.ocr.process(
     ),
     bbox_annotation_format=response_format_from_pydantic_model(Image),
     document_annotation_format=response_format_from_pydantic_model(Document),
+    # document_annotation_prompt=document_annotation_prompt,
     include_image_base64=True
   )
 ```
@@ -287,6 +331,7 @@ async function processDocument() {
       },
       bboxAnnotationFormat: responseFormatFromZodObject(ImageSchema),
       documentAnnotationFormat: responseFormatFromZodObject(DocumentSchema),
+      // documentAnnotationPrompt: documentAnnotationPrompt,
       includeImageBase64: true,
     });
 

@@ -4,7 +4,7 @@ export default {
   description: `An experimental specialized small model trained on meticulously curated data, designed for creative writing, narrative generation, roleplay and character-driven dialog, general-purpose instruction following and conversational agents.`,
   shortDescription: `A specialized model designed for creative writing and dynamic character interaction.`,
   slug: 'mistral-small-creative-25-12',
-  releaseDate: 'December 16, 2025',
+  releaseDate: 'December 11, 2025',
   version: '25.12',
   frontier: false,
   class: 'Specialist',

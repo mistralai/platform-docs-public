@@ -180,21 +180,57 @@ permission = "always"
 permission = "ask"
 ```
 
+MCP Servers also support:
+- **Environment variables**: Set environment variables for MCP servers (stdio transport)
+- **Custom timeouts**: Configure startup and tool execution timeouts
+- **Enhanced security**: Better API key handling
+
+Example with environment variables and timeouts:
+
+```toml
+[[mcp_servers]]
+name = "my_server"
+transport = "http"
+url = "http://localhost:8000"
+env = { "DEBUG" = "1", "LOG_LEVEL" = "info" }
+startup_timeout_sec = 15
+tool_timeout_sec = 120
+```
+
+<SectionTab as="h1" sectionId="session-management">Session Management</SectionTab>
+
+### Session Continuation and Resumption
+
+Vibe supports continuing from previous sessions:
+
+- **`--continue`** or **`-c`**: Continue from the most recent saved session
+- **`--resume SESSION_ID`**: Resume a specific session by ID (supports partial matching)
+
+```bash
+# Continue from last session
+vibe --continue
+
+# Resume specific session
+vibe --resume abc123
+```
+
+Session logging is required for these features to work, it's enabled by default.
+
 <SectionTab as="h1" sectionId="enable-disable-tools">Enable/Disable Tools with Patterns</SectionTab>
 
 ### Controlling Tool Availability
 
 You can control which tools are active using `enabled_tools` and `disabled_tools`.
-These fields support exact names, glob patterns, and regular expressions.
+These fields support exact names, glob patterns, and even regular expressions with a `re:` prefix.
 
 Examples:
 ```python
 # Only enable tools that start with "serena_" (glob)
 enabled_tools = ["serena_*"]
+
 # Regex (prefix with re:) — matches full tool name (case-insensitive)
 enabled_tools = ["re:^serena_.*$"]
-# Heuristic regex support (patterns like `serena.*` are treated as regex)
-enabled_tools = ["serena.*"]
+
 # Disable a group with glob; everything else stays enabled
 disabled_tools = ["mcp_*", "grep"]
 ```
@@ -221,3 +257,37 @@ This affects where Vibe looks for:
 - `logs/` - Session logs
 
 To run code, enable code execution and file creation in Settings > Capabilities.
+
+<SectionTab as="h1" sectionId="working-directory-control">Working Directory Control</SectionTab>
+
+### Define a Working Directory
+
+Use the `--workdir` option to specify a working directory:
+
+```bash
+vibe --workdir /path/to/project
+```
+
+This is useful when you want to run Vibe from a different location than your current directory.
+
+<SectionTab as="h1" sectionId="trust-folder-system">Trust Folder System</SectionTab>
+
+### Manage which folders you trust
+
+Vibe includes a trust folder system to ensure you only run the agent in directories you trust. When you first run Vibe in a new directory, it may ask you to confirm whether you trust the folder.
+
+Trusted folders are remembered for future sessions. You can manage trusted folders through its configuration file `~/.vibe/trusted_folders.toml`.
+
+This safety feature helps **prevent accidental execution in sensitive directories**.
+
+<SectionTab as="h1" sectionId="working-directory-control">Update Settings</SectionTab>
+
+### Auto-Update
+
+Vibe includes an automatic update feature that keeps your installation current. This is enabled by default.
+
+To disable auto-updates, add this to your `config.toml`:
+
+```toml
+enable_auto_update = false
+```

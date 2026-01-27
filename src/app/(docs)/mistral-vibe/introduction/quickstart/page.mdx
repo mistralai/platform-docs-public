@@ -49,7 +49,7 @@ If this is your first time running Vibe, it will:
   centered
 />
 
-- Prompt you to enter your API key if it's not already configured, you can create one [here](https://console.mistral.ai/codestral/vibe).
+- Prompt you to enter your API key if it's not already configured, you can create one [here](https://console.mistral.ai/codestral/cli).
 
 <Image
   url='/img/vibekey.png'
@@ -59,6 +59,8 @@ If this is your first time running Vibe, it will:
 />
 
 - Save your API key to `~/.vibe/.env` for future use
+
+Alternatively, you can configure your API key separately using `vibe --setup`.
 
 Once done, you can start interacting with the agent! Currently Vibe by default uses our **Devstral 2** model, you can also use Devstral Small 2 or even your own [custom model](configuration#change-providers).
 
@@ -71,6 +73,8 @@ Once done, you can start interacting with the agent! Currently Vibe by default u
 
 <SectionTab as="h1" sectionId="get-started">Usage</SectionTab>
 
+### Learn how to use Vibe
+
 We recommend using Vibe in interactive mode, but you can also use it in programmatic mode, learn more about both below.
 
 <SectionTab as="h2" variant="secondary" sectionId="interactive-mode">Interactive Mode</SectionTab>
@@ -80,6 +84,10 @@ Simply run `vibe` to enter the interactive chat loop, this mode simulates a chat
 - **Multi-line Input**: Press `Ctrl+J` or `Shift+Enter` for select terminals to insert a newline.
 - **File Paths**: Reference files in your prompt using the `@` symbol for smart autocompletion (e.g., `> Read the file @src/agent.py`).
 - **Shell Commands**: Prefix any command with `!` to execute it directly in your shell, bypassing the agent (e.g., `> !ls -l`).
+- **External Editor**: Press `Ctrl+G` to edit your current input in an external editor.
+- **Tool Output Toggle**: Press `Ctrl+O` to toggle the tool output view.
+- **Todo View Toggle**: Press `Ctrl+T` to toggle the todo list view.
+- **Auto-Approve Toggle**: Press `Shift+Tab` to toggle auto-approve mode on/off.
 
 You can also directly start Vibe with a prompt with the following command:
 
@@ -88,26 +96,50 @@ vibe "Refactor the main function in cli/main.py to be more modular."
 ```
 
 Vibe also allows you to use slash commands and keyboard shortcuts for meta-actions and configuration changes during a session such as:
-- `/h`, `/help`: Show help message
-- `/stats`, `/status`: Display agent statistics
-- `/cfg`, `/config`, `/model`, `/theme`: Edit config settings
-- `/r`, `/reload`: Reload configuration from disk
-- `/clear`, `/reset`: Clear conversation history
-- `/log`, `/logpath`: Show path to current interaction log file
-- `/compact`, `/summarize`: Compact conversation history by summarizing
-- `/exit`, `/q`, `/quit`: Exit the application
-- `!<command>` Execute bash command directly
-- `@path/to/file/` Autocompletes file paths
-- `Enter` Submit message
-- `Ctrl+J` / `Shift+Enter` Insert newline
-- `Escape` Interrupt agent or close dialogs
-- `Ctrl+C` Quit (or clear input if text present)
-- `Ctrl+O` Toggle tool output view
+- `/h`, `/help`: Show a help message
+- `/config`, `/theme`, `/model`: Edit configuration settings interactively
+- `/clear`: Clear conversation history
+- ...
 - `Ctrl+T` Toggle todo view
 - `Shift+Tab` Toggle auto-approve mode
+- ...
+And more, use `/help` to display all available commands.
 
-:::note
-The `--auto-approve` flag automatically approves all tool executions without prompting. In interactive mode, you can also toggle auto-approve on/off using `Shift+Tab`.
+<SectionTab as="h3" variant="secondary" sectionId="custom-slash-commands">Custom Slash Commands</SectionTab>
+
+You can define your own slash commands through the skills system. Skills are reusable components that extend Vibe's functionality.
+
+To create a custom slash command:
+- Create a skill directory with a `SKILL.md` file
+- Set `user-invocable = true` in the skill metadata
+- Define the command logic in your skill
+
+Example skill metadata:
+```markdown
+---
+name: my-skill
+description: My custom skill with slash commands
+user-invocable: true
+---
+```
+
+Learn more about [Agents](../agents_and_skills#skills).
+
+Custom slash commands appear in the autocompletion menu alongside built-in commands.
+
+<SectionTab as="h3" variant="secondary" sectionId="agents-switching">Agent Switching</SectionTab>
+
+You can define Agents and change them with `Shift+Tab`, below you can find a non-exaustive list of agents Vibe is packaged with:
+- `default`: The standard default Vibe behavior, built for general usage requesting approval for tool execution.
+- `plan`: Read-only agent for exploration and planning.
+- `auto approve`: Automatically approves all tool executions without prompting.
+- ...
+
+Learn more about [Agents](../agents_and_skills#agents).
+
+:::tip
+**Trust Folder System**
+Vibe includes a trust folder system to ensure you only run the agent in directories you trust.
 :::
 
 <SectionTab as="h2" variant="secondary" sectionId="programmatic-mode">Programmatic Mode</SectionTab>
@@ -118,7 +150,23 @@ You can run Vibe non-interactively by piping input or using the `--prompt` flag.
 vibe --prompt "Refactor the main function in cli/main.py to be more modular."
 ```
 
-By default it will use `auto-approve` mode.
+By default, it uses `auto-approve` mode.
+
+When using `--prompt`, you can specify additional options:
+
+- **`--max-turns N`**: Limit the maximum number of assistant turns. The session will stop after N turns.
+- **`--max-price DOLLARS`**: Set a maximum cost limit in dollars. The session will be interrupted if the cost exceeds this limit.
+- **`--enabled-tools TOOL`**: Enable specific tools. In programmatic mode, this disables all other tools. Can be specified multiple times. Supports exact names, glob patterns (e.g., `bash*`), or regex with `re:` prefix (e.g., `re:^serena_.*$`).
+- **`--output FORMAT`**: Set the output format. Options:
+  - `text` (default): Human-readable text output
+  - `json`: All messages as JSON at the end
+  - `streaming`: Newline-delimited JSON per message
+
+Example:
+
+```bash
+vibe --prompt "Analyze the codebase" --max-turns 5 --max-price 1.0 --output json
+```
 
 <SectionTab as="h1" sectionId="guardrails-and-permissions">Guardrails and Permissions</SectionTab>
 

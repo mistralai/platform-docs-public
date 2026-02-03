@@ -152,38 +152,37 @@ export default function AmbassadorsPage() {
           Ambassadors
         </SectionTab>
         <div>
-          <h3 className="font-bold text-2xl mb-6">
-            Meet out current Ambassadors
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {currentAmbassadors.map((ambassador, index) => {
-              const colorKey = getAmbassadorColor(index);
-              const colorValue = MODEL_COLORS[colorKey];
-              return (
-                <AmbassadorCard
-                  key={ambassador.id}
-                  name={ambassador.name}
-                  image={ambassador.image || '/ambassadors/people-1.png'}
-                  link={ambassador.link}
-                  style={
-                    {
+          <h3 className="font-bold text-2xl mb-6">Meet our current Ambassadors</h3>
+          <div className="overflow-y-auto h-[700px] border rounded-lg p-2">
+            <div className="grid grid-cols-3 gap-2">
+              {currentAmbassadors.map((ambassador, index) => {
+                const colorKey = getAmbassadorColor(index);
+                const colorValue = MODEL_COLORS[colorKey];
+                return (
+                  <AmbassadorCard
+                    key={ambassador.id}
+                    name={ambassador.name}
+                    image={ambassador.image || '/ambassadors/people-1.png'}
+                    link={ambassador.link}
+                    style={{
                       backgroundColor: colorValue,
                       boxShadow: `0 10px 15px -3px ${colorValue}50`,
-                    } as React.CSSProperties
-                  }
+                      minWidth: '120px',
+                    } as React.CSSProperties}
+                  />
+                );
+              })}
+              {placeholderAmbassador && (
+                <AmbassadorCard
+                  key={placeholderAmbassador.id}
+                  name={placeholderAmbassador.name}
+                  className="group"
+                  image={<AmbassadorYouImage />}
+                  link={placeholderAmbassador.link}
+                  color="secondary"
                 />
-              );
-            })}
-            {placeholderAmbassador && (
-              <AmbassadorCard
-                key={placeholderAmbassador.id}
-                name={placeholderAmbassador.name}
-                className="group"
-                image={<AmbassadorYouImage />}
-                link={placeholderAmbassador.link}
-                color="secondary"
-              />
-            )}
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -196,17 +195,14 @@ export default function AmbassadorsPage() {
           <h3 className="font-bold text-2xl">Apply to join the team</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <p className="text-foreground">
-              Applications for the {applicationInfo.cohort} cohort are now open
-              and will be accepted until {applicationInfo.deadline}. If
-              selected, you will be contacted by the{' '}
-              {applicationInfo.notification} to discuss next steps and possibly
-              participate in an interview with additional questions.
+              Applications are open on a rolling basis. If selected, you will be
+              contacted to discuss next steps and possibly participate in an interview
+              with additional questions.
             </p>
             <div className="flex flex-col gap-4 justify-between">
               <p className="text-foreground">
-                Our team will review each application, evaluating candidates
-                based on the following criteria. We accept applications on a{' '}
-                {applicationInfo.frequency}.
+                Our team will review each application continuously, evaluating candidates
+                based on the following criteria.
               </p>
               <Button
                 variant="tertiary"

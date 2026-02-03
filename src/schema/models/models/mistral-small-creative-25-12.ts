@@ -33,7 +33,7 @@ export default {
   capabilities: {
     input: ['text'],
     output: ['text'],
-    features: ['document-qna', 'chat-completions', 'batching', 'structured-outputs'],
+    features: ['document-qna', 'chat-completions', 'batching', 'structured-outputs', 'function-calling'],
     finetuning: [],
   },
   metadata: {},

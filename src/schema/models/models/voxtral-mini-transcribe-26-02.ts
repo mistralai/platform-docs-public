@@ -1,6 +1,6 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'Voxtral Mini Transcribe',
+  name: 'Voxtral Mini Transcribe 2',
   description: `An efficient audio input model, fine-tuned and optimized for transcription purposes only.`,
   shortDescription: `An efficient audio input model, fine-tuned and optimized for transcription purposes.`,
   slug: 'voxtral-mini-transcribe-26-02',
@@ -23,7 +23,7 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 0.002, denominator: '/Min' }
+      { type: 'flat', price: 0.003, denominator: '/Min' }
     ],
     output: [
       

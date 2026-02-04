@@ -29,7 +29,7 @@ export default {
       
     ]
   },
-  identifiers: { apiNames: ['voxtral-mini-2507', 'voxtral-mini-latest'] },
+  identifiers: { apiNames: ['voxtral-mini-2507'] },
   capabilities: {
     input: ['audio'],
     output: ['text'],

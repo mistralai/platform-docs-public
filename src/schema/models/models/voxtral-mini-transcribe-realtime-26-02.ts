@@ -23,7 +23,7 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 0.002, denominator: '/Min' }
+      { type: 'flat', price: 0.006, denominator: '/Min' }
     ],
     output: [
       

@@ -1,11 +1,11 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'Voxtral Mini Transcribe',
+  name: 'Voxtral Mini Transcribe 2',
   description: `An efficient audio input model, fine-tuned and optimized for transcription purposes only.`,
   shortDescription: `An efficient audio input model, fine-tuned and optimized for transcription purposes.`,
-  slug: 'voxtral-mini-transcribe-25-07',
-  releaseDate: 'July 15, 2025',
-  version: '25.07',
+  slug: 'voxtral-mini-transcribe-26-02',
+  releaseDate: 'February 4, 2026',
+  version: '26.02',
   frontier: true,
   class: 'Specialist',
   type: 'Premier',
@@ -15,7 +15,7 @@ export default {
   weights: [],
   bloglink: 'https://mistral.ai/news/voxtral',
   paperlink: null,
-  contextLength: '32k',
+  contextLength: '--',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
@@ -23,13 +23,13 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 0.002, denominator: '/Min' }
+      { type: 'flat', price: 0.003, denominator: '/Min' }
     ],
     output: [
       
     ]
   },
-  identifiers: { apiNames: ['voxtral-mini-2507'] },
+  identifiers: { apiNames: ['voxtral-mini-2602', 'voxtral-mini-latest'] },
   capabilities: {
     input: ['audio'],
     output: ['text'],

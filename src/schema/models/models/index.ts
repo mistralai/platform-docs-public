@@ -4,6 +4,8 @@ import mistralMedium312508 from './mistral-medium-3-1-25-08';
 import mistralSmall322506 from './mistral-small-3-2-25-06';
 import ocr32512 from './ocr-3-25-12';
 import voxtralMiniTranscribe2507 from './voxtral-mini-transcribe-25-07';
+import voxtralMiniTranscribe2602 from './voxtral-mini-transcribe-26-02';
+import voxtralMiniTranscribeRealtime2602 from './voxtral-mini-transcribe-realtime-26-02';
 import codestral2508 from './codestral-25-08';
 import devstral22512 from './devstral-2-25-12';
 import magistralMedium112507 from './magistral-medium-1-1-25-07';
@@ -58,6 +60,8 @@ export const MODELS = defineModels([
   mistralSmall322506,
   ocr32512,
   voxtralMiniTranscribe2507,
+  voxtralMiniTranscribe2602,
+  voxtralMiniTranscribeRealtime2602,
   codestral2508,
   devstral22512,
   magistralMedium112507,

@@ -19,6 +19,8 @@ import CompareSpeakersTab from './compare_speakers_tab/_page.mdx';
 import PassingTranscriptionAudioFileTab from './passing_transcription_audio_file_tab/_page.mdx';
 import PassingTranscriptionAudioURLTab from './passing_transcription_audio_url_tab/_page.mdx';
 import PassingTranscriptionUploadedAudioFileTab from './passing_transcription_uploaded_audio_file_tab/_page.mdx';
+import TranscriptionWithTimestampsSection from './transcription_with_timestamps_section/_page.mdx'
+import RealtimeTranscriptionSection from './realtime_transcription_section/_page.mdx'
 
 import ObamaTab from './obama_tab/_page.mdx';
 
@@ -42,6 +44,15 @@ Audio capable models:
 - **Voxtral Mini** (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases
 - And **Voxtral Mini Transcribe** (`voxtral-mini-latest` via `audio/transcriptions`), with an efficient [transcription](#transcription) only service.
 
+:::note
+- `voxtral-mini-latest` for chat points to `voxtral-mini-2507`
+- `voxtral-mini-latest` for transcription points to `voxtral-mini-2602`
+:::
+
+:::tip
+For faster transcription time, we recommend uploading your audio files.
+:::
+
 <SectionTab as="h1" sectionId="models">Chat with Audio</SectionTab>
 
 ### Use Audio with Instruction Following models
@@ -49,8 +60,9 @@ Audio capable models:
 Our Voxtral models are capable of being used for chat use cases with our chat completions endpoint.
 
 :::tip
-Before continuing, we recommend reading the [Chat Competions](completion) documentation to learn more about the chat completions API and how to use it before proceeding.
+Before continuing, we recommend reading the [Chat Completions](completion) documentation to learn more about the chat completions API and how to use it before proceeding.
 :::
+
 
 <ExplorerTabs id="chat-with-audio">
   <ExplorerTab value="passing-an-audio-file" label="Passing an Audio File in Base64">
@@ -89,7 +101,11 @@ Transcription provides an optimized endpoint for transcription purposes and curr
 **Parameters**  
 We provide different settings and parameters for transcription, such as:
 - `timestamp_granularities`: This allows you to set timestamps to track not only "what" was said but also "when". You can find more about timestamps [here](#transcription-with-timestamps).
+- `diarize`: This allows you to keep track of who is talking.
 - `language`: Our transcription service also works as a language detection service. However, you can manually set the language of the transcription for better accuracy if the language of the audio is already known.
+
+**Realtime**:
+We provide a live transcription functionality. You can find more info about Realtime [here](#realtime-transcription).
 
 <ExplorerTabs id="audio-transcription-3">
   <ExplorerTab value="passing-an-audio-file" label="Passing an Audio File">
@@ -113,279 +129,9 @@ Below you can find a few examples leveraging the audio transcription endpoint.
   </ExplorerTab>
 </ExplorerTabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="transcription-with-timestamps">Transcription with Timestamps</SectionTab>
+<TranscriptionWithTimestampsSection/>
 
-You can request timestamps for the transcription by passing the `timestamp_granularities` parameter, currently supporting `segment`.  
-It will return the start and end time of each segment in the audio file.
-
-:::note
-`timestamp_granularities` is currently not compatible with `language`, please use either one or the other.
-:::
-
-<Tabs groupId="code">
-  <TabItem value="python" label="python">
-
-```python
-import os
-from mistralai import Mistral
-
-api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
-
-client = Mistral(api_key=api_key)
-
-transcription_response = client.audio.transcriptions.complete(
-    model=model,
-    file_url="https://docs.mistral.ai/audio/obama.mp3",
-    timestamp_granularities=["segment"]
-)
-```
-  </TabItem>
-  <TabItem value="typescript" label="typescript">
-
-```typescript
-import { Mistral } from "@mistralai/mistralai";
-
-const apiKey = process.env["MISTRAL_API_KEY"];
-
-const client = new Mistral({ apiKey: apiKey });
-
-const transcriptionResponse = await client.audio.transcriptions.complete({
-  model: "voxtral-mini-latest",
-  fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
-  timestamp_granularities: ["segment"]
-});
-```
-
-  </TabItem>
-  <TabItem value="curl" label="curl" default>
-
-```bash
-curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
---header "x-api-key: $MISTRAL_API_KEY" \
---form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
---form 'model="voxtral-mini-latest"' \
---form 'timestamp_granularities="segment"'
-```
-  </TabItem>
-  <TabItem value="output" label="output">
-```json
-{
-  "model": "voxtral-mini-2507",
-  "text": "This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American people, in living rooms, in schools, at farms and on factory floors, at diners and on distant military outposts. All these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers. And I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees. to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there's an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy. to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title, citizen. It has been the honor of my life to serve you as president. Eight years later, I am even more optimistic about our country's promise, and I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you, and God bless the United States of America.",
-  "language": null,
-  "segments": [
-    {
-      "text": "This week, I traveled to Chicago to deliver my final farewell address to the nation, following",
-      "start": 0.8,
-      "end": 6.2
-    },
-    {
-      "text": "in the tradition of presidents before me.",
-      "start": 6.2,
-      "end": 9.0
-    },
-    {
-      "text": "It was an opportunity to say thank you.",
-      "start": 9.0,
-      "end": 11.8
-    },
-    {
-      "text": "Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American",
-      "start": 11.8,
-      "end": 17.6
-    },
-    {
-      "text": "people, in living rooms, in schools, at farms and on factory floors, at diners and on distant",
-      "start": 17.6,
-      "end": 24.9
-    },
-    {
-      "text": "military outposts.",
-      "start": 24.9,
-      "end": 26.6
-    },
-    {
-      "text": "All these conversations are what have kept me honest, kept me inspired, and kept me going.",
-      "start": 26.6,
-      "end": 32.8
-    },
-    {
-      "text": "Every day, I learned from you.",
-      "start": 32.8,
-      "end": 35.4
-    },
-    {
-      "text": "You made me a better President, and you made me a better man.",
-      "start": 35.4,
-      "end": 39.3
-    },
-    {
-      "text": "Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people.",
-      "start": 39.3,
-      "end": 46.1
-    },
-    {
-      "text": "I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes.",
-      "start": 46.1,
-      "end": 51.3
-    },
-    {
-      "text": "I've hugged cancer survivors who finally know the security of affordable health care.",
-      "start": 52.2,
-      "end": 56.5
-    },
-    {
-      "text": "I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit.",
-      "start": 57.1,
-      "end": 65.7
-    },
-    {
-      "text": "I've seen the hopeful faces of young graduates and our newest military officers.",
-      "start": 66.5,
-      "end": 71.1
-    },
-    {
-      "text": "I've mourned with grieving families searching for answers.",
-      "start": 71.7,
-      "end": 74.4
-    },
-    {
-      "text": "And I found grace in a Charleston church.",
-      "start": 75.2,
-      "end": 77.7
-    },
-    {
-      "text": "I've seen our scientists help a paralyzed man regain his sense of touch and our wounded warriors walk again.",
-      "start": 78.5,
-      "end": 85.2
-    },
-    {
-      "text": "I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks.",
-      "start": 85.9,
-      "end": 91.9
-    },
-    {
-      "text": "I've learned from students who are building robots and curing diseases and who will change the world in ways we can't even imagine.",
-      "start": 92.6,
-      "end": 99.2
-    },
-    {
-      "text": "I've seen the youngest of children remind us of our obligations to care for our refugees.",
-      "start": 100.1,
-      "end": 105.8
-    },
-    {
-      "text": "to work in peace, and above all, to look out for each other.",
-      "start": 106.6,
-      "end": 111.6
-    },
-    {
-      "text": "That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government.",
-      "start": 111.6,
-      "end": 120.3
-    },
-    {
-      "text": "But we can't take our democracy for granted.",
-      "start": 120.3,
-      "end": 123.4
-    },
-    {
-      "text": "All of us, regardless of party, should throw ourselves into the work of citizenship.",
-      "start": 123.4,
-      "end": 129.2
-    },
-    {
-      "text": "Not just when there's an election.",
-      "start": 129.2,
-      "end": 131.2
-    },
-    {
-      "text": "Not just when our own narrow interest is at stake.",
-      "start": 131.2,
-      "end": 134.7
-    },
-    {
-      "text": "But over the full span of a lifetime.",
-      "start": 134.7,
-      "end": 138.1
-    },
-    {
-      "text": "If you're tired of arguing with strangers on the Internet,",
-      "start": 138.1,
-      "end": 141.4
-    },
-    {
-      "text": "try to talk with one in real life.",
-      "start": 141.4,
-      "end": 144.0
-    },
-    {
-      "text": "If something needs fixing,",
-      "start": 144.0,
-      "end": 146.0
-    },
-    {
-      "text": "lace up your shoes and do some organizing.",
-      "start": 146.0,
-      "end": 149.3
-    },
-    {
-      "text": "If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself.",
-      "start": 149.3,
-      "end": 156.8
-    },
-    {
-      "text": "Our success depends on our participation, regardless of which way the pendulum of power swings.",
-      "start": 156.8,
-      "end": 165.3
-    },
-    {
-      "text": "It falls on each of us to be guardians of our democracy.",
-      "start": 165.3,
-      "end": 168.5
-    },
-    {
-      "text": "to embrace the joyous task we've been given to continually try to improve this great nation of ours.",
-      "start": 168.5,
-      "end": 174.6
-    },
-    {
-      "text": "Because for all our outward differences, we all share the same proud title, citizen.",
-      "start": 175.4,
-      "end": 181.7
-    },
-    {
-      "text": "It has been the honor of my life to serve you as president.",
-      "start": 182.7,
-      "end": 186.0
-    },
-    {
-      "text": "Eight years later, I am even more optimistic about our country's promise,",
-      "start": 186.9,
-      "end": 190.3
-    },
-    {
-      "text": "and I look forward to working along your side as a citizen for all my days that remain.",
-      "start": 190.3,
-      "end": 197.3
-    },
-    {
-      "text": "Thanks, everybody. God bless you, and God bless the United States of America.",
-      "start": 198.5,
-      "end": 203.4
-    }
-  ],
-  "usage": {
-    "prompt_audio_seconds": 203,
-    "prompt_tokens": 4,
-    "total_tokens": 3945,
-    "completion_tokens": 1316
-  }
-}
-```
-  </TabItem>
-</Tabs>
+<RealtimeTranscriptionSection/>
 
 <SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
 

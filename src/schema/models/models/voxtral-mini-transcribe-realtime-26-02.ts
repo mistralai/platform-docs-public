@@ -15,7 +15,7 @@ export default {
   weights: [],
   bloglink: 'https://mistral.ai/news/voxtral',
   paperlink: null,
-  contextLength: '32k',
+  contextLength: '--',
   ratings: { 
     speed: { stars: 4.0, label: 'Fast' },
     performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },

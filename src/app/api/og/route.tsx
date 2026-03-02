@@ -22,6 +22,7 @@ const getHexColor = (cssVar: string): string => {
     'var(--model-beige)': '#F5F5DC',
     'var(--model-gray)': '#BDC3C7',
   };
+
   return colorMap[cssVar] || '#BDC3C7';
 };
 

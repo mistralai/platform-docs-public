@@ -475,7 +475,19 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            description: Filter by agent name
             title: Name
+          description: Filter by agent name
+        - name: search
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Search agents by name or ID
+            title: Search
+          description: Search agents by name or ID
         - name: id
           in: query
           required: false
@@ -782,6 +794,37 @@ paths:
                 items:
                   $ref: '#/components/schemas/AgentAliasResponse'
                 title: Response V1 Agents List Version Aliases
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - beta.agents
+    delete:
+      summary: Delete an agent version alias.
+      description: Delete an existing alias for an agent.
+      operationId: agents_api_v1_agents_delete_alias
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Agent Id
+        - name: alias
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            pattern: ^[a-z]([a-z0-9_-]*[a-z0-9])?$
+            title: Alias
+      responses:
+        '204':
+          description: Successful Response
         '422':
           description: Validation Error
           content:
@@ -1276,7 +1319,7 @@ paths:
                 $ref: '#/components/schemas/JobsOut'
       description: Get a list of fine-tuning jobs for your organization and user.
       tags:
-        - fine-tuning
+        - deprecated.fine-tuning
     post:
       operationId: jobs_api_routes_fine_tuning_create_fine_tuning_job
       summary: Create Fine Tuning Job
@@ -1315,7 +1358,7 @@ paths:
               $ref: '#/components/schemas/JobIn'
         required: true
       tags:
-        - fine-tuning
+        - deprecated.fine-tuning
   /v1/fine_tuning/jobs/{job_id}:
     get:
       operationId: jobs_api_routes_fine_tuning_get_fine_tuning_job
@@ -1346,7 +1389,7 @@ paths:
                 title: Response
       description: Get a fine-tuned job details by its UUID.
       tags:
-        - fine-tuning
+        - deprecated.fine-tuning
   /v1/fine_tuning/jobs/{job_id}/cancel:
     post:
       operationId: jobs_api_routes_fine_tuning_cancel_fine_tuning_job
@@ -1377,7 +1420,7 @@ paths:
                 title: Response
       description: Request the cancellation of a fine tuning job.
       tags:
-        - fine-tuning
+        - deprecated.fine-tuning
   /v1/fine_tuning/jobs/{job_id}/start:
     post:
       operationId: jobs_api_routes_fine_tuning_start_fine_tuning_job
@@ -1407,7 +1450,7 @@ paths:
                 title: Response
       description: Request the start of a validated fine tuning job.
       tags:
-        - fine-tuning
+        - deprecated.fine-tuning
   /v1/fine_tuning/models/{model_id}:
     patch:
       operationId: jobs_api_routes_fine_tuning_update_fine_tuned_model
@@ -1559,6 +1602,16 @@ paths:
                 type: array
               - type: 'null'
             title: Status
+          required: false
+        - in: query
+          name: order_by
+          schema:
+            default: -created
+            enum:
+              - created
+              - -created
+            title: Order By
+            type: string
           required: false
       responses:
         '200':
@@ -1765,7 +1818,7 @@ paths:
   /v1/embeddings:
     post:
       summary: Embeddings
-      description: 'Embeddings'
+      description: Embeddings
       operationId: embeddings_v1_embeddings_post
       requestBody:
         content:
@@ -2136,7 +2189,19 @@ paths:
                 userExample:
                   value:
                     model: voxtral-mini-2507
-                    text: "This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, my conversations with you, the American people, in living rooms, in schools, at farms and on factory floors, at diners and on distant military outposts, All these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man.\nOver the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers. And I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other.\nThat's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself.\nOur success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title – citizen.\nIt has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise. And I look forward to working along your side as a citizen for all my days that remain.\nThanks, everybody. God bless you. And God bless the United States of America.\n"
+                    text: 'This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we''ve seen eye to eye or rarely agreed at all, my conversations with you, the American people, in living rooms, in schools, at farms and on factory floors, at diners and on distant military outposts, All these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better President, and you made me a better man.
+
+                      Over the course of these eight years, I''ve seen the goodness, the resilience, and the hope of the American people. I''ve seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I''ve hugged cancer survivors who finally know the security of affordable health care. I''ve seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I''ve seen the hopeful faces of young graduates and our newest military officers. I''ve mourned with grieving families searching for answers. And I found grace in a Charleston church. I''ve seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I''ve seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I''ve learned from students who are building robots and curing diseases, and who will change the world in ways we can''t even imagine. I''ve seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other.
+
+                      That''s what''s possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can''t take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you''re tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you''re disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself.
+
+                      Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we''ve been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title – citizen.
+
+                      It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country''s promise. And I look forward to working along your side as a citizen for all my days that remain.
+
+                      Thanks, everybody. God bless you. And God bless the United States of America.
+
+'
                     language: en
                     segments: []
                     usage:
@@ -2845,8 +2910,6 @@ components:
           const: base
           title: Type
           default: base
-          enum:
-            - base
       type: object
       required:
         - id
@@ -2935,8 +2998,6 @@ components:
           const: fine-tuned
           title: Type
           default: fine-tuned
-          enum:
-            - fine-tuned
         job:
           type: string
           title: Job
@@ -3081,6 +3142,13 @@ components:
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        guardrails:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/GuardrailConfig'
+              type: array
+            - type: 'null'
+          title: Guardrails
         model:
           type: string
           title: Model
@@ -3106,8 +3174,7 @@ components:
             - type: 'null'
         object:
           type: string
-          enum:
-            - agent
+          const: agent
           title: Object
           default: agent
         id:
@@ -3135,6 +3202,11 @@ components:
         source:
           type: string
           title: Source
+        version_message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Version Message
       additionalProperties: false
       type: object
       required:
@@ -3193,8 +3265,7 @@ components:
           description: Custom metadata for the conversation.
         object:
           type: string
-          enum:
-            - conversation
+          const: conversation
           title: Object
           default: conversation
         id:
@@ -3257,6 +3328,13 @@ components:
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        guardrails:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/GuardrailConfig'
+              type: array
+            - type: 'null'
+          title: Guardrails
         model:
           type: string
           title: Model
@@ -3280,6 +3358,12 @@ components:
           anyOf:
             - $ref: '#/components/schemas/MetadataDict'
             - type: 'null'
+        version_message:
+          anyOf:
+            - type: string
+              maxLength: 500
+            - type: 'null'
+          title: Version Message
       additionalProperties: false
       type: object
       required:
@@ -3290,14 +3374,12 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - entry
+          const: entry
           title: Object
           default: entry
         type:
           type: string
-          enum:
-            - agent.handoff
+          const: agent.handoff
           title: Type
           default: agent.handoff
         created_at:
@@ -3365,6 +3447,13 @@ components:
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        guardrails:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/GuardrailConfig'
+              type: array
+            - type: 'null'
+          title: Guardrails
         model:
           anyOf:
             - type: string
@@ -3397,6 +3486,12 @@ components:
           anyOf:
             - $ref: '#/components/schemas/MetadataDict'
             - type: 'null'
+        version_message:
+          anyOf:
+            - type: string
+              maxLength: 500
+            - type: 'null'
+          title: Version Message
       additionalProperties: false
       type: object
       title: AgentUpdateRequest
@@ -3411,6 +3506,10 @@ components:
       title: BuiltInConnectors
     CodeInterpreterTool:
       properties:
+        tool_configuration:
+          anyOf:
+            - $ref: '#/components/schemas/ToolConfiguration'
+            - type: 'null'
         type:
           type: string
           enum:
@@ -3493,8 +3592,7 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - conversation.history
+          const: conversation.history
           title: Object
           default: conversation.history
         conversation_id:
@@ -3522,8 +3620,7 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - conversation.messages
+          const: conversation.messages
           title: Object
           default: conversation.messages
         conversation_id:
@@ -3548,8 +3645,35 @@ components:
               enum:
                 - false
               default: false
+    ConversationThinkChunk:
+      properties:
+        type:
+          type: string
+          const: thinking
+          title: Type
+          default: thinking
+        thinking:
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/TextChunk'
+              - $ref: '#/components/schemas/ToolReferenceChunk'
+          type: array
+          title: Thinking
+        closed:
+          type: boolean
+          title: Closed
+          default: true
+      additionalProperties: false
+      type: object
+      required:
+        - thinking
+      title: ConversationThinkChunk
     DocumentLibraryTool:
       properties:
+        tool_configuration:
+          anyOf:
+            - $ref: '#/components/schemas/ToolConfiguration'
+            - type: 'null'
         type:
           type: string
           enum:
@@ -3570,6 +3694,11 @@ components:
       title: DocumentLibraryTool
     DocumentURLChunk:
       properties:
+        type:
+          type: string
+          const: document_url
+          title: Type
+          default: document_url
         document_url:
           type: string
           title: Document Url
@@ -3579,12 +3708,6 @@ components:
             - type: 'null'
           title: Document Name
           description: The filename of the document
-        type:
-          type: string
-          enum:
-            - document_url
-          title: Type
-          default: document_url
       additionalProperties: false
       type: object
       required:
@@ -3617,14 +3740,12 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - entry
+          const: entry
           title: Object
           default: entry
         type:
           type: string
-          enum:
-            - function.call
+          const: function.call
           title: Type
           default: function.call
         created_at:
@@ -3637,6 +3758,16 @@ components:
               format: date-time
             - type: 'null'
           title: Completed At
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Agent Id
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Model
         id:
           type: string
           title: Id
@@ -3648,6 +3779,15 @@ components:
           title: Name
         arguments:
           $ref: '#/components/schemas/FunctionCallEntryArguments'
+        confirmation_status:
+          anyOf:
+            - type: string
+              enum:
+                - pending
+                - allowed
+                - denied
+            - type: 'null'
+          title: Confirmation Status
       additionalProperties: false
       type: object
       required:
@@ -3659,14 +3799,12 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - entry
+          const: entry
           title: Object
           default: entry
         type:
           type: string
-          enum:
-            - function.result
+          const: function.result
           title: Type
           default: function.result
         created_at:
@@ -3709,8 +3847,34 @@ components:
       required:
         - function
       title: FunctionTool
+    GuardrailConfig:
+      properties:
+        block_on_error:
+          type: boolean
+          title: Block On Error
+          description: If true, return HTTP 403 and block request in the event of a server-side error
+          default: false
+        moderation_llm_v1:
+          anyOf:
+            - $ref: '#/components/schemas/ModerationLLMV1Config'
+            - type: 'null'
+      type: object
+      required:
+        - moderation_llm_v1
+      title: GuardrailConfig
+    ImageDetail:
+      type: string
+      enum:
+        - low
+        - auto
+        - high
+      title: ImageDetail
     ImageGenerationTool:
       properties:
+        tool_configuration:
+          anyOf:
+            - $ref: '#/components/schemas/ToolConfiguration'
+            - type: 'null'
         type:
           type: string
           enum:
@@ -3720,19 +3884,32 @@ components:
       additionalProperties: false
       type: object
       title: ImageGenerationTool
+    ImageURL:
+      properties:
+        url:
+          type: string
+          title: Url
+        detail:
+          anyOf:
+            - $ref: '#/components/schemas/ImageDetail'
+            - type: 'null'
+      additionalProperties: false
+      type: object
+      required:
+        - url
+      title: ImageURL
     ImageURLChunk:
       properties:
+        type:
+          type: string
+          const: image_url
+          title: Type
+          default: image_url
         image_url:
           anyOf:
             - $ref: '#/components/schemas/ImageURL'
             - type: string
           title: Image Url
-        type:
-          type: string
-          enum:
-            - image_url
-          title: Type
-          default: image_url
       additionalProperties: false
       type: object
       required:
@@ -3768,14 +3945,12 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - entry
+          const: entry
           title: Object
           default: entry
         type:
           type: string
-          enum:
-            - message.input
+          const: message.input
           title: Type
           default: message.input
         created_at:
@@ -3817,14 +3992,12 @@ components:
       properties:
         object:
           type: string
-          enum:
-            - entry
+          const: entry
           title: Object
           default: entry
         type:
           type: string
-          enum:
-            - message.output
+          const: message.output
           title: Type
           default: message.output
         created_at:
@@ -3837,9 +4010,6 @@ components:
               format: date-time
             - type: 'null'
           title: Completed At
-        id:
-          type: string
-          title: Id
         agent_id:
           anyOf:
             - type: string
@@ -3850,10 +4020,12 @@ components:
             - type: string
             - type: 'null'
           title: Model
+        id:
+          type: string
+          title: Id
         role:
           type: string
-          enum:
-            - assistant
+          const: assistant
           title: Role
           default: assistant
         content:
@@ -3903,6 +4075,13 @@ components:
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        guardrails:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/GuardrailConfig'
+              type: array
+            - type: 'null'
+          title: Guardrails
         name:
           anyOf:
             - type: string
@@ -3922,8 +4101,7 @@ components:
           description: Custom metadata for the conversation.
         object:
           type: string
-          enum:
-            - conversation
+          const: conversation
           title: Object
           default: conversation
         id:
@@ -3948,6 +4126,84 @@ components:
         - updated_at
         - model
       title: ModelConversation
+    ModerationLLMV1Action:
+      type: string
+      enum:
+        - none
+        - block
+      title: ModerationLLMV1Action
+    ModerationLLMV1CategoryThresholds:
+      properties:
+        sexual:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Sexual
+        hate_and_discrimination:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Hate And Discrimination
+        violence_and_threats:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Violence And Threats
+        dangerous_and_criminal_content:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Dangerous And Criminal Content
+        selfharm:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Selfharm
+        health:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Health
+        financial:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Financial
+        law:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Law
+        pii:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Pii
+      type: object
+      title: ModerationLLMV1CategoryThresholds
+    ModerationLLMV1Config:
+      properties:
+        model_name:
+          type: string
+          title: Model Name
+          description: Override model name. Should be omitted in general.
+          default: mistral-moderation-2411
+        custom_category_thresholds:
+          anyOf:
+            - $ref: '#/components/schemas/ModerationLLMV1CategoryThresholds'
+            - type: 'null'
+          description: Override default thresholds for specific categories.
+        ignore_other_categories:
+          type: boolean
+          title: Ignore Other Categories
+          description: If true, only evaluate categories in custom_category_thresholds; others are ignored.
+          default: false
+        action:
+          $ref: '#/components/schemas/ModerationLLMV1Action'
+          description: Action to take if any score is above the threshold for any category.
+          default: none
+      type: object
+      title: ModerationLLMV1Config
     Prediction:
       properties:
         type:
@@ -4015,45 +4271,36 @@ components:
       title: ResponseFormats
     TextChunk:
       properties:
+        type:
+          type: string
+          const: text
+          title: Type
+          default: text
         text:
           type: string
           title: Text
-        type:
-          type: string
-          enum:
-            - text
-          title: Type
-          default: text
       additionalProperties: false
       type: object
       required:
         - text
       title: TextChunk
-    ThinkChunk:
+    ToolCallConfirmation:
       properties:
-        thinking:
-          items:
-            anyOf:
-              - $ref: '#/components/schemas/ReferenceChunk'
-              - $ref: '#/components/schemas/TextChunk'
-          type: array
-          title: Thinking
-        closed:
-          type: boolean
-          title: Closed
-          description: Whether the thinking chunk is closed or not. Currently only used for prefixing.
-          default: true
-        type:
+        tool_call_id:
+          type: string
+          title: Tool Call Id
+        confirmation:
           type: string
           enum:
-            - thinking
-          title: Type
-          default: thinking
+            - allow
+            - deny
+          title: Confirmation
       additionalProperties: false
       type: object
       required:
-        - thinking
-      title: ThinkChunk
+        - tool_call_id
+        - confirmation
+      title: ToolCallConfirmation
     ToolChoiceEnum:
       type: string
       enum:
@@ -4062,18 +4309,42 @@ components:
         - any
         - required
       title: ToolChoiceEnum
+    ToolConfiguration:
+      properties:
+        exclude:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Exclude
+        include:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Include
+        requires_confirmation:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Requires Confirmation
+      additionalProperties: false
+      type: object
+      title: ToolConfiguration
     ToolExecutionEntry:
       properties:
         object:
           type: string
-          enum:
-            - entry
+          const: entry
           title: Object
           default: entry
         type:
           type: string
-          enum:
-            - tool.execution
+          const: tool.execution
           title: Type
           default: tool.execution
         created_at:
@@ -4086,6 +4357,16 @@ components:
               format: date-time
             - type: 'null'
           title: Completed At
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Agent Id
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Model
         id:
           type: string
           title: Id
@@ -4101,16 +4382,15 @@ components:
           $ref: '#/components/schemas/ToolExecutionInfo'
       additionalProperties: false
       type: object
-      title: ToolExecutionEntry
       required:
         - name
         - arguments
+      title: ToolExecutionEntry
     ToolFileChunk:
       properties:
         type:
           type: string
-          enum:
-            - tool_file
+          const: tool_file
           title: Type
           default: tool_file
         tool:
@@ -4141,8 +4421,7 @@ components:
       properties:
         type:
           type: string
-          enum:
-            - tool_reference
+          const: tool_reference
           title: Type
           default: tool_reference
         tool:
@@ -4176,6 +4455,10 @@ components:
       title: ToolReferenceChunk
     WebSearchPremiumTool:
       properties:
+        tool_configuration:
+          anyOf:
+            - $ref: '#/components/schemas/ToolConfiguration'
+            - type: 'null'
         type:
           type: string
           enum:
@@ -4187,6 +4470,10 @@ components:
       title: WebSearchPremiumTool
     WebSearchTool:
       properties:
+        tool_configuration:
+          anyOf:
+            - $ref: '#/components/schemas/ToolConfiguration'
+            - type: 'null'
         type:
           type: string
           enum:
@@ -4215,7 +4502,7 @@ components:
           anyOf:
             - type: integer
             - type: 'null'
-          default:
+          default: null
           title: Connector Tokens
         connectors:
           anyOf:
@@ -4223,7 +4510,7 @@ components:
                 type: integer
               type: object
             - type: 'null'
-          default:
+          default: null
           title: Connectors
       title: ConversationUsageInfo
       type: object
@@ -4232,9 +4519,8 @@ components:
       description: The response after appending new entries to the conversation.
       properties:
         object:
+          const: conversation.response
           default: conversation.response
-          enum:
-            - conversation.response
           title: Object
           type: string
         conversation_id:
@@ -4251,6 +4537,14 @@ components:
           type: array
         usage:
           $ref: '#/components/schemas/ConversationUsageInfo'
+        guardrails:
+          anyOf:
+            - items:
+                type: object
+              type: array
+            - type: 'null'
+          default: null
+          title: Guardrails
       required:
         - conversation_id
         - outputs
@@ -4271,9 +4565,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: agent.handoff.done
           default: agent.handoff.done
-          enum:
-            - agent.handoff.done
           title: Type
           type: string
         created_at:
@@ -4303,9 +4596,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: agent.handoff.started
           default: agent.handoff.started
-          enum:
-            - agent.handoff.started
           title: Type
           type: string
         created_at:
@@ -4335,9 +4627,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: function.call.delta
           default: function.call.delta
-          enum:
-            - function.call.delta
           title: Type
           type: string
         created_at:
@@ -4351,6 +4642,18 @@ components:
         id:
           title: Id
           type: string
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default: null
+          title: Model
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default: null
+          title: Agent Id
         name:
           title: Name
           type: string
@@ -4360,6 +4663,16 @@ components:
         arguments:
           title: Arguments
           type: string
+        confirmation_status:
+          anyOf:
+            - enum:
+                - pending
+                - allowed
+                - denied
+              type: string
+            - type: 'null'
+          default: null
+          title: Confirmation Status
       required:
         - id
         - name
@@ -4371,9 +4684,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: message.output.delta
           default: message.output.delta
-          enum:
-            - message.output.delta
           title: Type
           type: string
         created_at:
@@ -4395,18 +4707,17 @@ components:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Model
         agent_id:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Agent Id
         role:
+          const: assistant
           default: assistant
-          enum:
-            - assistant
           title: Role
           type: string
         content:
@@ -4423,9 +4734,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: conversation.response.done
           default: conversation.response.done
-          enum:
-            - conversation.response.done
           title: Type
           type: string
         created_at:
@@ -4442,9 +4752,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: conversation.response.error
           default: conversation.response.error
-          enum:
-            - conversation.response.error
           title: Type
           type: string
         created_at:
@@ -4466,9 +4775,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: conversation.response.started
           default: conversation.response.started
-          enum:
-            - conversation.response.started
           title: Type
           type: string
         created_at:
@@ -4501,9 +4809,8 @@ components:
       additionalProperties: false
       properties:
         type:
+          const: tool.execution.delta
           default: tool.execution.delta
-          enum:
-            - tool.execution.delta
           title: Type
           type: string
         created_at:
@@ -4525,19 +4832,18 @@ components:
         arguments:
           title: Arguments
           type: string
-      title: ToolExecutionDeltaEvent
-      type: object
       required:
         - id
         - name
         - arguments
+      title: ToolExecutionDeltaEvent
+      type: object
     ToolExecutionDoneEvent:
       additionalProperties: false
       properties:
         type:
+          const: tool.execution.done
           default: tool.execution.done
-          enum:
-            - tool.execution.done
           title: Type
           type: string
         created_at:
@@ -4558,18 +4864,17 @@ components:
           title: Name
         info:
           $ref: '#/components/schemas/ToolExecutionInfo'
-      title: ToolExecutionDoneEvent
-      type: object
       required:
         - id
         - name
+      title: ToolExecutionDoneEvent
+      type: object
     ToolExecutionStartedEvent:
       additionalProperties: false
       properties:
         type:
+          const: tool.execution.started
           default: tool.execution.started
-          enum:
-            - tool.execution.started
           title: Type
           type: string
         created_at:
@@ -4583,6 +4888,18 @@ components:
         id:
           title: Id
           type: string
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default: null
+          title: Model
+        agent_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          default: null
+          title: Agent Id
         name:
           anyOf:
             - $ref: '#/components/schemas/BuiltInConnectors'
@@ -4591,12 +4908,12 @@ components:
         arguments:
           title: Arguments
           type: string
-      title: ToolExecutionStartedEvent
-      type: object
       required:
         - id
         - name
         - arguments
+      title: ToolExecutionStartedEvent
+      type: object
     ConversationEvents:
       properties:
         event:
@@ -4639,7 +4956,7 @@ components:
           - $ref: '#/components/schemas/ImageURLChunk'
           - $ref: '#/components/schemas/ToolFileChunk'
           - $ref: '#/components/schemas/DocumentURLChunk'
-          - $ref: '#/components/schemas/ThinkChunk'
+          - $ref: '#/components/schemas/ConversationThinkChunk'
       type: array
       title: MessageInputContentChunks
     MessageOutputContentChunks:
@@ -4649,7 +4966,7 @@ components:
           - $ref: '#/components/schemas/ImageURLChunk'
           - $ref: '#/components/schemas/ToolFileChunk'
           - $ref: '#/components/schemas/DocumentURLChunk'
-          - $ref: '#/components/schemas/ThinkChunk'
+          - $ref: '#/components/schemas/ConversationThinkChunk'
           - $ref: '#/components/schemas/ToolReferenceChunk'
       type: array
       title: MessageOutputContentChunks
@@ -4659,7 +4976,7 @@ components:
         - $ref: '#/components/schemas/ImageURLChunk'
         - $ref: '#/components/schemas/ToolFileChunk'
         - $ref: '#/components/schemas/DocumentURLChunk'
-        - $ref: '#/components/schemas/ThinkChunk'
+        - $ref: '#/components/schemas/ConversationThinkChunk'
         - $ref: '#/components/schemas/ToolReferenceChunk'
       title: OutputContentChunks
     MessageEntries:
@@ -4711,13 +5028,13 @@ components:
           anyOf:
             - type: boolean
             - type: 'null'
-          default:
+          default: null
           title: Stream
         store:
           anyOf:
             - type: boolean
             - type: 'null'
-          default:
+          default: null
           title: Store
         handoff_execution:
           anyOf:
@@ -4726,13 +5043,13 @@ components:
                 - server
               type: string
             - type: 'null'
-          default:
+          default: null
           title: Handoff Execution
         instructions:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Instructions
         tools:
           items:
@@ -4759,42 +5076,50 @@ components:
           anyOf:
             - $ref: '#/components/schemas/CompletionArgs'
             - type: 'null'
-          default:
+          default: null
+        guardrails:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/GuardrailConfig'
+              type: array
+            - type: 'null'
+          default: null
+          title: Guardrails
         name:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Name
         description:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Description
         metadata:
           anyOf:
             - $ref: '#/components/schemas/MetadataDict'
             - type: 'null'
-          default:
+          default: null
         agent_id:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Agent Id
         agent_version:
           anyOf:
             - type: string
             - type: integer
             - type: 'null'
-          default:
+          default: null
           title: Agent Version
         model:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Model
       required:
         - inputs
@@ -4834,10 +5159,15 @@ components:
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        tool_confirmations:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/ToolCallConfirmation'
+              type: array
+            - type: 'null'
+          title: Tool Confirmations
       additionalProperties: false
       type: object
-      required:
-        - inputs
       title: ConversationAppendRequest
     ConversationAppendStreamRequest:
       allOf:
@@ -4873,6 +5203,13 @@ components:
         completion_args:
           $ref: '#/components/schemas/CompletionArgs'
           description: Completion arguments that will be used to generate assistant responses. Can be overridden at each message request.
+        guardrails:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/GuardrailConfig'
+              type: array
+            - type: 'null'
+          title: Guardrails
         metadata:
           anyOf:
             - $ref: '#/components/schemas/MetadataDict'
@@ -4891,7 +5228,6 @@ components:
       additionalProperties: false
       type: object
       required:
-        - inputs
         - from_entry_id
       title: ConversationRestartRequest
       description: Request to restart a new conversation from a given entry in the conversation.
@@ -5218,7 +5554,8 @@ components:
           title: Auto Start
           type: boolean
         model:
-          $ref: '#/components/schemas/FineTuneableModel'
+          title: Model
+          type: string
         status:
           enum:
             - QUEUED
@@ -5260,11 +5597,10 @@ components:
           title: Validation Files
           description: A list containing the IDs of uploaded files that contain validation data.
         object:
+          const: job
           default: job
           title: Object
           type: string
-          enum:
-            - job
           description: The object type of the fine-tuning job.
         fine_tuned_model:
           anyOf:
@@ -5302,11 +5638,10 @@ components:
             - $ref: '#/components/schemas/JobMetadataOut'
             - type: 'null'
         job_type:
+          const: classifier
           default: classifier
           title: Job Type
           type: string
-          enum:
-            - classifier
           description: The type of job (`FT` for fine-tuning).
         hyperparameters:
           $ref: '#/components/schemas/ClassifierTrainingParameters'
@@ -5332,7 +5667,7 @@ components:
         learning_rate:
           default: 0.0001
           maximum: 1
-          minimum: 0.00000001
+          minimum: 1.0e-08
           title: Learning Rate
           type: number
         weight_decay:
@@ -5376,7 +5711,8 @@ components:
           title: Auto Start
           type: boolean
         model:
-          $ref: '#/components/schemas/FineTuneableModel'
+          title: Model
+          type: string
         status:
           enum:
             - QUEUED
@@ -5418,11 +5754,10 @@ components:
           title: Validation Files
           description: A list containing the IDs of uploaded files that contain validation data.
         object:
+          const: job
           default: job
           title: Object
           type: string
-          enum:
-            - job
           description: The object type of the fine-tuning job.
         fine_tuned_model:
           anyOf:
@@ -5460,11 +5795,10 @@ components:
             - $ref: '#/components/schemas/JobMetadataOut'
             - type: 'null'
         job_type:
+          const: completion
           default: completion
           title: Job Type
           type: string
-          enum:
-            - completion
           description: The type of job (`FT` for fine-tuning).
         hyperparameters:
           $ref: '#/components/schemas/CompletionTrainingParameters'
@@ -5501,7 +5835,7 @@ components:
         learning_rate:
           default: 0.0001
           maximum: 1
-          minimum: 0.00000001
+          minimum: 1.0e-08
           title: Learning Rate
           type: number
         weight_decay:
@@ -5542,28 +5876,13 @@ components:
           title: Fim Ratio
       title: CompletionTrainingParameters
       type: object
-    FineTuneableModel:
-      enum:
-        - ministral-3b-latest
-        - ministral-8b-latest
-        - open-mistral-7b
-        - open-mistral-nemo
-        - mistral-small-latest
-        - mistral-medium-latest
-        - mistral-large-latest
-        - pixtral-12b-latest
-        - codestral-latest
-      title: FineTuneableModel
-      type: string
-      description: The name of the model to fine-tune.
     GithubRepositoryOut:
       properties:
         type:
+          const: github
           default: github
           title: Type
           type: string
-          enum:
-            - github
         name:
           title: Name
           type: string
@@ -5646,11 +5965,10 @@ components:
           title: Data
           type: array
         object:
+          const: list
           default: list
           title: Object
           type: string
-          enum:
-            - list
         total:
           title: Total
           type: integer
@@ -5661,11 +5979,10 @@ components:
     WandbIntegrationOut:
       properties:
         type:
+          const: wandb
           default: wandb
           title: Type
           type: string
-          enum:
-            - wandb
         project:
           title: Project
           type: string
@@ -5769,11 +6086,10 @@ components:
           examples:
             - 10
         object:
+          const: job.metadata
           default: job.metadata
           title: Object
           type: string
-          enum:
-            - job.metadata
       required:
         - details
       title: LegacyJobMetadataOut
@@ -5814,7 +6130,7 @@ components:
         learning_rate:
           default: 0.0001
           maximum: 1
-          minimum: 0.00000001
+          minimum: 1.0e-08
           title: Learning Rate
           type: number
           description: A parameter describing how much to adjust the pre-trained model's weights in response to the estimated error each time the weights are updated during the fine-tuning process.
@@ -5863,7 +6179,7 @@ components:
         learning_rate:
           default: 0.0001
           maximum: 1
-          minimum: 0.00000001
+          minimum: 1.0e-08
           title: Learning Rate
           type: number
           description: A parameter describing how much to adjust the pre-trained model's weights in response to the estimated error each time the weights are updated during the fine-tuning process.
@@ -5917,11 +6233,10 @@ components:
     GithubRepositoryIn:
       properties:
         type:
+          const: github
           default: github
           title: Type
           type: string
-          enum:
-            - github
         name:
           title: Name
           type: string
@@ -5950,7 +6265,8 @@ components:
     JobIn:
       properties:
         model:
-          $ref: '#/components/schemas/FineTuneableModel'
+          title: Model
+          type: string
         training_files:
           default: []
           items:
@@ -6047,11 +6363,10 @@ components:
     WandbIntegration:
       properties:
         type:
+          const: wandb
           default: wandb
           title: Type
           type: string
-          enum:
-            - wandb
         project:
           title: Project
           type: string
@@ -6108,7 +6423,8 @@ components:
           title: Auto Start
           type: boolean
         model:
-          $ref: '#/components/schemas/FineTuneableModel'
+          title: Model
+          type: string
         status:
           enum:
             - QUEUED
@@ -6145,11 +6461,10 @@ components:
           default: []
           title: Validation Files
         object:
+          const: job
           default: job
           title: Object
           type: string
-          enum:
-            - job
         fine_tuned_model:
           anyOf:
             - type: string
@@ -6182,11 +6497,10 @@ components:
             - $ref: '#/components/schemas/JobMetadataOut'
             - type: 'null'
         job_type:
+          const: classifier
           default: classifier
           title: Job Type
           type: string
-          enum:
-            - classifier
         hyperparameters:
           $ref: '#/components/schemas/ClassifierTrainingParameters'
         events:
@@ -6251,7 +6565,8 @@ components:
           title: Auto Start
           type: boolean
         model:
-          $ref: '#/components/schemas/FineTuneableModel'
+          title: Model
+          type: string
         status:
           enum:
             - QUEUED
@@ -6288,11 +6603,10 @@ components:
           default: []
           title: Validation Files
         object:
+          const: job
           default: job
           title: Object
           type: string
-          enum:
-            - job
         fine_tuned_model:
           anyOf:
             - type: string
@@ -6325,11 +6639,10 @@ components:
             - $ref: '#/components/schemas/JobMetadataOut'
             - type: 'null'
         job_type:
+          const: completion
           default: completion
           title: Job Type
           type: string
-          enum:
-            - completion
         hyperparameters:
           $ref: '#/components/schemas/CompletionTrainingParameters'
         repositories:
@@ -6414,11 +6727,10 @@ components:
           title: Id
           type: string
         object:
+          const: model
           default: model
           title: Object
           type: string
-          enum:
-            - model
         created:
           title: Created
           type: integer
@@ -6469,11 +6781,10 @@ components:
           title: Classifier Targets
           type: array
         model_type:
+          const: classifier
           default: classifier
           title: Model Type
           type: string
-          enum:
-            - classifier
       required:
         - id
         - created
@@ -6493,11 +6804,10 @@ components:
           title: Id
           type: string
         object:
+          const: model
           default: model
           title: Object
           type: string
-          enum:
-            - model
         created:
           title: Created
           type: integer
@@ -6543,11 +6853,10 @@ components:
           title: Job
           type: string
         model_type:
+          const: completion
           default: completion
           title: Model Type
           type: string
-          enum:
-            - completion
       required:
         - id
         - created
@@ -6604,11 +6913,10 @@ components:
           title: Id
           type: string
         object:
+          const: model
           default: model
           title: Object
           type: string
-          enum:
-            - model
         archived:
           default: true
           title: Archived
@@ -6623,11 +6931,10 @@ components:
           title: Id
           type: string
         object:
+          const: model
           default: model
           title: Object
           type: string
-          enum:
-            - model
         archived:
           default: false
           title: Archived
@@ -6666,11 +6973,10 @@ components:
           title: Id
           type: string
         object:
+          const: batch
           default: batch
           title: Object
           type: string
-          enum:
-            - batch
         input_files:
           items:
             format: uuid
@@ -6770,11 +7076,10 @@ components:
           title: Data
           type: array
         object:
+          const: list
           default: list
           title: Object
           type: string
-          enum:
-            - list
         total:
           title: Total
           type: integer
@@ -6876,6 +7181,11 @@ components:
       type: object
     AssistantMessage:
       properties:
+        role:
+          type: string
+          const: assistant
+          title: Role
+          default: assistant
         content:
           title: Content
           anyOf:
@@ -6896,29 +7206,22 @@ components:
           title: Prefix
           default: false
           description: Set this to `true` when adding an assistant message as prefix to condition the model response. The role of the prefix message is to force the model to start its answer by the content of the message.
-        role:
-          type: string
-          default: assistant
-          title: Role
-          enum:
-            - assistant
       additionalProperties: false
       type: object
       title: AssistantMessage
     AudioChunk:
       properties:
+        type:
+          type: string
+          const: input_audio
+          title: Type
+          default: input_audio
         input_audio:
           anyOf:
             - type: string
             - type: string
               format: binary
           title: Input Audio
-        type:
-          type: string
-          enum:
-            - input_audio
-          title: Type
-          default: input_audio
       additionalProperties: false
       type: object
       required:
@@ -7113,10 +7416,10 @@ components:
       properties:
         model:
           title: Model
-          description: ID of the model to use.
           type: string
           examples:
             - mistral-moderation-latest
+          description: ID of the model to use.
         metadata:
           anyOf:
             - additionalProperties: true
@@ -7150,8 +7453,8 @@ components:
       properties:
         model:
           title: Model
+          description: ID of the model to use.
           type: string
-          description: The ID of the model to be used for embedding.
           example: mistral-embed
         metadata:
           anyOf:
@@ -7169,7 +7472,7 @@ components:
           example:
             - Embed this sentence.
             - As well as this one.
-          description: The text content to be embedded, can be a string or an array of strings for fast processing in bulk.
+          description: Text to embed.
         output_dimension:
           anyOf:
             - type: integer
@@ -7326,21 +7629,6 @@ components:
         - name
       title: FunctionName
       description: this restriction of `Function` is used to select a specific function to call
-    ImageURL:
-      properties:
-        url:
-          type: string
-          title: Url
-        detail:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Detail
-      additionalProperties: false
-      type: object
-      required:
-        - url
-      title: ImageURL
     InstructRequest:
       properties:
         messages:
@@ -7660,17 +7948,16 @@ components:
       title: OCRUsageInfo
     ReferenceChunk:
       properties:
+        type:
+          type: string
+          const: reference
+          title: Type
+          default: reference
         reference_ids:
           items:
             type: integer
           type: array
           title: Reference Ids
-        type:
-          type: string
-          enum:
-            - reference
-          title: Type
-          default: reference
       additionalProperties: false
       type: object
       required:
@@ -7678,6 +7965,11 @@ components:
       title: ReferenceChunk
     SystemMessage:
       properties:
+        role:
+          type: string
+          const: system
+          title: Role
+          default: system
         content:
           title: Content
           anyOf:
@@ -7685,16 +7977,35 @@ components:
             - items:
                 $ref: '#/components/schemas/SystemMessageContentChunks'
               type: array
-        role:
-          type: string
-          default: system
-          enum:
-            - system
       additionalProperties: false
       type: object
       required:
         - content
       title: SystemMessage
+    ThinkChunk:
+      properties:
+        type:
+          type: string
+          const: thinking
+          title: Type
+          default: thinking
+        thinking:
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/ReferenceChunk'
+              - $ref: '#/components/schemas/TextChunk'
+          type: array
+          title: Thinking
+        closed:
+          type: boolean
+          title: Closed
+          description: Whether the thinking chunk is closed or not. Currently only used for prefixing.
+          default: true
+      additionalProperties: false
+      type: object
+      required:
+        - thinking
+      title: ThinkChunk
     Tool:
       properties:
         type:
@@ -7742,6 +8053,11 @@ components:
       description: ToolChoice is either a ToolChoiceEnum or a ToolChoice
     ToolMessage:
       properties:
+        role:
+          type: string
+          const: tool
+          title: Role
+          default: tool
         content:
           title: Content
           anyOf:
@@ -7760,11 +8076,6 @@ components:
             - type: string
             - type: 'null'
           title: Name
-        role:
-          type: string
-          default: tool
-          enum:
-            - tool
       additionalProperties: false
       type: object
       required:
@@ -7806,6 +8117,11 @@ components:
       title: TranscriptionResponse
     TranscriptionSegmentChunk:
       properties:
+        type:
+          type: string
+          const: transcription_segment
+          title: Type
+          default: transcription_segment
         text:
           type: string
           title: Text
@@ -7825,11 +8141,6 @@ components:
             - type: string
             - type: 'null'
           title: Speaker Id
-        type:
-          type: string
-          default: transcription_segment
-          enum:
-            - transcription_segment
       additionalProperties: false
       type: object
       required:
@@ -7865,6 +8176,11 @@ components:
         - total_tokens
     UserMessage:
       properties:
+        role:
+          type: string
+          const: user
+          title: Role
+          default: user
         content:
           title: Content
           anyOf:
@@ -7873,11 +8189,6 @@ components:
             - items:
                 $ref: '#/components/schemas/ContentChunk'
               type: array
-        role:
-          type: string
-          default: user
-          enum:
-            - user
       additionalProperties: false
       type: object
       required:
@@ -7907,7 +8218,7 @@ components:
           anyOf:
             - $ref: '#/components/schemas/File'
             - type: 'null'
-          default:
+          default: null
           title: File
         file_url:
           anyOf:
@@ -7916,14 +8227,14 @@ components:
               minLength: 1
               type: string
             - type: 'null'
-          default:
+          default: null
           description: Url of a file to be transcribed
           title: File Url
         file_id:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           description: ID of a file uploaded to /v1/files
           title: File Id
         language:
@@ -7931,14 +8242,14 @@ components:
             - pattern: ^\w{2}$
               type: string
             - type: 'null'
-          default:
+          default: null
           description: Language of the audio, e.g. 'en'. Providing the language can boost accuracy.
           title: Language
         temperature:
           anyOf:
             - type: number
             - type: 'null'
-          default:
+          default: null
           title: Temperature
         stream:
           const: false
@@ -7975,7 +8286,7 @@ components:
           anyOf:
             - $ref: '#/components/schemas/File'
             - type: 'null'
-          default:
+          default: null
           title: File
         file_url:
           anyOf:
@@ -7984,14 +8295,14 @@ components:
               minLength: 1
               type: string
             - type: 'null'
-          default:
+          default: null
           description: Url of a file to be transcribed
           title: File Url
         file_id:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           description: ID of a file uploaded to /v1/files
           title: File Id
         language:
@@ -7999,14 +8310,14 @@ components:
             - pattern: ^\w{2}$
               type: string
             - type: 'null'
-          default:
+          default: null
           description: Language of the audio, e.g. 'en'. Providing the language can boost accuracy.
           title: Language
         temperature:
           anyOf:
             - type: number
             - type: 'null'
-          default:
+          default: null
           title: Temperature
         stream:
           const: true
@@ -8037,15 +8348,15 @@ components:
     TranscriptionStreamLanguage:
       additionalProperties: false
       properties:
+        type:
+          const: transcription.language
+          default: transcription.language
+          title: Type
+          type: string
         audio_language:
           pattern: ^\w{2}$
           title: Audio Language
           type: string
-        type:
-          type: string
-          default: transcription.language
-          enum:
-            - transcription.language
       required:
         - audio_language
       title: TranscriptionStreamLanguage
@@ -8053,6 +8364,11 @@ components:
     TranscriptionStreamSegmentDelta:
       additionalProperties: false
       properties:
+        type:
+          const: transcription.segment
+          default: transcription.segment
+          title: Type
+          type: string
         text:
           title: Text
           type: string
@@ -8066,13 +8382,8 @@ components:
           anyOf:
             - type: string
             - type: 'null'
-          default:
+          default: null
           title: Speaker Id
-        type:
-          type: string
-          default: transcription.segment
-          enum:
-            - transcription.segment
       required:
         - text
         - start
@@ -8082,14 +8393,14 @@ components:
     TranscriptionStreamTextDelta:
       additionalProperties: false
       properties:
+        type:
+          const: transcription.text.delta
+          default: transcription.text.delta
+          title: Type
+          type: string
         text:
           title: Text
           type: string
-        type:
-          type: string
-          default: transcription.text.delta
-          enum:
-            - transcription.text.delta
       required:
         - text
       title: TranscriptionStreamTextDelta
@@ -8117,10 +8428,10 @@ components:
         usage:
           $ref: '#/components/schemas/UsageInfo'
         type:
-          type: string
+          const: transcription.done
           default: transcription.done
-          enum:
-            - transcription.done
+          title: Type
+          type: string
       required:
         - model
         - text
@@ -8160,6 +8471,20 @@ components:
         - transcription.done
       title: TranscriptionStreamEventTypes
       type: string
+    RealtimeTranscriptionClientMessage:
+      discriminator:
+        mapping:
+          input_audio.append: '#/components/schemas/RealtimeTranscriptionInputAudioAppend'
+          input_audio.end: '#/components/schemas/RealtimeTranscriptionInputAudioEnd'
+          input_audio.flush: '#/components/schemas/RealtimeTranscriptionInputAudioFlush'
+          session.update: '#/components/schemas/RealtimeTranscriptionSessionUpdateMessage'
+        propertyName: type
+      oneOf:
+        - $ref: '#/components/schemas/RealtimeTranscriptionSessionUpdateMessage'
+        - $ref: '#/components/schemas/RealtimeTranscriptionInputAudioAppend'
+        - $ref: '#/components/schemas/RealtimeTranscriptionInputAudioFlush'
+        - $ref: '#/components/schemas/RealtimeTranscriptionInputAudioEnd'
+      title: RealtimeTranscriptionClientMessage
     AudioEncoding:
       enum:
         - pcm_s16le
@@ -8184,6 +8509,75 @@ components:
         - encoding
         - sample_rate
       title: AudioFormat
+      type: object
+    RealtimeTranscriptionInputAudioAppend:
+      additionalProperties: false
+      properties:
+        type:
+          const: input_audio.append
+          default: input_audio.append
+          title: Type
+          type: string
+        audio:
+          description: 'Base64-encoded raw PCM bytes matching the current audio_format. Max decoded size: 262144 bytes.'
+          format: base64
+          title: Audio
+          type: string
+      required:
+        - audio
+      title: RealtimeTranscriptionInputAudioAppend
+      type: object
+    RealtimeTranscriptionInputAudioEnd:
+      additionalProperties: false
+      properties:
+        type:
+          const: input_audio.end
+          default: input_audio.end
+          title: Type
+          type: string
+      title: RealtimeTranscriptionInputAudioEnd
+      type: object
+    RealtimeTranscriptionInputAudioFlush:
+      additionalProperties: false
+      properties:
+        type:
+          const: input_audio.flush
+          default: input_audio.flush
+          title: Type
+          type: string
+      title: RealtimeTranscriptionInputAudioFlush
+      type: object
+    RealtimeTranscriptionSessionUpdateMessage:
+      additionalProperties: false
+      properties:
+        type:
+          const: session.update
+          default: session.update
+          title: Type
+          type: string
+        session:
+          $ref: '#/components/schemas/RealtimeTranscriptionSessionUpdatePayload'
+      required:
+        - session
+      title: RealtimeTranscriptionSessionUpdateMessage
+      type: object
+    RealtimeTranscriptionSessionUpdatePayload:
+      additionalProperties: false
+      properties:
+        audio_format:
+          anyOf:
+            - $ref: '#/components/schemas/AudioFormat'
+            - type: 'null'
+          default: null
+          description: Set before sending audio. Audio format updates are rejected after audio starts.
+        target_streaming_delay_ms:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          default: null
+          description: Set before sending audio. Streaming delay updates are rejected after audio starts.
+          title: Target Streaming Delay Ms
+      title: RealtimeTranscriptionSessionUpdatePayload
       type: object
     AgentsCompletionRequest:
       properties:
@@ -8300,6 +8694,27 @@ components:
         - messages
         - agent_id
       title: AgentsCompletionRequest
+    ChatClassificationRequest:
+      properties:
+        model:
+          title: Model
+          type: string
+        input:
+          $ref: '#/components/schemas/ChatClassificationRequestInputs'
+      additionalProperties: false
+      type: object
+      required:
+        - input
+        - model
+      title: ChatClassificationRequest
+    ChatClassificationRequestInputs:
+      anyOf:
+        - $ref: '#/components/schemas/InstructRequest'
+        - items:
+            $ref: '#/components/schemas/InstructRequest'
+          type: array
+      title: ChatClassificationRequestInputs
+      description: Chat to classify
     ClassificationResponse:
       type: object
       title: ClassificationResponse
@@ -8331,27 +8746,26 @@ components:
             type: number
       required:
         - scores
-    ChatClassificationRequest:
-      properties:
-        model:
-          title: Model
-          type: string
-        input:
-          $ref: '#/components/schemas/ChatClassificationRequestInputs'
-      additionalProperties: false
-      type: object
-      required:
-        - input
-        - model
-      title: ChatClassificationRequest
-    ChatClassificationRequestInputs:
-      anyOf:
-        - $ref: '#/components/schemas/InstructRequest'
-        - items:
-            $ref: '#/components/schemas/InstructRequest'
-          type: array
-      title: ChatClassificationRequestInputs
-      description: Chat to classify
+    ContentChunk:
+      oneOf:
+        - $ref: '#/components/schemas/TextChunk'
+        - $ref: '#/components/schemas/ImageURLChunk'
+        - $ref: '#/components/schemas/DocumentURLChunk'
+        - $ref: '#/components/schemas/ReferenceChunk'
+        - $ref: '#/components/schemas/FileChunk'
+        - $ref: '#/components/schemas/ThinkChunk'
+        - $ref: '#/components/schemas/AudioChunk'
+      discriminator:
+        propertyName: type
+        mapping:
+          image_url: '#/components/schemas/ImageURLChunk'
+          document_url: '#/components/schemas/DocumentURLChunk'
+          text: '#/components/schemas/TextChunk'
+          reference: '#/components/schemas/ReferenceChunk'
+          file: '#/components/schemas/FileChunk'
+          thinking: '#/components/schemas/ThinkChunk'
+          input_audio: '#/components/schemas/AudioChunk'
+      title: ContentChunk
     ModerationResponse:
       type: object
       title: ModerationResponse
@@ -8383,26 +8797,6 @@ components:
           type: object
           additionalProperties:
             type: number
-    ContentChunk:
-      oneOf:
-        - $ref: '#/components/schemas/TextChunk'
-        - $ref: '#/components/schemas/ImageURLChunk'
-        - $ref: '#/components/schemas/DocumentURLChunk'
-        - $ref: '#/components/schemas/ReferenceChunk'
-        - $ref: '#/components/schemas/FileChunk'
-        - $ref: '#/components/schemas/ThinkChunk'
-        - $ref: '#/components/schemas/AudioChunk'
-      discriminator:
-        propertyName: type
-        mapping:
-          image_url: '#/components/schemas/ImageURLChunk'
-          document_url: '#/components/schemas/DocumentURLChunk'
-          text: '#/components/schemas/TextChunk'
-          reference: '#/components/schemas/ReferenceChunk'
-          file: '#/components/schemas/FileChunk'
-          thinking: '#/components/schemas/ThinkChunk'
-          input_audio: '#/components/schemas/AudioChunk'
-      title: ContentChunk
     SystemMessageContentChunks:
       oneOf:
         - $ref: '#/components/schemas/TextChunk'
@@ -8466,8 +8860,8 @@ components:
             - type: integer
             - type: 'null'
           title: Number Of Pages
-        processing_status:
-          type: string
+        process_status:
+          $ref: '#/components/schemas/ProcessStatus'
         uploaded_by_id:
           anyOf:
             - type: string
@@ -8497,6 +8891,10 @@ components:
               type: object
             - type: 'null'
           title: Attributes
+        processing_status:
+          type: string
+          title: Processing Status
+          readOnly: true
         tokens_processing_total:
           type: integer
           title: Tokens Processing Total
@@ -8511,9 +8909,10 @@ components:
         - size
         - name
         - created_at
-        - processing_status
+        - process_status
         - uploaded_by_id
         - uploaded_by_type
+        - processing_status
         - tokens_processing_total
       title: DocumentOut
     DocumentTextContent:
@@ -8735,17 +9134,34 @@ components:
         - page_size
         - has_more
       title: PaginationInfo
+    ProcessStatus:
+      type: string
+      enum:
+        - self_managed
+        - missing_content
+        - noop
+        - done
+        - todo
+        - in_progress
+        - error
+        - waiting_for_capacity
+      title: ProcessStatus
     ProcessingStatusOut:
       properties:
         document_id:
           type: string
           format: uuid
           title: Document Id
+        process_status:
+          $ref: '#/components/schemas/ProcessStatus'
         processing_status:
           type: string
+          title: Processing Status
+          readOnly: true
       type: object
       required:
         - document_id
+        - process_status
         - processing_status
       title: ProcessingStatusOut
     ShareEnum:
@@ -9054,9 +9470,9 @@ tags:
   - name: files
     x-displayName: Files
     description: Files API
-  - name: fine-tuning
-    x-displayName: Fine Tuning
-    description: Fine-tuning API
+  - name: deprecated.fine-tuning
+    x-displayName: (deprecated) Fine Tuning
+    description: (deprecated) Fine-tuning API
   - name: models
     x-displayName: Models
     description: Model Management API

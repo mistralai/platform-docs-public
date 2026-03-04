@@ -72,33 +72,20 @@ function findApiItemByPath(
     pathSlugMap?: Record<string, string[]>;
   }
 ): SideBarTreeNode | null {
-  const [stable, beta] = items;
-
-  const stableItem = stable.children.find(item => {
-    const overrideHref =
-      overrides?.pathSlugMap?.[targetPath]?.join('/') ?? null;
-    const itemHref = getHrefSlugs(item.href ?? '').join('/');
-    const targetHref = getHrefSlugs(targetPath).join('/');
-    return (
-      item.href &&
-      (itemHref === targetHref ||
-        (overrideHref ? overrideHref === itemHref : false))
-    );
-  }) as SideBarTreeNode | null;
-
-  if (stableItem) return stableItem;
-  const betaItem = beta.children.find(item => {
-    const overrideHref =
-      overrides?.pathSlugMap?.[targetPath]?.join('/') ?? null;
-    const itemHref = getHrefSlugs(item.href ?? '').join('/');
-    const targetHref = getHrefSlugs(targetPath).join('/');
-    return (
-      item.href &&
-      (itemHref === targetHref ||
-        (overrideHref ? overrideHref === itemHref : false))
-    );
-  }) as SideBarTreeNode | null;
-  if (betaItem) return betaItem;
+  for (const category of items) {
+    const found = category.children.find(item => {
+      const overrideHref =
+        overrides?.pathSlugMap?.[targetPath]?.join('/') ?? null;
+      const itemHref = getHrefSlugs(item.href ?? '').join('/');
+      const targetHref = getHrefSlugs(targetPath).join('/');
+      return (
+        item.href &&
+        (itemHref === targetHref ||
+          (overrideHref ? overrideHref === itemHref : false))
+      );
+    }) as SideBarTreeNode | null;
+    if (found) return found;
+  }
 
   return null;
 }

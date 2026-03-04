@@ -8,15 +8,15 @@ sidebar_position: 1.4
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
-Tokenization is a fundamental step in LLMs. It is the process of breaking down text into smaller subword units, known as tokens. We recently open-sourced our tokenizer at Mistral AI. This guide will walk you through the fundamentals of tokenization, details about our open-source tokenizers, and how to use our tokenizers in Python.
+Tokenization is a fundamental step in LLMs. It's the process of breaking down text into smaller subword units, known as tokens. We recently open-sourced our tokenizer. This guide walks you through the fundamentals of tokenization, details about our open-source tokenizers, and how to use them in Python.
 
 ## What is tokenization?
 
-Tokenization is the first step and the last step of text processing and modeling. Texts need to be represented as numbers in our models so that our model can understand. Tokenization breaks down text into tokens, and each token is assigned a numerical representation, or index, which can be used to feed into a model. In a typical LLM workflow:
+Tokenization is the first step and the last step of text processing and modeling. Text needs to be represented as numbers so that the model can understand it. Tokenization breaks down text into tokens, and each token is assigned a numerical representation, or index, which can be fed into a model. In a typical LLM workflow:
 
 - We first encode the input text into tokens using a tokenizer. Each unique token is assigned a specific index number in the tokenizer’s vocabulary.
 - Once the text is tokenized, these tokens are passed through the model, which typically includes an embedding layer and transformer blocks. The embedding layer converts the tokens into dense vectors that capture semantic meanings. Check out our [embedding guide](/capabilities/embeddings/overview) for details. The transformer blocks then process these embedding vectors to understand the context and generate results.
-- The last step is decoding, which detokenize output tokens back to human-readable text. This is done by mapping the tokens back to their corresponding words using the tokenizer’s vocabulary.
+- The last step is decoding, which detokenizes output tokens back to human-readable text. This is done by mapping the tokens back to their corresponding words using the tokenizer’s vocabulary.
 
 <img src="/img/guides/tokenization1.png" alt="drawing" width="600"/>
 
@@ -27,9 +27,9 @@ adding parsing of tools and structured conversation.
 We also release the validation and normalization code that is used in our API.
 Specifically, we use control tokens, which are special tokens to indicate different types of elements.
 These tokens are not treated as strings and are added directly to the code.
-Note that we are still iterating on the tokenizer. Things may change and this is the current state of things.
+Note that we're still iterating on the tokenizer. Things may change and this is the current state of things.
 
-We have released three versions of our tokenizers powering different sets of models.
+We've released three versions of our tokenizers powering different sets of models.
 
 - v1: `mistral-embed`, `open-mixtral-8x7b`
 - v2: `mistral-small-2402` (deprecated), `mistral-large-2402`
@@ -44,10 +44,10 @@ There are several tokenization methods used in Natural Language Processing (NLP)
 Our newest tokenizer, tekken, uses the Byte-Pair Encoding (BPE) with [Tiktoken](https://github.com/openai/tiktoken).
 
 Tekken was trained on more than 100 languages and compresses natural language text and
-source code more efficiently than the SentencePiece tokeniser used in previous Mistral models.
+source code more efficiently than the SentencePiece tokenizer used in previous Mistral models.
 In particular, it is ~30% more efficient at compressing source code in Chinese, Italian,
 French, German, Spanish, and Russian. It is also 2x and 3x more efficient at compressing
-Korean and Arabic, respectively. Compared to the Llama 3 tokeniser,
+Korean and Arabic, respectively. Compared to the Llama 3 tokenizer,
 Tekken proved more proficient in compressing text for approximately 85% of all languages.
 
 <img src="/img/guides/tokenization3.png" alt="drawing" width="600"/>
@@ -81,16 +81,16 @@ Our vocabulary starts with 14 control tokens, which are special tokens we use in
 [SUFFIX]
 ```
 
-The tokenizer does not encode control tokens, which help prevent a situation known as prompt injection. For example, the control token “[INST]” is used to denote user message:
+The tokenizer doesn't encode control tokens, which helps prevent a situation known as prompt injection. For example, the control token “[INST]” is used to denote user message:
 
 - Without the control tokens, the tokenizer treats “[INST]” as a regular string and encodes the entire sequence “[INST] I love Paris [/INST]”. This could potentially allow users to include "[INST]" and "[/INST]" tags within their message, causing confusion for the model as it might interpret part of the user's message as an assistant's message.
 - With the control tokens, the tokenizer instead concatenates the control tokens with the encoded message: [INST] + encode(“I love Paris”) + [/INST]. This ensures that only the user's message gets encoded, and the encoded messages are guaranteed to have the correct [INST] and [/INST] tags.
 
-You may have noticed that we have 1000 slots for control tokens. The remaining 1000-14=986 slots for control tokens are actually empty for us to add more control tokens in the future and also ensure our vocabulary size is 131k (2\^17). Computers like powers of 2s!
+You may have noticed that we have 1000 slots for control tokens. The remaining 1000 - 14 = 986 slots are empty so we can add more control tokens in the future while also ensuring our vocabulary size is 131k (2\^17). Computers like powers of 2!
 
 #### Bytes, characters, and merged characters
 
-Below are two examples of the vocab. token_str is null when the byte sequence doesn't decode into a full unicode character, e.g., raw bytes.
+Below are two examples of the vocab. `token_str` is null when the byte sequence doesn't decode into a full Unicode character, e.g., raw bytes.
 
 ```
 {
@@ -346,14 +346,14 @@ To count the number of tokens, run `len(tokens)` and we get 302 tokens.
 
 ### NLP tasks
 
-As we mentioned earlier, tokenization is a crucial first step in natural language processing (NLP) tasks. Once we have tokenized our text, we can use those tokens to create text embeddings, which are dense vector representations of the text. These embeddings can then be used for a variety of NLP tasks, such as text classification, sentiment analysis, and machine translation.
+As mentioned earlier, tokenization is a crucial first step in natural language processing (NLP) tasks. Once we have tokenized our text, we can use those tokens to create text embeddings, which are dense vector representations of the text. These embeddings can then be used for a variety of NLP tasks, such as text classification, sentiment analysis, and machine translation.
 
-Mistral's embedding API simplifies this process by combining the tokenization and embedding steps into one. With this API, we can easily create text embeddings for a given text, without having to separately tokenize the text and create embeddings from the tokens.
+Our embedding API simplifies this process by combining the tokenization and embedding steps into one. With this API, you can easily create text embeddings for a given text, without having to separately tokenize the text and create embeddings from the tokens.
 
-If you're interested in learning more about how to use Mistral's embedding API, be sure to check out our [embedding guide](/capabilities/embeddings/overview), which provides detailed instructions and examples.
+If you're interested in learning more about how to use our embedding API, check out our [embedding guide](/capabilities/embeddings/overview), which provides detailed instructions and examples.
 
-### Tokens count
+### Token count
 
-Mistral AI's LLM API endpoints charge based on the number of tokens in the input text.
+Our LLM API endpoints charge based on the number of tokens in the input text.
 
 To help you estimate your costs, our tokenization API makes it easy to count the number of tokens in your text. Simply run `len(tokens)` as shown in the example above to get the total number of tokens in the text, which you can then use to estimate your cost based on our pricing information.

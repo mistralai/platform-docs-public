@@ -65,6 +65,7 @@ export default function DocsLayout({
 const flattenSidebar = (sidebar: typeof sidebarMetadata): ApiSidebarItem[] => {
   const stableEndpoints: ApiSidebarItem[] = [];
   const betaEndpoints: ApiSidebarItem[] = [];
+  const deprecatedEndpoints: ApiSidebarItem[] = [];
 
   const gettingStartedCategory: ApiSidebarItem = {
     type: 'category',
@@ -84,10 +85,21 @@ const flattenSidebar = (sidebar: typeof sidebarMetadata): ApiSidebarItem[] => {
     pagination: { prev: undefined, next: undefined },
   };
 
+  const deprecatedCategory: ApiSidebarItem = {
+    type: 'category',
+    label: 'Deprecated',
+    href: '/api/endpoint/deprecated/fine-tuning',
+    children: [],
+    clickable: true,
+    pagination: { prev: undefined, next: undefined },
+  };
+
   const traverse = (node: ApiSidebarMetadataItem) => {
-    const targetCategory = node.slug.includes('beta')
-      ? betaEndpoints
-      : stableEndpoints;
+    const targetCategory = node.slug.includes('deprecated')
+      ? deprecatedEndpoints
+      : node.slug.includes('beta')
+        ? betaEndpoints
+        : stableEndpoints;
 
     targetCategory.push({
       type: 'category',
@@ -120,10 +132,12 @@ const flattenSidebar = (sidebar: typeof sidebarMetadata): ApiSidebarItem[] => {
 
   gettingStartedCategory.children = stableEndpoints;
   betaCategory.children = betaEndpoints;
+  deprecatedCategory.children = deprecatedEndpoints;
 
   const result = [
     gettingStartedCategory,
     betaCategory,
+    deprecatedCategory,
   ] satisfies ApiSidebarItem[];
 
   const allItems: ApiSidebarItem[] = [] satisfies ApiSidebarItem[];

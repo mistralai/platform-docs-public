@@ -1,6 +1,6 @@
 ---
 id: function_calling
-title: Function Calling
+title: Function calling
 sidebar_position: 8
 ---
 
@@ -8,21 +8,24 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 import { SectionTab } from '@/components/layout/section-tab';
 import { CollabButton } from '@/components/common/collab-button';
 
-# Function Calling
+# Function calling
 
-Function calling, under the Tool Calling umbrela, allows Mistral models to connect to external local tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. In this guide, for instance, we wrote two functions for tracking payment status and payment date. We can use these two tools to provide answers for payment-related queries.
+Function calling lets our models **connect to external tools**: user-defined functions, APIs, or databases.
 
-:::tip
-Before continuing, we recommend reading the [Chat Competions](completion) documentation to learn more about the chat completions API and how to use it before proceeding.
+:::info
+This guide walks through a **practical example**: two functions that look up payment status and payment date from a transaction dataset.
+
+It assumes you're familiar with [Chat Completions](completion) basics.
 :::
 
-<SectionTab as="h1" sectionId="before-you-start">Before You Start</SectionTab>
+<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
 
-### Available Models
+### Available models
 
-Currently, among the function calling capable models, we have the following non-exhaustive list:
+Not all models support function calling. Here are the ones that do:
 
-| General Models               | Specialized Models         |Reasoning Models         |
+{/* TODO: this should be automatized somehow */}
+| General models               | Specialized models         | Reasoning models         |
 |------------------------------|----------------------------|----------------------------|
 | [Mistral Large 3](../models/mistral-large-3-25-12)<br/>- `mistral-large-latest` | [Devstral 2.0](../models/devstral-2-25-12)<br/>- `devstral-latest` |[Magistral Medium 1.2](../models/magistral-medium-1-2-25-09)<br/>- `magistral-medium-latest` |
 | [Mistral Medium 3.1](../models/mistral-medium-3-1-25-08)<br/>- `mistral-medium-latest` | [Devstral Small 2](../models/devstral-small-2-25-07)<br/>- `devstral-small-latest` |[Magistral Small 1.2](../models/magistral-small-1-2-25-09)<br/>- `magistral-small-latest`        |
@@ -32,42 +35,47 @@ Currently, among the function calling capable models, we have the following non-
 | [Ministral 3 8B](../models/ministral-8b-25-12)<br/>- `ministral-8b-latest` |       |     |
 | [Ministral 3 3B](../models/ministral-3b-25-12)<br/>- `ministral-3b-latest` |       |     |
 
-For more exhaustive information about all our models, visit the [Models Page](../getting-started/models).
+:::info
+For a complete list, see the [models page](../getting-started/models).
+:::
 
-<SectionTab as="h1" sectionId="five-steps">Five Steps</SectionTab>
+<SectionTab as="h1" sectionId="five-steps">Five steps</SectionTab>
 
 <CollabButton colabUrl="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/function_calling/function_calling.ipynb" />
 
-At a glance, there are five main steps with function calling:
+The function calling workflow follows **five steps**, shared between the **Developer** (defines tools and executes functions), the **User**, and the **Model**.
 
-- **[1. Developer:](#step-1)** Specify Functions/Tools, and a System Prompt (optional)
-- **[2. User:](#step-2)** Query the Model powered with the new Functions/Tools
-- **[3. Model:](#step-3)** Generates function arguments if applicable when necessary
-- **[4. Developer:](#step-4)** Executes the corresponding function to obtain tool results
-- **[5. Model:](#step-5)** Generates an answer based on the tool results
+1. The Developer [defines tools](#step-1) and optionally a system prompt.
+2. The User [sends a query](#step-2) with the tools attached.
+3. The Model [generates function arguments](#step-3) when needed.
+4. The Developer [executes the function](#step-4) and collects the result.
+5. The Model [generates a final answer](#step-5) based on the tool result.
 
-In general, a chat with function calling will always look like the following:
-| Sequence Type                    | Role Flow                                                                                               |
+The message flow **always follows this pattern**:
+
+| Sequence type                    | Role flow                                                                                               |
 |----------------------------------|---------------------------------------------------------------------------------------------------------|
-| **No Function Call**             | <u>system</u>* → <u>user</u> → <u>assistant</u> → <u>user</u> → ...                                                                 |
-| **Function Calling**             | <u>system</u>* → <u>user</u> → <u>assistant</u> function call 1 → <u>tool</u> result 1 → <u>assistant</u> → user → ...                    |
-| **Successive Function Calling**  | <u>system</u>* → <u>user</u> → <u>assistant</u> fc.1 → <u>tool</u> r.1 → <u>assistant</u> fc.2 → <u>tool</u> r.2→ <u>assistant</u> → <u>user</u> → ...  |
-| **Parallel Function Calling**    | <u>system</u>* → <u>user</u> → <u>assistant</u> fc.1, fc.2 → <u>tool</u> r.1 → <u>tool</u> r.2 → <u>assistant</u> → <u>user</u> → ...   |
+| **No function call**             | <u>system</u>* → <u>user</u> → <u>assistant</u> → <u>user</u> → ...                                                                 |
+| **Function calling**             | <u>system</u>* → <u>user</u> → <u>assistant</u> function call 1 → <u>tool</u> result 1 → <u>assistant</u> → user → ...                    |
+| **Successive function calling**  | <u>system</u>* → <u>user</u> → <u>assistant</u> fc.1 → <u>tool</u> r.1 → <u>assistant</u> fc.2 → <u>tool</u> r.2→ <u>assistant</u> → <u>user</u> → ...  |
+| **Parallel function calling**    | <u>system</u>* → <u>user</u> → <u>assistant</u> fc.1, fc.2 → <u>tool</u> r.1 → <u>tool</u> r.2 → <u>assistant</u> → <u>user</u> → ...   |
 _*optional_
-
-In this guide, we will walk through a **simple function calling example** to demonstrate how function calling works with Mistral models in these five steps.
 
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/fc_steps.png"
-    alt="functioncalling_steps"
+    alt="Function calling steps overview"
     width="700"
     style={{ borderRadius: '15px' }}
-    className='mx-auto' 
+    className='mx-auto'
   />
 </div>
 
-Before we get started, let’s assume we have a dataframe consisting of payment transactions. When users ask questions about this dataframe, they can use certain tools to answer questions about this data. This is just an example to emulate an external database that the LLM cannot directly access.
+For this guide, let's assume we have **a dataframe of payment transactions** and the following workflow:
+- The User **asks questions** about this data.
+- The Model **uses tools** to look up answers in an external database **it cannot access directly**.
+- Once the tool call succeeds, the Model **provides the User with the relevant information**.
+
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -114,23 +122,21 @@ const transactions = data.transactionId.map((id, index) => ({
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="step-1">Step 1. Developer</SectionTab>
-
-### Functions and System Definitions
+<SectionTab as="h2" variant="secondary" sectionId="step-1">Define tools and system prompt</SectionTab>
 
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/fc_step1.png"
-    alt="functioncalling_step1"
+    alt="Step 1: define functions"
     width="600"
     style={{ borderRadius: '15px' }}
-    className='mx-auto' 
+    className='mx-auto'
   />
 </div>
 
-Developers can define all the necessary tools for their use cases. Often, we might have multiple tools at our disposal. For this example, let’s consider we have two functions as our two tools: 
-- `retrieve_payment_status`: To retrieve payment status given a transaction ID.
-- `retrieve_payment_date`: To retrieve payment date given a transaction ID.
+Define the tools for your use case. In this example, we have two functions:
+- `retrieve_payment_status`: get the payment status for a transaction ID.
+- `retrieve_payment_date`: get the payment date for a transaction ID.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -173,8 +179,7 @@ function retrievePaymentDate(transactionId) {
   </TabItem>
 </Tabs>
 
-For ease of use, we will organize the two functions into a dictionary where keys represent the functions names, and values are the functions themselves.  
-**This allows us to dynamically call each function based on its function name.**
+Store the functions in a dictionary so you can call them dynamically by name:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -199,8 +204,7 @@ const namesToFunctions = {
   </TabItem>
 </Tabs>
 
-When seting up a model capable of function calling and agentic workflows, it's **recommended to provide context and custom instructions** under the `system` role umbrela, this can be done by adding a `system` message to the chat history.  
-For this example, we will define a very simple system prompt to guide the model on how to use the provided tools.
+Provide context and instructions under the `system` role:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -219,8 +223,8 @@ messages = [
 
 ```typescript
 const messages = [
-    { 
-        role: 'system', 
+    {
+        role: 'system',
         content: 'You are a helpful assistant. You can use the following tools to help answer the user\'s questions related to payment transactions.'
     },
 ];
@@ -229,7 +233,7 @@ const messages = [
   </TabItem>
 </Tabs>
 
-In order for models to understand these functions, we need to outline the **function specifications with a JSON schema**. Specifically, we need to describe the type, function name, function description, function parameters, and the required parameter for the function. Since we have two functions here, let’s list two function specifications in a list.
+Describe each function with a **JSON schema** so the model knows how to use them: `type`, `name`, `description`, `parameters`, and `required` fields:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -363,21 +367,21 @@ const tools = [
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="step-2">Step 2. User</SectionTab>
-
-### Query the Model
+<SectionTab as="h2" variant="secondary" sectionId="step-2">Send the user query</SectionTab>
 
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/fc_step2.png"
-    alt="functioncalling_step2"
+    alt="Step 2: query the model"
     width="700"
     style={{ borderRadius: '15px' }}
-    className='mx-auto' 
+    className='mx-auto'
   />
 </div>
 
-With our functions and instructions ready, lets Suppose a user asks the following question: “What’s the status of my transaction T1001?” A standalone LLM would not be able to answer this question, as it needs to query the business logic backend to access the necessary data. **But with function calling, we can use the tools we have defined to answer accordingly.**
+Suppose a user asks: *"What's the status of my transaction T1001?"*
+
+A standalone LLM can't answer this directly. It needs to query the backend, and function calling bridges the gap.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -396,37 +400,32 @@ messages.push({ role: 'user', content: 'What\'s the status of my transaction T10
   </TabItem>
 </Tabs>
 
-The previous question expects the model to use the `retrieve_payment_status` function to get the payment status of transaction T1001.
-
-<SectionTab as="h2" variant="secondary" sectionId="step-3">Step 3. Model</SectionTab>
-
-### Generate Function Arguments
+<SectionTab as="h2" variant="secondary" sectionId="step-3">Generate function arguments</SectionTab>
 
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/fc_step3.png"
-    alt="functioncalling_step3"
+    alt="Step 3: generate function arguments"
     width="700"
     style={{ borderRadius: '15px' }}
-    className='mx-auto' 
+    className='mx-auto'
   />
 </div>
 
-How do models know about these functions and know which function to use? We provide both the user query and the tools specifications to models. The goal in this step is not for the Mistral model to run the function directly. It’s to:
-- Determine the appropriate function to use.
-- Identify if there is any essential information missing for a function.
-- Generate necessary arguments for the chosen function.
+The model receives the user query and the tool specifications. It **doesn't run the function itself**, but instead:
+- Picks the right function.
+- Identifies any missing information.
+- Generates the arguments.
 
-Developers can use `tool_choice` to specify how tools are used:
-- "auto": default mode. Model decides if it uses the tool or not.
-- "any": forces tool use.
-- "none": prevents tool use.
+Control tool usage with two properties:
 
-And `parallel_tool_calls` to specify whether parallel tool calling is allowed.
-- true: default mode. The model decides if it uses parallel tool calls or not.
-- false: forces the model to use single tool calling.
-
-With all our tools, system and query ready, we can call the model to **either reply or use the tools, generating the necessary arguments for the chosen function**.
+- `tool_choice`:
+    - `"auto"` (default): the model decides whether to use a tool.
+    - `"any"`: forces tool use.
+    - `"none"`: prevents tool use.
+- `parallel_tool_calls`:
+    - `true` (default): the model may call multiple tools in parallel.
+    - `false`: forces single tool calls.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -460,9 +459,9 @@ const model = 'mistral-large-latest';
 const client = new Mistral({ apiKey: apiKey });
 
 let response = await client.chat.complete({
-    model: model, # The model we want to use
-    messages: messages, # The message history, in this example we have a system (optional) + user query.
-    tools: tools, # The tools specifications
+    model: model,
+    messages: messages,
+    tools: tools,
     toolChoice: 'any',
     parallelToolCalls: false,
 });
@@ -509,7 +508,8 @@ let response = await client.chat.complete({
   </TabItem>
 </Tabs>
 
-The model provided a tool call as a response, visit the raw output for more information:
+The model returned a tool call with function name `retrieve_payment_status` and argument `transaction_id: "T1001"`:
+
 ```json
 [
   {
@@ -523,7 +523,7 @@ The model provided a tool call as a response, visit the raw output for more info
 ]
 ```
 
-Let’s add the response message to the `messages` list history to continue the conversation.
+Add the response to the message history:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -542,25 +542,25 @@ messages.push(response.choices[0].message);
   </TabItem>
 </Tabs>
 
-Here, we got the response including `tool_calls` with the chosen function name `retrieve_payment_status` and the arguments for this function, the next step is to execute the function.
-
-<SectionTab as="h2" variant="secondary" sectionId="step-4">Step 4. Developer</SectionTab>
-
-### Execute Functions
+<SectionTab as="h2" variant="secondary" sectionId="step-4">Execute the function</SectionTab>
 
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/fc_step4.png"
-    alt="functioncalling_step4"
+    alt="Step 4: execute the function"
     width="700"
     style={{ borderRadius: '15px' }}
-    className='mx-auto' 
+    className='mx-auto'
   />
 </div>
 
-How do we execute the function? Currently, it is the developer's responsibility to execute these functions and the function execution lies on the user/developer side. We have also introduced some tools executed server side for our Agents and Conversations API, visit [Tools](../agents/tools).
+You handle function execution on your side. The model doesn't run it.
 
-To execute it, we extract some useful function information from the model response including `function_name` and `function_params`. It’s clear here that our model has chosen to use `retrieve_payment_status` with the parameter `transaction_id` set to T1001.
+:::note
+For server-side tool execution, see [Agents tools](../agents/tools).
+:::
+
+Extract the function name and arguments from the response:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -600,7 +600,7 @@ function_params:  { transactionId: 'T1001' }
   </TabItem>
 </Tabs>
 
-We then execute the corresponding function and we get the function output `'{"status": "Paid"}'`.
+Execute the function and get the result:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -630,21 +630,19 @@ console.log(functionResult);
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="step-5">Step 5. Model</SectionTab>
-
-### Generate Followup Answer
+<SectionTab as="h2" variant="secondary" sectionId="step-5">Generate the final answer</SectionTab>
 
 <div style={{ textAlign: 'center' }}>
   <img
     src="/img/fc_step5.png"
-    alt="functioncalling_step5"
+    alt="Step 5: generate the final answer"
     width="700"
     style={{ borderRadius: '15px' }}
-    className='mx-auto' 
+    className='mx-auto'
   />
 </div>
 
-We can now provide the output from the tools/functions to our model, and in return, the model can produce a customised final response for the specific user (or in some cases, another tool call)
+Pass the tool result back to the model so it can produce a final response:
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -692,16 +690,15 @@ The status of your transaction with ID T1001 is "Paid". Is there anything else I
   </TabItem>
 </Tabs>
 
-Our model has successfully generated a response using the output from the tool, providing the final answer: 
-- **"The status of your transaction with ID T1001 is Paid. Is there anything else I can assist you with?"**
+That's it! The model produced a **natural-language answer** using the tool result: *"The status of your transaction with ID T1001 is Paid. Is there anything else I can assist you with?"*
 
-:::note
-A model is allowed to followup a tool call with another tool call. To handle such scenarios, you should **recursively call the model with the new tool call until it generates a final answer**.
+:::tip
+A model can follow up a tool call with another tool call. Handle this by **recursively calling the model until it returns a final answer** (no more tool calls).
 :::
 
-<SectionTab as="h1" sectionId="full-example">Full Example</SectionTab>
+<SectionTab as="h1" sectionId="full-example">Full example</SectionTab>
 
-Below you can find a full example of the above steps looping to simulate a chat session, interactivelly handling successive and/or parallel tool calls.
+Here's a complete chat loop that handles both **successive and parallel tool calls** interactively:
 
 <Tabs groupdId="code">
   <TabItem value="python" label="python" default>
@@ -848,7 +845,7 @@ while True:
             temperature = temperature,
             top_p = top_p
         )
-    
+
         # Add the new response message to the messages list
         messages.append(response.choices[0].message)
 
@@ -1037,6 +1034,6 @@ chatLoop().catch(console.error);
     </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="more">More</SectionTab>
+<SectionTab as="h1" sectionId="more">Going further</SectionTab>
 
-If you are interested in function calling and want to explore built-in solutions, MCP, and other agentic use cases, we invite you to visit the Agents documentation [here](../agents/introduction).
+For built-in tools, MCP integration, and other agentic use cases, see the [Agents documentation](../agents/introduction).

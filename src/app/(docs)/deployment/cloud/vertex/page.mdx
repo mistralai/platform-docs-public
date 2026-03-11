@@ -35,33 +35,59 @@ Available models expose a REST API that you can query using Mistral's SDKs or pl
 To run the examples below:
 - Install the `gcloud` CLI to authenticate against the Google Cloud APIs. Refer to [this page](https://cloud.google.com/docs/authentication/provide-credentials-adc#google-idp) for more details.
 - Set the following environment variables:
-  - `GOOGLE_CLOUD_REGION`: The target cloud region.
-  - `GOOGLE_CLOUD_PROJECT_ID`: The name of your project.
   - `VERTEX_MODEL_NAME`: The name of the model to query (e.g., `mistral-large`).
   - `VERTEX_MODEL_VERSION`: The version of the model to query (e.g., `2407`).
+  - _(V1 only)_ `GOOGLE_CLOUD_REGION`: The target cloud region.
+  - _(V1 only)_ `GOOGLE_CLOUD_PROJECT_ID`: The name of your project.
 
 <Tabs>
   <TabItem value="python" label="Python">
-    ```python
-    # This code requires the following packages: mistralai[gcp] (version >= `1.0.0`)
-    import os
-    from mistralai_gcp import MistralGoogleCloud
-    region = os.environ.get("GOOGLE_CLOUD_REGION")
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_ID")
-    model_name = os.environ.get("VERTEX_MODEL_NAME")
-    model_version = os.environ.get("VERTEX_MODEL_VERSION")
-    client = MistralGoogleCloud(region=region, project_id=project_id)
-    resp = client.chat.complete(
-        model=f"{model_name}-{model_version}",
-        messages=[
-            {
-                "role": "user",
-                "content": "Who is the best French painter? Answer in one short sentence.",
-            }
-        ],
-    )
-    print(resp.choices[0].message.content)
-    ```
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+            ```python
+            # This code requires the following packages: mistralai[gcp] (version >= `1.0.0`)
+            import os
+            from mistralai_gcp import MistralGoogleCloud
+            region = os.environ.get("GOOGLE_CLOUD_REGION")
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_ID")
+            model_name = os.environ.get("VERTEX_MODEL_NAME")
+            model_version = os.environ.get("VERTEX_MODEL_VERSION")
+            client = MistralGoogleCloud(region=region, project_id=project_id)
+            resp = client.chat.complete(
+                model=f"{model_name}-{model_version}",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Who is the best French painter? Answer in one short sentence.",
+                    }
+                ],
+            )
+            print(resp.choices[0].message.content)
+            ```
+        </TabItem>
+        <TabItem value="v2" label="V2">
+            ```python
+            # This code requires the following packages: mistralai>=2.0.0
+            import os
+            from mistralai.gcp.client import MistralGCP
+            model_name = os.environ.get("VERTEX_MODEL_NAME")
+            model_version = os.environ.get("VERTEX_MODEL_VERSION")
+            # Auth is automatic via google.auth.default(); region defaults to "europe-west4"
+            # You can still override: MistralGCP(region="us-central1", project_id="my-project")
+            client = MistralGCP()
+            resp = client.chat.complete(
+                model=f"{model_name}-{model_version}",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Who is the best French painter? Answer in one short sentence.",
+                    }
+                ],
+            )
+            print(resp.choices[0].message.content)
+            ```
+        </TabItem>
+    </Tabs>
   </TabItem>
   <TabItem value="ts" label="TypeScript">
 
@@ -137,21 +163,40 @@ For more information, see the [code generation section](../../../capabilities/co
     ```
   </TabItem>
   <TabItem value="python" label="Python">
-    ```python
-    import os
-    from mistralai_gcp import MistralGoogleCloud
-    region = os.environ.get("GOOGLE_CLOUD_REGION")
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_ID")
-    model_name = "codestral"
-    model_version = "2405"
-    client = MistralGoogleCloud(region=region, project_id=project_id)
-    resp = client.fim.complete(
-        model=f"{model_name}-{model_version}",
-        prompt="def count_words_in_file(file_path: str) -> int:",
-        suffix="return n_words"
-    )
-    print(resp.choices[0].message.content)
-    ```
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+            ```python
+            import os
+            from mistralai_gcp import MistralGoogleCloud
+            region = os.environ.get("GOOGLE_CLOUD_REGION")
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT_ID")
+            model_name = "codestral"
+            model_version = "2405"
+            client = MistralGoogleCloud(region=region, project_id=project_id)
+            resp = client.fim.complete(
+                model=f"{model_name}-{model_version}",
+                prompt="def count_words_in_file(file_path: str) -> int:",
+                suffix="return n_words"
+            )
+            print(resp.choices[0].message.content)
+            ```
+        </TabItem>
+        <TabItem value="v2" label="V2">
+            ```python
+            from mistralai.gcp.client import MistralGCP
+            model_name = "codestral"
+            model_version = "2405"
+            # Auth is automatic via google.auth.default(); region defaults to "europe-west4"
+            client = MistralGCP()
+            resp = client.fim.complete(
+                model=f"{model_name}-{model_version}",
+                prompt="def count_words_in_file(file_path: str) -> int:",
+                suffix="return n_words"
+            )
+            print(resp.choices[0].message.content)
+            ```
+        </TabItem>
+    </Tabs>
   </TabItem>
   <TabItem value="ts" label="TypeScript">
     ```typescript

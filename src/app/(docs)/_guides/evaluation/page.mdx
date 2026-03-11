@@ -4,6 +4,8 @@ title: Evaluation
 sidebar_position: 1.7
 ---
 
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
 <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/evaluation/evaluation.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
@@ -146,6 +148,9 @@ prompts = {
 
 We have designed a prompt that incorporates the medical notes as context. Additionally, we expect the model to provide output in a JSON format following a predefined JSON schema, ensuring that the model produces the desired output accurately. It is worth noting that when calling our models, we specified the response format as `{"type": "json_object"}` to ensure consistent JSON output.
 
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
 ```py
 import os
 from mistralai import Mistral
@@ -191,6 +196,58 @@ Return json format with the following JSON schema:
 }}
 """
 ```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+def run_mistral(user_message, model="mistral-large-latest"):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role": "user", "content": user_message}]
+    chat_response = client.chat.complete(
+        model=model,
+        messages=messages,
+        response_format={"type": "json_object"},
+    )
+    return chat_response.choices[0].message.content
+
+
+# define prompt template
+prompt_template = """
+Extract information from the following medical notes:
+{medical_notes}
+
+Return json format with the following JSON schema:
+
+{{
+        "age": {{
+            "type": "integer"
+        }},
+        "gender": {{
+            "type": "string",
+            "enum": ["male", "female", "other"]
+        }},
+        "diagnosis": {{
+            "type": "string",
+            "enum": ["migraine", "diabetes", "arthritis", "acne", "common cold"]
+        }},
+        "weight": {{
+            "type": "integer"
+        }},
+        "smoking": {{
+            "type": "string",
+            "enum": ["yes", "no"]
+        }},
+
+}}
+"""
+```
+
+    </TabItem>
+</Tabs>
 
 - Step 2: Define how we compare the model response with the golden answer
 
@@ -378,6 +435,9 @@ news = (
 
 First, let's use a smaller model, `open-mistral-7b', to generate a summary for the provided news article. If you have additional news articles to summarize, please generate a summary for each one. For the sake of simplicity in this example, we will only demonstrate one news sample.
 
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
 ```py
 import os
 from mistralai import Mistral
@@ -404,6 +464,39 @@ Summarize the following news. Write the summary based on the following criteria:
 
 summary = run_mistral(summary_prompt)
 ```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+def run_mistral(user_message, model="open-mistral-7b", is_json=False):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role":"user", "content":user_message}]
+
+    if is_json:
+        chat_response = client.chat.complete(
+            model=model, messages=messages, response_format={"type": "json_object"}
+        )
+    else:
+        chat_response = client.chat.complete(model=model, messages=messages)
+
+    return chat_response.choices[0].message.content
+
+summary_prompt = f"""
+Summarize the following news. Write the summary based on the following criteria: relevancy and readability. Consider the sources cited, the quality of evidence provided, and any potential biases or misinformation.
+
+## News:
+{news}
+"""
+
+summary = run_mistral(summary_prompt)
+```
+
+    </TabItem>
+</Tabs>
 
 - Step 2: Define evaluation metrics and rubrics
 

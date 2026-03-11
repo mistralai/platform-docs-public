@@ -22,7 +22,7 @@ const framework = {
     const yamlFrontmatter = `---
 type: api
 title: ${frontmatter.sidebarLabel || frontmatter.title || 'Api Reference'}
-description: Bienvenue to Mistral AI's Api Reference
+description: Welcome to Mistral AI's Api Reference
 ---`;
     return yamlFrontmatter;
   },
@@ -87,7 +87,7 @@ export default {
     },
     {
       language: 'python',
-      sdkTarballPath: './sdks/client-python-1.9.11.tar.gz',
+      sdkTarballPath: './sdks/client-python-2.0.0.tar.gz',
     },
     {
       language: 'curl',

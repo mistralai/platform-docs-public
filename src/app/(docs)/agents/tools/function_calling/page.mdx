@@ -82,7 +82,7 @@ Once defined, we provide a Shema corresponding to the same function.
   <TabItem value="python" label="python">
 ```py
 ecb_interest_rate_agent = client.beta.agents.create(
-    model="mistral-medium-2505",
+    model="mistral-medium-latest",
     description="Can find the current interest rate of the European central bank",
     name="ecb-interest-rate-agent",
     tools=[
@@ -112,7 +112,7 @@ ecb_interest_rate_agent = client.beta.agents.create(
   <TabItem value="typescript" label="typescript">
 ```typescript
 let ecbInterestRateAgent = await client.beta.agents.create({
-    model:"mistral-medium-2505",
+    model:"mistral-medium-latest",
     description:"Can find the current interest rate of the European central bank",
     name:"ecb-interest-rate-agent",
     tools:[
@@ -145,7 +145,7 @@ curl --location "https://api.mistral.ai/v1/agents" \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
-     "model": "mistral-medium-2505",
+     "model": "mistral-medium-latest",
      "name": "ecb-interest-rate-agent",
      "description": "Can find the current interest rate of the European central bank",
      "instructions": "You can provide interest rate and information regarding the European central bank.",
@@ -174,7 +174,7 @@ curl --location "https://api.mistral.ai/v1/agents" \
   <TabItem value="output" label="output">
 ```json
 {
-  "model": "mistral-medium-2505",
+  "model": "mistral-medium-latest",
   "name": "ecb-interest-rate-agent",
   "description": "Can find the current interest rate of the European central bank",
   "id": "ag_06835a34f2c476518000c372a505c2c4",
@@ -301,6 +301,8 @@ The model will output either an answer, or a function call, we need to detect an
 
 <Tabs>
   <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
 ```py
 from mistralai import FunctionResultEntry
 import json
@@ -327,6 +329,36 @@ else:
     # In case the model did not call our function
     print(response.outputs[-1])
 ```
+        </TabItem>
+        <TabItem value="v2" label="V2">
+```py
+from mistralai.client import FunctionResultEntry
+import json
+
+if response.outputs[-1].type == "function.call" and response.outputs[-1].name == "get_european_central_bank_interest_rate":
+
+    # Running our function
+    function_result = json.dumps(get_european_central_bank_interest_rate(**json.loads(response.outputs[-1].arguments)))
+
+    # Providing the result to our Agent
+    user_function_calling_entry = FunctionResultEntry(
+        tool_call_id=response.outputs[-1].tool_call_id,
+        result=function_result,
+    )
+
+    # Retrieving the final response
+    response = client.beta.conversations.append(
+        conversation_id=response.conversation_id,
+        inputs=[user_function_calling_entry]
+    )
+    print(response.outputs[-1])
+else:
+
+    # In case the model did not call our function
+    print(response.outputs[-1])
+```
+        </TabItem>
+    </Tabs>
   </TabItem>
   <TabItem value="typescript" label="typescript">
 ```typescript
@@ -394,7 +426,7 @@ curl --location "https://api.mistral.ai/v1/conversations/<conv_id>" \
   "completed_at": "2025-05-27T11:34:40.801117Z",
   "id": "msg_06835a35024879bc80005b1bf9ab0f12",
   "agent_id": "ag_06835a34f2c476518000c372a505c2c4",
-  "model": "mistral-medium-2505",
+  "model": "mistral-medium-latest",
   "role": "assistant"
 }
 ```

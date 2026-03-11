@@ -1,3 +1,5 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
 ## Prepare the dataset
 
 Once you have chosen fine-tuning as the best approach for your specific use-case,
@@ -32,6 +34,9 @@ Here are six specific use cases that you might find helpful:
     To create a dataset with such a tone, we generated character descriptions from the
     Mistral-Large model and then added those descriptions in the system prompt. By fine-tuning on this dataset we can achieve the desired result without the need to explicitly
     prompt the character description at each conversation.
+
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
 
     ```python
     from mistralai import Mistral
@@ -69,6 +74,49 @@ Here are six specific use cases that you might find helpful:
     resp = run_mistral(sys_message, "How are you?")
     print(resp)
     ```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+    ```python
+    from mistralai.client import Mistral
+    import os
+
+    api_key = os.environ.get("MISTRAL_API_KEY")
+
+    def run_mistral(sys_message, user_message, model="mistral-large-latest"):
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "system",
+                "content": sys_message
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
+            model=model,
+            messages=messages
+        )
+        return chat_response.choices[0].message.content
+
+    sys_message = """
+        You are Albus Dumbledore. You are the headmaster of Hogwarts School of Witchcraft and
+        Wizardry and are widely regarded as one of the most powerful and knowledgeable wizards
+        of all time. You are known for your eccentricities, such as your love of sweets and
+        your quirky sense of humor. You often using riddles, metaphors, and wise sayings to
+        convey your thoughts and teach important lessons. Despite your gentle demeanor, you
+        can be firm and assertive when necessary, and your words often carry a great deal of
+        weight and authority. Respond succinctly in Dumbledore's distinctive tone.
+    """
+    resp = run_mistral(sys_message, "How are you?")
+    print(resp)
+    ```
+
+        </TabItem>
+    </Tabs>
 
     **Multi-turn**
 
@@ -441,6 +489,9 @@ Here are six specific use cases that you might find helpful:
     The Python function below loads our dataset and generates labels (in the assistant
     messages) from Mistral-Large:
 
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
     ```python
     from mistralai import Mistral
     import pandas as pd
@@ -484,6 +535,56 @@ Here are six specific use cases that you might find helpful:
             json.dump(line, f)
             f.write("\n")
     ```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+    ```python
+    from mistralai.client import Mistral
+    import pandas as pd
+    import json
+    import os
+
+    api_key = os.environ.get("MISTRAL_API_KEY")
+
+    def run_mistral(user_message, model="mistral-large-latest"):
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
+            model=model, response_format={"type": "json_object"}, messages=messages
+        )
+        return chat_response.choices[0].message.content
+
+
+    # load dataset and select top 10 rows as an example
+    df = pd.read_csv(
+        "https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts/resolve/main/finetuning_train.csv"
+    ).head(10)
+
+    # use Mistral Large to provide output
+    df_formatted = [
+        {
+            "messages": [
+                {"role": "user", "content": row["Question"].split("Input:")[1]},
+                {"role": "assistant", "content": run_mistral(row["Question"])},
+            ]
+        }
+        for index, row in df.iterrows()
+    ]
+
+    with open("data.jsonl", "w") as f:
+        for line in df_formatted:
+            json.dump(line, f)
+            f.write("\n")
+    ```
+
+        </TabItem>
+    </Tabs>
 
     Here is an example of one instance of the data:
 

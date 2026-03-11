@@ -111,6 +111,8 @@ To get started, you need to initialize the client with your API key like usual.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
 
 ```python
 import os
@@ -123,6 +125,22 @@ model = "mistral-small-latest"
 client = Mistral(api_key=api_key)
 ```
 
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral, ToolMessage
+import json
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-latest"
+
+client = Mistral(api_key=api_key)
+```
+
+      </TabItem>
+    </Tabs>
   </TabItem>
 </Tabs>
 
@@ -395,6 +413,8 @@ You can extract and print these references from the response as you like.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
 
 ```python
 from mistralai.models import TextChunk, ReferenceChunk
@@ -416,6 +436,31 @@ if refs_used:
         print(f"\n{i}. {reference['title']}: {reference['url']}")
 ```
 
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client.models import TextChunk, ReferenceChunk
+
+refs_used = []
+
+# Print the main response and save each reference
+for chunk in chat_response.choices[0].message.content:
+    if isinstance(chunk, TextChunk):
+        print(chunk.text, end="")
+    elif isinstance(chunk, ReferenceChunk):
+        refs_used += chunk.reference_ids
+
+# Print references only
+if refs_used:
+    print("\n\nSources:")
+    for i, ref in enumerate(set(refs_used), 1):
+        reference = json.loads(result)[str(ref)]
+        print(f"\n{i}. {reference['title']}: {reference['url']}")
+```
+
+      </TabItem>
+    </Tabs>
   </TabItem>
   <TabItem value="output" label="output">
 

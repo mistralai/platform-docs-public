@@ -32,7 +32,7 @@ You can create an agent with access to image generation by providing it as one o
 
 ```py
 image_agent = client.beta.agents.create(
-    model="mistral-medium-2505",
+    model="mistral-medium-latest",
     name="Image Generation Agent",
     description="Agent used to generate images.",
     instructions="Use the image generation tool when you have to create images.",
@@ -49,7 +49,7 @@ image_agent = client.beta.agents.create(
 
 ```typescript
 let imageAgent = await client.beta.agents.create({
-    model:"mistral-medium-2505",
+    model:"mistral-medium-latest",
     name:"Image Generation Agent",
     description:"Agent used to generate images.",
     instructions:"Use the image generation tool when you have to create images.",
@@ -72,7 +72,7 @@ curl --location "https://api.mistral.ai/v1/agents" \
      --header 'Accept: application/json' \
      --header "Authorization: Bearer $MISTRAL_API_KEY" \
      --data '{
-     "model": "mistral-medium-2505",
+     "model": "mistral-medium-latest",
      "name": "Image Generation Agent",
      "description": "Agent used to generate images.",
      "instructions": "Use the image generation tool when you have to create images.",
@@ -93,7 +93,7 @@ curl --location "https://api.mistral.ai/v1/agents" \
 
 ```json
 {
-  "model": "mistral-medium-2505",
+  "model": "mistral-medium-latest",
   "name": "Image Generation Agent",
   "description": "Agent used to generate images.",
   "id": "ag_068359b1d997713480003c77113b8119",
@@ -206,7 +206,7 @@ curl --location "https://api.mistral.ai/v1/conversations" \
       "completed_at": "2025-05-27T10:59:58.818205Z",
       "id": "msg_068359b2db7e74eb8000d11444e03eb8",
       "agent_id": "ag_068359b1d997713480003c77113b8119",
-      "model": "mistral-medium-2505",
+      "model": "mistral-medium-latest",
       "role": "assistant"
     }
   ],
@@ -249,7 +249,7 @@ Below we will explain the different outputs of the response of the previous snip
   - `created_at` and `completed_at`: Timestamps indicating when the message was created and completed.
   - `id`: A unique identifier for the message.
   - `agent_id`: A unique identifier for the agent that generated the message.
-  - `model`: The model used to generate the message, which in this case is `mistral-medium-2505`.
+  - `model`: The model used to generate the message, which in this case is `mistral-medium-latest`.
   - `role`: The role of the message, which is `assistant`.
 
 <SectionTab as="h2" variant="secondary" sectionId="download-images">Download Images</SectionTab>
@@ -328,6 +328,8 @@ A full code snippet to download all generated images from a response could look 
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
 
 ```py
 from mistralai.models import ToolFileChunk
@@ -344,6 +346,26 @@ for i, chunk in enumerate(response.outputs[-1].content):
           file.write(file_bytes)
 ```
 
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```py
+from mistralai.client.models import ToolFileChunk
+
+for i, chunk in enumerate(response.outputs[-1].content):
+    # Check if chunk corresponds to a ToolFileChunk
+    if isinstance(chunk, ToolFileChunk):
+
+      # Download using the ToolFileChunk ID
+      file_bytes = client.files.download(file_id=chunk.file_id).read()
+
+      # Save the file locally
+      with open(f"image_generated_{i}.png", "wb") as file:
+          file.write(file_bytes)
+```
+
+        </TabItem>
+    </Tabs>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">

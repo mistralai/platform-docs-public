@@ -3,6 +3,8 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 A method to upload local pdf files, is by **encoding them in base64 and passing them as a data url**.
 <Tabs groupId="code">
     <TabItem value="python" label="python">
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
 
 ```python
 import base64
@@ -24,7 +26,7 @@ ocr_response = client.ocr.process(
     model="mistral-ocr-latest",
     document={
         "type": "document_url",
-        "document_url": f"data:application/pdf;base64,{base64_pdf}" 
+        "document_url": f"data:application/pdf;base64,{base64_pdf}"
     },
     table_format="html", # default is None
     # extract_header=True, # default is False
@@ -33,7 +35,41 @@ ocr_response = client.ocr.process(
 )
 ```
 
-  </TabItem>
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import base64
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+def encode_pdf(pdf_path):
+    with open(pdf_path, "rb") as pdf_file:
+        return base64.b64encode(pdf_file.read()).decode('utf-8')
+
+pdf_path = "path_to_your_pdf.pdf"
+base64_pdf = encode_pdf(pdf_path)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": f"data:application/pdf;base64,{base64_pdf}"
+    },
+    table_format="html", # default is None
+    # extract_header=True, # default is False
+    # extract_footer=True, # default is False
+    include_image_base64=True
+)
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
   <TabItem value="typescript" label="typescript">
 
 ```ts

@@ -4,6 +4,8 @@ Alternatively, you can upload a local file to our cloud and then use a signed UR
 
 <Tabs groupId="code">
     <TabItem value="python" label="python">
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
 
 ```python
 import os
@@ -47,6 +49,53 @@ chat_response = client.chat.complete(
 )
 ```
 
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "voxtral-mini-latest"
+
+client = Mistral(api_key=api_key)
+
+# If local audio, upload and retrieve the signed url
+with open("music.mp3", "rb") as f:
+    uploaded_audio = client.files.upload(
+      file={
+          "content": f,
+          "file_name": f.name
+      },
+      purpose="audio"
+    )
+signed_url = client.files.get_signed_url(file_id=uploaded_audio.id)
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "input_audio",
+                "input_audio": signed_url.url,
+            },
+            {
+                "type": "text",
+                "text": "What's in this file?"
+            }
+        ]
+    }
+]
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=messages
+)
+```
+
+            </TabItem>
+        </Tabs>
     </TabItem>
     <TabItem value="typescript" label="typescript">
 

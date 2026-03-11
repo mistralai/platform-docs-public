@@ -47,6 +47,8 @@ First things first, let's create diverse Agents with multiple tasks and capabili
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
 
 ```py
 from mistralai import CompletionArgs, ResponseFormat, JSONSchema
@@ -117,6 +119,80 @@ calculator_agent = client.beta.agents.create(
 )
 ```
 
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```py
+from mistralai.client import CompletionArgs, ResponseFormat, JSONSchema
+from pydantic import BaseModel
+
+class CalcResult(BaseModel):
+    reasoning: str
+    result: str
+
+# Create your agents
+finance_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Agent used to answer financial related requests",
+    name="finance-agent",
+)
+web_search_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Agent that can search online for any information if needed",
+    name="websearch-agent",
+    tools=[{"type": "web_search"}],
+)
+ecb_interest_rate_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Can find the current interest rate of the European central bank",
+    name="ecb-interest-rate-agent",
+    tools=[
+        {
+            "type": "function",
+            "function": {
+                "name": "get_european_central_bank_interest_rate",
+                "description": "Retrieve the real interest rate of European central bank.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "date": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "date",
+                    ]
+                },
+            },
+        },
+    ],
+)
+graph_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    name="graph-drawing-agent",
+    description="Agent used to create graphs using the code interpreter tool.",
+    instructions="Use the code interpreter tool when you have to draw a graph.",
+    tools=[{"type": "code_interpreter"}]
+)
+calculator_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    name="calculator-agent",
+    description="Agent used to make detailed calculations",
+    instructions="When doing calculations explain step by step what you are doing.",
+    completion_args=CompletionArgs(
+          response_format=ResponseFormat(
+            type="json_schema",
+            json_schema=JSONSchema(
+                name="calc_result",
+                schema=CalcResult.model_json_schema(),
+            )
+        )
+    )
+)
+```
+
+        </TabItem>
+    </Tabs>
   </TabItem>
 
   <TabItem value="typescript" label="typescript">

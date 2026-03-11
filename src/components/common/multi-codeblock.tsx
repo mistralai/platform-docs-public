@@ -10,6 +10,10 @@ import {
 import { cn } from '@/lib/utils';
 import DashedRightArrow from './dashed-right-arrow';
 import { useTabSync, isCodingLanguage } from '@/contexts/tab-sync-context';
+import {
+  useSDKVersionSync,
+  isSDKVersion,
+} from '@/contexts/sdk-version-sync-context';
 import './multi-codeblock.css';
 import {
   $multiCodeBlockWrapper,
@@ -24,12 +28,16 @@ interface TabsProps {
   children: React.ReactNode;
   className?: string;
   tabsClassName?: string;
+  groupId?: string;
 }
 
 const OUTPUT_TAB_VALUE = 'output';
 
-function Tabs({ children, className, tabsClassName }: TabsProps) {
+function Tabs({ children, className, tabsClassName, groupId }: TabsProps) {
   const { selectedLanguage, setSelectedLanguage } = useTabSync();
+  const { selectedSDKVersion, setSelectedSDKVersion } = useSDKVersionSync();
+
+  const isSDKVersionGroup = groupId === 'sdk-version';
 
   const snippets = React.Children.toArray(children).filter(
     (child): child is React.ReactElement<CodeSnippetProps> =>
@@ -41,21 +49,27 @@ function Tabs({ children, className, tabsClassName }: TabsProps) {
     return null;
   }
 
-  const notOutputTabs = snippets.filter(
-    snippet => snippet.props.value !== OUTPUT_TAB_VALUE
-  );
+  const notOutputTabs = snippets
+    .filter(snippet => snippet.props.value !== OUTPUT_TAB_VALUE)
+    .sort((a, b) => {
+      if (!isSDKVersionGroup) return 0;
+      const order = ['v2', 'v1'];
+      return order.indexOf(a.props.value) - order.indexOf(b.props.value);
+    });
 
   const outputTab = snippets.find(
     snippet => snippet.props.value === OUTPUT_TAB_VALUE
   );
 
-  const availableLanguages = notOutputTabs.map(tab =>
+  const availableValues = notOutputTabs.map(tab =>
     tab.props.value.toLowerCase()
   );
 
+  const syncedValue = isSDKVersionGroup ? selectedSDKVersion : selectedLanguage;
+
   const getActiveTab = () => {
-    if (availableLanguages.includes(selectedLanguage)) {
-      return selectedLanguage;
+    if (availableValues.includes(syncedValue)) {
+      return syncedValue;
     }
     return notOutputTabs[0]?.props?.value || 'code';
   };
@@ -67,11 +81,13 @@ function Tabs({ children, className, tabsClassName }: TabsProps) {
     if (newActiveTab !== activeTab) {
       setActiveTab(newActiveTab);
     }
-  }, [selectedLanguage, availableLanguages.join(',')]);
+  }, [syncedValue, availableValues.join(',')]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    if (isCodingLanguage(value)) {
+    if (isSDKVersionGroup) {
+      setSelectedSDKVersion(value);
+    } else if (isCodingLanguage(value)) {
       setSelectedLanguage(value);
     }
   };
@@ -90,7 +106,10 @@ function Tabs({ children, className, tabsClassName }: TabsProps) {
               key={snippet.props.value}
               value={snippet.props.value}
               className={cn(
-                'text-sm data-[state=active]:bg-code-background data-[state=active]:text-foreground',
+                'text-sm',
+                isSDKVersionGroup
+                  ? 'data-[state=active]:bg-foreground/40 data-[state=active]:text-background dark:data-[state=active]:bg-foreground/40 dark:data-[state=active]:text-background'
+                  : 'data-[state=active]:bg-code-background data-[state=active]:text-foreground',
                 tabsClassName
               )}
               variant="code"

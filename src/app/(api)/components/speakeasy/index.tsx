@@ -51,3 +51,4 @@ export {
   ExpandableBreakoutProperties,
 } from './components/section/ExpandableSection';
 export { FrontMatterDisplayType } from './components/frontmatter';
+export { SDKVersionCodeSample } from './components/sdk-version-code-sample';

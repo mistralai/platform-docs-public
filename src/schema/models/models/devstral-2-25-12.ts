@@ -56,3 +56,4 @@ export default {
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;
+

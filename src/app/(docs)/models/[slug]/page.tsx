@@ -280,8 +280,8 @@ export default async function ModelPage({ params }: ModelPageProps) {
                 )}
 
                 {/* right side */}
-                <ModelCardInner className="ml-auto border-l border-dashed pb-3 pt-3 px-4">
-                  <div className="ml-auto items-start flex flex-col gap-2 justify-center">
+                <ModelCardInner className="ml-auto border-l border-dashed py-4 px-8 shrink">
+                  <SectionBlock>
                     <SectionLabel>
                       <span>Price</span>
                       <PriceTooltip />
@@ -290,7 +290,8 @@ export default async function ModelPage({ params }: ModelPageProps) {
                       pricing={model.pricing}
                       isRetired={model.status === 'Retired'}
                     />
-                  </div>
+                    <span />
+                  </SectionBlock>
                 </ModelCardInner>
               </ModelCard>
             )}

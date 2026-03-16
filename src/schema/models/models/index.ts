@@ -1,4 +1,5 @@
 import { defineModels } from '../schema';
+import leanstral26032603 from './leanstral-26-03';
 import mistralLarge32512 from './mistral-large-3-25-12';
 import mistralMedium312508 from './mistral-medium-3-1-25-08';
 import mistralSmall322506 from './mistral-small-3-2-25-06';
@@ -55,6 +56,7 @@ import mixtral8x7b01 from './mixtral-8x7b-0-1';
 import mistral7b02 from './mistral-7b-0-2';
 import mistral7b01 from './mistral-7b-0-1';
 export const MODELS = defineModels([
+  leanstral26032603,
   mistralLarge32512,
   mistralMedium312508,
   mistralSmall322506,

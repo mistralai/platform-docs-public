@@ -17,7 +17,7 @@ export default {
       name: 'Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
-      url: 'https://huggingface.co/mistralai/Leanstral-120B-A6B-2603',
+      url: 'https://huggingface.co/mistralai/Leanstral-2603',
       parameters: '119',
       minGpuRam: {
         bf16: '238',

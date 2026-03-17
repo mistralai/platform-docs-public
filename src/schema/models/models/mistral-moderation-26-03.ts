@@ -1,0 +1,38 @@
+import { StaticModel } from '../schema';
+export default {
+  name: 'Mistral Moderation 2',
+  description: `Our latest moderation model with 128k context window and jailbreaking detection, based on Ministral 3B. Strong performance on complex multilingual data including long multi-turn conversations.`,
+  shortDescription: `Our latest moderation model with 128k context window and jailbreaking detection.`,
+  slug: 'mistral-moderation-26-03',
+  releaseDate: 'March 2026',
+  version: '26.03',
+  frontier: true,
+  class: 'Specialist',
+  type: 'Premier',
+  legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-moderation',
+  status: 'Active',
+  avatar: { icon: 'moderation', backgroundColor: 'beige' },
+  weights: [],
+  bloglink: null,
+  paperlink: null,
+  contextLength: '128k',
+  ratings: {
+    speed: { stars: 5.0, label: 'Very Fast' },
+    performance: { stars: 3.5, label: 'Smart' }, input: { stars: 5.0, label: 'Very Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+  pricing: {
+    type: 'flat',
+    free: true,
+    price: 0,
+    denominator: '/M Tokens',
+  },
+  identifiers: { apiNames: ['mistral-moderation-2603'] },
+  capabilities: {
+    input: ['text'],
+    output: ['scores'],
+    features: ['moderations', 'batching'],
+    finetuning: [],
+  },
+  metadata: {},
+  playground: '',
+  legacy: false,
+} as const satisfies StaticModel;

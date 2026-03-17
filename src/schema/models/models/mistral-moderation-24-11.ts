@@ -29,7 +29,7 @@ export default {
       
     ]
   },
-  identifiers: { apiNames: ['mistral-moderation-2411', 'mistral-moderation-latest'] },
+  identifiers: { apiNames: ['mistral-moderation-2411'] },
   capabilities: {
     input: ['text'],
     output: ['scores'],

@@ -77,6 +77,13 @@ export const AVAILABLE_ENDPOINTS = {
     icon: EndpointIcon.AUDIO,
     href: '#',
   },
+  'audio-speech': {
+    name: 'Audio Speech',
+    path: '/v1/audio/speech',
+    type: 'transcription' as const,
+    icon: EndpointIcon.AUDIO,
+    href: '#',
+  },
 } as const;
 
 export type EndpointKey = keyof typeof AVAILABLE_ENDPOINTS;

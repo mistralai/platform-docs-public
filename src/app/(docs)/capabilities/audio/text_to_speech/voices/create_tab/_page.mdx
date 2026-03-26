@@ -1,0 +1,131 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Create a voice by providing a name and a base64-encoded audio sample. The audio sample is used for voice cloning and can be retrieved later via `get_sample_audio`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import base64
+from pathlib import Path
+from mistralai import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+sample_audio_b64 = base64.b64encode(Path("sample.mp3").read_bytes()).decode()
+
+voice = client.audio.voices.create(
+    name="my-voice",
+    sample_audio=sample_audio_b64,
+    sample_filename="sample.mp3",
+    languages=["en", "fr"],
+    gender="female",
+)
+
+print(f"Created voice: {voice.id}")
+print(f"Name: {voice.name}")
+print(f"Languages: {voice.languages}")
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import base64
+from pathlib import Path
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+sample_audio_b64 = base64.b64encode(Path("sample.mp3").read_bytes()).decode()
+
+voice = client.audio.voices.create(
+    name="my-voice",
+    sample_audio=sample_audio_b64,
+    sample_filename="sample.mp3",
+    languages=["en", "fr"],
+    gender="female",
+)
+
+print(f"Created voice: {voice.id}")
+print(f"Name: {voice.name}")
+print(f"Languages: {voice.languages}")
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { readFileSync } from "fs";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+const sampleAudio = readFileSync("sample.mp3").toString("base64");
+
+const voice = await client.audio.voices.create({
+  name: "my-voice",
+  sampleAudio: sampleAudio,
+  sampleFilename: "sample.mp3",
+  languages: ["en", "fr"],
+  gender: "female",
+});
+
+console.log(`Created voice: ${voice.id}`);
+console.log(`Name: ${voice.name}`);
+console.log(`Languages: ${voice.languages}`);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+SAMPLE_AUDIO=$(base64 -i sample.mp3)
+
+curl -X POST "https://api.mistral.ai/v1/audio/voices" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"name\": \"my-voice\",
+    \"sample_audio\": \"$SAMPLE_AUDIO\",
+    \"sample_filename\": \"sample.mp3\",
+    \"languages\": [\"en\", \"fr\"],
+    \"gender\": \"female\"
+  }"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "a3e8f2b1-4c9d-4a6b-8e2f-1c3d5e7a9b0c",
+  "name": "my-voice",
+  "slug": null,
+  "languages": ["en", "fr"],
+  "gender": "male",
+  "age": null,
+  "tags": null,
+  "created_at": "2026-03-20T18:34:32.118943Z"
+}
+```
+
+  </TabItem>
+</Tabs>
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | Yes | Display name for the voice |
+| `sample_audio` | string | Yes | Base64-encoded audio file |
+| `sample_filename` | string | No | Original filename (used for format detection) |
+| `slug` | string | No | URL-friendly identifier |
+| `languages` | string[] | No | Languages the voice supports (e.g. `["en", "fr"]`) |
+| `gender` | string | No | Gender label (e.g. `"female"`, `"male"`) |
+| `age` | integer | No | Approximate age of the speaker |
+| `tags` | string[] | No | Arbitrary tags for filtering |

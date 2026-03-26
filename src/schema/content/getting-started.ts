@@ -49,7 +49,7 @@ export const BUILDING_FEATURES = [
     description: 'Speech-to-text and interactive audio capabilities.',
     icon: MusicIcon,
     iconClassName: 'w-5 h-5',
-    href: '/capabilities/audio_transcription',
+    href: '/capabilities/audio',
   },
 ] as const;
 

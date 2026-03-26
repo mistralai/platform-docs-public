@@ -103,7 +103,7 @@ export async function getSidebar(
         children,
         pagination: { prev: undefined, next: undefined },
         hidden: shouldHide,
-        clickable: hasPage || categoryMeta.link !== undefined,
+        clickable: categoryMeta.clickable !== false && (hasPage || categoryMeta.link !== undefined),
         hasPage,
         isMarkdownFile: hasPage && pageIsMdx,
       };
@@ -317,6 +317,7 @@ function deriveCategoryMetadata(args: {
     position: typeof position === 'number' ? position : (undefined as any),
     link: categoryJson?.link,
     table_of_contents,
+    clickable: categoryJson?.clickable,
   } as DocsCategoryMetadata;
 
   return out;

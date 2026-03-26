@@ -2272,6 +2272,215 @@ paths:
             text/event-stream:
               schema:
                 $ref: '#/components/schemas/TranscriptionStreamEvents'
+  /v1/audio/speech:
+    post:
+      summary: Speech
+      description: Generate speech from text using a saved voice or a reference audio clip.
+      operationId: speech_v1_audio_speech_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeechRequest'
+        required: true
+      responses:
+        '200':
+          description: Speech audio data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpeechResponse'
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/SpeechStreamEvents'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      tags:
+        - audio.speech
+  /v1/audio/voices:
+    get:
+      operationId: list_voices_v1_audio_voices_get
+      summary: List all voices
+      description: List all voices (excluding sample data)
+      tags:
+        - audio.voices
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of voices to return
+          required: false
+          schema:
+            type: integer
+            title: Limit
+            description: Maximum number of voices to return
+            default: 10
+        - name: offset
+          in: query
+          description: Offset for pagination
+          required: false
+          schema:
+            type: integer
+            title: Offset
+            description: Offset for pagination
+            default: 0
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      operationId: create_voice_v1_audio_voices_post
+      summary: Create a new voice
+      description: Create a new voice with a base64-encoded audio sample
+      tags:
+        - audio.voices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceCreateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/audio/voices/{voice_id}:
+    get:
+      operationId: get_voice_v1_audio_voices__voice_id__get
+      summary: Get voice details
+      description: Get voice details (excluding sample)
+      tags:
+        - audio.voices
+      parameters:
+        - name: voice_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Voice Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      operationId: update_voice_v1_audio_voices__voice_id__patch
+      summary: Update voice metadata
+      description: Update voice metadata (name, gender, languages, age, tags).
+      tags:
+        - audio.voices
+      parameters:
+        - name: voice_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Voice Id
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      operationId: delete_voice_v1_audio_voices__voice_id__delete
+      summary: Delete a custom voice
+      description: Delete a custom voice
+      tags:
+        - audio.voices
+      parameters:
+        - name: voice_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Voice Id
+            format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/audio/voices/{voice_id}/sample:
+    get:
+      operationId: get_voice_sample_audio_v1_audio_voices__voice_id__sample_get
+      summary: Get voice sample audio
+      description: Get the audio sample for a voice
+      tags:
+        - audio.voices
+      parameters:
+        - name: voice_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Voice Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: string
+                title: Response Get Voice Sample Audio V1 Audio Voices Voice Id Sample Get
+            audio/wav: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /v1/libraries:
     get:
       operationId: libraries_list_v1
@@ -8387,6 +8596,16 @@ components:
         - start
         - end
       additionalProperties: false
+    PromptTokensDetails:
+      properties:
+        cached_tokens:
+          type: integer
+          title: Cached Tokens
+          default: 0
+      additionalProperties: false
+      type: object
+      title: PromptTokensDetails
+      description: Token usage details for the prompt.
     UsageInfo:
       type: object
       properties:
@@ -8407,12 +8626,317 @@ components:
             - type: integer
             - type: 'null'
           title: Prompt Audio Seconds
+        num_cached_tokens:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Num Cached Tokens
+        prompt_tokens_details:
+          anyOf:
+            - $ref: '#/components/schemas/PromptTokensDetails'
+            - type: 'null'
+        prompt_token_details:
+          anyOf:
+            - $ref: '#/components/schemas/PromptTokensDetails'
+            - type: 'null'
       title: UsageInfo
       additionalProperties: false
       required:
         - prompt_tokens
         - completion_tokens
         - total_tokens
+    SpeechRequest:
+      properties:
+        model:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Model
+        stream:
+          type: boolean
+          title: Stream
+          default: false
+        voice_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Voice Id
+          description: The preset or custom voice to use for generating the speech.
+        ref_audio:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Ref Audio
+          description: The base64-encoded audio reference for zero-shot voice cloning.
+        input:
+          type: string
+          title: Input
+          description: Text to generate speech from.
+        response_format:
+          $ref: '#/components/schemas/SpeechOutputFormat'
+          description: Output audio format. Defaults to mp3.
+          default: mp3
+      additionalProperties: true
+      type: object
+      required:
+        - input
+      title: SpeechRequest
+    SpeechOutputFormat:
+      type: string
+      enum:
+        - pcm
+        - wav
+        - mp3
+        - flac
+        - opus
+      title: SpeechOutputFormat
+    SpeechResponse:
+      properties:
+        audio_data:
+          type: string
+          title: Audio Data
+          description: Base64 encoded audio data
+      additionalProperties: false
+      type: object
+      required:
+        - audio_data
+      title: SpeechResponse
+    SpeechStreamAudioDelta:
+      properties:
+        type:
+          type: string
+          const: speech.audio.delta
+          title: Type
+          default: speech.audio.delta
+        audio_data:
+          type: string
+          title: Audio Data
+      additionalProperties: false
+      type: object
+      required:
+        - audio_data
+      title: SpeechStreamAudioDelta
+    SpeechStreamDone:
+      properties:
+        type:
+          type: string
+          const: speech.audio.done
+          title: Type
+          default: speech.audio.done
+        usage:
+          $ref: '#/components/schemas/UsageInfo'
+      additionalProperties: false
+      type: object
+      required:
+        - usage
+      title: SpeechStreamDone
+    SpeechStreamEvents:
+      properties:
+        event:
+          type: string
+          enum:
+            - speech.audio.delta
+            - speech.audio.done
+          title: Event
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/SpeechStreamAudioDelta'
+            - $ref: '#/components/schemas/SpeechStreamDone'
+          title: Data
+          discriminator:
+            propertyName: type
+            mapping:
+              speech.audio.delta: '#/components/schemas/SpeechStreamAudioDelta'
+              speech.audio.done: '#/components/schemas/SpeechStreamDone'
+      additionalProperties: false
+      type: object
+      required:
+        - event
+        - data
+      title: SpeechStreamEvents
+    VoiceCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+        slug:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Slug
+        languages:
+          type: array
+          items:
+            type: string
+          title: Languages
+          default: []
+        gender:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Gender
+        age:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Age
+        tags:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: 'null'
+          title: Tags
+        color:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Color
+        retention_notice:
+          type: integer
+          title: Retention Notice
+          default: 30
+        sample_audio:
+          type: string
+          title: Sample Audio
+          description: Base64-encoded audio file
+        sample_filename:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Sample Filename
+          description: Original filename for extension detection
+      title: VoiceCreateRequest
+      required:
+        - name
+        - sample_audio
+      description: Request model for creating a new voice with base64 audio.
+    VoiceListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceResponse'
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+        total_pages:
+          type: integer
+          title: Total Pages
+      title: VoiceListResponse
+      required:
+        - items
+        - total
+        - page
+        - page_size
+        - total_pages
+      description: Schema for voice list response
+    VoiceResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+        slug:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Slug
+        languages:
+          type: array
+          items:
+            type: string
+          title: Languages
+          default: []
+        gender:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Gender
+        age:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Age
+        tags:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: 'null'
+          title: Tags
+        color:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Color
+        retention_notice:
+          type: integer
+          title: Retention Notice
+          default: 30
+        id:
+          type: string
+          title: Id
+          format: uuid
+        created_at:
+          type: string
+          title: Created At
+          format: date-time
+        user_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: User Id
+      title: VoiceResponse
+      required:
+        - name
+        - id
+        - created_at
+        - user_id
+      description: Schema for voice response
+    VoiceUpdateRequest:
+      type: object
+      properties:
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+        languages:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: 'null'
+          title: Languages
+        gender:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Gender
+        age:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Age
+        tags:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: 'null'
+          title: Tags
+      title: VoiceUpdateRequest
+      description: Request model for partially updating voice metadata.
     UserMessage:
       type: object
       properties:
@@ -11771,6 +12295,12 @@ tags:
   - name: audio.transcriptions
     x-displayName: Transcriptions API
     description: API for audio transcription.
+  - name: audio.speech
+    x-displayName: Speech API
+    description: API for text-to-speech generation.
+  - name: audio.voices
+    x-displayName: Voices API
+    description: API for managing custom voice profiles.
   - name: beta.agents
     x-displayName: (beta) Agents API
     description: (beta) Agents API

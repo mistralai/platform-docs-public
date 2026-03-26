@@ -8,15 +8,15 @@ const UTM = "?utm_source=docs&utm_medium=header_cta&utm_campaign=studio_trial"
 const DEFAULT_CTA = { href: "https://console.mistral.ai", label: "Try Studio" } as const
 
 const CTA_BY_PATH: Record<string, { href: string; label: string }> = {
-  "/capabilities/audio_transcription": {
+  "/capabilities/audio": {
     href: "https://console.mistral.ai/build/audio/speech-to-text",
     label: "Try our Audio API",
   },
-  "/capabilities/audio_transcription/offline_transcription": {
+  "/capabilities/audio/speech_to_text/offline_transcription": {
     href: "https://console.mistral.ai/build/audio/speech-to-text",
     label: "Try our Audio API",
   },
-  "/capabilities/audio_transcription/realtime_transcription": {
+  "/capabilities/audio/speech_to_text/realtime_transcription": {
     href: "https://console.mistral.ai/build/audio/realtime",
     label: "Try our Realtime Audio API",
   },

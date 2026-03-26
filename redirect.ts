@@ -108,8 +108,13 @@ export const redirects = [
     permanent: true,
   },
   {
-    source: "/capabilities/audio",
-    destination: "/capabilities/audio_transcription",
+    source: "/capabilities/audio_transcription",
+    destination: "/capabilities/audio",
+    permanent: true,
+  },
+  {
+    source: "/capabilities/audio_transcription/:path*",
+    destination: "/capabilities/audio/:path*",
     permanent: true,
   },
   // Tools redirects

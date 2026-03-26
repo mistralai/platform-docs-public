@@ -1,0 +1,138 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Each chunk is a `speech.audio.delta` event with a base64-encoded audio fragment. The stream ends with a `speech.audio.done` event containing usage info.
+
+:::tip
+Use `response_format="pcm"` for the lowest streaming latency (~0.7s time-to-first-audio vs ~2s for `mp3`).
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import base64
+from pathlib import Path
+from mistralai import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+ref_audio_b64 = base64.b64encode(Path("sample.mp3").read_bytes()).decode()
+audio_chunks = []
+
+with client.audio.speech.complete(
+    model="voxtral-mini-tts-2603",
+    input="Streaming makes voice agents feel more responsive and natural.",
+    ref_audio=ref_audio_b64,
+    response_format="opus",
+    stream=True,
+) as stream:
+    for event in stream:
+        if event.event == "speech.audio.delta":
+            audio_chunks.append(base64.b64decode(event.data.audio_data))
+        elif event.event == "speech.audio.done":
+            print(f"Done. Tokens used: {event.data.usage}")
+
+audio_bytes = b"".join(audio_chunks)
+with open("output_streamed.opus", "wb") as f:
+    f.write(audio_bytes)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import base64
+from pathlib import Path
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+ref_audio_b64 = base64.b64encode(Path("sample.mp3").read_bytes()).decode()
+audio_chunks = []
+
+with client.audio.speech.complete(
+    model="voxtral-mini-tts-2603",
+    input="Streaming makes voice agents feel more responsive and natural.",
+    ref_audio=ref_audio_b64,
+    response_format="opus",
+    stream=True,
+) as stream:
+    for event in stream:
+        if event.event == "speech.audio.delta":
+            audio_chunks.append(base64.b64decode(event.data.audio_data))
+        elif event.event == "speech.audio.done":
+            print(f"Done. Tokens used: {event.data.usage}")
+
+audio_bytes = b"".join(audio_chunks)
+with open("output_streamed.opus", "wb") as f:
+    f.write(audio_bytes)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { readFileSync, writeFileSync } from "fs";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+const refAudio = readFileSync("sample.mp3").toString("base64");
+const stream = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-2603",
+  input: "Streaming makes voice agents feel more responsive and natural.",
+  refAudio: refAudio,
+  responseFormat: "opus",
+  stream: true,
+});
+
+const audioChunks: Uint8Array[] = [];
+
+for await (const event of stream) {
+  if (event.event === "speech.audio.delta") {
+    audioChunks.push(Buffer.from(event.data.audioData, "base64"));
+  } else if (event.event === "speech.audio.done") {
+    console.log("Done. Tokens used:", event.data.usage);
+  }
+}
+
+const audioBytes = Buffer.concat(audioChunks);
+writeFileSync("output_streamed.opus", audioBytes);
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+[
+  {
+    "event": "speech.audio.delta",
+    "data": {
+      "audio_data": "<base64_audio_chunk>"
+    }
+  },
+  {
+    "event": "speech.audio.delta",
+    "data": {
+      "audio_data": "<base64_audio_chunk>"
+    }
+  },
+  {
+    "event": "speech.audio.done",
+    "data": {
+      "usage": {
+        "prompt_tokens": 56,
+        "completion_tokens": 94080,
+        "total_tokens": 94136
+      }
+    }
+  }
+]
+```
+
+  </TabItem>
+</Tabs>

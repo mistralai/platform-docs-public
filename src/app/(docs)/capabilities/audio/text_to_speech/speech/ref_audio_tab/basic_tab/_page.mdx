@@ -1,0 +1,99 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import base64
+from pathlib import Path
+from mistralai import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+ref_audio_b64 = base64.b64encode(Path("sample.mp3").read_bytes()).decode()
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-2603",
+    input="This speech will sound like the voice in the reference audio.",
+    ref_audio=ref_audio_b64,
+    response_format="wav",
+)
+
+Path("output.wav").write_bytes(base64.b64decode(response.audio_data))
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import base64
+from pathlib import Path
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+ref_audio_b64 = base64.b64encode(Path("sample.mp3").read_bytes()).decode()
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-2603",
+    input="This speech will sound like the voice in the reference audio.",
+    ref_audio=ref_audio_b64,
+    response_format="wav",
+)
+
+Path("output.wav").write_bytes(base64.b64decode(response.audio_data))
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { readFileSync, writeFileSync } from "fs";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+const refAudio = readFileSync("sample.mp3").toString("base64");
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-2603",
+  input: "This speech will sound like the voice in the reference audio.",
+  refAudio: refAudio,
+  responseFormat: "wav",
+});
+
+writeFileSync("output.wav", response.audioData);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+REF_AUDIO=$(base64 -i sample.mp3)
+
+curl -X POST "https://api.mistral.ai/v1/audio/speech" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"voxstral-mini-tts-2603\",
+    \"input\": \"This speech will sound like the voice in the reference audio.\",
+    \"ref_audio\": \"$REF_AUDIO\",
+    \"response_format\": \"wav\"
+  }" | jq -r '.audio_data' | base64 -d > output.wav
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "audio_data": "UklGRv////9XQVZFZm10IBAAAAABAAEAwF0AAIC7...<base64_encoded_audio>"
+}
+```
+
+  </TabItem>
+</Tabs>

@@ -128,9 +128,9 @@ const sidebarTreeData = (sidebar: SidebarItem[]): SideBarTreeNode[] => {
         items.push({
           label: label,
           children: sidebarTreeData(item.children || []),
-          href: href,
+          href: item.clickable ? href : undefined,
           pagination: { prev: undefined, next: undefined },
-          clickable: true,
+          clickable: item.clickable,
         });
         break;
       }

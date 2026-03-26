@@ -146,12 +146,17 @@ export const AVAILABLE_FEATURES = {
   },
   transcriptions: {
     name: 'Transcriptions',
-    link: '/capabilities/audio_transcription#transcription',
+    link: '/capabilities/audio/speech_to_text#transcription',
     endpoints: ['audio-transcriptions'],
+  },
+  tts: {
+    name: 'Text to Speech',
+    link: '/capabilities/text_to_speech',
+    endpoints: ['audio-speech'],
   },
   timestamps: {
     name: 'Timestamps',
-    link: '/capabilities/audio_transcription#transcription-with-timestamps',
+    link: '/capabilities/audio/speech_to_text#transcription-with-timestamps',
     endpoints: ['audio-transcriptions'],
   },
   batching: {

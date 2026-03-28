@@ -48,7 +48,7 @@ export default {
       { type: 'range', price: 16.0, denominator: '/M Chars' },
     ],
   },
-  identifiers: { apiNames: ['voxtral-tts-2603'] },
+  identifiers: { apiNames: ['voxtral-mini-tts-2603'] },
   capabilities: {
     input: ['text', 'audio'],
     output: ['audio'],

@@ -12,10 +12,14 @@ const proseCodeClassNames = 'prose-code:text-[0.875em] prose-code:font-mono';
 
 // Section tab spacing is handled in globals.css
 
+const proseLinkClassNames =
+  'prose-a:text-primary-soft prose-a:underline hover:prose-a:text-primary prose-a:transition-colors';
+
 const proseClassNames = [
   'prose prose-neutral text-secondary-foreground max-w-none',
   // blockquote
   'prose-blockquote:border-secondary-foreground prose-blockquote:text-secondary-foreground',
+  proseLinkClassNames,
   proseHeadingsClassNames,
   proseDivisorClassNames,
   proseDetailsClassNames,

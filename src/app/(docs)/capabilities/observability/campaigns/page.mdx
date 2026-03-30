@@ -1,0 +1,211 @@
+---
+id: observability_campaigns
+title: Campaigns
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Campaigns
+
+Campaigns let you **batch-annotate production traffic** using a [Judge](./judges). You define a filter, pick a Judge, and the Campaign **runs the Judge on every matching event**, writing the annotations back into [Explorer](./explorer).
+
+<SectionTab as="h1" sectionId="when-to-use">When to use Campaigns</SectionTab>
+
+Campaigns are the right tool when you want to **score existing production traffic** at scale. Common scenarios:
+
+- **Detect problematic behavior:** your agent might be rude, off-topic, or giving inaccurate answers. Run a Campaign with a rudeness or quality Judge to find out.
+- **Tag traffic for analysis:** classify a batch of events (e.g., `code` / `search` / `general`) and filter by category in Explorer.
+- **Build quality-labeled Datasets:** run a Campaign, then export the annotated events to a Dataset.
+
+<SectionTab as="h1" sectionId="how-to-run">How to run a Campaign</SectionTab>
+
+#### Prerequisite: create a Judge
+
+Before creating a Campaign, you need a [Judge](./judges) that defines your quality criteria.
+
+A Campaign uses a **single Judge**. To run multiple checks on the same traffic, create separate Campaigns.
+
+#### Step 1: Filter events
+
+Select a **time range**, then **add filter conditions** to narrow the scope (see [Explorer filter syntax](./explorer#filter-language)).
+
+:::tip
+If your filter returns too many events, set a **maximum number of events** (from 100 to 10,000).
+:::
+
+#### Step 2: Launch the Campaign
+
+Start the Campaign. It runs in the background: you can close the tab and check progress later in the Campaign details.
+
+#### Step 3: Analyze results
+
+Once complete, matching events appear **with annotations** in the **Judge output** column. From there you can:
+
+- **Filter by annotation value** to surface flagged events (e.g., labeled `rude` or scored below 3).
+- **Inspect individual events** to verify the Judge's assessments.
+- **Export to a Dataset** for further review or analysis.
+
+<SectionTab as="h1" sectionId="sdk-access">[Developer] Use Campaigns programmatically</SectionTab>
+
+The [SDK](/getting-started/clients) lets you **create and monitor Campaigns from code**. Useful for scheduled quality checks, automated alerting pipelines, or CI/CD integration.
+
+<ExplorerTabs id="campaigns-sdk">
+  <ExplorerTab value="create" label="Create a Campaign">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Create a Campaign to annotate last week's support conversations
+campaign = mistral.beta.observability.campaigns.create(
+    name="Support Quality Review - Week 3",
+    description="Evaluate quality of customer support responses from last week",
+    judge_id="judge-456",  # replace with your Judge ID
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-01-15T00:00:00Z"},
+                {"field": "timestamp", "op": "lt", "value": "2026-01-22T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"}
+            ]
+        }
+    },
+    max_nb_events=5000
+)
+
+print(f"Campaign created: {campaign.id} — {campaign.name}")
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Create a Campaign to annotate last week's support conversations
+campaign = mistral.beta.observability.campaigns.create(
+    name="Support Quality Review - Week 3",
+    description="Evaluate quality of customer support responses from last week",
+    judge_id="judge-456",  # replace with your Judge ID
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-01-15T00:00:00Z"},
+                {"field": "timestamp", "op": "lt", "value": "2026-01-22T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"}
+            ]
+        }
+    },
+    max_nb_events=5000
+)
+
+print(f"Campaign created: {campaign.id} — {campaign.name}")
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="monitor" label="Monitor and read results">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Check Campaign status
+status = mistral.beta.observability.campaigns.fetch_status(
+    campaign_id=campaign.id
+)
+print(f"Status: {status.status}")
+
+# List annotated events once the Campaign completes
+annotated_events = mistral.beta.observability.campaigns.list_events(
+    campaign_id=campaign.id,
+    page_size=100
+)
+
+for event in annotated_events.completion_events.results:
+    # Annotations are stored in extra_fields with the Judge ID as key
+    annotation = event.extra_fields.get("__judge_<judge-id>")
+    print(f"Event {event.event_id}: {annotation}")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="manage" label="List and delete">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# List all Campaigns
+campaigns = mistral.beta.observability.campaigns.list(page_size=20)
+for c in campaigns.campaigns.results:
+    print(f"{c.name} (id: {c.id})")
+
+# Search Campaigns by name
+support_campaigns = mistral.beta.observability.campaigns.list(q="support")
+
+# Get Campaign details
+campaign = mistral.beta.observability.campaigns.fetch(
+    campaign_id="campaign-123"  # replace with your Campaign ID
+)
+print(f"Campaign: {campaign.name}")
+
+# Delete a Campaign
+mistral.beta.observability.campaigns.delete(
+    campaign_id="campaign-123"  # replace with your Campaign ID
+)
+print("Campaign deleted")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Campaign creation failed with a filter error">
+  If no events match your filter, the API won't create the Campaign and returns an error. Check your filter conditions, especially the time range. Try running the same filter in Explorer first to confirm it returns results.
+  </FaqItem>
+  <FaqItem question="Can I change the filter after starting a Campaign?">
+  No. Filters lock when the Campaign starts. If the scope is wrong, create a new Campaign with the correct filter.
+  </FaqItem>
+  <FaqItem question="Annotations don't look right">
+  The issue is likely in the Judge, not the Campaign. Review the Judge's instructions and test it on a few individual records. See [Judges — validate before you scale](./judges#validation-before-scale).
+  </FaqItem>
+  <FaqItem question="I need more than 10,000 events">
+  Split the work into multiple Campaigns with non-overlapping filters (e.g., by date range or model). Each Campaign can process up to 10,000 events.
+  </FaqItem>
+  <FaqItem question="How long does a Campaign take?">
+  It depends on the number of events and the Judge model's throughput. Campaigns run asynchronously. You don't need to keep the tab open. Check the Campaign status in the UI or via the SDK.
+  </FaqItem>
+  <FaqItem question="If I delete a Campaign, are the annotations lost?">
+  No. Annotations are written directly onto the events in Explorer. Deleting a Campaign removes the Campaign definition, but the annotations it produced remain on the events.
+  </FaqItem>
+</Faq>

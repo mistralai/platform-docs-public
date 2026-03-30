@@ -12,9 +12,10 @@ import InfoHint from '../icons/info-hint';
 import { Prose } from './prose';
 
 type AdmonitionProps = {
-  type?: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success';
+  type?: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success' | 'virgin';
   title?: string;
   collapsible?: boolean | string;
+  hideType?: boolean;
   open?: boolean | string;
   children: React.ReactNode;
 };
@@ -34,6 +35,7 @@ const admonitionVariants = cva(
         danger: 'border-destructive bg-destructive/10 text-foreground',
         success:
           'border-model-green bg-model-green/10 dark:bg-model-green/5 text-foreground',
+        virgin: 'border-model-blue bg-model-blue/10 dark:bg-model-blue/5 text-foreground',
       },
     },
     defaultVariants: {
@@ -47,6 +49,7 @@ export function Admonition({
   title,
   collapsible,
   open,
+  hideType = false,
   children,
 }: AdmonitionProps) {
   const base = cn(admonitionVariants({ type }));
@@ -71,7 +74,7 @@ export function Admonition({
         <div className="flex items-center gap-2">
           <AdminitionIcon type={type} />
           <span className="text-sm font-bold uppercase text-foreground/70">
-            <AdminitionTypeText type={type} />
+            {!hideType && <AdminitionTypeText type={type} />}
           </span>
         </div>
         {title && <div className="font-semibold mb-1">{title}</div>}
@@ -84,7 +87,7 @@ export function Admonition({
 const AdminitionTypeText = ({
   type,
 }: {
-  type: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success';
+  type: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success' | 'virgin';
 }) => {
   switch (type) {
     case 'info':
@@ -97,7 +100,7 @@ const AdminitionTypeText = ({
 const AdminitionIcon = ({
   type,
 }: {
-  type: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success';
+  type: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success' | 'virgin';
 }) => {
   switch (type) {
     case 'info':
@@ -114,6 +117,8 @@ const AdminitionIcon = ({
       return <AlertCircleIcon className="size-4" />;
     case 'success':
       return <CheckCircleIcon className="size-4" />;
+    case 'virgin':
+      return null;
   }
 };
 

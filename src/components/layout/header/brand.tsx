@@ -11,6 +11,7 @@ import {
 import { BASE_URL, MISTRAL_BRAND_GUIDELINES_URL, MISTRAL_URL } from '@/lib/constants';
 import { useCopyButton } from '@/components/ui/copy-button';
 import { Slottable } from '@radix-ui/react-slot';
+import MistralLogoSolid from '@/components/icons/assets/mistral-logo-solid';
 
 const BrandContextMenuItem = ({
   children,
@@ -43,7 +44,7 @@ export const BrandContextMenu = ({
 
   const logoUrl = useMemo(() => {
     const _logoUrl = new URL(BASE_URL);
-    _logoUrl.pathname = '/brand/m-rainbow.svg';
+    _logoUrl.pathname = '/brand/m-solid.svg';
     return _logoUrl;
   }, []);
 
@@ -53,18 +54,19 @@ export const BrandContextMenu = ({
         <div>{children}</div>
       </ContextMenuTrigger>
       <ContextMenuContent className="z-110">
-        <BrandContextMenuItem icon={<MistralIso />} onClick={handleCopy}>
+        <BrandContextMenuItem icon={<MistralLogoSolid className="size-5" />} onClick={handleCopy}>
           Copy Logo as SVG
         </BrandContextMenuItem>
-        <BrandContextMenuItem asChild icon={<Download />}>
-          <a
-            href={logoUrl.toString()}
-            target="_blank"
-            rel="noopener noreferrer"
-            download
-          >
-            Download Logo as SVG
-          </a>
+        <BrandContextMenuItem
+          icon={<Download />}
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = logoUrl.toString();
+            a.download = '';
+            a.click();
+          }}
+        >
+          Download Logo as SVG
         </BrandContextMenuItem>
         <BrandContextMenuItem
           icon={<Pen />}
@@ -86,47 +88,6 @@ export const BrandContextMenu = ({
     </ContextMenu>
   );
 };
-
-const MistralIso = () => (
-  <svg
-    className="size-5"
-    viewBox="0 0 365 258"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path d="M104.107 0H52.0525V51.57H104.107V0Z" fill="#FFD800"></path>
-    <path d="M312.351 0H260.296V51.57H312.351V0Z" fill="#FFD800"></path>
-    <path
-      d="M156.161 51.5701H52.0525V103.14H156.161V51.5701Z"
-      fill="#FFAF00"
-    ></path>
-    <path
-      d="M312.353 51.5701H208.244V103.14H312.353V51.5701Z"
-      fill="#FFAF00"
-    ></path>
-    <path
-      d="M312.356 103.14H52.0525V154.71H312.356V103.14Z"
-      fill="#FF8205"
-    ></path>
-    <path
-      d="M104.107 154.71H52.0525V206.28H104.107V154.71Z"
-      fill="#FA500F"
-    ></path>
-    <path
-      d="M208.228 154.711H156.174V206.281H208.228V154.711Z"
-      fill="#FA500F"
-    ></path>
-    <path
-      d="M312.351 154.711H260.296V206.281H312.351V154.711Z"
-      fill="#FA500F"
-    ></path>
-    <path d="M156.195 206.312H0V257.882H156.195V206.312Z" fill="#E10500"></path>
-    <path
-      d="M364.439 206.312H208.244V257.882H364.439V206.312Z"
-      fill="#E10500"
-    ></path>
-  </svg>
-);
 
 const Download = () => (
   <svg
@@ -230,18 +191,7 @@ const Home = () => (
 );
 
 const copyLogo = `
-  <svg width="365" height="258" viewBox="0 0 365 258" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g id="Mistral AI Logo">
-      <path d="M104.107 0H52.0525V51.57H104.107V0Z" fill="#FFD800"/>
-      <path d="M312.351 0H260.296V51.57H312.351V0Z" fill="#FFD800"/>
-      <path d="M156.161 51.5701H52.0525V103.14H156.161V51.5701Z" fill="#FFAF00"/>
-      <path d="M312.353 51.5701H208.244V103.14H312.353V51.5701Z" fill="#FFAF00"/>
-      <path d="M312.356 103.14H52.0525V154.71H312.356V103.14Z" fill="#FF8205"/>
-      <path d="M104.107 154.71H52.0525V206.28H104.107V154.71Z" fill="#FA500F"/>
-      <path d="M208.228 154.711H156.174V206.281H208.228V154.711Z" fill="#FA500F"/>
-      <path d="M312.351 154.711H260.296V206.281H312.351V154.711Z" fill="#FA500F"/>
-      <path d="M156.195 206.312H0V257.882H156.195V206.312Z" fill="#E10500"/>
-      <path d="M364.439 206.312H208.244V257.882H364.439V206.312Z" fill="#E10500"/>
-    </g>
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+    <path fill="currentColor" d="M15.724 15.662h5.454v5.454h5.455v-5.454h5.457v-5.455h5.455v5.455h-.001v10.91h-.003l.004.001v5.455l-.006.002h5.46v5.455H26.636V32.03h5.455v-5.458h-5.455v5.456h-5.456v-5.455l.006-.001h-5.461v5.458h5.455v5.455H4.813V32.03h5.462l-.006-.002v-5.455l.005-.001h-.006v-10.91h.001v-5.455h5.455v5.455Z"/>
   </svg>
 `;

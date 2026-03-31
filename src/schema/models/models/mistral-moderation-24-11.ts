@@ -10,7 +10,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-moderation',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'moderation', backgroundColor: 'beige' },
   weights: [],
   bloglink: 'https://mistral.ai/news/mistral-moderation',
@@ -36,7 +36,7 @@ export default {
     features: ['moderations', 'batching'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'March 31, 2026', retirementDate: 'June 30, 2026', replacement: 'Mistral Moderation 2'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

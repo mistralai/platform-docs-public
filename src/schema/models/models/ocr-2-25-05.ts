@@ -10,7 +10,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-ocr',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'ocr', backgroundColor: 'red' },
   weights: [],
   bloglink: 'https://mistral.ai/solutions/document-ai',
@@ -37,7 +37,7 @@ export default {
     features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'OCR 3'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table';
 import { ChevronUpIcon, ChevronsUpDownIcon } from '@/components/icons/pixel';
 import Link from 'next/link';
-import { getModelUrl, Model } from '@/schema';
+import { getModelUrl, Model, models } from '@/schema';
 
 interface ModelTableProps {
   data: Model[];
@@ -96,14 +96,18 @@ function ModelRowResponsive({ data, isDeprecated }: ModelRowProps) {
           'text-xs 2xl:text-sm p-2 text-foreground/70 hidden lg:table-cell text-end'
         )}
       >
-        {data.metadata?.replacement ? (
-          <Badge
-            variant="outline"
-            className={badgeClassName}
-          >
-            {data.metadata?.replacement}
-          </Badge>
-        ) : null}
+        {data.metadata?.replacement ? (() => {
+          const replacementModel = models.find(m => m.name === data.metadata?.replacement);
+          const replacementUrl = replacementModel ? getModelUrl(replacementModel) : undefined;
+          const badge = (
+            <Badge variant="outline" className={badgeClassName}>
+              {data.metadata?.replacement}
+            </Badge>
+          );
+          return replacementUrl ? (
+            <Link href={replacementUrl}>{badge}</Link>
+          ) : badge;
+        })() : null}
       </TableCell>
     </TableRow>
   );

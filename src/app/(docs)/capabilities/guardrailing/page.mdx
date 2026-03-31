@@ -25,11 +25,11 @@ We provide two ways to guardrail your applications:
 
 ### Moderate Inputs/Outputs
 
-Our moderation service is powered by Mistral Moderation models. These are classifiers trained by fine-tuning small Mistral models. They enable our users to detect harmful text content along several policy dimensions. Two models are currently available:
-- `mistral-moderation-2411` is an 8B model based on [Ministral 8B 24.10](/models/ministral-8b-24-1)
-- `mistral-moderation-2603` is a 3B model based on [Ministral 3B 25.12](/models/ministral-3-3b-25-12)
+Our moderation service is powered by `mistral-moderation-2603`. It classifies text across policy categories including a `jailbreaking` category.
 
-The new `2603` model is smaller, has a larger context window, and has an updated set of policy categories, including a `jailbreaking` category.
+:::note
+`mistral-moderation-2411` was deprecated on March 31, 2026. See [Mistral Moderation 2411](/deprecated/guardrailing/mistral_moderation_2411) for legacy reference.
+:::
 
 <SectionTab as="h2" variant="secondary" sectionId="endpoints">Endpoints</SectionTab>
 
@@ -54,9 +54,6 @@ Custom policies that depend on `category_scores` can require recalibration.
 
 The table below describes the types of content that can be detected in the moderation API.
 
-<ExplorerTabs id="categories">
-  <ExplorerTab value="mistral-moderation-2603" label="mistral-moderation-2603">
-
 | Category | Description |
 | --- | --- |
 | Sexual | Material that explicitly depicts, describes, or promotes sexual activities, nudity, or sexual services. This includes pornographic content, graphic descriptions of sexual acts, and solicitation for sexual purposes. Educational or medical content about sexual health presented in a non-explicit, informational context is generally exempted. |
@@ -70,32 +67,6 @@ The table below describes the types of content that can be detected in the moder
 | Law | Content that contains or tries to elicit detailed or tailored legal advice. |
 | PII | Content that requests, shares, or attempts to elicit personal identifying information such as full names, addresses, phone numbers, social security numbers, or financial account details. |
 | Jailbreaking | Attempts to bypass or circumvent the model's safety guidelines, policies, or intended behavior through prompt manipulation, role-playing scenarios, or other techniques designed to elicit disallowed outputs. |
-
-:::note[ ]
-The `Dangerous`, `Criminal`, and `Jailbreaking` categories are only available in `mistral-moderation-2603` and are not present in `mistral-moderation-2411`.
-:::
-
-  </ExplorerTab>
-  <ExplorerTab value="mistral-moderation-2411" label="mistral-moderation-2411">
-
-| Category | Description |
-| --- | --- |
-| Sexual | Material that explicitly depicts, describes, or promotes sexual activities, nudity, or sexual services. This includes pornographic content, graphic descriptions of sexual acts, and solicitation for sexual purposes. Educational or medical content about sexual health presented in a non-explicit, informational context is generally exempted. |
-| Hate and Discrimination | Content that expresses prejudice, hostility, or advocates discrimination against individuals or groups based on protected characteristics such as race, ethnicity, religion, gender, sexual orientation, or disability. This includes slurs, dehumanizing language, calls for exclusion or harm targeted at specific groups, and persistent harassment or bullying of individuals based on these characteristics. |
-| Violence and Threats | Content that describes, glorifies, incites, or threatens physical violence against individuals or groups. This includes graphic depictions of injury or death, explicit threats of harm, and instructions for carrying out violent acts. This category covers both targeted threats and general promotion or glorification of violence. |
-| Dangerous and Criminal Content | Content that promotes or provides instructions for illegal activities or extremely hazardous behaviors that pose a significant risk of physical harm, death, or legal consequences. This includes guidance on creating weapons or explosives, encouragement of extreme risk-taking behaviors, and promotion of non-violent crimes such as fraud, theft, or drug trafficking. |
-| Self-Harm | Content that promotes, instructs, plans, or encourages deliberate self-injury, suicide, eating disorders, or other self-destructive behaviors. This includes detailed methods, glorification, statements of intent, dangerous challenges, and related slang terms. |
-| Health | Content that contains or tries to elicit detailed or tailored medical advice. |
-| Financial | Content that contains or tries to elicit detailed or tailored financial advice. |
-| Law | Content that contains or tries to elicit detailed or tailored legal advice. |
-| PII | Content that requests, shares, or attempts to elicit personal identifying information such as full names, addresses, phone numbers, social security numbers, or financial account details. |
-
-:::note[ ]
-`Dangerous and Criminal Content` is a legacy category only available in `mistral-moderation-2411`. It has been replaced by the separate `Dangerous` and `Criminal` categories in `mistral-moderation-2603`.
-:::
-
-  </ExplorerTab>
-</ExplorerTabs>
 
 <SectionTab as="h2" variant="secondary" sectionId="cookbooks">Cookbooks</SectionTab>
 
@@ -114,9 +85,7 @@ For a more broad view, there is also a more [explorative cookbook](https://colab
 
 Custom guardrails let you declare moderation rules directly in your API requests, without manually calling the Moderation API and implementing threshold logic in your application code. Guardrails apply **input moderation only** — they run before the request reaches the model. When a guardrail is triggered, the request is blocked and a `403` error is returned.
 
-Each guardrail uses one of two moderation configs:
-- **`moderation_llm_v1`**: backed by `mistral-moderation-2411`
-- **`moderation_llm_v2`**: backed by `mistral-moderation-2603`
+Each guardrail uses the `moderation_llm_v2` config, backed by `mistral-moderation-2603`.
 
 Each config accepts:
 - **`custom_category_thresholds`**: object mapping category names to threshold values (0–1). Set a category to `1` to explicitly disable it.
@@ -125,7 +94,7 @@ Each config accepts:
 - **`block_on_error`**: if `true`, the request is blocked when the moderation API itself fails (per guardrail).
 - **`model_name`** *(optional)*: override the default moderation model for that config.
 
-Multiple guardrails can be specified per request — the request is blocked if any one is triggered. Only one moderation config (`moderation_llm_v1` or `moderation_llm_v2`) can be specified per guardrail object, but you can include multiple guardrail objects to use both.
+Multiple guardrails can be specified per request — the request is blocked if any one is triggered. Only one `moderation_llm_v2` config can be specified per guardrail object, but you can include multiple guardrail objects.
 
 <SectionTab as="h2" variant="secondary" sectionId="inline-guardrails">Inline Guardrails</SectionTab>
 
@@ -620,7 +589,7 @@ curl https://api.mistral.ai/v1/agents \
   "guardrails": [
     {
       "block_on_error": true,
-      "moderation_llm_v1": null,
+      "moderation_llm_v2": null,
       "moderation_llm_v2": {
         "model_name": "mistral-moderation-2603",
         "custom_category_thresholds": {
@@ -671,7 +640,7 @@ On a successful (non-blocked) request, a `guardrails` field is included in the r
   "usage": {},
   "guardrails": [
     {
-      "moderation_llm_v1": {
+      "moderation_llm_v2": {
         "action": "pass",
         "categories": {
           "sexual": { "score": 0.03, "violated": false },
@@ -695,8 +664,8 @@ When a guardrail blocks a request, a `403` is returned with details on which cat
   },
   "guardrails": {
     "results": {
-      "moderation_llm_v1": {
-        "model_name": "mistral-moderation-2411",
+      "moderation_llm_v2": {
+        "model_name": "mistral-moderation-2603",
         "decisions": {
           "sexual": { "threshold": 0.1, "score": 0.3, "violated": true },
           "selfharm": { "threshold": 0.1, "score": 0.05, "violated": false },
@@ -721,7 +690,7 @@ If `block_on_error` is `true` and the moderation API fails, the request is block
   "code": 3201,
   "guardrails": [
     {
-      "moderation_llm_v1": {
+      "moderation_llm_v2": {
         "action": "block",
         "error": {
           "message": "Moderation API request failed."

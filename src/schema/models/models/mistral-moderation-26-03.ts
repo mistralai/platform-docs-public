@@ -1,7 +1,7 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Moderation 2',
-  description: `Our latest moderation model with 128k context window and jailbreaking detection, based on Ministral 3B. Strong performance on complex multilingual data including long multi-turn conversations.`,
+  description: `Our latest moderation model with 128k context window and jailbreaking detection. Strong performance on complex multilingual data including long multi-turn conversations.`,
   shortDescription: `Our latest moderation model with 128k context window and jailbreaking detection.`,
   slug: 'mistral-moderation-26-03',
   releaseDate: 'March 2026',

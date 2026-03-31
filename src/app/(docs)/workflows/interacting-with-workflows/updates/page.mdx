@@ -1,0 +1,102 @@
+---
+id: updates
+title: Updates
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Updates
+
+Updates allow external systems to modify workflow state and receive a response. Unlike signals, updates are synchronous and can return values.
+
+<SectionTab as="h1" sectionId="key-characteristics">Key characteristics</SectionTab>
+
+- Synchronous communication (with response)
+- Can modify workflow state
+- Can return values to the caller
+- Can execute activities
+- More structured than signals
+
+<SectionTab as="h1" sectionId="basic-example">Basic example</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import asyncio
+
+# Activity definition
+@workflows.activity()
+async def process_update_data(data: str) -> str:
+    # Simulate processing
+    await asyncio.sleep(0.5)
+    return f"Processed: {data.upper()}"
+
+@workflows.workflow.define()
+class DataProcessingWorkflow:
+    def __init__(self):
+        self.current_value = "default"
+
+    @workflows.workflow.update(name="update_data")
+    async def update_data(self, new_value: str) -> dict:
+        # Execute an activity as part of the update
+        processed = await process_update_data(new_value)
+
+        # Update workflow state
+        old_value = self.current_value
+        self.current_value = processed
+
+        return {
+            "success": True,
+            "processed_value": processed,
+            "message": f"Updated from '{old_value}' to '{processed}'"
+        }
+
+    @workflows.workflow.entrypoint
+    async def run(self):
+        print(f"Workflow started with value: {self.current_value}")
+        # Workflow continues running...
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="input-validation">Input validation</SectionTab>
+
+Updates validate incoming payloads against their declared parameters. The system automatically:
+
+- Validates incoming payloads match the expected types
+- **Rejects extra fields** not declared in the handler signature
+- Returns HTTP 422 (Unprocessable Entity) with descriptive error messages on validation failure
+
+For complex input structures, use Pydantic models:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import pydantic
+
+class ConfigUpdate(pydantic.BaseModel):
+    timeout: int
+    retry_count: int
+
+@workflows.workflow.update(name="update_config")
+async def update_config(self, config: ConfigUpdate) -> dict:
+    self.config = config
+    return {"success": True}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="comparison">Comparison</SectionTab>
+
+| Feature | Communication Type | Modifies State | Returns Value | Can Execute Activities |
+| ------- | ------------------ | -------------- | ------------- | ---------------------- |
+| Signal  | Asynchronous       | Yes            | No            | No                     |
+| Query   | Synchronous        | No             | Yes           | No                     |
+| Update  | Synchronous        | Yes            | Yes           | Yes                    |

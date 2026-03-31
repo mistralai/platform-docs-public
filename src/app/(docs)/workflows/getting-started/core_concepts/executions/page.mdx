@@ -1,0 +1,64 @@
+---
+id: core-concepts-executions
+title: Executions
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Executions
+
+An execution is a single invocation of a workflow. Each execution has a unique `execution_id` — either auto-generated or specified by the caller — and progresses through a sequence of statuses as it runs.
+
+<SectionTab as="h1" sectionId="triggering-an-execution">Triggering an execution</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai import Mistral
+
+client = Mistral(api_key="your_key")
+
+execution = client.workflows.execute(
+    workflow_identifier="my_workflow",
+    input={"data": "hello"},
+    execution_id="my-run-2024-01-15",  # optional custom ID
+)
+print(execution.execution_id, execution.status)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="execution-statuses">Execution statuses</SectionTab>
+
+An execution starts as `RUNNING` and ends in one of several terminal states:
+
+- `COMPLETED` — finished successfully
+- `FAILED` — terminated with an unhandled error
+- `CANCELED` — gracefully stopped
+- `TERMINATED` — forcefully stopped
+- `TIMED_OUT` — exceeded `execution_timeout`
+- `CONTINUED_AS_NEW` — history reset via continue-as-new
+- `RETRYING_AFTER_ERROR` — failed and scheduled for retry
+
+<SectionTab as="h1" sectionId="executions-vs-runs">Executions vs runs</SectionTab>
+
+An **execution** is a workflow invocation with a stable `execution_id` that persists across its entire lifetime. A **run** is a single attempt within that execution. Most of the time, an execution has exactly one run. But if a workflow is reset to a previous point in its history, a new run begins under the same `execution_id`.
+
+Only one run can be active at a time. API action endpoints — `/cancel`, `/terminate`, `/signals`, `/queries`, `/updates` — always target the **latest run** of an execution.
+
+<SectionTab as="h1" sectionId="api-endpoints">API endpoints</SectionTab>
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/workflows/{id}/execute` | Trigger a new execution |
+| `GET /v1/workflows/runs` | List all runs |
+| `GET /v1/workflows/executions/{execution_id}` | Get latest run of an execution |
+| `POST /v1/workflows/executions/{id}/cancel` | Cancel gracefully |
+| `POST /v1/workflows/executions/{id}/terminate` | Stop immediately |
+| `POST /v1/workflows/executions/{id}/reset` | Reset to a previous event |
+
+See the full [API reference](../../../api/endpoint/beta/workflows/executions) for parameters and response schemas.

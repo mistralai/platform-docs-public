@@ -1,0 +1,93 @@
+---
+id: waiting-for-conditions
+title: Waiting for Conditions
+sidebar_position: 9
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Waiting for Conditions
+
+Workflows can pause execution until a specific condition is met, enabling event-driven patterns like human-in-the-loop and approval flows.
+
+<SectionTab as="h1" sectionId="basic-usage">Basic usage</SectionTab>
+
+Use `workflow.wait_condition()` to block until a predicate returns `True`:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+from mistralai.workflows import workflow
+
+await workflow.wait_condition(
+    lambda: self.ready,
+    timeout=timedelta(minutes=5)
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="example-approval-flow">Example: approval flow</SectionTab>
+
+Combine with signals to implement a human-in-the-loop pattern:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from mistralai.workflows import workflow
+from datetime import timedelta
+
+@workflows.workflow.define(name="approval_workflow")
+class ApprovalWorkflow:
+    def __init__(self):
+        self.approved = False
+
+    @workflows.workflow.signal(name="approve")
+    async def approve(self):
+        self.approved = True
+
+    @workflows.workflow.entrypoint
+    async def run(self, request_id: str) -> str:
+        # Wait up to 24 hours for approval
+        await workflow.wait_condition(
+            lambda: self.approved,
+            timeout=timedelta(hours=24)
+        )
+
+        if not self.approved:
+            return f"Request {request_id} timed out"
+
+        return f"Request {request_id} approved"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="timeout-behavior">Timeout behavior</SectionTab>
+
+When a timeout is specified, `wait_condition` raises a `asyncio.TimeoutError` if the condition is not met within the duration. Handle this to implement timeout logic:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+
+try:
+    await workflow.wait_condition(
+        lambda: self.ready,
+        timeout=timedelta(minutes=30)
+    )
+except asyncio.TimeoutError:
+    # Handle timeout
+    return "Operation timed out"
+```
+
+  </TabItem>
+</Tabs>

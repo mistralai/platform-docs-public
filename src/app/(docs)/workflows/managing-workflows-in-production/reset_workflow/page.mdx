@@ -1,0 +1,88 @@
+---
+id: reset-workflow
+title: Resetting Workflows
+sidebar_position: 8
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Resetting Workflows
+
+Reset a workflow execution to restart it from a specific point in its event history.
+
+<SectionTab as="h1" sectionId="when-to-reset">When to reset</SectionTab>
+
+Resetting is useful when a workflow gets stuck — for example, because of a non-determinism error after a code change — or when it cannot complete due to a bug that has since been fixed.
+
+:::warning
+Resetting should only be used **after fixing the underlying problem**. All progress made after the reset point will be lost.
+:::
+
+<SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
+
+When you reset a workflow:
+
+1. The current run is terminated
+2. A new run is created under the same execution ID
+3. All events up to the reset point are copied to the new run
+4. The workflow replays from the reset point using the **latest version of your code**
+
+This means any bug fix you deployed will take effect when the workflow resumes.
+
+<SectionTab as="h1" sectionId="usage">Usage</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+await client.reset_workflow(
+    execution_id="your-execution-id",
+    event_id=42,  # Must be a WORKFLOW_TASK_COMPLETED event
+    reason="Bug fixed in activity logic",
+    exclude_signals=True,  # Optional: skip replaying signals after this point
+    exclude_updates=True   # Optional: skip replaying updates after this point
+)
+```
+
+  </TabItem>
+</Tabs>
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `execution_id` | `str` | Yes | The execution to reset |
+| `event_id` | `int` | Yes | Event ID to reset to (must be a `WORKFLOW_TASK_COMPLETED` event) |
+| `reason` | `str` | Yes | Reason for the reset (recorded in event history) |
+| `exclude_signals` | `bool` | No | Skip replaying signals received after the reset point |
+| `exclude_updates` | `bool` | No | Skip replaying updates received after the reset point |
+
+<SectionTab as="h1" sectionId="finding-the-reset-point">Finding the reset point</SectionTab>
+
+Use the trace events API to find valid reset points:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+events = await client.get_workflow_execution_trace_events(execution_id)
+
+# Filter for WORKFLOW_TASK_COMPLETED events
+valid_reset_points = [
+    e for e in events
+    if e.event_type == "WORKFLOW_TASK_COMPLETED"
+]
+```
+
+  </TabItem>
+</Tabs>
+
+If you provide an invalid event ID, the API returns a `WF_1001` error with a `valid_reset_events` field listing valid alternatives.
+
+<SectionTab as="h1" sectionId="best-practices">Best practices</SectionTab>
+
+1. **Fix the root cause first** — resetting without fixing the bug will reproduce the same failure
+2. **Always provide a reason** — it is recorded in the event history for auditing
+3. **Use `exclude_signals` carefully** — skipping signals means any external input received after the reset point won't be replayed
+4. **Test your fix** — deploy and test the fix on a development workspace before resetting production workflows

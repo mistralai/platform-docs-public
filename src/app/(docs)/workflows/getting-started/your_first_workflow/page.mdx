@@ -1,0 +1,103 @@
+---
+id: your-first-workflow
+title: Your First Workflow
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Your First Workflow
+
+We'll walk through creating a simple workflow that executes a single activity.
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+Before running your workflow, you'll need to:
+
+1. Connect to the [Mistral Console](https://console.mistral.ai/) with your Mistral account
+2. Select a workspace and [create a new API key](https://console.mistral.ai/home?profile_dialog=api-keys)
+3. Keep this API key handy — you'll use it when running `uvx mistralai-workflows-cli setup` in the next step
+
+<SectionTab as="h1" sectionId="scaffold-your-project">Scaffold your project</SectionTab>
+
+The fastest way to get started is with the CLI:
+
+```bash
+uvx mistralai-workflows-cli setup
+```
+
+This scaffolds a ready-to-run Python project with the Workflows SDK already configured, a minimal example workflow, and helper commands to run your worker and trigger executions.
+
+Alternatively, if you're adding Workflows to an existing project, follow the [installation instructions](./installation).
+
+<SectionTab as="h1" sectionId="step-1-define-your-workflow-and-worker">Step 1: Define Your Workflow and Worker</SectionTab>
+
+Create a file `my_workflow.py`
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+
+# Activities are async functions that can take any JSON-serializable types
+@workflows.activity()
+async def hello_world(name: str) -> dict:
+    """Activities are the building blocks of workflows.
+    1. It's the place where you do the actual work
+       (e.g. call an API, process data, CPU intensive tasks, etc.)
+    2. It must be async
+    3. Parameters can be any JSON-serializable type (str, int, dict, list, etc.)
+    """
+    return {"message": f"Hello, {name}!"}
+
+
+# Workflows orchestrate activities
+@workflows.workflow.define(name="simple_example_workflow")
+class SimpleExampleWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, name: str) -> dict:
+        """Workflow entry point.
+        1. It coordinate multiple activities
+        2. It may need to wait for external events
+        """
+        return await hello_world(name)
+
+
+# The Worker runs your workflows and activities
+async def main() -> None:
+    await workflows.run_worker([SimpleExampleWorkflow])
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="step-2-run-your-worker-with-the-simpleexampleworkflow-workflow">Step 2: Run Your Worker with the `simple_example_workflow` Workflow</SectionTab>
+
+```bash
+uv run python my_workflow.py
+```
+
+The worker will start, connect to the Mistral API, and register your workflow and wait for any task to do. You will need to trigger execution in order to see the workflow running.
+
+
+
+<SectionTab as="h1" sectionId="step-3-trigger-execution-of-your-workflow">Step 3: Trigger execution of Your Workflow</SectionTab>
+
+1. Visit [https://console.mistral.ai/](https://console.mistral.ai/) (make sure you are located in the same workspace than the one you created your API key in)
+1. Click `Workflows` in the left sidebar
+1. Select `simple_example_workflow`
+1. Launch the workflow using the `Start Workflow` button and the input `{"name": <your_name>}`
+1. Find your execution in the `Executions` tab
+1. Make sure the workflow ran until the end by checking if the output is correct
+
+<SectionTab as="h1" sectionId="multi-worker-setup-advanced-multi-worker-setup">Multi-Worker Setup</SectionTab>
+
+For scaling patterns and running multiple workers, see [Core Concepts - Scaling with Multiple Workers](./core-concepts#scaling-with-multiple-workers).

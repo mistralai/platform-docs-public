@@ -72,7 +72,7 @@ const BreadcrumbItemComponent = ({ item }: { item: BreadcrumbItem }) => {
       <BreadcrumbLink
         onClick={e => e.stopPropagation()}
         className={cn(
-          'uppercase min-w-0 truncate',
+          'uppercase whitespace-nowrap',
           item.clickable === false && 'pointer-events-none'
         )}
         href={item.href}
@@ -116,7 +116,7 @@ const BreadcrumbItem = ({
       <BreadcrumbLink
         onClick={e => e.stopPropagation()}
         className={cn(
-          'uppercase min-w-0 truncate',
+          'uppercase whitespace-nowrap',
           !isClickable && 'pointer-events-none'
         )}
         href={href}
@@ -202,7 +202,7 @@ export function GenericBreadcrumb({
         className
       )}
     >
-      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-hidden">
+      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-x-auto">
         <BreadcrumbList className="!gap-2 min-w-0 flex-nowrap">
           {showHome && (
             <>
@@ -216,7 +216,7 @@ export function GenericBreadcrumb({
                 className={cn(
                   item.isCurrentPage
                     ? 'text-foreground'
-                    : 'overflow-hidden min-w-0'
+                    : 'shrink-0'
                 )}
               >
                 <BreadcrumbItemComponent item={item} />
@@ -352,7 +352,7 @@ export default function Breadcrumb({
         className
       )}
     >
-      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-hidden">
+      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-x-auto">
         <BreadcrumbList className="!gap-2 min-w-0 flex-nowrap">
           {showHome && (
             <>
@@ -369,7 +369,7 @@ export default function Breadcrumb({
                   className={cn(
                     isCurrentPage
                       ? 'text-foreground'
-                      : 'overflow-hidden min-w-0'
+                      : 'shrink-0'
                   )}
                 >
                   <BreadcrumbItem item={item} isCurrentPage={isCurrentPage} />

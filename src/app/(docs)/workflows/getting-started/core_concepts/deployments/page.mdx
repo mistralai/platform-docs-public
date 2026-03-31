@@ -1,0 +1,74 @@
+---
+id: core-concepts-deployments
+title: Deployments
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Deployments
+
+A deployment is a running instance of your workflow workers registered with the Workflows platform. When you start a worker, it connects to the platform, registers its workflows and activities, and starts polling for tasks. There is no separate registration step — everything is handled automatically at startup.
+
+<SectionTab as="h1" sectionId="starting-a-worker">Starting a worker</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import mistralai.workflows as workflows
+
+
+@workflows.activity()
+async def my_activity(data: str) -> str:
+    return f"processed: {data}"
+
+
+@workflows.workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, data: str) -> str:
+        return await my_activity(data)
+
+
+async def main():
+    await workflows.run_worker([MyWorkflow])
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+  </TabItem>
+</Tabs>
+
+```bash
+MISTRAL_API_KEY=your_key uv run python my_workflow.py
+```
+
+<SectionTab as="h1" sectionId="scaling">Scaling</SectionTab>
+
+Workers are stateless and interchangeable — any worker that has registered a workflow can execute it. To increase throughput, run multiple workers with the same code and API key. Tasks are automatically distributed across all available workers.
+
+```bash
+MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Worker 1
+MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Worker 2
+MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Worker 3
+```
+
+For environment separation, use different workspaces:
+
+```bash
+MISTRAL_API_KEY=dev_key  uv run python my_workflow.py  # Dev
+MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Production
+```
+
+:::danger
+Workers using the same API key share the same workspace. Always run the **same code version** across all workers in a workspace to avoid unpredictable behavior.
+:::
+
+:::info
+Out-of-the-box solutions to help you scale your workers automatically are planned for a future release.
+:::

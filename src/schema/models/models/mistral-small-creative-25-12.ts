@@ -10,7 +10,7 @@ export default {
   class: 'Specialist',
   type: 'Labs',
   legalButton: 'DEFAULT',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'mistral-small', backgroundColor: 'yellow' },
   weights: [],
   bloglink: null,
@@ -36,7 +36,7 @@ export default {
     features: ['document-qna', 'chat-completions', 'batching', 'structured-outputs', 'function-calling'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'March 31, 2026', retirementDate: 'April 30, 2026', replacement: 'Mistral Nemo 12B'},
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

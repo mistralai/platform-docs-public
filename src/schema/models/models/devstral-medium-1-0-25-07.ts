@@ -10,7 +10,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-medium-1',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [],
   bloglink: 'https://mistral.ai/news/devstral-2507',
@@ -36,7 +36,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'Devstral 2'},
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

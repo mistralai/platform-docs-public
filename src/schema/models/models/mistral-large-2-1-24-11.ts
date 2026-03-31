@@ -10,7 +10,7 @@ export default {
   class: 'Generalist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-large-2',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'mistral-large', backgroundColor: 'orange' },
   weights: [
     {
@@ -52,7 +52,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching'],
     finetuning: ['text'],
   },
-  metadata: {},
+  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'Mistral Large 3'},
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

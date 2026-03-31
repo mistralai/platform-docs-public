@@ -1,0 +1,66 @@
+---
+id: continue-as-new
+title: Continue-As-New
+sidebar_position: 10
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Continue-As-New
+
+Continue-As-New resets the workflow's event history while carrying forward its state, enabling indefinitely long-running workflows without hitting history size limits.
+
+<SectionTab as="h1" sectionId="when-to-use">When to use</SectionTab>
+
+- Long-running workflows that iterate indefinitely
+- When workflow history approaches size limits (~50K events or 50MB)
+- Workflows that need to run for weeks or months
+
+<SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
+
+When `continue_as_new()` is called, the current run completes and a new run starts fresh from the beginning with the provided state. All accumulated event history is discarded.
+
+**Important:** Your workflow's `run` method must accept a state parameter to restore its state when continuing as new.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.workflow.define(name="long-running-processor")
+class LongRunningProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, page: int = 0, total_processed: int = 0):  # State parameters are required
+        # Process current page
+        result = await process_page(page)
+        total_processed += result.count
+
+        # Check if history is getting large
+        if workflows.workflow.should_continue_as_new():
+            # Continue with fresh history, passing current state
+            workflows.workflow.continue_as_new({"page": page + 1, "total_processed": total_processed})
+
+        return await self.run(page + 1, total_processed)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="checking-history-size">Checking history size</SectionTab>
+
+Use `should_continue_as_new()` to check whether it's time to reset:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+if workflows.workflow.should_continue_as_new():
+    workflows.workflow.continue_as_new({"page": next_page, "count": total})
+```
+
+  </TabItem>
+</Tabs>
+
+This returns `True` when the event history is approaching the system limit.

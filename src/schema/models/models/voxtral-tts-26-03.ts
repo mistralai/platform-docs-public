@@ -1,14 +1,14 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral TTS',
-  description: `Our state-of-the-art text-to-speech model with zero-shot voice cloning. Supports 9 languages, streaming with ~100ms time-to-first-audio, and no transcript required for voice prompts.`,
+  description: `Our state-of-the-art text-to-speech model with zero-shot voice cloning. Supports 9 languages, streaming with ~90ms time-to-first-audio, and no transcript required for voice prompts.`,
   shortDescription: `State-of-the-art TTS with zero-shot voice cloning and multilingual support.`,
   slug: 'voxtral-tts-26-03',
   releaseDate: 'March 23, 2026',
   version: '26.03',
   frontier: true,
   class: 'Specialist',
-  type: 'Premier',
+  type: 'Open',
   legalButton: null,
   status: 'Active',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },

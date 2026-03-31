@@ -1,0 +1,99 @@
+---
+id: signals
+title: Signals
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Signals
+
+Signals allow external systems to send messages to running workflows asynchronously.
+
+<SectionTab as="h1" sectionId="key-characteristics">Key characteristics</SectionTab>
+
+- Asynchronous communication
+- Can be sent at any time during workflow execution
+- Workflows must explicitly handle signals
+- Can carry payload data
+
+<SectionTab as="h1" sectionId="basic-example">Basic example</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.workflow.define()
+class NotificationWorkflow:
+    def __init__(self):
+        self.notifications = []
+
+    @workflows.workflow.signal(name="add_notification")
+    async def add_notification(self, message: str, priority: int = 1):
+        self.notifications.append(message)
+        print(f"Received notification: {message} (Priority: {priority})")
+
+    @workflows.workflow.entrypoint
+    async def run(self):
+        print("Workflow started, waiting for notifications...")
+        while True:
+            await workflows.workflow.wait_condition(lambda: len(self.notifications) > 0)
+            print(f"Processing {len(self.notifications)} notifications")
+            self.notifications.clear()
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="input-validation">Input validation</SectionTab>
+
+Signals validate incoming payloads against their declared parameters. The system automatically:
+
+- Validates incoming payloads match the expected types
+- **Rejects extra fields** not declared in the handler signature
+- Returns HTTP 422 (Unprocessable Entity) with descriptive error messages on validation failure
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.workflow.signal(name="add_notification")
+async def add_notification(self, message: str, priority: int = 1):
+    # Only 'message' and 'priority' fields are accepted
+    # Extra fields like {"message": "hi", "extra": "bad"} will be rejected
+    ...
+```
+
+  </TabItem>
+</Tabs>
+
+For complex input structures, use Pydantic models:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import pydantic
+
+class UserProfile(pydantic.BaseModel):
+    name: str
+    address: str
+
+@workflows.workflow.signal(name="update_profile")
+async def update_profile(self, profile: UserProfile) -> None:
+    self._profile = profile
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="comparison">Comparison</SectionTab>
+
+| Feature | Communication Type | Modifies State | Returns Value | Can Execute Activities |
+| ------- | ------------------ | -------------- | ------------- | ---------------------- |
+| Signal  | Asynchronous       | Yes            | No            | No                     |
+| Query   | Synchronous        | No             | Yes           | No                     |
+| Update  | Synchronous        | Yes            | Yes           | Yes                    |

@@ -1,0 +1,90 @@
+---
+id: queries
+title: Queries
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Queries
+
+Queries allow external systems to read the current state of a running workflow synchronously.
+
+<SectionTab as="h1" sectionId="key-characteristics">Key characteristics</SectionTab>
+
+- Synchronous communication
+- Read-only operations (should not modify workflow state)
+- Can be called at any time during workflow execution
+- Must return quickly (not for long-running operations)
+
+<SectionTab as="h1" sectionId="basic-example">Basic example</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.workflow.define()
+class ProcessingWorkflow:
+    def __init__(self):
+        self.progress = 0.0
+        self.completed = False
+
+    @workflows.workflow.query(name="get_status")
+    def get_status(self) -> dict:
+        return {
+            "progress": self.progress,
+            "completed": self.completed
+        }
+
+    @workflows.workflow.entrypoint
+    async def run(self):
+        # Simulate work
+        for i in range(1, 11):
+            self.progress = i * 10
+            await asyncio.sleep(1)
+        self.completed = True
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="input-validation">Input validation</SectionTab>
+
+Queries validate incoming payloads against their declared parameters. The system automatically:
+
+- Validates incoming payloads match the expected types
+- **Rejects extra fields** not declared in the handler signature
+- Returns HTTP 422 (Unprocessable Entity) with descriptive error messages on validation failure
+
+For complex input structures, use Pydantic models:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import pydantic
+
+class StatusRequest(pydantic.BaseModel):
+    include_details: bool = False
+
+@workflows.workflow.query(name="get_status")
+def get_status(self, req: StatusRequest) -> dict:
+    result = {"progress": self.progress}
+    if req.include_details:
+        result["steps"] = self.completed_steps
+    return result
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="comparison">Comparison</SectionTab>
+
+| Feature | Communication Type | Modifies State | Returns Value | Can Execute Activities |
+| ------- | ------------------ | -------------- | ------------- | ---------------------- |
+| Signal  | Asynchronous       | Yes            | No            | No                     |
+| Query   | Synchronous        | No             | Yes           | No                     |
+| Update  | Synchronous        | Yes            | Yes           | Yes                    |

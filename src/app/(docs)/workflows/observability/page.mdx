@@ -1,0 +1,60 @@
+---
+id: observability
+title: Observability
+sidebar_position: 6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Workflow observability
+
+This guide covers OpenTelemetry traces for execution-level diagnostics.
+
+<SectionTab as="h1" sectionId="traces-opentelemetry">Traces (OpenTelemetry)</SectionTab>
+
+Traces capture execution details (spans, timings, errors) and are optimized for debugging and performance analysis. They are independent from custom task events.
+
+### Activity observability
+
+Activities automatically generate spans. Use the `name` parameter to make them more readable:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(name="Processing customer emails")
+async def process_emails(params: ActivityParams) -> ActivityResult:
+    # Your activity code
+```
+
+  </TabItem>
+</Tabs>
+
+### Trace sampling
+
+Trace collection is sampled. By default the worker uses a parent-based sampler with a configurable sample rate, so upstream decisions can be honored.
+
+**TL;DR:** For the finest control of sampling, pass a `traceparent` header at your workflow entry point (or API edge). This lets you force sampling on or off and propagate the parent trace consistently.
+
+### Fetching workflow traces
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# Get trace data
+trace = await client.get_workflow_execution_trace_otel(execution_id)
+
+# Get trace summary
+summary = await client.get_workflow_execution_trace_summary(execution_id)
+
+# Get detailed events
+events = await client.get_workflow_execution_trace_events(
+    execution_id,
+    include_internal_events=False  # Hide system events
+)
+```
+
+  </TabItem>
+</Tabs>

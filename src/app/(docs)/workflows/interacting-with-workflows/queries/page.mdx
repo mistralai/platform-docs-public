@@ -13,12 +13,11 @@ Queries allow external systems to read the current state of a running workflow s
 
 <SectionTab as="h1" sectionId="key-characteristics">Key characteristics</SectionTab>
 
-- Synchronous communication
-- Read-only operations (should not modify workflow state)
-- Can be called at any time during workflow execution
-- Must return quickly (not for long-running operations)
+Queries use synchronous communication and are read-only — they should not modify workflow state. They can be called at any time during execution but must return quickly, making them unsuitable for long-running operations.
 
-<SectionTab as="h1" sectionId="basic-example">Basic example</SectionTab>
+<SectionTab as="h1" sectionId="basic-example">Exposing queries</SectionTab>
+
+The workflow below tracks its own progress as it runs. The `get_status` query handler reads that state and returns it immediately to the caller — without interrupting or modifying the running workflow.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -53,13 +52,9 @@ class ProcessingWorkflow:
 
 <SectionTab as="h1" sectionId="input-validation">Input validation</SectionTab>
 
-Queries validate incoming payloads against their declared parameters. The system automatically:
+Query handlers can accept parameters just like any other handler, and the SDK validates the payload before invoking the handler. Queries validate incoming payloads against their declared parameters. Incoming data is checked against the expected types, and any extra fields not declared in the handler signature are rejected. Validation failures return HTTP 422 (Unprocessable Entity) with a descriptive error message.
 
-- Validates incoming payloads match the expected types
-- **Rejects extra fields** not declared in the handler signature
-- Returns HTTP 422 (Unprocessable Entity) with descriptive error messages on validation failure
-
-For complex input structures, use Pydantic models:
+For complex input structures, use Pydantic models. This lets you pass structured parameters to a query handler while keeping full type safety:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -76,6 +71,67 @@ def get_status(self, req: StatusRequest) -> dict:
     if req.include_details:
         result["steps"] = self.completed_steps
     return result
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="sending-a-query">Sending a query</SectionTab>
+
+Once your workflow is running, you can query its state at any time from the outside using the SDK or the API.
+
+<Tabs>
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+result = client.workflows.executions.query_workflow_execution(
+    execution_id="my-execution-id",
+    name="get_status",
+)
+print(result)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+result = client.workflows.executions.query_workflow_execution(
+    execution_id="my-execution-id",
+    name="get_status",
+)
+print(result)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="api" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/executions/{execution_id}/queries \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "get_status"}'
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "query_name": "get_status",
+  "result": {"progress": 60.0, "completed": false}
+}
 ```
 
   </TabItem>

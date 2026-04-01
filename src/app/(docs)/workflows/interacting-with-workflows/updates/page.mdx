@@ -13,13 +13,11 @@ Updates allow external systems to modify workflow state and receive a response. 
 
 <SectionTab as="h1" sectionId="key-characteristics">Key characteristics</SectionTab>
 
-- Synchronous communication (with response)
-- Can modify workflow state
-- Can return values to the caller
-- Can execute activities
-- More structured than signals
+Updates use synchronous communication and return a response to the caller. Unlike signals, they can modify workflow state, return values, and execute activities as part of handling the request.
 
-<SectionTab as="h1" sectionId="basic-example">Basic example</SectionTab>
+<SectionTab as="h1" sectionId="basic-example">Handling updates</SectionTab>
+
+The workflow below exposes an `update_data` handler that runs an activity, updates internal state, and returns a result to the caller — all in a single synchronous call. This makes updates the right choice when the caller needs confirmation that the operation completed.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -66,13 +64,9 @@ class DataProcessingWorkflow:
 
 <SectionTab as="h1" sectionId="input-validation">Input validation</SectionTab>
 
-Updates validate incoming payloads against their declared parameters. The system automatically:
+Update handlers declare their expected parameters, and the SDK validates the payload before the handler runs. Updates validate incoming payloads against their declared parameters. Incoming data is checked against the expected types, and any extra fields not declared in the handler signature are rejected. Validation failures return HTTP 422 (Unprocessable Entity) with a descriptive error message.
 
-- Validates incoming payloads match the expected types
-- **Rejects extra fields** not declared in the handler signature
-- Returns HTTP 422 (Unprocessable Entity) with descriptive error messages on validation failure
-
-For complex input structures, use Pydantic models:
+For complex input structures, use Pydantic models. This is especially useful when an update carries several related fields that belong together:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -88,6 +82,69 @@ class ConfigUpdate(pydantic.BaseModel):
 async def update_config(self, config: ConfigUpdate) -> dict:
     self.config = config
     return {"success": True}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="sending-an-update">Sending an update</SectionTab>
+
+Once your workflow is running, you can send an update from the outside and receive the handler's return value synchronously.
+
+<Tabs>
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+result = client.workflows.executions.update_workflow_execution(
+    execution_id="my-execution-id",
+    name="update_data",
+    input={"new_value": "hello"},
+)
+print(result)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+result = client.workflows.executions.update_workflow_execution(
+    execution_id="my-execution-id",
+    name="update_data",
+    input={"new_value": "hello"},
+)
+print(result)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="api" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/executions/{execution_id}/updates \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "update_data", "input": {"new_value": "hello"}}'
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "update_name": "update_data",
+  "result": {"success": true, "processed_value": "Processed: HELLO", "message": "Updated from 'default' to 'processed:HELLO'"}
+}
 ```
 
   </TabItem>

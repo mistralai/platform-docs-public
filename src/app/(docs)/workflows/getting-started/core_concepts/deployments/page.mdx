@@ -5,70 +5,26 @@ sidebar_position: 3
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
-import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Deployments
 
-A deployment is a running instance of your workflow workers registered with the Workflows platform. When you start a worker, it connects to the platform, registers its workflows and activities, and starts polling for tasks. There is no separate registration step — everything is handled automatically at startup.
-
-<SectionTab as="h1" sectionId="starting-a-worker">Starting a worker</SectionTab>
-
-<Tabs>
-  <TabItem value="python" label="Python">
-
-```python
-import asyncio
-import mistralai.workflows as workflows
-
-
-@workflows.activity()
-async def my_activity(data: str) -> str:
-    return f"processed: {data}"
-
-
-@workflows.workflow.define(name="my_workflow")
-class MyWorkflow:
-    @workflows.workflow.entrypoint
-    async def run(self, data: str) -> str:
-        return await my_activity(data)
-
-
-async def main():
-    await workflows.run_worker([MyWorkflow])
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-  </TabItem>
-</Tabs>
+A **deployment** is a named group of workers that owns a set of workflow definitions and receives all executions for those definitions. Workers join a deployment by setting the `DEPLOYMENT_NAME` environment variable at startup.
 
 ```bash
-MISTRAL_API_KEY=your_key uv run python my_workflow.py
+DEPLOYMENT_NAME=invoice-service MISTRAL_API_KEY=your-key uv run python worker.py
 ```
 
-<SectionTab as="h1" sectionId="scaling">Scaling</SectionTab>
+All workers running under the same `DEPLOYMENT_NAME` form a single deployment. They share identical workflow definitions and collectively receive all executions routed to that deployment.
 
-Workers are stateless and interchangeable — any worker that has registered a workflow can execute it. To increase throughput, run multiple workers with the same code and API key. Tasks are automatically distributed across all available workers.
+<SectionTab as="h1" sectionId="why-deployments">Why deployments?</SectionTab>
 
-```bash
-MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Worker 1
-MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Worker 2
-MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Worker 3
-```
+Deployments give you four key capabilities:
 
-For environment separation, use different workspaces:
+- **Worker isolation**: In a shared workspace, each deployment exclusively receives executions for its registered workflows. Multiple teams can run workers simultaneously without interfering with each other.
+- **Automatic routing**: When a single active deployment owns a workflow, executions route to it automatically — no manual configuration needed.
+- **Horizontal scaling**: Run multiple workers under the same `DEPLOYMENT_NAME` to increase throughput. The platform distributes tasks across all of them automatically.
+- **Lifecycle tracking**: A deployment is considered active as long as at least one of its workers has heartbeated within the liveness window. Inactive deployments are excluded from routing.
 
-```bash
-MISTRAL_API_KEY=dev_key  uv run python my_workflow.py  # Dev
-MISTRAL_API_KEY=prod_key uv run python my_workflow.py  # Production
-```
-
-:::danger
-Workers using the same API key share the same workspace. Always run the **same code version** across all workers in a workspace to avoid unpredictable behavior.
-:::
-
-:::info
-Out-of-the-box solutions to help you scale your workers automatically are planned for a future release.
+:::tip
+For a complete guide covering execution routing, conflict detection, and the Deployments API, see [Managing Deployments](/workflows/managing-workflows-in-production/deployments).
 :::

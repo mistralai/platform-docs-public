@@ -34,7 +34,8 @@ When **a key is provided**, multiple different activities that use the same key 
 
 ```python
 import mistralai.workflows as workflows
-from mistralai import Mistral, Messages, Depends
+from mistralai.client import Mistral
+from mistralai.workflows import Depends
 from pydantic import BaseModel
 
 def get_mistral_client() -> Mistral:
@@ -46,13 +47,13 @@ def get_mistral_client() -> Mistral:
 
 class CompletionParams(BaseModel):
     model: str
-    messages: Messages
+    messages: list
 
-@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_calls=100))
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=100))
 async def generate_chat_response(
     params: CompletionParams,
     client: Mistral = Depends(get_mistral_client)
-):
+) -> dict:
     """Generates a chat response using a shared client"""
     # This activity can be called from multiple workflows
     # but will share the same rate limit across all of them
@@ -62,6 +63,6 @@ async def generate_chat_response(
   </TabItem>
 </Tabs>
 
-**Behavior**: All workflows calling `generate_chat_response` share the same 100 calls/sec limit. If Workflow A makes 60 calls and Workflow B makes 50 calls in the same second, they compete for the same pool.
+**Behavior**: All workflows calling `generate_chat_response` share the same 100 executions/sec limit. If Workflow A makes 60 calls and Workflow B makes 50 calls in the same second, they compete for the same pool.
 
 **With a key**: Add `key="mistral_api"` to share this limit across multiple activities (e.g., `generate_chat_response`, `generate_embeddings`, `moderate_content`).

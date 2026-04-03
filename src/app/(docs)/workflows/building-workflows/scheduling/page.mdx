@@ -34,9 +34,10 @@ schedule = ScheduleDefinition(
     cron_expressions=["0 0 * * *"]  # Daily at midnight UTC
 )
 
-@workflows.workflow.define(schedules=[schedule])
+@workflows.workflow.define(name="report_workflow", schedules=[schedule])
 class ReportWorkflow:
-    async def run(self, report_type: str = "daily"):
+    @workflows.workflow.entrypoint
+    async def run(self, report_type: str = "daily") -> None:
         # Generate report
         pass
 ```
@@ -46,18 +47,22 @@ class ReportWorkflow:
 
 <SectionTab as="h1" sectionId="defining-schedule-policies">Defining Schedule Policies</SectionTab>
 
-Customize schedule behavior with policies:
+Policies control what happens when schedules are missed or overlap:
+
+- **`catchup_window_seconds`** — If the platform was down or missed scheduled runs, it will retroactively trigger all missed executions within this window. Runs older than the window are skipped.
+- **`overlap`** — What to do when a new run is due but the previous one is still running. `SKIP` drops the new run, `BUFFER_ONE` queues one pending run, and `ALLOW_ALL` starts all runs concurrently.
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
-from mistralai.workflows.models import SchedulePolicy, ScheduleOverlapPolicy
+import mistralai.workflows as workflows
+from mistralai.workflows.models import ScheduleDefinition, SchedulePolicy, ScheduleOverlapPolicy
 
 # Override default schedule policy
 schedule_policy = SchedulePolicy(
-    catchup_window=timedelta(days=1),  # Allow 1 day of catchup
-    overlap_policy=ScheduleOverlapPolicy.SKIP,  # Skip overlapping executions
+    catchup_window_seconds=86400,  # Allow 1 day of catchup
+    overlap=ScheduleOverlapPolicy.SKIP,  # Skip overlapping executions
 )
 
 schedule = ScheduleDefinition(
@@ -66,9 +71,10 @@ schedule = ScheduleDefinition(
     policy=schedule_policy
 )
 
-@workflows.workflow.define(schedules=[schedule])
+@workflows.workflow.define(name="report_workflow", schedules=[schedule])
 class ReportWorkflow:
-    async def run(self, report_type: str = "daily"):
+    @workflows.workflow.entrypoint
+    async def run(self, report_type: str = "daily") -> None:
         # Generate report
         pass
 ```
@@ -96,7 +102,6 @@ class ReportWorkflow:
   <TabItem value="python" label="Python">
 
 ```python
-from datetime import timedelta
 import mistralai.workflows as workflows
 from mistralai.workflows.models import ScheduleDefinition, SchedulePolicy, ScheduleOverlapPolicy
 
@@ -105,14 +110,15 @@ backup_schedule = ScheduleDefinition(
     input={"retention_days": 30},
     cron_expressions=["0 3 * * 6"],
     policy=SchedulePolicy(
-        catchup_window=timedelta(days=7),
-        overlap_policy=ScheduleOverlapPolicy.SKIP,
+        catchup_window_seconds=604800,  # 7 days
+        overlap=ScheduleOverlapPolicy.SKIP,
     )
 )
 
-@workflows.workflow.define(schedules=[backup_schedule])
+@workflows.workflow.define(name="database_backup_workflow", schedules=[backup_schedule])
 class DatabaseBackupWorkflow:
-    async def run(self, retention_days: int = 30):
+    @workflows.workflow.entrypoint
+    async def run(self, retention_days: int = 30) -> None:
         print(f"Starting backup with {retention_days} day retention")
         # Backup implementation here
 

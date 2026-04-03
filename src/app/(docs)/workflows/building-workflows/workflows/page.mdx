@@ -329,7 +329,7 @@ class OptionalWorkflow:
 Unions that combine a `BaseModel` with a non-model type (`str`, `int`, etc.) are not supported and will fail when the `@workflow.entrypoint` decorator is applied:
 
 ```python
-# ❌ Raises TypeError at class definition time
+# ❌ Raises an error at class definition time
 @workflow.define(name="my_workflow")
 class MyWorkflow:
     @workflow.entrypoint
@@ -338,7 +338,7 @@ class MyWorkflow:
 ```
 
 ```
-TypeError: Parameter 'params' of 'run' has unsupported union members: str.
+Parameter 'params' of 'run' has unsupported union members: str.
 Union inputs only support Pydantic BaseModel subclasses and None.
 Use a dedicated BaseModel instead.
 ```
@@ -452,7 +452,8 @@ schedule = ScheduleDefinition(
 
 @workflows.workflow.define(name="report_workflow", schedules=[schedule])
 class ReportWorkflow:
-    async def run(self, report_type: str = "daily", include_details: bool = False):
+    @workflows.workflow.entrypoint
+    async def run(self, report_type: str = "daily", include_details: bool = False) -> None:
         # Generate report
         pass
 ```
@@ -509,7 +510,7 @@ handle = await workflow.execute_workflow(
 
 ### 6. Waiting for Conditions
 
-Wait for conditions to be met:
+Pause the workflow until a condition becomes true — typically set by an incoming signal or update. The workflow sleeps without consuming resources. If the condition is not met within the `timeout`, a `TimeoutError` is raised.
 
 ```python
 from mistralai.workflows import workflow
@@ -561,7 +562,11 @@ All workflow events up to the reset point are copied to the new execution. The w
 Resetting should only be used after fixing the underlying problem. It's best practice to provide a reason for the reset, which is recorded in the workflow's event history.
 
 ```python
-await client.reset_workflow(
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+client.workflows.executions.reset_workflow(
     execution_id="your-execution-id",
     event_id=42,  # Must be a WORKFLOW_TASK_COMPLETED event
     reason="Bug fixed in activity logic",
@@ -572,11 +577,11 @@ await client.reset_workflow(
 
 ### 2. Workflow Execution Context
 
-Access workflow execution information:
+Retrieve the current execution's unique identifier at runtime. This is useful for logging, correlating events across services, or passing the execution ID to external systems so they can send signals back.
 
 ```python
-from mistralai.workflows import workflow
-execution_id = workflow.get_execution_id()
+import mistralai.workflows as workflows
+execution_id = workflows.get_execution_id()
 ```
 
 <SectionTab as="h1" sectionId="workflow-vs-activity">Workflow vs Activity</SectionTab>

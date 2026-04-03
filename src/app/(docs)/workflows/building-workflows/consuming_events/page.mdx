@@ -19,23 +19,22 @@ Subscribe to real-time events from workflows and activities using the Workflows 
   <TabItem value="python" label="Python">
 
 ```python
-from mistralai.workflows.client import get_mistral_client
+import os
+from mistralai.client import Mistral
 
-async with get_mistral_client(
-    server_url="https://api.mistral.ai",
-    api_key=os.environ["MISTRAL_API_KEY"],
-) as client:
-    # Start a workflow
-    execution = await client.workflows.execute_workflow_async(
-        workflow_identifier="my-workflow",
-        input=params,
-    )
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
-    # Stream all events for this execution
-    async for event in client.workflows.events.get_stream_events(
-        workflow_exec_id=execution.execution_id,
-    ):
-        print(f"[{event.stream}] {event.data}")
+# Start a workflow
+execution = client.workflows.execute_workflow(
+    workflow_identifier="my-workflow",
+    input=params,
+)
+
+# Stream all events for this execution
+for event in client.workflows.events.get_stream_events(
+    workflow_exec_id=execution.execution_id,
+):
+    print(f"[{event.stream}] {event.data}")
 ```
 
   </TabItem>
@@ -193,6 +192,8 @@ class ParentWorkflow:
 
 ### Consuming Events from Workflow Trees
 
+To receive events from a parent workflow and all its children in a single stream, subscribe using `root_workflow_exec_id`. Each event includes `workflow_context` so you can tell which workflow in the tree emitted it — if `parent_workflow_exec_id` is set, the event came from a child workflow.
+
 <Tabs>
   <TabItem value="python" label="Python">
 
@@ -282,6 +283,8 @@ The SDK uses typed event responses discriminated by `event_type`. Each event is 
 <SectionTab as="h1" sectionId="best-practices">Best practices</SectionTab>
 
 ### 1. Always Handle Disconnection
+
+Streaming connections can drop at any time. Use `start_seq` to resume from the last received event, and implement exponential backoff to avoid hammering the server. The `is_terminal_status()` check below is your own helper — check the event type against terminal statuses like `WORKFLOW_EXECUTION_COMPLETED`, `WORKFLOW_EXECUTION_FAILED`, or `WORKFLOW_EXECUTION_CANCELED`.
 
 <Tabs>
   <TabItem value="python" label="Python">

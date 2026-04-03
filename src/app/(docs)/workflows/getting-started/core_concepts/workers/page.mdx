@@ -18,6 +18,8 @@ Workers are also fault-tolerant from the platform's perspective: if a worker cra
 
 <SectionTab as="h1" sectionId="starting-a-worker">Starting a worker</SectionTab>
 
+Call `run_worker()` with the list of workflow classes the worker should handle. The worker connects to the platform, registers everything, and starts polling for tasks. It runs until the process is stopped.
+
 ```python
 import asyncio
 import mistralai.workflows as workflows
@@ -28,6 +30,8 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+The `MISTRAL_API_KEY` environment variable determines which workspace the worker connects to. All workers sharing the same key share the same task queue.
 
 ```bash
 MISTRAL_API_KEY=your_key uv run python my_worker.py
@@ -45,7 +49,7 @@ MISTRAL_API_KEY=your_key uv run python my_worker.py
 
 <SectionTab as="h1" sectionId="worker-info">Worker info</SectionTab>
 
-Verify worker connection details:
+To verify that a worker is connected and inspect its configuration, call the `whoami` endpoint:
 
 ```
 GET /v1/workflows/workers/whoami
@@ -58,3 +62,9 @@ GET /v1/workflows/workers/whoami
   "tls": false
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `scheduler_url` | The platform endpoint the worker is connected to |
+| `namespace` | The isolation boundary for this workspace's workflows |
+| `tls` | Whether the connection to the scheduler is encrypted |

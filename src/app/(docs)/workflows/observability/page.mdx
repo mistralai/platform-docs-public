@@ -39,20 +39,34 @@ Trace collection is sampled. By default the worker uses a parent-based sampler w
 
 ### Fetching workflow traces
 
+Three methods are available to retrieve trace data for a given execution:
+
+- **`get_workflow_execution_trace_otel()`** — Returns the raw OpenTelemetry trace data (spans with timings, attributes, and parent-child relationships). Use this to feed traces into your own observability backend (Jaeger, Grafana Tempo, etc.).
+- **`get_workflow_execution_trace_summary()`** — Returns a high-level summary of the execution: total duration, activity count, error count. Useful for dashboards and quick status checks.
+- **`get_workflow_execution_trace_events()`** — Returns a chronological list of events in the execution. Set `include_internal_events=False` to filter out platform-internal events and see only your workflow and activity events.
+
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
-# Get trace data
-trace = await client.get_workflow_execution_trace_otel(execution_id)
+from mistralai.client import Mistral
 
-# Get trace summary
-summary = await client.get_workflow_execution_trace_summary(execution_id)
+client = Mistral(api_key="your_api_key")
 
-# Get detailed events
-events = await client.get_workflow_execution_trace_events(
-    execution_id,
-    include_internal_events=False  # Hide system events
+# Get raw OpenTelemetry trace data (spans, timings, attributes)
+trace = client.workflows.executions.get_workflow_execution_trace_otel(
+    execution_id=execution_id,
+)
+
+# Get high-level summary (duration, activity count, errors)
+summary = client.workflows.executions.get_workflow_execution_trace_summary(
+    execution_id=execution_id,
+)
+
+# Get chronological event list
+events = client.workflows.executions.get_workflow_execution_trace_events(
+    execution_id=execution_id,
+    include_internal_events=False,  # Hide system events
 )
 ```
 

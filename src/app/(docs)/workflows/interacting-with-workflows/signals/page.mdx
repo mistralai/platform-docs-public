@@ -25,7 +25,7 @@ The workflow below listens for `add_notification` signals indefinitely. Each tim
 ```python
 import mistralai.workflows as workflows
 
-@workflows.workflow.define()
+@workflows.workflow.define(name="notification_workflow")
 class NotificationWorkflow:
     def __init__(self):
         self.notifications = []
@@ -36,7 +36,7 @@ class NotificationWorkflow:
         print(f"Received notification: {message} (Priority: {priority})")
 
     @workflows.workflow.entrypoint
-    async def run(self):
+    async def run(self) -> None:
         print("Workflow started, waiting for notifications...")
         while True:
             await workflows.workflow.wait_condition(lambda: len(self.notifications) > 0)
@@ -91,23 +91,6 @@ Once your workflow is running and listening for signals, you can send one from t
 
 <Tabs>
   <TabItem value="python" label="python">
-    <Tabs groupId="sdk-version">
-      <TabItem value="v1" label="V1" default>
-
-```python
-from mistralai import Mistral
-
-client = Mistral(api_key="your_api_key")
-
-client.workflows.executions.signal_workflow_execution(
-    execution_id="my-execution-id",
-    name="add_notification",
-    input={"message": "Deployment complete", "priority": 2},
-)
-```
-
-      </TabItem>
-      <TabItem value="v2" label="V2">
 
 ```python
 from mistralai.client import Mistral
@@ -121,8 +104,6 @@ client.workflows.executions.signal_workflow_execution(
 )
 ```
 
-      </TabItem>
-    </Tabs>
   </TabItem>
   <TabItem value="api" label="curl">
 

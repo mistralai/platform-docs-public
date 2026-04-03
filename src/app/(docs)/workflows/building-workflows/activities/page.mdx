@@ -45,7 +45,7 @@ async def my_activity(input_data: str, count: int = 1) -> dict:
 
 ### 1. Activity Naming
 
-Customize activity identification with:
+By default, an activity is registered using its Python function name. Use the `name` parameter to set a custom name — this is the identifier used for registration, execution routing, and what appears in traces and the console.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -63,27 +63,25 @@ Customize activity identification with:
 
 ### 2. Timeouts
 
-Configure execution time limits to prevent runaway activities:
+`start_to_close_timeout` sets the maximum time an activity can run from the moment it starts executing to the moment it must return a result. If the activity exceeds this duration, it is terminated and treated as a failure (which may trigger a retry). Without a timeout, a hung activity blocks indefinitely.
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
-from datetime import datetime
+from datetime import timedelta
 
 @workflows.activity(
-    start_to_close_timeout=datetime.timedelta(minutes=10)
+    start_to_close_timeout=timedelta(minutes=10)
 )
 ```
 
   </TabItem>
 </Tabs>
 
-[Learn more about timeouts](/workflows/managing-workflows-in-production/rate_limiting)
-
 ### 3. Retry Policies
 
-Automatic retries with configurable policies to handle transient failures:
+When an activity fails, it is retried automatically up to `retry_policy_max_attempts` times. The `retry_policy_backoff_coefficient` controls exponential backoff between retries — a coefficient of `2.0` means the delay doubles after each attempt (e.g., 1s, 2s, 4s, 8s). After all retries are exhausted, the failure propagates to the workflow.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -275,8 +273,6 @@ class MixedWorkflow:
 | ---------------- | --------------- | --------------------------- |
 | Local Activity   | < 10ms          | Quick computations, lookups |
 | Regular Activity | 50-200ms        | API calls, complex logic    |
-
-### Limitations
 
 ### Limitations
 

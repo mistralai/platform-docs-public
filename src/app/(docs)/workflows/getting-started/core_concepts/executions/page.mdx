@@ -13,24 +13,45 @@ An execution is a single invocation of a workflow. Each execution has a unique `
 
 <SectionTab as="h1" sectionId="triggering-an-execution">Triggering an execution</SectionTab>
 
+You can start a workflow execution from client code using the Mistral SDK. The `workflow_identifier` must match the `name` you passed to `@workflows.workflow.define()`. If you don't provide an `execution_id`, the platform generates one automatically.
+
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key="your_key")
 
-execution = client.workflows.execute(
+execution = client.workflows.execute_workflow(
     workflow_identifier="my_workflow",
     input={"data": "hello"},
     execution_id="my-run-2024-01-15",  # optional custom ID
 )
-print(execution.execution_id, execution.status)
+print(execution.model_dump_json(indent=2))
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "workflow_name": "my_workflow",
+  "execution_id": "my-run-2024-01-15",
+  "root_execution_id": "my-run-2024-01-15",
+  "status": "RUNNING",
+  "start_time": "2026-04-02T08:45:45.578013Z",
+  "end_time": null,
+  "result": null,
+  "parent_execution_id": null,
+  "total_duration_ms": null
+}
 ```
 
   </TabItem>
 </Tabs>
+
+The returned `execution` object contains the `execution_id` and the initial `status` (typically `RUNNING`). You can also trigger executions from the [Mistral Console](https://console.mistral.ai/) or via a schedule.
 
 <SectionTab as="h1" sectionId="execution-statuses">Execution statuses</SectionTab>
 
@@ -50,15 +71,4 @@ An **execution** is a workflow invocation with a stable `execution_id` that pers
 
 Only one run can be active at a time. API action endpoints — `/cancel`, `/terminate`, `/signals`, `/queries`, `/updates` — always target the **latest run** of an execution.
 
-<SectionTab as="h1" sectionId="api-endpoints">API endpoints</SectionTab>
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /v1/workflows/{id}/execute` | Trigger a new execution |
-| `GET /v1/workflows/runs` | List all runs |
-| `GET /v1/workflows/executions/{execution_id}` | Get latest run of an execution |
-| `POST /v1/workflows/executions/{id}/cancel` | Cancel gracefully |
-| `POST /v1/workflows/executions/{id}/terminate` | Stop immediately |
-| `POST /v1/workflows/executions/{id}/reset` | Reset to a previous event |
-
-See the full [API reference](/api/endpoint/beta/workflows/executions) for parameters and response schemas.

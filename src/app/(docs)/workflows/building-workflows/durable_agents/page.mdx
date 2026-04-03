@@ -105,7 +105,7 @@ agent = workflows_mistralai.Agent(
 
 ### Runner
 
-The `Runner` executes an agent with user inputs and manages the conversation loop:
+The `Runner` executes an agent with user inputs and manages the conversation loop. It calls the model, processes tool calls, and repeats until the agent produces a final response or reaches `max_turns`. If `max_turns` is reached, the runner returns whatever outputs have been collected so far.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -118,12 +118,14 @@ outputs = await workflows_mistralai.Runner.run(
     agent=agent,
     inputs="What is the interest rate for 2024?",
     session=session,
-    max_turns=10,
+    max_turns=10,  # Maximum model call iterations before stopping
 )
 ```
 
   </TabItem>
 </Tabs>
+
+The returned `outputs` is a list of output items produced by the agent during the run (text responses, tool results, handoff results).
 
 ### Sessions
 
@@ -142,9 +144,9 @@ Here's a simple agent workflow that uses an activity as a tool:
   <TabItem value="python" label="Python">
 
 ```python
-import mistralai
 import mistralai.workflows as workflows
 import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import TextChunk
 
 
 @workflows.activity()
@@ -180,7 +182,7 @@ class FinanceAgentWorkflow:
 
         answer = "\n".join([
             output.text for output in outputs
-            if isinstance(output, mistralai.TextChunk)
+            if isinstance(output, TextChunk)
         ])
 
         return {"answer": answer}
@@ -296,16 +298,16 @@ Use Mistral's built-in tools alongside activities:
   <TabItem value="python" label="Python">
 
 ```python
-import mistralai
 import mistralai.workflows as workflows
 import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import WebSearchTool
 
 agent = workflows_mistralai.Agent(
     model="mistral-medium-latest",
     name="web-search-agent",
     description="Agent with web search capability",
     instructions="Use web search to answer user questions",
-    tools=[mistralai.WebSearchTool()],
+    tools=[WebSearchTool()],
 )
 ```
 
@@ -314,10 +316,14 @@ agent = workflows_mistralai.Agent(
 
 Available built-in tools:
 
-- `mistralai.WebSearchTool()` - Web search capability
-- `mistralai.CodeInterpreterTool()` - Code execution
-- `mistralai.ImageGenerationTool()` - Image generation
-- `mistralai.DocumentLibraryTool()` - Document analysis
+| Tool | Description |
+|------|-------------|
+| `WebSearchTool()` | Search the web and return results to the model |
+| `CodeInterpreterTool()` | Execute Python code in a sandboxed environment |
+| `ImageGenerationTool()` | Generate images from text descriptions |
+| `DocumentLibraryTool()` | Analyze and extract information from uploaded documents |
+
+These tools are executed server-side by the Mistral platform — they do not run in your worker process. Pass them in the `tools` list alongside any activity-based tools.
 
 <SectionTab as="h1" sectionId="session-types">Session Types</SectionTab>
 
@@ -393,8 +399,9 @@ A full example combining activities, handoffs and workflow orchestration:
 
 ```python
 import asyncio
-import mistralai
 import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import TextChunk
 
 
 @workflows.activity()
@@ -449,7 +456,7 @@ class DealAnalysisWorkflow:
 
         analysis = "\n".join([
             output.text for output in outputs
-            if isinstance(output, mistralai.TextChunk)
+            if isinstance(output, TextChunk)
         ])
 
         return {"analysis": analysis}

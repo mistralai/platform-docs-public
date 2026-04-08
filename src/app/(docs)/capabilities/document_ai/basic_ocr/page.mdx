@@ -15,6 +15,7 @@ import OCRWithImageBase64Tab from './ocr_with_image_base64_tab/_page.mdx';
 import OCRWithPDFUrlTab from './ocr_with_pdf_url_tab/_page.mdx';
 import OCRWithPDFBase64Tab from './ocr_with_pdf_base64_tab/_page.mdx';
 import OCRWithPDFUploadedTab from './ocr_with_pdf_uploaded_tab/_page.mdx';
+import OCRWithConfidenceScoresTab from './ocr_with_confidence_scores_tab/_page.mdx';
 
 # Document AI - OCR Processor 
 
@@ -40,6 +41,7 @@ Mistral Document AI API comes with a Document OCR (Optical Character Recognition
 - Option to **extract headers and footers** via the `extract_header` and the `extract_footer` parameter, when used, the headers and footers content will be provided in the `header` and `footer` fields. By default, headers and footers are considered as part of the main content output.
 - Returns results in markdown format for easy parsing and rendering.
 - Handles complex layouts including multi-column text and mixed content and returns hyperlinks when available.
+- Provides **confidence scores** for extracted content at word or page granularity via the `confidence_scores_granularity` parameter.
 - Processes documents at scale with high accuracy
 - Supports multiple document formats including:
     - `image_url`: png, jpeg/jpg, avif and more...
@@ -89,7 +91,8 @@ The output will be a JSON object containing the extracted text content, images b
       "hyperlinks": list, # Hyperlinks detected
       "header": str|null, # Header content when using `extract_header=True`
       "footer": str|null, # Footer content when using `extract_footer=True`
-      "dimensions": dict # The dimensions of the page
+      "dimensions": dict, # The dimensions of the page
+      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
     }
   ],
   "model": str, # The model used for the OCR
@@ -132,7 +135,8 @@ The output will be a JSON object containing the extracted text content, images b
       "hyperlinks": list, # Hyperlinks detected
       "header": str|null, # Header content when using `extract_header=True`
       "footer": str|null, # Footer content when using `extract_footer=True`
-      "dimensions": dict # The dimensions of the page
+      "dimensions": dict, # The dimensions of the page
+      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
     }
   ],
   "model": str, # The model used for the OCR
@@ -148,6 +152,23 @@ When extracting images and tables they will be replaced with placeholders, such 
 
 You can map them to the actual images and tables by using the `images` and `tables` fields.
 :::
+
+<SectionTab as="h1" sectionId="confidence-scores">Confidence Scores</SectionTab>
+
+### Extract Confidence Scores
+
+The OCR processor can return confidence scores for extracted content to help you assess recognition quality. Use the `confidence_scores_granularity` parameter to control the level of detail:
+
+| Value | Description |
+| --- | --- |
+| `"page"` | Returns a `confidence_scores` object on each page with aggregate statistics (`average_page_confidence_score`, `minimum_page_confidence_score`). |
+| `"word"` | Returns everything from `"page"`, plus a `word_confidence_scores` array with per-word confidence values on each page and each table entry. |
+
+<ExplorerTabs id="confidence-scores">
+  <ExplorerTab value="confidence-scores-example" label="Confidence Scores">
+    <OCRWithConfidenceScoresTab/>
+  </ExplorerTab>
+</ExplorerTabs>
 
 <SectionTab as="h1" sectionId="ocr-at-scale">OCR at Scale</SectionTab>
 

@@ -163,15 +163,17 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 
 ### Field Types
 
-| Field Type      | Description      | Properties                                                                    |
-| --------------- | ---------------- | ----------------------------------------------------------------------------- |
-| `TextField`     | Text input       | `description`, `pattern` (optional regex)                                     |
-| `NumberField`   | Numeric input    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum` |
-| `DateTimeField` | Date/time picker | `description`                                                                 |
-| `DateField`     | Date picker      | `description`                                                                 |
-| `SingleChoice`  | Dropdown/select  | `options` (list of tuples or strings), `description`                          |
-| `MultiChoice`   | Multi-select     | `options` (list of tuples or strings), `description`                          |
-| `FileField`     | File upload      | `description`, `multiple` (default `False`)                                   |
+| Field Type      | Description      | Properties                                                                                        |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------------- |
+| `TextField`     | Text input       | `description`, `pattern` (optional regex), `prefilled_value`                                      |
+| `NumberField`   | Numeric input    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum`, `prefilled_value`   |
+| `DateTimeField` | Date/time picker | `description`, `prefilled_value` (ISO 8601 datetime string)                                       |
+| `DateField`     | Date picker      | `description`, `prefilled_value` (ISO 8601 date string)                                           |
+| `SingleChoice`  | Dropdown/select  | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
+| `MultiChoice`   | Multi-select     | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
+| `FileField`     | File upload      | `description`, `multiple` (default `False`)                                                       |
+
+All field types (except `FileField`) support an optional `prefilled_value` parameter. This is a **UI hint only** — it pre-fills the form field but does not make the field optional. The value must still be explicitly submitted by the user. Invalid prefilled values (out of bounds, non-matching pattern, unknown option) are silently ignored.
 
 ### TextField
 
@@ -179,7 +181,7 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
   <TabItem value="python" label="Python">
 
 ```python
-name: str = TextField(description="Your name")
+name: str = TextField(description="Your name", prefilled_value="John Doe")
 email: str = TextField(
     description="Email address",
     pattern=r"^[\w.-]+@[\w.-]+\.\w+$",  # Optional regex validation
@@ -199,6 +201,7 @@ amount: float = NumberField(
     description="Amount",
     minimum=0,           # Inclusive minimum
     maximum=10000,       # Inclusive maximum
+    prefilled_value=100,   # Pre-filled value
 )
 price: float = NumberField(
     description="Price",
@@ -218,7 +221,10 @@ price: float = NumberField(
 ```python
 from datetime import datetime
 
-scheduled_at: datetime = DateTimeField(description="Schedule date and time")
+scheduled_at: datetime = DateTimeField(
+    description="Schedule date and time",
+    prefilled_value="2025-01-15T10:00:00Z",  # ISO 8601 datetime string
+)
 ```
 
   </TabItem>
@@ -232,7 +238,10 @@ scheduled_at: datetime = DateTimeField(description="Schedule date and time")
 ```python
 from datetime import date
 
-scheduled_at: date = DateField(description="Schedule date")
+scheduled_at: date = DateField(
+    description="Schedule date",
+    prefilled_value="2025-01-15",  # ISO 8601 date string
+)
 ```
 
   </TabItem>
@@ -252,6 +261,7 @@ priority: str = SingleChoice(
         ("high", "High Priority"),
     ],
     description="Select priority",
+    prefilled_value="medium",  # Pre-selected option
 )
 
 # Simple string options (value = label)
@@ -278,6 +288,7 @@ tags: list[str] = MultiChoice(
         ("infra", "Infrastructure"),
     ],
     description="Select applicable tags",
+    prefilled_value=["frontend"],  # Pre-selected options
 )
 
 # Simple string options (value = label)

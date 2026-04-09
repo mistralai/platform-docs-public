@@ -367,7 +367,12 @@ async function main(config: CollectorConfig = DEFAULT_CONFIG) {
   }
 
   const results = await Promise.all(collectors);
-  const docs = results.flat();
+  const seenIds = new Set<string>();
+  const docs = results.flat().filter(doc => {
+    if (seenIds.has(doc.id)) return false;
+    seenIds.add(doc.id);
+    return true;
+  });
 
   // Separate docs by type for different search configurations
   const docsByType = docs.reduce(

@@ -11865,6 +11865,11 @@ components:
           - $ref: '#/components/schemas/OCRPageDimensions'
           - type: 'null'
           description: The dimensions of the PDF Page's screenshot image
+        confidence_scores:
+          anyOf:
+          - $ref: '#/components/schemas/OCRPageConfidenceScores'
+          - type: 'null'
+          description: Confidence scores for the page. Populated when `confidence_scores_granularity` is set in the request.
       title: OCRPageObject
       required:
       - index
@@ -11932,6 +11937,15 @@ components:
           - type: 'null'
           title: Document Annotation Prompt
           description: Optional prompt to guide the model in extracting structured output from the entire document. A document_annotation_format must be provided.
+        confidence_scores_granularity:
+          anyOf:
+          - type: string
+            enum:
+            - word
+            - page
+          - type: 'null'
+          title: Confidence Scores Granularity
+          description: Granularity level for confidence scores. Set to `"page"` to get aggregate statistics (average and minimum) per page, or `"word"` to also get per-word scores on each page and table. Defaults to `null` (no confidence scores returned).
         table_format:
           anyOf:
           - type: string
@@ -11999,11 +12013,71 @@ components:
           - markdown
           - html
           description: Format of the table
+        word_confidence_scores:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/OCRConfidenceScore'
+          - type: 'null'
+          title: Word Confidence Scores
+          description: Per-word confidence scores. Returned when `confidence_scores_granularity` is set to `"word"`.
       title: OCRTableObject
       required:
       - id
       - content
       - format
+      additionalProperties: false
+    OCRConfidenceScore:
+      type: object
+      properties:
+        confidence:
+          type: number
+          title: Confidence
+          minimum: 0
+          maximum: 1
+          description: Confidence score for the word, between 0 and 1.
+        start_index:
+          type: integer
+          title: Start Index
+          minimum: 0
+          description: Start index of the word in the markdown string.
+        text:
+          type: string
+          title: Text
+          description: The word text.
+      title: OCRConfidenceScore
+      required:
+      - confidence
+      - start_index
+      - text
+      additionalProperties: false
+    OCRPageConfidenceScores:
+      type: object
+      properties:
+        average_page_confidence_score:
+          type: number
+          title: Average Page Confidence Score
+          minimum: 0
+          maximum: 1
+          description: Average confidence score across all words on the page, between 0 and 1.
+        minimum_page_confidence_score:
+          type: number
+          title: Minimum Page Confidence Score
+          minimum: 0
+          maximum: 1
+          description: Minimum confidence score across all words on the page, between 0 and 1.
+        word_confidence_scores:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/OCRConfidenceScore'
+          - type: 'null'
+          title: Word Confidence Scores
+          description: Per-word confidence scores. Returned when `confidence_scores_granularity` is set to `"word"`.
+      title: OCRPageConfidenceScores
+      required:
+      - average_page_confidence_score
+      - minimum_page_confidence_score
       additionalProperties: false
     OCRUsageInfo:
       type: object

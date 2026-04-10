@@ -3,13 +3,13 @@ import { cn } from '@/lib/utils';
 import { CodeBlock } from '@/components/common/code-block';
 import { Badge } from '@/components/ui/badge';
 import Admonition from '@/components/common/admonition';
-import { Bullet } from '@/components/ui/bullet';
 import { markdownTableComponents } from '@/components/common/markdown-table';
 import { HeadingTitle } from '../layout/heading';
 import type { MDXComponents } from 'mdx/types';
 import Link from 'next/link';
 import { AudioPlayer } from '../common/audio';
 import { Image } from './image';
+import { OrderedList, UnorderedList, ListItem } from './ordered-list';
 
 type HeadingProps = React.DetailedHTMLProps<
   React.HTMLAttributes<HTMLHeadingElement>,
@@ -222,20 +222,9 @@ const baseComponents = {
   },
   li: ({ children, className, ref: _r, ...props }: LiProps) => {
     return (
-      <li
-        className={cn(
-          'relative list-none text-secondary-foreground',
-          className
-        )}
-        {...props}
-      >
-        <Bullet
-          className="absolute -left-2 top-[0.75em] -translate-y-1/2"
-          size="sm"
-          data-bullet
-        />
+      <ListItem className={className} {...props}>
         {children}
-      </li>
+      </ListItem>
     );
   },
   a: ({ children, className, href, ref: _r, ...props }: AnchorProps) => {
@@ -271,12 +260,24 @@ const baseComponents = {
     HTMLUListElement
   >) => {
     return (
-      <ul
-        className={cn('list-none text-secondary-foreground', className)}
-        {...props}
-      >
+      <UnorderedList className={className} {...props}>
         {children}
-      </ul>
+      </UnorderedList>
+    );
+  },
+  ol: ({
+    children,
+    className,
+    ref: _r,
+    ...props
+  }: React.DetailedHTMLProps<
+    React.OlHTMLAttributes<HTMLOListElement>,
+    HTMLOListElement
+  >) => {
+    return (
+      <OrderedList className={className} {...props}>
+        {children}
+      </OrderedList>
     );
   },
   Audio: AudioPlayer,

@@ -1,0 +1,344 @@
+---
+id: connectors_confirmation
+title: Human-in-the-loop
+sidebar_position: 4
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Human-in-the-loop
+
+Some tool calls, like sending an email or modifying data, are safer with human approval. The `requires_confirmation` parameter lets you intercept these calls before they run, so a user or your system can **approve or deny each action**.
+
+:::info
+This works for all tool types: Connectors, built-in tools (such as `web_search_premium`), and local functions (Python SDK only).
+:::
+
+You can implement the confirmation flow in two ways:
+
+- **[REST API](#raw-api)**: manage conversation IDs and tool call IDs yourself. Works with any language or HTTP client.
+- **[Python SDK](#python-sdk)**: use `RunContext` and `DeferredToolCallsException` for a higher-level flow that handles the plumbing for you.
+
+<SectionTab as="h1" sectionId="configuration">Configuration</SectionTab>
+
+Add `requires_confirmation` to the `tool_configuration` of any Connector or built-in tool, and list the tool names that require approval:
+
+```json
+[
+  {
+    "type": "connector",
+    "connector_id": "gmail",
+    "tool_configuration": {
+      "requires_confirmation": ["gmail_search"]
+    }
+  },
+  {
+    "type": "web_search_premium",
+    "tool_configuration": {
+      "requires_confirmation": ["web_search", "news_search"]
+    }
+  }
+]
+```
+
+<SectionTab as="h1" sectionId="raw-api">REST API flow</SectionTab>
+
+The confirmation flow has two steps:
+
+1. [Start the conversation](#start-conversation) and get a pending `function.call`.
+2. [Approve](#approve) or [deny](#deny) the call to resume the conversation.
+
+<SectionTab as="h2" variant="secondary" sectionId="start-conversation">Start the conversation</SectionTab>
+
+The API returns a pending `function.call` entry instead of running the tool.
+
+```bash
+RESPONSE=$(curl -s -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-medium-latest",
+    "inputs": "What is the title of my latest email?",
+    "tools": [
+      {
+        "type": "connector",
+        "connector_id": "gmail",
+        "tool_configuration": {
+          "requires_confirmation": ["gmail_search"]
+        }
+      }
+    ]
+  }')
+
+CONVERSATION_ID=$(echo "$RESPONSE" | jq -r '.conversation_id')
+TOOL_CALL_ID=$(echo "$RESPONSE" | jq -r '.outputs[0].tool_call_id')
+```
+
+The response contains a pending `function.call`:
+
+```json
+{
+  "conversation_id": "conv_abc123...",
+  "outputs": [
+    {
+      "type": "function.call",
+      "tool_call_id": "WJfo42Ow3",
+      "name": "gmail_search",
+      "arguments": "{\"limit\": 1}",
+      "confirmation_status": "pending"
+    }
+  ]
+}
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="approve">Approve the tool call</SectionTab>
+
+Send `"allow"` to run the tool and get the model response.
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/conversations/$CONVERSATION_ID" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool_confirmations": [
+      {"tool_call_id": "'$TOOL_CALL_ID'", "confirmation": "allow"}
+    ]
+  }'
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="deny">Deny the tool call</SectionTab>
+
+Send `"deny"` to reject the call. The model handles the rejection gracefully.
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/conversations/$CONVERSATION_ID" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool_confirmations": [
+      {"tool_call_id": "'$TOOL_CALL_ID'", "confirmation": "deny"}
+    ]
+  }'
+```
+
+:::tip
+Multiple tool calls can be pending at once. You can approve or deny them individually or as a batch in a single request.
+:::
+
+<SectionTab as="h1" sectionId="python-sdk">Python SDK flow</SectionTab>
+
+:::info
+`DeferredToolCallsException` requires `mistralai` **v2.4+** and the `mcp` extra (`pip install mistralai[mcp]`). If you're on an earlier version, use the [REST API flow](#raw-api).
+:::
+
+The Python SDK provides `RunContext` and `DeferredToolCallsException` to handle confirmation flows without managing conversation IDs and tool call IDs yourself.
+
+`run_async` runs the conversation loop and raises `DeferredToolCallsException` when a tool requires confirmation. Call `dc.confirm()` or `dc.reject()` on each deferred call, then loop back to resume.
+
+<SectionTab as="h2" variant="secondary" sectionId="local-functions">Local functions</SectionTab>
+
+Register local Python functions with `register_func` and set `requires_confirmation=True` for functions that need approval.
+
+```python
+import asyncio
+import os
+import random
+
+from mistralai.client import Mistral
+from mistralai.extra.run.context import RunContext
+from mistralai.extra.exceptions import DeferredToolCallsException
+
+
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    temp = random.randint(10, 30)
+    return f"The weather in {city} is {random.choice(['sunny', 'cloudy'])}, {temp}C"
+
+
+def book_flight(destination: str, date: str) -> str:
+    """Book a flight to a destination."""
+    return f"Flight booked to {destination} on {date}. Confirmation: FL-{random.randint(10000, 99999)}"
+
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    conversation_id = None
+    pending_inputs = [
+        {"role": "user", "content": "I need a vacation somewhere warm next Friday. Can you help?"}
+    ]
+
+    while True:
+        async with RunContext(model="mistral-large-latest") as run_ctx:
+            run_ctx.conversation_id = conversation_id
+            run_ctx.register_func(get_weather, requires_confirmation=False)
+            run_ctx.register_func(book_flight, requires_confirmation=True)
+
+            try:
+                result = await client.beta.conversations.run_async(
+                    run_ctx=run_ctx,
+                    inputs=pending_inputs,
+                    instructions="You are a travel assistant. Check the weather and book a flight to the warmest destination.",
+                )
+                print(result.output_entries)
+                break
+
+            except DeferredToolCallsException as deferred:
+                conversation_id = deferred.conversation_id
+
+                pending_inputs = []
+                for dc in deferred.deferred_calls:
+                    print(f"[APPROVAL REQUIRED] {dc.tool_name}({dc.arguments})")
+                    approved = input("Approve? (y/n): ").strip().lower() == "y"
+                    pending_inputs.append(dc.confirm() if approved else dc.reject("Denied by user"))
+
+
+asyncio.run(main())
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="connector-confirmation">Connector tools</SectionTab>
+
+Connector tools work the same way. `run_async` raises `DeferredToolCallsException` when the server returns a `function.call` with `confirmation_status: "pending"`.
+
+```python
+import asyncio
+import os
+
+from mistralai.client import Mistral
+from mistralai.extra.exceptions import DeferredToolCallsException
+from mistralai.extra.run.context import RunContext
+
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    conversation_id = None
+    pending_inputs = [{"role": "user", "content": "Summarize my latest emails from Gmail."}]
+
+    while True:
+        async with RunContext(model="mistral-large-latest") as run_ctx:
+            run_ctx.conversation_id = conversation_id
+
+            try:
+                result = await client.beta.conversations.run_async(
+                    run_ctx=run_ctx,
+                    inputs=pending_inputs,
+                    instructions="You are a helpful assistant. Use Gmail to access the user's emails.",
+                    tools=[
+                        {
+                            "type": "connector",
+                            "connector_id": "gmail",
+                            "tool_configuration": {
+                                "requires_confirmation": ["gmail_search"],
+                            },
+                        },
+                    ],
+                )
+                for entry in result.output_entries:
+                    if hasattr(entry, "content"):
+                        print(entry.content)
+                break
+
+            except DeferredToolCallsException as deferred:
+                conversation_id = deferred.conversation_id
+
+                pending_inputs = []
+                for dc in deferred.deferred_calls:
+                    print(f"[APPROVAL REQUIRED] {dc.tool_name}({dc.arguments})")
+                    approved = input("Approve? (y/n): ").strip().lower() == "y"
+                    pending_inputs.append(dc.confirm() if approved else dc.reject("Denied by user"))
+
+
+asyncio.run(main())
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="stateless">Stateless (serialize and resume)</SectionTab>
+
+For web APIs where the confirmation happens in a separate request (for example, the frontend sends back the approval), serialize the deferred state and reconstruct it later.
+
+<Tabs groupId="stateless">
+  <TabItem value="start" label="Start and serialize" default>
+
+```python
+import asyncio, json, os
+from mistralai.client import Mistral
+from mistralai.extra.run.context import RunContext
+from mistralai.extra.exceptions import DeferredToolCallsException
+
+
+def book_flight(destination: str, date: str) -> str:
+    """Book a flight to a destination."""
+    return f"Flight booked to {destination} on {date}"
+
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    async with RunContext(model="mistral-large-latest") as run_ctx:
+        run_ctx.register_func(book_flight, requires_confirmation=True)
+
+        try:
+            result = await client.beta.conversations.run_async(
+                run_ctx=run_ctx,
+                inputs=[{"role": "user", "content": "Book me a flight to Paris next Friday."}],
+                instructions="You are a travel assistant. Book the flight directly.",
+            )
+            print("No confirmation needed:", result.output_as_text)
+
+        except DeferredToolCallsException as deferred:
+            # Serialize and send to frontend / store in DB
+            print(json.dumps(deferred.to_dict()))
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="resume" label="Deserialize and resume">
+
+```python
+import asyncio, json, os
+from mistralai.client import Mistral
+from mistralai.extra.run.context import RunContext
+from mistralai.extra.exceptions import DeferredToolCallsException
+
+
+def book_flight(destination: str, date: str) -> str:
+    """Book a flight to a destination."""
+    return f"Flight booked to {destination} on {date}"
+
+
+async def main():
+    state = json.loads(os.environ["DEFERRED_STATE"])
+    deferred = DeferredToolCallsException.from_dict(state)
+
+    # Build confirmations from user input
+    pending_inputs = list(deferred.executed_results)
+    for dc in deferred.deferred_calls:
+        print(f"Tool: {dc.tool_name}, Args: {dc.arguments}")
+        pending_inputs.append(dc.confirm())  # or dc.reject("reason")
+
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    async with RunContext(model="mistral-large-latest") as run_ctx:
+        run_ctx.conversation_id = deferred.conversation_id
+        run_ctx.register_func(book_flight, requires_confirmation=True)
+
+        result = await client.beta.conversations.run_async(
+            run_ctx=run_ctx,
+            inputs=pending_inputs,
+            instructions="You are a travel assistant. Book the flight directly.",
+        )
+        print("Final response:", result.output_as_text)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+`deferred.executed_results` contains results from tools that ran before the deferral point. Always prepend them when resuming so the model has full context.
+:::

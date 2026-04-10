@@ -33,7 +33,7 @@ If the code produces different commands on replay, the workflow fails with a non
 Determinism is **enforced by default**. Workflow code runs inside a sandbox that intercepts non-deterministic calls and raises errors at runtime. You can opt out per-workflow with `enforce_determinism=False` or worker-wide with `DEFAULT_ENFORCE_DETERMINISM=0`. See [Determinism Enforcement](#determinism-enforcement-sandbox) below for details.
 :::
 
-### Correct: Use Deterministic APIs
+<SectionTab as="h2" variant="secondary" sectionId="correct-use-deterministic-apis">Correct: Use Deterministic APIs</SectionTab>
 
 Always use these in workflow code:
 
@@ -50,7 +50,7 @@ request_id = workflow.uuid4()
 random_value = workflow.random()
 ```
 
-### Dangerous: Standard Library Equivalents
+<SectionTab as="h2" variant="secondary" sectionId="dangerous-standard-library-equivalents">Dangerous: Standard Library Equivalents</SectionTab>
 
 Don't use these directly in workflow code:
 
@@ -74,7 +74,7 @@ Also dangerous in workflows:
 - Modifying global variables
 - System calls (`os.environ`, `os.getcwd()`, etc.)
 
-### Move Non-Deterministic Work to Activities
+<SectionTab as="h2" variant="secondary" sectionId="move-non-deterministic-work-to-activities">Move Non-Deterministic Work to Activities</SectionTab>
 
 For operations like external API calls, database queries, or file I/O, use activities:
 
@@ -98,7 +98,7 @@ class MyWorkflow:
         return MyResult(data=data)
 ```
 
-### Determinism Enforcement (Sandbox)
+<SectionTab as="h2" variant="secondary" sectionId="determinism-enforcement-sandbox">Determinism Enforcement (Sandbox)</SectionTab>
 
 When determinism enforcement is enabled, your workflow code runs inside a sandbox. The sandbox:
 
@@ -115,7 +115,7 @@ rather than silently producing a non-determinism bug that surfaces only on repla
 If you disable the sandbox, determinism is your responsibility. Your code will still break on replay if it's non-deterministic, you just won't get an immediate error telling you so.
 :::
 
-#### Disabling Per-Workflow
+<SectionTab as="h3" variant="secondary" sectionId="disabling-per-workflow">Disabling Per-Workflow</SectionTab>
 
 Determinism enforcement is enabled by default. To opt out for a specific workflow, pass
 `enforce_determinism=False` to the `@workflow.define` decorator:
@@ -132,7 +132,7 @@ class MyWorkflow:
         return f"Processed: {input}"
 ```
 
-#### Disabling Worker-Wide
+<SectionTab as="h3" variant="secondary" sectionId="disabling-worker-wide">Disabling Worker-Wide</SectionTab>
 
 Set the `DEFAULT_ENFORCE_DETERMINISM` environment variable to disable sandboxing for all
 workflows on a worker by default:
@@ -143,7 +143,7 @@ DEFAULT_ENFORCE_DETERMINISM=0
 
 This sets `config.worker.default_enforce_determinism` to `False`.
 
-#### Precedence
+<SectionTab as="h3" variant="secondary" sectionId="precedence">Precedence</SectionTab>
 
 The decorator-level setting takes priority over the environment variable:
 
@@ -154,7 +154,7 @@ The decorator-level setting takes priority over the environment variable:
 | not set (default) | `1` / `True` (default) | sandboxed |
 | not set (default) | `0` / `False` | **not** sandboxed |
 
-#### Temporarily Bypassing the Sandbox
+<SectionTab as="h3" variant="secondary" sectionId="temporarily-bypassing-the-sandbox">Temporarily Bypassing the Sandbox</SectionTab>
 
 :::warning
 These escape hatches defeat the purpose of determinism enforcement.
@@ -202,7 +202,7 @@ class MyWorkflow:
         return f"Processed: {input} with {value}"
 ```
 
-#### Recommendations
+<SectionTab as="h3" variant="secondary" sectionId="recommendations">Recommendations</SectionTab>
 
 1. **Keep enforcement enabled.** Determinism enforcement is on by default. Catching
    non-determinism at development time is far cheaper than debugging replay failures
@@ -235,7 +235,7 @@ class MyWorkflow:
 
 The `run` method accepts any JSON-serializable types as parameters.
 
-### Primitive and multi-parameter inputs
+<SectionTab as="h2" variant="secondary" sectionId="primitive-and-multi-parameter-inputs">Primitive and multi-parameter inputs</SectionTab>
 
 ```python
 @workflow.define(name="report_workflow")
@@ -250,7 +250,7 @@ Input:
 {"report_type": "daily", "include_details": false}
 ```
 
-### Single Pydantic model
+<SectionTab as="h2" variant="secondary" sectionId="single-pydantic-model">Single Pydantic model</SectionTab>
 
 When the entrypoint takes a single Pydantic `BaseModel`, its fields become the top-level input keys — there is no wrapper object:
 
@@ -273,7 +273,7 @@ Input:
 {"report_type": "daily", "include_details": true}
 ```
 
-### Union of Pydantic models
+<SectionTab as="h2" variant="secondary" sectionId="union-of-pydantic-models">Union of Pydantic models</SectionTab>
 
 When a workflow can be triggered with different input shapes, use a union of `BaseModel` subclasses:
 
@@ -308,7 +308,7 @@ The SDK validates the input against each member in order and passes the first ma
 >Tip: Use `extra="forbid"` on each member model. It produces precise discrimination and clear error messages when the input doesn't match any expected shape.
 
 
-### Optional union (`| None`)
+<SectionTab as="h2" variant="secondary" sectionId="optional-union-none">Optional union (`| None`)</SectionTab>
 
 Append `| None` (or use `Optional` from `typing`) to make the input optional:
 
@@ -324,7 +324,7 @@ class OptionalWorkflow:
         return f"count: {params.count}"
 ```
 
-### Mixing BaseModel with primitive types
+<SectionTab as="h2" variant="secondary" sectionId="mixing-basemodel-with-primitive-types">Mixing BaseModel with primitive types</SectionTab>
 
 Unions that combine a `BaseModel` with a non-model type (`str`, `int`, etc.) are not supported and will fail when the `@workflow.entrypoint` decorator is applied:
 
@@ -398,7 +398,7 @@ class LongRunningWorkflow:
 
 <SectionTab as="h1" sectionId="core-workflow-features">Core Workflow Features</SectionTab>
 
-### 1. Signals
+<SectionTab as="h2" variant="secondary" sectionId="signals">Signals</SectionTab>
 
 Handle external events with signals:
 
@@ -410,7 +410,7 @@ async def approve_signal(self, data: ApprovalData) -> None:
 
 [Learn more about signals](/workflows/interacting-with-workflows/signals)
 
-### 2. Queries
+<SectionTab as="h2" variant="secondary" sectionId="queries">Queries</SectionTab>
 
 Expose workflow state through queries:
 
@@ -425,7 +425,7 @@ def get_status(self) -> WorkflowStatus:
 
 [Learn more about queries](/workflows/interacting-with-workflows/queries)
 
-### 3. Updates
+<SectionTab as="h2" variant="secondary" sectionId="updates">Updates</SectionTab>
 
 Handle workflow updates:
 
@@ -438,7 +438,7 @@ async def update_config(self, config: UpdateConfig) -> UpdateResult:
 
 [Learn more about updates](/workflows/interacting-with-workflows/updates)
 
-### 4. Schedules
+<SectionTab as="h2" variant="secondary" sectionId="schedules">Schedules</SectionTab>
 
 Define scheduled workflow executions using cron expressions:
 
@@ -466,7 +466,7 @@ Key schedule features:
 
 [Learn more about scheduling](/workflows/building-workflows/scheduling)
 
-### 5. Child Workflows
+<SectionTab as="h2" variant="secondary" sectionId="child-workflows">Child Workflows</SectionTab>
 
 Execute other workflows as children:
 
@@ -508,7 +508,7 @@ handle = await workflow.execute_workflow(
 )
 ```
 
-### 6. Waiting for Conditions
+<SectionTab as="h2" variant="secondary" sectionId="waiting-for-conditions">Waiting for Conditions</SectionTab>
 
 Pause the workflow until a condition becomes true — typically set by an incoming signal or update. The workflow sleeps without consuming resources. If the condition is not met within the `timeout`, a `TimeoutError` is raised.
 
@@ -520,7 +520,7 @@ await workflow.wait_condition(
 )
 ```
 
-### 7. Continue-As-New
+<SectionTab as="h2" variant="secondary" sectionId="continue-as-new">Continue-As-New</SectionTab>
 
 Reset workflow history for long-running or iterative workflows. Use this to prevent history from growing too large when processing large datasets or running indefinitely.
 
@@ -553,7 +553,7 @@ class LongRunningProcessor:
 
 <SectionTab as="h1" sectionId="advanced-features">Advanced Features</SectionTab>
 
-### 1. Reset Mechanism
+<SectionTab as="h2" variant="secondary" sectionId="reset-mechanism">Reset Mechanism</SectionTab>
 
 You can "reset" a Workflow Execution to restart it from a specific point in its history. This is useful if your workflow gets stuck (for example, because of a non-deterministic error) or cannot complete. When you reset, the workflow ends its current run and starts again from the event you pick in the event history.
 
@@ -575,7 +575,7 @@ client.workflows.executions.reset_workflow(
 )
 ```
 
-### 2. Workflow Execution Context
+<SectionTab as="h2" variant="secondary" sectionId="workflow-execution-context">Workflow Execution Context</SectionTab>
 
 Retrieve the current execution's unique identifier at runtime. This is useful for logging, correlating events across services, or passing the execution ID to external systems so they can send signals back.
 

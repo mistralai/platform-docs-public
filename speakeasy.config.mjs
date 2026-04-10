@@ -49,8 +49,9 @@ description: Welcome to Mistral AI's Api Reference
       const aTagName = a.tags[0]?.name;
       const bTagName = b.tags[0]?.name;
 
-      const aIndex = parsedTags.findIndex(tag => tag.name === aTagName);
-      const bIndex = parsedTags.findIndex(tag => tag.name === bTagName);
+      const normalize = name => name?.replace(/\//g, '.');
+      const aIndex = parsedTags.findIndex(tag => tag.name === normalize(aTagName));
+      const bIndex = parsedTags.findIndex(tag => tag.name === normalize(bTagName));
 
       if (aIndex === -1 && bIndex === -1) return 0;
       if (aIndex === -1) return 1;

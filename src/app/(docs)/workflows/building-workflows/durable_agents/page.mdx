@@ -28,58 +28,10 @@ A Durable Agent is an LLM agent that executes within a workflow, benefiting from
 - **Multi-Agent Handoffs**: Agents can delegate tasks to specialized agents
 - **MCP Support**: Connect to external tools via Model Context Protocol (stdio / SSE)
 
-<SectionTab as="h1" sectionId="architecture-overview">Architecture Overview</SectionTab>
-
-```mermaid
-flowchart TB
-    subgraph Runner["Runner"]
-        direction TB
-        R[Runner.run]
-    end
-
-    subgraph Session["Session"]
-        S[RemoteSession / LocalSession]
-    end
-
-    subgraph Coordinator["Coordinator Agent"]
-        CA[deal-coordinator]
-    end
-
-    subgraph Specialists["Specialist Agents"]
-        RA[risk-agent]
-        CompA[compliance-agent]
-    end
-
-    subgraph Activities["Activities"]
-        A1[parse_deal_document]
-        A2[calculate_risk_score]
-        A3[check_compliance]
-    end
-
-    subgraph BuiltIn["Built-in Tools"]
-        T1[WebSearchTool]
-    end
-
-    subgraph External["External"]
-        MCP[MCP Server]
-    end
-
-    R -->|manages| S
-    S -->|runs| CA
-    CA -->|handoff| RA
-    CA -->|handoff| CompA
-    CA -->|uses| A1
-    RA -->|uses| A2
-    RA -->|connects| MCP
-    CompA -->|uses| A3
-    CompA -->|uses| T1
-```
-
-The Runner orchestrates agent execution through a Session. Agents can hand off tasks to specialized agents and each agent can use activities, built-in Mistral tools or MCP servers as tools.
 
 <SectionTab as="h1" sectionId="core-components">Core Components</SectionTab>
 
-### Agent
+<SectionTab as="h2" variant="secondary" sectionId="agent">Agent</SectionTab>
 
 The `Agent` class defines an LLM agent with its model, instructions, tools and handoffs:
 
@@ -103,7 +55,7 @@ agent = workflows_mistralai.Agent(
   </TabItem>
 </Tabs>
 
-### Runner
+<SectionTab as="h2" variant="secondary" sectionId="runner">Runner</SectionTab>
 
 The `Runner` executes an agent with user inputs and manages the conversation loop. It calls the model, processes tool calls, and repeats until the agent produces a final response or reaches `max_turns`. If `max_turns` is reached, the runner returns whatever outputs have been collected so far.
 
@@ -127,7 +79,7 @@ outputs = await workflows_mistralai.Runner.run(
 
 The returned `outputs` is a list of output items produced by the agent during the run (text responses, tool results, handoff results).
 
-### Sessions
+<SectionTab as="h2" variant="secondary" sectionId="sessions">Sessions</SectionTab>
 
 Sessions manage agent state and API communication. Two session types are available:
 
@@ -235,7 +187,7 @@ When the finance agent receives a query about ECB interest rates, it can automat
 
 Connect to external tool servers using the Model Context Protocol. Two transport types are supported:
 
-### Stdio MCP Server
+<SectionTab as="h2" variant="secondary" sectionId="stdio-mcp-server">Stdio MCP Server</SectionTab>
 
 For local command-line MCP servers:
 
@@ -262,7 +214,7 @@ agent = Agent(
   </TabItem>
 </Tabs>
 
-### SSE MCP Server
+<SectionTab as="h2" variant="secondary" sectionId="sse-mcp-server">SSE MCP Server</SectionTab>
 
 For remote MCP servers over Server-Sent Events:
 
@@ -327,7 +279,7 @@ These tools are executed server-side by the Mistral platform — they do not run
 
 <SectionTab as="h1" sectionId="session-types">Session Types</SectionTab>
 
-### RemoteSession (Recommended)
+<SectionTab as="h2" variant="secondary" sectionId="remote-session">RemoteSession (Recommended)</SectionTab>
 
 Uses the Mistral Agents SDK for production workloads:
 
@@ -357,7 +309,7 @@ Features:
 - Managed conversation state
 - Production-ready
 
-### LocalSession (Experimental)
+<SectionTab as="h2" variant="secondary" sectionId="local-session">LocalSession (Experimental)</SectionTab>
 
 Runs agents locally using the completion endpoint:
 

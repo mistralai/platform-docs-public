@@ -1,0 +1,118 @@
+---
+id: sticky-worker-sessions
+title: Sticky Worker Sessions
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Sticky Worker Sessions
+
+Sticky worker sessions route multiple activities to the same worker instance, enabling resource reuse and stateful operations across activity calls.
+
+<SectionTab as="h1" sectionId="when-to-use">When to Use</SectionTab>
+
+**Good for:**
+
+- Sharing expensive resources (ML models, database connections, cached data)
+- Stateful data processing across multiple activity calls
+- Reducing initialization overhead for related operations
+
+**Avoid for:**
+
+- Activities that must be highly available (session breaks if worker crashes)
+- Long-running workflows (ties up specific worker resources)
+- When worker-level state isn't needed
+
+<SectionTab as="h1" sectionId="basic-usage">Basic Usage</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows import run_sticky_worker_session
+
+# Worker-level state
+_loaded_model = None
+
+@workflows.activity(sticky_to_worker=True)
+async def load_model() -> None:
+    global _loaded_model
+    if _loaded_model is None:
+        _loaded_model = load_expensive_model()
+
+@workflows.activity(sticky_to_worker=True)
+async def predict(data: dict) -> dict:
+    return _loaded_model.predict(data)
+
+@workflows.workflow.define(name="ml-inference")
+class MLInferenceWorkflow:
+    @workflows.workflow.entrypoint
+    async def execute(self, batch: list[dict]) -> list[dict]:
+        # All activities run on same worker
+        async with run_sticky_worker_session():
+            await load_model()  # Load once
+            results = [await predict(item) for item in batch]
+        return results
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="session-reuse">Session Reuse</SectionTab>
+
+Capture a session explicitly to reuse across multiple scopes:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.workflow.define(name="multi-batch")
+class MultiBatchWorkflow:
+    @workflows.workflow.entrypoint
+    async def execute(self, batches: list[list[dict]]) -> list[list[dict]]:
+        # Capture worker once
+        session = await get_sticky_worker_session()
+
+        all_results = []
+        for batch in batches:
+            async with run_sticky_worker_session(session):
+                results = [await process_item(item) for item in batch]
+                all_results.append(results)
+        return all_results
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="limitations">Limitations</SectionTab>
+
+**Session breaks on worker failure:**
+
+- If the worker crashes or scales down, the session ends
+- Subsequent activities route to a different worker
+- Design activities to handle cold starts gracefully
+
+**In-memory state only:**
+
+- Worker-level state is lost on worker restart or redeployment
+- Use databases or external storage for persistent state
+- Not a replacement for distributed state management
+
+**Worker resource contention:**
+
+- Long-running sessions tie up specific worker capacity
+- Can create hot spots if many workflows target the same worker
+- Monitor worker utilization to avoid resource starvation
+
+**Note:** The `sticky_to_worker` parameter doesn't apply to local activities since they already run in the workflow worker process.
+
+<SectionTab as="h1" sectionId="performance-comparison">Performance Comparison</SectionTab>
+
+| Feature          | Regular Activity | Sticky Session | Local Activity |
+| ---------------- | ---------------- | -------------- | -------------- |
+| Routing Overhead | Standard         | Standard       | None           |
+| Worker Isolation | Yes              | Yes            | No             |
+| Resource Sharing | No               | Yes            | N/A            |
+| Best For         | Independent ops  | Resource reuse | Fast lookups   |

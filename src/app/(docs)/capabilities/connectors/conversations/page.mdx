@@ -1,0 +1,456 @@
+---
+id: connectors_conversations
+title: Using Connectors in conversations
+sidebar_position: 2
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Using Connectors in conversations
+
+After a Connector is [registered](../management) and [authenticated](../management#get-auth-url) (if required), you can attach it to any conversation.
+
+You can mix Connectors with built-in tools like `web_search`, filter which tools the model can use, and configure Connectors on Agents so they're available in every conversation.
+
+:::info
+Tools are [MCP server executable functions](https://modelcontextprotocol.io/docs/learn/architecture#primitives) the model can call. When you attach a Connector, the model discovers these tools automatically and calls the right ones based on the query.
+:::
+
+<SectionTab as="h1" sectionId="using-connectors">Attach Connectors to a conversation</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="basic-usage">Basic usage</SectionTab>
+
+Pass any Connector as a `tool` to a conversation using `type: "connector"` and the Connector's name or UUID as `connector_id`.
+
+:::note
+All tools the Connector exposes are available to the model. To restrict which tools the model can call, see [Filter tools](#filtering-tools).
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+
+async def main() -> None:
+    response = await client.beta.conversations.start_async(
+        model="mistral-small-latest",
+        inputs=[
+            {
+                "role": "user",
+                "content": "Using deepwiki, tell me about the structure of the sqlite/sqlite repository.",
+            }
+        ],
+        tools=[
+            {
+                "type": "connector",
+                "connector_id": "my_deepwiki",  # name or UUID
+            },
+        ],
+    )
+    for output in response.outputs:
+        if output.type == "message.output":
+            print(output.content)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+async function main(): Promise<void> {
+  const response = await client.beta.conversations.start({
+    model: "mistral-small-latest",
+    inputs: [
+      {
+        role: "user",
+        content: "Using deepwiki, tell me about the structure of the sqlite/sqlite repository.",
+      },
+    ],
+    tools: [
+      {
+        type: "connector",
+        connectorId: "my_deepwiki", // name or UUID
+      },
+    ],
+  });
+
+  for (const output of response.outputs ?? []) {
+    if (output.type === "message.output") {
+      console.log(output.content);
+    }
+  }
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-small-latest",
+    "inputs": [{"role": "user", "content": "Using deepwiki, tell me about the structure of the sqlite/sqlite repository."}],
+    "tools": [{"type": "connector", "connector_id": "my_deepwiki"}]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="filtering-tools">Filter tools</SectionTab>
+
+To control which tools from a Connector the model can use, add a `tool_configuration` object. Set `include` to allowlist specific tools, or `exclude` to block them. You can use one or the other, but not both at the same time.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+
+async def main() -> None:
+    # Exclude specific tools
+    response = await client.beta.conversations.start_async(
+        model="mistral-small-latest",
+        inputs=[{"role": "user", "content": "What tools do you have access to?"}],
+        tools=[
+            {
+                "type": "connector",
+                "connector_id": "my_deepwiki",
+                "tool_configuration": {
+                    "exclude": ["read_wiki_structure"],
+                },
+            },
+        ],
+    )
+
+    # Include only specific tools
+    response = await client.beta.conversations.start_async(
+        model="mistral-small-latest",
+        inputs=[{"role": "user", "content": "What tools do you have access to?"}],
+        tools=[
+            {
+                "type": "connector",
+                "connector_id": "my_deepwiki",
+                "tool_configuration": {
+                    "include": ["ask_question"],
+                },
+            },
+        ],
+    )
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+async function main(): Promise<void> {
+  // Exclude specific tools
+  await client.beta.conversations.start({
+    model: "mistral-small-latest",
+    inputs: [{ role: "user", content: "What tools do you have access to?" }],
+    tools: [
+      {
+        type: "connector",
+        connectorId: "my_deepwiki",
+        toolConfiguration: {
+          exclude: ["read_wiki_structure"],
+        },
+      },
+    ],
+  });
+
+  // Include only specific tools
+  await client.beta.conversations.start({
+    model: "mistral-small-latest",
+    inputs: [{ role: "user", content: "What tools do you have access to?" }],
+    tools: [
+      {
+        type: "connector",
+        connectorId: "my_deepwiki",
+        toolConfiguration: {
+          include: ["ask_question"],
+        },
+      },
+    ],
+  });
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+# Exclude specific tools
+curl -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-small-latest",
+    "inputs": [{"role": "user", "content": "What tools do you have access to?"}],
+    "tools": [{
+      "type": "connector",
+      "connector_id": "my_deepwiki",
+      "tool_configuration": { "exclude": ["read_wiki_structure"] }
+    }]
+  }'
+
+# Include only specific tools
+curl -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-small-latest",
+    "inputs": [{"role": "user", "content": "What tools do you have access to?"}],
+    "tools": [{
+      "type": "connector",
+      "connector_id": "my_deepwiki",
+      "tool_configuration": { "include": ["ask_question"] }
+    }]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+You can require user approval before a tool runs by adding `requires_confirmation` to the `tool_configuration`. This is useful for sensitive actions like sending emails or modifying data. See [Human-in-the-loop](../confirmation) for the full confirmation flow.
+:::
+
+<SectionTab as="h1" sectionId="combining-tools">Use built-in tools alongside Connectors</SectionTab>
+
+Mistral provides [built-in tools](/agents/tools/built-in) such as `web_search`, `code_interpreter`, `image_generation`, and `document_library`. You can pass them alongside Connectors in the same `tools` array. The model decides which tool to call **based on the query**.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+
+async def main() -> None:
+    response = await client.beta.conversations.start_async(
+        model="mistral-small-latest",
+        inputs=[
+            {
+                "role": "user",
+                "content": "Search the web for the latest SQLite release, then use deepwiki to find where the version is defined in the sqlite/sqlite repo.",
+            }
+        ],
+        tools=[
+            {"type": "web_search"},
+            {"type": "connector", "connector_id": "my_deepwiki"},
+        ],
+    )
+    for output in response.outputs:
+        if output.type == "message.output":
+            print(output.content)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+async function main(): Promise<void> {
+  const response = await client.beta.conversations.start({
+    model: "mistral-small-latest",
+    inputs: [
+      {
+        role: "user",
+        content: "Search the web for the latest SQLite release, then use deepwiki to find where the version is defined in the sqlite/sqlite repo.",
+      },
+    ],
+    tools: [
+      { type: "web_search" },
+      { type: "connector", connectorId: "my_deepwiki" },
+    ],
+  });
+
+  for (const output of response.outputs ?? []) {
+    if (output.type === "message.output") {
+      console.log(output.content);
+    }
+  }
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-small-latest",
+    "inputs": [{"role": "user", "content": "Search the web for the latest SQLite release, then use deepwiki to find where the version is defined in the sqlite/sqlite repo."}],
+    "tools": [
+      {"type": "web_search"},
+      {"type": "connector", "connector_id": "my_deepwiki"}
+    ]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="agents-with-connectors">Add Connectors to an Agent</SectionTab>
+
+You can also attach Connectors directly to an Agent at creation time. Every conversation started with that Agent then has access to the Connector [tools](/agents/tools/built-in) automatically, without passing a `tools` array each time.
+
+:::tip
+This is useful when an Agent always needs the same external tools (for example, a support Agent that always queries a CRM).
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+
+async def main() -> None:
+    # Create the agent with a connector
+    agent = await client.beta.agents.create_async(
+        name="deepwiki_agent",
+        description="Agent with DeepWiki access for code repository exploration",
+        model="mistral-small-latest",
+        instructions="You are a helpful assistant that can explore code repositories using DeepWiki. Be concise.",
+        tools=[
+            {
+                "type": "connector",
+                "connector_id": "my_deepwiki",
+            },
+        ],
+    )
+
+    # Start a conversation using the agent — no tools needed here
+    response = await client.beta.conversations.start_async(
+        agent_id=agent.id,
+        inputs=[
+            {"role": "user", "content": "What is the main purpose of the sqlite repository?"}
+        ],
+    )
+    for output in response.outputs:
+        if output.type == "message.output":
+            print(output.content)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+async function main(): Promise<void> {
+  // Create the agent with a connector
+  const agent = await client.beta.agents.create({
+    name: "deepwiki_agent",
+    description: "Agent with DeepWiki access for code repository exploration",
+    model: "mistral-small-latest",
+    instructions: "You are a helpful assistant that can explore code repositories using DeepWiki. Be concise.",
+    tools: [
+      {
+        type: "connector",
+        connectorId: "my_deepwiki",
+      },
+    ],
+  });
+
+  // Start a conversation using the agent — no tools needed here
+  const response = await client.beta.conversations.start({
+    agentId: agent.id,
+    inputs: [
+      { role: "user", content: "What is the main purpose of the sqlite repository?" },
+    ],
+  });
+
+  for (const output of response.outputs ?? []) {
+    if (output.type === "message.output") {
+      console.log(output.content);
+    }
+  }
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+# Create agent
+curl -X POST "https://api.mistral.ai/v1/agents" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "deepwiki_agent",
+    "model": "mistral-small-latest",
+    "instructions": "You are a helpful assistant that can explore code repositories using DeepWiki. Be concise.",
+    "tools": [{"type": "connector", "connector_id": "my_deepwiki"}]
+  }'
+
+# Start conversation with the agent (use agent_id from response above)
+curl -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "<agent-id>",
+    "inputs": [{"role": "user", "content": "What is the main purpose of the sqlite repository?"}]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+:::caution
+Use `agent_id` **instead of** `model` when starting a conversation. You cannot pass both.
+:::

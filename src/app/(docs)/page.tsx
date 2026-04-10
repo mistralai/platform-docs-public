@@ -34,7 +34,7 @@ const ogImageUrl = getOGImageUrl({
   path: 'generic',
   eyebraw: 'Docs',
   title: 'Documentation',
-  description: 'Bienvenue to Mistral AI’s Documentation',
+  description: 'Mistral AI Documentation',
   image: '/ogs/docs.png',
 });
 
@@ -90,7 +90,7 @@ export default function DocumentationPage() {
             size="h1"
             as="h1"
           >
-            Bienvenue to Mistral AI Documentation
+            Mistral AI Documentation
           </HeadingTitle>
         </Heading>
 

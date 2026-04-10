@@ -61,7 +61,7 @@ class GreetingWorkflow(workflows.InteractiveWorkflow):
 
 `send_assistant_message()` displays a message to the user in the chat interface. It also accepts an optional `canvas` keyword argument to include a `CanvasResource` alongside the text (see [Canvas Editing](#canvas-editing-human-in-the-loop)). `ChatInput()` pauses the workflow and waits for the user to respond. You can optionally pass a `prompt` to `ChatInput()` to provide additional context (in placeholder) and `suggestions` to offer pre-filled options that users can select directly.
 
-### Timeout
+<SectionTab as="h2" variant="secondary" sectionId="timeout">Timeout</SectionTab>
 
 `wait_for_input()` accepts an optional `timeout` parameter. If the user doesn't respond within the specified duration, an `asyncio.TimeoutError` is raised. The timeout can be a `timedelta` or a number of seconds (`float`). By default, the workflow waits indefinitely.
 
@@ -161,7 +161,7 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
   </TabItem>
 </Tabs>
 
-### Field Types
+<SectionTab as="h2" variant="secondary" sectionId="field-types">Field Types</SectionTab>
 
 | Field Type      | Description      | Properties                                                                                        |
 | --------------- | ---------------- | ------------------------------------------------------------------------------------------------- |
@@ -172,10 +172,11 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 | `SingleChoice`  | Dropdown/select  | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
 | `MultiChoice`   | Multi-select     | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
 | `FileField`     | File upload      | `description`, `multiple` (default `False`)                                                       |
+| `FileWithMetadataField` | File upload with metadata | `description`, `multiple` (default `False`)                                        |
 
 All field types (except `FileField`) support an optional `prefilled_value` parameter. This is a **UI hint only** — it pre-fills the form field but does not make the field optional. The value must still be explicitly submitted by the user. Invalid prefilled values (out of bounds, non-matching pattern, unknown option) are silently ignored.
 
-### TextField
+<SectionTab as="h2" variant="secondary" sectionId="textfield">TextField</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -191,7 +192,7 @@ email: str = TextField(
   </TabItem>
 </Tabs>
 
-### NumberField
+<SectionTab as="h2" variant="secondary" sectionId="numberfield">NumberField</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -213,7 +214,7 @@ price: float = NumberField(
   </TabItem>
 </Tabs>
 
-### DateTimeField
+<SectionTab as="h2" variant="secondary" sectionId="datetimefield">DateTimeField</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -230,7 +231,7 @@ scheduled_at: datetime = DateTimeField(
   </TabItem>
 </Tabs>
 
-### DateField
+<SectionTab as="h2" variant="secondary" sectionId="datefield">DateField</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -247,7 +248,7 @@ scheduled_at: date = DateField(
   </TabItem>
 </Tabs>
 
-### SingleChoice
+<SectionTab as="h2" variant="secondary" sectionId="singlechoice">SingleChoice</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -274,7 +275,7 @@ status: str = SingleChoice(
   </TabItem>
 </Tabs>
 
-### MultiChoice
+<SectionTab as="h2" variant="secondary" sectionId="multichoice">MultiChoice</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -301,7 +302,7 @@ colors: list[str] = MultiChoice(
   </TabItem>
 </Tabs>
 
-### FileField
+<SectionTab as="h2" variant="secondary" sectionId="filefield">FileField</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -321,11 +322,42 @@ attachments: list[str] = FileField(description="Upload files", multiple=True)
 
 The workflow receives URLs (strings) pointing to files uploaded by the user. To process a file, download it from the provided URL within your workflow. These URLs may expire, so if your workflow needs long-term access to the files, it is responsible for storing them elsewhere.
 
+
+### FileWithMetadataField
+
+Unlike `FileField` which only provides signed URLs, `FileWithMetadataField` provides structured metadata including filename, URL, and content type. Use `FileWithMetadataValue` as the type annotation.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.conversational import FileWithMetadataField, FileWithMetadataValue
+
+# Single file upload with metadata
+document: FileWithMetadataValue = FileWithMetadataField(description="Upload a document")
+
+# Multiple file uploads with metadata
+attachments: list[FileWithMetadataValue] = FileWithMetadataField(description="Upload files", multiple=True)
+```
+
+  </TabItem>
+</Tabs>
+
+
+Each `FileWithMetadataValue` has the following fields:
+
+| Field          | Type             | Required | Description                     |
+| -------------- | ---------------- | -------- | ------------------------------- |
+| `filename`     | `str`            | Yes      | Original filename               |
+| `url`          | `str`            | Yes      | Signed URL to download the file |
+| `content_type` | `str`            | Yes      | MIME type of the file           |
+
+
 <SectionTab as="h1" sectionId="confirmation-inputs">Confirmation Inputs</SectionTab>
 
 For workflows that need a simple single-choice confirmation with direct submit, use `ConfirmationInput` or `AcceptDeclineConfirmation`. These helpers create a single-field form where selecting an option immediately submits the form.
 
-### ConfirmationInput
+<SectionTab as="h2" variant="secondary" sectionId="confirmationinput">ConfirmationInput</SectionTab>
 
 `ConfirmationInput` provides a list of options that should be rendered as buttons. Selection of an option should immediately submit the form:
 
@@ -375,7 +407,7 @@ class TypeSelectionWorkflow(workflows.InteractiveWorkflow):
 
 The returned object has a `choice` property containing the selected option value.
 
-### AcceptDeclineConfirmation
+<SectionTab as="h2" variant="secondary" sectionId="acceptdeclineconfirmation">AcceptDeclineConfirmation</SectionTab>
 
 `AcceptDeclineConfirmation` is a specialized confirmation with two options: accept and decline. Clients can render this as a standard validation UI with keyboard shortcuts for quick responses:
 
@@ -496,7 +528,7 @@ class ExpenseProcessingWorkflow(workflows.InteractiveWorkflow):
   </TabItem>
 </Tabs>
 
-### Updating Item Status
+<SectionTab as="h2" variant="secondary" sectionId="updating-item-status">Updating Item Status</SectionTab>
 
 There are two ways to update the status of a `TodoListItem`:
 
@@ -531,7 +563,7 @@ await item.set_status("done")
 
 Use manual control when you need to update status at specific points, handle conditional flows, or implement custom exception handling.
 
-### TodoListItem Properties
+<SectionTab as="h2" variant="secondary" sectionId="todolistitem-properties">TodoListItem Properties</SectionTab>
 
 | Property      | Type                                | Description                           |
 | ------------- | ----------------------------------- | ------------------------------------- |
@@ -646,7 +678,7 @@ pie title Expenses by Category
   </TabItem>
 </Tabs>
 
-### Canvas Types
+<SectionTab as="h2" variant="secondary" sectionId="canvas-types">Canvas Types</SectionTab>
 
 | Type            | Description                   |
 | --------------- | ----------------------------- |
@@ -729,7 +761,7 @@ class ReportReviewWorkflow(workflows.InteractiveWorkflow):
 
 Workflows can render rich, interactive UI components in the chat interface using the design system component library. Components are defined as Python objects and sent as `UIComponentResource` resources.
 
-### Basic Usage
+<SectionTab as="h2" variant="secondary" sectionId="basic-usage">Basic Usage</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -787,7 +819,7 @@ class ReportWorkflow:
   </TabItem>
 </Tabs>
 
-### Available Components
+<SectionTab as="h2" variant="secondary" sectionId="available-components">Available Components</SectionTab>
 
 All components are imported from `mistralai.workflows.plugins.mistralai.conversational_ui_components`.
 
@@ -806,7 +838,7 @@ All components are imported from `mistralai.workflows.plugins.mistralai.conversa
 | `Row`        | Horizontal layout container                   | `alignment`, `distribution`, `gap`, `wrap`, `children`                |
 | `Tooltip`    | Additional information on hover               | `trigger`, `children`                                                 |
 
-### Nesting Components
+<SectionTab as="h2" variant="secondary" sectionId="nesting-components">Nesting Components</SectionTab>
 
 Components that accept `children` can contain other components, allowing you to build complex layouts:
 
@@ -864,11 +896,11 @@ layout = Row(
 
 Tool UI States provide optional visual representations of tool execution in the chat interface. When attached to `ChatAssistantWorkingTask`, they enable specialized UI feedback for different types of tool operations, allowing workflows to display the status and results of tool calls in a structured, user-friendly way.
 
-### Tool UI State Types
+<SectionTab as="h2" variant="secondary" sectionId="tool-ui-state-types">Tool UI State Types</SectionTab>
 
 There are three types of tool UI states:
 
-#### File Tool UI State
+<SectionTab as="h3" variant="secondary" sectionId="file-tool-ui-state">File Tool UI State</SectionTab>
 
 Represents file operations such as creating, replacing, or deleting files:
 
@@ -918,7 +950,7 @@ delete_state = FileToolUIState(
   </TabItem>
 </Tabs>
 
-#### Generic Tool UI State
+<SectionTab as="h3" variant="secondary" sectionId="generic-tool-ui-state">Generic Tool UI State</SectionTab>
 
 Represents generic tool execution with various status states:
 
@@ -961,7 +993,7 @@ failed_state = GenericToolUIState(
   </TabItem>
 </Tabs>
 
-#### Command Tool UI State
+<SectionTab as="h3" variant="secondary" sectionId="command-tool-ui-state">Command Tool UI State</SectionTab>
 
 Represents command execution with running/success/failed states:
 
@@ -1001,7 +1033,7 @@ failed_state = CommandToolUIState(
   </TabItem>
 </Tabs>
 
-### Using Tool UI States in Working Tasks
+<SectionTab as="h2" variant="secondary" sectionId="using-tool-ui-states-in-working-tasks">Using Tool UI States in Working Tasks</SectionTab>
 
 Tool UI States can be attached to `ChatAssistantWorkingTask` to provide visual feedback during tool execution:
 
@@ -1067,7 +1099,7 @@ class ExpenseSummaryWorkflow:
   </TabItem>
 </Tabs>
 
-### Tagging Input Variants
+<SectionTab as="h2" variant="secondary" sectionId="tagging-input-variants">Tagging Input Variants</SectionTab>
 
 When a workflow accepts a union of input types, clients may need a way to know which variant to use. The `@input_tag` decorator adds an `x-input-tag` field to a model's JSON schema so clients can identify and select the right one.
 
@@ -1115,7 +1147,7 @@ class MultiClientWorkflow:
 `SimpleParams.model_json_schema()` now contains `"x-input-tag": "simplified"`. Clients inspect the union members in the workflow's `input_schema` and select the variant whose tag they recognise.
 
 
-### Error Handling
+<SectionTab as="h2" variant="secondary" sectionId="error-handling">Error Handling</SectionTab>
 
 To signal that a workflow has failed, set `isError=True` on the output.
 The text content is used as the error message displayed to the user, and the workflow is marked as failed in the conversation:
@@ -1151,7 +1183,7 @@ class ExpenseValidationWorkflow:
   </TabItem>
 </Tabs>
 
-### Structured Content
+<SectionTab as="h2" variant="secondary" sectionId="structured-content">Structured Content</SectionTab>
 
 `ChatAssistantWorkflowOutput` accepts an optional `structuredContent` field (`dict[str, Any]`)
 for attaching arbitrary structured data to the workflow output.

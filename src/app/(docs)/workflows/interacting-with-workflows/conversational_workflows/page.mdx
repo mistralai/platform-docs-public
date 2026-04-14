@@ -171,8 +171,7 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 | `DateField`     | Date picker      | `description`, `prefilled_value` (ISO 8601 date string)                                           |
 | `SingleChoice`  | Dropdown/select  | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
 | `MultiChoice`   | Multi-select     | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
-| `FileField`     | File upload      | `description`, `multiple` (default `False`)                                                       |
-| `FileWithMetadataField` | File upload with metadata | `description`, `multiple` (default `False`)                                        |
+| `FileField`     | File upload | `description`, `multiple` (default `False`), `include_metadata` (default `False`)                  |
 
 All field types (except `FileField`) support an optional `prefilled_value` parameter. This is a **UI hint only** — it pre-fills the form field but does not make the field optional. The value must still be explicitly submitted by the user. Invalid prefilled values (out of bounds, non-matching pattern, unknown option) are silently ignored.
 
@@ -308,49 +307,35 @@ colors: list[str] = MultiChoice(
   <TabItem value="python" label="Python">
 
 ```python
-from mistralai.workflows.conversational import FileField
+from mistralai.workflows.conversational import FileField, FileWithMetadataValue
 
-# Single file upload
+# Single file upload (plain URL)
 document: str = FileField(description="Upload a document")
 
-# Multiple file uploads
+# Multiple file uploads (plain URLs)
 attachments: list[str] = FileField(description="Upload files", multiple=True)
-```
-
-  </TabItem>
-</Tabs>
-
-The workflow receives URLs (strings) pointing to files uploaded by the user. To process a file, download it from the provided URL within your workflow. These URLs may expire, so if your workflow needs long-term access to the files, it is responsible for storing them elsewhere.
-
-
-### FileWithMetadataField
-
-Unlike `FileField` which only provides signed URLs, `FileWithMetadataField` provides structured metadata including filename, URL, and content type. Use `FileWithMetadataValue` as the type annotation.
-
-<Tabs>
-  <TabItem value="python" label="Python">
-
-```python
-from mistralai.workflows.conversational import FileWithMetadataField, FileWithMetadataValue
 
 # Single file upload with metadata
-document: FileWithMetadataValue = FileWithMetadataField(description="Upload a document")
+document: FileWithMetadataValue = FileField(description="Upload a document", include_metadata=True)
 
 # Multiple file uploads with metadata
-attachments: list[FileWithMetadataValue] = FileWithMetadataField(description="Upload files", multiple=True)
+attachments: list[FileWithMetadataValue] = FileField(
+    description="Upload files", multiple=True, include_metadata=True
+)
 ```
 
   </TabItem>
 </Tabs>
 
-
-Each `FileWithMetadataValue` has the following fields:
+By default the workflow receives URLs (strings) pointing to files uploaded by the user. With `include_metadata=True`, it receives `FileWithMetadataValue` objects instead:
 
 | Field          | Type             | Required | Description                     |
 | -------------- | ---------------- | -------- | ------------------------------- |
 | `filename`     | `str`            | Yes      | Original filename               |
 | `url`          | `str`            | Yes      | Signed URL to download the file |
 | `content_type` | `str`            | Yes      | MIME type of the file           |
+
+These URLs may expire, so if your workflow needs long-term access to the files, it is responsible for storing them elsewhere.
 
 
 <SectionTab as="h1" sectionId="confirmation-inputs">Confirmation Inputs</SectionTab>

@@ -6,6 +6,7 @@ sidebar_position: 10
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Cloud Storage Providers
 
@@ -24,3 +25,67 @@ uv add "mistralai-workflows[gcs]"
 # All storage providers
 uv add "mistralai-workflows[storage]"
 ```
+
+<SectionTab as="h1" sectionId="named-blob-storage">Named Blob Storage</SectionTab>
+
+Use `blob_storage_configs` when activities need to read or write cloud storage directly — downloading documents, uploading results, or accessing files between workflow steps. This is separate from payload offloading above.
+
+Declare named backends via environment variables. The segment after `BLOB_STORAGE_CONFIGS__` (e.g. `DOCUMENTS`) becomes the lowercase key used in your code:
+
+```bash
+# Google Cloud Storage
+BLOB_STORAGE_CONFIGS__<NAME>__STORAGE_PROVIDER=gcs
+BLOB_STORAGE_CONFIGS__<NAME>__BUCKET_ID=my-bucket
+
+# AWS S3
+BLOB_STORAGE_CONFIGS__<NAME>__STORAGE_PROVIDER=s3
+BLOB_STORAGE_CONFIGS__<NAME>__BUCKET_NAME=my-bucket
+BLOB_STORAGE_CONFIGS__<NAME>__REGION_NAME=us-east-1           # optional
+BLOB_STORAGE_CONFIGS__<NAME>__ENDPOINT_URL=https://...        # optional, for S3-compatible stores
+BLOB_STORAGE_CONFIGS__<NAME>__AWS_ACCESS_KEY_ID=...           # optional, falls back to IAM
+BLOB_STORAGE_CONFIGS__<NAME>__AWS_SECRET_ACCESS_KEY=...       # optional
+
+# Azure Blob Storage
+BLOB_STORAGE_CONFIGS__<NAME>__STORAGE_PROVIDER=azure
+BLOB_STORAGE_CONFIGS__<NAME>__CONTAINER_NAME=my-container
+BLOB_STORAGE_CONFIGS__<NAME>__AZURE_CONNECTION_STRING=...
+
+# Optional key prefix (all providers)
+BLOB_STORAGE_CONFIGS__<NAME>__PREFIX=my/prefix/
+```
+
+Define a provider function and inject it into activities with `Depends()`:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from contextlib import asynccontextmanager
+from temporalio.exceptions import ApplicationError
+
+import mistralai.workflows as workflows
+from mistralai.workflows import Depends
+from mistralai.workflows.core.storage.blob_storage import get_blob_storage
+from mistralai.workflows.core.storage.blob_storage_impl import BlobStorage
+from mistralai.workflows.core.config import config
+
+
+@asynccontextmanager
+async def get_document_storage():
+    storage_config = config.worker.blob_storage_configs.get("documents")
+    if storage_config is None:
+        raise ApplicationError(
+            "Blob storage is not configured. Set BLOB_STORAGE_CONFIGS__DOCUMENTS__* env vars.",
+            non_retryable=True,
+        )
+    async with get_blob_storage(storage_config) as storage:
+        yield storage
+
+
+@workflows.activity(display_name="Read document")
+async def read_document(key: str, storage: BlobStorage = Depends(get_document_storage)) -> bytes:
+    return await storage.download(key)
+```
+
+  </TabItem>
+</Tabs>

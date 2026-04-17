@@ -205,16 +205,6 @@ export const redirects = [
     permanent: true,
   },
   {
-    source: "/studio-api/conversations/structured-output/custom",
-    destination: "/studio-api/conversations/structured-output",
-    permanent: true,
-  },
-  {
-    source: "/studio-api/conversations/structured-output/json_mode",
-    destination: "/studio-api/conversations/structured-output",
-    permanent: true,
-  },
-  {
     source: "/capabilities/audio",
     destination: "/studio-api/data-ingestion/audio-transcriptions",
     permanent: true,

@@ -6,6 +6,7 @@ import { PixelGrid } from './pixel-grid';
 
 interface LinkCardProps extends React.ComponentProps<'a'> {
   title: string;
+  hoverTitle?: string;
   icon?: React.ReactNode;
   href: string;
   hoverColor?: string;
@@ -14,6 +15,7 @@ interface LinkCardProps extends React.ComponentProps<'a'> {
 
 function LinkCard({
   title,
+  hoverTitle,
   icon,
   href,
   hoverColor,
@@ -31,7 +33,7 @@ function LinkCard({
         } as React.CSSProperties
       }
       className={cn(
-        'relative overflow-clip text-foreground rounded-lg border border-border flex items-center justify-center gap-4 h-16 2xl:h-20 p-6 bg-foreground/10 transition-colors duration-100 hover:bg-[var(--hover-color)] group',
+        'relative overflow-clip text-foreground no-underline rounded-lg border border-border flex items-center justify-center gap-4 h-16 2xl:h-20 p-6 bg-foreground/10 dark:bg-foreground/5 transition-colors duration-300 ease-in-out hover:bg-[var(--hover-color)] dark:hover:bg-zinc-900 group',
         className
       )}
       target={isExternal ? '_blank' : undefined}
@@ -41,14 +43,21 @@ function LinkCard({
       {pixelEffect && <PixelGrid pixelSize={8} opacity={0.35} />}
 
       <div className="flex items-center gap-2.5 z-10">
-        <span className="text-foreground">{icon}</span>
-        <h3
+        <span className="text-foreground dark:group-hover:text-white transition-colors duration-100">{icon}</span>
+        <span
           className={cn(
-            'font-bold text-base 2xl:text-lg dark:group-hover:text-black/70 transition-colors duration-100'
+            'font-semibold text-sm text-center group-hover:text-black/80 dark:group-hover:text-white transition-colors duration-100'
           )}
         >
-          {title}
-        </h3>
+          {hoverTitle ? (
+            <>
+              <span className="group-hover:hidden">{title}</span>
+              <span className="hidden group-hover:inline">{hoverTitle}</span>
+            </>
+          ) : (
+            title
+          )}
+        </span>
       </div>
     </Link>
   );
@@ -59,17 +68,15 @@ function UsefullLinkContainer({ children }: { children: React.ReactNode }) {
   const modifiedChildren = React.Children.map(children, (child, index) => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, {
-        hoverColor: COLOR_INDEX[index % COLOR_INDEX.length],
+        hoverColor: '#FF8205',
       } as LinkCardProps);
     }
   });
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="not-prose grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
       {modifiedChildren}
     </div>
   );
 }
 
 export { LinkCard, UsefullLinkContainer };
-
-const COLOR_INDEX = ['#F097D7', '#FF9549', '#D0D94C', '#B7E2ED'];

@@ -1,0 +1,404 @@
+---
+id: observability_judges
+title: Judges
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Judges
+
+Judges are LLM-based evaluators that **score or classify model responses**.
+
+Define your quality criteria once, then apply them consistently at scale **across thousands of events**.
+
+:::note
+Judges aren't used on their own. They power **[Campaigns](./campaigns)**, which **batch-annotate production traffic**.
+:::
+
+A Judge has three main components: its **type**, **model**, and **instructions**.
+
+<SectionTab as="h1" sectionId="two-types">Two types of Judges</SectionTab>
+
+There are two types of Judges: **Classification** and **Regression**.
+
+<ExplorerTabs id="judge-types">
+  <ExplorerTab value="classification" label="Classification">
+
+### Classification Judges
+
+Classification Judges assign a **discrete label** to each response. Use them when you need a clear category, not a score.
+
+**Good for:**
+- Binary decisions: `helpful` / `not helpful`, `safe` / `unsafe`
+- Multi-class tagging: `excellent` / `acceptable` / `poor`
+- Routing labels: `code` / `search` / `guide`
+
+**Example:**
+
+> Evaluate the assistant's final response. Is it accurate, relevant, and complete? Classify as excellent, acceptable, or poor.
+
+Then define labels as follows:
+  - *excellent* → "Fully addresses the question with accurate, clear information"
+  - *acceptable* → "Addresses the question but with minor issues"
+  - *poor* → "Fails to address the question or contains significant errors"
+
+
+  </ExplorerTab>
+  <ExplorerTab value="regression" label="Regression">
+
+### Regression Judges
+
+Regression Judges assign a **numeric score** within a defined range. Use them when you need granularity, not categories.
+
+**Good for:**
+- Helpfulness rating: 1–5
+- Relevance score: 0–100
+- Accuracy percentage
+
+You define a min, max, and descriptions for the endpoints of the scale.
+
+**Example:**
+
+> Rate the helpfulness of the assistant's response on a 1–5 scale. Consider accuracy, relevance, and completeness.
+
+Then define the endpoints of the scale:
+  - 1 → Completely unhelpful or harmful
+  - 5 → Excellent, fully addresses the user's needs
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="choosing-a-model">Choosing a model</SectionTab>
+
+Pick a model of your choice based on the **trade-off between evaluation quality and cost**:
++ stronger models produce **more nuanced judgments** but cost more per event.
++ faster models work well for **straightforward, well-defined criteria**.
+
+See the full list of available models and their pricing on the [Models page](/models/overview).
+
+<SectionTab as="h1" sectionId="setting-instructions">Instructions guidelines</SectionTab>
+
+Craft your instructions with care: 
+
++ **Be specific**. Avoid vague prompts and prefer detailed instructions
++ **Never assume** the Judge understands your context. Spell out what "good" means **for your use case**.
++ **Ensure testability**. If you can't apply the criteria consistently, neither can the Judge.
++ **Use boundary examples**: *"A score of 3 means the response is **partially helpful** (= answers the question but omits a key detail)."*
+
+:::note
+The instructions field is **prefilled with a template structure**. Just write under the **# Instructions** block. Conversation history, user message, assistant response, and available tools are **auto-injected into the Judge's context**.
+:::
+
+<details>
+<summary><b>Advanced: using Jinja2 template variables</b></summary>
+
+Advanced users can **tweak the template and reference event data directly** using [Jinja2 syntax](https://jinja.palletsprojects.com/) (`{{ }}`).
+
+Here is a list of available variables:
+
+| Variable                       | What it contains                                    |
+|--------------------------------|-----------------------------------------------------|
+| `{{ conversation_history }}`   | The full conversation history (messages in order).  |
+| `{{ user_message }}`           | The user's last message.                            |
+| `{{ assistant_message }}`      | The assistant's last response.                      |
+| `{{ system_prompt }}`          | The system prompt used during the request.          |
+| `{{ available_tools }}`        | Tools available to the model during the request.    |
+| `{{ answer_type_definition }}` | The output schema (auto-generated from your output type config). |
+| `{{ properties.* }}`          | Custom properties from the dataset record.          |
+
+Properties let you attach **structured context that Judges can reference**.
+
+For instance, if your dataset records have a `properties.expected_output` field, you can reference it to compare against a **known-good answer**:
+
+```text
+Compare the assistant's response to the expected output.
+Expected output: {{ properties.expected_output }}
+```
+
+</details>
+
+<SectionTab as="h1" sectionId="validation-before-scale">Validate before you scale</SectionTab>
+
+Always test your Judge on a small sample **before scaling** to thousands of events:
+
+1. Select a Source between **Traffic** or **Dataset**.
+2. Optionally **filter the events** (using the same [filter language](./explorer#filter-language) as in Explorer)
+3. Use the **Try it** button to **run the Judge on all events** or click on a row to analyze a single event.
+
+Run on 10–20 records and inspect every judgment:
+  + **Check agreement**: do the Judge's scores match what you'd give?
+  + **Check stability**: does the Judge score similar inputs consistently?
+  + **Check failure patterns**: are there undefined answers or contradictions?
+
+If the Judge disagrees with your expectations, **revise the instructions** before scaling up.
+
+<SectionTab as="h1" sectionId="sdk-access">[Developer] Use Judges programmatically</SectionTab>
+
+The [SDK](/resources/sdks) lets you **create, manage, and version Judges from code**. Useful for automated Campaign workflows or teams that want Judge definitions in version control.
+
+<ExplorerTabs id="judges-sdk">
+  <ExplorerTab value="create" label="Create">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Classification Judge
+classifier = mistral.beta.observability.judges.create(
+    name="Response Quality Classifier",
+    description="Classifies responses as excellent, acceptable, or poor",
+    model_name="mistral-medium-latest",
+    instructions="""You are evaluating the quality of an AI assistant's response.
+
+Conversation:
+{{ conversation_history }}
+
+Evaluate the assistant's final response based on:
+- Accuracy and correctness
+- Helpfulness and relevance
+- Clarity and conciseness
+
+Classify as:
+- excellent: Fully addresses the question with accurate, clear information
+- acceptable: Addresses the question but with minor issues
+- poor: Fails to address the question or contains significant errors""",
+    output={
+        "type": "CLASSIFICATION",
+        "options": [
+            {"value": "excellent", "description": "High quality, accurate response"},
+            {"value": "acceptable", "description": "Adequate but improvable"},
+            {"value": "poor", "description": "Inadequate or incorrect"}
+        ]
+    },
+    tools=[]
+)
+print(f"Classifier created: {classifier.id}")
+
+# Regression Judge
+scorer = mistral.beta.observability.judges.create(
+    name="Helpfulness Score",
+    description="Rates response helpfulness on a 1-5 scale",
+    model_name="mistral-small-latest",
+    instructions="""Rate the helpfulness of the assistant's response.
+
+Conversation:
+{{ conversation_history }}
+
+Score from 1 to 5:
+1 = Completely unhelpful or harmful
+2 = Mostly unhelpful with major issues
+3 = Partially helpful but with significant gaps
+4 = Helpful with minor issues
+5 = Excellent, fully addresses the user's needs""",
+    output={
+        "type": "REGRESSION",
+        "min": 1,
+        "max": 5,
+        "min_description": "Completely unhelpful",
+        "max_description": "Excellent response"
+    },
+    tools=[]
+)
+print(f"Scorer created: {scorer.id}")
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Classification Judge
+classifier = mistral.beta.observability.judges.create(
+    name="Response Quality Classifier",
+    description="Classifies responses as excellent, acceptable, or poor",
+    model_name="mistral-medium-latest",
+    instructions="""You are evaluating the quality of an AI assistant's response.
+
+Conversation:
+{{ conversation_history }}
+
+Evaluate the assistant's final response based on:
+- Accuracy and correctness
+- Helpfulness and relevance
+- Clarity and conciseness
+
+Classify as:
+- excellent: Fully addresses the question with accurate, clear information
+- acceptable: Addresses the question but with minor issues
+- poor: Fails to address the question or contains significant errors""",
+    output={
+        "type": "CLASSIFICATION",
+        "options": [
+            {"value": "excellent", "description": "High quality, accurate response"},
+            {"value": "acceptable", "description": "Adequate but improvable"},
+            {"value": "poor", "description": "Inadequate or incorrect"}
+        ]
+    },
+    tools=[]
+)
+print(f"Classifier created: {classifier.id}")
+
+# Regression Judge
+scorer = mistral.beta.observability.judges.create(
+    name="Helpfulness Score",
+    description="Rates response helpfulness on a 1-5 scale",
+    model_name="mistral-small-latest",
+    instructions="""Rate the helpfulness of the assistant's response.
+
+Conversation:
+{{ conversation_history }}
+
+Score from 1 to 5:
+1 = Completely unhelpful or harmful
+2 = Mostly unhelpful with major issues
+3 = Partially helpful but with significant gaps
+4 = Helpful with minor issues
+5 = Excellent, fully addresses the user's needs""",
+    output={
+        "type": "REGRESSION",
+        "min": 1,
+        "max": 5,
+        "min_description": "Completely unhelpful",
+        "max_description": "Excellent response"
+    },
+    tools=[]
+)
+print(f"Scorer created: {scorer.id}")
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="custom-properties" label="Using custom properties">
+
+Use custom properties from dataset records for more targeted scoring.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Judge that compares responses to expected output
+judge = mistral.beta.observability.judges.create(
+    name="Expected Output Comparison",
+    description="Compares response to expected output",
+    model_name="mistral-medium-latest",
+    instructions="""Compare the assistant's response to the expected output.
+
+Conversation:
+{{ conversation_history }}
+
+Expected output:
+{{ properties.expected_output }}
+
+Grading guidance:
+{{ properties.grading_guidance }}
+
+{% if available_tools %}
+Available tools the assistant could use:
+{{ available_tools }}
+{% endif %}
+
+Rate how well the response matches the expected output.""",
+    output={
+        "type": "REGRESSION",
+        "min": 0,
+        "max": 100,
+        "min_description": "Completely wrong",
+        "max_description": "Perfect match"
+    },
+    tools=[]
+)
+print(f"Judge created: {judge.id}")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="manage" label="List, update, delete">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# List all Judges
+judges = mistral.beta.observability.judges.list(page_size=50)
+for judge in judges.judges.results:
+    print(f"{judge.name} ({judge.output.type})")
+
+# Filter by type
+classification_judges = mistral.beta.observability.judges.list(
+    type_filter=["CLASSIFICATION"]
+)
+
+# Search by name
+quality_judges = mistral.beta.observability.judges.list(q="quality")
+
+# Get Judge details
+judge = mistral.beta.observability.judges.fetch(judge_id="judge-123")  # replace with your Judge ID
+print(f"Judge: {judge.name} ({judge.output.type})")
+
+# Update a Judge
+updated = mistral.beta.observability.judges.update(
+    judge_id="judge-123",  # replace with your Judge ID
+    name="Updated Judge Name",
+    description="Updated description",
+    model_name="mistral-large-latest",
+    instructions="Updated instructions...",
+    output={"type": "CLASSIFICATION", "options": [
+        {"value": "good", "description": "Good response"},
+        {"value": "bad", "description": "Bad response"}
+    ]},
+    tools=[]
+)
+print(f"Judge updated")
+
+# Delete a Judge
+mistral.beta.observability.judges.delete(judge_id="judge-123")  # replace with your Judge ID
+print("Judge deleted")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="My Judge gives inconsistent scores on similar inputs">
+  The instructions are probably too vague. Add explicit criteria with concrete boundaries. If the task is nuanced, try a stronger model (e.g., switch from mistral-small to mistral-medium). Test on a small sample after each instruction change.
+  </FaqItem>
+  <FaqItem question="Too many judgments come back as undefined">
+  The Judge couldn't map its reasoning to your output schema. Tighten the option descriptions for classification Judges, or ensure the score range makes sense for regression Judges. Check that your instructions match the output type. Don't ask the Judge to "classify" when the output type is regression.
+  </FaqItem>
+  <FaqItem question="Can I reuse the same Judge across multiple Campaigns?">
+  Yes. A Judge is a reusable definition. You can use the same Judge across multiple Campaigns. Just be aware that if you update the Judge between Campaigns, results won't be directly comparable.
+  </FaqItem>
+  <FaqItem question="How do I choose between classification and regression?">
+  If you need a clear decision (yes/no, good/bad, category A/B/C), use classification. If you need granularity and want to track score trends over time, use regression. When in doubt, start with classification. It's simpler to reason about and easier to validate.
+  </FaqItem>
+</Faq>

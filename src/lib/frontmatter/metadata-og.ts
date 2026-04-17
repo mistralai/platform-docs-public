@@ -43,7 +43,7 @@ export const remarkOgFromPath: Plugin<[Options?]> = (opts = {}) => {
 
       if (__fm.type === 'api') {
         const __title = __fm.title || __fm.sidebarLabel || 'Api Reference';
-        const __description = __fm.description || 'Mistral AI Api Reference';
+        const __description = __fm.description || 'Welcome to Mistral AI\\'s Api Reference';
 
         const __params = new URLSearchParams();
         __params.set('type', 'generic');
@@ -80,7 +80,7 @@ export const remarkOgFromPath: Plugin<[Options?]> = (opts = {}) => {
         )});
         if (__title) __params.set('title', __title);
         __params.set('type', 'generic');
-        __params.set('description', __description || 'Mistral AI\\'s Documentation');
+        __params.set('description', __description || 'Welcome to Mistral AI\\'s Documentation');
 
         const __ogUrl = \`${
           new URL(BASE_URL).origin

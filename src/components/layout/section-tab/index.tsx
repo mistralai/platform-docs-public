@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 const sectionTabContainerVariants = cva(
-  'w-full group/section-tab flex items-end not-prose section-tab-container mt-6 mb-2 justify-between gap-1 scroll-mt-[calc(var(--header)+2rem)]',
+  'w-full group/section-tab flex items-end not-prose section-tab-container mt-12 mb-2 justify-between gap-1 scroll-mt-[calc(var(--header)+2rem)]',
   {
     variants: {
       variant: {
@@ -23,7 +23,7 @@ const sectionTabContainerVariants = cva(
 );
 
 export const sectionTabVariants = cva(
-  'inline-flex items-center -mb-px gap-2 px-2.5 py-1 rounded-t-md font-semibold text-xs 2xl:text-sm font-mono uppercase not-prose [&_p]:m-0',
+  'inline-flex items-center -mb-px gap-2 px-2.5 py-1 rounded-t-md font-semibold text-xs 2xl:text-sm font-mono uppercase not-prose [&_p]:m-0 [&_p]:text-inherit',
   {
     variants: {
       variant: {
@@ -54,7 +54,7 @@ export function SectionTab({
   children,
   sectionId,
   onSectionCopy,
-  showIcon = true,
+  showIcon = false,
   as = 'h2',
   ...props
 }: SectionTabProps) {

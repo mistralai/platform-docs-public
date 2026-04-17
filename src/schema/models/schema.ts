@@ -75,93 +75,93 @@ type Features = Record<
 export const AVAILABLE_FEATURES = {
   'chat-completions': {
     name: 'Chat Completions',
-    link: '/capabilities/completion',
+    link: '/studio-api/conversations/chat-completion',
     endpoints: ['chat-completions'],
   },
   'function-calling': {
     name: 'Function Calling',
-    link: '/capabilities/function_calling',
+    link: '/studio-api/conversations/function-calling',
     endpoints: ['chat-completions', 'conversations'],
   },
   'agents-conversations': {
     name: 'Agents & Conversations',
-    link: '/agents/agents',
+    link: '/studio-api/agents/agents-api',
     endpoints: ['agents', 'conversations'],
   },
   connectors: {
     name: 'Built-In Tools',
-    link: '/agents/tools',
+    link: '/studio-api/agents/agent-tools',
     endpoints: ['agents', 'conversations'],
   },
   'structured-outputs': {
     name: 'Structured Outputs',
-    link: '/capabilities/structured_output',
+    link: '/studio-api/conversations/structured-output',
     endpoints: ['chat-completions', 'conversations'],
   },
   'predicted-outputs': {
     name: 'Predicted Outputs',
-    link: '/capabilities/predicted_outputs',
+    link: '/studio-api/conversations/advanced/predicted-outputs',
     endpoints: ['chat-completions', 'conversations'],
   },
   prefix: {
     name: 'Prefix',
-    link: '/capabilities/completion/usage#other-useful-features',
+    link: '/studio-api/conversations/chat-completion#other-useful-features',
     endpoints: ['chat-completions', 'conversations'],
   },
-  ocr: { name: 'OCR', link: '/capabilities/document_ai', endpoints: ['ocr'] },
+  ocr: { name: 'OCR', link: '/studio-api/document-processing', endpoints: ['ocr'] },
   'annotations-structured-ocr': {
     name: 'Annotations - Structured',
-    link: '/capabilities/document_ai/annotations',
+    link: '/studio-api/document-processing/annotations',
     endpoints: ['ocr'],
   },
   'bbox-extraction': {
     name: 'BBox Extraction',
-    link: '/capabilities/document_ai/basic_ocr',
+    link: '/studio-api/document-processing/basic_ocr',
     endpoints: ['ocr'],
   },
   'document-qna': {
     name: 'Document QnA',
-    link: '/capabilities/document_ai/document_qna',
+    link: '/studio-api/document-processing/document_qna',
     endpoints: ['chat-completions', 'conversations'],
   },
   fim: {
     name: 'FIM',
-    link: '/capabilities/fim',
+    link: '/mistral-vibe/using-fim-api',
     endpoints: ['fim-completions'],
   },
   embeddings: {
     name: 'Embeddings',
-    link: '/capabilities/embeddings',
+    link: '/studio-api/knowledge-rag/embeddings',
     endpoints: ['embeddings'],
   },
   moderations: {
     name: 'Moderations',
-    link: '/capabilities/guardrailing',
+    link: '/studio-api/safety-moderation',
     endpoints: ['moderations'],
   },
   'chat-moderations': {
     name: 'Chat Moderations',
-    link: '/capabilities/guardrailing',
+    link: '/studio-api/safety-moderation',
     endpoints: ['chat-moderations'],
   },
   transcriptions: {
     name: 'Transcriptions',
-    link: '/capabilities/audio/speech_to_text#transcription',
+    link: '/studio-api/audio#transcription',
     endpoints: ['audio-transcriptions'],
   },
   tts: {
     name: 'Text to Speech',
-    link: '/capabilities/text_to_speech',
+    link: '/studio-api/audio/text_to_speech',
     endpoints: ['audio-speech'],
   },
   timestamps: {
     name: 'Timestamps',
-    link: '/capabilities/audio/speech_to_text#transcription-with-timestamps',
+    link: '/studio-api/audio#transcription-with-timestamps',
     endpoints: ['audio-transcriptions'],
   },
   batching: {
     name: 'Batching',
-    link: '/capabilities/batch',
+    link: '/studio-api/batch-processing',
     endpoints: ['batch'],
   },
 } as const satisfies Features;
@@ -268,13 +268,13 @@ export type StaticModel = Readonly<ModelTemplate<any, any>>;
 // 4 Type helpers
 export type Names<T> = T extends readonly any[]
   ? T[number] extends { name: infer N }
-    ? Extract<N, string>
-    : never
+  ? Extract<N, string>
+  : never
   : never;
 export type Slugs<T> = T extends readonly any[]
   ? T[number] extends { slug: infer S }
-    ? Extract<S, string>
-    : never
+  ? Extract<S, string>
+  : never
   : never;
 
 // factory function to define models

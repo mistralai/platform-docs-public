@@ -80,3 +80,4 @@ export { default as WinkIcon } from './wink';
 export { default as WowIcon } from './wow';
 export { default as PlayIcon } from './play';
 export { default as RepostIcon } from './repost';
+export { default as StudioIcon } from './studio';

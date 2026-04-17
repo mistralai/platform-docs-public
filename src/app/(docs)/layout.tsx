@@ -12,6 +12,9 @@ import { Metadata } from 'next';
 import { Prose } from '@/components/common/prose';
 import { SidebarItem } from '@/schema';
 import { DocsVariantProvider } from '@/contexts/docs-variant';
+import sidebarMetadata from '@/app/(api)/components/sidebar-metadata.json';
+import { flattenSidebar } from '@/lib/api-sidebar';
+import { ApiSidebarItem } from '@/app/(api)/schema/api-sidebar';
 
 export const metadata: Metadata = {
   title: {
@@ -27,7 +30,7 @@ export default async function SidebarLayout({
   children: React.ReactNode;
 }) {
   const sidebar = await getSidebar('src/app/(docs)');
-  const sidebarTree = sidebarTreeData(sidebar);
+  const { tree: sidebarTree, defaultExpandedCategories } = sidebarTreeData(sidebar);
 
   const asideClassName =
     'hidden xl:flex w-[calc(var(--sidebar-width)-var(--sides))] ml-10 2xl:ml-14 pl-2';
@@ -43,8 +46,9 @@ export default async function SidebarLayout({
             sidebar={sidebarTree}
             expandedCategoriesOptions={{
               overridedExpandedCategories: {
-                '/': [['getting-started', 'introduction']],
+                '/': [['getting-started']],
               },
+              defaultExpandedCategories,
             }}
           />
         </Sidebar>
@@ -86,8 +90,22 @@ export default async function SidebarLayout({
   );
 }
 
-const sidebarTreeData = (sidebar: SidebarItem[]): SideBarTreeNode[] => {
+const mapApiSidebarToTreeNode = (items: ApiSidebarItem[]): SideBarTreeNode[] => {
+  return items.map(item => ({
+    label: item.label,
+    href: item.href,
+    clickable: item.clickable,
+    pagination: { prev: undefined, next: undefined },
+    children: [],
+    isExternalLink: true,
+  }));
+};
+
+const sidebarTreeData = (sidebar: SidebarItem[]): { tree: SideBarTreeNode[]; defaultExpandedCategories: string[] } => {
   const items: SideBarTreeNode[] = [];
+  const defaultExpandedCategories: string[] = [];
+  const apiSidebarData = mapApiSidebarToTreeNode(flattenSidebar(sidebarMetadata));
+
   for (const item of sidebar) {
     if (item.hidden) {
       continue;
@@ -102,16 +120,31 @@ const sidebarTreeData = (sidebar: SidebarItem[]): SideBarTreeNode[] => {
         } else if (!label) {
           label = item.slug[item.slug.length - 1]!;
         }
+        const fileHref =
+          item.overridedSlug && item.overridedSlug.length > 0
+            ? `/${item.overridedSlug.join('/')}`
+            : `/${item.slug.join('/')}`;
+
+        if (label === 'API Reference') {
+          items.push({
+            label: label,
+            href: fileHref,
+            children: apiSidebarData,
+            pagination: { prev: undefined, next: undefined },
+            clickable: true,
+          });
+          break;
+        }
+
         items.push({
           label: label,
-          href: `/${item.slug.join('/')}`,
+          href: fileHref,
           children: [] as SideBarTreeNode[],
           pagination: { prev: undefined, next: undefined },
           clickable: true,
         });
         break;
       }
-      /* Category --- */
       case 'category': {
         // get label ------------------------------------------------------------
         let label = item.slug[item.slug.length - 1]!;
@@ -122,19 +155,34 @@ const sidebarTreeData = (sidebar: SidebarItem[]): SideBarTreeNode[] => {
         // get href ------------------------------------------------------------
         const href =
           item.overridedSlug && item.overridedSlug.length > 0
-            ? item.overridedSlug.join('/')
+            ? `/${item.overridedSlug.join('/')}`
             : `/${item.slug.join('/')}`;
+
+        const childResult = sidebarTreeData(item.children || []);
+        const categoryChildren = childResult.tree;
+        defaultExpandedCategories.push(...childResult.defaultExpandedCategories);
+
+        if (label === 'API Reference') {
+          categoryChildren.push(...apiSidebarData);
+        }
+
+        const isGettingStarted = label === 'Getting Started' && item.slug.length === 1;
+        const categoryHref = isGettingStarted ? '/' : href;
+
+        if (item.metadata?.defaultExpanded) {
+          defaultExpandedCategories.push(categoryHref);
+        }
 
         items.push({
           label: label,
-          children: sidebarTreeData(item.children || []),
-          href: item.clickable ? href : undefined,
+          children: categoryChildren,
+          href: categoryHref,
           pagination: { prev: undefined, next: undefined },
-          clickable: item.clickable,
+          clickable: isGettingStarted || item.clickable ? true : false,
         });
         break;
       }
     }
   }
-  return items;
+  return { tree: items, defaultExpandedCategories };
 };

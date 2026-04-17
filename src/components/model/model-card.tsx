@@ -76,7 +76,7 @@ export function ModelCard({
           <h3 className="font-bold text-xl text-foreground flex items-center gap-2">
             <span>{model.name}</span>
           </h3>
-          <p className="text-sm text-foreground/50 group-hover:text-foreground/70 line-clamp-1 text-ellipsis overflow-hidden">
+          <p className="text-sm text-foreground/50 group-hover:text-foreground/70 line-clamp-2 text-ellipsis overflow-hidden">
             {model.shortDescription || model.description}
           </p>
         </div>
@@ -149,7 +149,7 @@ export function ModelCard({
         size="lg"
         style={cardStyle}
       />
-      <div className="z-2 px-4 py-2 flex-1 flex flex-col  gap-0.5">
+      <div className="z-2 px-4 py-2 flex-1 flex flex-col gap-0.5">
         <div className="flex items-center gap-2 justify-between">
           <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
             {model.name}
@@ -157,7 +157,7 @@ export function ModelCard({
           {model.type && <ModelTypeBadge type={model.type} />}
         </div>
         <div className="flex gap-2 justify-between items-baseline">
-          <p className="text-sm text-foreground/70 line-clamp-1 text-ellipsis overflow-hidden">
+          <p className="text-sm text-foreground/70 line-clamp-2 text-ellipsis overflow-hidden">
             {model.shortDescription || model.description}
           </p>
           {showParameters && (

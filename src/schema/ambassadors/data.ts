@@ -379,7 +379,7 @@ export const AMBASSADOR_BENEFITS = [
     id: 'free-credits',
     title: 'Free credits',
     description:
-      'Mistral Ambassadors will receive free API credits on la Plateforme.',
+      'Mistral Ambassadors will receive free API credits on Studio.',
     icon: 'credits',
   },
   {

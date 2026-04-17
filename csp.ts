@@ -28,6 +28,7 @@ const cspDirectives = {
     'https://www.google-analytics.com',
     'https://analytics.google.com',
     'https://axeptio.imgix.net',
+    'https://colab.research.google.com',
   ],
   'media-src': ["'self'", 'blob:'],
   'connect-src': [

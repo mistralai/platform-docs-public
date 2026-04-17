@@ -17,8 +17,8 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { SearchInput } from './search-input';
-import { ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { ChevronRightIcon, ChevronDownIcon } from '@/components/icons/pixel';
 import { ActiveIndicator } from '@/components/ui/active-indicator';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ import {
 import { getHrefSlugs } from '@/lib/urls';
 import { useActiveElementHash } from '@/app/(api)/components/hash-auto-change';
 import { AnyDocsMetadata } from '@/schema';
+import { getActiveSidebarSections } from '@/schema/content/header';
 
 export type SideBarTreeNode = {
   clickable: boolean;
@@ -49,6 +50,7 @@ export type SideBarTreeNode = {
     };
   };
   metadata?: AnyDocsMetadata | null;
+  isExternalLink?: boolean;
 };
 
 const isPathContained = (
@@ -68,6 +70,8 @@ type ExpandedCategoriesContextType<T extends SideBarTreeNode> = {
   lastActiveItem: T | null;
   setLastActiveItem: (item: T | null) => void;
   hashResponsive: boolean;
+  forceExpandAll?: boolean;
+  toggleCategory: (href: string, isOpen: boolean, accordion?: boolean) => void;
 };
 
 const ExpandedCategoriesContext =
@@ -92,14 +96,16 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
   expandedCategoriesOptions,
   renderItem,
   hashResponsive,
+  forceExpandAll,
 }: {
   children: React.ReactNode;
   sidebar: T[];
   expandedCategoriesOptions?: ExpandedCategoriesOptions;
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
   hashResponsive?: boolean;
+  forceExpandAll?: boolean;
 }) => {
-  const { expandedCategories, isHydrated } = useSidebarExpandedCategories(
+  const { expandedCategories, isHydrated, toggleCategory } = useSidebarExpandedCategories(
     sidebar,
     expandedCategoriesOptions
   );
@@ -115,6 +121,8 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
       lastActiveItem,
       setLastActiveItem,
       hashResponsive: hashResponsive,
+      forceExpandAll: forceExpandAll,
+      toggleCategory,
     }),
     [
       expandedCategories,
@@ -123,6 +131,8 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
       renderItem,
       lastActiveItem,
       hashResponsive,
+      forceExpandAll,
+      toggleCategory,
     ]
   );
 
@@ -135,6 +145,8 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
   );
 };
 
+import { MethodBadge } from '@/app/(api)/components/method-badge';
+
 const SidebarFileItem = <T extends SideBarTreeNode>({
   item,
   className,
@@ -145,8 +157,32 @@ const SidebarFileItem = <T extends SideBarTreeNode>({
 } & React.HTMLAttributes<HTMLDivElement>) => {
   const { setOpenMobile } = useSidebar();
   const { renderItem } = useExpandedCategories();
-  const Content = renderItem ?? (props => props.item.label);
+  const Content = renderItem ?? (props => {
+    const it = props.item as any;
+    if (it.method) {
+      return (
+        <div className="flex items-center gap-2 min-w-0 w-full">
+           <MethodBadge active={isActive}>{it.method}</MethodBadge>
+           <span className="truncate leading-tight mt-[1px]">{it.label}</span>
+        </div>
+      );
+    }
+    return <span className="truncate">{it.label}</span>;
+  });
   const href = item.href!;
+  const itemRef = React.useRef<HTMLAnchorElement>(null);
+
+  React.useEffect(() => {
+    if (isActive && itemRef.current) {
+      // Small timeout to allow the sidebar to render and open collapsibles
+      setTimeout(() => {
+        itemRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100);
+    }
+  }, [isActive]);
 
   return (
     <SidebarMenuItem>
@@ -156,6 +192,7 @@ const SidebarFileItem = <T extends SideBarTreeNode>({
         className={cn('group', className)}
       >
         <Link
+          ref={itemRef}
           href={href}
           onClick={() => setOpenMobile(false)}
           {...(item.download ? { download: item.download.filename } : {})}
@@ -173,15 +210,35 @@ const SidebarFirstLevelCategoryItem = <T extends SideBarTreeNode>({
 }: {
   item: SideBarTreeNode;
 }) => {
+  const containerId = item.label.toLowerCase().replace(/\s+/g, '-');
+  const pathname = usePathname();
+  const isActive = item.clickable && item.href ? pathname === item.href : false;
+
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{item.label}</SidebarGroupLabel>
+    <SidebarGroup id={containerId}>
+      <SidebarGroupLabel className="flex justify-between items-center w-full group/label pr-1">
+        {item.clickable && item.href ? (
+          <Link
+            className={cn(
+              "flex items-center gap-1.5 transition-colors",
+              isActive ? "text-foreground font-bold" : "hover:text-foreground"
+            )}
+            href={item.href}
+          >
+            {item.label}
+            {(item.label === 'API Reference' || item.isExternalLink) && <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />}
+          </Link>
+        ) : (
+          item.label
+        )}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {item.children.map((child, index) => (
             <SidebarItem<SideBarTreeNode>
               key={index}
               item={child as SideBarTreeNode}
+              submenu={true}
             />
           ))}
         </SidebarMenu>
@@ -203,6 +260,8 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
     overridedExpandedCategories,
     renderItem,
     hashResponsive,
+    forceExpandAll,
+    toggleCategory,
   } = useExpandedCategories();
 
   const pathnameWithoutHash = usePathname();
@@ -231,84 +290,119 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
     isPathContained(getHrefSlugs(item.href!), currentSlug)
   );
 
+  const categoryId = item.href || item.label;
+
   const [isExpanded, setIsExpanded] = React.useState(
-    expandedCategories.has(item.href!) ||
-      isCategoryActive ||
-      hasActiveDescendant
+    forceExpandAll ||
+    expandedCategories.has(categoryId) ||
+    isCategoryActive ||
+    hasActiveDescendant
   );
 
+  const lastPathname = React.useRef(pathname);
+
   React.useEffect(() => {
-    const shouldExpand =
-      isCategoryActive ||
-      expandedCategories.has(item.href!) ||
-      item.href! === pathname ||
-      hasActiveDescendant ||
-      (hashResponsive && pathname.startsWith(item.href!));
-    if (shouldExpand) {
+    if (forceExpandAll) {
       setIsExpanded(true);
+      return;
     }
+
+    const routeIsActive =
+      isCategoryActive ||
+      hasActiveDescendant ||
+      (!!item.href && item.href === pathname) ||
+      (!!item.href && hashResponsive && pathname.startsWith(item.href));
+
+    if (pathname !== lastPathname.current) {
+      lastPathname.current = pathname;
+      if (routeIsActive) {
+        setIsExpanded(true);
+        return;
+      }
+    }
+
+    setIsExpanded(expandedCategories.has(categoryId));
   }, [
+    forceExpandAll,
+    pathname,
     isCategoryActive,
     hasActiveDescendant,
     expandedCategories,
-    pathnameWithoutHash,
+    categoryId,
+    hashResponsive,
+    item.href,
   ]);
   const UsedSidebarItem = submenu ? SidebarMenuItem : SidebarMenuSubItem;
   const Content = renderItem ?? (props => props.item.label);
+  const itemRef = React.useRef<HTMLAnchorElement>(null);
+
+  React.useEffect(() => {
+    if (isCategoryActive && itemRef.current) {
+      setTimeout(() => {
+        itemRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100);
+    }
+  }, [isCategoryActive]);
+
   return (
     <Collapsible.Root
       className="group/collapsible"
       open={isExpanded}
-      onOpenChange={setIsExpanded}
+      onOpenChange={(open) => {
+        setIsExpanded(open);
+        toggleCategory(categoryId, open, false);
+      }}
     >
       <UsedSidebarItem>
         <div className="flex items-center">
-          {item.href ? (
-            <div className="relative w-full h-full">
+          <div className="relative w-full h-full flex items-center">
+            {item.href && item.clickable !== false ? (
               <SidebarMenuButton
                 asChild
-                className="flex-1"
+                className="flex-1 pr-8"
                 isActive={isCategoryActive}
               >
                 <Link
-                  onClick={() => setOpenMobile(false)}
+                  ref={itemRef}
+                  onClick={() => {
+                    setOpenMobile(false);
+                    toggleCategory(categoryId, !isExpanded, true);
+                  }}
                   className="flex-1 group w-full h-full"
-                  href={item.href!}
+                  href={item.href}
                   data-state={isCategoryActive ? 'on' : 'off'}
                 >
                   <Content item={item as T} isActive={isCategoryActive} />
                 </Link>
               </SidebarMenuButton>
-              <Collapsible.Trigger asChild>
-                <button
-                  onClick={e => e.stopPropagation()}
-                  className="py-0.5 pl-1 pr-2 hover:text-foreground text-foreground/50 rounded-md ml-1 absolute right-0 top-1/2 -translate-y-1/2"
-                >
-                  <ChevronRight
-                    className={cn(
-                      'h-4 w-4 transition-transform',
-                      isExpanded && 'rotate-90'
-                    )}
-                  />
-                </button>
-              </Collapsible.Trigger>
-            </div>
-          ) : (
-            <Collapsible.Trigger asChild>
+            ) : (
               <SidebarMenuButton
-                className="flex-1 relative"
+                className="flex-1 pr-8"
                 isActive={isCategoryActive}
+                onClick={() => {
+                  toggleCategory(categoryId, !isExpanded, true);
+                }}
               >
                 <Content item={item as T} isActive={isCategoryActive} />
-                <ChevronRight
+              </SidebarMenuButton>
+            )}
+            <Collapsible.Trigger asChild>
+              <button
+                onClick={e => e.stopPropagation()}
+                className="py-0.5 pl-1 pr-2 hover:text-foreground text-foreground/50 rounded-md ml-1 absolute right-0 top-1/2 -translate-y-1/2 h-full flex items-center justify-center cursor-pointer touch-manipulation z-10"
+              >
+                <ChevronRightIcon
                   className={cn(
-                    'h-4 w-4 ml-auto transition-transform',
+                    'h-4 w-4 transition-transform',
                     isExpanded && 'rotate-90'
                   )}
                 />
-              </SidebarMenuButton>
+              </button>
             </Collapsible.Trigger>
-          )}
+          </div>
         </div>
         <Collapsible.Content>
           <SidebarMenuSub className="mr-0 pr-0">
@@ -335,8 +429,15 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
   children?: React.ReactNode;
 }) => {
+  const pathname = usePathname();
   const UsedSidebarItem = renderItem ? SidebarItem<T> : SidebarFileItem<T>;
   const [hasScrollDown, setHasScrollDown] = React.useState(false);
+
+  const filteredSidebar = React.useMemo(() => {
+    if (!pathname) return sidebar;
+    const activeSections = getActiveSidebarSections(pathname);
+    return sidebar.filter(item => activeSections.includes(item.label));
+  }, [sidebar, pathname]);
 
   React.useEffect(() => {
     const element = document.querySelector(
@@ -368,23 +469,72 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
 
   return (
     <>
-      <SidebarHeader className="max-lg:hidden">
-        <SearchInput />
-      </SidebarHeader>
+      <SidebarHeader className="max-lg:hidden" />
       <SidebarContent>
         {children}
-        {sidebar.map((item, index) => {
-          if (!item.children.length) {
+        {filteredSidebar.map((item, index) => {
+          if (!item.children || !item.children.length) {
             return (
               <SidebarGroup key={index}>
+                <SidebarGroupLabel className="flex justify-between items-center w-full group/label pr-1">
+                  {item.clickable && item.href ? (
+                    <Link className="flex items-center gap-1.5" href={item.href}>
+                      {item.label}
+                      {item.isExternalLink && <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />}
+                    </Link>
+                  ) : (
+                    item.label
+                  )}
+                </SidebarGroupLabel>
+              </SidebarGroup>
+            );
+          }
+
+          // Check if we are in one of the new sections
+          const isNewSection =
+            pathname?.startsWith('/mistral-vibe') ||
+            pathname?.startsWith('/studio-api') ||
+            pathname?.startsWith('/models') ||
+            pathname?.startsWith('/admin') ||
+            pathname?.startsWith('/getting-started') ||
+            pathname?.startsWith('/resources') ||
+            pathname?.startsWith('/guides') ||
+            pathname?.startsWith('/community');
+
+          if (isNewSection) {
+            const isSectionActive = item.clickable && item.href ? pathname === item.href : false;
+            return (
+              <SidebarGroup key={index}>
+                <SidebarGroupLabel className="cursor-pointer">
+                  {item.clickable && item.href ? (
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "transition-colors cursor-pointer",
+                        isSectionActive ? "text-foreground font-bold" : "hover:text-foreground"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    item.label
+                  )}
+                </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    <UsedSidebarItem item={item as T} isActive={false} />
+                    {item.children.map((child, childIndex) => (
+                      <SidebarItem<T>
+                        key={childIndex}
+                        item={child as T}
+                        submenu={true}
+                      />
+                    ))}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
             );
           }
+
           return <SidebarFirstLevelCategoryItem key={index} item={item as T} />;
         })}
       </SidebarContent>
@@ -400,7 +550,7 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
             hasScrollDown ? 'opacity-100' : 'opacity-0'
           )}
         >
-          <ChevronDown className="size-4 text-foreground/50" />
+          <ChevronDownIcon className="size-4 text-foreground/50" />
         </div>
       </div>
     </>
@@ -451,11 +601,8 @@ const SidebarItem = <T extends SideBarTreeNode>({
       pathname.split('#')[1] === item.href?.split('#')[1];
     // if is overrided expanded, and the hash is not the same as the item href, return false
 
-    // Define custom matches for special cases
-    const customMatches = item.href?.startsWith('/models') ? ['models'] : [];
-
     const isActive =
-      isItemActive(pathname, item.href, customMatches) ||
+      isItemActive(pathname, item.href) ||
       (hashResponsive ? overridedHashActive : isOverridedExpanded);
     return <SidebarFileItem<T> item={item} isActive={isActive} />;
   }
@@ -468,12 +615,14 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
   expandedCategoriesOptions,
   renderItem,
   hashResponsive = false,
+  forceExpandAll = false,
   children,
 }: {
   sidebar: T[];
   expandedCategoriesOptions?: ExpandedCategoriesOptions;
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
   hashResponsive?: boolean;
+  forceExpandAll?: boolean;
   children?: React.ReactNode;
 }) => {
   return (
@@ -482,6 +631,7 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
       sidebar={sidebar}
       expandedCategoriesOptions={expandedCategoriesOptions}
       hashResponsive={hashResponsive}
+      forceExpandAll={forceExpandAll}
     >
       <DocsSidebarContent<T> sidebar={sidebar as T[]} renderItem={renderItem}>
         {children}

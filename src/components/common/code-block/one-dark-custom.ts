@@ -9,7 +9,7 @@ export default {
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
-    lineHeight: '1.5',
+    lineHeight: 'normal',
     MozTabSize: '2',
     OTabSize: '2',
     tabSize: '2',
@@ -28,7 +28,7 @@ export default {
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
-    lineHeight: '1.5',
+    lineHeight: 'normal',
     MozTabSize: '2',
     OTabSize: '2',
     tabSize: '2',
@@ -199,9 +199,9 @@ export default {
     color: 'hsl(286, 60%, 67%)',
   },
   '.language-javascript .token.template-string > .token.interpolation > .token.interpolation-punctuation.punctuation':
-    {
-      color: 'hsl(5, 48%, 51%)',
-    },
+  {
+    color: 'hsl(5, 48%, 51%)',
+  },
   '.language-json .token.operator': {
     color: 'hsl(220, 14%, 71%)',
   },
@@ -343,9 +343,9 @@ export default {
     boxShadow: '0 2px 0 0 rgba(0, 0, 0, 0.2)',
   },
   'pre[id].linkable-line-numbers.linkable-line-numbers span.line-numbers-rows > span:hover:before':
-    {
-      backgroundColor: 'hsla(220, 100%, 80%, 0.04)',
-    },
+  {
+    backgroundColor: 'hsla(220, 100%, 80%, 0.04)',
+  },
   '.line-numbers.line-numbers .line-numbers-rows': {
     borderRightColor: 'hsla(220, 14%, 71%, 0.15)',
   },
@@ -401,21 +401,21 @@ export default {
     backgroundColor: 'hsla(353, 100%, 66%, 0.15)',
   },
   'pre.diff-highlight > code .token.token.deleted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.deleted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.deleted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.deleted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.deleted:not(.prefix)::selection': {
     backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
   },
@@ -435,21 +435,21 @@ export default {
     backgroundColor: 'hsla(137, 100%, 55%, 0.15)',
   },
   'pre.diff-highlight > code .token.token.inserted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.inserted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.inserted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.inserted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.inserted:not(.prefix)::selection': {
     backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
   },
@@ -521,7 +521,7 @@ export const onelightCustom = {
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
-    lineHeight: '1.5',
+    lineHeight: 'normal',
     MozTabSize: '2',
     OTabSize: '2',
     tabSize: '2',
@@ -540,7 +540,7 @@ export const onelightCustom = {
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
-    lineHeight: '1.5',
+    lineHeight: 'normal',
     MozTabSize: '2',
     OTabSize: '2',
     tabSize: '2',
@@ -705,9 +705,9 @@ export const onelightCustom = {
     color: 'hsl(301, 63%, 40%)',
   },
   '.language-javascript .token.template-string > .token.interpolation > .token.interpolation-punctuation.punctuation':
-    {
-      color: 'hsl(344, 84%, 43%)',
-    },
+  {
+    color: 'hsl(344, 84%, 43%)',
+  },
   '.language-json .token.operator': {
     color: 'hsl(230, 8%, 24%)',
   },
@@ -845,9 +845,9 @@ export const onelightCustom = {
     boxShadow: '0 2px 0 0 rgba(0, 0, 0, 0.2)',
   },
   'pre[id].linkable-line-numbers.linkable-line-numbers span.line-numbers-rows > span:hover:before':
-    {
-      backgroundColor: 'hsla(230, 8%, 24%, 0.05)',
-    },
+  {
+    backgroundColor: 'hsla(230, 8%, 24%, 0.05)',
+  },
   '.line-numbers.line-numbers .line-numbers-rows': {
     borderRightColor: 'hsla(230, 8%, 24%, 0.2)',
   },
@@ -903,21 +903,21 @@ export const onelightCustom = {
     backgroundColor: 'hsla(353, 100%, 66%, 0.15)',
   },
   'pre.diff-highlight > code .token.token.deleted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.deleted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.deleted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.deleted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.deleted:not(.prefix)::selection': {
     backgroundColor: 'hsla(353, 95%, 66%, 0.25)',
   },
@@ -937,21 +937,21 @@ export const onelightCustom = {
     backgroundColor: 'hsla(137, 100%, 55%, 0.15)',
   },
   'pre.diff-highlight > code .token.token.inserted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.inserted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.inserted:not(.prefix)::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre > code.diff-highlight .token.token.inserted:not(.prefix) *::-moz-selection':
-    {
-      backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
-    },
+  {
+    backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
+  },
   'pre.diff-highlight > code .token.token.inserted:not(.prefix)::selection': {
     backgroundColor: 'hsla(135, 73%, 55%, 0.25)',
   },

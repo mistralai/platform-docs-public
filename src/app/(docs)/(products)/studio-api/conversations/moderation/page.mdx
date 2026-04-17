@@ -1,0 +1,702 @@
+---
+id: guardrailing
+title: Moderation & Guardrailing
+sidebar_position: 11
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+import RawTextEndpointTab from './raw_text_endpoint_tab/_page.mdx';
+import ConversationalEndpointTab from './conversational_endpoint_tab/_page.mdx';
+
+# Moderation & Guardrailing
+
+When deploying LLMs in production, different verticals may require different levels of guardrailing. For example, in a chatbot application, it may be crucial to ensure that the generated content is safe and respectful.
+In other applications, it may be required to detect and filter out harmful or PII (Personally Identifiable Information) content.
+
+We provide two ways to guardrail your applications:
+- **[Custom Guardrails](#custom-guardrails)** *(recommended)*: Declare moderation rules directly in your API requests — no separate calls, no threshold logic in your code. Supports chat completions, conversations, and agent-level configuration.
+- **[Moderation API](#moderation)**: A dedicated API to classify text across policy categories, for custom pipelines where you need raw scores and full control.
+
+<SectionTab as="h1" sectionId="moderation">Moderation</SectionTab>
+
+### Moderate Inputs/Outputs
+
+Our moderation service is powered by `mistral-moderation-2603`. It classifies text across policy categories including a `jailbreaking` category.
+
+:::note
+`mistral-moderation-2411` was deprecated on March 31, 2026. See [Mistral Moderation 2411](/resources/deprecated/guardrailing/mistral_moderation_2411) for legacy reference.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="endpoints">Endpoints</SectionTab>
+
+The moderation service has two end-points: one to classify **raw text** and one to classify **conversational content**. More details below.
+
+<ExplorerTabs id="endpoints">
+  <ExplorerTab value="raw-text-endpoint" label="Raw-text Endpoint">
+    <RawTextEndpointTab/>
+  </ExplorerTab>
+  <ExplorerTab value="conversational-endpoint" label="Conversational Endpoint">
+    <ConversationalEndpointTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+:::note[ ]
+The policy threshold is determined based on the optimal performance of our internal test set.
+You can use the raw score or adjust the threshold according to your specific use cases.
+
+We intend to continually improve the underlying model of the moderation endpoint.
+Custom policies that depend on `category_scores` can require recalibration.
+:::
+
+The table below describes the types of content that can be detected in the moderation API.
+
+| Category | Description |
+| --- | --- |
+| Sexual | Material that explicitly depicts, describes, or promotes sexual activities, nudity, or sexual services. This includes pornographic content, graphic descriptions of sexual acts, and solicitation for sexual purposes. Educational or medical content about sexual health presented in a non-explicit, informational context is generally exempted. |
+| Hate and Discrimination | Content that expresses prejudice, hostility, or advocates discrimination against individuals or groups based on protected characteristics such as race, ethnicity, religion, gender, sexual orientation, or disability. This includes slurs, dehumanizing language, calls for exclusion or harm targeted at specific groups, and persistent harassment or bullying of individuals based on these characteristics. |
+| Violence and Threats | Content that describes, glorifies, incites, or threatens physical violence against individuals or groups. This includes graphic depictions of injury or death, explicit threats of harm, and instructions for carrying out violent acts. This category covers both targeted threats and general promotion or glorification of violence. |
+| Dangerous | Content that describes or promotes extremely hazardous behaviors that pose a significant risk of physical harm. |
+| Criminal | Content that describes or promotes illegal activities. |
+| Self-Harm | Content that promotes, instructs, plans, or encourages deliberate self-injury, suicide, eating disorders, or other self-destructive behaviors. This includes detailed methods, glorification, statements of intent, dangerous challenges, and related slang terms. |
+| Health | Content that contains or tries to elicit detailed or tailored medical advice. |
+| Financial | Content that contains or tries to elicit detailed or tailored financial advice. |
+| Law | Content that contains or tries to elicit detailed or tailored legal advice. |
+| PII | Content that requests, shares, or attempts to elicit personal identifying information such as full names, addresses, phone numbers, social security numbers, or financial account details. |
+| Jailbreaking | Attempts to bypass or circumvent the model's safety guidelines, policies, or intended behavior through prompt manipulation, role-playing scenarios, or other techniques designed to elicit disallowed outputs. |
+
+<SectionTab as="h2" variant="secondary" sectionId="cookbooks">Cookbooks</SectionTab>
+
+Our [moderation cookbook](/resources/cookbooks/mistral-moderation-system-level-guardrails) provides a concrete example of how to use the Moderation service to implement system level guardrails.  
+For a more broad view, there is also a more [explorative cookbook](/resources/cookbooks/mistral-moderation-moderation-explored).
+
+<SectionTab as="h2" variant="secondary" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="What is the distribution of false-positive and false-negative results on the new moderation API models. Specifically, will they be more likely to flag something as harmful when it is not or not flag something that is harmful?">
+    On our internal testset, policies have a precision between [0.8 - 1.0] and a recall between [0.7 - 1.0]. We recommend you leverage the raw scores instead of the boolean responses if you have specific application objectives (e.g. reduce false positives) and set thresholds accordingly. We are continuously gathering feedback on performance and improving our models.
+  </FaqItem>
+</Faq>
+
+<SectionTab as="h1" sectionId="custom-guardrails">Custom Guardrails</SectionTab>
+
+Custom guardrails let you declare moderation rules directly in your API requests, without manually calling the Moderation API and implementing threshold logic in your application code. Guardrails apply **input moderation only** — they run before the request reaches the model. When a guardrail is triggered, the request is blocked and a `403` error is returned.
+
+Each guardrail uses the `moderation_llm_v2` config, backed by `mistral-moderation-2603`.
+
+Each config accepts:
+- **`custom_category_thresholds`**: object mapping category names to threshold values (0–1). Set a category to `1` to explicitly disable it.
+- **`ignore_other_categories`**: if `true`, only the categories listed in `custom_category_thresholds` are evaluated; all others are ignored.
+- **`action`**: `"block"` to block the request on violation.
+- **`block_on_error`**: if `true`, the request is blocked when the moderation API itself fails (per guardrail).
+- **`model_name`** *(optional)*: override the default moderation model for that config.
+
+Multiple guardrails can be specified per request — the request is blocked if any one is triggered. Only one `moderation_llm_v2` config can be specified per guardrail object, but you can include multiple guardrail objects.
+
+<SectionTab as="h2" variant="secondary" sectionId="inline-guardrails">Inline Guardrails</SectionTab>
+
+Pass a `guardrails` field in any `POST /v1/chat/completions` or `POST /v1/conversations` request.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.chat.complete(
+    model="mistral-small-latest",
+    messages=[{"role": "user", "content": "How far is the moon from Earth?"}],
+    guardrails=[
+        {
+            "block_on_error": True,
+            "moderation_llm_v2": {
+                "custom_category_thresholds": {
+                    "sexual": 0.1,
+                    "selfharm": 0.1,
+                },
+                "ignore_other_categories": False,
+                "action": "block",
+            },
+        }
+    ],
+)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.chat.complete(
+    model="mistral-small-latest",
+    messages=[{"role": "user", "content": "How far is the moon from Earth?"}],
+    guardrails=[
+        {
+            "block_on_error": True,
+            "moderation_llm_v2": {
+                "custom_category_thresholds": {
+                    "sexual": 0.1,
+                    "selfharm": 0.1,
+                },
+                "ignore_other_categories": False,
+                "action": "block",
+            },
+        }
+    ],
+)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({ apiKey });
+
+const response = await client.chat.complete({
+    model: "mistral-small-latest",
+    messages: [{ role: "user", content: "How far is the moon from Earth?" }],
+    guardrails: [
+        {
+            blockOnError: true,
+            moderationLlmV2: {
+                customCategoryThresholds: {
+                    sexual: 0.1,
+                    selfharm: 0.1,
+                },
+                ignoreOtherCategories: false,
+                action: "block",
+            },
+        },
+    ],
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-small-latest",
+    "messages": [{ "role": "user", "content": "How far is the moon from Earth?" }],
+    "guardrails": [
+      {
+        "block_on_error": true,
+        "moderation_llm_v2": {
+          "custom_category_thresholds": {
+            "sexual": 0.1,
+            "selfharm": 0.1
+          },
+          "ignore_other_categories": false,
+          "action": "block"
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "9c5e5d0cd53d479a8c78a7d2e34be7a3",
+  "created": 1773411346,
+  "model": "mistral-small-latest",
+  "usage": {
+    "prompt_tokens": 11,
+    "total_tokens": 172,
+    "completion_tokens": 161,
+    "prompt_tokens_details": { "cached_tokens": 0 }
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The average distance from the **Earth to the Moon** is about **384,400 kilometers (238,855 miles)**.\n\nHowever, this distance varies due to the Moon's elliptical orbit:\n- **Closest approach (Perigee):** ~363,300 km (225,700 mi)\n- **Farthest distance (Apogee):** ~405,500 km (252,000 mi)\n\nThis variation is why we sometimes see **supermoons** (when the Moon is at perigee) and **micromoons** (when it's at apogee).\n\nWould you like details on how this distance is measured or its significance in space exploration?"
+      }
+    }
+  ],
+  "guardrails": [
+    {
+      "moderation_llm_v2": {
+        "action": "none",
+        "categories": {
+          "sexual": { "score": 4.7850949158601e-6, "violated": false },
+          "hate_and_discrimination": { "score": 0.00002355261858610902, "violated": false },
+          "violence_and_threats": { "score": 0.00002014569145103451, "violated": false },
+          "dangerous": { "score": 0.000011125607670692261, "violated": false },
+          "criminal": { "score": 0.0000376364441763144, "violated": false },
+          "selfharm": { "score": 1.003014176603756e-6, "violated": false },
+          "health": { "score": 3.288748985141865e-6, "violated": false },
+          "financial": { "score": 2.0580494037858443e-6, "violated": false },
+          "law": { "score": 2.9023121896898374e-6, "violated": false },
+          "pii": { "score": 0.000027535692424862646, "violated": false },
+          "jailbreaking": { "score": 0.000014285516954259947, "violated": false }
+        }
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="conversations-guardrails">Conversations Endpoint</SectionTab>
+
+You can also pass guardrails directly on a `POST /v1/conversations` request, either with a `model` or when you want to override an agent's guardrails.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.beta.conversations.start(
+    model="mistral-small-latest",
+    inputs=[{"role": "user", "content": "How far is the moon from Earth?"}],
+    guardrails=[
+        {
+            "block_on_error": True,
+            "moderation_llm_v2": {
+                "custom_category_thresholds": {
+                    "sexual": 0.1,
+                    "selfharm": 0.1,
+                },
+                "ignore_other_categories": False,
+                "action": "block",
+            },
+        }
+    ],
+)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+response = client.beta.conversations.start(
+    model="mistral-small-latest",
+    inputs=[{"role": "user", "content": "How far is the moon from Earth?"}],
+    guardrails=[
+        {
+            "block_on_error": True,
+            "moderation_llm_v2": {
+                "custom_category_thresholds": {
+                    "sexual": 0.1,
+                    "selfharm": 0.1,
+                },
+                "ignore_other_categories": False,
+                "action": "block",
+            },
+        }
+    ],
+)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({ apiKey });
+
+const response = await client.beta.conversations.start({
+    model: "mistral-small-latest",
+    inputs: [{ role: "user", content: "How far is the moon from Earth?" }],
+    guardrails: [
+        {
+            blockOnError: true,
+            moderationLlmV2: {
+                customCategoryThresholds: {
+                    sexual: 0.1,
+                    selfharm: 0.1,
+                },
+                ignoreOtherCategories: false,
+                action: "block",
+            },
+        },
+    ],
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/conversations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-small-latest",
+    "inputs": [{ "role": "user", "content": "How far is the moon from Earth?" }],
+    "guardrails": [
+      {
+        "block_on_error": true,
+        "moderation_llm_v2": {
+          "custom_category_thresholds": {
+            "sexual": 0.1,
+            "selfharm": 0.1
+          },
+          "ignore_other_categories": false,
+          "action": "block"
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "object": "conversation.response",
+  "conversation_id": "conv_019ce791858676bc94cc69cd6aa4353a",
+  "outputs": [
+    {
+      "object": "entry",
+      "type": "message.output",
+      "created_at": "2026-03-13T14:19:59.915998Z",
+      "completed_at": "2026-03-13T14:20:00.117313Z",
+      "model": "mistral-small-latest",
+      "id": "msg_019ce791862b725d8529b3a589de562a",
+      "role": "assistant",
+      "content": "The average distance from the Earth to the Moon is about 384,400 kilometers (238,855 miles). This distance can vary slightly due to the Moon's elliptical orbit."
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 11,
+    "completion_tokens": 45,
+    "total_tokens": 56
+  },
+  "guardrails": [
+    {
+      "moderation_llm_v2": {
+        "action": "none",
+        "categories": {
+          "sexual": { "score": 4.7850949158601e-6, "violated": false },
+          "hate_and_discrimination": { "score": 2.355261858610902e-5, "violated": false },
+          "violence_and_threats": { "score": 2.014569145103451e-5, "violated": false },
+          "dangerous": { "score": 1.1125607670692261e-5, "violated": false },
+          "criminal": { "score": 3.76364441763144e-5, "violated": false },
+          "selfharm": { "score": 1.0348530850023963e-6, "violated": false },
+          "health": { "score": 3.187565198459197e-6, "violated": false },
+          "financial": { "score": 1.9947297005273867e-6, "violated": false },
+          "law": { "score": 2.8130175451224204e-6, "violated": false },
+          "pii": { "score": 2.6688530851970427e-5, "violated": false },
+          "jailbreaking": { "score": 1.4285516954259947e-5, "violated": false }
+        }
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="agent-guardrails">Agent-Level Guardrails</SectionTab>
+
+Guardrails can also be attached to an agent at creation time. All conversations using that agent automatically inherit them without needing to re-specify them per request. They can be overridden by passing `guardrails` directly on a `POST /v1/conversations` request.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+agent = client.beta.agents.create(
+    model="mistral-small-latest",
+    name="Moderated Agent",
+    guardrails=[
+        {
+            "block_on_error": True,
+            "moderation_llm_v2": {
+                "custom_category_thresholds": {
+                    "sexual": 0.1,
+                    "jailbreaking": 0.3,
+                },
+                "ignore_other_categories": False,
+                "action": "block",
+            },
+        }
+    ],
+)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+client = Mistral(api_key=api_key)
+
+agent = client.beta.agents.create(
+    model="mistral-small-latest",
+    name="Moderated Agent",
+    guardrails=[
+        {
+            "block_on_error": True,
+            "moderation_llm_v2": {
+                "custom_category_thresholds": {
+                    "sexual": 0.1,
+                    "jailbreaking": 0.3,
+                },
+                "ignore_other_categories": False,
+                "action": "block",
+            },
+        }
+    ],
+)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const apiKey = process.env.MISTRAL_API_KEY;
+const client = new Mistral({ apiKey });
+
+const agent = await client.beta.agents.create({
+    model: "mistral-small-latest",
+    name: "Moderated Agent",
+    guardrails: [
+        {
+            blockOnError: true,
+            moderationLlmV2: {
+                customCategoryThresholds: {
+                    sexual: 0.1,
+                    jailbreaking: 0.3,
+                },
+                ignoreOtherCategories: false,
+                action: "block",
+            },
+        },
+    ],
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/agents \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-small-latest",
+    "name": "Moderated Agent",
+    "guardrails": [
+      {
+        "block_on_error": true,
+        "moderation_llm_v2": {
+          "custom_category_thresholds": {
+            "sexual": 0.1,
+            "jailbreaking": 0.3
+          },
+          "ignore_other_categories": false,
+          "action": "block"
+        }
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "object": "agent",
+  "id": "ag_019ce792c1647356af78d08137c8cd08",
+  "version": 0,
+  "created_at": "2026-03-13T14:21:20.648178Z",
+  "updated_at": "2026-03-13T14:21:20.648181Z",
+  "model": "mistral-small-latest",
+  "name": "Moderated Agent",
+  "description": null,
+  "instructions": null,
+  "tools": [],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": null,
+    "top_p": null,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto",
+    "reasoning_effort": null
+  },
+  "guardrails": [
+    {
+      "block_on_error": true,
+      "moderation_llm_v2": null,
+      "moderation_llm_v2": {
+        "model_name": "mistral-moderation-2603",
+        "custom_category_thresholds": {
+          "sexual": 0.1,
+          "hate_and_discrimination": null,
+          "violence_and_threats": null,
+          "dangerous": null,
+          "criminal": null,
+          "selfharm": null,
+          "health": null,
+          "financial": null,
+          "law": null,
+          "pii": null,
+          "jailbreaking": 0.3
+        },
+        "ignore_other_categories": false,
+        "action": "block"
+      }
+    }
+  ],
+  "handoffs": null,
+  "metadata": null,
+  "deployment_chat": false,
+  "source": "api"
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="guardrail-responses">Responses</SectionTab>
+
+On a successful (non-blocked) request, a `guardrails` field is included in the response with the evaluation results for each guardrail. Only the categories specified in `custom_category_thresholds` are returned (when `ignore_other_categories` is `false`, all evaluated categories are included):
+
+```json
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {}
+    }
+  ],
+  "created": 1702256327,
+  "id": "cmpl-e5cc70bb28c444948073e77776eb30ef",
+  "model": "mistral-small-latest",
+  "object": "chat.completion",
+  "usage": {},
+  "guardrails": [
+    {
+      "moderation_llm_v2": {
+        "action": "pass",
+        "categories": {
+          "sexual": { "score": 0.03, "violated": false },
+          "selfharm": { "score": 0.05, "violated": false },
+          "violence_and_threats": { "score": 0.0, "violated": false },
+          "hate_and_discrimination": { "score": 0.0, "violated": false }
+        }
+      }
+    }
+  ]
+}
+```
+
+When a guardrail blocks a request, a `403` is returned with details on which categories were violated:
+
+```json
+{
+  "error": {
+    "message": "Content blocked by guardrail",
+    "status": 403
+  },
+  "guardrails": {
+    "results": {
+      "moderation_llm_v2": {
+        "model_name": "mistral-moderation-2603",
+        "decisions": {
+          "sexual": { "threshold": 0.1, "score": 0.3, "violated": true },
+          "selfharm": { "threshold": 0.1, "score": 0.05, "violated": false },
+          "violence_and_threats": { "threshold": 1.0, "score": 0.0, "violated": false },
+          "hate_and_discrimination": { "threshold": 1.0, "score": 0.0, "violated": false }
+        },
+        "violated": true,
+        "action": "block"
+      }
+    }
+  }
+}
+```
+
+If `block_on_error` is `true` and the moderation API fails, the request is blocked with the following error:
+
+```json
+{
+  "object": "Error",
+  "message": "Request blocked due to error in guardrail evaluation and block_on_error is set to True.",
+  "type": "invalid_request_error",
+  "code": 3201,
+  "guardrails": [
+    {
+      "moderation_llm_v2": {
+        "action": "block",
+        "error": {
+          "message": "Moderation API request failed."
+        }
+      }
+    }
+  ]
+}
+```

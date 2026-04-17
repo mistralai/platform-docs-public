@@ -49,9 +49,8 @@ description: Welcome to Mistral AI's Api Reference
       const aTagName = a.tags[0]?.name;
       const bTagName = b.tags[0]?.name;
 
-      const normalize = name => name?.replace(/\//g, '.');
-      const aIndex = parsedTags.findIndex(tag => tag.name === normalize(aTagName));
-      const bIndex = parsedTags.findIndex(tag => tag.name === normalize(bTagName));
+      const aIndex = parsedTags.findIndex(tag => tag.name === aTagName);
+      const bIndex = parsedTags.findIndex(tag => tag.name === bTagName);
 
       if (aIndex === -1 && bIndex === -1) return 0;
       if (aIndex === -1) return 1;
@@ -88,7 +87,7 @@ export default {
     },
     {
       language: 'python',
-      sdkTarballPath: './sdks/client-python-2.0.0.tar.gz',
+      sdkTarballPath: './sdks/client-python-1.9.11.tar.gz',
     },
     {
       language: 'curl',

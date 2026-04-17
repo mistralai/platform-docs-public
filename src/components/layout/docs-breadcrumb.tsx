@@ -12,6 +12,7 @@ import {
   getSlugOrOverridedSlug,
 } from '@/lib/content/breadcrumb-stuff';
 import { SidebarItem } from '@/schema';
+import { getActiveHeaderTab } from '@/schema/content/header';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
@@ -66,6 +67,8 @@ export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
   const { breadcrumb, topCategory } = getBreadcrumb(sidebar, slug);
   const lastItem = breadcrumb[breadcrumb.length - 1];
 
+  const activeTab = getActiveHeaderTab(pathname);
+
   const breadcrumbItems: BreadcrumbItem[] = breadcrumb.map((item, i) => {
     const sidebarLabel =
       item.type === 'file'
@@ -81,6 +84,27 @@ export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
       clickable: item.clickable,
     };
   });
+
+  // Prepend the active header tab as a virtual breadcrumb segment
+  // Skip for "Getting Started" (root tab) since those pages are already at the root level
+  if (activeTab.href !== '/') {
+    // If the first sidebar breadcrumb item has the same label as the tab, replace it
+    // to avoid "Developers > Developers" or "Products > Products"
+    if (
+      breadcrumbItems.length > 0 &&
+      breadcrumbItems[0].label.toLowerCase() === activeTab.label.toLowerCase()
+    ) {
+      breadcrumbItems[0] = {
+        ...breadcrumbItems[0],
+        href: activeTab.href,
+      };
+    } else {
+      breadcrumbItems.unshift({
+        label: activeTab.label,
+        href: activeTab.href,
+      });
+    }
+  }
 
   return (
     <div

@@ -1,0 +1,129 @@
+---
+title: "Manage workspaces and API keys"
+sidebar_label: "Manage workspaces"
+sidebar_position: 3
+description: "Create isolated workspaces, generate API keys, and set usage limits for your team. ~10 minutes."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+import { AppLink } from '@/components/common/app-link';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+
+# Manage workspaces and API keys
+
+Organize your Mistral account with workspaces, API keys, and spending controls.
+
+- **Workspaces** isolate API keys and usage metrics by team or environment
+- **API keys** are scoped to a workspace for tracking and access control
+- **Spending limits** prevent unexpected costs per workspace
+
+**Time to complete:** ~10 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
+
+- Admin role in your Mistral organization
+- Billing activated (API keys are inactive until a payment method is on file)
+
+<SectionTab as="h2" sectionId="step-1">Step 1: Create a workspace</SectionTab>
+
+Workspaces isolate API keys, usage metrics, and billing. Use them to separate development from production, or to track usage by team.
+
+1. Open <AppLink href="https://admin.mistral.ai/organization/workspaces" app="admin">Manage › Workspaces</AppLink>.
+2. Click **Create workspace**.
+3. Enter a name: for example, `Production` or `ML Research`.
+4. Optionally add an icon and description for easy identification.
+5. Click **Create**.
+
+Create at least two workspaces (development and production) so test traffic doesn't consume production quotas.
+
+<SectionTab as="h2" sectionId="step-2">Step 2: Add members to the workspace</SectionTab>
+
+Control who has access to each workspace independently.
+
+1. Open the workspace you just created.
+2. Click **Add members**.
+3. Select team members from your organization.
+4. Assign their workspace role:
+
+<Table className="mt-4 mb-6">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Role</TableHead>
+      <TableHead>Permissions</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>**Admin**</TableCell>
+      <TableCell>Full workspace control: manage members, keys, settings</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>**Member**</TableCell>
+      <TableCell>Use API keys, view usage: no management access</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+5. Click **Confirm**.
+
+<SectionTab as="h2" sectionId="step-3">Step 3: Generate API keys</SectionTab>
+
+Each workspace has its own API keys. We track and bill usage per workspace.
+
+1. Open <AppLink href="https://console.mistral.ai/api-keys" app="studio">API keys</AppLink>.
+2. Select the target workspace from the workspace dropdown.
+3. Click **Create new key**.
+4. Name the key descriptively: for example, `prod-backend` or `staging-chatbot`.
+5. Copy the key immediately. It's shown only once.
+
+```bash
+# Set the key as an environment variable
+export MISTRAL_API_KEY="your-key-here"
+```
+
+:::warning
+Never commit API keys to source control. Use environment variables or a secrets manager to store them.
+:::
+
+<SectionTab as="h2" sectionId="step-4">Step 4: Set usage limits</SectionTab>
+
+Prevent unexpected costs by setting monthly spending limits per workspace.
+
+1. Open <AppLink href="https://admin.mistral.ai/organization/billing" app="admin">Subscriptions › Billing</AppLink>.
+2. Under the workspace, click **Set limit**.
+3. Enter a monthly budget in USD: for example, `$500`.
+4. When the workspace hits the limit, API requests return `429 Too Many Requests` until the next billing cycle.
+
+Monitor real-time usage from the billing dashboard to spot trends before hitting limits.
+
+<SectionTab as="h2" sectionId="verify">Verify</SectionTab>
+
+Your workspace setup is complete if:
+
+- The workspace appears in the workspace dropdown in <AppLink href="https://console.mistral.ai">Studio</AppLink>
+- Team members added to the workspace can see it in their console
+- API keys generated for the workspace return successful responses
+- Usage appears under the correct workspace in the billing dashboard
+
+Test a key with a quick API call:
+
+```bash
+curl https://api.mistral.ai/v1/models \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+A successful response returns a JSON list of available models.
+
+<SectionTab as="h2" sectionId="whats-next">What's next</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/getting-started/quickstarts/admin" title="All admin quickstarts" />
+</UsefullLinkContainer>

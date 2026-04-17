@@ -120,9 +120,9 @@ function Tabs({ children, className, tabsClassName, groupId }: TabsProps) {
           ))}
           {outputTab && (
             <>
-              <div className="flex-1 flex items-center">
+              <div className="flex-1 flex items-center min-w-0">
                 <DashedRightArrow
-                  className="text-foreground px-2"
+                  className="text-foreground px-2 min-w-0"
                   lineThickness={1}
                   arrowSize={8}
                 />
@@ -130,7 +130,7 @@ function Tabs({ children, className, tabsClassName, groupId }: TabsProps) {
                   data-type="multi-codeblock-tab"
                   value={'output'}
                   className={cn(
-                    'text-sm flex-1 text-center data-[state=active]:bg-code-background data-[state=active]:text-foreground',
+                    'text-sm shrink-0 text-center data-[state=active]:bg-code-background data-[state=active]:text-foreground',
                     tabsClassName
                   )}
                   variant="code"

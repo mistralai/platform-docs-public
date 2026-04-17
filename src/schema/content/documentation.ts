@@ -50,8 +50,8 @@ export interface DocsCategoryMetadata {
   table_of_contents?: boolean;
   /* If the page has no pagination, it will not be displayed in the sidebar */
   hidePagination?: boolean;
-  /* If false, the category label in the sidebar will not be a clickable link */
-  clickable?: boolean;
+  /* If true, this category will be expanded by default on all pages */
+  defaultExpanded?: boolean;
 }
 
 export type AnyDocsMetadata = DocsCategoryMetadata | DocsMetadata;

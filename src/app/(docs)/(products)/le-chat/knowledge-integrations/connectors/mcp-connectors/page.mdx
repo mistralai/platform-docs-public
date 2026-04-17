@@ -1,0 +1,133 @@
+---
+title: "MCP Connectors"
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+# MCP Connectors
+
+Beyond our [featured Connectors](/le-chat/knowledge-integrations/connectors), you can connect Le Chat to third-party and custom services built on the [Model Context Protocol](https://modelcontextprotocol.io) (MCP), an open standard for connecting tools to language models.
+
+There are two ways to add an MCP Connector: pick one from the **pre-configured directory**, or point Le Chat at **your own MCP-compatible server**. Both require an administrator.
+
+:::warning
+MCP Connectors aren't Mistral products. We don't control third-party servers and can't guarantee their behavior or data handling. Connect only to servers you trust.
+:::
+
+<SectionTab as="h1" sectionId="directory">Browsing the directory</SectionTab>
+
+The MCP Connectors directory is a curated collection of pre-configured third-party Connectors your administrator can add to your organization.
+
+1. Open the `Connectors` page.
+2. Click `+ Add Connector`.
+3. Browse the directory or search for a specific Connector.
+4. Click a Connector to view its details and add it to your organization.
+5. Complete the authentication flow if required.
+
+Some Connectors in the directory require additional configuration (a custom URL or API key). You'll be prompted during setup.
+
+:::note
+This is an administrator-only feature. On Free, Pro, and Student plans, the account owner is the administrator by default.
+:::
+
+<SectionTab as="h1" sectionId="custom-connectors">Configuring a custom Connector</SectionTab>
+
+Custom Connectors let you connect Le Chat to any MCP-compatible server. This is useful for internal tools, private APIs, or services that aren't in the directory.
+
+1. Open the `Connectors` page.
+2. Click `+ Add Connector` and switch to the `Custom MCP Connector` tab.
+3. Fill in the required fields:
+   - **Connector name**: a unique identifier (no spaces or special characters).
+   - **Server URL**: the full URL of your MCP-compatible server.
+   - **Description** (optional): a short explanation of what this Connector does.
+4. Click `Connect`. The platform detects the server's authentication method automatically.
+5. Complete the authentication flow if prompted.
+
+### Supported authentication methods
+
+Our platform auto-detects the authentication method when you provide the server URL:
+
+- **No authentication**: for publicly accessible or trusted internal servers.
+- **HTTP Bearer Token / Basic Auth**: for servers that require credentials in the `Authorization` header.
+- **OAuth 2.1** (with dynamic client registration): for servers using standard OAuth 2.1 delegated access. You'll be guided through the consent flow.
+
+<SectionTab as="h1" sectionId="per-function-permissions">Per-function permissions</SectionTab>
+
+After setup, every user can control whether Le Chat asks for permission each time it calls a Connector function, or whether it should be pre-authorized.
+
+1. Go to `Connectors` and select the `My Connectors` tab.
+2. Click the Connector card to open its details.
+3. Open the `Functions` tab.
+4. Toggle `Always Allow` for each function you want to pre-authorize.
+
+MCP Connectors expose two types of functions:
+
+- **Read functions**: retrieve information (list events, search files, get data). Lower risk.
+- **Write functions**: perform actions (send emails, create events, modify records). Higher risk.
+
+:::tip
+Pre-authorize read functions you use frequently to reduce approval prompts. Keep write functions on manual approval until you're confident in the Connector's behavior.
+:::
+
+<SectionTab as="h1" sectionId="security">Security best practices</SectionTab>
+
+Since MCP Connectors connect Le Chat to servers we haven't reviewed, you're responsible for vetting them. Keep these practices in mind:
+
+- **Vet every server you connect.** Check the publisher, review documentation, and verify the server's purpose before adding it.
+- **Watch for unexpected changes.** Server developers can update tools at any time, which may change behavior. Monitor Connector outputs periodically.
+- **Guard against prompt injection.** A malicious server could attempt to inject hidden instructions. Le Chat has built-in protections, but review tool inputs and outputs for anything unexpected.
+- **Grant only the permissions you need.** Use the per-function `Always Allow` toggle deliberately. Start with manual approval and only pre-authorize functions you trust.
+
+If you discover a malicious MCP server, report it to our support team.
+
+<SectionTab as="h1" sectionId="limitations">Current limitations</SectionTab>
+
+Custom MCP Connectors don't yet support all MCP capabilities:
+
+- [Dynamic tool discovery](https://modelcontextprotocol.io/specification/2025-06-18/server/tools)
+- [Resources](https://modelcontextprotocol.io/specification/2025-06-18/server/resources)
+- [Automatic prompt templates](https://modelcontextprotocol.io/specification/2025-06-18/server/prompts#prompts)
+
+We plan to add support for these in future updates.
+
+<SectionTab as="h1" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+If you see *"MCP connection requires additional information or is invalid"*, check the following:
+
+- **Endpoint URL**: make sure you're using the correct path (some servers use `/mcp` or `/sse`). Streamable HTTP is the current standard.
+- **Server reachability**: the server must be accessible over HTTPS with a valid TLS certificate.
+- **Authentication**: verify your credentials. OAuth servers should return a `401` with a `WWW-Authenticate` header; API key servers should return `200` on a valid request.
+- **MCP handshake**: the server must respond correctly to the `initialize` JSON-RPC call.
+
+:::tip
+Use the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) to test your server's compatibility before configuring it in Le Chat.
+:::
+
+### Quick checks with curl
+
+**Test reachability:**
+```bash
+curl -I https://your-server.example.com/mcp
+```
+
+**Test API key authentication:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" https://your-server.example.com/mcp
+```
+
+**Test MCP initialize handshake:**
+```bash
+curl -X POST https://your-server.example.com/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{}}}'
+```
+
+A successful response includes `"result"` with the server's capabilities. An error response or timeout indicates a configuration issue on the server side.
+
+<SectionTab as="h1" sectionId="related-features">Related features</SectionTab>
+
+- **[Connectors](/le-chat/knowledge-integrations/connectors)**: overview of all available Connectors and how to use them in chat.
+- **[Knowledge Connectors](./knowledge-connectors)**: set up Google Drive and Microsoft SharePoint for your organization.
+- **[Agents](/le-chat/knowledge-integrations/agents)**: attach MCP Connectors to Agents for context-aware assistants.

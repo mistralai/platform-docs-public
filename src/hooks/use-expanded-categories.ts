@@ -17,7 +17,8 @@ const isPathContained = (
 const getExpandedPaths = (
   sidebar: SideBarTreeNode[],
   pathname: string,
-  overridedExpandedCategories: OverridedExpandedCategories
+  overridedExpandedCategories: OverridedExpandedCategories,
+  defaultExpandedCategories: string[] = []
 ): Set<string> => {
   const expandedPaths = new Set<string>();
 
@@ -25,29 +26,37 @@ const getExpandedPaths = (
   if (overridedExpandedCategories[pathname]) {
     targetSlugs = overridedExpandedCategories[pathname];
   } else {
-    targetSlugs = [pathname.slice(1).split('/')];
+    targetSlugs = [pathname.split('/').filter(Boolean)];
   }
 
   const traverse = (items: SideBarTreeNode[]) => {
     items.forEach(item => {
       if (item.href) {
-        const categoryPath = item.href.split('/');
-        const pathKey = categoryPath.join('/');
+        const categoryPathText = item.href.split('/');
+        const pathKey = categoryPathText.join('/');
+        const categoryPath = categoryPathText.filter(Boolean);
 
         if (
-          targetSlugs.some(targetSlug =>
+          targetSlugs.some((targetSlug: any) =>
             isPathContained(categoryPath, targetSlug)
           )
         ) {
           expandedPaths.add(pathKey);
         }
+      }
 
+      if (item.children) {
         traverse(item.children);
       }
     });
   };
 
   traverse(sidebar);
+
+  for (const href of defaultExpandedCategories) {
+    expandedPaths.add(href);
+  }
+
   return expandedPaths;
 };
 
@@ -61,17 +70,20 @@ export type ExpandedCategoriesOptions = {
    * }
    */
   overridedExpandedCategories: OverridedExpandedCategories;
+  /* Category hrefs that should be expanded by default on all pages */
+  defaultExpandedCategories?: string[];
 };
 
 const defaultExpandedCategoriesOptions: ExpandedCategoriesOptions = {
   overridedExpandedCategories: {},
+  defaultExpandedCategories: [],
 };
 
 export const useExpandedCategories = (
   sidebar: SideBarTreeNode[],
   options: ExpandedCategoriesOptions = defaultExpandedCategoriesOptions
 ) => {
-  const { overridedExpandedCategories } = {
+  const { overridedExpandedCategories, defaultExpandedCategories } = {
     ...defaultExpandedCategoriesOptions,
     ...options,
   };
@@ -80,7 +92,7 @@ export const useExpandedCategories = (
   const isHydrated = useIsRendered();
 
   const autoExpandedPaths = React.useMemo(() => {
-    return getExpandedPaths(sidebar, pathname, overridedExpandedCategories);
+    return getExpandedPaths(sidebar, pathname, overridedExpandedCategories, defaultExpandedCategories);
   }, [sidebar, pathname]);
 
   const [expandedCategories, setExpandedCategories] = React.useState<
@@ -100,8 +112,41 @@ export const useExpandedCategories = (
     });
   }, [autoExpandedPaths]);
 
+  const toggleCategory = React.useCallback((href: string, isOpen: boolean, accordion = false) => {
+    setExpandedCategories(prev => {
+      const next = new Set<string>();
+      if (accordion) {
+        if (isOpen) {
+          for (const p of prev) {
+            if (href.startsWith(p) || p.startsWith(href)) {
+              next.add(p);
+            }
+          }
+          next.add(href);
+        } else {
+          for (const p of prev) {
+            if (p !== href && !p.startsWith(href)) {
+              next.add(p);
+            }
+          }
+        }
+      } else {
+        for (const p of prev) {
+          next.add(p);
+        }
+        if (isOpen) {
+          next.add(href);
+        } else {
+          next.delete(href);
+        }
+      }
+      return next;
+    });
+  }, []);
+
   return {
     expandedCategories,
+    toggleCategory,
     isHydrated,
   };
 };

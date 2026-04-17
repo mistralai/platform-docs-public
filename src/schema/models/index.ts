@@ -18,7 +18,7 @@ export function getModelSlug(model: Model) {
 }
 
 export function getModelUrl(model: Model) {
-  return `/models/${getModelSlug(model)}`;
+  return `/models/model-cards/${getModelSlug(model)}`;
 }
 
 export const isLegacyModel = (model: Model) =>

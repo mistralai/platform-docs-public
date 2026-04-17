@@ -15,6 +15,8 @@ import { headerDropdownData } from '@/schema/content/header';
 import { HeaderItem } from '@/components/ui/header-logo-menu';
 import { match } from 'ts-pattern';
 import MistralLogoSolid from '@/components/icons/assets/mistral-logo-solid';
+import Image from 'next/image';
+import { PRODUCT_LOGOS } from '@/schema/content/getting-started';
 import { BrandContextMenu } from './brand';
 import { useIsTablet } from '@/hooks/use-mobile';
 
@@ -27,6 +29,12 @@ export const BrandProductDropdown = ({
   const dropdownItems: HeaderItem[] = headerDropdownData.map(item => ({
     ...item,
     icon: match(item.id)
+      .with('le-chat', () => (
+        <Image src={PRODUCT_LOGOS['le-chat']} alt="Le Chat" width={20} height={20} className="rounded" />
+      ))
+      .with('ai-studio', () => (
+        <Image src={PRODUCT_LOGOS['studio']} alt="Studio" width={20} height={20} className="rounded" />
+      ))
       .with('admin', () => (
         <SettingsIcon className="size-4 lg:size-5 text-black dark:text-foreground" />
       ))
@@ -104,7 +112,10 @@ const DropdownItemComponent = ({ item }: { item: HeaderItem }) => (
       >
         {item.icon}
       </div>
-      <span className="font-bold">{item.label}</span>
+      <span className="font-bold">
+        {item.label}
+        {item.isExternal && ' ↗'}
+      </span>
     </Link>
   </DropdownMenuItem>
 );

@@ -25,6 +25,7 @@ import { Bullet } from '@/components/ui/bullet';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useCopyButton } from '@/components/ui/copy-button';
 import { CheckIcon, CopyIcon } from '@/components/icons/pixel';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export interface BreadcrumbItem {
   label: string;
@@ -72,7 +73,7 @@ const BreadcrumbItemComponent = ({ item }: { item: BreadcrumbItem }) => {
       <BreadcrumbLink
         onClick={e => e.stopPropagation()}
         className={cn(
-          'uppercase whitespace-nowrap',
+          'uppercase min-w-0 truncate',
           item.clickable === false && 'pointer-events-none'
         )}
         href={item.href}
@@ -116,7 +117,7 @@ const BreadcrumbItem = ({
       <BreadcrumbLink
         onClick={e => e.stopPropagation()}
         className={cn(
-          'uppercase whitespace-nowrap',
+          'uppercase min-w-0 truncate',
           !isClickable && 'pointer-events-none'
         )}
         href={href}
@@ -202,7 +203,7 @@ export function GenericBreadcrumb({
         className
       )}
     >
-      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-x-auto">
+      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-hidden">
         <BreadcrumbList className="!gap-2 min-w-0 flex-nowrap">
           {showHome && (
             <>
@@ -216,7 +217,7 @@ export function GenericBreadcrumb({
                 className={cn(
                   item.isCurrentPage
                     ? 'text-foreground'
-                    : 'shrink-0'
+                    : 'overflow-hidden min-w-0'
                 )}
               >
                 <BreadcrumbItemComponent item={item} />
@@ -352,7 +353,7 @@ export default function Breadcrumb({
         className
       )}
     >
-      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-x-auto">
+      <BreadcrumbRoot className="flex-3 max-w-max shrink-0 min-w-0 overflow-hidden">
         <BreadcrumbList className="!gap-2 min-w-0 flex-nowrap">
           {showHome && (
             <>
@@ -369,7 +370,7 @@ export default function Breadcrumb({
                   className={cn(
                     isCurrentPage
                       ? 'text-foreground'
-                      : 'shrink-0'
+                      : 'overflow-hidden min-w-0'
                   )}
                 >
                   <BreadcrumbItem item={item} isCurrentPage={isCurrentPage} />
@@ -418,22 +419,19 @@ const isDownloadable = (item: SidebarItem) => {
   );
 };
 export const TopCategoryCta = ({
-  topCategory,
   lastItem,
   className,
 }: {
-  topCategory: SidebarItem | null;
-  lastItem: SidebarItem;
+  topCategory?: SidebarItem | null;
+  lastItem?: SidebarItem;
   className?: string;
 }) => {
-  if (!topCategory) {
-    return null;
-  }
+  if (!lastItem) return null;
 
   if (lastItem.type === 'file' && lastItem.metadata?.cta) {
     return (
       <Button variant="tertiary" size="xs" asChild className={className}>
-        <Link
+        <a
           href={lastItem.metadata.cta.href}
           target="_blank"
           rel="noopener noreferrer"
@@ -442,7 +440,7 @@ export const TopCategoryCta = ({
           <span className="uppercase font-mono font-semibold">
             {lastItem.metadata.cta.label}
           </span>
-        </Link>
+        </a>
       </Button>
     );
   }
@@ -451,17 +449,7 @@ export const TopCategoryCta = ({
     return <CopyMarkdownButton lastItem={lastItem} />;
   }
 
-  return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <p className="text-xs 2xl:text-sm text-foreground/30 shrink-0 tracking-wide uppercase">
-        [
-        {topCategory.type === 'file'
-          ? topCategory.metadata?.sidebar_label || topCategory.metadata?.title
-          : topCategory.metadata?.label}
-        ]
-      </p>
-    </div>
-  );
+  return null;
 };
 
 const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
@@ -489,18 +477,25 @@ const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
     value: '',
   });
   return (
-    <Button
-      variant="outline"
-      size="xs"
-      className="font-medium"
-      onClick={handleCopy}
-    >
-      {copyState === 'copied' ? (
-        <CheckIcon className="size-3 text-primary-soft" />
-      ) : (
-        <CopyIcon className="size-3" />
-      )}
-      <span className="font-medium">Copy markdown</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="xs"
+          className="font-medium"
+          onClick={handleCopy}
+          aria-label="Copy markdown"
+        >
+          {copyState === 'copied' ? (
+            <CheckIcon className="size-3 text-primary-soft" />
+          ) : (
+            <CopyIcon className="size-3" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        {copyState === 'copied' ? 'Copied!' : 'Copy markdown'}
+      </TooltipContent>
+    </Tooltip>
   );
 };

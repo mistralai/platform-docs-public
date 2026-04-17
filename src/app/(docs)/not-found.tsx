@@ -1,6 +1,6 @@
 import { ArrowRightIcon } from '@/components/icons/pixel';
 import NotFoundCat from '@/components/404';
-import UsefullLinksSection from '@/components/sections/usefull-links';
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -18,7 +18,6 @@ export default function NotFound() {
           </Link>
         </Button>
       </NotFoundCat>
-      <UsefullLinksSection showTab={false} className="relative" />
     </div>
   );
 }

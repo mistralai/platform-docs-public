@@ -1,0 +1,116 @@
+---
+title: "SSO"
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Single sign-on (SSO)
+
+:::warning[Enterprise only]
+SSO is available exclusively on **Enterprise** plans. Contact [sales](https://mistral.ai/contact/) to upgrade.
+:::
+
+SSO lets users in your Organization authenticate with their existing corporate **identity provider (IdP) credentials** using SAML 2.0. We support any compliant IdP, including Okta, Microsoft Entra ID (formerly Azure AD), and Google Workspace.
+
+
+<SectionTab as="h1" sectionId="benefits">Benefits</SectionTab>
+
+- **Centralized authentication**: users sign in with their familiar corporate credentials, reducing password fatigue.
+- **Automatic account creation**: user accounts are provisioned on first sign-in through your IdP.
+- **Simplified management**: manage access centrally from your IdP rather than inviting users one by one.
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+Before you set up SSO, you need:
+
+- An **Enterprise** plan subscription.
+- **Domain verification** completed in the Admin Panel. This proves you control the domain and is required for both SSO and Email Domain Authentication. See [domain verification](#domain-verification) below.
+
+<SectionTab as="h1" sectionId="domain-verification">Domain verification</SectionTab>
+
+Domain verification is a one-time setup that proves you own your email domain.
+
+1. Open <AppLink href="https://admin.mistral.ai" app="admin">Access</AppLink> settings.
+2. Click **Add domain** in the Domain Ownership section.
+3. Enter your domain (e.g., `yourcompany.com`) and click **Add domain**.
+4. Click **Instructions** and copy the DNS TXT record provided.
+5. In your domain registrar or DNS provider, add a new TXT record:
+   - **Type**: `TXT`
+   - **Host/Name**: `@` or your domain (depends on your provider)
+   - **Value**: paste the verification code (e.g., `mistral-domain-verification=xxxxxx`)
+6. Save the record and wait for DNS propagation (typically 10 minutes to 24 hours).
+
+You can check propagation status with:
+
+```bash
+nslookup -type=TXT yourcompany.com
+```
+
+The Admin Panel updates the status to **Verified** once propagation completes.
+
+:::caution
+Keep the DNS TXT record active. Removing it breaks both Email Domain Authentication and SSO.
+:::
+
+<SectionTab as="h1" sectionId="setup">Set up SSO</SectionTab>
+
+1. Open <AppLink href="https://admin.mistral.ai" app="admin">Access</AppLink> settings.
+2. In the Authentication section, find **Single Sign-On (SAML SSO)** and click **Activate SSO**.
+3. A configuration modal appears. Keep it open while you configure your IdP.
+4. In your IdP admin console, create a new **SAML 2.0 application** for Mistral AI.
+5. Copy the **ACS URL** and **Entity ID** from the Mistral modal into your IdP configuration.
+6. Map user attributes in your IdP (case-sensitive):
+   - User's first name: `firstName`
+   - User's last name: `lastName`
+7. Set **Name ID Format** to `EmailAddress`.
+8. Obtain the **SAML metadata XML** from your IdP.
+9. Paste the complete XML into the text box in the Mistral configuration modal.
+10. Click **Enable SSO**.
+
+Users with email addresses matching your verified domain are now redirected to your IdP for authentication.
+
+<SectionTab as="h1" sectionId="signing-in">Signing in with SSO</SectionTab>
+
+From the user's perspective:
+
+1. Go to the Mistral AI login page.
+2. Enter your work email address.
+3. The password field disappears and the button changes to **Sign in with SSO**.
+4. Click **Sign in with SSO**, then select your organization.
+5. Authenticate with your corporate credentials on your IdP's login page.
+6. You're redirected back to Mistral AI, logged in.
+
+<SectionTab as="h1" sectionId="supported-idps">Supported identity providers</SectionTab>
+
+We use the SAML 2.0 standard, so any compliant IdP should work. The most commonly used providers are:
+
+- **Microsoft Entra ID** (formerly Azure Active Directory)
+- **Google Workspace** / Google Identity Platform
+- **Okta**
+
+Refer to your IdP's documentation for specific SAML application setup instructions.
+
+<SectionTab as="h1" sectionId="disabling">Disable SSO</SectionTab>
+
+You can disable SSO at any time from the **Access** settings page in the Admin Panel.
+
+:::warning
+Disabling SSO means users can no longer sign in through your IdP. They'll need to set a password (via the reset flow) or be re-invited. Automatic user provisioning also stops. Consider enabling [Email Domain Authentication](/admin/security-access/email-domain-auth) as an alternative before disabling SSO.
+:::
+
+<SectionTab as="h1" sectionId="limitations">Limitations</SectionTab>
+
+- OIDC isn't supported. We use SAML 2.0 only for enterprise SSO. (OIDC/OAuth 2.0 is used separately for individual social login with Google, Apple, or Microsoft.)
+- SSO is available on Enterprise plans only.
+
+<SectionTab as="h1" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+If SSO fails after configuration:
+
+- Verify the **ACS URL** and **Entity ID** match exactly between Mistral and your IdP.
+- Confirm attribute mappings are case-sensitive (`firstName`, `lastName`).
+- Check that **Name ID Format** is set to `EmailAddress`.
+- Make sure the metadata XML is complete and correctly pasted.
+- Contact [support](https://help.mistral.ai) if issues persist.

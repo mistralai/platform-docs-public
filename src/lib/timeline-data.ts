@@ -70,7 +70,7 @@ export function generateTimelineData(): TimelineYear[] {
       year,
       months: sortedMonths.map(month => ({
         month,
-        href: `/getting-started/changelog#${month}-${year}`,
+        href: `/resources/changelogs#${month}-${year}`,
       })),
     });
   });

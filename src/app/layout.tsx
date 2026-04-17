@@ -84,7 +84,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sfMono.variable}`}
+      className={sfMono.variable}
       suppressHydrationWarning
       data-selected-language="typescript"
     >

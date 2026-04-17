@@ -1,0 +1,151 @@
+---
+title: "Configure SSO and domain verification"
+sidebar_label: "Configure SSO"
+sidebar_position: 2
+description: "Verify your domain and set up SAML SSO so team members sign in with your corporate identity provider. ~20 minutes."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+import { AppLink } from '@/components/common/app-link';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+
+# Configure SSO and domain verification
+
+Verify your company domain and connect your corporate identity provider to your Mistral organization.
+
+- Add a DNS record to prove domain ownership
+- Enable email-domain authentication for automatic team onboarding
+- Configure SAML SSO with your IdP (Okta, Azure AD, or similar)
+
+Once complete, team members sign in with their corporate credentials instead of separate passwords.
+
+**Time to complete:** ~20 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
+
+- An **Enterprise plan** (SAML SSO requires Enterprise; domain verification works on Team+)
+- Admin role in your Mistral organization
+- Access to your company's DNS records (for domain verification)
+- Access to your identity provider admin console (Okta, Azure AD, Ping Identity, or similar)
+
+<SectionTab as="h2" sectionId="step-1">Step 1: Verify your domain</SectionTab>
+
+Domain verification proves you own your company's email domain. This enables email-domain authentication and SSO.
+
+1. Navigate to **Administration › Settings** in the <AppLink href="https://admin.mistral.ai" app="admin">Admin panel</AppLink>.
+2. Under **Domain verification**, click **Add domain**.
+3. Enter your domain: for example, `acme.com`.
+4. We generate a DNS TXT record. Copy the record value.
+5. Add the TXT record to your domain's DNS configuration:
+
+```
+Type:  TXT
+Name:  _mistral-verification
+Value: mistral-verify=abc123xyz...
+```
+
+6. Click **Verify**. DNS propagation can take up to 48 hours but typically finishes within 15 minutes.
+
+You can confirm the TXT record is live before clicking Verify by running: `dig TXT _mistral-verification.acme.com`
+
+<SectionTab as="h2" sectionId="step-2">Step 2: Enable email-domain authentication (optional)</SectionTab>
+
+Once your domain is verified, you can allow anyone with a matching email address to automatically join your organization: no individual invitations needed.
+
+1. Navigate to **Administration › Settings** in the <AppLink href="https://admin.mistral.ai" app="admin">Admin panel</AppLink>.
+2. Under **Email domain authentication**, toggle it **on**.
+3. Select the default role for auto-joined users: **Member** (recommended).
+
+When enabled, any user who signs up with an `@acme.com` email is automatically added to your organization as a Member.
+
+Only enable this if you want all employees with your domain email to have automatic access. If you prefer manual control, skip this step and invite users individually.
+
+<SectionTab as="h2" sectionId="step-3">Step 3: Configure SAML SSO</SectionTab>
+
+SAML SSO lets team members sign in through your corporate identity provider instead of a separate password.
+
+1. Navigate to **Administration › Settings** in the <AppLink href="https://admin.mistral.ai" app="admin">Admin panel</AppLink>.
+2. Under **SAML SSO**, click **Configure**.
+3. We provide two values to enter in your IdP:
+
+<Table className="mt-4 mb-6">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Field</TableHead>
+      <TableHead>Value</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>**ACS URL** (Assertion Consumer Service)</TableCell>
+      <TableCell>Provided by Mistral: copy from the settings page</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>**Entity ID** (Audience URI)</TableCell>
+      <TableCell>Provided by Mistral: copy from the settings page</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+4. In your IdP (Okta, Azure AD, etc.), create a new SAML application and paste the ACS URL and Entity ID.
+5. Configure attribute mapping in your IdP:
+
+<Table className="mt-4 mb-6">
+  <TableHeader>
+    <TableRow>
+      <TableHead>IdP attribute</TableHead>
+      <TableHead>Mistral attribute</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>Email</TableCell>
+      <TableCell>Name ID (email format)</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>First name</TableCell>
+      <TableCell>`firstName`</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Last name</TableCell>
+      <TableCell>`lastName`</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+6. Copy the **IdP metadata URL** (or download the metadata XML) from your IdP.
+7. Back in the settings page, paste the metadata URL and click **Save**.
+
+<SectionTab as="h2" sectionId="step-4">Step 4: Test SSO login</SectionTab>
+
+1. Open a private/incognito browser window.
+2. Open <AppLink href="https://chat.mistral.ai">Le Chat</AppLink> or <AppLink href="https://console.mistral.ai">Studio</AppLink>.
+3. Click **Sign in with SSO** and enter your company email.
+4. Your IdP login page opens.
+5. After authenticating, you land in your Mistral dashboard with your organization selected.
+
+If the login fails, verify the ACS URL and Entity ID match exactly between Mistral and your IdP. Check that the Name ID format is set to **email**.
+
+<SectionTab as="h2" sectionId="verify">Verify</SectionTab>
+
+Your SSO is configured correctly if:
+
+- The domain shows **Verified** in Organization Settings
+- Team members can sign in via your IdP without a separate Mistral password
+- New users who sign in via SSO are automatically added to your organization
+- User names (first and last) appear correctly from the IdP attribute mapping
+
+<SectionTab as="h2" sectionId="whats-next">What's next</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/getting-started/quickstarts/admin/manage-workspaces" title="Manage workspaces and API keys" />
+  <LinkCard href="/getting-started/quickstarts/admin" title="All admin quickstarts" />
+</UsefullLinkContainer>

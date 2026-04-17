@@ -55,7 +55,7 @@ export default function BackGradient() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: 'easeInOut' }}
-          className="pointer-events-none fixed top-0 w-full left-0 h-20 bg-gradient-to-b from-40% from-background to-background/0 z-50"
+          className="pointer-events-none fixed top-0 w-full left-0 h-20 bg-gradient-to-b from-60% from-background to-background/0 z-50"
         />
       )}
     </AnimatePresence>

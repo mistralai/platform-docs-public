@@ -1,0 +1,178 @@
+---
+id: activity-basics
+title: Basics
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Activity Basics
+
+<SectionTab as="h1" sectionId="defining-an-activity">Defining an Activity</SectionTab>
+
+Basic activity structure:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def my_activity(input_data: str, count: int = 1) -> dict:
+    """Activity implementation"""
+    # Perform work here
+    return {"result": input_data, "processed_count": count}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="core-activity-features">Core Activity Features</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="activity-naming">Activity Naming</SectionTab>
+
+By default, an activity is registered using its Python function name. Use the `name` parameter to set a custom name — this is the identifier used for registration, execution routing, and what appears in traces and the console.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(
+    name="custom_activity_name",  # Used for registration, execution, and observability
+)
+```
+
+  </TabItem>
+</Tabs>
+
+[Learn more about observability and naming](/studio-api/workflows/observability)
+
+<SectionTab as="h2" variant="secondary" sectionId="timeouts">Timeouts</SectionTab>
+
+`start_to_close_timeout` sets the maximum time an activity can run from the moment it starts executing to the moment it must return a result. If the activity exceeds this duration, it is terminated and treated as a failure (which may trigger a retry). Without a timeout, a hung activity blocks indefinitely.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+
+@workflows.activity(
+    start_to_close_timeout=timedelta(minutes=10)
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="retry-policies">Retry Policies</SectionTab>
+
+When an activity fails, it is retried automatically up to `retry_policy_max_attempts` times. The `retry_policy_backoff_coefficient` controls exponential backoff between retries — a coefficient of `2.0` means the delay doubles after each attempt (e.g., 1s, 2s, 4s, 8s). After all retries are exhausted, the failure propagates to the workflow.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(
+    retry_policy_max_attempts=5,
+    retry_policy_backoff_coefficient=2.0
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="worker-stickiness">Worker Stickiness</SectionTab>
+
+Execute activities on the same worker for performance optimization:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(
+    sticky_to_worker=True
+)
+```
+
+  </TabItem>
+</Tabs>
+
+See [Sticky Worker Sessions](/studio-api/workflows/building-workflows/activities/sticky_worker_sessions) for detailed documentation
+
+<SectionTab as="h2" variant="secondary" sectionId="heartbeat-timeout">Heartbeat Timeout</SectionTab>
+
+Detect stuck activities quickly by requiring periodic heartbeat signals:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+from mistralai.workflows import activity
+
+@workflows.activity(
+    start_to_close_timeout=timedelta(minutes=30),
+    heartbeat_timeout=timedelta(seconds=30)
+)
+async def long_running_task(items: list[str]) -> dict:
+    results = []
+    for i, item in enumerate(items):
+        result = await process_item(item)
+        results.append(result)
+        # Report progress to prevent timeout
+        activity.heartbeat({"processed": i + 1, "total": len(items)})
+    return {"results": results}
+```
+
+  </TabItem>
+</Tabs>
+
+When `heartbeat_timeout` is set, activities must call `activity.heartbeat()` periodically. If no heartbeat is received within the timeout, the activity is considered failed and a retry is triggered. This enables fast detection of stuck activities without waiting for the full `start_to_close_timeout`.
+
+**Note:** Not supported for local activities.
+
+<SectionTab as="h1" sectionId="granularity-and-failure-handling">Granularity and Failure Handling</SectionTab>
+
+Activities should be designed to be as granular as possible. This means breaking down complex tasks into smaller, manageable activities. However, each activity should encapsulate all the logic that is susceptible to failure. This granular approach has several benefits:
+
+- **Isolation of Failures**: Smaller activities make it easier to isolate and handle failures. If a failure occurs, only the affected activity needs to be retried.
+- **Easier Debugging**: Granular activities make it easier to identify the exact point of failure and debug issues.
+- **Better Retry Mechanisms**: Since each activity is idempotent and can be retried independently, granular activities ensure that only the failed part of the process is retried, saving time and resources.
+
+For example, if you have a process that involves fetching data from an API, processing that data, and then storing it in a database, you might define three separate activities:
+
+1. Fetch data from API
+2. Process the data
+3. Store the data in the database
+
+<SectionTab as="h1" sectionId="nested-activities">Nested Activities</SectionTab>
+
+When designing activities, it's important to understand how state management works, especially when activities are nested within each other. If an activity is encapsulated within another activity, only the parent activity will be considered for retries and state management. This means that the state will be saved before the nested activity, and only the parent activity will be retried in case of failure.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def parent_activity(input_data: str) -> dict:
+    """Parent activity that encapsulates a nested activity."""
+    # Some logic here
+    nested_result = await nested_activity(input_data)
+    return {"result_data": nested_result["result_data"]}
+
+@workflows.activity()
+async def nested_activity(input_data: str) -> dict:
+    """Nested activity."""
+    # Logic for the nested activity
+    return {"result_data": "processed_data"}
+```
+
+  </TabItem>
+</Tabs>
+
+In this example, if nested_activity fails, the entire parent_activity will be retried, not just the nested activity. The state will be saved before the nested activity is called.

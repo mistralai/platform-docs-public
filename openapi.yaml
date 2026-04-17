@@ -858,335 +858,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /v1/connectors:
-    post:
-      operationId: connector_create_v1
-      summary: Create a new connector.
-      description: Create a new MCP connector. You can customize its visibility, url and auth type.
-      tags:
-        - beta.connectors
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateConnectorRequest'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Connector'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    get:
-      operationId: connector_list_v1
-      summary: List all connectors.
-      description: List all your custom connectors with keyset pagination and filters.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: query_filters
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/ConnectorsQueryFilters'
-            default:
-              fetch_user_data: false
-              fetch_customer_data: false
-              fetch_connection_secrets: false
-              fetch_execution_data: false
-        - name: cursor
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            title: Cursor
-        - name: page_size
-          in: query
-          required: false
-          schema:
-            type: integer
-            title: Page Size
-            maximum: 1000
-            minimum: 1
-            default: 100
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedConnectors'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /v1/connectors/{connector_id_or_name}/auth_url:
-    get:
-      operationId: connector_get_auth_url_v1
-      summary: Get the auth URL for a connector.
-      description: Get the OAuth2 authorization URL for a connector to initiate user authentication.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: app_return_url
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            title: App Return Url
-        - name: connector_id_or_name
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Connector Id Or Name
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthUrlResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /v1/connectors/{connector_id_or_name}/tools/{tool_name}/call:
-    post:
-      operationId: connector_call_tool_v1
-      summary: Call Connector Tool
-      description: Call a tool on an MCP connector.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: tool_name
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Tool Name
-        - name: credentials_name
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            title: Credentials Name
-        - name: connector_id_or_name
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Connector Id Or Name
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConnectorCallToolRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConnectorToolCallResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /v1/connectors/{connector_id_or_name}/tools:
-    get:
-      operationId: connector_list_tools_v1
-      summary: List tools for a connector.
-      description: List all tools available for an MCP connector.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            title: Page
-            default: 1
-        - name: page_size
-          in: query
-          required: false
-          schema:
-            type: integer
-            title: Page Size
-            default: 100
-        - name: refresh
-          in: query
-          required: false
-          schema:
-            type: boolean
-            title: Refresh
-            default: false
-        - name: pretty
-          in: query
-          description: Return a simplified payload with only name, description, annotations, and a compact inputSchema.
-          required: false
-          schema:
-            type: boolean
-            title: Pretty
-            description: Return a simplified payload with only name, description, annotations, and a compact inputSchema.
-            default: false
-        - name: connector_id_or_name
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Connector Id Or Name
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - type: array
-                    items:
-                      $ref: '#/components/schemas/ConnectorTool'
-                  - type: array
-                    items:
-                      $ref: '#/components/schemas/MCPTool'
-                  - type: array
-                    items:
-                      type: object
-                      additionalProperties: true
-                title: Response Connector List Tools V1
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /v1/connectors/{connector_id_or_name}#idOrName:
-    get:
-      operationId: connector_get_v1
-      summary: Get a connector.
-      description: Get a connector by its ID or name.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: fetch_customer_data
-          in: query
-          description: Fetch the customer data associated with the connector (e.g. customer secrets / config).
-          required: false
-          schema:
-            type: boolean
-            title: Fetch Customer Data
-            description: Fetch the customer data associated with the connector (e.g. customer secrets / config).
-            default: false
-        - name: fetch_connection_secrets
-          in: query
-          description: Fetch the general connection secrets associated with the connector.
-          required: false
-          schema:
-            type: boolean
-            title: Fetch Connection Secrets
-            description: Fetch the general connection secrets associated with the connector.
-            default: false
-        - name: connector_id_or_name
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Connector Id Or Name
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Connector'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /v1/connectors/{connector_id}#id:
-    patch:
-      operationId: connector_update_v1
-      summary: Update a connector.
-      description: Update a connector by its ID.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: connector_id
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Connector Id
-            format: uuid
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateConnectorRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Connector'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    delete:
-      operationId: connector_delete_v1
-      summary: Delete a connector.
-      description: Delete a connector by its ID.
-      tags:
-        - beta.connectors
-      parameters:
-        - name: connector_id
-          in: path
-          required: true
-          schema:
-            type: string
-            title: Connector Id
-            format: uuid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /v1/conversations#stream:
     post:
       operationId: agents_api_v1_conversations_start_stream
@@ -5739,7 +5410,7 @@ paths:
       operationId: get_workflow_execution_v1_workflows_executions__execution_id__get
       summary: Get Workflow Execution
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5765,7 +5436,7 @@ paths:
       operationId: get_workflow_execution_history_v1_workflows_executions__execution_id__history_get
       summary: Get Workflow Execution History
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5797,7 +5468,7 @@ paths:
       operationId: signal_workflow_execution_v1_workflows_executions__execution_id__signals_post
       summary: Signal Workflow Execution
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5829,7 +5500,7 @@ paths:
       operationId: query_workflow_execution_v1_workflows_executions__execution_id__queries_post
       summary: Query Workflow Execution
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5861,7 +5532,7 @@ paths:
       operationId: terminate_workflow_execution_v1_workflows_executions__execution_id__terminate_post
       summary: Terminate Workflow Execution
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5883,7 +5554,7 @@ paths:
       operationId: batch_terminate_workflow_executions_v1_workflows_executions_terminate_post
       summary: Batch Terminate Workflow Executions
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       requestBody:
         content:
           application/json:
@@ -5908,7 +5579,7 @@ paths:
       operationId: cancel_workflow_execution_v1_workflows_executions__execution_id__cancel_post
       summary: Cancel Workflow Execution
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5930,7 +5601,7 @@ paths:
       operationId: batch_cancel_workflow_executions_v1_workflows_executions_cancel_post
       summary: Batch Cancel Workflow Executions
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       requestBody:
         content:
           application/json:
@@ -5955,7 +5626,7 @@ paths:
       operationId: reset_workflow_v1_workflows_executions__execution_id__reset_post
       summary: Reset Workflow
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -5983,7 +5654,7 @@ paths:
       operationId: update_workflow_execution_v1_workflows_executions__execution_id__updates_post
       summary: Update Workflow Execution
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -6015,7 +5686,7 @@ paths:
       operationId: get_workflow_execution_trace_otel
       summary: Get Workflow Execution Trace Otel
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -6041,7 +5712,7 @@ paths:
       operationId: get_workflow_execution_trace_summary
       summary: Get Workflow Execution Trace Summary
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -6067,7 +5738,7 @@ paths:
       operationId: get_workflow_execution_trace_events
       summary: Get Workflow Execution Trace Events
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -6107,7 +5778,7 @@ paths:
       operationId: stream_v1_workflows_executions__execution_id__stream_get
       summary: Stream
       tags:
-      - workflows.executions
+      - beta.workflows.executions
       parameters:
       - name: execution_id
         in: path
@@ -6159,7 +5830,7 @@ paths:
       summary: Get Workflow Metrics
       description: "Get comprehensive metrics for a specific workflow.\n\nArgs:\n    workflow_name: The name of the workflow type to get metrics for\n    start_time: Optional start time filter (ISO 8601 format)\n    end_time: Optional end time filter (ISO 8601 format)\n\nReturns:\n    WorkflowMetrics: Dictionary containing metrics:\n        - execution_count: Total number of executions\n        - success_count: Number of successful executions\n        - error_count: Number of failed/terminated executions\n        - average_latency_ms: Average execution duration in milliseconds\n        - retry_rate: Proportion of workflows with retries\n        - latency_over_time: Time-series data of execution durations\n\nExample:\n    GET /v1/workflows/MyWorkflow/metrics\n    GET /v1/workflows/MyWorkflow/metrics?start_time=2025-01-01T00:00:00Z\n    GET /v1/workflows/MyWorkflow/metrics?start_time=2025-01-01T00:00:00Z&end_time=2025-12-31T23:59:59Z"
       tags:
-      - workflows.metrics
+      - beta.workflows.metrics
       parameters:
       - name: workflow_name
         in: path
@@ -6207,7 +5878,7 @@ paths:
       operationId: list_runs_v1_workflows_runs_get
       summary: List Runs
       tags:
-      - workflows.runs
+      - beta.workflows.runs
       parameters:
       - name: workflow_identifier
         in: query
@@ -6293,7 +5964,7 @@ paths:
       operationId: get_run_v1_workflows_runs__run_id__get
       summary: Get Run
       tags:
-      - workflows.runs
+      - beta.workflows.runs
       parameters:
       - name: run_id
         in: path
@@ -6320,7 +5991,7 @@ paths:
       operationId: get_run_history_v1_workflows_runs__run_id__history_get
       summary: Get Run History
       tags:
-      - workflows.runs
+      - beta.workflows.runs
       parameters:
       - name: run_id
         in: path
@@ -6353,7 +6024,7 @@ paths:
       operationId: get_schedules_v1_workflows_schedules_get
       summary: Get Schedules
       tags:
-      - workflows.schedules
+      - beta.workflows.schedules
       responses:
         '200':
           description: Successful Response
@@ -6365,7 +6036,7 @@ paths:
       operationId: schedule_workflow_v1_workflows_schedules_post
       summary: Schedule Workflow
       tags:
-      - workflows.schedules
+      - beta.workflows.schedules
       requestBody:
         content:
           application/json:
@@ -6390,7 +6061,7 @@ paths:
       operationId: unschedule_workflow_v1_workflows_schedules__schedule_id__delete
       summary: Unschedule Workflow
       tags:
-      - workflows.schedules
+      - beta.workflows.schedules
       parameters:
       - name: schedule_id
         in: path
@@ -6412,7 +6083,7 @@ paths:
       operationId: get_worker_info_v1_workflows_workers_whoami_get
       summary: Get Worker Info
       tags:
-      - workflows.workers
+      - beta.workflows.workers
       responses:
         '200':
           description: Successful Response
@@ -6425,7 +6096,7 @@ paths:
       operationId: get_stream_events_v1_workflows_events_stream_get
       summary: Get Stream Events
       tags:
-      - workflows.events
+      - beta.workflows.events
       parameters:
       - name: scope
         in: query
@@ -6548,7 +6219,7 @@ paths:
       operationId: get_workflow_events_v1_workflows_events_list_get
       summary: Get Workflow Events
       tags:
-      - workflows.events
+      - beta.workflows.events
       parameters:
       - name: root_workflow_exec_id
         in: query
@@ -6617,7 +6288,7 @@ paths:
       operationId: list_deployments_v1_workflows_deployments_get
       summary: List Deployments
       tags:
-      - workflows.deployments
+      - beta.workflows.deployments
       parameters:
       - name: active_only
         in: query
@@ -6652,7 +6323,7 @@ paths:
       operationId: get_deployment_v1_workflows_deployments__name__get
       summary: Get Deployment
       tags:
-      - workflows.deployments
+      - beta.workflows.deployments
       parameters:
       - name: name
         in: path
@@ -6673,104 +6344,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /v1/workflows:
-    get:
-      operationId: get_workflows_v1_workflows_get
-      summary: Get Workflows
-      tags:
-      - workflows
-      parameters:
-      - name: active_only
-        in: query
-        description: Whether to only return active workflows
-        required: false
-        schema:
-          type: boolean
-          title: Active Only
-          description: Whether to only return active workflows
-          default: false
-      - name: include_shared
-        in: query
-        description: Whether to include shared workflows
-        required: false
-        schema:
-          type: boolean
-          title: Include Shared
-          description: Whether to include shared workflows
-          default: true
-      - name: available_in_chat_assistant
-        in: query
-        description: Whether to only return workflows compatible with chat assistant
-        required: false
-        schema:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Available In Chat Assistant
-          description: Whether to only return workflows compatible with chat assistant
-      - name: archived
-        in: query
-        description: Filter by archived state. False=exclude archived, True=only archived,
-          None=include all
-        required: false
-        schema:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Archived
-          description: Filter by archived state. False=exclude archived, True=only
-            archived, None=include all
-      - name: cursor
-        in: query
-        description: The cursor for pagination
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            format: uuid
-          - type: 'null'
-          title: Cursor
-          description: The cursor for pagination
-      - name: limit
-        in: query
-        description: The maximum number of workflows to return
-        required: false
-        schema:
-          type: integer
-          title: Limit
-          description: The maximum number of workflows to return
-          default: 50
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WorkflowListResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      x-speakeasy-pagination:
-        type: cursor
-        inputs:
-        - name: cursor
-          in: parameters
-          type: cursor
-        - name: limit
-          in: parameters
-          type: limit
-        outputs:
-          results: $.workflows
-          nextCursor: $.next_cursor
   /v1/workflows/registrations:
     get:
       operationId: get_workflow_registrations_v1_workflows_registrations_get
       summary: Get Workflow Registrations
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_id
         in: query
@@ -6888,7 +6467,7 @@ paths:
       operationId: execute_workflow_v1_workflows__workflow_identifier__execute_post
       summary: Execute Workflow
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_identifier
         in: path
@@ -6923,7 +6502,7 @@ paths:
       operationId: execute_workflow_registration_v1_workflows_registrations__workflow_registration_id__execute_post
       summary: Execute Workflow Registration
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_registration_id
         in: path
@@ -6960,7 +6539,7 @@ paths:
       operationId: get_workflow_v1_workflows__workflow_identifier__get
       summary: Get Workflow
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_identifier
         in: path
@@ -6985,7 +6564,7 @@ paths:
       operationId: update_workflow_v1_workflows__workflow_identifier__put
       summary: Update Workflow
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_identifier
         in: path
@@ -7017,7 +6596,7 @@ paths:
       operationId: get_workflow_registration_v1_workflows_registrations__workflow_registration_id__get
       summary: Get Workflow Registration
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_registration_id
         in: path
@@ -7062,7 +6641,7 @@ paths:
       operationId: archive_workflow_v1_workflows__workflow_identifier__archive_put
       summary: Archive Workflow
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_identifier
         in: path
@@ -7088,7 +6667,7 @@ paths:
       operationId: unarchive_workflow_v1_workflows__workflow_identifier__unarchive_put
       summary: Unarchive Workflow
       tags:
-      - workflows
+      - beta.workflows
       parameters:
       - name: workflow_identifier
         in: path
@@ -12286,11 +11865,6 @@ components:
           - $ref: '#/components/schemas/OCRPageDimensions'
           - type: 'null'
           description: The dimensions of the PDF Page's screenshot image
-        confidence_scores:
-          anyOf:
-          - $ref: '#/components/schemas/OCRPageConfidenceScores'
-          - type: 'null'
-          description: Confidence scores for the page. Populated when `confidence_scores_granularity` is set in the request.
       title: OCRPageObject
       required:
       - index
@@ -12358,15 +11932,6 @@ components:
           - type: 'null'
           title: Document Annotation Prompt
           description: Optional prompt to guide the model in extracting structured output from the entire document. A document_annotation_format must be provided.
-        confidence_scores_granularity:
-          anyOf:
-          - type: string
-            enum:
-            - word
-            - page
-          - type: 'null'
-          title: Confidence Scores Granularity
-          description: Granularity level for confidence scores. Set to `"page"` to get aggregate statistics (average and minimum) per page, or `"word"` to also get per-word scores on each page and table. Defaults to `null` (no confidence scores returned).
         table_format:
           anyOf:
           - type: string
@@ -12434,71 +11999,11 @@ components:
           - markdown
           - html
           description: Format of the table
-        word_confidence_scores:
-          anyOf:
-          - type: array
-            items:
-              $ref: '#/components/schemas/OCRConfidenceScore'
-          - type: 'null'
-          title: Word Confidence Scores
-          description: Per-word confidence scores. Returned when `confidence_scores_granularity` is set to `"word"`.
       title: OCRTableObject
       required:
       - id
       - content
       - format
-      additionalProperties: false
-    OCRConfidenceScore:
-      type: object
-      properties:
-        confidence:
-          type: number
-          title: Confidence
-          minimum: 0
-          maximum: 1
-          description: Confidence score for the word, between 0 and 1.
-        start_index:
-          type: integer
-          title: Start Index
-          minimum: 0
-          description: Start index of the word in the markdown string.
-        text:
-          type: string
-          title: Text
-          description: The word text.
-      title: OCRConfidenceScore
-      required:
-      - confidence
-      - start_index
-      - text
-      additionalProperties: false
-    OCRPageConfidenceScores:
-      type: object
-      properties:
-        average_page_confidence_score:
-          type: number
-          title: Average Page Confidence Score
-          minimum: 0
-          maximum: 1
-          description: Average confidence score across all words on the page, between 0 and 1.
-        minimum_page_confidence_score:
-          type: number
-          title: Minimum Page Confidence Score
-          minimum: 0
-          maximum: 1
-          description: Minimum confidence score across all words on the page, between 0 and 1.
-        word_confidence_scores:
-          anyOf:
-          - type: array
-            items:
-              $ref: '#/components/schemas/OCRConfidenceScore'
-          - type: 'null'
-          title: Word Confidence Scores
-          description: Per-word confidence scores. Returned when `confidence_scores_granularity` is set to `"word"`.
-      title: OCRPageConfidenceScores
-      required:
-      - average_page_confidence_score
-      - minimum_page_confidence_score
       additionalProperties: false
     OCRUsageInfo:
       type: object
@@ -19554,7 +19059,7 @@ components:
           title: Next Cursor
       title: WorkflowListResponse
       required:
-      - workflows
+      - beta.workflows
       - next_cursor
     WorkflowMetadata:
       type: object
@@ -20044,533 +19549,6 @@ components:
       - customer_id
       - workspace_id
       - active
-    AuthUrlResponse:
-      type: object
-      properties:
-        auth_url:
-          type: string
-          title: Auth Url
-        ttl:
-          type: integer
-          title: Ttl
-      title: AuthUrlResponse
-      required:
-        - auth_url
-        - ttl
-    MCPSupportedLanguage:
-      type: string
-      title: MCPSupportedLanguage
-      enum:
-        - en
-        - fr
-        - de
-        - es
-        - pl
-        - it
-        - ar
-        - pt-BR
-        - nl
-    MCPTool:
-      type: object
-      properties:
-        name:
-          type: string
-          title: Name
-        title:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Title
-        description:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Description
-        inputSchema:
-          type: object
-          title: Inputschema
-          additionalProperties: true
-        outputSchema:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Outputschema
-        icons:
-          anyOf:
-            - type: array
-              items:
-                $ref: '#/components/schemas/MCPServerIcon'
-            - type: 'null'
-          title: Icons
-        annotations:
-          anyOf:
-            - $ref: '#/components/schemas/ToolAnnotations'
-            - type: 'null'
-        _meta:
-          anyOf:
-            - $ref: '#/components/schemas/MCPToolMeta'
-            - type: 'null'
-        execution:
-          anyOf:
-            - $ref: '#/components/schemas/ToolExecution'
-            - type: 'null'
-      title: MCPTool
-      required:
-        - name
-        - inputSchema
-      additionalProperties: true
-    MCPToolMeta:
-      type: object
-      properties:
-        ui:
-          anyOf:
-            - $ref: '#/components/schemas/MCPUIToolMeta'
-            - type: 'null'
-        ai.mistral/turbine:
-          anyOf:
-            - $ref: '#/components/schemas/TurbineToolMeta'
-            - type: 'null'
-      title: MCPToolMeta
-      additionalProperties: true
-      description: 'Typed _meta for MCP tools.
-
-
-        Only the ''ui'' field is typed. Other fields are allowed via extra="allow".'
-    MCPUIToolMeta:
-      type: object
-      properties:
-        resourceUri:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Resourceuri
-        visibility:
-          anyOf:
-            - type: array
-              items:
-                type: string
-                enum:
-                  - model
-                  - app
-            - type: 'null'
-          title: Visibility
-      title: MCPUIToolMeta
-      additionalProperties: true
-      description: UI metadata for tools that reference UI resources.
-    ToolAnnotations:
-      type: object
-      properties:
-        title:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Title
-        readOnlyHint:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Readonlyhint
-        destructiveHint:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Destructivehint
-        idempotentHint:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Idempotenthint
-        openWorldHint:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Openworldhint
-      title: ToolAnnotations
-      additionalProperties: true
-      description: 'Additional properties describing a Tool to clients.
-
-
-        NOTE: all properties in ToolAnnotations are **hints**.
-
-        They are not guaranteed to provide a faithful description of
-
-        tool behavior (including descriptive properties like `title`).
-
-
-        Clients should never make tool use decisions based on ToolAnnotations
-
-        received from untrusted servers.'
-    ToolExecution:
-      type: object
-      properties:
-        taskSupport:
-          anyOf:
-            - type: string
-              enum:
-                - forbidden
-                - optional
-                - required
-            - type: 'null'
-          title: Tasksupport
-      title: ToolExecution
-      additionalProperties: true
-      description: Execution-related properties for a tool.
-    ToolType:
-      type: string
-      title: ToolType
-      enum:
-        - rag
-        - image
-        - code
-        - event
-    TurbineToolLocale:
-      type: object
-      properties:
-        name:
-          anyOf:
-            - type: object
-              propertyNames:
-                $ref: '#/components/schemas/MCPSupportedLanguage'
-              additionalProperties:
-                type: string
-            - type: 'null'
-          title: Name
-        description:
-          anyOf:
-            - type: object
-              propertyNames:
-                $ref: '#/components/schemas/MCPSupportedLanguage'
-              additionalProperties:
-                type: string
-            - type: 'null'
-          title: Description
-        usage_sentence:
-          anyOf:
-            - type: object
-              propertyNames:
-                $ref: '#/components/schemas/MCPSupportedLanguage'
-              additionalProperties:
-                type: string
-            - type: 'null'
-          title: Usage Sentence
-        working_description:
-          anyOf:
-            - type: object
-              propertyNames:
-                $ref: '#/components/schemas/MCPSupportedLanguage'
-              additionalProperties:
-                type: string
-            - type: 'null'
-          title: Working Description
-        done_description:
-          anyOf:
-            - type: object
-              propertyNames:
-                $ref: '#/components/schemas/MCPSupportedLanguage'
-              additionalProperties:
-                type: string
-            - type: 'null'
-          title: Done Description
-      title: TurbineToolLocale
-    TurbineToolMeta:
-      type: object
-      properties:
-        locale:
-          anyOf:
-            - $ref: '#/components/schemas/TurbineToolLocale'
-            - type: 'null'
-        tool_type:
-          anyOf:
-            - $ref: '#/components/schemas/ToolType'
-            - type: 'null'
-        timeout:
-          anyOf:
-            - type: number
-            - type: 'null'
-          title: Timeout
-        private_execution:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Private Execution
-      title: TurbineToolMeta
-    CreateConnectorRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          title: Name
-          description: The name of the connector. Should be 64 char length maximum, alphanumeric, only underscores/dashes.
-        description:
-          type: string
-          title: Description
-          description: The description of the connector.
-        icon_url:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Icon Url
-          description: The optional url of the icon you want to associate to the connector.
-        visibility:
-          $ref: '#/components/schemas/ResourceVisibility'
-          description: Visibility of the connector. Use 'shared_workspace' for workspace scoped connectors, or 'private' for private connectors.
-          default: shared_org
-        server:
-          type: string
-          title: Server
-          maxLength: 2083
-          minLength: 1
-          format: uri
-          description: The url of the MCP server.
-        headers:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Headers
-          description: Optional organization-level headers to be sent with the request to the mcp server.
-        auth_data:
-          anyOf:
-            - $ref: '#/components/schemas/AuthData'
-            - type: 'null'
-          description: Optional additional authentication data for the connector.
-        system_prompt:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: System Prompt
-          description: Optional system prompt for the connector.
-      title: CreateConnectorRequest
-      required:
-        - name
-        - description
-        - server
-    UpdateConnectorRequest:
-      type: object
-      properties:
-        name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Name
-          description: The name of the connector.
-        description:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Description
-          description: The description of the connector.
-        icon_url:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Icon Url
-          description: The optional url of the icon you want to associate to the connector.
-        system_prompt:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: System Prompt
-          description: Optional system prompt for the connector.
-        connection_config:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Connection Config
-          description: Optional new connection config.
-        connection_secrets:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Connection Secrets
-          description: Optional new connection secrets
-        server:
-          anyOf:
-            - type: string
-              maxLength: 2083
-              minLength: 1
-              format: uri
-            - type: 'null'
-          title: Server
-          description: New server url for your mcp connector.
-        headers:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Headers
-          description: New headers for your mcp connector.
-        auth_data:
-          anyOf:
-            - $ref: '#/components/schemas/AuthData'
-            - type: 'null'
-          description: New authentication data for your mcp connector.
-      title: UpdateConnectorRequest
-    ConnectorToolResultMetadata:
-      type: object
-      properties:
-        isError:
-          type: boolean
-          title: Iserror
-          default: false
-        structuredContent:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Structuredcontent
-        _meta:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Meta
-      title: ConnectorToolResultMetadata
-      additionalProperties: true
-      description: MCP-specific result metadata (isError, structuredContent, _meta).
-    ConnectorToolCallMetadata:
-      type: object
-      properties:
-        mcp_meta:
-          anyOf:
-            - $ref: '#/components/schemas/ConnectorToolResultMetadata'
-            - type: 'null'
-      title: ConnectorToolCallMetadata
-      additionalProperties: true
-      description: 'Metadata wrapper for MCP tool call responses.
-
-
-        Nests MCP-specific fields under `mcp_meta` to avoid collisions with other
-
-        metadata keys (e.g. `tool_call_result`) in Harmattan''s streaming deltas.'
-    ConnectorCallToolRequest:
-      type: object
-      properties:
-        arguments:
-          type: object
-          title: Arguments
-          additionalProperties: true
-      title: ConnectorCallToolRequest
-      description: Request body for calling an MCP tool.
-    ConnectorToolCallResponse:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            anyOf:
-              - $ref: '#/components/schemas/TextContent'
-              - $ref: '#/components/schemas/ImageContent'
-              - $ref: '#/components/schemas/AudioContent'
-              - $ref: '#/components/schemas/ResourceLink'
-              - $ref: '#/components/schemas/EmbeddedResource'
-          title: Content
-        metadata:
-          anyOf:
-            - $ref: '#/components/schemas/ConnectorToolCallMetadata'
-            - type: 'null'
-      title: ConnectorToolCallResponse
-      required:
-        - content
-      additionalProperties: true
-      description: 'Response from calling an MCP tool.
-
-
-        We override mcp_types.CallToolResult because:
-
-        - Models only support `content`, not `structuredContent` at top level
-
-        - Downstream consumers (le-chat, etc.) need structuredContent/isError/_meta via metadata
-
-
-        SYNC: Keep in sync with Harmattan (orchestrator) for harmonized tool result processing.'
-    ConnectorToolLocale:
-      type: object
-      properties:
-        name:
-          type: object
-          propertyNames:
-            $ref: '#/components/schemas/ConnectorSupportedLanguage'
-          title: Name
-          additionalProperties:
-            type: string
-        description:
-          type: object
-          propertyNames:
-            $ref: '#/components/schemas/ConnectorSupportedLanguage'
-          title: Description
-          additionalProperties:
-            type: string
-        usage_sentence:
-          type: object
-          propertyNames:
-            $ref: '#/components/schemas/ConnectorSupportedLanguage'
-          title: Usage Sentence
-          additionalProperties:
-            type: string
-      title: ConnectorToolLocale
-      required:
-        - name
-        - description
-        - usage_sentence
-    ConnectorTool:
-      type: object
-      properties:
-        id:
-          type: string
-          title: Id
-        name:
-          type: string
-          title: Name
-        description:
-          type: string
-          title: Description
-        system_prompt:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: System Prompt
-        locale:
-          anyOf:
-            - $ref: '#/components/schemas/ConnectorToolLocale'
-            - type: 'null'
-        jsonschema:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Jsonschema
-        execution_config:
-          anyOf:
-            - $ref: '#/components/schemas/ExecutionConfig'
-            - type: 'null'
-        visibility:
-          $ref: '#/components/schemas/ResourceVisibility'
-        created_at:
-          type: string
-          title: Created At
-          format: date-time
-        modified_at:
-          type: string
-          title: Modified At
-          format: date-time
-        active:
-          anyOf:
-            - type: boolean
-            - type: 'null'
-          title: Active
-      title: ConnectorTool
-      required:
-        - id
-        - name
-        - description
-        - execution_config
-        - visibility
-        - created_at
-        - modified_at
   securitySchemes:
     ApiKey:
       type: http
@@ -20621,9 +19599,6 @@ tags:
 - name: beta.agents
   x-displayName: (beta) Agents API
   description: (beta) Agents API
-- name: beta.connectors
-  x-displayName: (beta) Connectors API
-  description: (beta) Connectors API to create, manage, and call tools on MCP connectors.
 - name: beta.conversations
   x-displayName: (beta) Conversations API
   description: (beta) Conversations API
@@ -20654,28 +19629,28 @@ tags:
 - name: beta.observability.datasets.records
   x-displayName: (beta) Observability - Dataset records
   description: (beta) Manage individual records within datasets.
-- name: workflows
+- name: beta.workflows
   x-displayName: Workflows
   description: Workflow management API.
-- name: workflows.executions
+- name: beta.workflows.executions
   x-displayName: Executions
   description: Trigger, monitor, and control workflow executions.
-- name: workflows.runs
+- name: beta.workflows.runs
   x-displayName: Runs
   description: List and inspect individual workflow runs.
-- name: workflows.schedules
+- name: beta.workflows.schedules
   x-displayName: Schedules
   description: Create and manage workflow schedules.
-- name: workflows.deployments
+- name: beta.workflows.deployments
   x-displayName: Deployments
   description: List and inspect worker deployments.
-- name: workflows.events
+- name: beta.workflows.events
   x-displayName: Events
   description: Stream and list workflow execution events.
-- name: workflows.metrics
+- name: beta.workflows.metrics
   x-displayName: Metrics
   description: Get performance metrics for workflows.
-- name: workflows.workers
+- name: beta.workflows.workers
   x-displayName: Workers
   description: Worker connection info.
 security:

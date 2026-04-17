@@ -6,7 +6,7 @@ const ChatIcon = (props: SVGProps<SVGSVGElement>) => (
     width={24}
     height={24}
     fill="none"
-    viewBox="0 0 24 24"
+    viewBox="3 3 18 18"
     {...props}
   >
     <path fill="currentColor" d="M12 9.75h4.5V7.5h-9V12H12V9.75Z" />

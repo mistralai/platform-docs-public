@@ -113,11 +113,11 @@ function buildBreadcrumbsForFile(
   const segs = rel ? rel.split(path.sep) : [];
   const crumbs: Array<{ url: string; title: string }> = [];
 
-  // progressive URLs for each directory segment
   let currentAbs = DOCS_ROOT;
   let currentUrl = '';
   for (const seg of segs) {
     currentAbs = path.join(currentAbs, seg);
+    if (seg.startsWith('(')) continue;
     currentUrl += '/' + seg;
     const title = dirTitleMap.get(currentAbs) || titleCase(seg);
     crumbs.push({ url: currentUrl, title });
@@ -137,11 +137,13 @@ async function* walk(dir: string): AsyncGenerator<string> {
   }
 }
 
+const stripRouteGroups = (segments: string[]) =>
+  segments.filter(s => !s.startsWith('('));
+
 const toUrlFromPageFile = (absFile: string) => {
-  // .../app/docs/a/b/page.mdx -> /docs/a/b
   const dir = path.dirname(absFile);
   const rel = path.relative(DOCS_ROOT, dir);
-  return '/' + rel.split(path.sep).filter(Boolean).join('/');
+  return '/' + stripRouteGroups(rel.split(path.sep).filter(Boolean)).join('/');
 };
 
 async function mdxToPlainText(
@@ -221,6 +223,7 @@ async function collectMDX(
       body: text,
       breadcrumbs: crumbs,
       sidebar_position: data.sidebar_position,
+      suggest_rank: data.suggest_rank as number | undefined,
       type: 'docs',
     });
   }

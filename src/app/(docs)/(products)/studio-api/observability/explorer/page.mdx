@@ -1,0 +1,310 @@
+---
+id: observability_explorer
+title: Explorer
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Explorer
+
+Explorer is your **window into production traffic**.
+
+It lets you **search, filter, and inspect every chat completion event** flowing through your Workspace.
+
+:::info
+Explorer is restricted to **Workspace administrators**.
+:::
+
+<SectionTab as="h1" sectionId="what-you-can-do">What you can do</SectionTab>
+
+- **Search and filter** events by model, tool usage, message content, latency, etc.
+- **Inspect** any conversation records (messages, tool calls, and metadata).
+- **Export** filtered events to [Datasets](./datasets).
+- **Automate** by creating [Judges](./judges) and [Campaigns](./campaigns) directly from your filter results.
+
+<SectionTab as="h1" sectionId="filter-language">Filter language</SectionTab>
+
+Explorer supports a **structured filter language**.
+
+You write conditions on event fields and combine them with `AND`, `OR`, and parentheses.
+
+### Available operators
+
+| Operator          | Meaning                          | Example                                       |
+|-------------------|----------------------------------|-----------------------------------------------|
+| `=`               | Equals                           | `model_name = "mistral-medium-2508"`          |
+| `!=`              | Not equals                       | `model_name != "mistral-medium-2508"`         |
+| `contains`        | Substring match                  | `model_name contains "large"`                 |
+| `includes`        | List contains value              | `invoked_tools includes "web_search"`         |
+| `excludes`        | List doesn't include value       | `invoked_tools excludes "web_search"`         |
+| `>`               | Greater than                     | `total_time_elapsed > 5`                      |
+| `<`               | Less than                        | `total_time_elapsed < 2`                      |
+| `>=`              | Greater than or equal            | `total_time_elapsed >= 5`                     |
+| `<=`              | Less than or equal               | `total_time_elapsed <= 2`                     |
+| `isnull`          | Is null                          | `api_agent_id isnull False`                   |
+| `length_equals`   | List length equals               | `invoked_tools length_equals 3`               |
+| `starts_with`     | Starts with substring            | `model_name startswith "mistral-med"`         |
+| `ends_with`       | Ends with substring              | `model_name endswith "-2508"`                 |
+| `matches`         | Regex match                      | `model_name matches ".+-8b-.+"`              |
+
+{/* TODO add a reference table of available fields with their types (check with @gaspard2) */}
+
+### Examples
+
+**Filter by model and tool usage:**
+
+```text
+model_name = "mistral-medium-2508" AND invoked_tools includes "web_search"
+```
+
+**Filter by model family with code output:**
+
+```text
+(model_name contains "large" OR model_name contains "small") AND invoked_tools includes "code_interpreter"
+```
+
+**Filter by response time:**
+
+```text
+total_time_elapsed > 5
+```
+
+**Combine multiple conditions:**
+
+```text
+model_name = "mistral-large" AND total_time_elapsed > 5 AND (last_user_message_preview contains "password" OR response_messages_preview contains "error")
+```
+
+:::tip
+Use the **autocomplete dropdown** to select from the suggested fields and values as you type.
+:::
+
+### Query design tips
+
+1. **Start broad** with a time range, then narrow down.
+2. **Add one business-relevant condition** (e.g., a specific tool, feature, or model).
+3. **Add one technical condition** (e.g., latency, message content, or specific tools).
+4. **Scan a few results** before exporting. Make sure the sample is relevant.
+
+<SectionTab as="h1" sectionId="inspect-events">Inspect events</SectionTab>
+
+Click any event in the results list to see the full detail view. Each event includes:
+
+- A **feed of messages**, including the full conversation (user inputs, assistant responses, and system prompts).
+- A **list of properties** (model name, token counts, computation duration, and any tools invoked by the model).
+
+<SectionTab as="h1" sectionId="export-to-datasets">Export to a Dataset</SectionTab>
+
+Once you've filtered to a useful set of events, you can **export them** to a [Dataset](./datasets).
+
+1. Select one or more events using the checkboxes
+2. Click **Add to dataset**.
+3. Choose an existing Dataset or create a new one.
+
+**Treat Dataset exports as snapshots**. Use descriptive names (e.g., `support_web_search_2026_02`) and clear descriptions to enable accurate comparisons over time.
+
+:::tip
+Found a useful filter? Reuse it to create a [Judge](./judges) or [Campaign](./campaigns) directly from the Explorer UI.
+:::
+
+<SectionTab as="h1" sectionId="sdk-access">[Developer] Use Explorer programmatically</SectionTab>
+
+All Explorer functionality is available via the [SDK](/resources/sdks). Use it to automate searches, build reporting pipelines, or integrate with custom tooling.
+
+<ExplorerTabs id="explorer-usage">
+  <ExplorerTab value="search" label="Search events">
+
+Search for events using the same filter structure as the UI, but expressed as nested dictionaries.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Search for events matching specific criteria
+result = mistral.beta.observability.chat_completion_events.search(
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-01-15T00:00:00Z"},
+                {"field": "timestamp", "op": "lte", "value": "2026-01-16T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"},
+                {"field": "invoked_tools", "op": "includes", "value": "web_search"}
+            ]
+        }
+    },
+    extra_fields=["model_name"],
+    page_size=20
+)
+
+print(f"Found {len(result.completion_events.results)} events")
+for event in result.completion_events.results:
+    print(f"{event.event_id}: {event.extra_fields.get('model_name')}")
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Search for events matching specific criteria
+result = mistral.beta.observability.chat_completion_events.search(
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-01-15T00:00:00Z"},
+                {"field": "timestamp", "op": "lte", "value": "2026-01-16T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"},
+                {"field": "invoked_tools", "op": "includes", "value": "web_search"}
+            ]
+        }
+    },
+    extra_fields=["model_name"],
+    page_size=20
+)
+
+print(f"Found {len(result.completion_events.results)} events")
+for event in result.completion_events.results:
+    print(f"{event.event_id}: {event.extra_fields.get('model_name')}")
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+</Tabs>
+
+**Complex filters with AND/OR:**
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Combine conditions with nested AND/OR
+events = mistral.beta.observability.chat_completion_events.search(
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "model_name", "op": "eq", "value": "mistral-large"},
+                {"field": "total_time_elapsed", "op": "gt", "value": 5},
+                {
+                    "OR": [
+                        {"field": "last_user_message_preview", "op": "contains", "value": "password"},
+                        {"field": "invoked_tools", "op": "includes", "value": "web_search"}
+                    ]
+                }
+            ]
+        }
+    }
+)
+print(f"Found {len(events.completion_events.results)} events")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="fields" label="Discover fields">
+
+Not sure which fields you can filter on? List them programmatically.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# List all available filter fields
+fields = mistral.beta.observability.chat_completion_events.fields.list()
+
+for field in fields.field_definitions:
+    print(f"{field.name} ({field.type}) — operators: {field.supported_operators}")
+
+# Get available values for a specific field
+options = mistral.beta.observability.chat_completion_events.fields.fetch_options(
+    field_name="model_name",
+    operator="startswith"
+)
+print(f"Available models: {options.options}")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="export" label="Export to dataset">
+
+Export search results directly to a dataset without going through the UI.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# 1. Search for events
+result = mistral.beta.observability.chat_completion_events.search(
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-02-01T00:00:00Z"},
+                {"field": "timestamp", "op": "lte", "value": "2026-02-07T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"}
+            ]
+        }
+    },
+    page_size=100
+)
+
+# 2. Create a dataset
+dataset = mistral.beta.observability.datasets.create(
+    name="weekly_review_2026_02_w1",
+    description="Medium model traffic, first week of Feb 2026"
+)
+print(f"Dataset created: {dataset.id}")
+
+# 3. Import the matching events
+res = mistral.beta.observability.datasets.import_from_explorer(
+    dataset_id=dataset.id,
+    completion_event_ids=[
+        event.event_id for event in result.completion_events.results
+    ]
+)
+print(f"Imported {len(result.completion_events.results)} events")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="My filters return no results">
+  Start by expanding the time range. If that doesn't help, remove all conditions except the time range and add them back one at a time. This usually reveals which condition is too restrictive.
+  </FaqItem>
+  <FaqItem question="Results are too noisy to be useful">
+  Narrow the scope: filter to one model and one use case. Add a condition on a specific tool or output flag. A smaller, focused set is more actionable than a large, noisy one.
+  </FaqItem>
+  <FaqItem question="I can't see Explorer in my sidebar">
+  Explorer is restricted to Workspace administrators on Enterprise-tier plans. Check with your Workspace admin if you don't have access.
+  </FaqItem>
+  <FaqItem question="Export is blocked or the button is greyed out">
+  Make sure you've selected at least one event. If the button is still disabled, check your Workspace role. You need admin permissions to create Datasets.
+  </FaqItem>
+</Faq>

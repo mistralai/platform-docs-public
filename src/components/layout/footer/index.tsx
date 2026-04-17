@@ -49,18 +49,18 @@ const footerSchema: { sections: FooterSection[] } = {
       title: 'DOCUMENTATION',
       links: [
         { label: 'Documentation', href: '/' },
-        { label: 'Contributing', href: '/ambassadors' },
-        { label: 'Cookbooks', href: '/cookbooks' },
+        { label: 'Ambassadors', href: '/community/ambassadors' },
+        { label: 'Cookbooks', href: '/resources/cookbooks' },
       ],
     },
     {
       title: 'BUILD',
       links: [
         {
-          label: 'AI Studio',
-          href: `${MISTRAL_URL}/products/la-plateforme`,
+          label: 'Studio',
+          href: 'https://console.mistral.ai',
         },
-        { label: 'Le Chat', href: `${MISTRAL_URL}/products/le-chat` },
+        { label: 'Mistral Vibe', href: `${MISTRAL_URL}/products/vibe` },
         { label: 'Mistral Code', href: `${MISTRAL_URL}/products/mistral-code` },
         {
           label: 'Mistral Compute',
@@ -77,7 +77,7 @@ const footerSchema: { sections: FooterSection[] } = {
           label: 'Privacy policy',
           href: `${MISTRAL_URL}/terms#privacy-policy`,
         },
-        // { label: 'Privacy choices', href: `${MISTRAL_URL}/privacy-choices` }, TODO: This displays a cookie modal
+        // TODO: Privacy choices link displays a cookie modal, handled by cookie type below
         { label: 'Legal notice', href: `${MISTRAL_URL}/legal` },
         {
           label: 'Privacy Choices',
@@ -116,7 +116,7 @@ const footerSchema: { sections: FooterSection[] } = {
           external: true,
           icon: '↗',
         },
-        { label: 'Ambassador', href: '/ambassadors' },
+        { label: 'Ambassadors', href: '/community/ambassadors' },
       ],
     },
   ],
@@ -204,7 +204,7 @@ export default function Footer() {
 
           {/* Copyright */}
           <div className="flex justify-between items-center">
-            <p className="text-sm  text-foreground/50">
+            <p className="text-sm text-foreground/50">
               Mistral AI © {new Date().getFullYear()}
             </p>
             <ThemeToggle />

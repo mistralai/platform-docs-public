@@ -16,7 +16,7 @@ export function TimelineClient({
   timelineData,
 }: TimelineClientProps) {
   const pathname = usePathname();
-  const isChangelogPage = pathname === '/getting-started/changelog';
+  const isChangelogPage = pathname === '/resources/changelogs';
 
   if (!isChangelogPage) {
     return null;

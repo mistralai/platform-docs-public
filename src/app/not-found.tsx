@@ -1,9 +1,8 @@
 import { ArrowRightIcon } from '@/components/icons/pixel';
 import NotFoundCat from '@/components/404';
-import UsefullLinksSection from '@/components/sections/usefull-links';
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import PageContent from '@/components/layout/page-content';
 
 export default function NotFound() {
   return (
@@ -20,7 +19,6 @@ export default function NotFound() {
             </Link>
           </Button>
         </NotFoundCat>
-        <UsefullLinksSection showTab={false} className="relative" />
       </div>
     </div>
   );

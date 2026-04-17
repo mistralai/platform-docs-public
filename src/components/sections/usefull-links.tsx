@@ -2,18 +2,17 @@ import React from 'react';
 import { SectionTab } from '../layout/section-tab';
 import { LinkCard, UsefullLinkContainer } from '../common/link-card';
 import {
-  PageIcon,
-  RockIcon,
-  SmileIcon,
   QuestionIcon,
 } from '@/components/icons/pixel';
+import Image from 'next/image';
+import { PRODUCT_LOGOS } from '@/schema/content/getting-started';
 import { cn } from '@/lib/utils';
-import { SOCIALS } from '@/schema/content/socials';
-import { MISTRAL_HELP_CENTER_URL, MISTRAL_URL } from '@/lib/constants';
+import { MISTRAL_HELP_CENTER_URL } from '@/lib/constants';
 
 interface UsefullLinksSectionProps {
   links?: {
     title: string;
+    hoverTitle?: string;
     href: string;
     icon: React.ReactNode;
   }[];
@@ -41,6 +40,7 @@ export default function UsefullLinksSection({
           <LinkCard
             key={link.title}
             title={link.title}
+            hoverTitle={link.hoverTitle}
             href={link.href}
             icon={link.icon}
           />
@@ -52,31 +52,27 @@ export default function UsefullLinksSection({
 
 export const usefullLinks = [
   {
+    title: 'Le Chat',
+    hoverTitle: 'Go to Le Chat ↗',
+    href: 'https://chat.mistral.ai',
+    icon: (
+      <Image src={PRODUCT_LOGOS['le-chat']} alt="Le Chat" width={20} height={20} className="rounded" />
+    ),
+  },
+  {
+    title: 'Studio',
+    hoverTitle: 'Go to Studio ↗',
+    href: 'https://console.mistral.ai',
+    icon: (
+      <Image src={PRODUCT_LOGOS['studio']} alt="Studio" width={20} height={20} className="rounded" />
+    ),
+  },
+  {
     title: 'Help Center',
+    hoverTitle: 'Go to Help Center ↗',
     href: `${MISTRAL_HELP_CENTER_URL}`,
     icon: (
       <QuestionIcon className="transition-colors duration-100 dark:group-hover:text-black/70" />
-    ),
-  },
-  {
-    title: 'Cookbooks',
-    href: '/cookbooks',
-    icon: (
-      <PageIcon className="transition-colors duration-100 dark:group-hover:text-black/70" />
-    ),
-  },
-  {
-    title: 'AI Studio',
-    href: `${MISTRAL_URL}/products/la-plateforme`,
-    icon: (
-      <RockIcon className="transition-colors duration-100 dark:group-hover:text-black/70" />
-    ),
-  },
-  {
-    title: 'Discord',
-    href: SOCIALS.discord,
-    icon: (
-      <SmileIcon className="transition-colors duration-100 dark:group-hover:text-black/70" />
     ),
   },
 ];

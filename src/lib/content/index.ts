@@ -7,7 +7,7 @@ import {
 import { SidebarItem, TocItem } from '@/schema';
 import { parseFrontmatter } from './parse-metadata';
 import { extractHeadingsFromContent } from './extract-headings';
-import { getModelsBreadcrumb } from '@/app/(docs)/models/[slug]/_get-breacrumb';
+import { getModelsBreadcrumb } from '@/app/(docs)/models/model-cards/[slug]/_get-breacrumb';
 
 /**
  * NOTE: Assumptions (tweak to taste):
@@ -19,7 +19,14 @@ import { getModelsBreadcrumb } from '@/app/(docs)/models/[slug]/_get-breacrumb';
  * - Empty folders (no children and no page/meta) are skipped.
  */
 
-export const IGNORED_DIRS = ['components'];
+export const IGNORED_DIRS = [
+  'components',
+  'capabilities',
+  'robots',
+];
+
+/** Detect Next.js route groups — directories like (products) or (developers) */
+const isRouteGroup = (name: string) => /^\(.*\)$/.test(name);
 
 const PAGE_BASENAMES = ['page.md', 'page.mdx', 'page.tsx', 'page.jsx'];
 const META_BASENAMES = ['_meta.mdx', '_meta.md'];
@@ -39,6 +46,14 @@ export async function getSidebar(
 
   for (const dirent of childDirs) {
     const subPath = path.join(rootDir, dirent.name);
+
+    // Route groups: transparent pass-through (like Next.js App Router)
+    if (isRouteGroup(dirent.name)) {
+      const groupChildren = await getSidebar(subPath, basePath);
+      items.push(...groupChildren);
+      continue;
+    }
+
     const slug = basePath
       ? basePath.split('/').concat(dirent.name)
       : [dirent.name];
@@ -94,7 +109,7 @@ export async function getSidebar(
         else overridedSlug = categoryMeta.link.split('/');
       }
 
-      const shouldHide = shouldHideCategory(overridedSlug?.join('/') || '');
+      const shouldHide = shouldHideCategory(dirent.name);
       const categoryItem: SidebarItem = {
         slug,
         overridedSlug,
@@ -103,7 +118,7 @@ export async function getSidebar(
         children,
         pagination: { prev: undefined, next: undefined },
         hidden: shouldHide,
-        clickable: categoryMeta.clickable !== false && (hasPage || categoryMeta.link !== undefined),
+        clickable: hasPage || categoryMeta.link !== undefined,
         hasPage,
         isMarkdownFile: hasPage && pageIsMdx,
       };
@@ -170,7 +185,33 @@ export async function getSidebar(
       continue;
     }
 
-    // 4) Leaf with no content: skip (do not create empty category nodes)
+    // 4) Leaf with only _category_.json that has a link: treat as a clickable redirect
+    if (categoryJson?.link) {
+      let overridedSlug: SidebarItem['overridedSlug'];
+      let link = categoryJson.link;
+      if (link.startsWith('/')) link = link.slice(1);
+      if (link === '/') overridedSlug = [];
+      else overridedSlug = link.split('/');
+
+      const fileItem: SidebarItem = {
+        slug,
+        overridedSlug,
+        type: 'file',
+        metadata: {
+          title: categoryJson.label ?? humanizeSlug(dirent.name),
+          sidebar_label: categoryJson.label,
+          sidebar_position: categoryJson.position,
+        } as DocsMetadata,
+        toc: [],
+        pagination: { prev: undefined, next: undefined },
+        clickable: true,
+        isMarkdownFile: false,
+      };
+      items.push(fileItem);
+      continue;
+    }
+
+    // 5) Leaf with no content: skip (do not create empty category nodes)
     // (Intentionally no push)
   }
 
@@ -264,8 +305,8 @@ function loadFileMetadataAndToc(filePath: string): {
     const toc = skipToc
       ? []
       : extractHeadingsFromContent(markdownContent, {
-          path: filePath,
-        });
+        path: filePath,
+      });
 
     return { metadata, toc };
   } catch (error) {
@@ -317,7 +358,7 @@ function deriveCategoryMetadata(args: {
     position: typeof position === 'number' ? position : (undefined as any),
     link: categoryJson?.link,
     table_of_contents,
-    clickable: categoryJson?.clickable,
+    defaultExpanded: categoryJson?.defaultExpanded,
   } as DocsCategoryMetadata;
 
   return out;
@@ -457,7 +498,7 @@ function isDynamicRoute(path: string): boolean {
 }
 
 function shouldHideCategory(dirName: string): boolean {
-  const HIDDEN_DIRS = new Set(['models']);
+  const HIDDEN_DIRS = new Set(['model-cards']);
   return HIDDEN_DIRS.has(dirName);
 }
 
@@ -492,7 +533,7 @@ type BreadcrumbProvider = (
 ) => Promise<SidebarItem[]> | SidebarItem[];
 
 // IMPORTANT, ENSURE THIS MATCH WITH THE CORRECT ROUTE
-const MODELS_SLUG_DIR = path.join('src', 'app', '(docs)', 'models');
+const MODELS_SLUG_DIR = path.join('src', 'app', '(docs)', 'models', 'model-cards');
 const registry: Array<{ matchDirname: string; provider: BreadcrumbProvider }> =
   [
     {

@@ -1,0 +1,290 @@
+---
+id: native_reasoning
+title: Native
+sidebar_position: 2
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import NewOutputTab from './new_output_tab/_page.mdx';
+import OldOutputTab from './old_output_tab/_page.mdx';
+import NewFormatMigrationTab from './new_format_migration_tab/_page.mdx';
+import OldFormatMigrationTab from './old_format_migration_tab/_page.mdx';
+
+# Native
+
+:::tip
+Before continuing, we recommend reading the [Chat Completions](../chat-completion) documentation to learn more about the chat completions API and how to use it before proceeding.
+:::
+
+<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
+
+### Models
+
+Native reasoning models always generate thinking traces without any extra parameters:
+
+- `magistral-small-latest`: Our open smaller version for open research and efficient reasoning.
+- `magistral-medium-latest`: Our more powerful reasoning model balancing performance and cost.
+
+:::info
+Currently, `-latest` points to `-2509`, our most recent version of our reasoning models. If you were previously using `-2506`, a **migration** regarding the thinking chunks is required.
+
+- `-2509` & `-2507` **(new)**: Uses tokenized thinking chunks via control tokens, providing the thinking traces in different types of content chunks.
+
+- `-2506` **(old)**: Used `<think>\n` and `\n</think>\n` tags as strings to encapsulate the thinking traces for input and output within the same content type.
+
+<ExplorerTabs id="format-migration" mode="close">
+  <ExplorerTab value="2509" label="2509/2507 (new)">
+    <NewFormatMigrationTab />
+  </ExplorerTab>
+  <ExplorerTab value="2506" label="2506 (old)">
+    <OldFormatMigrationTab />
+  </ExplorerTab>
+</ExplorerTabs>
+:::
+
+<SectionTab as="h1" sectionId="usage">Usage</SectionTab>
+
+### How to use Native Reasoning Models
+
+Native reasoning models work similarly to standard models — reasoning is always active and no extra parameter is required. However, they generate more tokens for the reasoning step and perform best with a specific system prompt.
+
+<SectionTab as="h2" variant="secondary" sectionId="system-prompt">System Prompt</SectionTab>
+
+To have the best performance out of native reasoning models, we recommend having the following system prompt (currently default):
+
+<Tabs groupId="version">
+  <TabItem value="2509" label="2509 (new)" default>
+```json
+{
+  "role": "system",
+  "content": [
+    {
+      "type": "text",
+      "text": "# HOW YOU SHOULD THINK AND ANSWER\n\nFirst draft your thinking process (inner monologue) until you arrive at a response. Format your response using Markdown, and use LaTeX for any mathematical equations. Write both your thoughts and the response in the same language as the input.\n\nYour thinking process must follow the template below:"
+    },
+    {
+      "type": "thinking",
+      "thinking": [
+        {
+          "type": "text",
+          "text": "Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate the response to the user."
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Here, provide a self-contained response."
+    }
+  ]
+}
+```
+  </TabItem>
+  <TabItem value="2507" label="2507">
+```json
+{
+  "role": "system",
+  "content": [
+    {
+      "type": "text",
+      "text": "First draft your thinking process (inner monologue) until you arrive at a response. Format your response using Markdown, and use LaTeX for any mathematical equations. Write both your thoughts and the response in the same language as the input.\n\nYour thinking process must follow the template below:"
+    },
+    {
+      "type": "thinking",
+      "thinking": [
+        {
+          "type": "text",
+          "text": "Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate the response to the user."
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Here, provide a self-contained response."
+    }
+  ]
+}
+```
+  </TabItem>
+  <TabItem value="2506" label="2506 (old)">
+```json
+{
+  "role": "system",
+  "content": "A user will ask you to solve a task. You should first draft your thinking process (inner monologue) until you have derived the final answer. Afterwards, write a self-contained summary of your thoughts (i.e. your summary should be succinct but contain all the critical steps you needed to reach the conclusion). You should use Markdown to format your response. Write both your thoughts and summary in the same language as the task posed by the user. NEVER use \\boxed{} in your response.\n\nYour thinking process must follow the template below:\n<think>\nYour thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate a correct answer.\n</think>\n\nHere, provide a concise summary that reflects your reasoning and presents a clear final answer to the user. Don't mention that this is a summary.\n\nProblem:\n\n"
+}
+```
+  </TabItem>
+</Tabs>
+
+Providing your own system prompt will override the default system prompt with the new one.
+
+You can also control the system prompt behavior via the `prompt_mode` parameter:
+
+- `"reasoning"`: Explicitly uses the default reasoning system prompt.
+- `null`: Opts out of the default system prompt entirely.
+
+<SectionTab as="h2" variant="secondary" sectionId="native-reasoning-with-chat-completions">Native reasoning with chat completions</SectionTab>
+
+You can use our native reasoning models in a similar way to how you would use our other text models, here is an example via our [chat completions](https://docs.mistral.ai/api/#tag/chat) endpoint:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "magistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?",
+        },
+    ],
+    # prompt_mode = "reasoning" if you want to explicitly use the default system prompt, or None if you want to opt out of the default system prompt.
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "magistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?",
+        },
+    ],
+    # prompt_mode = "reasoning" if you want to explicitly use the default system prompt, or None if you want to opt out of the default system prompt.
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+  const chatResponse = await client.chat.complete({
+    model: 'magistral-medium-latest',
+    messages: [
+      {
+        role: 'user',
+        content:
+          'John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?',
+      },
+    ],
+    // prompt_mode: "reasoning" if you want to explicitly use the default system prompt, or null if you want to opt out of the default system prompt.
+  });
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "magistral-medium-latest",
+    "messages": [
+     {
+        "role": "user",
+        "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?"
+      }
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+```json
+{
+  "id":"0d93cd053f4c4b3ca627ccd07cf2f18c",
+  "created":1773842038,
+  "model":"magistral-medium-latest",
+  "usage":
+    {
+      "prompt_tokens":77,
+      "total_tokens":1191,
+      "completion_tokens":1114,
+      "prompt_tokens_details":
+        {
+          "cached_tokens":0
+          }
+    },
+  "object":"chat.completion",
+  "choices":
+    [
+      {
+        "index":0,
+        "finish_reason":"stop",
+        "message":
+          {
+            "role":"assistant",
+            "tool_calls":null,
+            "content":
+            [
+              {"type":"thinking",
+              "thinking":
+                [
+                  {
+                    "type":"text",
+                    "text":"Okay, let's try to figure out John's age. So, John is one of 4 children. There are three sisters and one brother (John). Wait, the problem says \"the first sister,\" \"the second sister,\" \"the third sister,\" so that means there are three sisters and John is the brother. So total four children: three sisters and John.\n\nFirst, the first sister is 4 years old. Let's note that down. Let's call the sisters S1, S2, S3, and John is J.\n\nGiven:\n- S1 = 4 years old (current age)\n- Next year, the second sister (S2) will be twice as old as the first sister (S1). Wait, \"next year\" meaning one year from now. So next year, S1 will be 5, and S2 will be twice that, so 10? Wait, but let's check.\n\nWait, the problem says: \"Next year, the second sister will be twice as old as the first sister.\" So next year, S2's age = 2 * S1's age next year.\n\nS1 is currently 4, so next year S1 will be 5. Therefore, next year S2 will be 2*5=10. Therefore, S2's current age is 10 - 1 = 9 years old.\n\nWait, let's confirm that. If S2 is currently X years old, then next year S2 will be X+1. At that time, S1 will be 4+1=5. So X+1 = 2*5 => X+1=10 => X=9. So S2 is currently 9.\n\nNext, \"The third sister is two years older than the second sister.\" So S3 = S2 + 2. Since S2 is 9, S3 is 11.\n\nThen, \"The third sister is half the age of her older brother.\" The older brother is John, since John is a brother (assuming he's older than the sisters; but wait, could John be younger? Wait, the problem says \"her older brother,\" so the brother is older than the third sister. So John is older than S3.\n\nSo S3 = (1/2) * J => J = 2 * S3.\n\nSince S3 is 11, then J = 22.\n\nSo John is 22 years old."
+                  }]},{"type":"text","text":"Let's denote the ages of the sisters as follows:\n- \\( S_1 \\): age of the first sister\n- \\( S_2 \\): age of the second sister\n- \\( S_3 \\): age of the third sister\n- \\( J \\): age of John\n\nFrom the problem statement, we have the following information:\n1. The first sister is currently 4 years old: \\( S_1 = 4 \\).\n2. Next year, the second sister will be twice as old as the first sister: \\( S_2 + 1 = 2 \\times (S_1 + 1) \\).\n3. The third sister is two years older than the second sister: \\( S_3 = S_2 + 2 \\).\n4. The third sister is half the age of her older brother: \\( S_3 = \\frac{1}{2}J \\).\n\nFirst, we calculate the age of the second sister:\n\\[ S_2 + 1 = 2 \\times (4 + 1) \\]\n\\[ S_2 + 1 = 2 \\times 5 \\]\n\\[ S_2 + 1 = 10 \\]\n\\[ S_2 = 9 \\]\n\nNext, we calculate the age of the third sister:\n\\[ S_3 = S_2 + 2 \\]\n\\[ S_3 = 9 + 2 \\]\n\\[ S_3 = 11 \\]\n\nFinally, we calculate John's age:\n\\[ S_3 = \\frac{1}{2}J \\]\n\\[ 11 = \\frac{1}{2}J \\]\n\\[ J = 22 \\]\n\nTherefore, John is \\(\\boxed{22}\\) years old."
+                    }
+                  ]
+            }
+        }
+    ]
+}
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="full-reasoning-output">Native reasoning output</SectionTab>
+
+Below we provide the full output of the model so you can see the reasoning traces and the final answer in detail.
+
+<ExplorerTabs id="full-reasoning-output">
+  <ExplorerTab value="2509" label="2509/2507 (New)">
+    <NewOutputTab />
+  </ExplorerTab>
+  <ExplorerTab value="2506" label="2506 (Old)">
+    <OldOutputTab />
+  </ExplorerTab>
+</ExplorerTabs>

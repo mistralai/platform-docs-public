@@ -9,7 +9,6 @@ import {
   TabsContent as UITabsContent,
 } from '@/components/ui/tabs';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import { CopyButton } from '../ui/copy-button';
 import { CheckIcon, CopyIcon } from '@/components/icons/pixel';
 import { Prose } from './prose';
@@ -61,7 +60,7 @@ export function ExplorerTabs({
         }
       }
     }
-    return mode === 'default' ? items[0]?.props.value ?? 'empty' : 'empty';
+    return items[0]?.props.value ?? 'empty';
   });
 
   const handleTabChange = (newValue: string | undefined) => {
@@ -88,6 +87,30 @@ export function ExplorerTabs({
     return url.toString();
   };
 
+  const tabsListRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(false);
+
+  const updateScrollState = React.useCallback(() => {
+    const el = tabsListRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  React.useEffect(() => {
+    const el = tabsListRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      observer.disconnect();
+    };
+  }, [updateScrollState]);
+
   return (
     <UITabs
       id={explorerId}
@@ -96,8 +119,15 @@ export function ExplorerTabs({
       onValueChange={handleTabChange}
       className={cn('w-full mt-6 flex flex-col gap-0', className)}
     >
-      <div className="flex items-center group/tabs">
+      <div className="relative flex items-center group/tabs">
+        {canScrollLeft && (
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        )}
+        {canScrollRight && (
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        )}
         <UITabsList
+          ref={tabsListRef}
           className="h-9 gap-2 group/explorer-tabs"
           variant="tertiary"
         >
@@ -140,7 +170,7 @@ export function ExplorerTabs({
             </div>
           ))}
 
-          {value !== 'empty' && (
+          {mode === 'close' && value !== 'empty' && (
             <UITabsTrigger
               variant="tertiary"
               size="sm"
@@ -168,14 +198,8 @@ export function ExplorerTabs({
         >
           <UITabsContent value="empty" className="px-2">
             <div className="flex items-center not-prose gap-2">
-              <Image
-                src="/assets/sprites/cat_head.png"
-                alt="Cat head"
-                width={24}
-                height={18}
-              />
               <p className="text-base text-foreground/50">
-                ¡Meow! Click one of the tabs above to learn more.
+                Select a tab above to see its content.
               </p>
             </div>
           </UITabsContent>

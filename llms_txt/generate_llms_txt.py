@@ -9,7 +9,7 @@ import yaml
 import requests
 import re
 from pathlib import Path
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 # Configuration
 REPO_NAME = "."  # Current directory since we're IN the repo

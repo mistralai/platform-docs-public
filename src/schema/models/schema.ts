@@ -146,7 +146,7 @@ export const AVAILABLE_FEATURES = {
   },
   transcriptions: {
     name: 'Transcriptions',
-    link: '/studio-api/audio#transcription',
+    link: '/studio-api/audio/speech_to_text',
     endpoints: ['audio-transcriptions'],
   },
   tts: {
@@ -156,7 +156,7 @@ export const AVAILABLE_FEATURES = {
   },
   timestamps: {
     name: 'Timestamps',
-    link: '/studio-api/audio#transcription-with-timestamps',
+    link: '/studio-api/audio/speech_to_text/offline_transcription#transcription-with-timestamps',
     endpoints: ['audio-transcriptions'],
   },
   batching: {

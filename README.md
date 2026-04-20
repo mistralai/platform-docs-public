@@ -46,16 +46,10 @@ pnpm install
 ### Local Development
 
 ```bash
-pnpm start
+pnpm dev
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-
-To build in autocompile mode, run the following command:
-```bash
-npm run dev
-```
+This command starts a local development server at `http://localhost:3000`. Most changes are reflected live without having to restart the server.
 
 ### Build
 
@@ -63,7 +57,7 @@ npm run dev
 pnpm build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This command generates a production build in the `.next` directory.
 
 ### Cookbooks
 
@@ -93,7 +87,6 @@ If the title is empty, the title will be extracted from the cookbook.
 
 - Make sure URLs start with `https://` or `http://`, otherwise, it will look for the relative paths in the repo.
 - Images can be saved in the [img](https://github.com/mistralai/platform-docs-public/tree/main/static/img) folder. Please reference the images with `/img/your_added_image.svg`.
-This documentation is built using [Docusaurus](https://docusaurus.io/).
 
 # How to contribute?
 

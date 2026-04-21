@@ -83,7 +83,7 @@ export const headerDropdownData = [
     id: 'ai-studio',
     label: 'Studio',
     href: `${MISTRAL_STUDIO_URL}`,
-    bg: 'bg-[#2563EB]',
+    bg: 'bg-[#6060F8]',
     isExternal: true,
     section: 'default',
   },

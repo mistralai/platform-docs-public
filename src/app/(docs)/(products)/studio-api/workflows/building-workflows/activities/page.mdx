@@ -8,27 +8,25 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Activities
 
-Activities perform the actual work in your application while workflows coordinate them.
+This page covers the practical patterns for building activities. For the underlying model (atomicity, retries, replay semantics), see [Core Concepts > Activities](/studio-api/workflows/getting-started/core_concepts/activities).
 
-An activity is a unit of work that performs actual computations, API calls, or other operations. Key characteristics:
+An activity is a unit of work that performs computations, API calls, file I/O, LLM calls, or anything else with side effects. Key characteristics:
 
-- Must be idempotent (safe to retry)
-- Execute in isolated processes
-- Have automatic retry mechanisms
-- Accept any JSON-serializable types as inputs/outputs (str, int, dict, list, etc.)
-- Input/output limited to 2MB
-
-<SectionTab as="h1" sectionId="activity-vs-workflow">Activity vs Workflow</SectionTab>
-
-| Feature     | Activity           | Workflow             |
-| ----------- | ------------------ | -------------------- |
-| Duration    | Seconds to minutes | Seconds to years     |
-| State       | Stateless          | Stateful             |
-| Retries     | Automatic          | Manual recovery      |
-| Parallelism | Single operation   | Complex coordination |
+- **Safe to re-execute**: a retry after a partial failure leaves the system in a consistent state. Side effects converge to the same observable outcome (the precise notion of *idempotency*; outputs need not be byte-identical).
+- **Isolated execution**: each activity runs in its own process, with automatic retries on failure.
+- **JSON-serializable I/O**: inputs and outputs accept any JSON-serializable types, such as `str`, `int`, `dict`, or `list`.
+- **Per-call limit**: 2MB of input or output per call. For larger payloads, see [Payload offloading](/studio-api/workflows/building-workflows/payload_offloading).
 
 <SectionTab as="h1" sectionId="topics">Topics</SectionTab>
 
-- [Basics](/studio-api/workflows/building-workflows/activities/basics) — defining activities, core features, granularity, and nesting
-- [Local Activities](/studio-api/workflows/building-workflows/activities/local_activities) — run activities directly in the worker process for low-latency operations
-- [Sticky Worker Sessions](/studio-api/workflows/building-workflows/activities/sticky_worker_sessions) — route related activities to the same worker for resource sharing
+- [Basics](/studio-api/workflows/building-workflows/activities/basics): defining activities, configuring timeouts and retries, heartbeats, granularity, nesting. **Start here.**
+- [Local activities](/studio-api/workflows/building-workflows/activities/local_activities): run sub-second activities directly in the workflow worker to skip scheduling overhead.
+- [Sticky worker sessions](/studio-api/workflows/building-workflows/activities/sticky_worker_sessions): pin a sequence of activities to the same worker to share an in-memory resource (for example, a loaded ML model or a database connection).
+
+<SectionTab as="h1" sectionId="choosing-an-activity-flavor">Choosing an activity flavor</SectionTab>
+
+| Mode             | Routing overhead | Worker isolation | Resource sharing | Best for                                        |
+| ---------------- | ---------------- | ---------------- | ---------------- | ----------------------------------------------- |
+| Regular activity | Standard         | Yes              | No               | API calls, complex logic, anything with retries |
+| Sticky session   | Standard         | Yes              | Yes (in-memory)  | Reusing a loaded model or database connection   |
+| Local activity   | None             | No               | N/A              | Sub-second pure computations and lookups        |

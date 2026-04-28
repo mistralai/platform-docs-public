@@ -1,0 +1,487 @@
+---
+id: forms-and-confirmations
+title: Forms and confirmations
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Forms and confirmations
+
+Conversational workflows can ask the user for structured input — typed fields with validation, single- or multi-choice options, file uploads, accept/decline confirmations. Use `FormInput` for full forms and `ConfirmationInput` / `AcceptDeclineConfirmation` for single-click prompts.
+
+<SectionTab as="h1" sectionId="structured-form-inputs">Structured form inputs</SectionTab>
+
+For workflows that need structured form input with typed fields, validation, and custom UI rendering, use `FormInput` instead of `ChatInput`:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import date, datetime
+
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.conversational import (
+    FormInput,
+    TextField,
+    NumberField,
+    DateField,
+    DateTimeField,
+    SingleChoice,
+)
+
+
+class ExpenseForm(FormInput):
+    """Structured form for expense submission."""
+
+    description: str = TextField(description="Expense description")
+    amount: float = NumberField(
+        description="Amount in USD",
+        minimum=0,
+        maximum=10000,
+    )
+    category: str = SingleChoice(
+        options=[
+            ("travel", "Travel"),
+            ("equipment", "Equipment"),
+            ("software", "Software"),
+        ],
+        description="Expense category",
+    )
+    expense_date: date = DateField(description="Date of expense")
+    due_date: datetime = DateTimeField(description="Reimbursement due date")
+    receipt_id: str = TextField(
+        description="Receipt ID",
+        pattern=r"^RCP-\d{6}$",
+    )
+
+
+@workflows.workflow.define(
+    name="expense-submission-workflow",
+    workflow_display_name="Expense Submission",
+    workflow_description="Submit an expense with structured form",
+)
+class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        expense = await self.wait_for_input(
+            ExpenseForm,
+            label="Submit Expense",
+        )
+
+        result = f"""Expense submitted:
+- Description: {expense.description}
+- Amount: ${expense.amount:.2f}
+- Category: {expense.category}
+- Date: {expense.expense_date.isoformat()}
+- Due date: {expense.due_date.isoformat()}
+- Receipt: {expense.receipt_id}"""
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=result)]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_structured-form-input_expense-form.png"
+    alt="A structured form input rendered in Le Chat."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">A structured form input rendered in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="field-types">Field types</SectionTab>
+
+| Field Type      | Description      | Properties                                                                                        |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------------- |
+| `TextField`     | Text input       | `description`, `pattern` (optional regex), `prefilled_value`                                      |
+| `NumberField`   | Numeric input    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum`, `prefilled_value`   |
+| `DateTimeField` | Date/time picker | `description`, `prefilled_value` (ISO 8601 datetime string)                                       |
+| `DateField`     | Date picker      | `description`, `prefilled_value` (ISO 8601 date string)                                           |
+| `SingleChoice`  | Dropdown/select  | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
+| `MultiChoice`   | Multi-select     | `options` (list of tuples or strings), `description`, `prefilled_value`                            |
+| `FileField`     | File upload | `description`, `multiple` (default `False`), `include_metadata` (default `False`)                  |
+
+All field types (except `FileField`) support an optional `prefilled_value` parameter. This is a **UI hint only** — it pre-fills the form field but does not make the field optional. The value must still be explicitly submitted by the user. Invalid prefilled values (out of bounds, non-matching pattern, unknown option) are silently ignored.
+
+<SectionTab as="h2" variant="secondary" sectionId="textfield">TextField</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+name: str = TextField(description="Your name", prefilled_value="John Doe")
+email: str = TextField(
+    description="Email address",
+    pattern=r"^[\w.-]+@[\w.-]+\.\w+$",  # Optional regex validation
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_text-field.png"
+    alt="A text field rendered in Le Chat."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Text field in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="numberfield">NumberField</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+amount: float = NumberField(
+    description="Amount",
+    minimum=0,           # Inclusive minimum
+    maximum=10000,       # Inclusive maximum
+    prefilled_value=100,   # Pre-filled value
+)
+price: float = NumberField(
+    description="Price",
+    exclusive_minimum=0,   # Must be greater than 0
+    exclusive_maximum=100, # Must be less than 100
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_number-field.png"
+    alt="A number field rendered in Le Chat."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Number field in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="datetimefield">DateTimeField</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import datetime
+
+scheduled_at: datetime = DateTimeField(
+    description="Schedule date and time",
+    prefilled_value="2025-01-15T10:00:00Z",  # ISO 8601 datetime string
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_datetime-field.png"
+    alt="A date-time picker field rendered in Le Chat."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Date-time field in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="datefield">DateField</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import date
+
+scheduled_at: date = DateField(
+    description="Schedule date",
+    prefilled_value="2025-01-15",  # ISO 8601 date string
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_date-field.png"
+    alt="A date picker field rendered in Le Chat."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Date field in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="singlechoice">SingleChoice</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# With labels (value, display_label)
+priority: str = SingleChoice(
+    options=[
+        ("low", "Low Priority"),
+        ("medium", "Medium Priority"),
+        ("high", "High Priority"),
+    ],
+    description="Select priority",
+    prefilled_value="medium",  # Pre-selected option
+)
+
+# Simple string options (value = label)
+status: str = SingleChoice(
+    options=["pending", "approved", "rejected"],
+    description="Status",
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_single-choice-field_priority.png"
+    alt="A single-choice dropdown rendered in Le Chat, showing priority options."
+    centered
+  />
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_single-choice-field_status.png"
+    alt="A single-choice dropdown rendered in Le Chat, showing status options."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Single-choice field in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="multichoice">MultiChoice</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# With labels (value, display_label)
+tags: list[str] = MultiChoice(
+    options=[
+        ("frontend", "Frontend"),
+        ("backend", "Backend"),
+        ("infra", "Infrastructure"),
+    ],
+    description="Select applicable tags",
+    prefilled_value=["frontend"],  # Pre-selected options
+)
+
+# Simple string options (value = label)
+colors: list[str] = MultiChoice(
+    options=["red", "green", "blue"],
+    description="Pick colors",
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_multi-choice-field_tags.png"
+    alt="A multi-choice field rendered in Le Chat, showing tag options."
+    centered
+  />
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_multi-choice-field_colors.png"
+    alt="A multi-choice field rendered in Le Chat, showing color options."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Multi-choice field in Le Chat.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="filefield">FileField</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.conversational import FileField, FileWithMetadataValue
+
+# Single file upload (plain URL)
+document: str = FileField(description="Upload a document")
+
+# Multiple file uploads (plain URLs)
+attachments: list[str] = FileField(description="Upload files", multiple=True)
+
+# Single file upload with metadata
+document: FileWithMetadataValue = FileField(description="Upload a document", include_metadata=True)
+
+# Multiple file uploads with metadata
+attachments: list[FileWithMetadataValue] = FileField(
+    description="Upload files", multiple=True, include_metadata=True
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_file-field_document.png"
+    alt="A single file upload field rendered in Le Chat."
+    centered
+  />
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_file-field_attachements.png"
+    alt="A multiple file upload field rendered in Le Chat, showing attached files."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">File upload field in Le Chat.</legend>
+</figure>
+
+By default the workflow receives URLs (strings) pointing to files uploaded by the user. With `include_metadata=True`, it receives `FileWithMetadataValue` objects instead:
+
+| Field          | Type             | Required | Description                     |
+| -------------- | ---------------- | -------- | ------------------------------- |
+| `filename`     | `str`            | Yes      | Original filename               |
+| `url`          | `str`            | Yes      | Signed URL to download the file |
+| `content_type` | `str`            | Yes      | MIME type of the file           |
+
+These URLs may expire, so if your workflow needs long-term access to the files, it is responsible for storing them elsewhere.
+
+<SectionTab as="h1" sectionId="confirmation-inputs">Confirmation inputs</SectionTab>
+
+For workflows that need a simple single-choice confirmation with direct submit, use `ConfirmationInput` or `AcceptDeclineConfirmation`. These helpers create a single-field form where selecting an option immediately submits the form.
+
+<SectionTab as="h2" variant="secondary" sectionId="confirmationinput">ConfirmationInput</SectionTab>
+
+`ConfirmationInput` provides a list of options that should be rendered as buttons. Selection of an option should immediately submit the form:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="type-selection-workflow",
+    workflow_display_name="Type Selection",
+    workflow_description="Select your favorite type",
+)
+class TypeSelectionWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        await workflows_mistralai.send_assistant_message("Let's find out your type preference!")
+
+        selection = await self.wait_for_input(
+            workflows_mistralai.ConfirmationInput(
+                options=[
+                    ("fire", "Fire"),
+                    ("water", "Water"),
+                    ("grass", "Grass"),
+                    ("electric", "Electric"),
+                ],
+                description="What is your favorite type?",
+            )
+        )
+
+        selected_type = selection.choice  # Returns the value, e.g., "fire"
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=f"You selected {selected_type}!")]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_confirmation.png"
+    alt="A confirmation input rendered in Le Chat, showing buttons for each option."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Confirmation input in Le Chat.</legend>
+</figure>
+
+| Property      | Type                                   | Description                                                  |
+| ------------- | -------------------------------------- | ------------------------------------------------------------ |
+| `options`     | `list[tuple[str, str]]` or `list[str]` | List of options as `(value, label)` tuples or simple strings |
+| `description` | `str`                                  | Description shown above the options                          |
+
+The returned object has a `choice` property containing the selected option value.
+
+<SectionTab as="h2" variant="secondary" sectionId="acceptdeclineconfirmation">AcceptDeclineConfirmation</SectionTab>
+
+`AcceptDeclineConfirmation` is a specialized confirmation with two options: accept and decline. Clients can render this as a standard validation UI with keyboard shortcuts for quick responses:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="approval-workflow",
+    workflow_display_name="Approval",
+    workflow_description="Confirm an action",
+)
+class ApprovalWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        confirmation = await self.wait_for_input(
+            workflows_mistralai.AcceptDeclineConfirmation(
+                description="Do you want to proceed with this action?",
+                accept_label="Yes, proceed",
+                decline_label="Cancel",
+            )
+        )
+
+        if workflows_mistralai.is_accepted(confirmation):
+            return workflows_mistralai.ChatAssistantWorkflowOutput(
+                content=[workflows_mistralai.TextOutput(text="Action confirmed!")]
+            )
+        else:
+            return workflows_mistralai.ChatAssistantWorkflowOutput(
+                content=[workflows_mistralai.TextOutput(text="Action cancelled.")]
+            )
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_accept-decline-confirmation.png"
+    alt="An accept/decline confirmation rendered in Le Chat, showing two buttons for accept and decline."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Accept/decline confirmation in Le Chat.</legend>
+</figure>
+
+| Property        | Type  | Description                         |
+| --------------- | ----- | ----------------------------------- |
+| `description`   | `str` | Description shown above the buttons |
+| `accept_label`  | `str` | Label for the accept button         |
+| `decline_label` | `str` | Label for the decline button        |
+
+Use the `is_accepted()` helper function to check whether the user accepted or declined:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+if workflows_mistralai.is_accepted(confirmation):
+    # User accepted
+    pass
+else:
+    # User declined
+    pass
+```
+
+  </TabItem>
+</Tabs>

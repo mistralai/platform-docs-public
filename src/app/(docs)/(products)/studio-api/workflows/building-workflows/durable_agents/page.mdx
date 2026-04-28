@@ -7,9 +7,16 @@ sidebar_position: 6
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Durable Agents: LLM Agents on Mistral Workflows
+# Durable Agents
 
-Durable Agents allow you to run LLM agents within your Mistral workflows.
+A Durable Agent is an LLM agent whose loop (model calls, tool use, handoffs) runs **inside a workflow**, so its state survives crashes and restarts. The Mistral plugin (`mistralai-workflows[mistralai]`) provides the primitives — `Agent`, `Runner`, `RemoteSession`, and `LocalSession` (experimental) — for building them.
+
+What you get on top of a regular agent loop:
+
+- **Durability**: agent state is preserved across worker crashes and restarts
+- **Tool integration**: workflow activities can be passed directly as agent tools
+- **Multi-agent handoffs**: agents can delegate tasks to specialized agents
+- **MCP support**: connect to external tools via the Model Context Protocol (stdio / SSE)
 
 <SectionTab as="h1" sectionId="installation">Installation</SectionTab>
 
@@ -18,15 +25,6 @@ To use Durable Agents, install the Mistral plugin:
 ```bash
 uv add 'mistralai-workflows[mistralai]'
 ```
-
-<SectionTab as="h1" sectionId="what-is-a-durable-agent">What is a Durable Agent?</SectionTab>
-
-A Durable Agent is an LLM agent that executes within a workflow, benefiting from:
-
-- **Durability**: Agent state is preserved across failures and restarts
-- **Tool Integration**: Use activities as agent tools
-- **Multi-Agent Handoffs**: Agents can delegate tasks to specialized agents
-- **MCP Support**: Connect to external tools via Model Context Protocol (stdio / SSE)
 
 
 <SectionTab as="h1" sectionId="core-components">Core Components</SectionTab>
@@ -88,6 +86,8 @@ Sessions manage agent state and API communication. Two session types are availab
 | `RemoteSession` | Production (recommended)   | Mistral Agents SDK    |
 | `LocalSession`  | Experimental / On-premises | Direct completion API |
 
+`RemoteSession` lazily creates an agent server-side (or reuses an existing one if `agent.id` is set) and delegates completions to it. `LocalSession` runs the agent loop in your worker process using the chat completions API directly.
+
 <SectionTab as="h1" sectionId="basic-example">Basic example</SectionTab>
 
 Here's a simple agent workflow that uses an activity as a tool:
@@ -145,7 +145,7 @@ class FinanceAgentWorkflow:
 
 <SectionTab as="h1" sectionId="multi-agent-handoffs">Multi-Agent Handoffs</SectionTab>
 
-Agents can delegate tasks to specialized agents using handoffs. The system automatically manages the handoff conversation:
+Agents can delegate tasks to specialized agents using handoffs. The coordinator agent's `instructions` and the specialized agents' `description` fields guide handoff decisions; the model decides when to hand off based on the user query and the available specialists' descriptions. The system automatically manages the handoff conversation.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -195,6 +195,7 @@ For local command-line MCP servers:
   <TabItem value="python" label="Python">
 
 ```python
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
 from mistralai.workflows.plugins.mistralai import MCPStdioConfig
 
 mcp_config = MCPStdioConfig(
@@ -203,7 +204,7 @@ mcp_config = MCPStdioConfig(
     name="server-everything",
 )
 
-agent = Agent(
+agent = workflows_mistralai.Agent(
     model="mistral-medium-latest",
     name="mcp-agent",
     description="Agent with access to MCP tools",
@@ -275,7 +276,11 @@ Available built-in tools:
 | `ImageGenerationTool()` | Generate images from text descriptions |
 | `DocumentLibraryTool()` | Analyze and extract information from uploaded documents |
 
-These tools are executed server-side by the Mistral platform — they do not run in your worker process. Pass them in the `tools` list alongside any activity-based tools.
+These tools are executed server-side by the Mistral platform; they do not run in your worker process. Pass them in the `tools` list alongside any activity-based tools.
+
+:::warning
+**Built-in tools require RemoteSession**: `LocalSession` silently drops built-in tools (logs a warning and proceeds without them). Use `RemoteSession` for any agent that relies on `WebSearchTool`, `CodeInterpreterTool`, `ImageGenerationTool`, or `DocumentLibraryTool`.
+:::
 
 <SectionTab as="h1" sectionId="session-types">Session Types</SectionTab>
 
@@ -309,6 +314,35 @@ Features:
 - Managed conversation state
 - Production-ready
 
+<SectionTab as="h3" variant="secondary" sectionId="agent-lifecycle">Agent Lifecycle</SectionTab>
+
+When a `RemoteSession` initializes a conversation, it iterates over every agent in the handoff graph and either creates or updates it via the Agents API:
+
+- **`Agent(id=None)`** — a new remote agent is created via `beta.agents.create()`. The returned ID is stored back on the `Agent` object, so subsequent runs with the **same instance** will reuse it.
+- **`Agent(id="existing-id")`** — the existing remote agent is updated via `beta.agents.update()`. No new agent is created.
+
+To reuse a pre-existing agent across workflow executions, set `agent.id` before calling `Runner.run()`:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+agent = workflows_mistralai.Agent(
+    id="ag_abc123",  # Reuse an existing remote agent
+    model="mistral-medium-latest",
+    name="finance-agent",
+    instructions="Use tools to answer financial questions.",
+    tools=[get_interest_rate],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+:::warning
+Agents created by `RemoteSession` are **not cleaned up automatically** after a run completes. If you create agents dynamically (without setting `id`), a new remote agent will be created on every workflow execution.
+:::
+
 <SectionTab as="h2" variant="secondary" sectionId="local-session">LocalSession (Experimental)</SectionTab>
 
 Runs agents locally using the completion endpoint:
@@ -334,7 +368,7 @@ outputs = await workflows_mistralai.Runner.run(
 
 Use cases:
 
-- On-premises deployments that doesn't have access to Agents (Bora)
+- On-premises or private cloud deployments where the Agents API is not available
 - Development and testing
 - Full context control
 
@@ -421,10 +455,12 @@ if __name__ == "__main__":
   </TabItem>
 </Tabs>
 
+<SectionTab as="h1" sectionId="observability">Observability</SectionTab>
+
+Agent activity emits the same workflow and activity events as any other workflow. Subscribe to them live via [Streaming](/studio-api/workflows/building-workflows/streaming) and [Consuming Streaming Events](/studio-api/workflows/building-workflows/consuming_events), or replay the full event history after the fact.
+
 <SectionTab as="h1" sectionId="best-practices">Best practices</SectionTab>
 
-1. **Use RemoteSession for production** - It provides better reliability and Agents SDK integration
-2. **Keep activities granular** - Small, focused activities work better as agent tools
-3. **Provide clear instructions** - Agent performance depends on clear instructions
-4. **Use handoffs for specialization** - Create specialized agents for specific domains and improve context management by delegating tasks
-5. **Handle tool errors gracefully** - Activities used as tools should return meaningful error messages
+1. **Use `RemoteSession` for production** so the agent runs against the Agents API rather than the raw completion endpoint.
+2. **Set `agent.id`** on agents you want to reuse across runs, otherwise `RemoteSession` creates a new remote agent on every execution and never cleans them up.
+3. **Wrap tool side-effects in activities** so they get retry isolation and appear in the execution history.

@@ -1,0 +1,68 @@
+---
+id: core-concepts
+title: Core concepts
+sidebar_label: Core concepts
+sidebar_position: 0
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Core concepts
+
+This section explains the building blocks of Mistral Workflows and how they fit together. Each block has its own deep-dive page; start here to see the big picture.
+
+<SectionTab as="h2" sectionId="mental-model">The mental model</SectionTab>
+
+Everything starts at the **Workflows API**: the orchestrator you call to start, query, and signal runs. For full endpoint details, see the [API reference](/api/endpoint/workflows).
+
+Your code lives outside the API, in **Workers**: processes you deploy that connect outbound to the API and pull work from it. The code a worker runs splits in two:
+
+- A **Workflow** is your orchestration logic: deterministic code that decides what to do, in what order, and how to handle results.
+- **Activities** are the units of real work the workflow calls into: an LLM call, an HTTP request, a database write, a tool invocation. Side effects happen here.
+
+Starting a workflow produces an **Execution**: a single run with its own ID, result, and history of **Events**. Events record what happens during the run, such as `started`, `activity completed`, or `signal received`. They stream live to clients and remain in the execution history.
+
+Workers belong to a **Deployment** — a named group that owns a set of workflow definitions and shares its task queues.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/workflows_mental_model.svg'}
+  alt="Workflows mental model diagram"
+  centered
+  className="border-none!"
+/>
+</div>
+
+| Term | What it is |
+|------|------------|
+| **Workflows API** | The orchestrator. The entry point you call to start, query, and signal runs. |
+| **Worker** | A process you deploy that connects to the API and runs your workflow and activity code. |
+| **Workflow** | The orchestration logic. Defines what happens, in what order, and how to handle results. Deterministic (re-running it always produces the same plan from the same history). |
+| **Activity** | A single unit of real work the workflow calls into, such as calling an LLM, making an HTTP request, writing to a database, or running a tool. Where side effects happen. |
+| **Execution** | A single run of a workflow. Has a unique ID, an event history, and a result. |
+| **Event** | A record of something that happened during an execution, such as `started`, `activity completed`, or `signal received`. Streamed in real time and stored in history. |
+| **Deployment** | A named group of workers that shares workflow definitions and task queues. |
+
+<SectionTab as="h2" sectionId="how-it-fits-together">How it fits together</SectionTab>
+
+A typical run plays out like this:
+
+1. A client (your code, AI Studio, le Chat, or a schedule) calls the Workflows API to start an execution.
+2. The orchestrator records the request as an event and dispatches a task to the right deployment's queue.
+3. A worker in that deployment picks up the task, instantiates the workflow class, and runs the entrypoint.
+4. The workflow calls activities. Each activity call becomes a task; any worker in the deployment can pick it up and run it.
+5. Every step is recorded as an event in the execution's history. Clients can stream events live or read history later.
+6. If a worker crashes mid-run, another worker resumes from the recorded history. The execution survives.
+
+The orchestrator never holds your code — it only dispatches tasks. Workers hold your code and connect outbound. This is why workflows can run in your private network without inbound traffic from the platform.
+
+<SectionTab as="h2" sectionId="deep-dive">Deep dive</SectionTab>
+
+Once the model is clear, dive into each piece:
+
+- [Workflows](/studio-api/workflows/getting-started/core_concepts/workflows) — orchestration logic, determinism, replay.
+- [Activities](/studio-api/workflows/getting-started/core_concepts/activities) — units of work, retries, heartbeats.
+- [Executions](/studio-api/workflows/getting-started/core_concepts/executions) — lifecycle, statuses, executions vs runs.
+- [Events](/studio-api/workflows/getting-started/core_concepts/events) — the event history, replay, streaming.
+- [Workers](/studio-api/workflows/getting-started/core_concepts/workers) — process model, registration, fault tolerance.
+- [Deployments](/studio-api/workflows/getting-started/core_concepts/deployments) — worker grouping, isolation, scaling.

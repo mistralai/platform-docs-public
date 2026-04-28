@@ -9,24 +9,25 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Workflow scheduling
 
-Automatically run workflows at specified times without manual triggering.
+Run workflows on a recurring cron schedule, with policies for catchup and overlap.
 
 <SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
 
-Workers automatically register workflow schedules with Workflows during startup. The system handles:
+Workers register their workflow schedules with the platform at startup. The platform fires the workflow at the scheduled time and applies the policies you've defined for catchup and overlap.
 
-1. Schedule registration with Workflows
-2. Periodic refresh of schedule definitions (every 10 seconds)
-3. Execution of workflows according to the schedule
+:::note
+Schedule changes require a worker restart to take effect. The worker reads schedule definitions once at startup — changes to cron expressions or policies in your code are not picked up by a running worker.
+:::
 
 <SectionTab as="h1" sectionId="defining-schedules">Defining Schedules</SectionTab>
 
-Add schedules to workflows using cron expressions:
+Add schedules to workflows using cron expressions. Schedules use **UTC** by default — convert from your local timezone before writing the expression.
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
+import mistralai.workflows as workflows
 from mistralai.workflows.models import ScheduleDefinition
 
 schedule = ScheduleDefinition(
@@ -50,7 +51,10 @@ class ReportWorkflow:
 Policies control what happens when schedules are missed or overlap:
 
 - **`catchup_window_seconds`** — If the platform was down or missed scheduled runs, it will retroactively trigger all missed executions within this window. Runs older than the window are skipped.
-- **`overlap`** — What to do when a new run is due but the previous one is still running. `SKIP` drops the new run, `BUFFER_ONE` queues one pending run, and `ALLOW_ALL` starts all runs concurrently.
+- **`overlap`** — What to do when a new run is due but the previous one is still running:
+  - `SKIP` — drop the new run. Use this when you only care about the latest data and overlapping runs would do duplicate work (e.g., periodic sync jobs).
+  - `BUFFER_ONE` — queue one pending run, drop further ones until the buffered run starts. Use this when you want to guarantee one follow-up run but don't want a backlog.
+  - `ALLOW_ALL` — start every scheduled run concurrently. Use this only when runs are independent and the workload can absorb the parallelism.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -84,17 +88,16 @@ class ReportWorkflow:
 
 
 
-<SectionTab as="h1" sectionId="key-considerations">Key Considerations</SectionTab>
+<SectionTab as="h1" sectionId="managing-schedules">Managing schedules</SectionTab>
 
-1. **Worker Configuration**:
+Schedules can be managed in two ways:
 
-   - Ensure all workers have identical schedule configurations
-   - Mismatched configurations can cause conflicts and unexpected behavior
+- **In code (recommended for most cases)**: declare schedules on the workflow via `@workflows.workflow.define(..., schedules=[...])`. Workers register them at startup. Changes to the `ScheduleDefinition` take effect after restarting the worker.
+- **Via the REST API**: `POST /v1/workflows/schedules` to create, `GET /v1/workflows/schedules` to list, and `DELETE /v1/workflows/schedules/{schedule_id}` to remove. Use the API when you want to manage schedules independently of worker deployments (e.g., one-off ad-hoc schedules, or schedules driven by an external control plane).
 
-2. **Schedule Definition**:
-   - Uses standard cron syntax
-   - Includes input parameters for scheduled executions
-   - Supports multiple cron expressions per workflow
+:::warning
+**Workers must agree on schedule definitions**: every worker for a given workflow registers its own copy of the in-code schedules. If two workers run different versions of the same workflow with different `ScheduleDefinition` configs, the platform sees conflicting registrations and behavior is undefined. Roll out worker updates so all workers converge on the same definition.
+:::
 
 <SectionTab as="h1" sectionId="complete-example">Complete Example</SectionTab>
 
@@ -129,9 +132,9 @@ class DatabaseBackupWorkflow:
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="important-notes">Important Notes</SectionTab>
+<SectionTab as="h1" sectionId="notes">Notes</SectionTab>
 
-- Schedules use UTC time zone by default
-- Each schedule can specify different input parameters
-- Workers automatically maintain schedule registrations
-- Ensure consistent schedule definitions across all workers
+- Cron expressions follow standard 5-field syntax (`minute hour day-of-month month day-of-week`).
+- A workflow can have multiple `cron_expressions` — they all fire independently.
+- Each schedule passes its own `input` payload to the workflow's entrypoint.
+- Schedule changes require a worker restart to take effect.

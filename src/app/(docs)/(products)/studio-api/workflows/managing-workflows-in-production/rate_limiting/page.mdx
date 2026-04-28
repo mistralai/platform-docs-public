@@ -66,3 +66,52 @@ async def generate_chat_response(
 **Behavior**: All workflows calling `generate_chat_response` share the same 100 executions/sec limit. If Workflow A makes 60 calls and Workflow B makes 50 calls in the same second, they compete for the same pool.
 
 **With a key**: Add `key="mistral_api"` to share this limit across multiple activities (e.g., `generate_chat_response`, `generate_embeddings`, `moderate_content`).
+
+<SectionTab as="h1" sectionId="rate-limit-keys-and-poller-limits">Rate limit keys and poller limits</SectionTab>
+
+Each distinct rate limit key causes the SDK to spin up a separate internal Temporal worker. Combined with the main worker and the sticky-activity worker, a single worker process runs:
+
+- 1 main worker (workflows + default activities)
+- 1 sticky-activity worker
+- 1 additional worker **per distinct rate limit key**
+
+Each internal worker opens 5 workflow pollers and 5 activity pollers. With many distinct keys the total poller count grows quickly:
+
+| Distinct rate limit keys | Internal workers | Total pollers |
+|--------------------------|-----------------|---------------|
+| 0 | 2 | 20 |
+| 5 | 7 | 70 |
+| 12 | 14 | 140 |
+
+If the total exceeds your namespace's concurrent-poller quota you will see:
+
+```
+ResourceExhausted: namespace concurrent poller limit exceeded
+```
+
+Minimise the number of distinct keys. Activities that share the same external resource and the same budget can all use the same key:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# ❌ Avoid — each unique key creates an extra internal worker
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="ocr"))
+async def run_ocr(params: OcrParams) -> OcrResult: ...
+
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="classify"))
+async def classify_document(params: ClassifyParams) -> ClassifyResult: ...
+
+
+# ✅ Prefer — share one key across activities that hit the same resource
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="document_pipeline"))
+async def run_ocr(params: OcrParams) -> OcrResult: ...
+
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="document_pipeline"))
+async def classify_document(params: ClassifyParams) -> ClassifyResult: ...
+```
+
+  </TabItem>
+</Tabs>
+
+The second approach uses a single internal worker for both activities instead of two, halving the poller count for that pair.

@@ -7,34 +7,48 @@ sidebar_position: 2
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Dependency Injection in Workflows
+# Dependency Injection
 
-Dependency injection provides a clean way to access shared resources in your workflows and activities. It automatically handles the creation and management of resources like database connections, API clients, or configuration objects, so you don't have to manually create and pass these around in your code.
+Dependency injection provides a clean way to pass shared resources (database connections, API clients, configuration) into activities without constructing them manually inside each call.
+
+<SectionTab as="h1" sectionId="quick-start">Quick start</SectionTab>
+
+Mark an activity parameter with `Depends(provider)` and the worker will pass the provider's result on every call:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from mistralai.workflows import Depends
+
+async def get_db() -> Database:
+    return await Database.connect("postgres://...")
+
+@workflows.activity()
+async def insert_user(name: str, db: Database = Depends(get_db)) -> int:
+    return await db.insert(name)
+```
+
+  </TabItem>
+</Tabs>
+
+The provider (`get_db`) is called once when the worker starts. Its result is reused across every activity call.
+
+:::tip
+**Provider lifetime**: dependencies declared with `Depends()` are initialized once at worker startup and shared across all activity executions. The same instance is reused for every call, so connection pools, API clients, and parsed config objects are created once. Make sure the value returned is safe to share across concurrent activities.
+:::
 
 <SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
 
-The system supports multiple ways to provide dependencies, allowing you to choose the approach that best fits your resource's requirements:
+The system supports multiple provider styles. Pick the one that matches your resource's lifecycle:
 
-1. **Synchronous functions** - Ideal for simple configuration values or in-memory objects
-2. **Asynchronous functions** - Perfect for I/O-bound dependencies like database connections
-3. **Context managers** - Best for resources that require cleanup operations
-4. **Generators** - Useful for streaming data or complex resource management
+1. **Synchronous functions**: simple configuration values or in-memory objects
+2. **Asynchronous functions**: I/O-bound dependencies like database connections
+3. **Context managers** (sync or async): resources that require cleanup
+4. **Generators** (sync or async): streaming data or complex resource lifecycles
 
-When you declare a dependency in your activity or workflow, the system automatically provides that resource when needed, handling all the lifecycle management for you.
-
-<SectionTab as="h2" variant="secondary" sectionId="dependency-lifecycle-and-resource-sharing">Dependency Lifecycle and Resource Sharing</SectionTab>
-
-**Important**: All dependencies defined with `Depends()` are initialized once when the worker starts up and then shared across all activity executions. This means:
-
-- **Single Instance**: The same instance is reused for every activity call
-- **Resource Efficiency**: Reduces connection overhead and resource consumption
-- **Connection Pooling**: Database connections, API clients, and other resources are maintained and reused
-
-This approach is particularly beneficial for:
-
-- **Database connections**: Avoids creating new connections for each query
-- **API clients**: Maintains persistent connections and authentication
-- **Configuration objects**: Loads configuration once and shares it across all activities
+When you declare a dependency in your activity, the system invokes the provider, handles the lifecycle, and passes the value as the parameter default.
 
 <SectionTab as="h1" sectionId="defining-dependencies">Defining Dependencies</SectionTab>
 
@@ -148,6 +162,8 @@ For async streaming data sources:
   <TabItem value="python" label="Python">
 
 ```python
+import aiofiles
+
 async def get_async_data_stream():
     """Provides an async stream of data"""
     async with aiofiles.open("data.txt") as f:
@@ -244,49 +260,56 @@ async def main():
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="common-use-cases">Common Use Cases</SectionTab>
+<SectionTab as="h1" sectionId="common-use-cases">Common use cases</SectionTab>
 
-<SectionTab as="h2" variant="secondary" sectionId="database-connections">Database Connections</SectionTab>
+The same `Depends(provider)` pattern works for any shared resource. Two recurring examples:
 
-A more complete database connection example with proper session management:
+**Database connections** — provide an async session factory with cleanup:
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
-async def get_db_connection():
-    """Provides a database connection with proper cleanup"""
+async def get_db_session() -> AsyncIterator[AsyncSession]:
     engine = await create_db_engine("postgres://...")
     SessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
+    async with SessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
-    @asynccontextmanager
-    async def get_session() -> AsyncIterator[AsyncSession]:
-        async with SessionLocal() as session:
-            try:
-                yield session
-            finally:
-                await session.close()
-
-    return get_session
+@workflows.activity()
+async def write_record(payload: dict, session: AsyncSession = Depends(get_db_session)) -> int:
+    record = Record(**payload)
+    session.add(record)
+    await session.commit()
+    return record.id
 ```
 
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="api-clients">API Clients</SectionTab>
-
-Example of a payment service client with initialization:
+**API clients** — initialize once, reuse the persistent connection:
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
+import os
+import mistralai.workflows as workflows
+from mistralai.workflows import Depends
+
 async def get_payment_client() -> PaymentServiceClient:
-    """Creates and initializes a payment service client"""
-    client = PaymentServiceClient(api_key="your_key")
+    client = PaymentServiceClient(api_key=os.environ["PAYMENT_API_KEY"])
     await client.initialize()
     return client
+
+@workflows.activity()
+async def charge(user_id: str, amount: int, client: PaymentServiceClient = Depends(get_payment_client)) -> str:
+    return await client.charge(user_id=user_id, amount_cents=amount)
 ```
 
   </TabItem>
 </Tabs>
+

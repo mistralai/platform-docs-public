@@ -1,0 +1,91 @@
+---
+id: overview
+title: Overview
+sidebar_label: Overview
+sidebar_position: 1
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+# What is Mistral Workflows?
+
+:::info
+Workflows is in **public preview**. We don't plan major changes to APIs and features, but they might still happen. We'll notify you in advance when they do.
+:::
+
+Mistral Workflows is a platform for building **production-grade AI workflows**: multi-step processes that combine LLM calls, tool use, external APIs, and human input. They survive crashes, restarts, and failures of any individual step.
+
+You write workflows in code. The platform handles execution: durability, retries, scheduling, streaming, observability, and integration with the rest of Mistral.
+
+<SectionTab as="h2" sectionId="what-it-solves">What workflows solve</SectionTab>
+
+LLM applications often need to do more than answer one prompt. They orchestrate multiple model calls, wait for human approvals, hit external APIs, and run for minutes, hours, or days. Building this on raw infrastructure means writing your own retries, your own state machine, and your own recovery logic — and watching half of it break the first time a process restarts.
+
+Workflows take that off your plate:
+
+- **Crashes don't lose work.** Every step is recorded in an event history. When a process dies, another one resumes from the last completed step.
+- **Retries are first-class.** Configure backoff per activity; the platform handles the rest.
+- **Long-running orchestration.** Pause a workflow on a human signal or external event; resume when input arrives. Workflows run from seconds to months.
+- **Observable by default.** Events stream live, history is queryable, and OpenTelemetry traces work without extra wiring.
+- **AI primitives included.** Run an agent loop, stream LLM tokens to clients, and call Mistral's API without writing the integration code.
+
+Durable execution is powered by [Temporal](https://temporal.io/), an open-source engine for fault-tolerant workflow orchestration.
+
+<SectionTab as="h2" sectionId="when-to-use">When to use workflows</SectionTab>
+
+Reach for workflows when you need:
+
+- Multi-step LLM pipelines that must survive crashes and restarts.
+- Human-in-the-loop processes that pause for hours or days.
+- Scheduled or recurring AI tasks (cron-style or one-shot).
+- Multi-agent orchestration with hand-offs and shared state.
+- Anything you currently build with a queue, a state machine, and a lot of retry code.
+
+If you're calling a single LLM endpoint with no orchestration, plain SDK calls are enough.
+
+<SectionTab as="h2" sectionId="composing">Composing with the rest of Mistral</SectionTab>
+
+Workflows are the durable execution layer for AI applications you build on Mistral. When you compose other building blocks — **Agents**, **Judges**, **Datasets**, and more — inside a workflow, they inherit its durability, retries, observability, and human-in-the-loop primitives.
+
+You can call a workflow you build from:
+
+- **The Mistral API**: `POST /v1/workflows/{name}/execute` from any client, in any language.
+- **Mistral AI Studio**: trigger executions from the UI, with input forms generated from your workflow signature, and watch them run on a live execution timeline.
+- **le Chat**: workflows appear as assistants that users can invoke in a conversation.
+
+<SectionTab as="h2" sectionId="what-runs-where">What runs where</SectionTab>
+
+Workflows runs in **hybrid mode**: we host the orchestrator, and your workflow and activity code runs in your environment.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/workflows_hybrid_mode.svg'}
+  alt="Hybrid mode architecture diagram"
+  centered
+  className="border-none!"
+/>
+</div>
+
+**Your environment** holds the code you write (typically in your repository) and the workers that execute it. Workers run on your laptop for local development, or in your own infrastructure such as Kubernetes or virtual machines for production.
+
+**The AI Studio environment** holds the orchestrator (state, history, task dispatch) behind a public REST API and the AI Studio UI. Workers connect outbound; the orchestrator does not initiate connections into your network.
+
+For enterprise customers, the AI Studio environment can also run in your private cloud or on-premises.
+
+:::info
+**Hybrid mode**: your data stays where you want it. Workflow inputs and outputs flow through the platform, but you can keep them under your control:
+
+- **Encryption at the SDK layer**: the SDK encrypts payloads before they leave your worker; the platform stores ciphertext only.
+- **Payload offloading**: the platform offloads inputs and outputs above 2MB to *your* blob storage (S3, GCS, or Azure), keeping only references on its side.
+
+For details, see [Payload offloading](/studio-api/workflows/building-workflows/payload_offloading) and [Encryption](/studio-api/workflows/building-workflows/encryption).
+:::
+
+<SectionTab as="h2" sectionId="next-steps">Next steps</SectionTab>
+
+| If you want to | Start here |
+|------|------|
+| Install the SDK | [Installation](/studio-api/workflows/getting-started/installation) |
+| See a working workflow in 5 minutes | [Your First Workflow](/studio-api/workflows/getting-started/your_first_workflow) |
+| Understand how the pieces fit together | [Core concepts](/studio-api/workflows/getting-started/core_concepts) |
+| Build an LLM agent inside a workflow | [Durable Agents](/studio-api/workflows/building-workflows/durable_agents) |
+| Schedule a recurring workflow | [Scheduling](/studio-api/workflows/building-workflows/scheduling) |

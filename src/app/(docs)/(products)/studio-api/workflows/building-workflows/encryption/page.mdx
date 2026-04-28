@@ -1,0 +1,101 @@
+---
+id: encryption
+title: Encryption
+sidebar_position: 13
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Encryption
+
+Encrypt all payloads (workflow inputs, activity I/O, signal data) before they leave your worker. The platform stores ciphertext, and only your workers can decrypt.
+
+| Mode | Workflow input | Activity I/O | Stored in our database |
+|------|----------------|---------------|------------------|
+| Default | cleartext | cleartext | yes (cleartext) |
+| Encryption | ciphertext | ciphertext | yes (ciphertext) |
+
+:::info
+Encryption can be combined with [payload offloading](/studio-api/workflows/building-workflows/payload_offloading) — offloaded payloads are encrypted before they leave your worker, and the orchestrator only sees an encrypted reference.
+:::
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+Install the encryption extra:
+
+```bash
+uv add "mistralai[workflow-payload-encryption]"
+```
+
+This pulls in `cryptography`, which the SDK uses for AES-GCM encryption.
+
+<SectionTab as="h1" sectionId="generate-key">Generate a key</SectionTab>
+
+Generate a 256-bit AES-GCM key:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+key = AESGCM.generate_key(bit_length=256)
+print(key.hex())
+```
+
+  </TabItem>
+</Tabs>
+
+Store the key in your secret manager. Anyone with this key can read your workflow data.
+
+<SectionTab as="h1" sectionId="configure-workers">Configure your workers</SectionTab>
+
+Two modes are available:
+
+- `full`: encrypt every payload.
+- `partial`: encrypt only fields typed as `EncryptedStrField`.
+
+<Tabs>
+  <TabItem value="full" label="Full encryption">
+
+```bash
+TEMPORAL_PAYLOAD_ENCRYPTION__MODE=full
+TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<your_hex_key>
+```
+
+  </TabItem>
+  <TabItem value="partial" label="Partial encryption">
+
+```bash
+TEMPORAL_PAYLOAD_ENCRYPTION__MODE=partial
+TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<your_hex_key>
+```
+
+```python
+from mistralai.extra.workflows.encoding import EncryptedStrField
+
+class PIIPayload(BaseModel):
+    user_id: str                  # cleartext
+    ssn: EncryptedStrField        # encrypted
+```
+
+  </TabItem>
+</Tabs>
+
+Encrypted payloads appear as `<encrypted>` in execution traces and the Studio UI.
+
+<SectionTab as="h1" sectionId="key-rotation">Key rotation</SectionTab>
+
+To rotate without downtime, follow these steps:
+
++ **Generate a new key** using the method shown earlier.
++ **Promote the new key** and keep the old one as a secondary so workers can still decrypt in-flight executions:
+
+    ```bash
+    TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<new_key>
+    TEMPORAL_PAYLOAD_ENCRYPTION__SECONDARY_KEY=<old_key>
+    ```
+
++ **Wait** for workflows started before the rotation to finish. The wait depends on your retention plus workflow duration (default is 30 days).
++ **Remove the old key** by unsetting `SECONDARY_KEY`.

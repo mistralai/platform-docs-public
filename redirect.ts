@@ -146,6 +146,7 @@ export const redirects = [
   { source: "/mistral-vibe/introduction/install", destination: "/mistral-vibe/terminal/install", permanent: true },
   { source: "/mistral-vibe/introduction/quickstart", destination: "/mistral-vibe/terminal/quickstart", permanent: true },
   { source: "/mistral-vibe/introduction/configuration", destination: "/mistral-vibe/terminal/configuration", permanent: true },
+  { source: "/workflows", destination: "/studio-api/workflows/getting-started/introduction", permanent: true },
   { source: "/workflows/getting-started/introduction", destination: "/studio-api/workflows/getting-started/introduction", permanent: true },
   { source: "/workflows/getting-started/installation", destination: "/studio-api/workflows/getting-started/installation", permanent: true },
   { source: "/workflows/getting-started/your_first_workflow", destination: "/studio-api/workflows/getting-started/your_first_workflow", permanent: true },

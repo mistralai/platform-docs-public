@@ -1,19 +1,31 @@
 ---
-id: sub-workflows
-title: Sub-workflows
+id: child-workflows
+title: Child workflows
 sidebar_position: 8
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Sub-workflows
+# Child workflows
 
-A workflow can execute other workflows as sub-workflows, enabling hierarchical orchestration patterns.
+A workflow can execute other workflows as **child workflows**, enabling hierarchical orchestration patterns.
+
+<SectionTab as="h1" sectionId="when-to-use">When to use a child workflow vs an activity</SectionTab>
+
+Both let you compose work — pick based on whether you need a separate durable history:
+
+| Use a **child workflow** when... | Use an **activity** when... |
+| --- | --- |
+| The unit of work is itself long-running, has its own retries, or needs its own event history you can replay independently | The unit of work is a single side effect (DB write, API call, LLM call) that should be retried as a unit |
+| You want to inspect, signal, or query that sub-process from outside | You don't need external observability beyond the parent's history |
+| You want to run it on a different worker / deployment | The parent worker can execute it directly |
+
+Child workflows are heavier than activities: they get their own execution row, history, and retry policy. Reach for an activity first; reach for a child workflow when you need its independent durability.
 
 <SectionTab as="h1" sectionId="basic-usage">Basic usage</SectionTab>
 
-Execute a sub-workflow and wait for its result:
+Execute a child workflow and wait for its result:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -74,7 +86,7 @@ Parent got: processed:hello
 
 <SectionTab as="h1" sectionId="fire-and-forget">Fire and forget</SectionTab>
 
-Start a sub-workflow without waiting for its result by passing `wait=False`:
+Start a child workflow without waiting for its result by passing `wait=False`:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -116,3 +128,11 @@ handle = await workflow.execute_workflow(
 
   </TabItem>
 </Tabs>
+
+<SectionTab as="h1" sectionId="observing-child-events">Observing child workflow events</SectionTab>
+
+Every child workflow gets its own execution ID and event history. Each event carries `workflow_context.parent_workflow_exec_id` and `workflow_context.root_workflow_exec_id`, so you can subscribe to a parent and all of its descendants in a single stream by filtering on `root_workflow_exec_id`.
+
+For a top-level workflow with no parent, `parent_workflow_exec_id` is `null` and `root_workflow_exec_id` is the workflow's own execution ID.
+
+See [Consuming Streaming Events > Consuming events from workflow trees](/studio-api/workflows/building-workflows/consuming_events#consuming-events-from-workflow-trees) for the subscription pattern.

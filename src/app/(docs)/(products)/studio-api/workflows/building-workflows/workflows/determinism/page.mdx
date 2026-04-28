@@ -1,0 +1,202 @@
+---
+id: workflow-determinism
+title: Determinism
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Workflow Determinism
+
+Workflows must be **deterministic**: given the same inputs, they must always produce the same
+sequence of commands. This is fundamental to the replay mechanism:
+when a worker restarts or a workflow is recovered, the system re-executes the workflow code
+from the beginning, matching each command against the recorded event history.
+If the code produces different commands on replay, the workflow fails with a non-determinism error.
+
+:::note
+Determinism is **enforced by default**. Workflow code runs inside a sandbox that intercepts non-deterministic calls and raises errors at runtime. You can opt out per-workflow with `enforce_determinism=False` or worker-wide with `DEFAULT_ENFORCE_DETERMINISM=0`. See [Determinism Enforcement](#determinism-enforcement-sandbox) below for details.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="correct-use-deterministic-apis">Correct: Use Deterministic APIs</SectionTab>
+
+Always use these in workflow code:
+
+```python
+from mistralai.workflows import workflow
+
+# Use workflow.now() for current time
+current_time = workflow.now()
+
+# Use workflow.uuid4() for UUIDs
+request_id = workflow.uuid4()
+
+# Use workflow.random() for random values
+random_value = workflow.random()
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="dangerous-standard-library-equivalents">Dangerous: Standard Library Equivalents</SectionTab>
+
+Don't use these directly in workflow code:
+
+```python
+# Dangerous - use workflow.now() instead
+from datetime import datetime
+current_time = datetime.now()
+
+# Dangerous - use workflow.uuid4() instead
+import uuid
+request_id = uuid.uuid4()
+
+# Dangerous - use workflow.random() instead
+import random
+rand_val = random.random()
+```
+
+Also dangerous in workflows:
+- File system access (`open()`, `os.listdir()`, etc.)
+- Direct HTTP calls or database queries
+- Modifying global variables
+- System calls (`os.environ`, `os.getcwd()`, etc.)
+
+<SectionTab as="h2" variant="secondary" sectionId="move-non-deterministic-work-to-activities">Move Non-Deterministic Work to Activities</SectionTab>
+
+For operations like external API calls, database queries, or file I/O, use activities:
+
+```python
+from mistralai.workflows import workflow
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def fetch_external_data(params: DataParams) -> ExternalData:
+    # Safe - Activities are not replayed
+    response = await http_client.get(params.url)
+    timestamp = datetime.now()  # OK in activities
+    return ExternalData(data=response.json(), fetched_at=timestamp)
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, params: MyParams) -> MyResult:
+        # Correct - Non-deterministic work in activity
+        data = await fetch_external_data(params)
+        return MyResult(data=data)
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="determinism-enforcement-sandbox">Determinism Enforcement (Sandbox)</SectionTab>
+
+When determinism enforcement is enabled, your workflow code runs inside a sandbox. The sandbox:
+
+- **Re-imports modules** in an isolated environment so that side-effectful module-level code
+  is contained
+- **Intercepts dangerous standard library calls** such as `datetime.now()`, `random.random()`,
+  `uuid.uuid4()`, `open()`, `os.environ`, and other non-deterministic operations
+- **Restricts the asyncio event loop** to prevent spawning uncontrolled coroutines
+
+If your workflow code attempts any of these operations, the sandbox raises an error at runtime
+rather than silently producing a non-determinism bug that surfaces only on replay.
+
+:::info
+If you disable the sandbox, determinism is your responsibility. Your code will still break on replay if it's non-deterministic, you just won't get an immediate error telling you so.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="disabling-per-workflow">Disabling Per-Workflow</SectionTab>
+
+Determinism enforcement is enabled by default. To opt out for a specific workflow, pass
+`enforce_determinism=False` to the `@workflow.define` decorator:
+
+```python
+from mistralai.workflows import workflow
+
+@workflow.define(name="my_workflow", enforce_determinism=False)
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, input: str) -> str:
+        # This code runs WITHOUT the sandbox.
+        # You are responsible for ensuring determinism.
+        return f"Processed: {input}"
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="disabling-worker-wide">Disabling Worker-Wide</SectionTab>
+
+Set the `DEFAULT_ENFORCE_DETERMINISM` environment variable to disable sandboxing for all
+workflows on a worker by default:
+
+```bash
+DEFAULT_ENFORCE_DETERMINISM=0
+```
+
+This sets `config.worker.default_enforce_determinism` to `False`.
+
+<SectionTab as="h3" variant="secondary" sectionId="precedence">Precedence</SectionTab>
+
+The decorator-level setting takes priority over the environment variable:
+
+| `@workflow.define(enforce_determinism=...)` | `DEFAULT_ENFORCE_DETERMINISM` | Result |
+|---|---|---|
+| `True` | any | sandboxed |
+| `False` | any | **not** sandboxed |
+| not set (default) | `1` / `True` (default) | sandboxed |
+| not set (default) | `0` / `False` | **not** sandboxed |
+
+<SectionTab as="h3" variant="secondary" sectionId="temporarily-bypassing-the-sandbox">Temporarily Bypassing the Sandbox</SectionTab>
+
+:::warning
+These escape hatches defeat the purpose of determinism enforcement.
+Use them only when you understand the implications and have no alternative.
+:::
+
+When determinism enforcement is enabled, you may occasionally need to perform an operation
+that the sandbox blocks, for example importing a module that has non-deterministic side
+effects at import time, or performing a one-off read that you know is safe.
+
+The SDK exposes two context managers under `workflow.unsafe`:
+
+**`workflow.unsafe.imports_passed_through()`** — Allows imports inside the context to bypass the sandbox's module re-import mechanism.
+Use this when a third-party library performs side effects at import time that conflict
+with the sandbox.
+
+```python
+from mistralai.workflows import workflow
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, input: str) -> str:
+        with workflow.unsafe.imports_passed_through():
+            import some_problematic_library
+        # Use the library normally after the import
+        return some_problematic_library.process(input)
+```
+
+**`workflow.unsafe.skip_determinism_enforcement()`** — Temporarily disables all sandbox restrictions within the context.
+Code inside this block runs as if `enforce_determinism=False`.
+
+```python
+from mistralai.workflows import workflow
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, input: str) -> str:
+        with workflow.unsafe.skip_determinism_enforcement():
+            # Sandbox restrictions are lifted here.
+            # You are responsible for ensuring determinism.
+            import os
+            value = os.environ.get("SOME_CONFIG", "default")
+        return f"Processed: {input} with {value}"
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="recommendations">Recommendations</SectionTab>
+
+1. **Keep enforcement enabled.** Determinism enforcement is on by default. Catching
+   non-determinism at development time is far cheaper than debugging replay failures
+   in production. Only disable it temporarily while migrating legacy workflows.
+2. **Migrate existing workflows incrementally.** If you have workflows that are not yet
+   compliant, set `enforce_determinism=False` on those specific workflows while you fix
+   them. Avoid disabling enforcement worker-wide.
+3. **Keep unsafe blocks small and documented.** When you must bypass the sandbox, wrap the
+   minimum amount of code and leave a comment explaining why.
+4. **Move side effects to activities.** The best way to avoid sandbox issues is to keep
+   workflow code pure orchestration logic. All I/O, network calls, and non-deterministic
+   operations belong in activities.

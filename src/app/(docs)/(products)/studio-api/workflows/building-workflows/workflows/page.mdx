@@ -6,234 +6,41 @@ sidebar_position: 1
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-# Workflows: The Brains of Your Application
+# Workflows
 
-Workflows define the high-level business logic and coordinate activities in your application.
+This page covers the practical patterns for building workflows. For the underlying model (durability, replay, history, determinism), see [Core Concepts > Workflows](/studio-api/workflows/getting-started/core_concepts/workflows).
 
-<SectionTab as="h1" sectionId="what-is-a-workflow">What is a Workflow?</SectionTab>
+<SectionTab as="h1" sectionId="workflow-vs-activity">Workflow versus activity</SectionTab>
 
-A workflow is a durable, deterministic process that orchestrates activities and manages execution state. Key characteristics:
+When sketching the orchestration of your application, the first decision is what belongs in a workflow versus an activity.
 
-- Defined as Python classes
-- Can run for seconds to years (with proper checkpointing)
-- Maintains complete execution history
-- Automatically recovers from failures
-- Input/output limited to 2MB
-- Timeout if synchronous CPU-bound Python code exceeds 2 seconds ([see more](/studio-api/workflows/managing-workflows-in-production/rate_limiting))
+A **workflow** is the orchestration brain. It coordinates steps, makes decisions, holds state across long durations (seconds to years), and waits for external events. Workflow code must be deterministic so the platform can replay it from history when a worker restarts.
 
-<SectionTab as="h1" sectionId="workflow-determinism">Workflow Determinism</SectionTab>
+An **activity** is the unit of real work — anything that touches the outside world. LLM calls, HTTP requests, database writes, file reads, and tool invocations all live in activities. Activities don't need to be deterministic, run for seconds to minutes, and are automatically retried with configurable backoff when they fail.
 
-Workflows must be **deterministic**: given the same inputs, they must always produce the same
-sequence of commands. This is fundamental to the replay mechanism:
-when a worker restarts or a workflow is recovered, the system re-executes the workflow code
-from the beginning, matching each command against the recorded event history.
-If the code produces different commands on replay, the workflow fails with a non-determinism error.
+For example, a workflow that processes incoming invoices might call a `fetch_invoice_pdf` activity (HTTP download), then an `extract_fields` activity (LLM call with structured output), branch on the extracted total to decide whether human approval is needed, wait for an `approve` signal, and finally call a `post_to_accounting_system` activity. The order, the branching, and the wait sit in the workflow; each side effect lives in an activity.
 
-:::note
-Determinism is **enforced by default**. Workflow code runs inside a sandbox that intercepts non-deterministic calls and raises errors at runtime. You can opt out per-workflow with `enforce_determinism=False` or worker-wide with `DEFAULT_ENFORCE_DETERMINISM=0`. See [Determinism Enforcement](#determinism-enforcement-sandbox) below for details.
-:::
+For the activity counterpart of this page, see [Activities](/studio-api/workflows/building-workflows/activities).
 
-<SectionTab as="h2" variant="secondary" sectionId="correct-use-deterministic-apis">Correct: Use Deterministic APIs</SectionTab>
+<SectionTab as="h1" sectionId="defining-a-workflow">Defining a workflow</SectionTab>
 
-Always use these in workflow code:
-
-```python
-from mistralai.workflows import workflow
-
-# Use workflow.now() for current time
-current_time = workflow.now()
-
-# Use workflow.uuid4() for UUIDs
-request_id = workflow.uuid4()
-
-# Use workflow.random() for random values
-random_value = workflow.random()
-```
-
-<SectionTab as="h2" variant="secondary" sectionId="dangerous-standard-library-equivalents">Dangerous: Standard Library Equivalents</SectionTab>
-
-Don't use these directly in workflow code:
-
-```python
-# Dangerous - use workflow.now() instead
-from datetime import datetime
-current_time = datetime.now()
-
-# Dangerous - use workflow.uuid4() instead
-import uuid
-request_id = uuid.uuid4()
-
-# Dangerous - use workflow.random() instead
-import random
-rand_val = random.random()
-```
-
-Also dangerous in workflows:
-- File system access (`open()`, `os.listdir()`, etc.)
-- Direct HTTP calls or database queries
-- Modifying global variables
-- System calls (`os.environ`, `os.getcwd()`, etc.)
-
-<SectionTab as="h2" variant="secondary" sectionId="move-non-deterministic-work-to-activities">Move Non-Deterministic Work to Activities</SectionTab>
-
-For operations like external API calls, database queries, or file I/O, use activities:
-
-```python
-from mistralai.workflows import workflow
-import mistralai.workflows as workflows
-
-@workflows.activity()
-async def fetch_external_data(params: DataParams) -> ExternalData:
-    # Safe - Activities are not replayed
-    response = await http_client.get(params.url)
-    timestamp = datetime.now()  # OK in activities
-    return ExternalData(data=response.json(), fetched_at=timestamp)
-
-@workflow.define(name="my_workflow")
-class MyWorkflow:
-    @workflow.entrypoint
-    async def run(self, params: MyParams) -> MyResult:
-        # Correct - Non-deterministic work in activity
-        data = await fetch_external_data(params)
-        return MyResult(data=data)
-```
-
-<SectionTab as="h2" variant="secondary" sectionId="determinism-enforcement-sandbox">Determinism Enforcement (Sandbox)</SectionTab>
-
-When determinism enforcement is enabled, your workflow code runs inside a sandbox. The sandbox:
-
-- **Re-imports modules** in an isolated environment so that side-effectful module-level code
-  is contained
-- **Intercepts dangerous standard library calls** such as `datetime.now()`, `random.random()`,
-  `uuid.uuid4()`, `open()`, `os.environ`, and other non-deterministic operations
-- **Restricts the asyncio event loop** to prevent spawning uncontrolled coroutines
-
-If your workflow code attempts any of these operations, the sandbox raises an error at runtime
-rather than silently producing a non-determinism bug that surfaces only on replay.
-
-:::info
-If you disable the sandbox, determinism is your responsibility. Your code will still break on replay if it's non-deterministic, you just won't get an immediate error telling you so.
-:::
-
-<SectionTab as="h3" variant="secondary" sectionId="disabling-per-workflow">Disabling Per-Workflow</SectionTab>
-
-Determinism enforcement is enabled by default. To opt out for a specific workflow, pass
-`enforce_determinism=False` to the `@workflow.define` decorator:
-
-```python
-from mistralai.workflows import workflow
-
-@workflow.define(name="my_workflow", enforce_determinism=False)
-class MyWorkflow:
-    @workflow.entrypoint
-    async def run(self, input: str) -> str:
-        # This code runs WITHOUT the sandbox.
-        # You are responsible for ensuring determinism.
-        return f"Processed: {input}"
-```
-
-<SectionTab as="h3" variant="secondary" sectionId="disabling-worker-wide">Disabling Worker-Wide</SectionTab>
-
-Set the `DEFAULT_ENFORCE_DETERMINISM` environment variable to disable sandboxing for all
-workflows on a worker by default:
-
-```bash
-DEFAULT_ENFORCE_DETERMINISM=0
-```
-
-This sets `config.worker.default_enforce_determinism` to `False`.
-
-<SectionTab as="h3" variant="secondary" sectionId="precedence">Precedence</SectionTab>
-
-The decorator-level setting takes priority over the environment variable:
-
-| `@workflow.define(enforce_determinism=...)` | `DEFAULT_ENFORCE_DETERMINISM` | Result |
-|---|---|---|
-| `True` | any | sandboxed |
-| `False` | any | **not** sandboxed |
-| not set (default) | `1` / `True` (default) | sandboxed |
-| not set (default) | `0` / `False` | **not** sandboxed |
-
-<SectionTab as="h3" variant="secondary" sectionId="temporarily-bypassing-the-sandbox">Temporarily Bypassing the Sandbox</SectionTab>
-
-:::warning
-These escape hatches defeat the purpose of determinism enforcement.
-Use them only when you understand the implications and have no alternative.
-:::
-
-When determinism enforcement is enabled, you may occasionally need to perform an operation
-that the sandbox blocks, for example importing a module that has non-deterministic side
-effects at import time, or performing a one-off read that you know is safe.
-
-The SDK exposes two context managers under `workflow.unsafe`:
-
-**`workflow.unsafe.imports_passed_through()`** — Allows imports inside the context to bypass the sandbox's module re-import mechanism.
-Use this when a third-party library performs side effects at import time that conflict
-with the sandbox.
-
-```python
-from mistralai.workflows import workflow
-
-@workflow.define(name="my_workflow")
-class MyWorkflow:
-    @workflow.entrypoint
-    async def run(self, input: str) -> str:
-        with workflow.unsafe.imports_passed_through():
-            import some_problematic_library
-        # Use the library normally after the import
-        return some_problematic_library.process(input)
-```
-
-**`workflow.unsafe.skip_determinism_enforcement()`** — Temporarily disables all sandbox restrictions within the context.
-Code inside this block runs as if `enforce_determinism=False`.
-
-```python
-from mistralai.workflows import workflow
-
-@workflow.define(name="my_workflow")
-class MyWorkflow:
-    @workflow.entrypoint
-    async def run(self, input: str) -> str:
-        with workflow.unsafe.skip_determinism_enforcement():
-            # Sandbox restrictions are lifted here.
-            # You are responsible for ensuring determinism.
-            import os
-            value = os.environ.get("SOME_CONFIG", "default")
-        return f"Processed: {input} with {value}"
-```
-
-<SectionTab as="h3" variant="secondary" sectionId="recommendations">Recommendations</SectionTab>
-
-1. **Keep enforcement enabled.** Determinism enforcement is on by default. Catching
-   non-determinism at development time is far cheaper than debugging replay failures
-   in production. Only disable it temporarily while migrating legacy workflows.
-2. **Migrate existing workflows incrementally.** If you have workflows that are not yet
-   compliant, set `enforce_determinism=False` on those specific workflows while you fix
-   them. Avoid disabling enforcement worker-wide.
-3. **Keep unsafe blocks small and documented.** When you must bypass the sandbox, wrap the
-   minimum amount of code and leave a comment explaining why.
-4. **Move side effects to activities.** The best way to avoid sandbox issues is to keep
-   workflow code pure orchestration logic. All I/O, network calls, and non-deterministic
-   operations belong in activities.
-
-<SectionTab as="h1" sectionId="defining-a-workflow">Defining a Workflow</SectionTab>
-
-Basic workflow structure:
+To define a workflow, use the `@workflow.define` decorator on a class and mark the entry function with `@workflow.entrypoint`:
 
 ```python
 import mistralai.workflows as workflows
 
 @workflows.workflow.define(name="report_workflow")
-class MyWorkflow:
+class ReportWorkflow:
+    @workflows.workflow.entrypoint
     async def run(self, report_type: str, include_details: bool = False) -> dict:
-        """Workflow implementation"""
+        """Workflow implementation."""
         # Orchestrate activities here
-        pass
+        ...
 ```
 
-<SectionTab as="h1" sectionId="workflow-input">Workflow Input</SectionTab>
+<SectionTab as="h1" sectionId="workflow-input">Workflow input</SectionTab>
 
-The `run` method accepts any JSON-serializable types as parameters.
+The `run` method accepts any JSON-serializable type — Pydantic models, plain dicts, or primitives all work. The platform validates inputs and generates Console UI schemas in every case. For the conceptual overview, see [Core Concepts > Workflow input](/studio-api/workflows/getting-started/core_concepts/workflows#workflow-input).
 
 <SectionTab as="h2" variant="secondary" sectionId="primitive-and-multi-parameter-inputs">Primitive and multi-parameter inputs</SectionTab>
 
@@ -252,7 +59,7 @@ Input:
 
 <SectionTab as="h2" variant="secondary" sectionId="single-pydantic-model">Single Pydantic model</SectionTab>
 
-When the entrypoint takes a single Pydantic `BaseModel`, its fields become the top-level input keys — there is no wrapper object:
+When the entrypoint takes a single Pydantic `BaseModel`, its fields become the top-level input keys; there is no wrapper object:
 
 ```python
 from pydantic import BaseModel
@@ -305,8 +112,9 @@ The SDK validates the input against each member in order and passes the first ma
 {"count": 42, "extra": "field"}  → ValidationError
 ```
 
->Tip: Use `extra="forbid"` on each member model. It produces precise discrimination and clear error messages when the input doesn't match any expected shape.
-
+:::tip
+Use `extra="forbid"` on each member model. It produces precise discrimination and clear error messages when the input doesn't match any expected shape.
+:::
 
 <SectionTab as="h2" variant="secondary" sectionId="optional-union-none">Optional union (`| None`)</SectionTab>
 
@@ -326,7 +134,7 @@ class OptionalWorkflow:
 
 <SectionTab as="h2" variant="secondary" sectionId="mixing-basemodel-with-primitive-types">Mixing BaseModel with primitive types</SectionTab>
 
-Unions that combine a `BaseModel` with a non-model type (`str`, `int`, etc.) are not supported and will fail when the `@workflow.entrypoint` decorator is applied:
+Unions that combine a `BaseModel` with a non-model type (such as `str` or `int`) are not supported and fail when the `@workflow.entrypoint` decorator is applied:
 
 ```python
 # ❌ Raises an error at class definition time
@@ -365,42 +173,34 @@ class MyWorkflow:
 
 The named subclass also produces a cleaner generated JSON schema.
 
-<SectionTab as="h1" sectionId="execution-timeout">Execution Timeout</SectionTab>
+<SectionTab as="h1" sectionId="execution-timeout">Execution timeout</SectionTab>
 
-Every workflow has a maximum total execution time — `execution_timeout` — that caps its lifetime including all retries and [continue-as-new](#7-continue-as-new) iterations.
-
-Set it on the `@workflow.define` decorator:
+For the role and default of `execution_timeout`, see [Core Concepts > Execution timeout](/studio-api/workflows/getting-started/core_concepts/workflows#execution-timeout). To override the 1-hour default, pass a `timedelta` to the decorator:
 
 ```python
 from datetime import timedelta
 from mistralai.workflows import workflow
 
-@workflow.define(name="my_workflow", execution_timeout=timedelta(hours=4))
-class MyWorkflow:
+@workflow.define(name="long_running_workflow", execution_timeout=timedelta(days=7))
+class LongRunningWorkflow:
     @workflow.entrypoint
     async def run(self, params: MyParams) -> MyResult:
         ...
 ```
 
-When the workflow is started via the API, the platform uses this value as the hard cap. A workflow that is still running (or waiting) after `execution_timeout` has elapsed is cancelled with a `WORKFLOW_EXECUTION_TIMED_OUT` error.
-
-**Default: 1 hour.** Workflows that need to run longer must opt in explicitly:
-
-```python
-@workflow.define(name="long_running_workflow", execution_timeout=timedelta(days=7))
-class LongRunningWorkflow:
-    ...
-```
+A workflow still running after `execution_timeout` is canceled with a `WORKFLOW_EXECUTION_TIMED_OUT` error.
 
 :::note
-`execution_timeout` is a *total* wall-clock limit, not an activity timeout. Individual activity timeouts are controlled by `start_to_close_timeout` / `schedule_to_close_timeout` on each activity call.
+`execution_timeout` is a *total* wall-clock limit, not an activity timeout. Individual activity timeouts are controlled by `start_to_close_timeout` or `schedule_to_close_timeout` on each activity call.
 :::
 
-<SectionTab as="h1" sectionId="core-workflow-features">Core Workflow Features</SectionTab>
+<SectionTab as="h1" sectionId="core-workflow-features">Core workflow features</SectionTab>
 
 <SectionTab as="h2" variant="secondary" sectionId="signals">Signals</SectionTab>
 
-Handle external events with signals:
+A signal is a fire-and-forget message delivered to a running workflow. The caller doesn't wait for a response — the workflow handles the signal asynchronously and updates its own state. Use signals for human approvals, external system callbacks, or any event that should nudge a workflow without expecting a return value.
+
+For example, an invoice-processing workflow can pause until a reviewer signals approval:
 
 ```python
 @workflows.workflow.signal(name="approve", description="Approval signal")
@@ -412,7 +212,7 @@ async def approve_signal(self, data: ApprovalData) -> None:
 
 <SectionTab as="h2" variant="secondary" sectionId="queries">Queries</SectionTab>
 
-Expose workflow state through queries:
+A query reads workflow state without modifying it. Use queries to expose progress, current status, or computed values to external clients — for example, a dashboard polling for the percentage of items processed.
 
 ```python
 @workflows.workflow.query(name="get_status", description="Get current status")
@@ -427,7 +227,7 @@ def get_status(self) -> WorkflowStatus:
 
 <SectionTab as="h2" variant="secondary" sectionId="updates">Updates</SectionTab>
 
-Handle workflow updates:
+An update is like a signal, but the caller waits for the workflow to process the message and reply. Use updates when the caller needs confirmation or a computed result — for example, adjusting a workflow's configuration mid-run and getting the new state back, or submitting a value and receiving the validated, persisted version.
 
 ```python
 @workflows.workflow.update(name="update_config", description="Update workflow configuration")
@@ -462,13 +262,13 @@ Key schedule features:
 
 - Cron-based scheduling with standard cron expressions
 - Input parameters for scheduled executions
-- Multiple cron expressions can be specified
+- Specify multiple cron expressions
 
 [Learn more about scheduling](/studio-api/workflows/building-workflows/scheduling)
 
-<SectionTab as="h2" variant="secondary" sectionId="child-workflows">Child Workflows</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="child-workflows">Child workflows</SectionTab>
 
-Execute other workflows as children:
+Run other workflows as children:
 
 ```python
 from datetime import timedelta
@@ -490,7 +290,7 @@ handle = await workflow.execute_workflow(
     execution_timeout=timedelta(hours=1),
     wait=False,
 )
-# Parent continues immediately — child runs independently
+# Parent continues immediately; child runs independently
 # Optionally await later: result = await handle
 ```
 
@@ -508,9 +308,9 @@ handle = await workflow.execute_workflow(
 )
 ```
 
-<SectionTab as="h2" variant="secondary" sectionId="waiting-for-conditions">Waiting for Conditions</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="waiting-for-conditions">Waiting for conditions</SectionTab>
 
-Pause the workflow until a condition becomes true — typically set by an incoming signal or update. The workflow sleeps without consuming resources. If the condition is not met within the `timeout`, a `TimeoutError` is raised.
+Pause the workflow until a condition becomes true (typically set by an incoming signal or update). The workflow sleeps without consuming resources. If the condition is not met within the `timeout`, a `TimeoutError` is raised.
 
 ```python
 from mistralai.workflows import workflow
@@ -520,46 +320,21 @@ await workflow.wait_condition(
 )
 ```
 
-<SectionTab as="h2" variant="secondary" sectionId="continue-as-new">Continue-As-New</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="continue-as-new">Continue-as-new</SectionTab>
 
-Reset workflow history for long-running or iterative workflows. Use this to prevent history from growing too large when processing large datasets or running indefinitely.
+Reset a workflow's history while keeping it logically alive — useful for indefinitely iterating workflows or runs that approach the 50K-event history limit.
 
-**Important:** Your workflow's `run` method must accept a state parameter to restore its state when continuing as new. This parameter will receive the state passed to `continue_as_new()`.
+For the full pattern (state parameters, when to trigger, determinism implications), see [Continue-as-new](/studio-api/workflows/building-workflows/continue_as_new).
 
-```python
-import mistralai.workflows as workflows
+<SectionTab as="h1" sectionId="advanced-features">Advanced features</SectionTab>
 
-@workflows.workflow.define(name="long-running-processor")
-class LongRunningProcessor:
-    @workflows.workflow.entrypoint
-    async def run(self, page: int = 0, total_processed: int = 0):  # State parameters are required
-        # Process current page
+<SectionTab as="h2" variant="secondary" sectionId="reset-mechanism">Reset mechanism</SectionTab>
 
-        # Check if history is getting large
-        if workflows.workflow.should_continue_as_new():
-            # Continue with fresh history
-            workflows.workflow.continue_as_new({"page": page + 1, "total_processed": total_processed + 100})
+You can "reset" a workflow execution to restart it from a specific point in its history. This is useful if your workflow gets stuck (for example, because of a non-deterministic error) or cannot complete. When you reset, the workflow ends its current run and starts again from the event you pick in the event history.
 
-        return await self.run(page + 1, total_processed + 100)
-```
+All workflow events up to the reset point are copied to the new execution. The workflow then continues running from there using the current version of your code. Any progress made after the reset event is lost.
 
-**When to use continue-as-new:**
-
-- Long-running workflows that iterate indefinitely
-- When workflow history approaches size limits (~50K events)
-- Workflows that need to run for weeks/months
-
-
-
-<SectionTab as="h1" sectionId="advanced-features">Advanced Features</SectionTab>
-
-<SectionTab as="h2" variant="secondary" sectionId="reset-mechanism">Reset Mechanism</SectionTab>
-
-You can "reset" a Workflow Execution to restart it from a specific point in its history. This is useful if your workflow gets stuck (for example, because of a non-deterministic error) or cannot complete. When you reset, the workflow ends its current run and starts again from the event you pick in the event history.
-
-All workflow events up to the reset point are copied to the new execution. The workflow then continues running from there using the latest version of your code. Any progress made after the reset event will be lost.
-
-Resetting should only be used after fixing the underlying problem. It's best practice to provide a reason for the reset, which is recorded in the workflow's event history.
+Reset only after fixing the underlying problem. We recommend providing a reason for the reset, which is recorded in the workflow's event history.
 
 ```python
 from mistralai.client import Mistral
@@ -575,7 +350,7 @@ client.workflows.executions.reset_workflow(
 )
 ```
 
-<SectionTab as="h2" variant="secondary" sectionId="workflow-execution-context">Workflow Execution Context</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="workflow-execution-context">Workflow execution context</SectionTab>
 
 Retrieve the current execution's unique identifier at runtime. This is useful for logging, correlating events across services, or passing the execution ID to external systems so they can send signals back.
 
@@ -583,12 +358,3 @@ Retrieve the current execution's unique identifier at runtime. This is useful fo
 import mistralai.workflows as workflows
 execution_id = workflows.get_execution_id()
 ```
-
-<SectionTab as="h1" sectionId="workflow-vs-activity">Workflow vs Activity</SectionTab>
-
-| Feature     | Workflow             | Activity           |
-| ----------- | -------------------- | ------------------ |
-| Duration    | Seconds to years     | Seconds to minutes |
-| State       | Stateful             | Stateless          |
-| Retries     | Manual recovery      | Automatic          |
-| Parallelism | Complex coordination | Single operation   |

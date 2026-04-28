@@ -1,31 +1,23 @@
 ---
 id: sticky-worker-sessions
-title: Sticky Worker Sessions
+title: Sticky worker sessions
 sidebar_position: 2
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Sticky Worker Sessions
+# Sticky worker sessions
 
-Sticky worker sessions route multiple activities to the same worker instance, enabling resource reuse and stateful operations across activity calls.
+Sticky worker sessions route multiple activities to the same worker instance, letting you reuse resources and maintain state across activity calls.
 
-<SectionTab as="h1" sectionId="when-to-use">When to Use</SectionTab>
+<SectionTab as="h1" sectionId="when-to-use">When to use</SectionTab>
 
-**Good for:**
+Reach for sticky sessions when several activities in a row need to hit the same expensive resource — a loaded ML model, an open database connection, a warmed cache. By pinning all the calls to the same worker, you load the resource once and reuse it across the whole sequence instead of paying the initialization cost on every activity. The same applies to stateful processing: if step *N+1* depends on in-memory state built up by step *N*, sticky sessions keep that state addressable without serializing it through the orchestrator.
 
-- Sharing expensive resources (ML models, database connections, cached data)
-- Stateful data processing across multiple activity calls
-- Reducing initialization overhead for related operations
+The trade-off is availability. A sticky session is bound to one specific worker; if that worker crashes or scales down, the session ends and remaining activities have to start over on a different worker (potentially with a cold cache). Long sessions also tie up worker capacity, so avoid them for workflows that run for hours or for any case where the per-call initialization cost is small enough to absorb on every activity.
 
-**Avoid for:**
-
-- Activities that must be highly available (session breaks if worker crashes)
-- Long-running workflows (ties up specific worker resources)
-- When worker-level state isn't needed
-
-<SectionTab as="h1" sectionId="basic-usage">Basic Usage</SectionTab>
+<SectionTab as="h1" sectionId="basic-usage">Basic usage</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -60,7 +52,7 @@ class MLInferenceWorkflow:
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="session-reuse">Session Reuse</SectionTab>
+<SectionTab as="h1" sectionId="session-reuse">Session reuse</SectionTab>
 
 Capture a session explicitly to reuse across multiple scopes:
 
@@ -88,31 +80,22 @@ class MultiBatchWorkflow:
 
 <SectionTab as="h1" sectionId="limitations">Limitations</SectionTab>
 
+:::warning
+**In-memory state only**: worker-level state lives in process memory. It is lost on worker restart or redeployment, and is not shared across workers. Use a database or external store for any state that must persist or be visible elsewhere.
+:::
+
 **Session breaks on worker failure:**
 
-- If the worker crashes or scales down, the session ends
-- Subsequent activities route to a different worker
-- Design activities to handle cold starts gracefully
-
-**In-memory state only:**
-
-- Worker-level state is lost on worker restart or redeployment
-- Use databases or external storage for persistent state
-- Not a replacement for distributed state management
+- If the worker crashes or scales down, the session ends.
+- Subsequent activities route to a different worker.
+- Design activities to handle cold starts gracefully.
 
 **Worker resource contention:**
 
-- Long-running sessions tie up specific worker capacity
-- Can create hot spots if many workflows target the same worker
-- Monitor worker utilization to avoid resource starvation
+- Long-running sessions tie up specific worker capacity.
+- Can create hot spots if many workflows target the same worker.
+- Monitor worker utilization to avoid resource starvation.
 
-**Note:** The `sticky_to_worker` parameter doesn't apply to local activities since they already run in the workflow worker process.
+The `sticky_to_worker` parameter does not apply to [local activities](/studio-api/workflows/building-workflows/activities/local_activities), which already run in the workflow worker process.
 
-<SectionTab as="h1" sectionId="performance-comparison">Performance Comparison</SectionTab>
-
-| Feature          | Regular Activity | Sticky Session | Local Activity |
-| ---------------- | ---------------- | -------------- | -------------- |
-| Routing Overhead | Standard         | Standard       | None           |
-| Worker Isolation | Yes              | Yes            | No             |
-| Resource Sharing | No               | Yes            | N/A            |
-| Best For         | Independent ops  | Resource reuse | Fast lookups   |
+For a comparison across activity flavors (regular, sticky, or local), see [Choosing an activity flavor](/studio-api/workflows/building-workflows/activities#choosing-an-activity-flavor) on the Activities parent page.

@@ -19,48 +19,39 @@ Continue-As-New resets the workflow's event history while carrying forward its s
 
 <SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
 
-When `continue_as_new()` is called, the current run completes and a new run starts fresh from the beginning with the provided state. All accumulated event history is discarded.
+When `continue_as_new()` is called, the current run completes and a new run starts fresh from the beginning with the provided state. The event history is reset, while the state you pass to `continue_as_new()` is carried forward.
 
-**Important:** Your workflow's `run` method must accept a state parameter to restore its state when continuing as new.
+**Important:** Your workflow's `run` method must accept the carry-forward state as parameters to restore its state when continuing as new.
+
+Use `workflows.workflow.should_continue_as_new()` to check whether the current run is approaching the history limit; it returns `True` when the event history is close to the cap.
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
 import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+class ProcessorState(BaseModel):
+    page: int = 0
+    total_processed: int = 0
 
 @workflows.workflow.define(name="long-running-processor")
 class LongRunningProcessor:
     @workflows.workflow.entrypoint
     async def run(self, page: int = 0, total_processed: int = 0):  # State parameters are required
-        # Process current page
-        result = await process_page(page)
-        total_processed += result.count
+        while True:
+            # Process current page
+            result = await process_page(page)
+            total_processed += result.count
+            page += 1
 
-        # Check if history is getting large
-        if workflows.workflow.should_continue_as_new():
-            # Continue with fresh history, passing current state
-            workflows.workflow.continue_as_new({"page": page + 1, "total_processed": total_processed})
-
-        return await self.run(page + 1, total_processed)
+            # When history grows large, restart with a fresh history
+            if workflows.workflow.should_continue_as_new():
+                workflows.workflow.continue_as_new(ProcessorState(page=page, total_processed=total_processed))
 ```
 
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="checking-history-size">Checking history size</SectionTab>
-
-Use `should_continue_as_new()` to check whether it's time to reset:
-
-<Tabs>
-  <TabItem value="python" label="Python">
-
-```python
-if workflows.workflow.should_continue_as_new():
-    workflows.workflow.continue_as_new({"page": next_page, "count": total})
-```
-
-  </TabItem>
-</Tabs>
-
-This returns `True` when the event history is approaching the system limit.
+For the related concept on the canonical Workflows page, see [Building Workflows > Workflows > Continue-as-new](/studio-api/workflows/building-workflows/workflows#continue-as-new) and [Core Concepts > Workflows > Determinism](/studio-api/workflows/getting-started/core_concepts/workflows#determinism).

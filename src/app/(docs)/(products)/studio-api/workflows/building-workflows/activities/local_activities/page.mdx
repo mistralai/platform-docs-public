@@ -1,17 +1,17 @@
 ---
 id: local-activities
-title: Local Activities
+title: Local activities
 sidebar_position: 1
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Local Activities
+# Local activities
 
-For performance optimization, activities can run directly in the workflow worker process instead of being scheduled through the task queue. This is useful for fast operations (< 1 second) where scheduling overhead is significant.
+Local activities run directly in the workflow worker process, skipping the [deployment's](/studio-api/workflows/getting-started/core_concepts/deployments) task queues. They're useful for fast operations (under 1 second) where scheduling overhead is significant.
 
-<SectionTab as="h1" sectionId="when-to-use">When to Use</SectionTab>
+<SectionTab as="h1" sectionId="when-to-use">When to use</SectionTab>
 
 **Good for:**
 
@@ -21,11 +21,11 @@ For performance optimization, activities can run directly in the workflow worker
 
 **Avoid for:**
 
-- Long-running operations (> a few seconds)
+- Long-running operations (more than a few seconds)
 - External API calls or I/O-heavy tasks
 - Operations needing separate retry isolation or scaling
 
-<SectionTab as="h1" sectionId="basic-usage">Basic Usage</SectionTab>
+<SectionTab as="h1" sectionId="basic-usage">Basic usage</SectionTab>
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -49,7 +49,7 @@ class UserWorkflow:
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="mixed-execution">Mixed Execution</SectionTab>
+<SectionTab as="h1" sectionId="mixed-execution">Mixed execution</SectionTab>
 
 Combine local and remote activities:
 
@@ -74,27 +74,30 @@ class MixedWorkflow:
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="performance-impact">Performance Impact</SectionTab>
+<SectionTab as="h1" sectionId="performance-impact">Performance impact</SectionTab>
 
-| Execution Mode   | Typical Latency | Best For                    |
-| ---------------- | --------------- | --------------------------- |
-| Local Activity   | < 10ms          | Quick computations, lookups |
-| Regular Activity | 50-200ms        | API calls, complex logic    |
+Local activities skip the queue and worker hop, so they typically run much faster than regular activities. Actual latency depends on infrastructure and workflow load.
+
+| Execution mode   | Latency profile        | Best for                    |
+| ---------------- | ---------------------- | --------------------------- |
+| Local activity   | Sub-millisecond to ms  | Quick computations, lookups |
+| Regular activity | Tens to hundreds of ms | API calls, complex logic    |
 
 <SectionTab as="h1" sectionId="limitations">Limitations</SectionTab>
 
+:::warning
+**Worker crash risk**: local activities run in the workflow worker process. If a local activity raises an unexpected error, it can crash the worker, affecting all workflows and activities running on it. Unlike regular activities, there is no process-level isolation. Reserve local activities for code you trust to be exception-safe.
+:::
+
 **Bypasses standard scheduling:**
 
-- No task queue isolation - activities share resources with workflows
-- Worker process blocking - slow local activities block the workflow worker
-- No independent scaling - cannot scale local activities separately
-- Limited failure isolation - worker crashes affect both workflows and local activities
+- No deployment-level isolation: local activities share resources with workflows.
+- Worker process blocking: slow local activities block the workflow worker.
+- No independent scaling: local activities cannot scale separately from the worker.
 
-**⚠️ Warning:** Local activities can cause worker crashes if they fail unexpectedly. Unlike regular activities, local activity failures can bring down the entire worker process, potentially causing data loss and requiring manual intervention to restart the workflow.
 **Activity settings (partial support):**
-Timeouts, retry policies, and dependency injection work the same for local activities. However, rate limiting is NOT supported for local activities.
 
-**Note:** The `sticky_to_worker`, `rate_limit`, and `heartbeat_timeout` parameters don't apply to local activities since they already run in the workflow worker process.
+Timeouts, retry policies, and dependency injection work the same for local activities. The following parameters **do not apply** because local activities already run in the workflow worker process: `sticky_to_worker`, `rate_limit`, `heartbeat_timeout`.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -105,8 +108,8 @@ Timeouts, retry policies, and dependency injection work the same for local activ
     retry_policy_max_attempts=3
 )
 async def timed_local_activity(data: str) -> str:
-    # Timeouts and retry policies apply even when running locally
-    # Rate limiting is NOT supported for local activities
+    # Timeouts and retry policies apply even when running locally.
+    # Rate limiting is NOT supported for local activities.
     return data.upper()
 ```
 

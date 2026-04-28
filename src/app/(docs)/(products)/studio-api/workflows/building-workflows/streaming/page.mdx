@@ -1,17 +1,19 @@
 ---
 id: streaming
 title: Streaming Events
-sidebar_position: 5
+sidebar_position: 4
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Streaming: Real-Time Events from Workflows
+# Streaming Events
 
 Stream events in real-time from your workflows and activities to power live UIs, progress indicators, and token-by-token LLM responses.
 
-<SectionTab as="h1" sectionId="quick-start">Quick Start</SectionTab>
+This page covers how to **publish** streaming events from workflow code. To **consume** them from a client, see [Consuming Streaming Events](/studio-api/workflows/building-workflows/consuming_events).
+
+<SectionTab as="h1" sectionId="quick-start">Quick start</SectionTab>
 
 <SectionTab as="h2" variant="secondary" sectionId="publish-from-an-activity">1. Publish from an Activity</SectionTab>
 
@@ -41,7 +43,9 @@ async def chat_activity(messages: list) -> dict:
   </TabItem>
 </Tabs>
 
-When the `async with` block exits, the task is marked as complete and a terminal event is published.
+:::tip
+**Terminal event on exit**: when the `async with` block exits, the task is automatically marked complete and a terminal event is published to all subscribers. There is no need to call a `close()` or `complete()` method explicitly.
+:::
 
 <SectionTab as="h2" variant="secondary" sectionId="consume-events">2. Consume Events</SectionTab>
 
@@ -51,7 +55,7 @@ See [Consuming Streaming Events](/studio-api/workflows/building-workflows/consum
 
 <SectionTab as="h2" variant="secondary" sectionId="token-streaming-llm">Token Streaming (LLM)</SectionTab>
 
-The most common pattern - stream tokens as they're generated:
+The most common pattern: stream tokens as they're generated:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -111,13 +115,13 @@ async def streaming_tokens_with_progress_activity(text: str) -> dict:
 
 <SectionTab as="h1" sectionId="task-type-names">Task Type Names</SectionTab>
 
-The `type` parameter is a topic name you define. Best practices:
+The `type` parameter is a topic name you define. Pick names that describe the **content** of the stream so consumers can subscribe by intent.
 
-| Good            | Bad        |
-| --------------- | ---------- |
-| `token`         | `data`     |
-| `progress`      | `Stream1`  |
-| `search_result` | `myStream` |
+| Recommended     | Avoid      | Why                                                       |
+| --------------- | ---------- | --------------------------------------------------------- |
+| `token`         | `data`     | `data` says nothing about what's on the stream            |
+| `progress`      | `Stream1`  | Numbered names break when streams are added or reordered  |
+| `search_result` | `myStream` | Mixed case is inconsistent with the rest of the SDK       |
 
 - Use lowercase with underscores
 - Keep names short and descriptive
@@ -125,7 +129,7 @@ The `type` parameter is a topic name you define. Best practices:
 
 <SectionTab as="h1" sectionId="payload-limits">Payload Limits</SectionTab>
 
-Events have a **1MB message limit**. For large data:
+Streaming event messages have a **1MB cap**, separate from the 2MB activity input/output limit. For larger payloads:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -151,19 +155,19 @@ Each published event is wrapped with context:
 
 ```python
 {
-    "stream": "token",              # Your stream/topic name
-    "broker_sequence": 42,          # Monotonic sequence number
-    "timestamp": "...",             # ISO timestamp (optional)
-    "data": {                       # Typed event response (discriminated union)
+    "stream": "token",                          # Your stream/topic name
+    "broker_sequence": 42,                      # Monotonic sequence number
+    "timestamp": "2026-04-15T10:30:00.000Z",    # ISO timestamp
+    "data": {                                   # Typed event response (discriminated union)
         "event_type": "CUSTOM_TASK_IN_PROGRESS",
-        "event_id": "...",
-        "event_timestamp": 1234567890,
+        "event_id": "evt_abc123",
+        "event_timestamp": "2026-04-15T10:30:00.000Z",
         "workflow_name": "my-workflow",
         "workflow_exec_id": "abc123",
         "root_workflow_exec_id": "abc123",
         "parent_workflow_exec_id": null,
-        "workflow_run_id": "...",
-        "attributes": { ... }      # Type-specific attributes
+        "workflow_run_id": "run_456",
+        "attributes": {"progress_idx": 4, "progress_total": 10}
     },
     "workflow_context": {
         "workflow_name": "my-workflow",
@@ -175,3 +179,18 @@ Each published event is wrapped with context:
 
   </TabItem>
 </Tabs>
+
+<SectionTab as="h1" sectionId="sequence-guarantee">Sequence Guarantee</SectionTab>
+
+`broker_sequence` is a hard guarantee you can build on:
+
+- **Ordered**: events are always delivered in ascending sequence order — you will never receive a lower sequence after a higher one.
+- **Unique**: a sequence number is never reused, even after events expire.
+- **Resume-safe**: reconnecting with `start_seq=N` picks up exactly from sequence N. No event is skipped, no event is re-delivered from before N.
+- **Durable**: the guarantee holds across service restarts and reconnects. If the stream was interrupted mid-execution, historical events are replayed in the correct order before live events resume.
+
+Use `event.broker_sequence + 1` as the `start_seq` on reconnect — see [Consuming Streaming Events](/studio-api/workflows/building-workflows/consuming_events) for the full resume pattern.
+
+<SectionTab as="h1" sectionId="whats-next">What's next</SectionTab>
+
+→ [Consume events from a client](/studio-api/workflows/building-workflows/consuming_events): subscribe to the stream you just published, with the SDK or the raw HTTP endpoint.

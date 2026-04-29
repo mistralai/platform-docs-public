@@ -61,9 +61,8 @@ const VIBE_PLANS = [
         borderColor: 'border-[#FF8205]/30',
         activeBorder: 'border-[#FF8205]/50',
         description: 'Secure, collaborative workspace building with AI.',
-        features: ['200 flash answers/day', '30GB storage/user', 'Domain verification'],
+        features: ['30GB storage/user', 'Domain verification'],
         details: [
-            { label: 'Fast Answers', value: 'Up to 200 flash answers per user per day.' },
             { label: 'Storage', value: 'Up to 30GB of secure storage per user.' },
             { label: 'Security', value: 'Domain name verification & Data export controls.' },
             { label: 'Collaboration', value: 'Secure workspace meant for team ideation.' },

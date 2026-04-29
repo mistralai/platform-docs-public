@@ -242,6 +242,12 @@ export const redirects = [
     destination: "/le-chat/overview",
     permanent: false,
   },
+  // Typo fallback for an externally shared URL (TEMP)
+  {
+    source: "/le-chat/content-creation/vibe-code-worfklow",
+    destination: "/le-chat/content-creation/vibe-code-workflow",
+    permanent: false,
+  },
   // Guide redirects
   {
     source: "/guides/tokenization",

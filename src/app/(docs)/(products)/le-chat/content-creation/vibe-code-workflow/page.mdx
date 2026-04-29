@@ -1,0 +1,186 @@
+---
+title: "Vibe Code Workflow"
+sidebar_position: 14
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Vibe Code Workflow
+
+The Vibe Code Workflow is a remote coding agent that runs in a cloud sandbox, works on one of your GitHub repositories, and persists between devices. You launch a session, walk away, and come back to a draft pull request.
+
+The agent is the same [Mistral Vibe](/mistral-vibe/overview) *harness* (the software loop that gives the model access to tools, manages working memory, and runs steps until the task is done) that runs in your terminal. The sandbox lives in the cloud, so you don't need a local install, your laptop doesn't have to stay open, and you can follow the session from Le Chat on web or mobile.
+
+There are three ways to start a session:
+
+- From **Le Chat**: pick the **Vibe Code** workflow on the homepage, or use the `New Code Session` shortcut in the sidebar.
+- From the **[Mistral Vibe CLI](/mistral-vibe/overview)**: prefix any prompt with `&` to send it to a cloud session.
+- From an **active local Vibe session**: run `/teleport` to move the conversation to the cloud.
+
+:::info
+The Vibe Code Workflow is in **Preview**. Access is rolling out across the **Pro** and **Teams** plans. Capabilities, limits, and the interface can change before general availability.
+:::
+
+<SectionTab as="h1" sectionId="when-to-use">When to use it</SectionTab>
+
+The Vibe Code Workflow is designed for **iterating on an existing GitHub repository**. It works best when:
+
+- **You already have a GitHub repo.** The agent clones your repository into the sandbox. It cannot create new repositories from scratch.
+- **The project uses a standard toolchain.** Sandboxes provide a Linux environment with common runtimes such as Node.js, Python, and Go. Projects that depend on local hardware, GPUs, or proprietary services might not run as expected.
+- **The task is well-scoped.** Fixing a bug, adding a feature to an existing module, refactoring a file, or repairing failing tests produces the most reliable results.
+
+:::tip
+For one-off Python execution inside a chat (data analysis, charts, file conversions), use [Code Interpreter](/le-chat/content-creation/code-interpreter) instead. For local, terminal-based coding, use the [Mistral Vibe CLI](/mistral-vibe/overview).
+:::
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+Before you start, connect your GitHub account to Le Chat:
+
+1. Open **Le Chat** → **Intelligence** → **Connectors**.
+2. Connect your **GitHub** account.
+3. Authorize the requested permissions for the repositories you want the agent to work on.
+
+The connector grants the sandbox access to the repositories you select. See [GitHub permissions](#github-permissions) for the full list.
+
+<SectionTab as="h1" sectionId="start-from-le-chat">Start a session from Le Chat</SectionTab>
+
+1. From the Le Chat homepage, run the **Vibe Code** workflow, or use the `New Code Session` shortcut in the sidebar (equivalent to [chat.mistral.ai/code_session](https://chat.mistral.ai/code_session)).
+2. Enter a prompt describing what you want the agent to do (e.g, *"fix the failing tests in my repo"*).
+3. The session starts. You see the harness working in real time.
+4. Respond to any clarifying prompts as the agent runs. You can also steer it mid-task with follow-up messages.
+5. When the session finishes, review the result. The output is typically a draft pull request opened on the target repository.
+
+:::tip
+Keep your initial prompt focused. Smaller, well-scoped tasks complete faster and produce more reliable results.
+:::
+
+<SectionTab as="h1" sectionId="start-from-cli">Teleport from the Mistral Vibe CLI</SectionTab>
+
+If you already use the [Mistral Vibe CLI](/mistral-vibe/overview) locally, you can move work to a cloud session and follow it from Le Chat.
+
+### Setup
+
+1. Upgrade to the latest CLI:
+
+   ```bash
+   uv tool upgrade mistral-vibe
+   ```
+
+2. Enable cloud sessions in `~/.vibe/config.toml`:
+
+   ```toml
+   nuage_enabled = true
+   ```
+
+### Send a new prompt to the cloud
+
+From inside a Git repository, run `vibe` and prefix your prompt with `&`:
+
+```bash
+vibe
+& fix the tests
+```
+
+The task runs in a cloud sandbox. The CLI returns a Le Chat URL where you can follow the session.
+
+### Move an in-progress local session to the cloud
+
+Inside an active local session, run:
+
+```bash
+/teleport
+```
+
+The session continues in Le Chat and you can monitor it from any device.
+
+:::note
+Teleport only works from inside a Git repository. Running it from a non-code directory fails. Teleport is one-way today: after a session moves to the cloud, you cannot pull it back into your local CLI. Continue interacting with it from Le Chat instead.
+:::
+
+<SectionTab as="h1" sectionId="session-lifecycle">Session lifecycle</SectionTab>
+
+Each session goes through the same phases:
+
+1. **Sandbox creation.** A fresh cloud sandbox is provisioned and your repository is cloned into it.
+2. **Agent execution.** The agent analyzes your prompt and starts working: reading files, running commands, and editing code.
+3. **Real-time feedback.** You see the harness activity stream into Le Chat as it happens.
+4. **Interactive prompts.** When the agent needs clarification, it asks you directly in the session.
+5. **Completion.** The agent finishes its work and presents the result, usually a draft pull request on your repository.
+
+A session can end in several ways:
+
+- **Completed.** The agent finished the task.
+- **Stopped.** You stopped it manually.
+- **Timed out.** The session exceeded the duration limit, or you didn't respond to a question within the inactivity window.
+- **Error.** An unexpected error occurred.
+
+When a session ends, any commits and pull requests pushed during the run remain on GitHub. The cloud sandbox is deleted.
+
+<SectionTab as="h1" sectionId="limits">Limits</SectionTab>
+
+| Limit | Value |
+| --- | --- |
+| Maximum session duration | 24 hours |
+| Inactivity timeout (waiting for your reply) | 3 hours |
+| Individual command timeout | 30 seconds |
+| Concurrent sessions per user | Plan-dependent |
+
+Sessions that exceed the duration limit are ended automatically. The clean-up runs even if you close your browser.
+
+<SectionTab as="h1" sectionId="github-permissions">GitHub permissions</SectionTab>
+
+When you connect GitHub, the Vibe Code Workflow requests the following scopes:
+
+| Permission | Why it's needed |
+| --- | --- |
+| `repo` | Read and write access to your repositories: clone, commit, push, and create pull requests. |
+| `read:org` | List repositories available across your organizations. |
+| `write:org` | Manage organization-level project access. |
+| `workflow` | Update GitHub Actions workflows when a task involves CI changes. |
+| `read:user` | Read your GitHub profile. |
+| `user:email` | Attribute commits to your email address. |
+
+You can review or revoke these permissions at any time from your [GitHub application settings](https://github.com/settings/applications).
+
+Inside a session, the agent **can**:
+
+- Clone your repository into the sandbox.
+- Read all files in the repository.
+- Create branches and edit code.
+- Commit and push changes to your repository.
+- Open draft pull requests.
+
+It **cannot**:
+
+- Access your local machine or filesystem.
+- Create new repositories.
+- Touch repositories you haven't authorized.
+
+<SectionTab as="h1" sectionId="data-handling">Data handling</SectionTab>
+
+- **Sandbox.** Each session runs in an isolated, ephemeral cloud sandbox. The sandbox is deleted automatically when the session ends. No code or files remain on Mistral's infrastructure.
+- **GitHub changes persist.** Commits, branches, and draft PRs the agent creates stay in your repository. You manage them like any other branch or PR.
+- **Model.** The Vibe Code Workflow is powered by Mistral Medium 3.5.
+
+<SectionTab as="h1" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+**My session looks stuck.**
+
+- Check **Intelligence** → **Connectors** to confirm GitHub is connected.
+- Verify the repository exists and the connector has access to it.
+- If the session has run for a long time, the sandbox might have timed out. Start a new session with a more focused prompt.
+
+**Cloning is slow or fails.**
+
+Repository cloning has a generous timeout (up to 10 minutes) and is retried on failure. Very large repositories might take longer to set up. If cloning fails, the session ends with a clear error message. Try again or scope the work to a smaller repository.
+
+**The agent can't run my project.**
+
+The sandbox is a standard Linux environment. Projects that require macOS- or Windows-specific tooling, GPU access, or connections to local services do not work. Adjust your prompt to focus on parts of the codebase that don't require those dependencies.
+
+<SectionTab as="h1" sectionId="related">Related features</SectionTab>
+
+- **[Mistral Vibe](/mistral-vibe/overview)**: the same coding agent, running locally in your terminal.
+- **[Code Interpreter](/le-chat/content-creation/code-interpreter)**: run Python directly inside a Le Chat conversation for data analysis and quick scripts.
+- **[Connectors](/le-chat/knowledge-integrations/connectors)**: manage the GitHub connection and other integrations.

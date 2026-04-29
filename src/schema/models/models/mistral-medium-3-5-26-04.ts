@@ -48,7 +48,7 @@ export default {
   identifiers: { apiNames: ['mistral-medium-3.5', 'mistral-medium-3'] },
   capabilities: {
     input: ['text', 'image'],
-    output: ['text'],
+    output: ['reasoning', 'text'],
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'batching', 'agents-conversations', 'chat-completions', 'connectors'],
     finetuning: ['text'],
   },

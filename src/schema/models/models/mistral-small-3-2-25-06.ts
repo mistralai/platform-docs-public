@@ -10,7 +10,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-small-3',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'mistral-small', backgroundColor: 'purple' },
   weights: [
     {
@@ -45,14 +45,14 @@ export default {
       { type: 'range', price: 0.3, denominator: '/M Tokens' }
     ]
   },
-  identifiers: { apiNames: ['mistral-small-2506', 'mistral-small-latest'] },
+  identifiers: { apiNames: ['mistral-small-2506'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'batching', 'connectors', 'predicted-outputs'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: { deprecationDate: 'April 30, 2026', retirementDate: 'July 31, 2026', replacement: 'Mistral Small 4' },
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

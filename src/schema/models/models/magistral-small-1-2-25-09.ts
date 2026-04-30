@@ -10,7 +10,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/magistral-small-1',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'magistral', backgroundColor: 'beige' },
   weights: [
     {
@@ -52,7 +52,7 @@ export default {
     features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
     finetuning: [],
   },
-  metadata: {},
+  metadata: { deprecationDate: 'April 30, 2026', retirementDate: 'July 31, 2026', replacement: 'Mistral Small 4' },
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

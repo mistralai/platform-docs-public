@@ -114,9 +114,7 @@ export function InteractiveQuickstarts() {
                 {/* Top Row: Horizontal Role Selector */}
                 <TabsOpener
                     options={ROLES}
-                    activeId={activeRole}
                     onChange={setActiveRole}
-                    layoutIdPrefix="interactive-quickstarts"
                 />
 
                 {/* Bottom Row: Dynamic Content Grid */}

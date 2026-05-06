@@ -12,92 +12,48 @@ export interface TabOption {
     logo?: string;
     color?: string;
     bgColor?: string;
-    borderColor?: string;
-    activeBorder?: string;
 }
 
 export interface TabsOpenerProps {
     options: TabOption[];
-    activeId: string | null;
-    onChange: (id: string) => void;
-    layoutIdPrefix?: string;
+    onChange?: (id: string) => void;
     className?: string;
 }
 
-export function TabsOpener({ options, activeId, onChange, layoutIdPrefix = 'tabs-opener', className }: TabsOpenerProps) {
+export function TabsOpener({ options, onChange, className }: TabsOpenerProps) {
     const colsClass = options.length === 2 ? 'md:grid-cols-2' : options.length === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3';
 
     return (
         <div className={cn("grid grid-cols-1 gap-3 w-full", colsClass, className)}>
             {options.map((option) => {
-                const isActive = activeId === option.id;
                 const Icon = option.icon ?? null;
                 return (
-                    <button
+                    <motion.button
                         key={option.id}
-                        onClick={() => onChange(option.id)}
-                        className={cn(
-                            'group flex flex-col items-center justify-center p-4 rounded-xl border text-center transition-all duration-300 w-full relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                            isActive
-                                ? `bg-card border-border shadow-md ring-1 ring-border`
-                                : 'bg-transparent border-transparent hover:bg-card/50 hover:border-border/50 hover:shadow-sm'
-                        )}
+                        onClick={() => onChange?.(option.id)}
+                        whileHover={{ y: -3, scale: 1.02 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        className="group flex flex-col items-center justify-center p-5 rounded-xl border border-border/40 bg-transparent text-center w-full relative overflow-hidden cursor-pointer hover:bg-card/50 hover:border-border/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                        {/* Active Indicator Background Glow */}
-                        {isActive && (
-                            <motion.div
-                                layoutId={`${layoutIdPrefix}-bg`}
-                                className="absolute inset-0 bg-gradient-to-br from-card to-card opacity-50 z-0"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                            />
-                        )}
-
-                        <div className="relative z-10 flex flex-col items-center gap-3 w-full">
+                        <div className="relative z-10 flex flex-col items-center w-full">
                             {option.logo ? (
                                 <Image
                                     src={option.logo}
                                     alt={option.title}
-                                    width={36}
-                                    height={36}
-                                    className={cn(
-                                        'rounded-lg transition-opacity',
-                                        isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-80'
-                                    )}
+                                    width={64}
+                                    height={64}
+                                    className="rounded-lg transition-all duration-200 opacity-55 group-hover:opacity-100 group-hover:scale-105"
                                 />
                             ) : Icon ? (
-                                <div
-                                    className={cn(
-                                        'p-2 rounded-lg transition-colors',
-                                        isActive ? (option.bgColor || 'bg-primary/10') : 'bg-muted group-hover:bg-muted/80'
-                                    )}
-                                >
-                                    <Icon className={cn('size-5', isActive ? (option.color || 'text-primary') : 'text-muted-foreground')} />
+                                <div className="p-2 rounded-lg transition-colors bg-muted group-hover:bg-muted/80">
+                                    <Icon className={cn('size-5', option.color || 'text-muted-foreground')} />
                                 </div>
                             ) : null}
-                            <h3
-                                className={cn(
-                                    'text-base font-semibold transition-colors',
-                                    isActive ? 'text-foreground' : 'text-foreground/80'
-                                )}
-                            >
+                            <h3 className="text-base font-semibold transition-colors mt-3 mb-0 text-center text-foreground/80 group-hover:text-foreground">
                                 {option.title}
                             </h3>
-
-                            {/* Arrow for active state */}
-                            {isActive && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="absolute -bottom-4 animate-bounce hidden md:block"
-                                >
-                                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-foreground/20"></div>
-                                </motion.div>
-                            )}
                         </div>
-                    </button>
+                    </motion.button>
                 );
             })}
         </div>

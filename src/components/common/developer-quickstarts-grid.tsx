@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ThunderIcon from '@/components/icons/pixel/thunder';
 import PickaxeIcon from '@/components/icons/pixel/pickaxe';
 import SearchIcon from '@/components/icons/pixel/search';
+import PlugIcon from '@/components/icons/pixel/plug';
 import ArrowRightIcon from '@/components/icons/pixel/arrow-right';
 import ClockIcon from '@/components/icons/pixel/clock';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,14 @@ const QUICKSTARTS = [
         time: '15 min',
         href: '/getting-started/quickstarts/developer/rag-document-search',
         icon: SearchIcon,
+        activeBorder: 'hover:border-[#FF8205]/50',
+    },
+    {
+        title: 'Build a workflow',
+        description: 'Scaffold a durable AI pipeline, run a worker, and trigger your first execution.',
+        time: '15 min',
+        href: '/getting-started/quickstarts/developer/build-a-workflow',
+        icon: PlugIcon,
         activeBorder: 'hover:border-[#FF8205]/50',
     }
 ];

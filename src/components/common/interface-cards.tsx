@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { ShieldIcon } from '@/components/icons/pixel';
 import { useInterfaceSection } from './interface-section-provider';
 import { TabsOpener } from './tabs-opener';
 
@@ -54,7 +53,7 @@ const INTERFACES = [
     {
         id: 'admin',
         title: 'Admin',
-        icon: ShieldIcon,
+        logo: '/assets/logos/admin.svg',
         audience: 'IT admins, billing managers, organization owners',
         audienceShort: 'IT & Operations',
         color: 'text-[#FF8205]',
@@ -69,22 +68,11 @@ const INTERFACES = [
 ];
 
 export function InterfaceCards() {
-    const [activeId, setActiveId] = React.useState<string | null>(null);
     const { scrollToSection } = useInterfaceSection();
 
-    const handleChange = React.useCallback((id: string) => {
-        setActiveId(prev => (prev === id ? null : id));
-        scrollToSection(id);
-    }, [scrollToSection]);
-
     return (
-        <div className="my-8 w-full">
-            <TabsOpener
-                options={INTERFACES}
-                activeId={activeId}
-                onChange={handleChange}
-                layoutIdPrefix="interface-cards"
-            />
+        <div className="my-8 w-full not-prose">
+            <TabsOpener options={INTERFACES} onChange={scrollToSection} />
         </div>
     );
 }

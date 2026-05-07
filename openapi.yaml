@@ -11751,6 +11751,31 @@ components:
         Values represent high-level intent. Assignment to actual SPs is handled internally.
 
         System prompt may include knowledge cutoff date, model capabilities, tone to use, safety guidelines, etc.'
+    OCRConfidenceScore:
+      type: object
+      properties:
+        text:
+          type: string
+          title: Text
+          description: The word or text segment
+        confidence:
+          type: number
+          title: Confidence
+          maximum: 1
+          minimum: 0
+          description: Confidence score (0-1)
+        start_index:
+          type: integer
+          title: Start Index
+          minimum: 0
+          description: Start index of the text in the page markdown string
+      title: OCRConfidenceScore
+      required:
+      - text
+      - confidence
+      - start_index
+      additionalProperties: false
+      description: Confidence score for a token or word in OCR output.
     OCRImageObject:
       type: object
       properties:
@@ -11806,6 +11831,33 @@ components:
       - bottom_right_x
       - bottom_right_y
       additionalProperties: false
+    OCRPageConfidenceScores:
+      type: object
+      properties:
+        word_confidence_scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/OCRConfidenceScore'
+          title: Word Confidence Scores
+          description: Word-level confidence scores (populated only for 'word' granularity)
+        average_page_confidence_score:
+          type: number
+          title: Average Page Confidence Score
+          maximum: 1
+          minimum: 0
+          description: Average confidence score for the page
+        minimum_page_confidence_score:
+          type: number
+          title: Minimum Page Confidence Score
+          maximum: 1
+          minimum: 0
+          description: Minimum confidence score for the page
+      title: OCRPageConfidenceScores
+      required:
+      - average_page_confidence_score
+      - minimum_page_confidence_score
+      additionalProperties: false
+      description: Confidence scores for an OCR page at various granularities.
     OCRPageDimensions:
       type: object
       properties:
@@ -11877,6 +11929,11 @@ components:
           - $ref: '#/components/schemas/OCRPageDimensions'
           - type: 'null'
           description: The dimensions of the PDF Page's screenshot image
+        confidence_scores:
+          anyOf:
+          - $ref: '#/components/schemas/OCRPageConfidenceScores'
+          - type: 'null'
+          description: Confidence scores for the OCR page (populated when confidence_scores_granularity is set)
       title: OCRPageObject
       required:
       - index
@@ -11960,6 +12017,14 @@ components:
           type: boolean
           title: Extract Footer
           default: false
+        confidence_scores_granularity:
+          anyOf:
+          - type: string
+            enum:
+            - word
+            - page
+          - type: 'null'
+          description: 'Granularity for confidence scores: ''word'' (per-word scores) or ''page'' (aggregate only). Defaults to None (no confidence scores) to keep response payload small.'
       title: OCRRequest
       required:
       - document
@@ -12011,6 +12076,14 @@ components:
           - markdown
           - html
           description: Format of the table
+        word_confidence_scores:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/OCRConfidenceScore'
+          - type: 'null'
+          title: Word Confidence Scores
+          description: Per-word confidence scores for the table content. Returned when confidence_scores_granularity is set to 'word'.
       title: OCRTableObject
       required:
       - id

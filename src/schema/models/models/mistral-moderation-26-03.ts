@@ -30,7 +30,7 @@ export default {
     input: ['text'],
     output: ['scores'],
     features: ['moderations', 'batching'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: '',

@@ -64,7 +64,7 @@ export default {
     input: ['text', 'image'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'connectors', 'batching', 'predicted-outputs'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',

@@ -91,8 +91,7 @@ export default function ModelsPage() {
           <Heading align="between">
             <HeadingTitle as="h3">Specialist</HeadingTitle>
             <HeadingSubtitle className="text-secondary-foreground/85">
-              Models fine-tuned for specific domains or optimized for a given
-              purpose.
+              Models optimized for specific domains or a given purpose.
             </HeadingSubtitle>
           </Heading>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

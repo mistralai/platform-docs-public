@@ -35,7 +35,7 @@ export default {
     input: ['image', 'document'],
     output: ['text', 'image'],
     features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'OCR 3'},
   playground: '',

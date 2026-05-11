@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: ['document-qna', 'chat-completions', 'batching', 'structured-outputs', 'function-calling'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'March 31, 2026', retirementDate: 'April 30, 2026', replacement: 'Mistral Nemo 12B'},
   playground: 'https://console.mistral.ai/build/playground',

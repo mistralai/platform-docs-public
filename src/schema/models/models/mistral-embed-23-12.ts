@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['embeddings'],
     features: ['embeddings', 'batching'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: '',

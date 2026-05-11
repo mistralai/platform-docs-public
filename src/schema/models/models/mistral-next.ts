@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: [],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: '', retirementDate: '', replacement: 'Mistral Large 3'},
   playground: '',

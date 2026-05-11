@@ -125,9 +125,6 @@ export const MODELS = defineModels([
 const checkDuplicates = (throwError = true) => {
   const set = new Set(MODELS.map(m => m.slug));
   const modelSlugs = MODELS.map(m => m.slug);
-  console.log(`${modelSlugs.length} model slugs`);
-  console.log(`${set.size} unique model slugs`);
-  console.log(`${modelSlugs.length - set.size} duplicate model slugs`);
   if (modelSlugs.length !== set.size) {
     const duplicates = modelSlugs.filter(
       slug => modelSlugs.indexOf(slug) !== modelSlugs.lastIndexOf(slug)

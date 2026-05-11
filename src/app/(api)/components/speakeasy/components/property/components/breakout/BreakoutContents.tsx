@@ -2,11 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useChildren, useUniqueChild } from '@speakeasy-api/docs-md-react';
-// eslint-disable-next-line fast-import/no-restricted-imports -- Confirmed we're using the component as a default only
 import { ConnectingCell as DefaultConnectingCell } from '../cells/ConnectingCell';
-// eslint-disable-next-line fast-import/no-restricted-imports -- Confirmed we're using the component as a default only
 import { ExpandableCell as DefaultExpandableCell } from '../cells/ExpandableCell';
-// eslint-disable-next-line fast-import/no-restricted-imports -- Confirmed we're using the component as a default only
 import { NonExpandableCell as DefaultNonExpandableCell } from '../cells/NonExpandableCell';
 import { useHashManager } from '@/app/(api)/hooks/use-hash-manager';
 import { TitleContainer } from '../../content';

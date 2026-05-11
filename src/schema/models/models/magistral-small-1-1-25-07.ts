@@ -50,7 +50,7 @@ export default {
     input: ['text'],
     output: ['reasoning', 'text'],
     features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'October 31, 2025', retirementDate: 'November 30, 2025', replacement: 'Magistral Small 1.2'},
   playground: 'https://console.mistral.ai/build/playground',

@@ -4,20 +4,24 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": " pnpm cookbook:build && pnpm rawmdx:export && next dev",
-    "build": "pnpm prebuild && next build",
+    "dev": "node scripts/dev-prebuild.mjs && next dev",
+    "dev:full": "pnpm cookbook:build && pnpm rawmdx:export && next dev",
+    "build": "pnpm prebuild:local && next build",
+    "build:ci": "pnpm prebuild:ci && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "cf:build": "pnpm dlx @cloudflare/next-on-pages@1",
+    "cf:build": "pnpm prebuild:ci && pnpm dlx @cloudflare/next-on-pages@1",
     "search:build": "tsx src/scripts/build-search-index.ts",
     "cookbook:build": "tsx src/scripts/build-complete-cookbook.ts",
     "rawmdx:export": "tsx src/scripts/export-raw-mdx.ts",
     "cf:dev": "pnpm cf:build && npx wrangler pages dev --port 3000 --log-level=debug",
-    "postinstall": "git submodule update --init --recursive && pnpm -s build-api-docs",
+    "postinstall": "git submodule update --init --recursive",
     "copy-assets-file": "tsx src/scripts/copy-assets-file.ts",
     "copy-openapi": "tsx src/scripts/copy-openapi.ts",
-    "prebuild": "pnpm -s cookbook:build && pnpm -s rawmdx:export && pnpm -s copy-openapi && pnpm search:build && pnpm -s copy-assets-file",
+    "prebuild": "pnpm prebuild:local",
+    "prebuild:local": "pnpm -s cookbook:build && pnpm -s copy-openapi && pnpm search:build && pnpm -s copy-assets-file",
+    "prebuild:ci": "pnpm -s cookbook:build && pnpm -s rawmdx:export && pnpm -s copy-openapi && pnpm search:build && pnpm -s copy-assets-file",
     "build-api-docs": "docs-md",
     "check-links": "./scripts/check-links.sh",
     "check-links:only": "./scripts/check-links.sh --no-build",
@@ -32,8 +36,6 @@
     "vale:report": "./scripts/vale-report.sh"
   },
   "dependencies": {
-    "@codesandbox/sandpack-client": "^2.19.8",
-    "@codesandbox/sandpack-react": "^2.20.0",
     "@joycostudio/marquee": "^0.0.11",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.0",
@@ -127,6 +129,9 @@
   "pnpm": {
     "overrides": {
       "tar": ">=7.5.3"
+    },
+    "patchedDependencies": {
+      "next@15.5.9": "patches/next@15.5.9.patch"
     }
   }
 }

@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['scores'],
     features: ['moderations', 'batching'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'March 31, 2026', retirementDate: 'June 30, 2026', replacement: 'Mistral Moderation 2'},
   playground: '',

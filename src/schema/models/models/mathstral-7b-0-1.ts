@@ -50,7 +50,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: [],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: '', retirementDate: '', replacement: 'Magistral Small 1.2'},
   playground: '',

@@ -50,7 +50,7 @@ export default {
     input: ['text', 'image'],
     output: ['reasoning', 'text'],
     features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
-    finetuning: [],
+
   },
   metadata: { deprecationDate: 'April 30, 2026', retirementDate: 'July 31, 2026', replacement: 'Mistral Small 4' },
   playground: 'https://console.mistral.ai/build/playground',

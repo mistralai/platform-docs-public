@@ -7,7 +7,8 @@ import { markdownTableComponents } from '@/components/common/markdown-table';
 import { HeadingTitle } from '../layout/heading';
 import type { MDXComponents } from 'mdx/types';
 import Link from 'next/link';
-import { AudioPlayer } from '../common/audio';
+// Lazy-load via client wrapper: keeps wavesurfer.js out of every page bundle.
+import { AudioPlayer } from '../common/audio/lazy';
 import { Image } from './image';
 import { OrderedList, UnorderedList, ListItem } from './ordered-list';
 

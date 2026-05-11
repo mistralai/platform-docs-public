@@ -34,7 +34,7 @@ export default {
     input: ['text', 'image'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'batching', 'agents-conversations', 'chat-completions', 'connectors'],
-    finetuning: ['text'],
+
   },
   metadata: {},
   playground: 'https://console.mistral.ai/build/playground',

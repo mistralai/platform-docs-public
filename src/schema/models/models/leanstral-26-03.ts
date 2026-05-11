@@ -53,7 +53,7 @@ export default {
     input: ['text', 'image'],
     output: ['text'],
     features: ['chat-completions', 'function-calling', 'agents-conversations', 'structured-outputs'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: 'https://console.mistral.ai/build/playground',

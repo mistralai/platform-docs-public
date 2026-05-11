@@ -1,11 +1,59 @@
 'use client';
 
 import React, { Ref, useEffect, useRef, useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import oneDarkCustom, { onelightCustom } from './one-dark-custom';
-import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// Register only the languages we actually use across docs + cookbooks.
+// This avoids pulling in ~190 prism language modules.
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
+import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import toml from 'react-syntax-highlighter/dist/esm/languages/prism/toml';
+import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
+import sql from 'react-syntax-highlighter/dist/esm/languages/prism/sql';
+import powershell from 'react-syntax-highlighter/dist/esm/languages/prism/powershell';
+
+SyntaxHighlighter.registerLanguage('python', python);
+SyntaxHighlighter.registerLanguage('bash', bash);
+SyntaxHighlighter.registerLanguage('typescript', typescript);
+SyntaxHighlighter.registerLanguage('javascript', javascript);
+SyntaxHighlighter.registerLanguage('js', javascript);
+SyntaxHighlighter.registerLanguage('json', json);
+SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.registerLanguage('toml', toml);
+SyntaxHighlighter.registerLanguage('markdown', markdown);
+SyntaxHighlighter.registerLanguage('sql', sql);
+SyntaxHighlighter.registerLanguage('powershell', powershell);
+
+const LANGUAGE_ALIASES: Record<string, string> = {
+  console: 'bash',
+  curl: 'bash',
+  jsonl: 'json',
+  md: 'markdown',
+  plaintext: 'text',
+  ps1: 'powershell',
+  py: 'python',
+  sh: 'bash',
+  shell: 'bash',
+  text: 'text',
+  ts: 'typescript',
+  yml: 'yaml',
+};
+
+function normalizeLanguage(value?: string): string {
+  const normalized = value
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.-].*$/, '');
+  if (!normalized) return 'text';
+  return LANGUAGE_ALIASES[normalized] ?? normalized;
+}
 
 interface CodeBlockProps {
   children: string;
@@ -29,9 +77,9 @@ export function CodeBlock({
   const [copied, setCopied] = useState(false);
 
   const extractLanguage = (className?: string): string => {
-    if (!className) return language;
-    const match = className.match(/language-(\w+)/);
-    return match ? match[1] : language;
+    if (!className) return normalizeLanguage(language);
+    const match = className.match(/language-([^\s]+)/);
+    return normalizeLanguage(match ? match[1] : language);
   };
 
   const getHighlightedLines = (highlight?: string): number[] => {
@@ -50,34 +98,30 @@ export function CodeBlock({
 
   const detectedLanguage = extractLanguage(className);
   const highlightedLines = getHighlightedLines(highlight);
-  const codeStyle = oneDarkCustom;
   const codeRef = useRef<HTMLPreElement>(null);
-  const codeRefLight = useRef<HTMLPreElement>(null);
-  const stopScrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const stopScrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    // when scroll set data-scrolling to true
-    if (codeRef.current) {
-      codeRef.current.addEventListener('scroll', () => {
-        if (stopScrollTimeout.current) {
-          clearTimeout(stopScrollTimeout.current);
-        }
-        codeRef.current?.setAttribute('data-scrolling', 'true');
-        stopScrollTimeout.current = setTimeout(() => {
-          codeRef.current?.setAttribute('data-scrolling', 'false');
-        }, 1000);
-      });
-      // and then set a timeout to set data-scrolling to false that clears the timeout
-    }
+    const element = codeRef.current;
+    if (!element) return;
 
-    return () => {
-      if (codeRef.current) {
-        codeRef.current.removeEventListener('scroll', () => {});
+    const onScroll = () => {
+      if (stopScrollTimeout.current) {
+        clearTimeout(stopScrollTimeout.current);
       }
+      element.setAttribute('data-scrolling', 'true');
+      stopScrollTimeout.current = setTimeout(() => {
+        element.setAttribute('data-scrolling', 'false');
+      }, 1000);
+    };
+
+    element.addEventListener('scroll', onScroll);
+    return () => {
+      element.removeEventListener('scroll', onScroll);
       if (stopScrollTimeout.current) {
         clearTimeout(stopScrollTimeout.current);
       }
     };
-  }, [highlightedLines]);
+  }, []);
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(children);
@@ -116,13 +160,13 @@ export function CodeBlock({
         </button>
 
         <SyntaxHighlighter
-          ref={codeRef as Ref<SyntaxHighlighter>}
+          ref={codeRef as unknown as Ref<any>}
           language={detectedLanguage}
           style={oneDarkCustom}
           showLineNumbers={showLineNumbers}
           wrapLongLines={wrapLongLines}
           wrapLines={highlightedLines.length > 0}
-          lineProps={lineNumber => ({
+          lineProps={(lineNumber: number) => ({
             style: {
               backgroundColor: highlightedLines.includes(lineNumber)
                 ? 'rgba(255, 255, 255, 0.1)'
@@ -162,13 +206,13 @@ export function CodeBlock({
         </button>
 
         <SyntaxHighlighter
-          ref={codeRef as Ref<SyntaxHighlighter>}
+          ref={codeRef as unknown as Ref<any>}
           language={detectedLanguage}
           style={onelightCustom}
           showLineNumbers={showLineNumbers}
           wrapLongLines={wrapLongLines}
           wrapLines={highlightedLines.length > 0}
-          lineProps={lineNumber => ({
+          lineProps={(lineNumber: number) => ({
             style: {
               backgroundColor: highlightedLines.includes(lineNumber)
                 ? 'rgba(255, 255, 255, 0.1)'

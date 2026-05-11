@@ -90,7 +90,7 @@ export const feedbackData: QualitativeFeedbackItem[] = [
     },
     hashtags: ['#mistralnemo'],
     content:
-      'Nemo\'s coherence and creativity are exceptional. I\'ve tested it against various Llama 3 8B fine-tunes and it consistently outperforms them. The instruction capabilities are particularly strong, making it ideal for complex tasks that require nuanced understanding.',
+      'Nemo\'s coherence and creativity are exceptional. I\'ve tested it against various Llama 3 8B models and it consistently outperforms them. The instruction capabilities are particularly strong, making it ideal for complex tasks that require nuanced understanding.',
     date: '2025-07-01',
     comments: 2,
     likes: 10,

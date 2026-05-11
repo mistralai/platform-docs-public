@@ -20,7 +20,6 @@ export const FEATURED_COOKBOOK_PATHS = [
   'mistral/classifier_factory/product_classification.ipynb',
   'mistral/ocr/data_extraction.ipynb',
   'mistral/agents/non_framework/hubspot_dynamic_multi_agent/hubspot_dynamic_multi_agent_system.ipynb',
-  'mistral/fine_tune/pixtral_finetune_on_satellite_data.ipynb',
 ];
 
 /**
@@ -34,7 +33,6 @@ export const FEATURED_COOKBOOK_PATHS = [
 export const FEATURED_USE_CASES = [
   'Agents',
   'OCR',
-  'Finetuning',
   'Evaluation',
   'Function calling',
   'Structured outputs',

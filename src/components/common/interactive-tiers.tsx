@@ -96,7 +96,6 @@ const API_FEATURES = [
     { feature: 'Rate Limits', experiment: 'Standard tier limits', scale: 'Custom throughput based on commit' },
     { feature: 'Deployments', experiment: 'Studio SaaS', scale: 'Studio, Cloud VPC' },
     { feature: 'Support', experiment: 'Community & Email', scale: 'Dedicated Success Manager' },
-    { feature: 'Custom Fine-Tuning', experiment: 'Self-serve (LoRA)', scale: 'Full weights, specialized base models' },
 ];
 
 export function InteractiveTiers() {

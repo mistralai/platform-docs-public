@@ -64,7 +64,7 @@ export default {
     input: ['text', 'image'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
-    finetuning: ['text', 'vision'],
+
   },
   metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 14B'},
   playground: 'https://console.mistral.ai/build/playground',

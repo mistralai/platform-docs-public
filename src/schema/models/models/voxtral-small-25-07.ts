@@ -51,7 +51,7 @@ export default {
     input: ['audio', 'text'],
     output: ['text'],
     features: ['structured-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching', 'function-calling'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: 'https://console.mistral.ai/build/playground',

@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching', 'fim'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Codestral'},
   playground: '',

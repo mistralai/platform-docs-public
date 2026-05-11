@@ -34,7 +34,7 @@ export default {
     input: ['text', 'image'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'connectors', 'batching', 'predicted-outputs'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: '',

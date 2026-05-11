@@ -36,10 +36,24 @@ const CATEGORY_JSON = '_category_.json';
 // Public API
 // -----------------------------
 
+// Module-level cache for the root sidebar tree.
+// In production: cached forever (build-time computation, immutable input).
+// In dev: short TTL so MDX edits show up quickly without re-scanning every render.
+const SIDEBAR_TTL_MS =
+  process.env.NODE_ENV === 'production' ? Number.POSITIVE_INFINITY : 3000;
+const sidebarCache = new Map<string, { value: SidebarItem[]; expires: number }>();
+
 export async function getSidebar(
   rootDir: string,
   basePath = ''
 ): Promise<SidebarItem[]> {
+  // Only cache root-level invocations (the recursive ones pass basePath).
+  if (basePath === '') {
+    const hit = sidebarCache.get(rootDir);
+    if (hit && Date.now() < hit.expires) {
+      return hit.value;
+    }
+  }
   const childDirs = readEligibleDirs(rootDir);
 
   const items: SidebarItem[] = [];
@@ -222,6 +236,10 @@ export async function getSidebar(
   // This function is called recursively, so to avoid O(n^2) repeated work, only add pagination at the root.
   if (!basePath) {
     addPaginationToSidebar(items);
+    sidebarCache.set(rootDir, {
+      value: items,
+      expires: Date.now() + SIDEBAR_TTL_MS,
+    });
   }
 
   return items;

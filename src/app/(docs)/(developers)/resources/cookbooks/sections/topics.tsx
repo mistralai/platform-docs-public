@@ -42,7 +42,6 @@ const getUseCaseIcon = (useCase: string) => {
     Quickstart: ThunderIcon,
     Search: SearchIcon,
     Pixtral: PictureIcon,
-    Finetuning: FireIcon,
   };
 
   return iconMap[useCase] || PageIcon;

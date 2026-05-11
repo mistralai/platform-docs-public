@@ -49,15 +49,7 @@ export const glossaryData: GlossaryTerm[] = [
         ),
         categories: ['Models', 'Concepts'],
     },
-    {
-        term: 'Fine-tuning',
-        definition: (
-            <>
-                Further training a pre-trained model on a domain-specific dataset to improve performance on a target task, adopt a specific tone, or produce a particular output format. Mistral supports LoRA-based fine-tuning on Studio. <em className="text-foreground/50 not-italic text-xs">→ LoRA</em>
-            </>
-        ),
-        categories: ['Platform', 'Concepts'],
-    },
+
     {
         term: 'Function calling',
         definition: (
@@ -76,24 +68,16 @@ export const glossaryData: GlossaryTerm[] = [
     {
         term: 'Inference',
         definition:
-            'Running a trained model to generate a response. Calling the API is running inference, as distinct from training or fine-tuning, which modify model weights.',
+            'Running a trained model to generate a response. Calling the API is running inference, as distinct from training, which modifies model weights.',
         categories: ['Concepts'],
     },
     {
         term: 'Studio',
         definition:
-            "Mistral AI's SaaS API and developer platform at console.mistral.ai. Provides API access, the Studio developer console, fine-tuning, and model management tools.",
+            "Mistral AI's SaaS API and developer platform at console.mistral.ai. Provides API access, the Studio developer console, and model management tools.",
         categories: ['Platform'],
     },
-    {
-        term: 'LoRA',
-        definition: (
-            <>
-                <span className="text-foreground/60 text-xs">(low-rank adaptation)</span> A parameter-efficient fine-tuning technique that adds small trainable matrices to a frozen base model instead of updating all weights. Substantially reduces compute and memory requirements while achieving results close to full fine-tuning.
-            </>
-        ),
-        categories: ['Concepts'],
-    },
+
     {
         term: 'OCR',
         definition: (

@@ -50,7 +50,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',

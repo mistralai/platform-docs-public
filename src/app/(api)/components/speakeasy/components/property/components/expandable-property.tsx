@@ -7,7 +7,6 @@
 
 import { Children, isValidElement } from 'react';
 import { InternalError } from '../../../util/internalError';
-// eslint-disable-next-line fast-import/no-restricted-imports
 import { ConnectingCell as DefaultConnectingCell } from '../components/cells';
 import { PropertyContents } from '../content';
 import type {

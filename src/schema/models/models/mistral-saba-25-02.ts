@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: [],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'June 10, 2025', retirementDate: 'September 30, 2025', replacement: 'Mistral Small 3.2'},
   playground: '',

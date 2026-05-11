@@ -34,7 +34,7 @@ export default {
     input: ['image', 'document'],
     output: ['text', 'image'],
     features: [],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'OCR 3'},
   playground: '',

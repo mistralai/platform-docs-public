@@ -50,7 +50,7 @@ export default {
     input: ['audio'],
     output: ['text'],
     features: ['timestamps', 'transcriptions'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: '',

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import cookbookData from '@/../cookbooks.config.json';
 import {
@@ -16,7 +16,7 @@ import {
   getCookbookAuthor,
 } from '@/schema/cookbook';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export function generateCookbookSlug(p: string): string {
   return p
@@ -33,19 +33,21 @@ async function getFirstCommitDate(
   filePath: string
 ): Promise<string | undefined> {
   try {
-    const { stdout } = await execAsync(
-      `cd static/cookbooks && git log --reverse --pretty=format:"%ad %H" -- "${filePath}" | head -1`
-    );
+    const { stdout } = await execFileAsync('git', [
+      '-C',
+      path.join(process.cwd(), 'static', 'cookbooks'),
+      'log',
+      '--reverse',
+      '--pretty=format:%ad %H',
+      '--',
+      filePath,
+    ]);
 
-    const fullOutput = stdout.trim();
-    if (!fullOutput) {
-      console.log(`[DEBUG] No git history for ${filePath}`);
-      return undefined;
-    }
+    const fullOutput = stdout.trim().split('\n')[0]?.trim();
+    if (!fullOutput) return undefined;
 
-    const [dayName, month, day, time, year] = fullOutput.split(' ');
-    console.log(month, year);
-    return `${month} ${year}`;
+    const [, month, , , year] = fullOutput.split(' ');
+    return month && year ? `${month} ${year}` : undefined;
   } catch (error) {
     console.warn(`Could not get first commit date for ${filePath}:`, error);
     return undefined;

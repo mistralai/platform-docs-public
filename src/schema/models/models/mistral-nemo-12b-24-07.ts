@@ -78,7 +78,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
-    finetuning: ['text'],
+
   },
   metadata: {},
   playground: '',

@@ -41,7 +41,7 @@ export function InteractiveGlossary() {
                 <div className="relative mb-4">
                     <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search glossary terms... (e.g. RAG, Fine-tuning)"
+                        placeholder="Search glossary terms... (e.g. RAG, OCR)"
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value);

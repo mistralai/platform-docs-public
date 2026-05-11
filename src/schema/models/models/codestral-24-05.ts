@@ -50,7 +50,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: [],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'December 2, 2024', retirementDate: 'June 16, 2025', replacement: 'Codestral'},
   playground: '',

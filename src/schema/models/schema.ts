@@ -49,7 +49,7 @@ export interface ModelIdentifier {
 export type ModelLegalButton = null | undefined | 'DEFAULT' | string;
 
 // ------------------------------------------------------------
-// AVAILABLES: Modality, Feature, Finetuning
+// AVAILABLES: Modality, Feature
 // ------------------------------------------------------------
 
 export const AVAILABLE_MODALITIES = {
@@ -167,13 +167,6 @@ export const AVAILABLE_FEATURES = {
 } as const satisfies Features;
 export type FeatureKey = keyof typeof AVAILABLE_FEATURES;
 
-export const AVAILABLE_FINETUNING = {
-  text: { name: 'Text' },
-  vision: { name: 'Vision' },
-  classifier: { name: 'Classifier' },
-} as const;
-export type FinetuningKey = keyof typeof AVAILABLE_FINETUNING;
-
 // ------------------------------------------------------------
 // Model
 // ------------------------------------------------------------
@@ -210,7 +203,6 @@ export interface ModelCapabilities {
   input: ModalityKey[];
   output: ModalityKey[];
   features: FeatureKey[];
-  finetuning: FinetuningKey[];
 }
 export interface ModelAvatar {
   icon: AvatarIconVariant;

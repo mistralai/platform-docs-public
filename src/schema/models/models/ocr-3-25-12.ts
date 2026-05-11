@@ -35,7 +35,7 @@ export default {
     input: ['image', 'document'],
     output: ['text', 'image'],
     features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: 'https://console.mistral.ai/build/document-ai/ocr-playground',

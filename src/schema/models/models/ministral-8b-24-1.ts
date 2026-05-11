@@ -50,7 +50,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
-    finetuning: ['text'],
+
   },
   metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 8B'},
   playground: 'https://console.mistral.ai/build/playground',

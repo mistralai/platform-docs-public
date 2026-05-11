@@ -1,6 +1,6 @@
 import Link from "next/link";
 import * as React from "react";
-import { StatsIcon } from "@/components/icons/pixel";
+
 import {
 	Heading,
 	HeadingSubtitle,
@@ -12,11 +12,10 @@ import { resolveIcon } from "@/lib/icons";
 import {
 	AVAILABLE_ENDPOINTS,
 	AVAILABLE_FEATURES,
-	AVAILABLE_FINETUNING,
 	type EndpointKey,
 	type Model,
 } from "@/schema/models";
-import { FeatureItem, FeatureItemWithList } from "./feature-item";
+import { FeatureItemWithList } from "./feature-item";
 import { EndpointItem } from "./features-endpoint";
 import { WeightsTable } from "./weights-table";
 
@@ -30,22 +29,12 @@ export function ModelTabs({ model }: ModelTabsProps) {
 		if (model.capabilities.features.length > 0) {
 			tabs.push({ value: "features", label: "FEATURES" });
 		}
-		if (model.capabilities.finetuning.length > 0) {
-			tabs.push({ value: "finetuning", label: "FINETUNING" });
-		}
-
 		tabs.push({ value: "weights", label: "WEIGHTS" });
 
 		return { tabs, defaultValue: tabs[0]?.value };
 	}, [model]);
 
-	const featureEndpoints = React.useMemo(() => {
-		return new Set<string>(
-			Object.entries(AVAILABLE_FEATURES).flatMap(([key, feature]) => {
-				return feature.endpoints.map((endpoint) => endpoint);
-			}),
-		);
-	}, []);
+
 
 	if (!tabs.length) {
 		return null;
@@ -102,66 +91,6 @@ export function ModelTabs({ model }: ModelTabsProps) {
 									/>
 								))}
 							</FeatureItemWithList>
-						);
-					})}
-				</FeaturesGrid>
-			</TabsContent>
-
-			{/* Finetuning Tab */}
-			<TabsContent value="finetuning" className="mt-6">
-				<Heading className="mb-6">
-					<HeadingTitle as="h3" size="h4">
-						Finetuning
-					</HeadingTitle>
-				</Heading>
-				<FeaturesGrid>
-					{Object.entries(AVAILABLE_FINETUNING).map(([key, finetuning]) => {
-						const isSupported = model.capabilities.finetuning.includes(
-							key as keyof typeof AVAILABLE_FINETUNING,
-						);
-
-						// Determine capability based on input/output modalities
-						const getCapabilityDescription = () => {
-							if (!isSupported) return "Not supported";
-
-							// Map finetuning types to their corresponding modalities
-							const getModalityForFinetuning = (finetuningKey: string) => {
-								switch (finetuningKey) {
-									case "text":
-										return "text";
-									case "vision":
-										return "image";
-									case "predicted-outputs":
-										return "text"; // Predicted outputs is text-based
-									default:
-										return null;
-								}
-							};
-
-							const modality = getModalityForFinetuning(key);
-							if (!modality) return "Not supported";
-
-							const hasInput = model.capabilities.input.includes(
-								modality as any,
-							);
-							const hasOutput = model.capabilities.output.includes(
-								modality as any,
-							);
-
-							if (hasInput && hasOutput) return "Input and output";
-							if (hasInput) return "Input only";
-							if (hasOutput) return "Output only";
-							return "Not supported";
-						};
-
-						return (
-							<FeatureItem
-								key={key}
-								title={finetuning.name}
-								description={getCapabilityDescription()}
-								icon={StatsIcon}
-								disabled={!isSupported}
-							/>
 						);
 					})}
 				</FeaturesGrid>

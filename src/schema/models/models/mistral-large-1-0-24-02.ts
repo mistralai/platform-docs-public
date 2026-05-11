@@ -34,7 +34,7 @@ export default {
     input: ['text'],
     output: ['text'],
     features: [],
-    finetuning: [],
+
   },
   metadata: {deprecationDate: 'November 30, 2024', retirementDate: 'June 16, 2025', replacement: 'Mistral Large 3'},
   playground: '',

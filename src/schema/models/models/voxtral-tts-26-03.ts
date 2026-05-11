@@ -53,7 +53,7 @@ export default {
     input: ['text', 'audio'],
     output: ['audio'],
     features: ['tts'],
-    finetuning: [],
+
   },
   metadata: {},
   playground: 'https://console.mistral.ai/build/playground',

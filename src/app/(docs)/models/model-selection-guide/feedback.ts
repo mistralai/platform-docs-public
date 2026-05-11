@@ -98,7 +98,7 @@ export const feedbackData: QualitativeFeedbackItem[] = [
     },
     hashtags: ['#MachineLearning', '#MistralAI'],
     content:
-      "The fine-tuning capabilities are excellent. I've fine-tuned a model for our specific use case and the results exceeded expectations. The process is well-documented and the tools are intuitive.",
+      "The model selection tools helped us choose the right model for our specific use case, and the results exceeded expectations. The documentation is clear and the tools are intuitive.",
     date: '2024-06-18',
     comments: 31,
     likes: 167,

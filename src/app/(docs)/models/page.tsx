@@ -49,7 +49,7 @@ const EXPLORE_SECTIONS = [
   {
     title: 'Best practices',
     description:
-      'Prompt engineering, sampling parameter tuning, evaluation methods, and fine-tuning workflows.',
+      'Prompt engineering, sampling parameter tuning, and evaluation methods.',
     icon: StatsIcon,
     href: '/models/best-practices',
     color: PRODUCT_COLORS['models'],

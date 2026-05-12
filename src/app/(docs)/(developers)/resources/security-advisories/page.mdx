@@ -1,0 +1,66 @@
+---
+title: Security advisories
+sidebar_label: Security advisories
+description: Security advisories and remediation guidance for incidents affecting Mistral packages.
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Security advisories
+
+This page lists security advisories that may affect Mistral SDKs, packages, or developer tooling.
+
+<SectionTab as="h2" sectionId="tanstack-supply-chain-attack">TanStack supply chain attack affecting Mistral AI npm packages</SectionTab>
+
+**Status:** Under investigation  
+**Published:** May 12, 2026  
+**Impact:** Potential risk to systems that installed affected packages
+
+NPM and PyPi were compromised by a supply chain attack related to the **TanStack security incident**. An automated worm associated with the attack led to **compromised npm package versions being published**.
+
+Current investigation indicates that an affected developer device was involved. We have no indication that Mistral infrastructure was compromised.
+
+:::info
+The compromised versions were removed from npm. They were available only between May 11 at 22\:45 UTC and May 12 at 01\:53 UTC. **Previous and later versions are not affected by this advisory**.
+:::
+
+## Check whether you are affected
+
+You are affected if one of the package versions above was installed in any environment **during the exposure window** or is present in a lockfile, build artifact, container image, package cache, or deployment image.
+
+| Package | Affected versions |
+|---|---|
+| `@mistralai/mistralai` | `2.2.2`, `2.2.3`, `2.2.4` |
+| `@mistralai/mistralai-azure` | `1.7.1`, `1.7.2`, `1.7.3` |
+| `@mistralai/mistralai-gcp` | `1.7.1`, `1.7.2`, `1.7.3` |
+
+Check installed versions:
+
+```bash
+npm ls @mistralai/mistralai @mistralai/mistralai-azure @mistralai/mistralai-gcp
+```
+
+Check common JavaScript lockfiles:
+
+```bash
+grep -n -A 4 -B 2 -E '@mistralai/(mistralai|mistralai-azure|mistralai-gcp)|2\.2\.[2-4]|1\.7\.[1-3]' \
+  package-lock.json pnpm-lock.yaml yarn.lock 2>/dev/null
+```
+
+:::info
+You are not affected by this advisory if you did not install the affected package versions and they are not present in your lockfiles, build caches, deployment artifacts, or package mirrors.
+:::
+
+If the command finds an affected version, continue with the [remediation steps below](#remediate-affected-systems). If you use private package mirrors, caches, or container base images, check those copies too.
+
+## Remediate affected systems
+
+1. Stop using the affected package version immediately.
+2. Clean systems where one of this package has been installed and rotate all secrets accessible from these systems.
+3. Monitor connections to following C2 domain names:
+    - `api[.]masscan[.]cloud`
+    - `filev2[.]getsession[.]org`
+    - `git-tanstack[.]com`
+    - `seed1[.]getsession[.]org`
+  

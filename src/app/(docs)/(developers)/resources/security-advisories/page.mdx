@@ -25,7 +25,11 @@ Current investigation indicates that an affected developer device was involved. 
 The compromised npm packages were removed by the registry. They were available only between May 11 at 22\:45 UTC and May 12 at 01\:53 UTC. The compromised PyPi release `mistralai==2.4.6` was uploaded around May 12 at 00\:05 UTC and the project is currently quarantined on PyPi. **Previous versions are not affected by this advisory.**
 :::
 
-## Check whether you are affected
+Github security advisories:
+- PyPi: [GHSA-wx9m-wx4f-4cmg](https://github.com/mistralai/client-python/security/advisories/GHSA-wx9m-wx4f-4cmg)
+- npm: pending
+
+## Detection
 
 You are affected if one of the package versions below was installed in any environment **during the exposure window** or is present in a lockfile, build artifact, container image, package cache, or deployment image.
 
@@ -66,6 +70,15 @@ grep -n -E 'mistralai\b.*2\.4\.6' \
   requirements*.txt pyproject.toml uv.lock poetry.lock Pipfile Pipfile.lock 2>/dev/null
 ```
 
+The malicious code was injected into `src/mistralai/client/__init__.py` and runs at import time on Linux only. It downloads `https://83.142.209.194/transformers.pyz` to `/tmp/transformers.pyz` and executes it as a detached background process.
+
+Look for any of the following on Linux hosts that may have run `import mistralai` from version `2.4.6`:
+
+- File `/tmp/transformers.pyz`
+- Process started via `python /tmp/transformers.pyz`
+- Environment variable `MISTRAL_INIT=1`
+- Outbound connections to `83.142.209.194`
+
 :::info
 You are not affected by this advisory if you did not install the affected package versions and they are not present in your lockfiles, build caches, deployment artifacts, or package mirrors.
 :::
@@ -82,15 +95,3 @@ If the command finds an affected version, continue with the [remediation steps b
     - `git-tanstack[.]com`
     - `seed1[.]getsession[.]org`
     - `83[.]142[.]209[.]194` (PyPi payload host)
-
-### Indicators of compromise (PyPi `mistralai==2.4.6`)
-
-The malicious code was injected into `src/mistralai/client/__init__.py` and runs at import time on Linux only. It downloads `https://83.142.209.194/transformers.pyz` to `/tmp/transformers.pyz` and executes it as a detached background process.
-
-Look for any of the following on Linux hosts that may have run `import mistralai` from version `2.4.6`:
-
-- File `/tmp/transformers.pyz`
-- Process started via `python /tmp/transformers.pyz`
-- Environment variable `MISTRAL_INIT=1`
-- Outbound connections to `83.142.209.194`
-  

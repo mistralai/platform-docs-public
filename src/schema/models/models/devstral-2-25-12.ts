@@ -10,7 +10,7 @@ export default {
   class: 'Specialist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/devstral-2',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'devstral', backgroundColor: 'green' },
   weights: [
     {
@@ -52,7 +52,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {},
+  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'August 31, 2026', replacement: 'Mistral Medium 3.5'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;

@@ -516,7 +516,7 @@ function isDynamicRoute(path: string): boolean {
 }
 
 function shouldHideCategory(dirName: string): boolean {
-  const HIDDEN_DIRS = new Set(['model-cards']);
+  const HIDDEN_DIRS = new Set(['model-cards', 'vibe']);
   return HIDDEN_DIRS.has(dirName);
 }
 

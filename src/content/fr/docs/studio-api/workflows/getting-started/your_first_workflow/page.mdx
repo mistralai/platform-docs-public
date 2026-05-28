@@ -1,0 +1,204 @@
+---
+id: your-first-workflow
+title: Votre premier workflow
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Votre premier workflow
+
+Ce guide vous explique comment créer un workflow qui exécute une seule activité.
+
+<SectionTab as="h1" sectionId="prerequisites">
+  Prérequis
+</SectionTab>
+
+Pour suivre ce guide de démarrage, il vous faut :
+
+1. Un [compte Mistral](https://console.mistral.ai/).
+1. [Python](https://www.python.org/downloads/) 3.12 ou version ultérieure installé sur votre machine.
+1. [uv](https://docs.astral.sh/uv/getting-started/installation/) installé dans votre environnement (`uvx` est inclus avec `uv`).
+
+<SectionTab as="h1" sectionId="scaffold-your-project">
+  Initialisez votre projet
+</SectionTab>
+
+Lancez la commande `uvx` suivante dans votre terminal :
+
+```bash
+uvx mistralai-workflows-cli setup
+```
+
+Cela crée la structure d’un projet Python prêt à l’emploi, avec le SDK Workflows déjà configuré, un exemple minimal de workflow et des commandes utilitaires pour lancer votre worker et démarrer des exécutions.
+
+La commande vous invite à [générer une clé API Mistral dans la Console Mistral](https://console.mistral.ai/home?profile_dialog=api-keys).
+Suivez les instructions pour générer la clé API, puis fournissez-la à la commande quand demandé. Les clés API ne sont accessibles qu’une seule fois.
+
+Ouvrez le répertoire du projet dans votre IDE préféré. Le nom par défaut est `my-workflow`, mais il correspond à ce que vous avez renseigné lors de l’étape de configuration.
+
+<SectionTab as="h1" sectionId="step-1-define-your-workflow-and-worker">
+  Étape 1 : Définissez votre workflow et votre worker
+</SectionTab>
+
+Accédez à `src/workflows/hello.py` pour voir un exemple de workflow. Ce fichier contient le code suivant :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+"""Exemple minimal de workflow — modifiez ce fichier ou créez-en de nouveaux."""
+
+from pydantic import BaseModel
+
+import mistralai.workflows as workflows
+
+
+class HelloInput(BaseModel):
+    name: str = "World"
+
+
+@workflows.activity()
+async def greet(name: str) -> str:
+    """Une activité simple qui renvoie un message de bienvenue."""
+    return f"Hello, {name}! Welcome to Mistral Workflows."
+
+
+@workflows.workflow.define(
+    name="hello-world",
+    workflow_display_name="Hello World",
+    workflow_description="A minimal hello-world workflow.",
+)
+class HelloWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, input: HelloInput) -> str:
+        return await greet(input.name)
+
+```
+
+  </TabItem>
+</Tabs>
+Ce code définit un workflow Mistral qui reçoit un `name` en entrée et renvoie un message de bienvenue.
+
+Ouvrez `src/discover.py`. Concentrez-vous sur l’extrait suivant :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+await workflows.run_worker(discovered)
+```
+  </TabItem>
+</Tabs>
+
+Ce code découvre automatiquement tous les workflows dans le dossier `src/workflows`, puis les surveille grâce à la fonction `run_worker` de Mistral Workflows.
+
+<SectionTab
+  as="h1"
+  sectionId="step-2-run-your-worker-with-the-helloworld-workflow"
+>
+  Étape 2 : Démarrez votre worker avec le workflow `hello-world`
+</SectionTab>
+
+Depuis la racine de votre projet, lancez la commande suivante dans votre terminal pour démarrer le worker :
+
+```bash
+make start-worker
+```
+
+Cette commande démarre le worker, se connecte à l’API Mistral et enregistre votre workflow pour qu’il puisse attendre des tâches.
+Pour plus d’informations sur cette commande, consultez le `Makefile`.
+Pour voir le workflow en cours d’exécution, vous devez déclencher l’exécution via l’une des méthodes décrites à l’étape suivante.
+
+<SectionTab as="h1" sectionId="step-3-trigger-execution-of-your-workflow">
+  Étape 3 : Déclenchez l’exécution de votre workflow
+</SectionTab>
+
+Vous pouvez déclencher votre workflow via la Console Mistral, le SDK Python Mistral ou l’API Mistral.
+Le projet `my-workflow` inclut également une commande `Makefile` pour déclencher facilement l’exécution de workflows.
+
+<Tabs>
+  <TabItem value="console" label="Console">
+
+1. Ouvrez la [Console Mistral](https://console.mistral.ai/) et rendez-vous dans l’espace de travail où vous avez créé votre clé API.
+1. Cliquez sur **Workflows** dans la barre latérale.
+1. Sélectionnez **hello-world**.
+1. Lancez le workflow avec le bouton **Start Workflow** et l’entrée `{"name": <your_name>}`.
+1. Retrouvez votre exécution dans l’onglet **Executions**.
+1. Vérifiez la sortie du workflow :
+
+```
+{
+  "result": "Hello, <your_name>! Welcome to Mistral Workflows."
+}
+```
+
+  </TabItem>
+    <TabItem value="workflow-project-command" label="Makefile">
+
+1. Dans votre répertoire `my-workflow`, ouvrez une seconde fenêtre de terminal et lancez la commande suivante :
+```bash
+make execute workflow=hello-world input='{"name": "World"}'
+```
+
+1. Les logs du terminal affichent la sortie suivante :
+```console
+Result: {'result': 'Hello, World! Welcome to Mistral Workflows.'}
+```
+
+  </TabItem>
+  <TabItem value="python-sdk" label="python">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+execution = client.workflows.execute_workflow(
+    workflow_identifier="hello-world",
+    input={"name": "Alice"},
+)
+print(execution.model_dump_json(indent=2))
+```
+
+  </TabItem>
+  <TabItem value="api" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/hello-world/execute \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"name": "Alice"}}'
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "workflow_name": "hello-world",
+  "execution_id": "my-execution-id",
+  "root_execution_id": "my-execution-id",
+  "status": "RUNNING",
+  "start_time": "<timestamp>",
+  "end_time": null,
+  "result": null,
+  "parent_execution_id": null,
+  "total_duration_ms": null
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Une fois vos tests terminés, appuyez sur `Ctrl+C` pour arrêter le worker.
+
+<SectionTab as="h1" sectionId="getting-started-complete-next-steps">
+  Prochaines étapes
+</SectionTab>
+
+Vous avez créé et exécuté votre premier workflow.
+Pour explorer des modèles complets de bout en bout, consultez les [Exemples Cookbook](/studio-api/workflows/getting-started/cookbook_examples).
+Pour approfondir les concepts de workflow, lisez [Concepts fondamentaux – Workflows](/studio-api/workflows/getting-started/core_concepts/workflows).
+Pour les schémas d’évolution et l’exécution simultanée de plusieurs workers, consultez [Concepts fondamentaux – Monter en charge avec plusieurs workers](/studio-api/workflows/getting-started/core_concepts/deployments#scaling).

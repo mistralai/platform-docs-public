@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation.client';
 import { BreadcrumbHome, BreadcrumbItem } from '@/components/layout/breadcrumb';
-import { ApiSidebarItem } from '@/app/(api)/schema/api-sidebar';
+import { ApiSidebarItem } from '@/app/[locale]/(api)/schema/api-sidebar';
 import { getHrefSlugs } from '@/lib/urls';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';

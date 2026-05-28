@@ -14,12 +14,3 @@ export const formateDateMonthYear = (dateString: string): string => {
   });
 };
 
-export function formatDateNotice(dateString: string): string {
-  // expected: 30-11-2024
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'numeric',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}

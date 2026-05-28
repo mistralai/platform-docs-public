@@ -1,0 +1,42 @@
+import { SectionTab } from '@/components/layout/section-tab';
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/kqNtOlSOJIE?si=xQOhIXukTFZhV3xq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+La vidéo présente le comportement de Tak. Lorsqu'un utilisateur saisit une requête, Tak utilise les connaissances du LLM, un outil de recherche web et un outil de récupération d'actualités pour générer la réponse la plus pertinente à la requête de l'utilisateur. Son comportement dépend du type de requête formulée par l'utilisateur.
+
+<SectionTab variant="secondary" sectionId="phospho-description">Description</SectionTab>
+
+[Tak est une application de recherche internet B2C](https://tak.phospho.ai/) propulsée par Mistral Large et d'autres modèles avec RAG et Function Calling.
+
+Afin de fournir la réponse la plus pertinente à la requête de l'utilisateur, plusieurs appels de fonction sont effectués pour catégoriser la demande (voir le diagramme ci-dessous). Les multiples agents étant chaînés, il est crucial de garantir des sorties formatées de manière cohérente.
+
+![Performance Metrics](/img/stories/tak_architecture_diagram.png)
+
+<SectionTab variant="secondary" sectionId="phospho-company-description">Description de l'entreprise</SectionTab>
+
+Chez phospho, nous avons développé le chatbot Tak comme un terrain d'expérimentation pour tester de nouvelles fonctionnalités phospho et démontrer la puissance de l'analytique phospho. L'avantage est que vous pouvez utiliser les données enregistrées dans phospho pour affiner les modèles LLM.
+Nous sommes [phospho](https://phospho.ai/), une plateforme d'analytique textuelle open source pour les applications LLM. Des entreprises de toutes tailles utilisent phospho pour comprendre ce que les utilisateurs font avec leur application LLM et comment l'application performe au niveau produit.
+
+<SectionTab variant="secondary" sectionId="phospho-data">Données</SectionTab>
+
+Nous avons utilisé un jeu de données de requêtes utilisateur dans Tak et les appels de fonction GPT-4-turbo correspondants, collectés et filtrés via la plateforme phospho. Nous avons ensuite divisé le jeu de données en un ensemble d'_entraînement_ (70 %), un ensemble d'_évaluation_ (15 %) et un ensemble de test (15 %).
+
+Pour déterminer la durée d'entraînement optimale, nous avons suivi la règle empirique selon laquelle chaque token doit être vu trois fois (dans notre cas, 150 étapes d'entraînement, soit environ 10 minutes).
+
+Pour le taux d'apprentissage, nous avons utilisé le taux d'apprentissage suggéré de 6e-5.
+
+<SectionTab variant="secondary" sectionId="phospho-eval">Évaluation</SectionTab>
+
+Pour évaluer notre modèle affiné, nous exécutons l'inférence sur l'ensemble de test de notre jeu de données, puis utilisons des métriques de classification binaire (Exactitude, Rappel, Score F1). Nous testons si nous avons pu aligner le comportement de Mistral 7b sur le comportement de classification d'OpenAI GPT-4-turbo, tout en maintenant la sortie structurée attendue. En effet, nous avons supprimé le function calling.
+
+![Performance Metrics](/img/stories/performance_metrics.png)
+
+L'affinage a permis à Mistral 7B d'égaler le modèle de référence, **augmentant le score F1 de 20 % à 78 %**. Sans affinage, Mistral 7B atteignait 87 % d'exactitude et 20 % de rappel sur notre tâche de classification. Avec le modèle affiné, nous avons atteint 96 % d'exactitude et 90 % de rappel.
+
+Comme nous avons affiné le modèle pour qu'il ne réponde qu'avec `news_related` ou `not_news_related`, nous n'avons plus besoin d'utiliser le function calling. Cela a conduit à une **diminution de 34 % du nombre de tokens utilisés** en excluant la requête utilisateur, ce qui réduit encore les coûts.
+
+<SectionTab variant="secondary" sectionId="phospho-conclusion">Conclusion</SectionTab>
+
+En conclusion, en combinant la collecte et l'étiquetage de données phospho avec les services d'affinage de Mistral, nous avons considérablement amélioré notre capacité à fournir des réponses précises et pertinentes aux requêtes utilisateur tout en réduisant les coûts. Nous avons aligné avec succès le comportement de Mistral 7B sur celui de GPT-4-turbo. Ce processus d'affinage garantit non seulement un formatage de sortie cohérent, mais réduit également les coûts opérationnels en minimisant l'utilisation de tokens.
+
+Si vous souhaitez également améliorer votre agent RAG, nous vous encourageons à essayer l'affinage avec Mistral en utilisant les données collectées et étiquetées avec phospho. Cela peut conduire à une amélioration significative de votre expérience utilisateur.

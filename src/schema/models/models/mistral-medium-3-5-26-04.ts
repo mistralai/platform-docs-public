@@ -1,11 +1,13 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Medium 3.5',
-  description: `Our frontier-class multimodal model optimized for agentic and coding use cases. Releases as open weights under a Modified MIT license.`,
-  shortDescription: `Our frontier-class multimodal model optimized for agentic and coding use cases.`,
+  describe: (l) => ({
+    description: l.text(`Our frontier-class multimodal model optimized for agentic and coding use cases. Released as open weights under a Modified MIT license.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our frontier-class multimodal model optimized for agentic and coding use cases.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-medium-3-5-26-04',
-  releaseDate: 'April 2026',
-  version: '3.5',
+  releaseDate: '2026-04-28',
+  version: '26.04',
   frontier: true,
   class: 'Generalist',
   type: 'Open',
@@ -33,17 +35,20 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: {
-    speed: { stars: 2.0, label: 'Slow' },
-    performance: { stars: 4.5, label: 'Exceptional' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 2.0,
+    performance: 4.5,
+    input: 4.0,
+    output: 2.0,
+  },
   pricing: {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 1.5, denominator: '/M Tokens' }
+      { type: 'range', price: 1.5, denominator: '/M Tokens' },
     ],
     output: [
-      { type: 'range', price: 7.5, denominator: '/M Tokens' }
-    ]
+      { type: 'range', price: 7.5, denominator: '/M Tokens' },
+    ],
   },
   identifiers: { apiNames: ['mistral-medium-3-5', 'mistral-medium-3'] },
   capabilities: {

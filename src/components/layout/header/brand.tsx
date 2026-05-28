@@ -11,6 +11,7 @@ import {
 import { BASE_URL, MISTRAL_BRAND_GUIDELINES_URL, MISTRAL_URL } from '@/lib/constants';
 import { useCopyButton } from '@/components/ui/copy-button';
 import { Slottable } from '@radix-ui/react-slot';
+import { useLingo } from '@lingo.dev/react';
 
 const BrandContextMenuItem = ({
   children,
@@ -35,6 +36,7 @@ export const BrandContextMenu = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const l = useLingo();
   const { handleCopy } = useCopyButton({
     value: copyLogo.trim(),
     preventDefault: false,
@@ -54,17 +56,21 @@ export const BrandContextMenu = ({
       </ContextMenuTrigger>
       <ContextMenuContent className="z-110">
         <BrandContextMenuItem icon={<MistralIso />} onClick={handleCopy}>
-          Copy Logo as SVG
+          {l.text('Copy Logo as SVG', { context: 'Right-click menu item on the Mistral logo that copies the SVG source to the clipboard' })}
         </BrandContextMenuItem>
-        <BrandContextMenuItem asChild icon={<Download />}>
-          <a
-            href={logoUrl.toString()}
-            target="_blank"
-            rel="noopener noreferrer"
-            download
-          >
-            Download Logo as SVG
-          </a>
+        <BrandContextMenuItem
+          icon={<Download />}
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = logoUrl.toString();
+            a.download = 'm-rainbow.svg';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          {l.text('Download Logo as SVG', { context: 'Right-click menu item on the Mistral logo that downloads the SVG file' })}
         </BrandContextMenuItem>
         <BrandContextMenuItem
           icon={<Pen />}
@@ -72,7 +78,7 @@ export const BrandContextMenu = ({
             window.location.href = MISTRAL_BRAND_GUIDELINES_URL.toString();
           }}
         >
-          Brand Guidelines
+          {l.text('Brand Guidelines', { context: 'Menu item linking to brand guidelines' })}
         </BrandContextMenuItem>
         <BrandContextMenuItem
           icon={<Home />}
@@ -80,7 +86,7 @@ export const BrandContextMenu = ({
             window.location.href = MISTRAL_URL.toString();
           }}
         >
-          Go to Homepage
+          {l.text('Go to Homepage', { context: 'Right-click menu item on the Mistral logo linking to mistral.ai' })}
         </BrandContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

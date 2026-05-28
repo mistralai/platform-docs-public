@@ -1,0 +1,189 @@
+---
+id: workflow-determinism
+title: Déterminisme
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Déterminisme des workflows
+
+Les workflows doivent être **déterministes** : à entrées égales, ils doivent toujours produire la même séquence de commandes. C’est fondamental pour le mécanisme de relecture :
+lorsqu’un worker redémarre ou qu’un workflow est restauré, le système réexécute le code du workflow depuis le début, en comparant chaque commande à l’historique des événements enregistré.
+Si le code produit des commandes différentes lors de la relecture, le workflow échoue avec une erreur de non-déterminisme.
+
+:::note
+Le déterminisme est **appliqué par défaut**. Le code du workflow s’exécute dans un bac à sable qui intercepte les appels non déterministes et lève des erreurs à l’exécution. Vous pouvez le désactiver au cas par cas avec `enforce_determinism=False` ou au niveau du worker avec `DEFAULT_ENFORCE_DETERMINISM=0`. Voir [Application du Déterminisme](#determinism-enforcement-sandbox) ci-dessous pour plus de détails.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="correct-use-deterministic-apis">Correct : Utilisez les APIs déterministes</SectionTab>
+
+Utilisez toujours ces méthodes dans le code des workflows :
+
+```python
+from mistralai.workflows import workflow
+
+# Utiliser workflow.now() pour l’heure actuelle
+current_time = workflow.now()
+
+# Utiliser workflow.uuid4() pour générer un UUID
+request_id = workflow.uuid4()
+
+# Utiliser workflow.random() pour des valeurs aléatoires
+random_value = workflow.random()
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="dangerous-standard-library-equivalents">Attention : Équivalents de la bibliothèque standard</SectionTab>
+
+N’utilisez pas directement ces méthodes dans le code des workflows :
+
+```python
+# Dangereux — préférez workflow.now()
+from datetime import datetime
+current_time = datetime.now()
+
+# Dangereux — préférez workflow.uuid4()
+import uuid
+request_id = uuid.uuid4()
+
+# Dangereux — préférez workflow.random()
+import random
+rand_val = random.random()
+```
+
+Également risqué dans les workflows :
+- Accès au système de fichiers (`open()`, `os.listdir()`, etc.)
+- Appels HTTP ou requêtes base de données directs
+- Modification de variables globales
+- Appels système (`os.environ`, `os.getcwd()`, etc.)
+
+<SectionTab as="h2" variant="secondary" sectionId="move-non-deterministic-work-to-activities">Déplacez les opérations non déterministes dans des activités</SectionTab>
+
+Pour les opérations comme les appels API externes, les requêtes base de données ou l’accès aux fichiers, utilisez des activités :
+
+```python
+from mistralai.workflows import workflow
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def fetch_external_data(params: DataParams) -> ExternalData:
+    # Autorisé — les activités ne sont pas rejouées
+    response = await http_client.get(params.url)
+    timestamp = datetime.now()  # OK dans les activités
+    return ExternalData(data=response.json(), fetched_at=timestamp)
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, params: MyParams) -> MyResult:
+        # Correct — le travail non déterministe est fait dans une activité
+        data = await fetch_external_data(params)
+        return MyResult(data=data)
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="determinism-enforcement-sandbox">Application du déterminisme (bac à sable)</SectionTab>
+
+Lorsque l’application du déterminisme est activée, le code de votre workflow s’exécute dans un bac à sable. Le bac à sable :
+
+- **Réimporte les modules** dans un environnement isolé afin de contenir tout effet de bord au niveau de l’import
+- **Intercepte les appels dangereux à la bibliothèque standard** tels que `datetime.now()`, `random.random()`,
+  `uuid.uuid4()`, `open()`, `os.environ` et autres opérations non déterministes
+- **Restreint la boucle événementielle asyncio** pour empêcher le lancement incontrôlé de coroutines
+
+Si votre code tente d’exécuter une de ces opérations, le bac à sable lève une erreur à l’exécution
+plutôt que de laisser un bug de non-déterminisme apparaître lors de la relecture.
+
+:::info
+Si vous désactivez le bac à sable, le déterminisme devient votre responsabilité. Votre code plantera toujours à la relecture s’il n’est pas déterministe, mais vous n’aurez plus d’erreur immédiate.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="disabling-per-workflow">Désactiver au niveau du workflow</SectionTab>
+
+L’application du déterminisme est activée par défaut. Pour désactiver le bac à sable pour un workflow particulier, passez
+`enforce_determinism=False` au décorateur `@workflow.define` :
+
+```python
+from mistralai.workflows import workflow
+
+@workflow.define(name="my_workflow", enforce_determinism=False)
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, input: str) -> str:
+        # Ce code s’exécute SANS bac à sable.
+        # Vous êtes responsable du déterminisme.
+        return f"Processed: {input}"
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="disabling-worker-wide">Désactiver au niveau du worker</SectionTab>
+
+Définissez la variable d’environnement `DEFAULT_ENFORCE_DETERMINISM` pour désactiver le bac à sable par défaut sur tous les workflows d’un worker :
+
+```bash
+DEFAULT_ENFORCE_DETERMINISM=0
+```
+
+Cela positionne `config.worker.default_enforce_determinism` à `False`.
+
+<SectionTab as="h3" variant="secondary" sectionId="precedence">Priorité</SectionTab>
+
+Le paramètre du décorateur a priorité sur la variable d’environnement :
+
+| `@workflow.define(enforce_determinism=...)` | `DEFAULT_ENFORCE_DETERMINISM` | Résultat |
+|---|---|---|
+| `True` | any | bac à sable |
+| `False` | any | **pas** de bac à sable |
+| non défini (par défaut) | `1` / `True` (par défaut) | bac à sable |
+| non défini (par défaut) | `0` / `False` | **pas** de bac à sable |
+
+<SectionTab as="h3" variant="secondary" sectionId="temporarily-bypassing-the-sandbox">Contourner temporairement le bac à sable</SectionTab>
+
+:::warning
+Ces failles de sécurité vont à l’encontre du principe d’application du déterminisme.
+N’y recourez que si vous comprenez parfaitement les risques et qu’il n’existe aucune alternative.
+:::
+
+Lorsque l’application du déterminisme est activée, il peut arriver que vous ayez besoin d’effectuer une opération bloquée par le bac à sable, par exemple importer un module qui provoque des effets de bord à l’import, ou effectuer une lecture ponctuelle dont vous savez qu’elle est sûre.
+
+Le SDK expose deux gestionnaires de contexte sous `workflow.unsafe` :
+
+**`workflow.unsafe.imports_passed_through()`** — Permet aux imports effectués dans le contexte de contourner la réimportation des modules par le bac à sable.
+Utilisez-le si une bibliothèque tierce exécute des effets de bord à l’import qui posent problème avec le bac à sable.
+
+```python
+from mistralai.workflows import workflow
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, input: str) -> str:
+        with workflow.unsafe.imports_passed_through():
+            import some_problematic_library
+        # Utilisez la bibliothèque normalement après l’import
+        return some_problematic_library.process(input)
+```
+
+**`workflow.unsafe.skip_determinism_enforcement()`** — Désactive temporairement toutes les restrictions du bac à sable à l’intérieur du contexte.
+Le code dans ce bloc s’exécute comme si `enforce_determinism=False`.
+
+```python
+from mistralai.workflows import workflow
+
+@workflow.define(name="my_workflow")
+class MyWorkflow:
+    @workflow.entrypoint
+    async def run(self, input: str) -> str:
+        with workflow.unsafe.skip_determinism_enforcement():
+            # Les restrictions du bac à sable sont levées ici.
+            # Vous êtes responsable du déterminisme.
+            import os
+            value = os.environ.get("SOME_CONFIG", "default")
+        return f"Processed: {input} with {value}"
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="recommendations">Recommandations</SectionTab>
+
+1. **Gardez l’application du déterminisme activée.** Elle est active par défaut. Détecter
+   les problèmes de non-déterminisme en développement coûte bien moins cher que de déboguer des échecs de relecture en production. Ne la désactivez que temporairement lors de la migration de workflows existants.
+2. **Migrez vos workflows existants progressivement.** Si certains workflows ne respectent pas encore ce principe, mettez `enforce_determinism=False` sur ces workflows le temps de les corriger. Évitez de désactiver l’application au niveau du worker.
+3. **Limitez la taille des blocs unsafe et documentez-les.** Si vous devez contourner le bac à sable, isolez la portion de code minimale et ajoutez un commentaire explicatif.
+4. **Externalisez tous les effets de bord dans des activités.** La meilleure solution pour éviter les problèmes avec le bac à sable reste de garder le code de workflow purement orienteur. Toute I/O, appel réseau ou opération non déterministe doit aller dans une activité.

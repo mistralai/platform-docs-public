@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Ministral 3 8B',
-  description: `Ministral 3 8B is a powerful and efficient model in the Ministral 3 family, offering best-in-class text and vision capabilities. Built for edge deployment, it delivers high performance across diverse hardware, including local setups.`,
-  shortDescription: `A powerful and efficient model offering best-in-class text and vision capabilities. `,
+  describe: (l) => ({
+    description: l.text(`Ministral 3 8B is a powerful and efficient model in the Ministral 3 family, offering best-in-class text and vision capabilities. Built for edge deployment, it delivers high performance across diverse hardware, including local setups.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A powerful and efficient model offering best-in-class text and vision capabilities. `, { context: 'Short description of an AI model' }),
+  }),
   slug: 'ministral-3-8b-25-12',
-  releaseDate: 'December 2, 2025',
+  releaseDate: '2025-12-02',
   version: '25.12',
   frontier: true,
   class: 'Generalist',
@@ -61,8 +63,8 @@ export default {
   paperlink: 'https://arxiv.org/abs/2601.08584',
   contextLength: '256k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 2.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

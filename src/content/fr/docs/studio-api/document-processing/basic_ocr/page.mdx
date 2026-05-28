@@ -1,0 +1,210 @@
+---
+id: basic_ocr
+title: OCR Processor
+slug: basic_ocr
+sidebar_position: 3.1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+import OCRWithImageURLTab from './ocr_with_image_url_tab/_page.mdx';
+import OCRWithImageBase64Tab from './ocr_with_image_base64_tab/_page.mdx';
+
+import OCRWithPDFUrlTab from './ocr_with_pdf_url_tab/_page.mdx';
+import OCRWithPDFBase64Tab from './ocr_with_pdf_base64_tab/_page.mdx';
+import OCRWithPDFUploadedTab from './ocr_with_pdf_uploaded_tab/_page.mdx';
+import OCRWithConfidenceScoresTab from './ocr_with_confidence_scores_tab/_page.mdx';
+
+# Document AI - Processeur OCR
+
+L'API Mistral Document AI intègre un processeur OCR (reconnaissance optique de caractères), propulsé par notre dernier modèle OCR `mistral-ocr-latest`, qui vous permet d'extraire du texte et du contenu structuré à partir de documents PDF.
+
+<Image
+  url={['/img/basic_ocr_graph.png', '/img/basic_ocr_graph_dark.png']}
+  alt="Graphique OCR de base"
+  width="600px"
+  centered
+/>
+
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
+
+### Fonctionnalités principales
+
+- **Extrait le texte** du contenu tout en préservant la structure et la hiérarchie du document.
+- Préserve la mise en forme comme les en-têtes, paragraphes, listes et tableaux.
+  - **Le formatage des tableaux** peut basculer entre `null`, `markdown` et `html` via le paramètre `table_format`.
+    - `null` : les tableaux sont retournés en ligne sous forme de markdown dans la page extraite.
+    - `markdown` : les tableaux sont retournés séparément sous forme de tableaux markdown.
+    - `html` : les tableaux sont retournés séparément sous forme de tableaux html.
+- Option pour **extraire les en-têtes et pieds de page** via les paramètres `extract_header` et `extract_footer`. Lorsqu'ils sont utilisés, le contenu des en-têtes et pieds de page sera fourni dans les champs `header` et `footer`. Par défaut, les en-têtes et pieds de page sont considérés comme faisant partie du contenu principal.
+- Retourne les résultats au format markdown pour une analyse et un rendu faciles.
+- Gère les mises en page complexes incluant le texte en plusieurs colonnes et le contenu mixte, et retourne les hyperliens lorsqu'ils sont disponibles.
+- Fournit des **scores de confiance** pour le contenu extrait au niveau du mot ou de la page via le paramètre `confidence_scores_granularity`.
+- Traite les documents à grande échelle avec une grande précision.
+- Prend en charge plusieurs formats de documents, notamment :
+    - `image_url` : png, jpeg/jpg, avif et plus encore...
+    - `document_url` : pdf, pptx, docx et plus encore...
+    - Pour une liste plus complète (non exhaustive), consultez notre [FAQ](#faq).
+
+Découvrez-en plus sur notre API [ici](https://docs.mistral.ai/api/endpoint/ocr).
+
+:::info
+Le formatage des tableaux ainsi que l'extraction des en-têtes et pieds de page ne sont disponibles qu'avec OCR 2512 ou versions ultérieures.
+:::
+
+Le processeur OCR retourne le **contenu textuel** extrait, les **bboxes des images** et les métadonnées concernant la structure du document, facilitant ainsi le travail programmatique avec le contenu reconnu.
+
+<SectionTab as="h1" sectionId="ocr-images-and-pdfs">OCR avec images et PDF</SectionTab>
+
+### OCR de vos documents
+
+Nous proposons différentes méthodes pour effectuer l'OCR de vos documents. Vous pouvez traiter un **PDF** ou une **image**.
+
+<SectionTab as="h2" variant="secondary" sectionId="ocr-pdfs">PDF</SectionTab>
+
+Parmi les méthodes PDF, vous pouvez utiliser une **URL publiquement accessible**, un **PDF encodé en base64** ou **télécharger un PDF dans notre Cloud**.
+
+<ExplorerTabs id="pdfs">
+    <ExplorerTab value="pdf-url" label="OCR avec une URL de PDF">
+        <OCRWithPDFUrlTab/>
+    </ExplorerTab>
+    <ExplorerTab value="base64-encoded-pdf" label="OCR avec un PDF encodé en Base64">
+        <OCRWithPDFBase64Tab/>
+    </ExplorerTab>
+    <ExplorerTab value="with-uploaded-pdf" label="OCR avec un PDF téléchargé">
+        <OCRWithPDFUploadedTab/>
+    </ExplorerTab>
+</ExplorerTabs>
+
+Le résultat sera un objet JSON contenant le contenu textuel extrait, les bboxes des images, les métadonnées et d'autres informations sur la structure du document.
+
+```py
+{
+  "pages": [ # Le contenu de chaque page
+    {
+      "index": int, # L'index de la page correspondante
+      "markdown": str, # Le résultat principal et le contenu markdown brut
+      "images": list, # Informations sur les images lorsque celles-ci sont extraites
+      "tables": list, # Informations sur les tableaux lors de l'utilisation de `table_format=html` ou `table_format=markdown`
+      "hyperlinks": list, # Hyperliens détectés
+      "header": str|null, # Contenu de l'en-tête lors de l'utilisation de `extract_header=True`
+      "footer": str|null, # Contenu du pied de page lors de l'utilisation de `extract_footer=True`
+      "dimensions": dict, # Les dimensions de la page
+      "confidence_scores": dict|null # Scores de confiance lorsque `confidence_scores_granularity` est défini (contient `average_page_confidence_score`, `minimum_page_confidence_score` et `word_confidence_scores` pour la granularité au niveau du mot)
+    }
+  ],
+  "model": str, # Le modèle utilisé pour l'OCR
+  "document_annotation": dict|null, # Informations d'annotation du document lorsqu'utilisées, consultez la documentation Annotations pour plus d'informations
+  "usage_info": dict # Informations d'utilisation
+}
+```
+
+:::note
+Lors de l'extraction d'images et de tableaux, ceux-ci seront remplacés par des balises de remplacement, telles que :
+- `![img-0.jpeg](img-0.jpeg)`
+- `[tbl-3.html](tbl-3.html)`
+
+Vous pouvez les associer aux images et tableaux réels en utilisant les champs `images` et `tables`.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="ocr-images">Images</SectionTab>
+
+Pour effectuer l'OCR sur une image, vous pouvez soit transmettre une URL vers l'image, soit utiliser directement une image encodée en Base64.
+
+<ExplorerTabs id="images">
+    <ExplorerTab value="with-image-url" label="OCR avec une URL d'image">
+        <OCRWithImageURLTab/>
+    </ExplorerTab>
+    <ExplorerTab value="with-image-base64" label="OCR avec une image encodée en Base64">
+        <OCRWithImageBase64Tab/>
+    </ExplorerTab>
+</ExplorerTabs>
+
+Le résultat sera un objet JSON contenant le contenu textuel extrait, les bboxes des images, les métadonnées et d'autres informations sur la structure du document.
+
+```py
+{
+  "pages": [ # Le contenu de chaque page
+    {
+      "index": int, # L'index de la page correspondante
+      "markdown": str, # Le résultat principal et le contenu markdown brut
+      "images": list, # Informations sur les images lorsque celles-ci sont extraites
+      "tables": list, # Informations sur les tableaux lors de l'utilisation de `table_format=html` ou `table_format=markdown`
+      "hyperlinks": list, # Hyperliens détectés
+      "header": str|null, # Contenu de l'en-tête lors de l'utilisation de `extract_header=True`
+      "footer": str|null, # Contenu du pied de page lors de l'utilisation de `extract_footer=True`
+      "dimensions": dict, # Les dimensions de la page
+      "confidence_scores": dict|null # Scores de confiance lorsque `confidence_scores_granularity` est défini (contient `average_page_confidence_score`, `minimum_page_confidence_score` et `word_confidence_scores` pour la granularité au niveau du mot)
+    }
+  ],
+  "model": str, # Le modèle utilisé pour l'OCR
+  "document_annotation": dict|null, # Informations d'annotation du document lorsqu'utilisées, consultez la documentation Annotations pour plus d'informations
+  "usage_info": dict # Informations d'utilisation
+}
+```
+
+:::note
+Lors de l'extraction d'images et de tableaux, ceux-ci seront remplacés par des balises de remplacement, telles que :
+- `![img-0.jpeg](img-0.jpeg)`
+- `[tbl-3.html](tbl-3.html)`
+
+Vous pouvez les associer aux images et tableaux réels en utilisant les champs `images` et `tables`.
+:::
+
+<SectionTab as="h1" sectionId="confidence-scores">Scores de confiance</SectionTab>
+
+### Extraire les scores de confiance
+
+Le processeur OCR peut renvoyer des scores de confiance pour le contenu extrait afin de vous aider à évaluer la qualité de la reconnaissance. Utilisez le paramètre `confidence_scores_granularity` pour contrôler le niveau de détail :
+
+| Valeur | Description |
+| --- | --- |
+| `"page"` | Renvoie un objet `confidence_scores` sur chaque page avec des statistiques agrégées (`average_page_confidence_score`, `minimum_page_confidence_score`). |
+| `"word"` | Renvoie tout ce que renvoie `"page"`, plus un tableau `word_confidence_scores` avec les valeurs de confiance par mot sur chaque page et chaque entrée de tableau. |
+
+<ExplorerTabs id="confidence-scores">
+  <ExplorerTab value="confidence-scores-example" label="Scores de confiance">
+    <OCRWithConfidenceScoresTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="ocr-at-scale">OCR à grande échelle</SectionTab>
+
+Lorsque vous effectuez de l'OCR à grande échelle, nous recommandons d'utiliser notre [service d'inférence par lots](/studio-api/batch-processing), qui vous permet de traiter de grandes quantités de documents en parallèle tout en étant plus économique que l'utilisation directe de l'API OCR. Nous prenons également en charge les [Annotations](annotations) pour les sorties structurées et d'autres fonctionnalités.
+
+<SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
+
+Pour plus d'informations et de guides sur l'utilisation de l'OCR, nous avons les cookbooks suivants :
+- [Utilisation des outils](/resources/cookbooks/mistral-ocr-tool_usage)
+- [OCR par lots](/resources/cookbooks/mistral-ocr-batch_ocr)
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Existe-t-il des limites concernant l'API OCR ?">
+    Oui, il existe certaines limitations pour l'API OCR. Les fichiers de documents téléchargés ne doivent pas dépasser 50 Mo et ne doivent pas compter plus de 1 000 pages.
+  </FaqItem>
+  <FaqItem question="Quels types de documents sont pris en charge ?">
+Notre processeur OCR Document AI prend en charge une vaste gamme de types de documents et d'images. Vous trouverez ci-dessous une liste non exhaustive des formats pris en charge :
+| Documents                          | Images               |
+|------------------------------------|----------------------|
+| **PDF** (.pdf)                     | **JPEG** (.jpg, .jpeg)|
+| **Documents Word** (.docx, .doc)   | **PNG** (.png)       |
+| **PowerPoint** (.pptx, .ppt)       | **AVIF** (.avif)     |
+| **Excel** (.xlsx, .csv)                | **TIFF** (.tiff)     |
+| **Fichiers texte** (.txt)              | **GIF** (.gif)       |
+| **EPUB** (.epub)                   | **HEIC/HEIF** (.heic, .heif)|
+| **XML/DocBook** (.xml)             | **BMP** (.bmp)       |
+| **RTF** (.rtf)                     | **WebP** (.webp)     |
+| **OpenDocument Text** (.odt)       |                      |
+| **BibTeX/BibLaTeX** (.bib)         |                      |
+| **FictionBook** (.fb2)             |                      |
+| **Jupyter Notebooks** (.ipynb)     |                      |
+| **JATS XML** (.xml)                |                      |
+| **LaTeX** (.tex)                   |                      |
+| **OPML** (.opml)                   |                      |
+| **Troff** (.1, .man)               |                      |
+  </FaqItem>
+</Faq>

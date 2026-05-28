@@ -29,7 +29,7 @@ pnpm check-links:only
 
 ### CI check (`.github/workflows/check-links.yml`)
 
-Runs on every PR and push to `main` that touches `src/app/(docs)/` or `.lychee.toml`. It scans `.md` and `.mdx` source files directly (no build needed) using the [lychee GitHub Action](https://github.com/lycheeverse/lychee-action).
+Runs on every PR and push to `main` that touches `src/content/` or `.lychee.toml`. It scans `.md` and `.mdx` source files directly (no build needed) using the [lychee GitHub Action](https://github.com/lycheeverse/lychee-action).
 
 The CI check uses a response cache (`.lycheecache`, 1-day TTL) to avoid hammering external sites on every run.
 
@@ -52,7 +52,7 @@ The CI workflow uses the `lycheeverse/lychee-action` GitHub Action, so no instal
 
 Used by the GitHub Actions workflow. Key settings:
 
-- **`exclude_path`** — skips `src/app/(api)` (auto-generated API docs from OpenAPI spec)
+- **`exclude_path`** — skips `src/content/en/api` (auto-generated API docs from OpenAPI spec)
 - **`exclude`** — URL patterns to skip:
   - `docs.mistral.ai` — internal links are checked by the local build, not by CI
   - Mistral services (`api.mistral.ai`, `console.mistral.ai`, etc.) — require auth

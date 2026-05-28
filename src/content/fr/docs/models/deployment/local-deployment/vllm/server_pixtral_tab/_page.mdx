@@ -1,0 +1,64 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Démarrez le serveur d'inférence pour déployer votre modèle, par exemple pour Pixtral-12B :
+```bash
+vllm serve mistralai/Pixtral-12B-2409 \
+    --tokenizer_mode mistral \
+    --config_format mistral \
+    --load_format mistral
+```
+:::info
+- Le nombre par défaut d'entrées image par prompt est défini à 1. Pour l'augmenter, définissez l'option `--limit_mm_per_prompt` (par exemple, `--limit_mm_per_prompt 'image=4'`).
+- Si vous rencontrez des problèmes de mémoire, définissez l'option `--max_model_len` pour réduire les besoins en mémoire de vLLM (par exemple, `--max_model_len 16384`). Plus de détails de dépannage sont disponibles dans la [documentation vLLM](https://qwen.readthedocs.io/en/latest/deployment/vllm.html#troubleshooting).
+:::
+Vous pouvez maintenant exécuter des requêtes d'inférence avec des entrées image et texte. Supposons que vous souhaitiez légender l'image suivante :
+<center>
+    <a href="https://picsum.photos/id/237/512/512"><img alt="" src="/img/doggo.png" width="20%"/></a>
+</center>
+<br/>
+Vous pouvez interroger le modèle et récupérer sa réponse ainsi :
+<Tabs>
+    <TabItem value="vllm-infer-pixtral-curl" label="cURL">
+        ```bash
+        curl --location 'http://localhost:8000/v1/chat/completions' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer token' \
+            --data '{
+                "model": "mistralai/Pixtral-12B-2409",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Describe this image in a short sentence."},
+                            {"type": "image_url", "image_url": {"url": "https://picsum.photos/id/237/200/300"}},
+                        ]
+                    }
+                ]
+            }'
+        ```
+    </TabItem>
+    <TabItem value="vllm-infer-pixtral-python" label="Python">
+        ```python
+        import httpx
+        url = "http://localhost:8000/v1/chat/completions"
+        headers = {"Content-Type": "application/json", "Authorization": "Bearer token"}
+        data = {
+            "model": "mistralai/Pixtral-12B-2409",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Describe this image in a short sentence."},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://picsum.photos/id/237/200/300"},
+                        },
+                    ],
+                }
+            ],
+        }
+        response = httpx.post(url, headers=headers, json=data)
+        print(response.json())
+        ```
+    </TabItem>
+</Tabs>

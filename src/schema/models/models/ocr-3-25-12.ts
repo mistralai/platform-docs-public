@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'OCR 3',
-  description: `Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`,
-  shortDescription: `Our OCR service powering our Document AI stack.`,
+  describe: (l) => ({
+    description: l.text(`Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our OCR service powering our Document AI stack.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'ocr-3-25-12',
-  releaseDate: 'December 18, 2025',
+  releaseDate: '2025-12-18',
   version: '25.12',
   frontier: true,
   class: 'Specialist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: null,
   ratings: { 
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 4.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

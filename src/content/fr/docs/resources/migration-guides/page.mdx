@@ -1,0 +1,285 @@
+---
+title: Guides de migration
+sidebar_label: Guides de migration
+description: Migrez vers Mistral depuis OpenAI ou Llama auto-hébergé avec un minimum de modifications de code.
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Guides de migration
+
+Ces guides détaillent les modifications de code nécessaires pour passer d'un autre fournisseur à l'API Mistral. L'API Chat Completions de Mistral suit la même structure de requête qu'OpenAI, de sorte que la plupart des migrations impliquent de changer l'import du client, l'URL de base et le nom du modèle. Choisissez votre plateforme source ci-dessous pour voir les étapes exactes et un exemple de code fonctionnel.
+
+<ExplorerTabs id="migration-path">
+  <ExplorerTab value="from-openai" label="Depuis OpenAI">
+
+L'API Mistral suit la même structure Chat Completions que l'API OpenAI. Pour la plupart des applications, la migration nécessite de modifier trois éléments : l'import du client, l'appel d'initialisation et le nom du modèle.
+
+  </ExplorerTab>
+  <ExplorerTab value="from-llama" label="Depuis Llama auto-hébergé">
+
+Si vous exécutez des modèles Llama sur votre propre infrastructure, passer aux modèles Mistral implique deux points d'attention : le tokenizer et le format de prompt.
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" sectionId="migrate-from-openai">Migrer depuis OpenAI</SectionTab>
+
+### Mettre à jour le client
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+**Avant (OpenAI) :**
+
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="sk-...")
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+**Après (Mistral) :**
+
+```python
+from mistralai import Mistral
+
+client = Mistral(api_key="your_mistral_api_key")
+response = client.chat.complete(
+    model="mistral-large-latest",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+**Avant (OpenAI) :**
+
+```typescript
+import OpenAI from 'openai';
+
+const client = new OpenAI({ apiKey: 'sk-...' });
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+**Après (Mistral) :**
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const client = new Mistral({ apiKey: 'your_mistral_api_key' });
+const response = await client.chat.complete({
+  model: 'mistral-large-latest',
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+  </TabItem>
+</Tabs>
+
+### Principales différences
+
+| | OpenAI | Mistral |
+| :--- | :--- | :--- |
+| Client Python | `openai.OpenAI` | `mistralai.Mistral` |
+| Méthode Chat | `client.chat.completions.create` | `client.chat.complete` |
+| Méthode Streaming | `client.chat.completions.create(stream=True)` | `client.chat.stream` |
+| URL de base | `https://api.openai.com/v1` | `https://api.mistral.ai/v1` |
+
+### Correspondance des noms de modèles
+
+| Modèle OpenAI | Équivalent Mistral |
+| :--- | :--- |
+| `gpt-4o` | `mistral-large-latest` |
+| `gpt-4o-mini` | `mistral-small-latest` |
+| `text-embedding-3-small` | `mistral-embed` |
+
+### Utiliser l'URL de base compatible OpenAI
+
+Si votre application utilise un client compatible OpenAI (LangChain, LlamaIndex ou toute autre bibliothèque tierce), pointez-la vers l'API Mistral en modifiant uniquement l'URL de base et le nom du modèle. Aucun changement de bibliothèque requis.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="your_mistral_api_key",
+    base_url="https://api.mistral.ai/v1",
+)
+
+response = client.chat.completions.create(
+    model="mistral-large-latest",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+<SectionTab as="h2" sectionId="migrate-from-llama">Migrer depuis Llama auto-hébergé</SectionTab>
+
+### Tokenizer
+
+Les modèles Mistral utilisent un tokenizer différent de celui de Llama. Si vous calculez manuellement le nombre de tokens ou gérez la tokenisation brute, mettez à jour vos outils.
+
+Installez le tokenizer officiel Mistral :
+
+```bash
+pip install mistral-common
+```
+
+Utilisez-le pour tokeniser du texte :
+
+```python
+from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+
+tokenizer = MistralTokenizer.v3()
+result = tokenizer.encode_chat_completion(
+    messages=[{"role": "user", "content": "Hello, world!"}]
+)
+print(result.tokens)
+```
+
+Les modèles Mistral sur Hugging Face sont également compatibles avec la bibliothèque `transformers`. Utilisez `apply_chat_template` pour gérer automatiquement le formatage.
+
+### Format de prompt
+
+:::warning
+Les modèles Mistral n'utilisent pas le format de prompt `[INST]` / `[/INST]` de Llama 2. Passer des chaînes brutes au format Llama 2 aux modèles Mistral produit une sortie dégradée. Mettez à jour vos templates de prompt avant de tester.
+:::
+
+Utilisez `apply_chat_template` pour formater correctement les prompts :
+
+```python
+from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3")
+messages = [{"role": "user", "content": "Hello"}]
+formatted = tokenizer.apply_chat_template(messages, tokenize=False)
+```
+
+### Sélection du modèle
+
+| Modèle Llama auto-hébergé | Équivalent Mistral |
+| :--- | :--- |
+| Llama 3 8B Instruct | Mistral 7B Instruct (open-weight) |
+| Llama 3 70B Instruct | Mixtral 8x22B Instruct (open-weight) |
+| N'importe quel modèle auto-hébergé | API : `mistral-large-latest` (géré) |
+
+Tous les modèles open-weight Mistral sont disponibles sur [Hugging Face](https://huggingface.co/mistralai) sous licence Mistral.
+
+<SectionTab as="h2" sectionId="migrate-python-sdk-v2">Migrer vers le SDK Python v2</SectionTab>
+
+La version 2.0.0 du SDK Python introduit un nombre limité de changements incompatibles. Toutes les autres API (chat, streaming, embeddings, agents, function calling, batch) restent inchangées.
+
+### Mettre à jour le package
+
+Le SDK V1 correspond à `mistralai<2` et la V2 à `mistralai>=2`. Exécutez :
+
+```bash
+pip install "mistralai>=2"
+```
+
+### Mettre à jour le chemin d'import
+
+**Avant (V1) :**
+
+```python
+from mistralai import Mistral
+```
+
+**Après (V2) :**
+
+```python
+from mistralai.client import Mistral
+```
+
+### Azure AI (si applicable)
+
+**Avant (V1) :**
+
+```python
+# pip install mistralai-azure>=1.0.0
+from mistralai_azure import MistralAzure
+
+client = MistralAzure(
+    azure_endpoint=os.environ["AZUREAI_ENDPOINT"],
+    azure_api_key=os.environ["AZUREAI_API_KEY"],
+)
+```
+
+**Après (V2) :**
+
+```python
+# pip install mistralai>=2.0.0
+from mistralai.azure.client import MistralAzure
+
+client = MistralAzure(
+    server_url=os.environ["AZUREAI_ENDPOINT"],
+    api_key=os.environ["AZUREAI_API_KEY"],
+)
+```
+
+### Google Cloud / Vertex AI (si applicable)
+
+**Avant (V1) :**
+
+```python
+# pip install mistralai[gcp]
+from mistralai_gcp import MistralGoogleCloud
+
+client = MistralGoogleCloud(
+    region=os.environ["GOOGLE_CLOUD_REGION"],
+    project_id=os.environ["GOOGLE_CLOUD_PROJECT_ID"],
+)
+```
+
+**Après (V2) :**
+
+```python
+# pip install mistralai>=2.0.0  (aucun package séparé nécessaire)
+from mistralai.gcp.client import MistralGCP
+
+# L'authentification est gérée automatiquement via google.auth.default()
+# La région par défaut est "europe-west4" ; remplacez si nécessaire :
+# client = MistralGCP(region="us-central1", project_id="my-project")
+client = MistralGCP()
+```
+
+### Résumé
+
+| Domaine | V1 | V2 |
+| :--- | :--- | :--- |
+| Package | `mistralai<2` | `mistralai>=2` |
+| Import principal | `from mistralai import Mistral` | `from mistralai.client import Mistral` |
+| Import Azure | `from mistralai_azure import MistralAzure` | `from mistralai.azure.client import MistralAzure` |
+| Constructeur Azure | `azure_endpoint=`, `azure_api_key=` | `server_url=`, `api_key=` |
+| Import GCP | `from mistralai_gcp import MistralGoogleCloud` | `from mistralai.gcp.client import MistralGCP` |
+| Authentification GCP | Variables d'environnement `GOOGLE_CLOUD_REGION` + `GOOGLE_CLOUD_PROJECT_ID` | automatique via `google.auth.default()` |
+| Toutes les autres API | — | inchangées |
+
+<SectionTab as="h2" sectionId="common-questions">Questions fréquentes</SectionTab>
+
+<Faq type="multiple">
+  <FaqItem question="Mon implémentation de streaming fonctionnera-t-elle sans modifications ?">
+
+Le format de réponse en streaming est identique, mais le nom de la méthode diffère. Dans le SDK Python, utilisez `client.chat.stream` au lieu de `client.chat.completions.create(stream=True)`. Les types d'événements et la structure delta sont les mêmes.
+
+  </FaqItem>
+  <FaqItem question="Mistral prend-il en charge le format de function calling OpenAI ?">
+
+Oui. Nous prenons en charge le même schéma de tool/function calling qu'OpenAI. Vos définitions d'outils existantes, paramètres tool_choice et messages de résultats d'outils devraient fonctionner sans modifications. Testez avec `mistral-large-latest`, qui offre la meilleure prise en charge du function calling.
+
+  </FaqItem>
+  <FaqItem question="Qu'en est-il du comportement du prompt système ?">
+
+Les modèles Mistral respectent les prompts système de la même manière que les modèles OpenAI. Transmettez-les comme premier message avec `role: "system"`. Le comportement est équivalent ; vous constaterez peut-être que des ajustements de prompt améliorent la qualité de sortie, mais ils ne sont pas requis pour une migration de base.
+
+  </FaqItem>
+</Faq>

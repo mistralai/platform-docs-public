@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Large 3',
-  description: `Mistral Large 3, is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 41B active parameters and 675B total parameters.`,
-  shortDescription: `A state-of-the-art, open-weight, general-purpose multimodal model.`,
+  describe: (l) => ({
+    description: l.text(`Mistral Large 3, is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 41B active parameters and 675B total parameters.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A state-of-the-art, open-weight, general-purpose multimodal model.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-large-3-25-12',
-  releaseDate: 'December 2, 2025',
+  releaseDate: '2025-12-02',
   version: '25.12',
   frontier: true,
   class: 'Generalist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: { 
-    speed: { stars: 2.0, label: 'Slow' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 2.0,
+    performance: 4.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

@@ -1,0 +1,466 @@
+---
+id: durable-agents
+title: Agents durables
+sidebar_position: 6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Agents durables
+
+Un agent durable est un agent LLM dont la boucle (appels au modèle, utilisation d'outils, transmissions) s'exécute **au sein d'un workflow**, ce qui permet de préserver son état lors de crashs ou de redémarrages. Le plugin Mistral (`mistralai-workflows[mistralai]`) fournit les briques fondamentales — `Agent`, `Runner`, `RemoteSession` et `LocalSession` (expérimental) — pour construire ce type d'agent.
+
+Voici ce qu'un agent durable apporte par rapport à une boucle d'agent classique :
+
+- **Durabilité** : l'état de l'agent est préservé en cas de crash ou de redémarrage du worker
+- **Intégration d'outils** : les activités du workflow peuvent être utilisées comme outils pour l'agent
+- **Transmissions multi-agents** : un agent peut déléguer des tâches à des agents spécialisés
+- **Compatibilité MCP** : connexion possible à des outils externes via le Model Context Protocol (stdio / SSE)
+
+<SectionTab as="h1" sectionId="installation">Installation</SectionTab>
+
+Pour utiliser les agents durables, installez le plugin Mistral :
+
+```bash
+uv add 'mistralai-workflows[mistralai]'
+```
+
+
+<SectionTab as="h1" sectionId="core-components">Composants principaux</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="agent">Agent</SectionTab>
+
+La classe `Agent` définit un agent LLM avec son modèle, ses instructions, ses outils et ses transmissions :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="my-agent",
+    description="Agent réalisant des tâches spécifiques",
+    instructions="Utilisez les outils pour répondre à la demande de l'utilisateur.",
+    tools=[my_activity],  # Les activités Workflows comme outils
+    handoffs=[other_agent],  # Agents à qui déléguer
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="runner">Runner</SectionTab>
+
+Le `Runner` exécute un agent avec les entrées utilisateur et gère la boucle de conversation. Il appelle le modèle, traite les appels d'outils et répète le processus jusqu'à ce que l'agent produise une réponse finale ou atteigne la valeur de `max_turns`. Si `max_turns` est atteint, le runner retourne les sorties déjà collectées.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+outputs = await workflows_mistralai.Runner.run(
+    agent=agent,
+    inputs="Quel est le taux d'intérêt pour 2024 ?",
+    session=session,
+    max_turns=10,  # Nombre maximal d'itérations avant l'arrêt
+)
+```
+
+  </TabItem>
+</Tabs>
+
+La valeur de retour `outputs` est une liste d'objets produits par l'agent durant l'exécution (réponses textes, résultats d'outils, résultats de transmission).
+
+<SectionTab as="h2" variant="secondary" sectionId="sessions">Sessions</SectionTab>
+
+Les sessions gèrent l'état de l'agent et la communication avec l'API. Deux types de sessions sont disponibles :
+
+| Session         | Cas d'usage                  | Backend                  |
+| --------------- | ---------------------------- | ------------------------ |
+| `RemoteSession` | Production (recommandé)      | Mistral Agents SDK       |
+| `LocalSession`  | Expérimental / On-premises   | API de complétion directe |
+
+`RemoteSession` crée dynamiquement un agent côté serveur (ou en réutilise un existant si `agent.id` est renseigné) et y délègue les complétions. `LocalSession` exécute la boucle agent localement dans votre worker via l’API de chat completions.
+
+<SectionTab as="h1" sectionId="basic-example">Exemple basique</SectionTab>
+
+Voici un workflow d'agent simple utilisant une activité comme outil :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import TextChunk
+
+
+@workflows.activity()
+async def get_interest_rate(year: int) -> dict:
+    """Obtenir le taux d'intérêt pour une année donnée.
+
+    Args:
+        year: L'année ciblée
+    """
+    # Implémentation ici
+    return {"interest_rate": 1.62}
+
+
+@workflows.workflow.define(name="finance_agent_workflow")
+class FinanceAgentWorkflow:
+    @workflows.workflow.entrypoint
+    async def entrypoint(self, question: str) -> dict:
+        session = workflows_mistralai.RemoteSession()
+
+        agent = workflows_mistralai.Agent(
+            model="mistral-medium-latest",
+            name="finance-agent",
+            description="Agent pour les questions financières",
+            instructions="Utilisez les outils pour répondre aux questions financières.",
+            tools=[get_interest_rate],
+        )
+
+        outputs = await workflows_mistralai.Runner.run(
+            agent=agent,
+            inputs=question,
+            session=session,
+        )
+
+        answer = "\n".join([
+            output.text for output in outputs
+            if isinstance(output, TextChunk)
+        ])
+
+        return {"answer": answer}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="multi-agent-handoffs">Transmissions multi-agents</SectionTab>
+
+Les agents peuvent déléguer des tâches à des agents spécialisés via les transmissions. Le champ `instructions` de l’agent coordinateur et le champ `description` des spécialistes guident les décisions : le modèle décide s’il doit transmettre la requête à un spécialiste selon la demande utilisateur et la description des agents disponibles. La transmission de la conversation est gérée automatiquement par le système.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+# Agent spécialisé pour les taux d'intérêt
+interest_rate_agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="ecb-interest-rate-agent",
+    description="Agent dédié à la recherche des taux directeurs de la BCE",
+    instructions="Utilisez les outils pour obtenir le taux d'intérêt pour une année donnée.",
+    tools=[get_interest_rate],
+)
+
+# Agent principal pouvant déléguer au spécialiste
+finance_agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="finance-agent",
+    description="Agent pour les questions financières",
+    handoffs=[interest_rate_agent],  # Peut déléguer à l'interest_rate_agent
+)
+
+outputs = await workflows_mistralai.Runner.run(
+    agent=finance_agent,
+    inputs="Quel était le taux directeur de la BCE en 2023 ?",
+    session=workflows_mistralai.RemoteSession(),
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Lorsque l’agent « finance » reçoit une question sur les taux BCE, il peut automatiquement transmettre au spécialiste `interest_rate_agent`.
+
+<SectionTab as="h1" sectionId="mcp-integration">Intégration MCP</SectionTab>
+
+Connectez-vous à des serveurs d’outils externes via le Model Context Protocol. Deux types de transport sont pris en charge :
+
+<SectionTab as="h2" variant="secondary" sectionId="stdio-mcp-server">Serveur MCP Stdio</SectionTab>
+
+Pour les serveurs MCP en ligne de commande locaux :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.plugins.mistralai import MCPStdioConfig
+
+mcp_config = MCPStdioConfig(
+    command="npx",
+    args=["-y", "@modelcontextprotocol/server-everything"],
+    name="server-everything",
+)
+
+agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="mcp-agent",
+    description="Agent avec accès aux outils MCP",
+    mcp_clients=[mcp_config],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="sse-mcp-server">Serveur MCP SSE</SectionTab>
+
+Pour les serveurs MCP distants via Server-Sent Events :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai import MCPSSEConfig
+
+mcp_config = MCPSSEConfig(
+    url="https://your-mcp-server.com/sse",
+    timeout=60,
+    name="remote-tools",
+    headers={"Authorization": "Bearer your-token"},  # Optionnel
+)
+
+agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="sse-mcp-agent",
+    description="Agent avec accès aux outils MCP distants",
+    mcp_clients=[mcp_config],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="built-in-tools">Outils intégrés</SectionTab>
+
+Utilisez les outils intégrés de Mistral avec vos activités :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import WebSearchTool
+
+agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="web-search-agent",
+    description="Agent avec capacité de recherche web",
+    instructions="Utilisez la recherche web pour répondre aux questions utilisateurs",
+    tools=[WebSearchTool()],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Outils intégrés disponibles :
+
+| Outil | Description |
+|-------|-------------|
+| `WebSearchTool()` | Recherche sur le web et retour des résultats au modèle |
+| `CodeInterpreterTool()` | Exécute du code Python dans un environnement isolé |
+| `ImageGenerationTool()` | Génère des images à partir de descriptions textuelles |
+| `DocumentLibraryTool()` | Analyse et extrait des informations des documents envoyés |
+
+Ces outils sont exécutés côté serveur, sur la plateforme Mistral ; ils ne tournent pas dans votre worker. Passez-les dans la liste `tools` avec vos activités.
+
+:::warning
+**Les outils intégrés nécessitent RemoteSession** : `LocalSession` ignore silencieusement les outils intégrés (avec un avertissement dans les logs et poursuite de l'exécution). Utilisez `RemoteSession` pour tout agent qui dépend de `WebSearchTool`, `CodeInterpreterTool`, `ImageGenerationTool` ou `DocumentLibraryTool`.
+:::
+
+<SectionTab as="h1" sectionId="session-types">Types de session</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="remote-session">RemoteSession (Recommandé)</SectionTab>
+
+Utilise le Mistral Agents SDK pour les charges de production :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+session = workflows_mistralai.RemoteSession()
+
+outputs = await workflows_mistralai.Runner.run(
+    agent=agent,
+    inputs="Votre question ici",
+    session=session,
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Fonctionnalités :
+
+- Intégration complète avec l’Agents SDK
+- Création et mises à jour automatiques d'agents
+- Gestion de l’état de conversation
+- Prêt pour la production
+
+<SectionTab as="h3" variant="secondary" sectionId="agent-lifecycle">Cycle de vie de l’agent</SectionTab>
+
+Quand une `RemoteSession` initialise une conversation, elle parcourt chaque agent dans le graphe des transmissions et le crée ou le met à jour via l’Agents API :
+
+- **`Agent(id=None)`** : un nouvel agent distant est créé via `beta.agents.create()`. L’ID retourné est enregistré sur l’instance `Agent` pour pouvoir le réutiliser ultérieurement.
+- **`Agent(id="existing-id")`** : l’agent distant existant est mis à jour via `beta.agents.update()`. Aucun nouvel agent n’est créé.
+
+Pour réutiliser un agent préexistant entre plusieurs exécutions, renseignez `agent.id` avant d’appeler `Runner.run()` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+agent = workflows_mistralai.Agent(
+    id="ag_abc123",  # Réutilise un agent distant existant
+    model="mistral-medium-latest",
+    name="finance-agent",
+    instructions="Utilisez les outils pour répondre aux questions financières.",
+    tools=[get_interest_rate],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+:::warning
+Les agents créés par `RemoteSession` **ne sont pas supprimés automatiquement** à la fin du run. Si vous créez dynamiquement des agents sans renseigner `id`, un nouvel agent distant sera créé à chaque exécution du workflow.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="local-session">LocalSession (Expérimental)</SectionTab>
+
+Exécute des agents localement via le endpoint de complétion :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+session = workflows_mistralai.LocalSession()
+
+outputs = await workflows_mistralai.Runner.run(
+    agent=agent,
+    inputs="Votre question ici",
+    session=session,
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Cas d’usage :
+
+- Déploiements on-premises ou cloud privé où l’Agents API n’est pas accessible
+- Développement et test
+- Contrôle total du contexte
+
+:::warning
+`LocalSession` est expérimental et pourra être retiré dans de prochaines versions. Utilisez `RemoteSession` en production.
+:::
+
+<SectionTab as="h1" sectionId="complete-workflow-example">Exemple de workflow complet</SectionTab>
+
+Un exemple complet combinant activités, transmissions et orchestration de workflow :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.client.models import TextChunk
+
+
+@workflows.activity()
+async def calculate_risk_score(deal_type: str, amount: float) -> dict:
+    """Calcule le score de risque financier d'une transaction.
+
+    Args:
+        deal_type: Type de la transaction analysée
+        amount: Montant de la transaction
+    """
+    risk_score = min(100.0, amount / 10000.0)
+    risk_factors = []
+    if amount > 100000:
+        risk_factors.append("Transaction de grande valeur")
+    return {"risk_score": risk_score, "risk_factors": risk_factors}
+
+
+@workflows.workflow.define(name="deal_analysis_workflow")
+class DealAnalysisWorkflow:
+    @workflows.workflow.entrypoint
+    async def entrypoint(self, deal_request: str) -> dict:
+        """Analyse une demande de transaction.
+
+        Args:
+            deal_request: Demande à analyser
+        """
+        session = workflows_mistralai.RemoteSession()
+
+        # Agent d'évaluation du risque
+        risk_agent = workflows_mistralai.Agent(
+            model="mistral-medium-latest",
+            name="risk-agent",
+            description="Analyse le risque financier des transactions",
+            instructions="Utilisez l'outil de calcul de risque pour évaluer le risque de la transaction.",
+            tools=[calculate_risk_score],
+        )
+
+        # Agent coordinateur principal
+        coordinator = workflows_mistralai.Agent(
+            model="mistral-medium-latest",
+            name="deal-coordinator",
+            description="Coordonne l'analyse des transactions",
+            instructions="Analyse la demande et délègue aux spécialistes.",
+            handoffs=[risk_agent],
+        )
+
+        outputs = await workflows_mistralai.Runner.run(
+            agent=coordinator,
+            inputs=deal_request,
+            session=session,
+        )
+
+        analysis = "\n".join([
+            output.text for output in outputs
+            if isinstance(output, TextChunk)
+        ])
+
+        return {"analysis": analysis}
+
+
+if __name__ == "__main__":
+    asyncio.run(workflows.run_worker([DealAnalysisWorkflow]))
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="observability">Observabilité</SectionTab>
+
+Les activités des agents produisent les mêmes événements workflow/activité que tout autre workflow. Abonnez-vous en temps réel via [Streaming](/studio-api/workflows/building-workflows/streaming) et [Consuming Streaming Events](/studio-api/workflows/building-workflows/consuming_events), ou rejouez l’historique complet a posteriori.
+
+<SectionTab as="h1" sectionId="best-practices">Bonnes pratiques</SectionTab>
+
+1. **Utilisez `RemoteSession` en production** afin que l’agent interagisse avec l’Agents API plutôt que l’endpoint completions brut.
+2. **Attribuez `agent.id`** aux agents que vous souhaitez réutiliser entre les exécutions, sinon `RemoteSession` créera un nouvel agent à chaque lancement et ne les supprimera jamais.
+3. **Encapsulez les effets de bord des outils dans des activités** pour bénéficier de l’isolation/reprise et apparaître dans l’historique d’exécution.

@@ -1,0 +1,168 @@
+---
+id: customization
+title: API de fine-tuning (ancienne version)
+sidebar_position: 1.6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import JiminiTab from './jimini_tab/_page.mdx';
+import PhosphoTab from './phospho_tab/_page.mdx';
+import CleoTab from './cleo_tab/_page.mdx';
+import MyoTab from './myo_tab/_page.mdx';
+
+# API de fine-tuning (ancienne version)
+
+:::warning[Obsolète]
+Cette fonctionnalité est obsolète et n'est plus activement maintenue.
+:::
+
+Lors de la création d'une application avec un LLM, vous pouvez vouloir personnaliser le modèle pour mieux l'adapter à votre cas d'usage. Ce guide vous accompagne dans le processus de personnalisation d'un modèle pour votre application.
+
+<SectionTab as="h1" sectionId="overview">Vue d'ensemble</SectionTab>
+
+### Comment créer une application avec un modèle personnalisé
+
+Voici un guide rapide pour créer une application avec un modèle personnalisé. Notre objectif est d'aider les développeurs à mettre en place des opérations produit pour les LLM afin de passer du prototype au déploiement.
+
+**L'IA est un outil** : créer des applications qui exploitent l'IA les rend plus utiles et pratiques pour vos utilisateurs finaux.
+
+Avant les LLM, les applications IA étaient construites autour de la personnalisation, de la précision et de la prédiction. Les applications IA traditionnelles visent à prédire votre prochain choix et à vous le recommander en fonction de votre comportement passé et de celui « d'utilisateurs similaires ».
+
+En revanche, **les applications LLM sont construites autour de la collaboration humain-IA**. En tant que développeur et utilisateur final, vous avez plus de contrôle sur la personnalisation de votre produit. Vous pouvez créer quelque chose qui n'existait pas auparavant.
+
+Les applications construites avec des LLM personnalisés nécessitent un **cycle de développement itératif**, s'appuyant sur des **retours utilisateurs continus** et des **évaluations rigoureuses** pour garantir que le comportement de votre modèle personnalisé est aligné sur le comportement attendu de l'application.
+
+*Nous proposons quelques exemples de personnalisation de modèle via le Fine-Tuning [ici](/resources/cookbooks?useCase=Finetuning).*
+
+<SectionTab variant="secondary" as="h1" sectionId="key-terms">Termes clés</SectionTab>
+
+Avant de commencer, définissons les termes clés :
+
+Le **comportement de l'application** peut être défini comme l'interaction utilisateur. Il prend en compte l'utilisabilité, les performances, la sécurité et l'adaptabilité. Le comportement de l'application inclut les objectifs et les valeurs.
+
+Le **comportement du modèle** peut être défini comme la manière attendue, appropriée et acceptable dont un LLM agit dans un contexte spécifique ou dans les limites d'une application. Le comportement du modèle inclut les objectifs et les valeurs.
+
+Les **objectifs** déterminent si le comportement du modèle est conforme au comportement attendu de l'application.
+
+Les **valeurs** désignent la politique prévue par les développeurs pour le modèle et l'application. Il peut s'agir d'un ensemble de règles, d'une Constitution ou même des principes moraux d'un personnage fictif.
+
+<SectionTab as="h1" sectionId="steerability-three-methods">Pilotage : trois méthodes</SectionTab>
+
+Plusieurs techniques (avec différents niveaux de complexité technique) sont disponibles pour piloter le comportement du modèle dans le contexte de votre application. Nous recommandons d'utiliser les trois méthodes suivantes :
+1. **Prompt système**
+2. **Entraîner un modèle**
+3. **Déployer une couche de modération** pour le traitement des entrées/sorties
+
+Un **prompt système** est une méthode pour fournir du contexte, des instructions et des directives à votre modèle avant que celui-ci ne traite les données d'entrée de l'utilisateur ([guide de prompting](/models/best-practices/prompt-engineering)). En utilisant un prompt système, vous pouvez orienter le modèle pour mieux l'aligner sur le comportement produit souhaité — que l'application soit conversationnelle ou axée sur une tâche, vous pouvez spécifier un persona, une personnalité, un ton, des valeurs ou toute autre information pertinente susceptible d'aider votre modèle à mieux répondre aux entrées de l'utilisateur final.
+
+Les prompts système peuvent inclure :
+- Des instructions et objectifs clairs et précis
+- Des rôles, le persona et le ton souhaités
+- Des indications sur le style, par exemple des contraintes de verbosité
+- Des définitions de valeurs, par exemple des politiques, règles et garde-fous
+- Le format de sortie souhaité
+
+**Entraîner un modèle** est une méthode pour former le modèle sur le comportement attendu de votre application ([guide de fine-tuning](/resources/deprecated/finetuning)). Deux approches populaires pour entraîner les LLM :
+1. **Entraînement applicatif**, où vous exploitez un jeu de données d'exemples spécifiques au comportement souhaité de votre application.
+2. **Entraînement de sécurité**, où vous exploitez un jeu de données qui spécifie à la fois des exemples d'entrées susceptibles de produire un comportement non sécurisé, ainsi que la sortie sécurisée souhaitée dans cette situation.
+
+**Déployer un classificateur pour la modération de contenu** est une troisième méthode pour créer des garde-fous pour le comportement de votre modèle au sein de l'application. Cela est considéré comme une mesure de sécurité supplémentaire si vous déployez votre application auprès d'utilisateurs finaux.
+
+<SectionTab as="h1" sectionId="guide-for-tuning-a-model-to-your-intended-application-behavior">Guide pour entraîner un modèle selon le comportement applicatif souhaité</SectionTab>
+
+Voici un guide étape par étape pour vous aider à créer votre application avec un modèle personnalisé.
+
+<SectionTab as="h2" variant="secondary" sectionId="step-1-define-your-intended-application-behavior">Étape 1 : Définir le comportement applicatif souhaité</SectionTab>
+
+La première étape consiste à définir les objectifs, c'est-à-dire comment vous souhaitez que les utilisateurs interagissent avec votre produit LLM.
+
+Pour vous inspirer, observez les développeurs qui construisent avec les modèles Mistral :
+- des produits autonomes comme des assistants conversationnels ;
+- au sein de produits préexistants pour accomplir une tâche spécifique comme « Résumer » ou « Traduire » ou activer de nouvelles capacités comme l'appel de fonctions avec accès API pour la « Récupération de connaissances ».
+
+Découvrez comment d'autres créent des produits avec des modèles personnalisés ici : [exemples de développeurs](#developer-examples).
+
+<SectionTab as="h2" variant="secondary" sectionId="step-2-define-your-policies-based-on-your-values">Étape 2 : Définir vos politiques en fonction de vos valeurs</SectionTab>
+
+Lorsque vous déployez un LLM dans une application destinée aux utilisateurs finaux, vous identifiez quelles valeurs le modèle devra respecter afin de répondre à vos directives de modération de contenu ainsi qu'aux attentes de vos utilisateurs.
+
+Pour la modération de contenu, inspirez-vous des catégories de [Llama Guard](https://ai.meta.com/research/publications/llama-guard-llm-based-input-output-safeguard-for-human-ai-conversations/) comme la confidentialité, la haine et les conseils spécialisés, ainsi que des catégories de [ML Commons Taxonomy](https://drive.google.com/file/d/1V8KFfk8awaAXc83nZZzDV2bHgPT8jbJY/view) comme CSAM et la haine.
+
+<SectionTab as="h2" variant="secondary" sectionId="step-3-create-your-application-evals">Étape 3 : Créer vos évaluations d'application</SectionTab>
+
+L'objectif de vos évaluations est de vous permettre d'avoir un meilleur signal sur la question de savoir si le comportement de votre modèle personnalisé répondra à votre comportement applicatif avant le déploiement. Identifier comment vous souhaitez évaluer votre modèle personnalisé aidera à déterminer le type de données d'entraînement à inclure dans le fine-tuning.
+
+Il existe deux méthodes pour évaluer un LLM :
+- **Évaluations automatisées**
+    - **Basées sur des métriques**, similaires aux évaluations de référence publiques où vous pouvez dériver une métrique à partir de données pré-annotées par exemple.
+    - **Basées sur un LLM**, où vous exploitez un LLM différent comme Mistral Large pour évaluer ou juger la sortie de votre modèle personnalisé.
+- **Évaluations humaines**, où vous employez des annotateurs de contenu pour évaluer ou juger la sortie de votre modèle personnalisé et collecter des annotations humaines.
+
+Pour en savoir plus sur la conduite d'une évaluation de LLM, consultez notre [guide d'évaluation](/resources/deprecated/customization#step-3-create-your-application-evals).
+
+<SectionTab as="h2" variant="secondary" sectionId="step-4-test-your-application-behavior-hypothesis-with-an-mvp-powered-by-mistral-large">Étape 4 : Tester votre hypothèse de comportement applicatif avec un MVP</SectionTab>
+
+Une fois que vous comprenez l'intention de votre LLM personnalisé et les contours de la façon dont vous souhaitez que le modèle se comporte, commencez par tester votre hypothèse d'application avec Mistral Large et collectez les données d'interaction pour mieux comprendre comment vos utilisateurs finaux peuvent interagir avec votre LLM. Par exemple, de nombreux développeurs commencent leur processus en créant une démo ou un MVP avec un accès limité (une bêta privée).
+
+Pour certaines applications, un prompt système est la meilleure solution pour obtenir un comportement de modèle aligné. Si vous avez besoin d'aide pour choisir entre les deux, consultez notre [guide de fine-tuning](/resources/deprecated/finetuning).
+
+Si un prompt système fonctionne pour créer un modèle personnalisé, passez à l'étape 6.
+
+<SectionTab as="h2" variant="secondary" sectionId="step-5-tune-for-model-alignment">Étape 5 : Entraîner pour l'alignement du modèle</SectionTab>
+
+Maintenant que vous avez une idée du comportement applicatif — valeurs et objectifs inclus — que vous avez l'intention d'adopter avec un modèle personnalisé, vous pouvez commencer le processus de remplacement de Mistral Large par un modèle plus petit et personnalisé.
+
+Consultez notre guide sur la façon de [préparer votre jeu de données d'entraînement](/resources/deprecated/finetuning#prepare-the-dataset).
+
+Points à considérer lors de la préparation de votre jeu de données d'entraînement pour de meilleures performances du modèle :
+- **Compréhension des données**, incluez toutes les politiques de contenu pour chaque cas d'usage d'application dans votre jeu de données (comme les questions-réponses, la synthèse et le raisonnement).
+- **Variété des données**, assurez la diversité du jeu de données en termes de longueur de requête, structure, ton, sujet, niveaux de complexité et considérations démographiques.
+- **Déduplication**, supprimez les doublons pour éviter que vos données d'entraînement ne soient mémorisées.
+- **Éviter la contamination des données**, isolez les données d'évaluation du jeu de données d'entraînement.
+- **Pratiques éthiques des données**, fournissez des directives d'étiquetage claires et une diversité d'annotateurs pour minimiser les erreurs et les biais du modèle.
+
+Pour la modération de contenu, commencez avec des jeux de données open source comme [Safety-Tuned LlaMAs](https://arxiv.org/abs/2309.07875).
+
+Chez Mistral, nous supportons deux façons de personnaliser nos modèles :
+1. OSS avec le [FT Codebase](https://github.com/mistralai/mistral-finetune/)
+2. Via [AI Studio](https://console.mistral.ai/)
+
+Rendez-vous sur notre API FT dans AI Studio, chargez et validez vos données d'entraînement. Lancez le job et, une fois terminé, vous pouvez accéder à votre modèle personnalisé via votre propre endpoint d'API de modèle.
+
+<SectionTab as="h2" variant="secondary" sectionId="step-6-test-your-custom-model-with-your-evals">Étape 6 : Tester votre modèle personnalisé avec vos évaluations</SectionTab>
+
+Maintenant que vous avez votre endpoint d'API de modèle personnalisé, vous pouvez exécuter les évaluations d'application de l'étape 4. Selon votre application, n'oubliez pas d'inclure des évaluations de sécurité dans votre ensemble d'évaluations :
+- **Évaluations de développement**, incluent des évaluations continues pendant l'entraînement et le fine-tuning pour comparer les performances du modèle par rapport aux critères de lancement et évaluer l'impact des stratégies d'atténuation. Ces évaluations utilisent des requêtes adversariales ou des benchmarks académiques externes.
+- **Évaluations d'assurance**, mettez en place des évaluations de gouvernance et de révision aux étapes clés par un groupe externe. Ces évaluations standardisées utilisent des jeux de données strictement gérés et fournissent des informations de haut niveau pour les efforts d'atténuation. Elles testent les politiques de sécurité et les capacités dangereuses, telles que les risques biologiques, la persuasion et la cybersécurité.
+- **Red Teaming** nécessite des tests adversariaux par des équipes spécialisées utilisant des méthodes moins structurées pour découvrir les faiblesses potentielles et améliorer les approches d'atténuation des risques et d'évaluation.
+- **Évaluations externes**, incluent des évaluations par des experts indépendants externes du domaine pour identifier les limites du modèle et tester en conditions extrêmes les performances.
+
+En fonction des performances du modèle, soit réentraînez votre modèle avec de nouvelles données d'entraînement pour soutenir de meilleures performances, soit déployez-le dans votre application en remplaçant l'API Mistral Large par votre endpoint de modèle personnalisé.
+
+<SectionTab as="h2" variant="secondary" sectionId="step-7-once-deployed-continuously-monitor-and-update-your-custom-model-evals-and-testing-based-on-real-life-application-data">Étape 7 : Une fois déployé, surveiller et mettre à jour en continu</SectionTab>
+
+Surveillez et mettez à jour en continu votre modèle personnalisé, vos évaluations et vos tests en fonction des données d'application réelles.
+
+*Félicitations ! Vous avez déployé votre modèle personnalisé dans votre application.*
+
+<SectionTab as="h1" sectionId="developer-examples">Exemples de développeurs</SectionTab>
+
+Voici des exemples de développeurs issus de la communauté des startups utilisant notre API de fine-tuning.
+Consultez notre [documentation sur le fine-tuning](/resources/deprecated/finetuning) pour découvrir les avantages du fine-tuning et comment utiliser notre API de fine-tuning.
+
+<ExplorerTabs id="developer-examples" mode="close">
+  <ExplorerTab value="rag-for-internet-retrieval" label="RAG pour récupération Internet">
+    <PhosphoTab />
+  </ExplorerTab>
+  <ExplorerTab value="rag-for-medical-domain" label="RAG pour domaine médical">
+    <MyoTab />
+  </ExplorerTab>
+  <ExplorerTab value="financial-advisor-conversational-assistant" label="Assistant financier">
+    <CleoTab />
+  </ExplorerTab>
+  <ExplorerTab value="legal-copilot" label="Copilote juridique">
+    <JiminiTab />
+  </ExplorerTab>
+</ExplorerTabs>

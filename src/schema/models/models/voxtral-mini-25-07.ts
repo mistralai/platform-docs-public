@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral Mini',
-  description: `A mini version of our first audio input model.`,
-  shortDescription: `A mini version of our first audio input model.`,
+  describe: (l) => ({
+    description: l.text(`A mini version of our first audio input model.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A mini version of our first audio input model.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'voxtral-mini-25-07',
-  releaseDate: 'July 15, 2025',
+  releaseDate: '2025-07-15',
   version: '25.07',
   frontier: true,
   class: 'Specialist',
@@ -33,8 +35,8 @@ export default {
   paperlink: 'https://arxiv.org/pdf/2507.13264',
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 4.0,
+    performance: 2.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -53,7 +55,7 @@ export default {
     features: ['structured-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'Voxtral Mini Transcribe 2'},
+  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'Voxtral Mini Transcribe 2'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

@@ -1,0 +1,98 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+**N** représente le nombre de complétions à retourner pour chaque requête. Ce paramètre est utile lorsque vous souhaitez générer plusieurs réponses pour une seule entrée. Chaque complétion sera une réponse unique générée par le modèle, offrant une variété de sorties parmi lesquelles choisir.
+
+:::note
+Actuellement, `mistral-large-2512` ne prend pas en charge les complétions multiples.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="key-points">Points clés</SectionTab>
+
+- **Réponses multiples** : En définissant `N` sur une valeur supérieure à 1, vous pouvez obtenir plusieurs réponses pour la même entrée.
+- **Efficacité économique** : Les tokens d'entrée ne sont facturés qu'une seule fois, quel que soit le nombre de complétions demandées. Cela rend l'exploration de différentes possibilités économique.
+
+<SectionTab as="h2" variant="secondary" sectionId="n-example">Exemple</SectionTab>
+
+Voici un exemple d'utilisation du paramètre `N` dans l'API :
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 1, # Increasing randomness and diversity of the output, this is required to be higher than 0 to have diverse outputs
+    n = 10 # Number of completions
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 1, # Increasing randomness and diversity of the output, this is required to be higher than 0 to have diverse outputs
+    n = 10 # Number of completions
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```text
+Phoenix.
+Dragon
+Dragon
+Unicorn
+Unicorn
+Phoenix
+Unicorn
+Dragon
+Dragon.
+Unicorn
+```
+
+    </TabItem> 
+</Tabs>
+
+Dans cet exemple, le modèle génère 10 réponses pour le même prompt d'entrée. Cela vous permet de voir une variété de réponses possibles et de choisir celle qui correspond le mieux à vos besoins.

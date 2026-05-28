@@ -1,0 +1,126 @@
+---
+id: prompt-caching
+title: Mise en cache des prompts
+sidebar_position: 20
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Mise en cache des prompts
+
+La mise en cache des prompts vous permet de réutiliser les jetons de prompt déjà calculés lorsque plusieurs requêtes partagent le même préfixe, c'est-à-dire le même début du prompt. Les jetons de prompt mis en cache sont facturés à 10 % du prix standard des jetons d'entrée, et un accès à la mise en cache réduit la latence de réponse en réutilisant une partie du calcul précédent.
+
+:::info
+`prompt_cache_key` augmente la probabilité d'un accès à la mise en cache mais ne le **garantit pas**. Un accès a lieu si l'API trouve un préfixe compatible déjà mis en cache pour la requête.
+:::
+
+<SectionTab as="h1" sectionId="when-to-use-prompt-caching">Quand utiliser la mise en cache des prompts</SectionTab>
+
+Utilisez `prompt_cache_key` pour les conversations multi-tours, les prompts système répétés ou les cas où le même contexte est envoyé à plusieurs reprises, par exemple :
+
+- Conversations multi-tours qui renvoient l'historique des échanges.
+- Applications qui réutilisent le même prompt système ou les mêmes instructions au développeur.
+- Requêtes fill-in-the-middle réutilisant un long préfixe de prompt.
+- Requêtes d'agent utilisant le même contexte d'un échange à l'autre.
+
+:::tip
+La mise en cache des prompts est moins utile pour des prompts courts, des requêtes sans lien ou lorsque la première partie du prompt change à chaque appel.
+:::
+
+<SectionTab as="h1" sectionId="use-prompt-cache-key">Activer la mise en cache des prompts dans vos requêtes</SectionTab>
+
+Définissez le même `prompt_cache_key` sur les requêtes susceptibles de partager un préfixe. Utilisez un identifiant d'application stable, par exemple un identifiant de conversation, de session ou de workflow.
+
+N'incluez pas de secrets, de clés API ni de données utilisateur sensibles dans `prompt_cache_key`.
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-large-latest",
+    "prompt_cache_key": "support-session-42",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a support assistant. Answer with concise troubleshooting steps."
+      },
+      {
+        "role": "user",
+        "content": "My API request returns a 401 error. What should I check?"
+      }
+    ]
+  }'
+```
+
+Pour le prochain échange de la même conversation, conservez le même `prompt_cache_key` et gardez le préfixe partagé dans la requête :
+
+```json
+{
+  "model": "mistral-large-latest",
+  "prompt_cache_key": "support-session-42",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a support assistant. Answer with concise troubleshooting steps."
+    },
+    {
+      "role": "user",
+      "content": "My API request returns a 401 error. What should I check?"
+    },
+    {
+      "role": "assistant",
+      "content": "Check that your API key is present, valid, and sent in the Authorization header."
+    },
+    {
+      "role": "user",
+      "content": "How do I verify that the header is correct?"
+    }
+  ]
+}
+```
+
+<SectionTab as="h1" sectionId="check-cached-tokens">Vérifier les jetons mis en cache</SectionTab>
+
+Les réponses de complétion indiquent les jetons de prompt mis en cache dans `usage.prompt_tokens_details.cached_tokens`.
+
+```json
+{
+  "id": "a4db7c530548494f8ff9986bcd2a7737",
+  "created": 1773840064,
+  "model": "mistral-large-latest",
+  "usage": {
+    "prompt_tokens": 1013,
+    "total_tokens": 1043,
+    "completion_tokens": 30,
+    "prompt_tokens_details": {
+      "cached_tokens": 1008
+    }
+  },
+  "object": "chat.completion",
+  "choices": []
+}
+```
+
+Dans cette réponse, `prompt_tokens` correspond au nombre total de jetons de prompt. Les jetons d'entrée facturés sont calculés par `prompt_tokens - cached_tokens`.
+
+Dans cet exemple, la facturation comprend :
+
+- `5` jetons d'entrée non mis en cache facturés au prix standard d'entrée.
+- `1008` jetons d'entrée mis en cache facturés à 10 % du tarif standard d'entrée.
+- `30` jetons de complétion facturés au prix unitaire de sortie.
+
+Si l'API ne sert pas de jetons depuis le cache, `cached_tokens` vaut `0` ou est absent.
+
+:::info
+Les blocs de cache contiennent 64 jetons. Cette taille implique :
+
+- `cached_tokens` est un multiple de 64.
+- Les prompts ayant moins de 64 jetons n'ont pas de hits cache.
+- Un préfixe partagé plus long permet de réutiliser plus de jetons mis en cache.
+:::
+
+<SectionTab as="h1" sectionId="track-billing">Suivre la facturation</SectionTab>
+
+Les jetons mis en cache sont facturés à 10 % du prix standard d'entrée. Pour consulter la consommation de jetons mis en cache, ouvrez <AppLink href="https://admin.mistral.ai/organization/usage" app="admin">Utilisation</AppLink> dans Admin et visualisez la consommation par modèle.

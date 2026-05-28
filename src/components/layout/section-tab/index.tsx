@@ -6,6 +6,7 @@ import { CopyIcon, CheckIcon, PageIcon } from '@/components/icons/pixel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useLingo } from '@lingo.dev/react';
 
 const sectionTabContainerVariants = cva(
   'w-full group/section-tab flex items-end not-prose section-tab-container mt-12 mb-2 justify-between gap-1 scroll-mt-[calc(var(--header)+2rem)]',
@@ -58,6 +59,7 @@ export function SectionTab({
   as = 'h2',
   ...props
 }: SectionTabProps) {
+  const l = useLingo();
   const [copyState, setCopyState] = React.useState<
     'idle' | 'copied' | 'disappearing'
   >('idle');
@@ -81,7 +83,9 @@ export function SectionTab({
   };
 
   const isCopied = copyState === 'copied';
-  const copyText = isMobile ? 'Copy' : 'Copy section link';
+  const copyText = isMobile
+    ? l.text('Copy', { context: 'Compact command to copy a section URL' })
+    : l.text('Copy section link', { context: 'Command to copy a section URL' });
   return (
     <div
       id={sectionId}
@@ -110,9 +114,11 @@ export function SectionTab({
             copyState === 'disappearing' &&
               'opacity-0 group-hover/section-tab:opacity-0 pointer-events-none'
           )}
-          aria-label={`Copy link to ${children} section`}
+          aria-label={l.text('Copy section link', { context: 'Accessible label for copying a section URL' })}
         >
-          {copyState !== 'idle' ? 'Copied!' : copyText}
+          {copyState !== 'idle'
+            ? l.text('Copied!', { context: 'Confirmation that the section URL was copied' })
+            : copyText}
           {copyState !== 'idle' ? (
             <CheckIcon className="size-3 text-primary-soft" />
           ) : (

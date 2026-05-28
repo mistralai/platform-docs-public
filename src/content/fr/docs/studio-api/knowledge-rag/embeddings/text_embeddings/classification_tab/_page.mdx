@@ -1,0 +1,111 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les embeddings de texte peuvent être utilisés comme caractéristiques d'entrée dans des modèles d'apprentissage automatique, tels que la classification et le clustering. Dans cet exemple, nous utilisons un modèle de classification pour prédire les étiquettes de maladies à partir des embeddings du texte de description de maladies de l'**exemple de batch** précédent.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+# Create a train / test split
+train_x, test_x, train_y, test_y = train_test_split(
+    df["embeddings"], df["label"], test_size=0.2
+)
+
+# Normalize features
+scaler = StandardScaler()
+train_x = scaler.fit_transform(train_x.to_list())
+test_x = scaler.transform(test_x.to_list())
+
+# Train a classifier and compute the test accuracy
+# For a real problem, C should be properly cross validated and the confusion matrix analyzed
+clf = LogisticRegression(random_state=0, C=1.0, max_iter=500).fit(
+    train_x, train_y.to_list()
+)
+# you can also try the sag algorithm:
+# clf = LogisticRegression(random_state=0, C=1.0, max_iter=1000, solver='sag').fit(train_x, train_y)
+
+print(f"Precision: {100*np.mean(clf.predict(test_x) == test_y.to_list()):.2f}%")
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```
+Precision: 98.75%
+```
+
+    </TabItem>
+</Tabs>
+
+Après avoir entraîné le classifieur avec nos données d'embeddings, nous pouvons essayer de classer d'autres textes :
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Classify a single example
+text = "I've been experiencing frequent headaches and vision problems."
+clf.predict([get_text_embedding([text])])
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```text
+'Migraine'
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="comparison-with-fastText-embeddings">Comparaison avec les embeddings fastText</SectionTab>
+
+De plus, examinons les performances obtenues avec les embeddings fastText pour cette tâche de classification. Il apparaît que le modèle de classification obtient de meilleures performances avec le modèle d'embeddings Mistral AI comparé à l'utilisation des embeddings fastText.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+  
+```python
+# Create a train / test split
+train_x, test_x, train_y, test_y = train_test_split(
+    df["fasttext_embeddings"], df["label"], test_size=0.2
+)
+
+# Normalize features
+
+scaler = StandardScaler()
+train_x = scaler.fit_transform(train_x.to_list())
+test_x = scaler.transform(test_x.to_list())
+
+# Train a classifier and compute the test accuracy
+
+# For a real problem, C should be properly cross validated and the confusion matrix analyzed
+
+clf = LogisticRegression(random_state=0, C=1.0, max_iter=500).fit(
+train_x, train_y.to_list()
+)
+
+# you can also try the sag algorithm:
+
+# clf = LogisticRegression(random_state=0, C=1.0, max_iter=1000, solver='sag').fit(train_x, train_y)
+
+print(f"Precision: {100\*np.mean(clf.predict(test_x) == test_y.to_list()):.2f}%")
+
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```txt
+Precision: 86.25%
+````
+
+    </TabItem>
+</Tabs>
+
+Notre méthode utilisant le modèle d'embeddings Mistral AI atteint une précision de **98,75 %**, tandis que la méthode des embeddings fastText atteint une précision de 86,25 %.

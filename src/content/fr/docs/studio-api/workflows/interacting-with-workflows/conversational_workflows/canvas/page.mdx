@@ -1,0 +1,140 @@
+---
+id: canvas
+title: Canevas
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Canevas
+
+Le canevas est la surface riche en contenus de l’interface de chat : documents markdown, code, diagrammes, présentations et composants interactifs. Un workflow peut retourner un canevas en sortie ou en envoyer un en cours d’exécution, permettant à l’utilisateur de le modifier avant de continuer.
+
+<SectionTab as="h1" sectionId="rich-outputs-canvas">Sorties enrichies</SectionTab>
+
+Retournez des contenus riches comme du markdown, du code ou des diagrammes à l’aide de `ResourceOutput` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="expense-report-workflow",
+    workflow_display_name="Expense Report",
+    workflow_description="Generate expense report with charts",
+)
+class ExpenseReportWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, department: str) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Generate a mermaid chart
+        chart_content = """
+pie title Expenses by Category
+    "Travel" : 45
+    "Equipment" : 25
+    "Software" : 20
+    "Other" : 10
+"""
+
+        canvas = workflows_mistralai.CanvasPayload(
+            type="mermaid",
+            title="Expense Breakdown",
+            content=chart_content,
+        )
+
+        resource = workflows_mistralai.CanvasResource(
+            canvas=canvas,
+        )
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[
+                workflows_mistralai.TextOutput(text=f"Expense report for {department}:"),
+                workflows_mistralai.ResourceOutput(resource=resource),
+            ]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="canvas-types">Types de canevas</SectionTab>
+
+| Type            | Description                                  |
+| --------------- | -------------------------------------------- |
+| `text/markdown` | Contenu Markdown                             |
+| `text/html`     | Contenu HTML                                 |
+| `image/svg+xml` | Images SVG                                   |
+| `slides`        | Présentations                                |
+| `react`         | Composants React                             |
+| `code`          | Code avec coloration syntaxique              |
+| `mermaid`       | Diagrammes Mermaid                           |
+
+<SectionTab as="h1" sectionId="canvas-editing-human-in-the-loop">Édition du canevas (boucle humaine)</SectionTab>
+
+Vous pouvez envoyer un canevas pendant un workflow avec `send_assistant_message()` et permettre à l’utilisateur de le modifier. Le champ `canvas_uri` transmis à `CanvasInput` doit être identique au `uri` d’une ressource `CanvasResource` générée précédemment.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.conversational import CanvasInput
+
+
+@workflows.workflow.define(
+    name="report-review-workflow",
+    workflow_display_name="Report Review",
+    workflow_description="Generate a report and let the user edit it",
+)
+class ReportReviewWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Send a canvas to the user as an assistant message
+        canvas_resource = workflows_mistralai.CanvasResource(
+            canvas=workflows_mistralai.CanvasPayload(
+                type="text/markdown",
+                title="Weekly Report",
+                content="# Weekly Report\n\n## Summary\n\nTODO: fill in",
+            ),
+        )
+        await workflows_mistralai.send_assistant_message(
+            "Here is your report draft. You can review and edit it below.",
+            canvas=canvas_resource,
+        )
+
+        # Wait for the user to edit the canvas
+        edited = await self.wait_for_input(
+            CanvasInput(canvas_uri=canvas_resource.uri, prompt="Any feedback?"),
+            label="Relecture et édition du rapport",
+        )
+
+        # Use the edited content
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[
+                workflows_mistralai.TextOutput(text="Report finalized!"),
+                workflows_mistralai.ResourceOutput(
+                    resource=workflows_mistralai.CanvasResource(
+                        canvas=workflows_mistralai.CanvasPayload(
+                            type="text/markdown",
+                            title=edited.canvas.title,
+                            content=edited.canvas.content,
+                        ),
+                    )
+                ),
+            ]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+`CanvasInput` retourne un modèle avec :
+
+- `canvas.title` — le titre du canevas édité
+- `canvas.content` — le contenu modifié
+- `chatInput` — message de chat optionnel (présent uniquement quand `prompt` est fourni et que l’utilisateur envoie un message)

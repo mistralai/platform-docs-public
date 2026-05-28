@@ -15,11 +15,12 @@ while ((match = linkRegex.exec(headerContent)) !== null) {
 // Function to check if a valid Nextjs route exists
 function routeExists(routePrefix: string) {
   const cleanRoute = routePrefix.split('#')[0]; // discard anchors
-  // Mappings to App Router
+  // Mappings to App Router + content tree
   const possiblePaths = [
-    `src/app/(docs)${cleanRoute}/page.mdx`,
-    `src/app/(docs)${cleanRoute}/page.tsx`,
-    `src/app/(api)${cleanRoute}/page.tsx`,
+    `src/content/en/docs${cleanRoute}/page.mdx`,
+    `src/content/en/docs${cleanRoute}/page.md`,
+    `src/app/[locale]/(docs)${cleanRoute}/page.tsx`,
+    `src/app/[locale]/(api)${cleanRoute}/page.tsx`,
     `src/app${cleanRoute}/page.tsx`
   ];
   

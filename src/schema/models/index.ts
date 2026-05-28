@@ -33,3 +33,4 @@ export const nonLegacyModels = models.filter(
 export * from './schema';
 export * from './models';
 export * from './endpoints';
+export * from './i18n';

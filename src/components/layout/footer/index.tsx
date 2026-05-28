@@ -1,6 +1,7 @@
 import React from 'react';
 import MistralLogoSolid from '../../icons/assets/mistral-logo-solid';
 import Image from 'next/image';
+import { Link } from '@/i18n/navigation.client';
 import googlePlayBadge from '@/../public/assets/badges/GetItOnGooglePlay_Badge_Web_color_English.png';
 import appStoreBadge from '@/../public/assets/badges/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg';
 import AnimatedGround from './animated-ground';
@@ -10,6 +11,8 @@ import { MISTRAL_API_REFERENCE_URL, MISTRAL_URL } from '@/lib/constants';
 import { SOCIALS } from '@/schema/content/socials';
 import CookieTrigger from './cookie-trigger';
 import { ThemeToggle } from '../header/theme-toggle';
+import { getLingo } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 
 // Footer schema definition
 type CookieLink = { label: string; type: 'cookie' };
@@ -25,102 +28,6 @@ interface FooterSection {
   title: string;
   links: FooterLinkItem[];
 }
-
-const footerSchema: { sections: FooterSection[] } = {
-  sections: [
-    {
-      title: 'WHY MISTRAL',
-      links: [
-        { label: 'About us', href: `${MISTRAL_URL}/about` },
-        { label: 'Our customers', href: `${MISTRAL_URL}/customers` },
-        { label: 'Careers', href: `${MISTRAL_URL}/careers` },
-        { label: 'Contact us', href: `${MISTRAL_URL}/contact` },
-      ],
-    },
-    {
-      title: 'EXPLORE',
-      links: [
-        { label: 'AI Solutions', href: `${MISTRAL_URL}/solutions` },
-        { label: 'Partners', href: `${MISTRAL_URL}/partners` },
-        { label: 'Research', href: `${MISTRAL_URL}/news?category=Research` },
-      ],
-    },
-    {
-      title: 'DOCUMENTATION',
-      links: [
-        { label: 'Documentation', href: '/' },
-        { label: 'Ambassadors', href: '/community/ambassadors' },
-        { label: 'Cookbooks', href: '/resources/cookbooks' },
-      ],
-    },
-    {
-      title: 'BUILD',
-      links: [
-        {
-          label: 'Studio',
-          href: 'https://console.mistral.ai',
-        },
-        { label: 'Mistral Vibe', href: `${MISTRAL_URL}/products/vibe` },
-        { label: 'Mistral Code', href: `${MISTRAL_URL}/products/mistral-code` },
-        {
-          label: 'Mistral Compute',
-          href: `${MISTRAL_URL}/products/mistral-compute`,
-        },
-        { label: 'Try the API', href: `${MISTRAL_API_REFERENCE_URL}` },
-      ],
-    },
-    {
-      title: 'LEGAL',
-      links: [
-        { label: 'Terms of service', href: `${MISTRAL_URL}/terms` },
-        {
-          label: 'Privacy policy',
-          href: `${MISTRAL_URL}/terms#privacy-policy`,
-        },
-        // TODO: Privacy choices link displays a cookie modal, handled by cookie type below
-        { label: 'Legal notice', href: `${MISTRAL_URL}/legal` },
-        {
-          label: 'Privacy Choices',
-          type: 'cookie',
-        },
-        {
-          label: 'Brand',
-          href: `${MISTRAL_URL}/brand`,
-        },
-      ],
-    },
-    {
-      title: 'COMMUNITY',
-      links: [
-        {
-          label: 'Discord',
-          href: SOCIALS.discord,
-          external: true,
-          icon: '↗',
-        },
-        {
-          label: 'X',
-          href: SOCIALS.twitter,
-          external: true,
-          icon: '↗',
-        },
-        {
-          label: 'Github',
-          href: SOCIALS.github,
-          external: true,
-          icon: '↗',
-        },
-        {
-          label: 'LinkedIn',
-          href: SOCIALS.linkedin,
-          external: true,
-          icon: '↗',
-        },
-        { label: 'Ambassadors', href: '/community/ambassadors' },
-      ],
-    },
-  ],
-};
 
 // Reusable Footer Column Component
 const FooterColumn: React.FC<{
@@ -151,14 +58,15 @@ const FooterLink: React.FC<{
   external?: boolean;
   icon?: string;
 }> = ({ label, href, external, icon }) => (
-  <a
+  <Link
     href={href}
+    prefetch={false}
     className="text-sm text-foreground/70 hover:text-foreground transition-colors duration-200 flex items-center gap-1"
     {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
   >
     {label}
     {icon && <span className="text-xs font-mono font-bold">{icon}</span>}
-  </a>
+  </Link>
 );
 
 // App Store Badges Component
@@ -181,7 +89,103 @@ const AppStoreBadges: React.FC = () => (
   </div>
 );
 
-export default function Footer() {
+export default async function Footer({ locale }: { locale: Locale }) {
+  const l = await getLingo(locale);
+  const footerSchema: { sections: FooterSection[] } = {
+    sections: [
+      {
+        title: l.text('WHY MISTRAL', { context: 'Footer heading for company information' }),
+        links: [
+          { label: l.text('About us', { context: 'Footer link to company information' }), href: `${MISTRAL_URL}/about` },
+          { label: l.text('Our customers', { context: 'Footer link to customer stories' }), href: `${MISTRAL_URL}/customers` },
+          { label: l.text('Careers', { context: 'Footer link to job openings' }), href: `${MISTRAL_URL}/careers` },
+          { label: l.text('Contact us', { context: 'Footer link to contact the company' }), href: `${MISTRAL_URL}/contact` },
+        ],
+      },
+      {
+        title: l.text('EXPLORE', { context: 'Footer heading for company offerings and research' }),
+        links: [
+          { label: l.text('AI Solutions', { context: 'Footer link to AI solutions' }), href: `${MISTRAL_URL}/solutions` },
+          { label: l.text('Partners', { context: 'Footer link to partners' }), href: `${MISTRAL_URL}/partners` },
+          { label: l.text('Research', { context: 'Footer link to research news' }), href: `${MISTRAL_URL}/news?category=Research` },
+        ],
+      },
+      {
+        title: l.text('DOCUMENTATION', { context: 'Footer heading for documentation links' }),
+        links: [
+          { label: l.text('Documentation', { context: 'Footer link to documentation' }), href: '/' },
+          { label: l.text('Ambassadors', { context: 'Footer link to the Mistral ambassador program' }), href: '/community/ambassadors' },
+          { label: l.text('Cookbooks', { context: 'Footer link to developer cookbooks' }), href: '/resources/cookbooks' },
+        ],
+      },
+      {
+        title: l.text('BUILD', { context: 'Footer heading for products used to build with Mistral' }),
+        links: [
+          {
+            label: 'Studio',
+            href: 'https://console.mistral.ai',
+          },
+          { label: 'Vibe', href: `${MISTRAL_URL}/products/vibe` },
+          { label: 'Mistral Code', href: `${MISTRAL_URL}/products/mistral-code` },
+          {
+            label: 'Mistral Compute',
+            href: `${MISTRAL_URL}/products/mistral-compute`,
+          },
+          { label: l.text('Try the API', { context: 'Footer link to the API reference' }), href: `${MISTRAL_API_REFERENCE_URL}` },
+        ],
+      },
+      {
+        title: l.text('LEGAL', { context: 'Footer heading for legal information' }),
+        links: [
+          { label: l.text('Terms of service', { context: 'Footer link to terms of service' }), href: `${MISTRAL_URL}/terms` },
+          {
+            label: l.text('Privacy policy', { context: 'Footer link to the privacy policy' }),
+            href: `${MISTRAL_URL}/terms#privacy-policy`,
+          },
+          // TODO: Privacy choices link displays a cookie modal, handled by cookie type below
+          { label: l.text('Legal notice', { context: 'Footer link to the legal notice' }), href: `${MISTRAL_URL}/legal` },
+          {
+            label: l.text('Privacy Choices', { context: 'Button to manage cookie privacy choices' }),
+            type: 'cookie',
+          },
+          {
+            label: l.text('Brand', { context: 'Footer link to brand assets' }),
+            href: `${MISTRAL_URL}/brand`,
+          },
+        ],
+      },
+      {
+        title: l.text('COMMUNITY', { context: 'Footer heading for community links' }),
+        links: [
+          {
+            label: 'Discord',
+            href: SOCIALS.discord,
+            external: true,
+            icon: '↗',
+          },
+          {
+            label: 'X',
+            href: SOCIALS.twitter,
+            external: true,
+            icon: '↗',
+          },
+          {
+            label: 'Github',
+            href: SOCIALS.github,
+            external: true,
+            icon: '↗',
+          },
+          {
+            label: 'LinkedIn',
+            href: SOCIALS.linkedin,
+            external: true,
+            icon: '↗',
+          },
+          { label: l.text('Ambassadors', { context: 'Footer link to the Mistral ambassador community' }), href: '/community/ambassadors' },
+        ],
+      },
+    ],
+  };
   return (
     <footer className="mt-10 w-[-webkit-fill-available] max-lg:-mx-inner-sides lg:w-full flex flex-col max-lg:px-inner-sides">
       <div className="relative overflow-clip pt-40">

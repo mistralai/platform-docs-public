@@ -1,57 +1,58 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { PRODUCT_LOGOS } from '@/schema/content/getting-started';
 import { useState, useRef, useCallback } from 'react';
-
-const CARDS = [
-  {
-    id: 'le-chat',
-    title: 'Le Chat',
-    href: '/le-chat/overview',
-    logo: PRODUCT_LOGOS['le-chat'],
-    color: 'bg-[#FF7000]',
-    rotation: '-rotate-[15deg]',
-    translate: '-translate-x-20 translate-y-4',
-    zIndex: 'z-10',
-  },
-  {
-    id: 'studio',
-    title: 'Studio',
-    href: '/studio-api/overview',
-    logo: PRODUCT_LOGOS['studio'],
-    color: 'bg-[#FF9549]',
-    rotation: '-rotate-[5deg]',
-    translate: '-translate-x-8',
-    zIndex: 'z-20',
-  },
-  {
-    id: 'models',
-    title: 'Models',
-    href: '/models',
-    logo: '/assets/logos/models.svg',
-    color: 'bg-[#FFC200]',
-    rotation: 'rotate-[5deg]',
-    translate: 'translate-x-8 -translate-y-2',
-    zIndex: 'z-30',
-  },
-  {
-    id: 'vibe',
-    title: 'Mistral Vibe',
-    href: '/mistral-vibe/overview',
-    logo: PRODUCT_LOGOS['mistral-vibe'],
-    color: 'bg-[#212121]',
-    rotation: 'rotate-[15deg]',
-    translate: 'translate-x-20 translate-y-6',
-    zIndex: 'z-40',
-  },
-];
+import { useLingo } from '@lingo.dev/react';
 
 const UNHOVER_DELAY = 100;
 
 export function HeroCards() {
+  const l = useLingo();
+  const CARDS = [
+    {
+      id: 'vibe',
+      title: 'Vibe',
+      href: '/vibe/overview',
+      logo: '/assets/logos/m-white.svg',
+      color: 'bg-[#FA500F]',
+      rotation: '-rotate-[15deg]',
+      translate: '-translate-x-20 translate-y-4',
+      zIndex: 'z-10',
+    },
+    {
+      id: 'studio',
+      title: 'Studio',
+      href: '/studio-api/overview',
+      logo: '/assets/logos/m-white.svg',
+      color: 'bg-[#0082E6]',
+      rotation: '-rotate-[5deg]',
+      translate: '-translate-x-8',
+      zIndex: 'z-20',
+    },
+    {
+      id: 'models',
+      title: l.text('Models', { context: 'Label for AI models' }),
+      href: '/models',
+      logo: '/assets/logos/m-white.svg',
+      color: 'bg-[#6F6F84]',
+      rotation: 'rotate-[5deg]',
+      translate: 'translate-x-8 -translate-y-2',
+      zIndex: 'z-30',
+    },
+    {
+      id: 'admin',
+      title: l.text('Admin', { context: 'Name of the Mistral admin console' }),
+      href: '/admin/security-access/back-office',
+      logo: '/assets/logos/m-white.svg',
+      color: 'bg-[#4a4a5e]',
+      rotation: 'rotate-[15deg]',
+      translate: 'translate-x-20 translate-y-6',
+      zIndex: 'z-40',
+    },
+  ];
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [isGroupHovered, setIsGroupHovered] = useState(false);
   const cardTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});

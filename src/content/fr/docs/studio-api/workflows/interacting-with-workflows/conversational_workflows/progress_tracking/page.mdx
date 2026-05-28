@@ -1,0 +1,111 @@
+---
+id: progress-tracking
+title: Suivi de progression
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Suivi de progression
+
+Affichez une liste de contrôle des étapes avec des mises à jour de statut en temps réel grâce à `TodoList`. Les utilisateurs voient à quelle étape se trouve le workflow et peuvent suivre les processus longs sans avoir à deviner.
+
+<SectionTab as="h1" sectionId="todo-list-progress-tracking">Todo list</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="expense-processing-workflow",
+    workflow_display_name="Expense Processing",
+    workflow_description="Process expense with step-by-step progress",
+)
+class ExpenseProcessingWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self, expense_id: str) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Define the steps
+        validate_item = workflows_mistralai.TodoListItem(
+            title="Validate expense",
+            description="Check expense details and receipts"
+        )
+        approve_item = workflows_mistralai.TodoListItem(
+            title="Get approval",
+            description="Route to manager for approval"
+        )
+        process_item = workflows_mistralai.TodoListItem(
+            title="Process payment",
+            description="Submit for reimbursement"
+        )
+
+        async with workflows_mistralai.TodoList(
+            items=[validate_item, approve_item, process_item]
+        ) as todo_list:
+            # Step 1: Validate (using context manager for automatic status)
+            async with validate_item:
+                pass  # ... validation logic ...
+
+            # Step 2: Approve (using context manager for automatic status)
+            async with approve_item:
+                pass  # ... approval logic ...
+
+            # Step 3: Process (using context manager for automatic status)
+            async with process_item:
+                pass  # ... processing logic ...
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=f"Expense {expense_id} processed successfully")]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="updating-item-status">Mise à jour du statut d’un élément</SectionTab>
+
+Il existe deux manières de mettre à jour le statut d’un `TodoListItem` :
+
+**Gestionnaire de contexte :**
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+async with item:
+    # Status automatically set to "in_progress" on enter
+    # ... do work ...
+    # Status automatically set to "done" on successful exit
+```
+
+  </TabItem>
+</Tabs>
+
+**Contrôle manuel (pour des mises à jour plus fines) :**
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+await item.set_status("in_progress")
+# ... do work ...
+await item.set_status("done")
+```
+
+  </TabItem>
+</Tabs>
+
+Utilisez le contrôle manuel si vous avez besoin de modifier le statut à des moments précis, de gérer des parcours conditionnels ou de traiter des exceptions personnalisées.
+
+<SectionTab as="h2" variant="secondary" sectionId="todolistitem-properties">Propriétés d’un TodoListItem</SectionTab>
+
+| Propriété     | Type                                | Description                                 |
+| ------------- | ----------------------------------- | ------------------------------------------- |
+| `id`          | `str`                               | UUID généré automatiquement                 |
+| `title`       | `str`                               | Titre affiché pour l’étape                  |
+| `description` | `str`                               | Description détaillée                       |
+| `status`      | `"todo" \| "in_progress" \| "done"` | Statut actuel (par défaut à `"todo"`)         |

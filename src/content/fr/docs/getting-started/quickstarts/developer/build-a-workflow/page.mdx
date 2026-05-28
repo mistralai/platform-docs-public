@@ -1,0 +1,117 @@
+---
+title: Créer un workflow
+sidebar_label: Créer un workflow
+sidebar_position: 4
+description: « Créez l'ossature d'un workflow IA durable, lancez un worker et déclenchez votre première exécution en environ 15 minutes. »
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+
+# Créer un workflow
+
+Les workflows vous permettent d'exécuter des pipelines d'IA multi-étapes, capables de résister aux crashs, aux nouvelles tentatives et aux longues attentes. Votre code s'exécute dans votre environnement ; Mistral gère l'orchestration, l'état et l'observabilité.
+
+À la fin de ce guide de démarrage, vous disposerez d'un workflow opérationnel fonctionnant localement, déclenché depuis la Console Mistral.
+
+**Durée estimée :** ~15 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Une clé API Mistral (voir [Envoyer votre première requête API](/getting-started/quickstarts/developer/first-api-request#step-1) si vous n'en avez pas encore)
+- [Python](https://www.python.org/downloads/) 3.12 ou version ultérieure
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) installé (`uvx` inclut cet outil)
+
+<SectionTab as="h2" sectionId="step-1">Étape 1 : Générer la structure de votre projet</SectionTab>
+
+Exécutez la commande suivante dans votre terminal :
+
+```bash
+uvx mistralai-workflows-cli setup
+```
+
+Le CLI crée la structure d'un Projet Python prêt à l'emploi et vous demande la clé API Mistral. Saisissez-la quand cela vous est demandé — elle sera stockée dans la configuration d'environnement du projet.
+
+Ouvrez le dossier généré (nom par défaut : `my-workflow`) dans votre éditeur.
+
+<SectionTab as="h2" sectionId="step-2">Étape 2 : Comprendre le workflow</SectionTab>
+
+Ouvrez `src/workflows/hello.py`. Le projet généré contient un exemple minimal :
+
+```python
+from pydantic import BaseModel
+import mistralai.workflows as workflows
+
+
+class HelloInput(BaseModel):
+    name: str = "World"
+
+
+@workflows.activity()
+async def greet(name: str) -> str:
+    return f"Hello, {name}! Welcome to Mistral Workflows."
+
+
+@workflows.workflow.define(
+    name="hello-world",
+    workflow_display_name="Hello World",
+    workflow_description="A minimal hello-world workflow.",
+)
+class HelloWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, input: HelloInput) -> str:
+        return await greet(input.name)
+```
+
+À noter :
+
+- `@workflows.activity()` marque une fonction comme une étape durable. Si le processus est interrompu en cours, la plateforme relance à partir de la dernière activité terminée.
+- `@workflows.workflow.define` enregistre le workflow avec un nom qui vous servira à le déclencher.
+
+<SectionTab as="h2" sectionId="step-3">Étape 3 : Démarrer le worker</SectionTab>
+
+Depuis la racine de votre projet, exécutez :
+
+```bash
+make start-worker
+```
+
+Le worker se connecte à l'API Mistral, enregistre votre workflow, puis attend les tâches à traiter. Laissez ce terminal ouvert.
+
+<SectionTab as="h2" sectionId="step-4">Étape 4 : Déclencher le workflow</SectionTab>
+
+Tandis que le worker tourne, ouvrez un deuxième terminal et déclenchez une exécution avec la commande Makefile :
+
+```bash
+make execute workflow=hello-world input='{"name": "World"}'
+```
+
+Ou lancez-le depuis la [Console Mistral](https://console.mistral.ai) :
+
+1. Accédez à **Workflows** dans le menu latéral.
+2. Sélectionnez **hello-world**.
+3. Cliquez sur **Start Workflow** et renseignez `{"name": "World"}` comme entrée.
+4. Ouvrez l’onglet **Executions** pour visualiser l’exécution.
+
+<SectionTab as="h2" sectionId="verify">Vérifier</SectionTab>
+
+L'exécution se termine par :
+
+```json
+{
+  "result": "Hello, World! Welcome to Mistral Workflows."
+}
+```
+
+Si votre terminal worker affiche une erreur de connexion, vérifiez que votre clé API est bien configurée et que le processus worker est en cours.
+
+Appuyez sur `Ctrl+C` pour arrêter le worker lorsque vous avez terminé.
+
+<SectionTab as="h2" sectionId="whats-next">Et après</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio-api/workflows/getting-started/core_concepts" title="Concepts fondamentaux" />
+  <LinkCard href="/studio-api/workflows/getting-started/cookbook_examples" title="Exemples d'utilisation" />
+  <LinkCard href="/studio-api/workflows/building-workflows/durable_agents" title="Créer un agent durable" />
+  <LinkCard href="/#quickstarts" title="Tous les guides de démarrage pour développeurs" />
+</UsefullLinkContainer>

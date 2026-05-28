@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import MiniSearch, { SearchResult } from 'minisearch';
 import { DocType } from '@/schema/doc';
+import { defaultLocale, locales, type Locale } from '@/i18n/config';
+
+const LOCALE_SET = new Set<string>(locales);
 
 export type Hit = SearchResult & {
   url: string;
@@ -28,6 +32,12 @@ export function useSearch({
 }: UseSearchHookParams = {}) {
   const { maxSuggestions = 5, documentTypes = ['docs', 'endpoint'] } = options;
 
+  const params = useParams<{ locale?: string }>();
+  const locale: Locale =
+    params?.locale && LOCALE_SET.has(params.locale)
+      ? (params.locale as Locale)
+      : defaultLocale;
+
   const [mini, setMini] = useState<MiniSearch | null>(null);
   const [docs, setDocs] = useState<
     Record<
@@ -49,13 +59,13 @@ export function useSearch({
   >({});
 
   useEffect(() => {
-    if (!open || mini) return;
+    if (!open) return;
 
     let mounted = true;
     (async () => {
       const [idxRes, docsRes] = await Promise.all([
-        fetch('/search-index.json').then(r => r.text()),
-        fetch('/search-docs.json').then(r => r.json()),
+        fetch(`/search-index-${locale}.json`).then(r => r.text()),
+        fetch(`/search-docs-${locale}.json`).then(r => r.json()),
       ]);
 
       // Rehydrate MiniSearch with enhanced fields for endpoints
@@ -111,7 +121,7 @@ export function useSearch({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [open, locale]);
 
   const suggestions = useMemo<Hit[]>(() => {
     const all = Object.values(docs).filter(

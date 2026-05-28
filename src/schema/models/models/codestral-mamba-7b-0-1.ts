@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Codestral Mamba 7B',
-  description: `A coding dedicated model using a mamba 2 architecture for research purposes under an open license.`,
-  shortDescription: `A coding dedicated model using a mamba 2 architecture for research purposes.`,
+  describe: (l) => ({
+    description: l.text(`A coding dedicated model using a mamba 2 architecture for research purposes under an open license.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A coding dedicated model using a mamba 2 architecture for research purposes.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'codestral-mamba-7b-0-1',
-  releaseDate: 'July 16, 2024',
+  releaseDate: '2024-07-16',
   version: '0.1',
   frontier: false,
   class: 'Specialist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: { 
-    speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 0.0,
+    performance: 0.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: 'June 6, 2025', retirementDate: 'June 6, 2025', replacement: 'Codestral'},
+  metadata: {deprecationDate: '2025-06-06', retirementDate: '2025-06-06', replacement: 'Codestral'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

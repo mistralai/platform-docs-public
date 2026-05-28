@@ -1,0 +1,115 @@
+---
+id: annotations 
+title: Annotations
+slug: annotations
+sidebar_position: 3.2
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+import BBoxAnnotationTab from './bbox_annotation_tab/_page.mdx';
+import DocumentAnnotationTab from './document_annotation_tab/_page.mdx';
+import BBoxDocumentAnnotationTab from './bbox_document_annotation_tab/_page.mdx';
+
+# Annotations
+
+En plus de la fonctionnalité OCR de base, l'API Document AI de Mistral ajoute la fonctionnalité `annotations`, qui permet d'extraire des informations dans un format json structuré que vous fournissez.
+
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
+
+### Que pouvez-vous faire avec les Annotations ?
+
+Plus précisément, elle propose deux types d'annotations :
+- `bbox_annotation` : fournit l'annotation des bboxes extraites par le modèle OCR (graphiques, figures, etc.) en fonction des exigences de l'utilisateur et du format d'annotation bbox/image fourni. L'utilisateur peut par exemple demander de décrire ou légender la figure.
+- `document_annotation` : renvoie l'annotation de l'ensemble du document en fonction du format d'annotation de document fourni.
+
+<Image
+  url={['/img/ocr_annotations_explanation.png', '/img/ocr_annotations_explanation_dark.png']}
+  alt="annotations_explanation_graph"
+  width="600px"
+  centered
+/>
+
+<SectionTab as="h2" variant="secondary" sectionId="key-capabilities">Fonctionnalités clés</SectionTab>
+
+* Étiquetage et annotation de données
+* Extraction et structuration d'informations spécifiques de documents dans un format JSON prédéfini
+* Automatisation de l'extraction de données pour réduire la saisie manuelle et les erreurs
+* Traitement efficace de grands volumes de documents pour les applications d'entreprise
+
+<SectionTab as="h2" variant="secondary" sectionId="common-use-cases">Cas d'usage courants</SectionTab>
+
+* Analyse de formulaires, classification de documents et traitement d'images, incluant texte, graphiques et signatures
+* Conversion de graphiques en tableaux, extraction de texte en petits caractères à partir de figures, ou définition de types d'images personnalisés
+* Capture de données de reçus, incluant les noms de marchands et les montants de transactions, pour la gestion des dépenses.
+* Extraction d'informations clés telles que les détails des fournisseurs et les montants à partir de factures pour une comptabilité automatisée.
+* Extraction de clauses et termes clés de contrats pour faciliter la révision et la gestion
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+<Image
+  url={['/img/ocr_annotations_workflow.png', '/img/ocr_annotations_workflow_dark.png']}
+  alt="annotations_workflow_graph"
+  width="800px"
+  centered
+/>
+
+<SectionTab as="h2" variant="secondary" sectionId="bbox-annotations-explanation">Annotations BBOX</SectionTab>
+
+- Tous types de documents :
+  - Une fois l'OCR standard terminé, nous appelons un LLM capable de vision pour toutes les bboxes individuellement avec le format d'annotation fourni.
+
+<SectionTab as="h2" variant="secondary" sectionId="document-annotation-explanation">Annotation de document</SectionTab>
+
+- Tous types de documents :
+  - Nous exécutons l'OCR et envoyons le texte de sortie en Markdown, accompagné des huit premières bounding boxes d'images extraites, à un LMM capable de vision, avec le format d'annotation fourni.
+
+<SectionTab as="h2" variant="secondary" sectionId="accepted-formats">Formats acceptés</SectionTab>
+
+Vous pouvez utiliser notre API avec les formats de documents suivants :
+- [OCR avec PDF](basic_ocr#ocr-with-pdf)
+- [OCR avec image](basic_ocr#ocr-with-image) : même à partir de sources de faible qualité ou manuscrites.
+- scans, DOCX, PPTX...
+
+Dans les extraits de code ci-dessous, nous considérerons le format `OCR avec PDF`.
+
+<SectionTab as="h1" sectionId="usage">Utilisation</SectionTab>
+
+### Comment annoter
+
+Comme mentionné précédemment, vous pouvez soit :
+- Utiliser la fonctionnalité `bbox_annotation`, permettant d'extraire des informations à partir des bboxes du document.
+- Utiliser la fonctionnalité `document_annotation`, permettant d'extraire des informations de l'ensemble du document.
+  - En option, nous proposons également la possibilité d'ajouter un `document_annotation_prompt`, un prompt général de haut niveau pour guider et instruire sur la manière d'annoter le document.
+- Utiliser les deux fonctionnalités simultanément.
+
+<ExplorerTabs id="usage">
+  <ExplorerTab value="bbox-annotation" label="Annotation BBOX">
+    <BBoxAnnotationTab/>
+  </ExplorerTab>
+  <ExplorerTab value="document-annotation" label="Annotation de document">
+     <DocumentAnnotationTab/>
+  </ExplorerTab>
+  <ExplorerTab value="bbox-document-annotation" label="Annotation BBOX et document">
+    <BBoxDocumentAnnotationTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
+
+Pour plus d'informations et de guides sur l'utilisation de l'OCR, nous disposons des cookbooks suivants :
+- [Extraction de données avec sorties structurées](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/ocr/data_extraction.ipynb)
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+<FaqItem question="Y a-t-il des limites concernant l'API Document AI ?">
+Oui, il existe certaines limitations pour l'API Document Intelligence. Les fichiers de documents téléchargés ne doivent pas dépasser 50 Mo et ne doivent pas contenir plus de 1 000 pages.
+</FaqItem>
+<FaqItem question="Y a-t-il des limites concernant les Annotations ?">
+Lors de l'utilisation des Annotations de document, chaque annotation accepte un maximum de 8 bounding boxes d'images. Nous recommandons d'utiliser l'annotation de document pour les documents centrés sur le texte.
+</FaqItem>
+</Faq>

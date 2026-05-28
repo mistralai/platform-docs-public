@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
-import { useParams, usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation.client';
+import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
 import {
   SidebarContent,
@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/sidebar';
 import { ArrowUpRight } from 'lucide-react';
 import { ChevronRightIcon, ChevronDownIcon } from '@/components/icons/pixel';
+import HomeIcon from '@/components/icons/pixel/home';
+import { useLingo } from '@lingo.dev/react';
 import { ActiveIndicator } from '@/components/ui/active-indicator';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
@@ -27,14 +29,21 @@ import {
   ExpandedCategoriesOptions,
 } from '@/hooks/use-expanded-categories';
 import { getHrefSlugs } from '@/lib/urls';
-import { useActiveElementHash } from '@/app/(api)/components/hash-auto-change';
+import { useActiveElementHash } from '@/app/[locale]/(api)/components/hash-auto-change';
 import { AnyDocsMetadata } from '@/schema';
-import { getActiveSidebarSections } from '@/schema/content/header';
+import { getActiveSidebarItemHrefs } from '@/schema/content/header';
 
 export type SideBarTreeNode = {
   clickable: boolean;
   label: string;
   href?: string;
+  /**
+   * Topology identity of the node (always derived from the directory slug,
+   * independent of any `link` override from `_category_.json`). Used by the
+   * sidebar to determine ancestor/sibling relationships for accordion
+   * collapse and auto-expansion. Falls back to `href` when unset.
+   */
+  categoryPath?: string;
   download?: {
     filename: string;
   };
@@ -145,7 +154,7 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
   );
 };
 
-import { MethodBadge } from '@/app/(api)/components/method-badge';
+import { MethodBadge } from '@/app/[locale]/(api)/components/method-badge';
 
 const SidebarFileItem = <T extends SideBarTreeNode>({
   item,
@@ -290,7 +299,7 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
     isPathContained(getHrefSlugs(item.href!), currentSlug)
   );
 
-  const categoryId = item.href || item.label;
+  const categoryId = item.categoryPath || item.href || item.label;
 
   const [isExpanded, setIsExpanded] = React.useState(
     forceExpandAll ||
@@ -424,20 +433,22 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
   sidebar,
   renderItem,
   children,
+  filterByActiveHeaderTab = true,
 }: {
   sidebar: T[];
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
   children?: React.ReactNode;
+  filterByActiveHeaderTab?: boolean;
 }) => {
   const pathname = usePathname();
   const UsedSidebarItem = renderItem ? SidebarItem<T> : SidebarFileItem<T>;
   const [hasScrollDown, setHasScrollDown] = React.useState(false);
 
   const filteredSidebar = React.useMemo(() => {
-    if (!pathname) return sidebar;
-    const activeSections = getActiveSidebarSections(pathname);
-    return sidebar.filter(item => activeSections.includes(item.label));
-  }, [sidebar, pathname]);
+    if (!pathname || !filterByActiveHeaderTab) return sidebar;
+    const activeHrefs = getActiveSidebarItemHrefs(pathname);
+    return sidebar.filter(item => !!item.href && activeHrefs.includes(item.href));
+  }, [sidebar, pathname, filterByActiveHeaderTab]);
 
   React.useEffect(() => {
     const element = document.querySelector(
@@ -467,11 +478,28 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
     }
   }, []);
 
+  const l = useLingo();
+  const isHomeActive = pathname === '/';
+
   return (
     <>
       <SidebarHeader className="max-lg:hidden" />
       <SidebarContent>
         {children}
+        <SidebarGroup>
+          <SidebarGroupLabel className="flex justify-between items-center w-full group/label pr-1">
+            <Link
+              href="/"
+              className={cn(
+                'flex items-center gap-1.5 transition-colors',
+                isHomeActive ? 'text-foreground font-bold' : 'hover:text-foreground'
+              )}
+            >
+              <HomeIcon className="size-3.5" aria-hidden="true" />
+              {l.text('Home', { context: 'Sidebar link at the top of every docs page that returns to the documentation home' })}
+            </Link>
+          </SidebarGroupLabel>
+        </SidebarGroup>
         {filteredSidebar.map((item, index) => {
           if (!item.children || !item.children.length) {
             return (
@@ -492,7 +520,7 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
 
           // Check if we are in one of the new sections
           const isNewSection =
-            pathname?.startsWith('/mistral-vibe') ||
+            pathname?.startsWith('/vibe') ||
             pathname?.startsWith('/studio-api') ||
             pathname?.startsWith('/models') ||
             pathname?.startsWith('/admin') ||
@@ -616,6 +644,7 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
   renderItem,
   hashResponsive = false,
   forceExpandAll = false,
+  filterByActiveHeaderTab = true,
   children,
 }: {
   sidebar: T[];
@@ -623,6 +652,7 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
   renderItem?: (props: { item: T; isActive: boolean }) => React.ReactNode;
   hashResponsive?: boolean;
   forceExpandAll?: boolean;
+  filterByActiveHeaderTab?: boolean;
   children?: React.ReactNode;
 }) => {
   return (
@@ -633,7 +663,11 @@ export const DocsSidebar = <T extends SideBarTreeNode>({
       hashResponsive={hashResponsive}
       forceExpandAll={forceExpandAll}
     >
-      <DocsSidebarContent<T> sidebar={sidebar as T[]} renderItem={renderItem}>
+      <DocsSidebarContent<T>
+        sidebar={sidebar as T[]}
+        renderItem={renderItem}
+        filterByActiveHeaderTab={filterByActiveHeaderTab}
+      >
         {children}
       </DocsSidebarContent>
     </DocsSidebarProvider>

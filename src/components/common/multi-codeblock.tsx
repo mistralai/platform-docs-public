@@ -19,6 +19,7 @@ import {
   $multiCodeBlockWrapper,
   $multiCodeBlockContent,
 } from './multi-codeblock.styles';
+import { useLingo } from '@lingo.dev/react';
 interface CodeSnippetProps {
   value: string;
   label: string;
@@ -34,6 +35,7 @@ interface TabsProps {
 const OUTPUT_TAB_VALUE = 'output';
 
 function Tabs({ children, className, tabsClassName, groupId }: TabsProps) {
+  const l = useLingo();
   const { selectedLanguage, setSelectedLanguage } = useTabSync();
   const { selectedSDKVersion, setSelectedSDKVersion } = useSDKVersionSync();
 
@@ -136,7 +138,7 @@ function Tabs({ children, className, tabsClassName, groupId }: TabsProps) {
                   variant="code"
                   size="sm"
                 >
-                  Output
+                  {l.text('Output', { context: 'Tab label for the output/result pane of a multi-language code block' })}
                 </TabsTrigger>
               </div>
             </>

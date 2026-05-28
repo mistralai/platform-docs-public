@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Codestral',
-  description: `Our first cutting-edge language model for coding and FIM, released under the MNPL license.`,
-  shortDescription: `Our first cutting-edge language model for coding and FIM.`,
+  describe: (l) => ({
+    description: l.text(`Our first cutting-edge language model for coding and FIM, released under the MNPL license.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our first cutting-edge language model for coding and FIM.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'codestral-24-05',
-  releaseDate: 'May 29, 2024',
+  releaseDate: '2024-05-29',
   version: '24.05',
   frontier: false,
   class: 'Specialist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 0.0,
+    performance: 0.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: 'December 2, 2024', retirementDate: 'June 16, 2025', replacement: 'Codestral'},
+  metadata: {deprecationDate: '2024-12-02', retirementDate: '2025-06-16', replacement: 'Codestral'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

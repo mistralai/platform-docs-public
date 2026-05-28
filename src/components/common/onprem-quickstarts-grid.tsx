@@ -1,27 +1,28 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import ComputerIcon from '@/components/icons/pixel/computer';
 import ArrowRightIcon from '@/components/icons/pixel/arrow-right';
 import ClockIcon from '@/components/icons/pixel/clock';
 import { cn } from '@/lib/utils';
-
-const QUICKSTARTS = [
-    {
-        title: 'Deploy a custom model',
-        description: 'Deploy a model using Docker and the Mistral Inference Server.',
-        time: '30 min',
-        href: '/getting-started/quickstarts/on-prem/deploy-model',
-        icon: ComputerIcon,
-    }
-];
+import { useLingo } from '@lingo.dev/react';
 
 export function OnPremQuickstartsGrid() {
+    const l = useLingo();
+    const QUICKSTARTS = [
+        {
+            title: l.text('Deploy a custom model', { context: 'Quickstart title about deploying a custom model with Docker' }),
+            description: l.text('Deploy a model using Docker and the Mistral Inference Server.', { context: 'Quickstart description about deploying a custom model with Docker' }),
+            time: '30 min',
+            href: '/getting-started/quickstarts/on-prem/deploy-model',
+            icon: ComputerIcon,
+        }
+    ];
     return (
         <div className="flex flex-col gap-8 my-8 w-full">
             <div className="text-muted-foreground text-base max-w-2xl">
-                Choose a quickstart to begin. A commercial license is required for on-premise deployments.
+                {l.text('Choose a quickstart to begin. A commercial license is required for on-premise deployments.', { context: 'Intro text for self-hosted quickstarts' })}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-2">
@@ -61,7 +62,7 @@ export function OnPremQuickstartsGrid() {
                                 <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border/50">
                                     <ClockIcon className="size-3.5 text-muted-foreground/70" />
                                     <span className="text-xs font-medium text-muted-foreground tracking-wide uppercase">
-                                        {qs.time} to complete
+                                        {l.text('{time} to complete', { values: { time: qs.time }, context: 'Estimated time to finish a quickstart' })}
                                     </span>
                                 </div>
                             </div>

@@ -1,11 +1,13 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import React from 'react';
 import { Bullet } from '@/components/ui/bullet';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { headerLinks, getActiveHeaderTab } from '@/schema/content/header';
+import { headerLinkLabel } from '@/schema/content/i18n';
+import { useLingo } from '@lingo.dev/react';
 import { MobileMenuClose } from '../mobile-menu';
 
 export default function DesktopHeaderLinks({
@@ -15,15 +17,17 @@ export default function DesktopHeaderLinks({
 }) {
   const pathname = usePathname();
   const activeTab = getActiveHeaderTab(pathname);
+  const l = useLingo();
 
   return (
     <nav className={cn('flex items-center gap-1 pointer-events-auto flex-nowrap', className)}>
       {headerLinks.map(link => {
-        const isActive = activeTab.label === link.label;
+        const isActive = activeTab.id === link.id;
+        const label = headerLinkLabel(link.id, l);
 
         return (
           <Link
-            key={link.label}
+            key={link.id}
             href={link.href}
             className={cn(
               'inline-flex gap-2 items-center px-2.5 py-1.5 text-sm rounded-md transition-colors duration-150 whitespace-nowrap',
@@ -37,8 +41,8 @@ export default function DesktopHeaderLinks({
               size="default"
               className="transition-colors"
             />
-            <span className="inline-flex flex-col items-start after:content-[attr(data-label)] after:font-bold after:h-0 after:invisible after:overflow-hidden" data-label={link.label}>
-              {link.label}
+            <span className="inline-flex flex-col items-start after:content-[attr(data-label)] after:font-bold after:h-0 after:invisible after:overflow-hidden" data-label={label}>
+              {label}
             </span>
           </Link>
         );
@@ -50,11 +54,12 @@ export default function DesktopHeaderLinks({
 export const MobileHeaderLinks = () => {
   const pathname = usePathname();
   const activeTab = getActiveHeaderTab(pathname);
+  const l = useLingo();
 
   return (
     <nav className="flex w-full flex-col gap-1">
       {headerLinks.map(link => {
-        const isActive = activeTab.label === link.label;
+        const isActive = activeTab.id === link.id;
         const linkClassName = cn(
           'w-full h-10 px-3 flex items-center rounded-sm justify-between',
           { 'bg-sidebar-accent font-bold': isActive },
@@ -62,9 +67,9 @@ export const MobileHeaderLinks = () => {
         );
 
         return (
-          <MobileMenuClose key={link.label} asChild>
+          <MobileMenuClose key={link.id} asChild>
             <Link className={linkClassName} href={link.href}>
-              <span className="flex items-center">{link.label}</span>
+              <span className="flex items-center">{headerLinkLabel(link.id, l)}</span>
               {isActive ? <Bullet variant="primary" /> : null}
             </Link>
           </MobileMenuClose>

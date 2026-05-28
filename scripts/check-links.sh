@@ -114,8 +114,15 @@ with open('$REPORT_CSV', 'w', newline='') as f:
     w = csv.writer(f)
     w.writerow(['source', 'broken_link', 'type', 'status'])
     for source, errors in sorted(error_map.items()):
-        # .next/server/app/vibe/terminal.html → src/app/(docs)/vibe/terminal/page.mdx
-        mdx = source.replace('.next/server/app/', 'src/app/(docs)/').removesuffix('.html') + '/page.mdx'
+        # .next/server/app/en/vibe/terminal.html        → src/content/en/docs/vibe/terminal/page.mdx
+        # .next/server/app/en/api/endpoint/chat.html    → src/content/en/api/endpoint/chat/page.mdx
+        rel = source.replace('.next/server/app/', '').removesuffix('.html')
+        parts = rel.split('/', 1)
+        locale = parts[0] if parts[0] in ('en', 'fr') else 'en'
+        rest = parts[1] if parts[0] in ('en', 'fr') and len(parts) > 1 else rel
+        kind = 'api' if rest.startswith('api/') else 'docs'
+        rest = rest[len('api/'):] if rest.startswith('api/') else rest
+        mdx = f'src/content/{locale}/{kind}/{rest}/page.mdx'
         for err in errors:
             url = err['url']
             # Clean file:// URLs → just the path

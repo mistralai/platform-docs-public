@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Magistral Small 1.2',
-  description: `Our small multimodal reasoning model update of September 2025.`,
-  shortDescription: `Our small multimodal reasoning model.`,
+  describe: (l) => ({
+    description: l.text(`Our small multimodal reasoning model update of September 2025.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our small multimodal reasoning model.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'magistral-small-1-2-25-09',
-  releaseDate: 'September 18, 2025',
+  releaseDate: '2025-09-18',
   version: '25.09',
   frontier: true,
   class: 'Generalist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

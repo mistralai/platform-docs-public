@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Small 3.2',
-  description: `An update to our previous small model, released June 2025.`,
-  shortDescription: `An update to our previous small model, released June 2025.`,
+  describe: (l) => ({
+    description: l.text(`An update to our previous small model, released June 2025.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`An update to our previous small model, released June 2025.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-small-3-2-25-06',
-  releaseDate: 'June 20, 2025',
+  releaseDate: '2025-06-20',
   version: '25.06',
   frontier: true,
   class: 'Generalist',
@@ -32,9 +34,9 @@ export default {
   bloglink: null,
   paperlink: null,
   contextLength: '128k',
-  ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+  ratings: {
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'batching', 'connectors', 'predicted-outputs'],
 
   },
-  metadata: { deprecationDate: 'April 30, 2026', retirementDate: 'July 31, 2026', replacement: 'Mistral Small 4' },
+  metadata: { deprecationDate: '2026-04-30', retirementDate: '2026-07-31', replacement: 'Mistral Small 4' },
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

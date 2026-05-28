@@ -1,60 +1,56 @@
 "use client"
 import { usePathname } from 'next/navigation'
+import { useLingo } from '@lingo.dev/react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import { ArrowRightIcon } from '@/components/icons/pixel';
 
 const UTM = "?utm_source=docs&utm_medium=header_cta&utm_campaign=studio_trial"
-const DEFAULT_CTA = { href: "https://console.mistral.ai", label: "Try Studio" } as const
 
-const CTA_BY_PATH: Record<string, { href: string; label: string }> = {
+type CtaKey =
+  | 'studio'
+  | 'audio'
+  | 'realtime'
+  | 'batch'
+  | 'documentAi'
+  | 'vibe'
+  | 'vibeCode'
+  | 'admin'
+
+const DEFAULT_CTA = { href: "https://console.mistral.ai", key: 'studio' as CtaKey }
+
+const CTA_BY_PATH: Record<string, { href: string; key: CtaKey }> = {
 
   "/studio-api/audio/speech_to_text/offline_transcription": {
     href: "https://console.mistral.ai/build/audio/speech-to-text",
-    label: "Try our Audio API",
+    key: 'audio',
   },
   "/studio-api/audio/speech_to_text/realtime_transcription": {
     href: "https://console.mistral.ai/build/audio/realtime",
-    label: "Try our Realtime Audio API",
+    key: 'realtime',
   },
   "/studio-api/batch-processing": {
     href: "https://console.mistral.ai/build/batches",
-    label: "Try our Batch API",
+    key: 'batch',
   },
   "/models/overview": {
     href: "https://console.mistral.ai/build/playground",
-    label: "Try Studio",
+    key: 'studio',
   },
   "/models/model-selection-guide": {
     href: "https://console.mistral.ai/build/playground",
-    label: "Try Studio",
+    key: 'studio',
   },
   "/studio-api/document-processing": {
     href: "https://console.mistral.ai/build/document-ai/ocr-playground",
-    label: "Try Document AI",
-  },
-  "/mistral-vibe/using-fim-api": {
-    href: "https://console.mistral.ai/codestral/cli",
-    label: "Try Vibe",
-  },
-  "/mistral-vibe/terminal": {
-    href: "https://console.mistral.ai/codestral/cli",
-    label: "Try Vibe",
-  },
-  "/mistral-vibe/agents-skills": {
-    href: "https://console.mistral.ai/codestral/cli",
-    label: "Try Vibe",
-  },
-  "/mistral-vibe/local": {
-    href: "https://console.mistral.ai/codestral/cli",
-    label: "Try Vibe",
+    key: 'documentAi',
   },
 }
 
-const CTA_BY_PREFIX: Array<{ prefix: string; href: string; label: string }> = [
-  { prefix: "/le-chat", href: "https://chat.mistral.ai", label: "Try Le Chat" },
-  { prefix: "/mistral-vibe", href: "https://console.mistral.ai/codestral/cli", label: "Try Vibe" },
-  { prefix: "/admin", href: "https://console.mistral.ai/organisation", label: "Go to Admin" },
+const CTA_BY_PREFIX: Array<{ prefix: string; href: string; key: CtaKey }> = [
+  { prefix: "/vibe/code", href: "https://console.mistral.ai/codestral/cli", key: 'vibeCode' },
+  { prefix: "/vibe", href: "https://chat.mistral.ai", key: 'vibe' },
+  { prefix: "/admin", href: "https://admin.mistral.ai/", key: 'admin' },
 ]
 
 function resolveCta(pathname: string) {
@@ -65,9 +61,33 @@ function resolveCta(pathname: string) {
   return DEFAULT_CTA
 }
 
+function useCtaLabel(key: CtaKey) {
+  const l = useLingo()
+  switch (key) {
+    case 'audio':
+      return l.text('Try our Audio API', { context: 'Call to try the audio transcription API' })
+    case 'realtime':
+      return l.text('Try our Realtime Audio API', { context: 'Call to try the realtime audio API' })
+    case 'batch':
+      return l.text('Try our Batch API', { context: 'Call to try the batch processing API' })
+    case 'documentAi':
+      return l.text('Try Document AI', { context: 'Call to try document OCR in Studio' })
+    case 'vibe':
+      return l.text('Open Vibe', { context: 'Call to open Vibe' })
+    case 'vibeCode':
+      return l.text('Try Vibe Code', { context: 'Call to try Vibe Code, the coding mode of Vibe' })
+    case 'admin':
+      return l.text('Go to Admin', { context: 'Call to open the admin console' })
+    case 'studio':
+    default:
+      return l.text('Try Studio', { context: 'Call to open the Studio console' })
+  }
+}
+
 export const DynamicStudioCta = (props: React.ComponentProps<typeof Button>) => {
   const pathname = usePathname()
-  const { href, label } = resolveCta(pathname)
+  const { href, key } = resolveCta(pathname)
+  const label = useCtaLabel(key)
 
   return (
     <Button asChild {...props}>

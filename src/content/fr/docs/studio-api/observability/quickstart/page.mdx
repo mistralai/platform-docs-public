@@ -1,0 +1,189 @@
+---
+id: observability_quickstart
+title: Guide de démarrage
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Badge } from '@/components/ui/badge';
+import { Admonition } from '@/components/common/admonition';
+
+# Guide de démarrage
+
+:::info
+Ce guide présente le workflow Observabilité dans [Studio](http://console.mistral.ai).
+
+**Vous êtes développeur ?** Recherchez les encadrés `Implémentation API & SDK` inclus dans chaque étape :
+- ils montrent la ou les **méthodes SDK exactes** pour la même action,
+- et renvoient à la section correspondante dans la documentation API/SDK.
+:::
+
+<SectionTab as="h1" sectionId="what-youll-get">Ce que vous obtiendrez</SectionTab>
+
+À la fin de ce guide, vous disposerez de :
+
+- Une **vue filtrée** de votre trafic de production montrant les conversations pertinentes.
+- Un **Judge** qui identifie et note/labellise automatiquement ces conversations pour vous.
+- Une **Campagne** complétée qui applique le Judge à l'ensemble de votre trafic à grande échelle.
+- Un **Dataset** construit à partir des résultats de la Campagne.
+
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
+
+Assurez-vous de disposer de :
+
+- Une Organisation de **niveau Entreprise**.
+- Un **accès administrateur** aux fonctionnalités Observabilité dans votre Organisation.
+- Un trafic de production avec des **événements de chat completion**.
+
+<SectionTab as="h1" sectionId="step-1">Étape 1 : Explorer le trafic de production</SectionTab>
+
+Cliquez sur **Observe** puis ouvrez **Explorer** dans la barre latérale.
+
+Votre objectif est de trouver une combinaison de filtres qui fait ressortir les **conversations pertinentes** (par exemple, les modes de défaillance, les réponses de faible qualité ou les comportements spécifiques que vous souhaitez examiner).
+
+1. Commencez par une **plage temporelle large** (par exemple, les 7 derniers jours) et **un modèle** (par exemple, `mistral-medium-2508`).
+2. **Expérimentez avec les filtres** jusqu'à trouver une combinaison qui correspond à vos besoins. Par exemple :
+   - `invoked_tools includes "web_search"` pour isoler les conversations utilisant des outils.
+   - `last_user_message_preview contains "reset password"` pour trouver les conversations sur un sujet spécifique.
+   - `total_time_elapsed > 5` pour trouver les réponses lentes.
+3. **Cliquez sur les événements individuels** pour inspecter les messages, les appels d'outils et les métadonnées.
+
+:::tip
+Affiner vos filtres **améliore la précision du Judge et des Campagnes**. Cette étape vous aide à définir ce qui est « pertinent » avant d'automatiser les évaluations.
+:::
+
+<figure className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+  <Image
+    url="/img/observability_explorer_ui.png"
+    alt="La vue Explorer avec la barre de filtres affichant `model_name = 'mistral-medium-2508'` et une plage de dates. En dessous, une liste d'événements avec des colonnes pour l'horodatage, le modèle, les tokens et la latence. Un événement est développé montrant la conversation complète."
+    centered
+    className="border-none!"
+  />
+  <legend className="text-sm text-gray-500 text-center italic">La vue Explorer avec la barre de filtres affichant `model_name = "mistral-medium-2508"` et une plage de dates.</legend>
+</figure>
+
+<Admonition type="virgin" hideType={true}>
+<Badge variant="outline" size="sm" className="uppercase font-mono mb-4">Implémentation API & SDK</Badge>
+
+<a href="./explorer#sdk-access">Dans le SDK</a>, utilisez la méthode <code>chat_completion_events.search()</code> pour filtrer vos événements de manière programmatique.
+</Admonition>
+
+<SectionTab as="h1" sectionId="step-2">Étape 2 : Créer un Judge</SectionTab>
+
+Vous avez identifié une combinaison de filtres qui fait ressortir les conversations pertinentes. Vous allez maintenant créer un Judge pour **les évaluer automatiquement**.
+
+1. Accédez à **Judges** dans la barre latérale et cliquez sur **Create Judge**.
+2. **Sélectionnez un modèle** parmi les options disponibles.
+3. Fournissez des instructions claires détaillant **comment évaluer les conversations**. Par exemple :
+    ```text
+    Évaluez dans quelle mesure la réponse de l'assistant est utile à la question de l'utilisateur.
+    Déterminez si la réponse est précise, pertinente et complète.
+    ```
+
+4. **Ajoutez des outils** (Optionnel) :
+   - Activez **Web Search** pour donner au Judge un accès à internet.
+   - Choisissez **Code Interpreter** pour permettre au Judge d'exécuter son propre code Python.
+5. **Sélectionnez un type de Judge** et fournissez les labels ou plages de scores correspondants :
+   - **Classification** pour des labels discrets (par exemple, `helpful` / `not helpful`).
+   - **Regression** pour un score numérique (par exemple, de 0 à 5).
+  
+6. Cliquez sur **Create Judge**, fournissez un nom et une description, puis confirmez.
+
+<figure className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+  <Image
+    url="/img/observability_judges_create.png"
+    alt="Le formulaire de création de Judge montrant une zone de texte pour les instructions, le sélecteur de type de sortie (Classification sélectionnée avec deux options : 'helpful' et 'not helpful'), et le menu déroulant de sélection du modèle."
+    centered
+    className="border-none!"
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Le formulaire de création de Judge avec les instructions, le type de sortie et la sélection du modèle.</legend>
+</figure>
+
+:::tip
+[Testez votre Judge](./judges#validation-before-scale) sur des enregistrements réels **avant de lancer une Campagne**.
+:::
+
+<Admonition type="virgin" hideType={true}>
+<Badge variant="outline" size="sm" className="uppercase font-mono mb-4">Implémentation API & SDK</Badge>
+
+<a href="./judges#sdk-access">Dans le SDK</a>, utilisez <code>judges.create()</code> et passez vos instructions et autres paramètres dans la fonction.
+</Admonition>
+
+<SectionTab as="h1" sectionId="step-3">Étape 3 : Lancer une Campagne</SectionTab>
+
+Une **Campagne** évalue un ensemble d'événements filtrés et **applique votre Judge** à ceux-ci. Pour lancer une Campagne :
+
+1. Accédez à **Campaigns** dans la barre latérale et cliquez sur **Create Campaign**.
+2. Dans le formulaire de création de Campagne :
+    + Sélectionnez le **Judge** que vous avez créé à l'Étape 2.
+    + Sélectionnez une **plage temporelle** (par exemple, les 7 derniers jours).
+    + **Définissez vos filtres** (réutilisez les mêmes conditions de filtrage de l'Étape 1, ou élargissez le périmètre si nécessaire)
+    + Limitez le **nombre d'événements** à traiter (de 100 à 10 000).
+3. Cliquez sur **Create Campaign**, définissez un nom et une description pour la Campagne, puis confirmez.
+
+**Les Campagnes s'exécutent en arrière-plan**. Consultez ultérieurement le [tableau de bord Campaigns](https://console.mistral.ai/observability/campaigns) pour voir les résultats.
+
+<figure className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+  <Image
+    url="/img/observability_campaign_run.png"
+    alt="La vue détaillée de campagne montrant : le Judge utilisé, la plage temporelle, les conditions de filtrage et le nombre d'événements considérés"
+    centered
+    className="border-none!"
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Créez une nouvelle Campagne et appliquez un Judge.</legend>
+</figure>
+
+<Admonition type="virgin" hideType={true}>
+<Badge variant="outline" size="sm" className="uppercase font-mono mb-4">Implémentation API & SDK</Badge>
+
+<a href="./campaigns#sdk-access">Dans le SDK</a>, utilisez <code>campaigns.create()</code> pour définir les filtres et attacher votre Judge, puis surveillez la progression avec <code>campaigns.fetch_status()</code>.
+</Admonition>
+
+<SectionTab as="h1" sectionId="step-4">Étape 4 : Enregistrer les résultats dans un Dataset</SectionTab>
+
+Votre Campagne est terminée. Tous les événements sont désormais **annotés avec la sortie du Judge** et vous pouvez **les enregistrer dans un Dataset** :
+
+1. **Sélectionnez les événements pertinents** (vous pouvez appliquer des filtres supplémentaires).
+2. Cliquez sur **Actions** et choisissez entre ajouter les événements correspondants à un **nouveau Dataset** ou les ajouter à un Dataset existant.
+
+:::tip
+Les annotations de Campagnes sont liées à leurs événements d'origine. Consultez-les à tout moment dans [Explorer](./explorer).
+:::
+
+<Admonition type="virgin" hideType={true}>
+<Badge variant="outline" size="sm" className="uppercase font-mono mb-4">Implémentation API & SDK</Badge>
+
+Dans le SDK (voir <a href="./campaigns#sdk-access">Campaigns</a> & <a href="./datasets#sdk-access">Datasets</a>), utilisez <code>campaigns.list_events()</code> puis <code>datasets.import_from_explorer()</code> pour transférer directement les événements correspondants dans un dataset.
+</Admonition>
+
+<SectionTab as="h1" sectionId="whats-next">Félicitations</SectionTab>
+
+Félicitations ! Vous avez créé un **Dataset organisé et annoté**, construit à partir de **données de production réelles**. 
+
+Vous voulez en savoir plus ? **Explorez les approfondissements suivants** dans la documentation Observabilité :
+
+- **[Explorer](./explorer)** : Interrogez des événements spécifiques et filtrez les logs de production.
+- **[Judges](./judges)** : Concevez des instructions complexes, des schémas et des techniques de validation.
+- **[Campaigns](./campaigns)** : Annotez des milliers d'événements de production en masse.
+- **[Datasets](./datasets)** : Gérez les structures d'enregistrement, la curation et les imports de fichiers.
+
+<SectionTab as="h1" sectionId="troubleshooting">Dépannage</SectionTab>
+
+<Faq>
+  <FaqItem question="Explorer n'affiche aucun événement">
+  Élargissez votre filtre de plage temporelle. Si vous utilisez une fenêtre étroite (par exemple, la dernière heure), essayez plutôt les 7 derniers jours. Si Explorer reste vide, confirmez que votre projet dispose d'un trafic de chat completion actif et que vous avez un accès administrateur à l'espace de travail.
+  </FaqItem>
+  <FaqItem question="Je ne peux pas exporter d'événements vers un dataset">
+  Vérifiez vos permissions de l'espace de travail. La création et l'export de Dataset nécessitent un accès de niveau administrateur. Si vous disposez du bon rôle mais ne pouvez toujours pas exporter, assurez-vous d'avoir sélectionné au moins un événement dans l'interface.
+  </FaqItem>
+  <FaqItem question="Les scores du Judge semblent incohérents">
+  Vos instructions pour le Judge sont peut-être trop vagues. Soyez explicite sur les définitions de chaque score ou classe. Testez le Judge sur 5 à 10 enregistrements manuellement avant de lancer une Campagne complète. Consultez la [section dédiée à la validation des Judges](./judges#validation-before-scale) pour obtenir des conseils.
+  </FaqItem>
+  <FaqItem question="La Campagne est en attente ou bloquée">
+  Les Campagnes s'exécutent de manière asynchrone et les grands ensembles d'événements prennent plus de temps. Vérifiez le statut de la Campagne dans l'interface. Si une Campagne s'arrête complètement, consultez le statut pour détecter des erreurs spécifiques aux événements.
+  </FaqItem>
+  <FaqItem question="Les annotations de Campagne semblent incorrectes">
+  Le problème vient probablement du Judge, pas de la Campagne. Révisez les instructions du Judge et testez-le sur quelques événements individuels. Consultez [Judges — validez avant de passer à l'échelle](./judges#validation-before-scale).
+  </FaqItem>
+</Faq>

@@ -1,0 +1,510 @@
+---
+id: handoffs
+title: Transferts de contrôle
+slug: handoffs
+sidebar_position: 6
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { SectionTab } from '@/components/layout/section-tab';
+
+import ExampleATab from './example_a_tab/_page.mdx';
+import ExampleBTab from './example_b_tab/_page.mdx';
+
+# Handoffs
+
+Lorsque vous créez et utilisez des Agents, souvent avec accès à des outils spécifiques, il arrive que vous souhaitiez appeler d'autres Agents en cours d'action. Pour élaborer et concevoir des workflows pour diverses tâches que vous souhaitez automatiser, cette capacité à confier des tâches aux Agents ou à transférer une conversation à d'autres agents s'appelle **Handoffs**.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/handoffs.png"
+    alt="handoffs_graph"
+    width="800"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+<SectionTab as="h1" sectionId="create-an-agentic-workflow">Créer un workflow agentique</SectionTab>
+
+Lorsque vous créez un workflow basé sur les Handoffs, vous devez d'abord créer tous les Agents que votre workflow utilisera.
+Il n'y a aucune limite au nombre de Handoffs chaînés qu'un workflow peut avoir. Vous êtes libre de créer plusieurs Agents utilisant divers outils, modèles et handoffs, et d'orchestrer votre propre workflow à l'aide de ces Agents.
+
+<SectionTab as="h2" variant="secondary" sectionId="create-multiple-agents">Créer plusieurs Agents</SectionTab>
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/multiple_agents_handoffs.png"
+    alt="handoffs_graph"
+    width="600"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+Commençons par créer divers Agents avec plusieurs tâches et capacités.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```py
+from mistralai import CompletionArgs, ResponseFormat, JSONSchema
+from pydantic import BaseModel
+
+class CalcResult(BaseModel):
+    reasoning: str
+    result: str
+
+# Create your agents
+finance_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Agent used to answer financial related requests",
+    name="finance-agent",
+)
+web_search_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Agent that can search online for any information if needed",
+    name="websearch-agent",
+    tools=[{"type": "web_search"}],
+)
+ecb_interest_rate_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Can find the current interest rate of the European central bank",
+    name="ecb-interest-rate-agent",
+    tools=[
+        {
+            "type": "function",
+            "function": {
+                "name": "get_european_central_bank_interest_rate",
+                "description": "Retrieve the real interest rate of European central bank.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "date": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "date",
+                    ]
+                },
+            },
+        },
+    ],
+)
+graph_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    name="graph-drawing-agent",
+    description="Agent used to create graphs using the code interpreter tool.",
+    instructions="Use the code interpreter tool when you have to draw a graph.",
+    tools=[{"type": "code_interpreter"}]
+)
+calculator_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    name="calculator-agent",
+    description="Agent used to make detailed calculations",
+    instructions="When doing calculations explain step by step what you are doing.",
+    completion_args=CompletionArgs(
+          response_format=ResponseFormat(
+            type="json_schema",
+            json_schema=JSONSchema(
+                name="calc_result",
+                schema=CalcResult.model_json_schema(),
+            )
+        )
+    )
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```py
+from mistralai.client import CompletionArgs, ResponseFormat, JSONSchema
+from pydantic import BaseModel
+
+class CalcResult(BaseModel):
+    reasoning: str
+    result: str
+
+# Create your agents
+finance_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Agent used to answer financial related requests",
+    name="finance-agent",
+)
+web_search_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Agent that can search online for any information if needed",
+    name="websearch-agent",
+    tools=[{"type": "web_search"}],
+)
+ecb_interest_rate_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    description="Can find the current interest rate of the European central bank",
+    name="ecb-interest-rate-agent",
+    tools=[
+        {
+            "type": "function",
+            "function": {
+                "name": "get_european_central_bank_interest_rate",
+                "description": "Retrieve the real interest rate of European central bank.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "date": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "date",
+                    ]
+                },
+            },
+        },
+    ],
+)
+graph_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    name="graph-drawing-agent",
+    description="Agent used to create graphs using the code interpreter tool.",
+    instructions="Use the code interpreter tool when you have to draw a graph.",
+    tools=[{"type": "code_interpreter"}]
+)
+calculator_agent = client.beta.agents.create(
+    model="mistral-large-latest",
+    name="calculator-agent",
+    description="Agent used to make detailed calculations",
+    instructions="When doing calculations explain step by step what you are doing.",
+    completion_args=CompletionArgs(
+          response_format=ResponseFormat(
+            type="json_schema",
+            json_schema=JSONSchema(
+                name="calc_result",
+                schema=CalcResult.model_json_schema(),
+            )
+        )
+    )
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// First, let's make the following import
+import { z } from 'zod';
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
+
+//Then, we define and create our agents
+const CalcResult = z.object({
+  reasoning: z.string(),
+  result: z.string(),
+});
+
+let financeAgent = await client.beta.agents.create({
+  model: 'mistral-large-latest',
+  description: 'Agent used to answer financial related requests',
+  name: 'finance-agent',
+});
+
+let webSearchAgent = await client.beta.agents.create({
+  model: 'mistral-large-latest',
+  description: 'Agent that can search online for any information if needed',
+  name: 'websearch-agent',
+  tools: [{ type: 'web_search' }],
+});
+
+let ecbInterestRateAgent = await client.beta.agents.create({
+  model: 'mistral-large-latest',
+  description:
+    'Can find the current interest rate of the European central bank',
+  name: 'ecb-interest-rate-agent',
+  tools: [
+    {
+      type: 'function',
+      function: {
+        name: 'getEuropeanCentralBankInterestRate',
+        description:
+          'Retrieve the real interest rate of European central bank.',
+        parameters: {
+          type: 'object',
+          properties: {
+            date: {
+              type: 'string',
+            },
+          },
+          required: ['date'],
+        },
+      },
+    },
+  ],
+});
+
+const graphAgent = await client.beta.agents.create({
+  model: 'mistral-large-latest',
+  name: 'graph-drawing-agent',
+  description: 'Agent used to create graphs using the code interpreter tool.',
+  instructions: 'Use the code interpreter tool when you have to draw a graph.',
+  tools: [{ type: 'code_interpreter' }],
+});
+
+const calculatorAgent = await client.beta.agents.create({
+  model: 'mistral-large-latest',
+  name: 'calculator-agent',
+  description: 'Agent used to make detailed calculations',
+  instructions:
+    'When doing calculations explain step by step what you are doing.',
+  completionArgs: {
+    responseFormat: responseFormatFromZodObject(CalcResult),
+  },
+});
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-large-latest",
+     "name": "finance-agent",
+     "description": "Agent used to answer financial related requests"
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-large-latest",
+     "name": "websearch-agent",
+     "description": "Agent that can search online for any information if needed",
+     "tools": [{"type": "web_search"}]
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-large-latest",
+     "name": "ecb-interest-rate-agent",
+     "description": "Can find the current interest rate of the European central bank",
+     "tools": [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_european_central_bank_interest_rate",
+                "description": "Retrieve the real interest rate of European central bank.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "date": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "date",
+                    ]
+                },
+            },
+        },
+    ],
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-large-latest",
+     "name": "graph-drawing-agent",
+     "description": "Agent used to create graphs using the code interpreter tool.",
+     "instructions": "Use the code interpreter tool when you have to draw a graph.",
+     "tools": [{"type": "code_interpreter"}]
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-large-latest",
+     "name": "calculator-agent",
+     "description": "Agent used to make detailed calculations",
+     "instructions": "When doing calculations explain step by step what you are doing.",
+     "completion_args": {
+          "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+              "schema": {
+                "properties": {
+                  "reasoning": {
+                    "title": "Reasoning",
+                    "type": "string"
+                  },
+                  "result": {
+                    "title": "Result",
+                    "type": "string"
+                  }
+                },
+                "required": ["reasoning", "result"],
+                "title": "CalcResult",
+                "type": "object",
+                "additionalProperties": false
+              },
+              "name": "calc_result",
+              "strict": true
+            }
+        }
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="define-handoffs-responsibilities">Définir les responsabilités des Handoffs</SectionTab>
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/responsibilities_handoffs.png"
+    alt="handoffs_graph"
+    width="800"
+    style={{ borderRadius: '15px' }}
+  />
+</div>
+
+Une fois tous nos Agents créés, nous mettons à jour nos Agents précédemment définis avec une liste de `handoffs` disponibles.
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+
+```py
+# Allow the finance_agent to handoff the conversation to the ecb_interest_rate_agent or web_search_agent
+finance_agent = client.beta.agents.update(
+    agent_id=finance_agent.id,
+    handoffs=[ecb_interest_rate_agent.id, web_search_agent.id]
+)
+
+# Allow the ecb_interest_rate_agent to handoff the conversation to the graph_agent or calculator_agent
+ecb_interest_rate_agent = client.beta.agents.update(
+    agent_id=ecb_interest_rate_agent.id,
+    handoffs=[graph_agent.id, calculator_agent.id]
+)
+
+# Allow the web_search_agent to handoff the conversation to the graph_agent or calculator_agent
+web_search_agent = client.beta.agents.update(
+    agent_id=web_search_agent.id,
+    handoffs=[graph_agent.id, calculator_agent.id]
+)
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// Allow the financeAgent to handoff the conversation to the ecbInterestRateAgent or webSearchAgent
+financeAgent = await client.beta.agents.update({
+  agentId: financeAgent.id,
+  agentUpdateRequest: {
+    handoffs: [ecbInterestRateAgent.id, webSearchAgent.id],
+  },
+});
+
+// Allow the ecbInterestRateAgent to handoff the conversation to the grapAgent or calculatorAgent
+ecbInterestRateAgent = await client.beta.agents.update({
+  agentId: ecbInterestRateAgent.id,
+  agentUpdateRequest: {
+    handoffs: [graphAgent.id, calculatorAgent.id],
+  },
+});
+
+// Allow the webSearchAgent to handoff the conversation to the graphAgent or calculatorAgent
+webSearchAgent = await client.beta.agents.update({
+  agentId: webSearchAgent.id,
+  agentUpdateRequest: {
+    handoffs: [graphAgent.id, calculatorAgent.id],
+  },
+});
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents/<finance_agent_id>" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "handoffs": ["<ecb_interest_rate_agent_id>", "<web_search_agent_id>"]
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents/<ecb_interest_rate_agent_id>" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "handoffs": ["<graph_agent_id>", "<calculator_agent_id>"]
+  }'
+```
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents/<web_search_agent_id>" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "handoffs": ["<graph_agent_id>", "<calculator_agent_id>"]
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+Notre workflow et son comportement sont définis, nous pouvons maintenant l'exécuter.
+
+Nous avons créé 5 agents, dont certains ont accès à des outils intégrés, et d'autres à des outils locaux comme `get_european_central_bank_interest_rate`.
+
+Il est désormais possible d'avoir une chaîne d'actions en envoyant une requête au `finance_agent`.
+
+Nous fournissons également le paramètre `handoff_execution`, qui dispose actuellement de deux modes : `server` ou `client`.
+
+- `server` : exécute le handoff comme prévu en interne sur nos serveurs cloud ; il s'agit du paramètre par défaut.
+- `client` : lorsqu'un handoff est déclenché, une réponse est fournie directement à l'utilisateur, lui permettant de gérer le handoff avec contrôle.
+
+Déclenchons deux comportements différents à titre d'exemples :
+
+<ExplorerTabs id="how-it-works" groupId="code">
+  <ExplorerTab value="local-mcp" label="Exemple A" default>
+    <ExampleATab/>
+  </ExplorerTab>
+  <ExplorerTab value="remote-mcp" label="Exemple B">
+    <ExampleBTab/>
+  </ExplorerTab>
+</ExplorerTabs>

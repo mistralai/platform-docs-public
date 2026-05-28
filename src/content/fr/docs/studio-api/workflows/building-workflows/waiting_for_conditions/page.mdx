@@ -1,0 +1,110 @@
+---
+id: waiting-for-conditions
+title: Attente de conditions
+sidebar_position: 9
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Attente de conditions
+
+Les workflows peuvent suspendre leur exécution jusqu’à ce qu’une condition spécifique soit remplie, permettant des schémas pilotés par événements comme la validation humaine ou les circuits d’approbation.
+
+Le prédicat de condition est généralement activé par un [signal](/studio-api/workflows/interacting-with-workflows/signals) envoyé depuis l’extérieur du workflow (appel API, autre service ou action utilisateur). Le workflow reste en pause sans consommer de ressources de calcul jusqu’à ce que le prédicat soit à `True` ou que le délai soit dépassé.
+
+:::tip
+**Vous créez une interaction de type chat ?** Utilisez plutôt [`wait_for_input()`](/studio-api/workflows/interacting-with-workflows/conversational_workflows) issu de `InteractiveWorkflow`. Ce primitive intégré permet de solliciter l’utilisateur et d’attendre une réponse — sans définition de signal ni prédicat personnalisé à écrire, avec prise en charge native des formulaires structurés, confirmations et délais.
+:::
+
+<SectionTab as="h1" sectionId="common-patterns">Schémas courants</SectionTab>
+
+La même primitive `wait_condition` permet de couvrir plusieurs cas d’usage récurrents :
+
+- **Circuits d’approbation** — attendre la validation ou le refus d’un humain (piloté par signal). Voir l’exemple ci-dessous.
+- **Rappel externe** — attendre qu’un webhook ou job tiers signale que le workflow peut continuer.
+- **Polling progressif (rare)** — attendre qu’un autre processus interne change un indicateur ; le plus souvent, il est préférable d’utiliser une activité dédiée au polling.
+
+Si votre cas repose fortement sur l’intervention humaine, consultez aussi [Signals](/studio-api/workflows/interacting-with-workflows/signals) pour définir et émettre le déclencheur.
+
+<SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+Utilisez `workflow.wait_condition()` pour bloquer jusqu’à ce qu’un prédicat retourne `True` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+from mistralai.workflows import workflow
+
+await workflow.wait_condition(
+    lambda: self.ready,
+    timeout=timedelta(minutes=5)
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="example-approval-flow">Exemple : circuit d’approbation</SectionTab>
+
+Combinez avec des signaux pour mettre en œuvre un circuit humain-dans-la-boucle :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import mistralai.workflows as workflows
+from mistralai.workflows import workflow
+from datetime import timedelta
+
+@workflows.workflow.define(name="approval_workflow")
+class ApprovalWorkflow:
+    def __init__(self):
+        self.approved = False
+
+    @workflows.workflow.signal(name="approve")
+    async def approve(self) -> None:
+        self.approved = True
+
+    @workflows.workflow.entrypoint
+    async def run(self, request_id: str) -> str:
+        try:
+            # Attendre jusqu’à 24 heures que le signal `approve` fasse passer self.approved à True
+            await workflow.wait_condition(
+                lambda: self.approved,
+                timeout=timedelta(hours=24),
+            )
+        except asyncio.TimeoutError:
+            return f"Request {request_id} timed out"
+
+        return f"Request {request_id} approved"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="timeout-behavior">Comportement en cas de dépassement de délai</SectionTab>
+
+Lorsqu’un délai est renseigné, `wait_condition` déclenche une exception `asyncio.TimeoutError` si la condition n’est pas satisfaite dans le temps imparti. Gérez-la pour définir une logique de traitement du délai :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+
+try:
+    await workflow.wait_condition(
+        lambda: self.ready,
+        timeout=timedelta(minutes=30)
+    )
+except asyncio.TimeoutError:
+    # Gérer le dépassement de délai
+    return "Operation timed out"
+```
+
+  </TabItem>
+</Tabs>

@@ -1,0 +1,129 @@
+---
+title: Gérer les espaces de travail et les clés API
+sidebar_label: Gérer les espaces de travail
+sidebar_position: 3
+description: « Créez des espaces de travail isolés, générez des clés API et définissez des limites d'utilisation pour votre Team. ~10 minutes. »
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+import { AppLink } from '@/components/common/app-link';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+
+# Gérer les espaces de travail et les clés API
+
+Organisez votre compte Mistral avec des espaces de travail, des clés API et des contrôles de dépenses.
+
+- Les **espaces de travail** isolent les clés API et la consommation par équipe ou par environnement
+- Les **clés API** sont associées à un espace de travail pour le suivi et le contrôle d'accès
+- Les **plafonds de dépenses** évitent les surcoûts inattendus par espace de travail
+
+**Durée estimée :** ~10 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Rôle Admin dans votre organisation Mistral
+- Facturation activée (les clés API restent inactives tant qu'une méthode de paiement n'est pas enregistrée)
+
+<SectionTab as="h2" sectionId="step-1">Étape 1 : Créer un espace de travail</SectionTab>
+
+Les espaces de travail isolent les clés API, la consommation et la facturation. Utilisez-les pour séparer le développement et la production, ou pour suivre l'activité par équipe.
+
+1. Ouvrez <AppLink href="https://admin.mistral.ai/organization/workspaces" app="admin">Gérer › Espaces de travail</AppLink>.
+2. Cliquez sur **Créer un espace de travail**.
+3. Saisissez un nom : par exemple, `Production` ou `ML Research`.
+4. Ajoutez éventuellement une icône et une description pour faciliter l'identification.
+5. Cliquez sur **Créer**.
+
+Créez au moins deux espaces de travail (développement et production) pour éviter que le trafic de test ne consomme les quotas en production.
+
+<SectionTab as="h2" sectionId="step-2">Étape 2 : Ajouter des membres à l'espace de travail</SectionTab>
+
+Contrôlez indépendamment l'accès à chaque espace de travail.
+
+1. Ouvrez l'espace de travail que vous venez de créer.
+2. Cliquez sur **Ajouter des membres**.
+3. Sélectionnez les membres de l'équipe dans votre organisation.
+4. Attribuez leur rôle sur l'espace de travail :
+
+<Table className="mt-4 mb-6">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Rôle</TableHead>
+      <TableHead>Permissions</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>**Admin**</TableCell>
+      <TableCell>Contrôle total de l'espace de travail : gestion des membres, des clés et des paramètres</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>**Membre**</TableCell>
+      <TableCell>Utilisation des clés API, consultation des consommations : pas d'accès à la gestion</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+5. Cliquez sur **Confirmer**.
+
+<SectionTab as="h2" sectionId="step-3">Étape 3 : Générer des clés API</SectionTab>
+
+Chaque espace de travail dispose de ses propres clés API. La consommation et la facturation sont suivies par espace de travail.
+
+1. Ouvrez <AppLink href="https://console.mistral.ai/api-keys" app="studio">Clés API</AppLink>.
+2. Sélectionnez l'espace de travail cible via le menu déroulant.
+3. Cliquez sur **Créez une nouvelle clé**.
+4. Donnez un nom explicite à la clé : par exemple, `prod-backend` ou `staging-chatbot`.
+5. Copiez la clé tout de suite : elle n'est affichée qu'une seule fois.
+
+```bash
+# Définissez la clé comme variable d'environnement
+export MISTRAL_API_KEY="your-key-here"
+```
+
+:::warning
+Ne stockez jamais vos clés API dans le code source. Utilisez des variables d'environnement ou un gestionnaire de secrets.
+:::
+
+<SectionTab as="h2" sectionId="step-4">Étape 4 : Définir les plafonds de consommation</SectionTab>
+
+Évitez les surcoûts inattendus en définissant des plafonds mensuels par espace de travail.
+
+1. Ouvrez <AppLink href="https://admin.mistral.ai/organization/billing" app="admin">Abonnements › Facturation</AppLink>.
+2. Sous l'espace de travail, cliquez sur **Définir un plafond**.
+3. Saisissez un budget mensuel en USD : par exemple, `$500`.
+4. Lorsque le plafond est atteint, les requêtes API retournent `429 Too Many Requests` jusqu'au prochain cycle de facturation.
+
+Suivez la consommation en temps réel depuis le tableau de bord de facturation pour anticiper les dépassements.
+
+<SectionTab as="h2" sectionId="verify">Vérification</SectionTab>
+
+Votre configuration est complète si :
+
+- L'espace de travail apparaît dans la liste déroulante des espaces de travail dans <AppLink href="https://console.mistral.ai">Studio</AppLink>
+- Les membres ajoutés à l'espace de travail le voient dans leur console
+- Les clés API créées pour l'espace de travail renvoient des réponses valides
+- La consommation est bien rattachée à l'espace de travail concerné dans le tableau de bord de facturation
+
+Testez une clé par un appel rapide à l'API :
+
+```bash
+curl https://api.mistral.ai/v1/models \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+Une réponse valide renvoie une liste JSON des modèles disponibles.
+
+<SectionTab as="h2" sectionId="whats-next">Et après ?</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/#quickstarts" title="Tous les guides admin express" />
+</UsefullLinkContainer>

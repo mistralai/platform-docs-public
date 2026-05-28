@@ -1,0 +1,116 @@
+---
+title: Sessions
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Sessions
+
+Une **session** correspond à une exécution de l’agent Vibe Code sur un projet : un environnement isolé créé pour la tâche, la boucle d’agent qui effectue le travail, et la branche ou pull request générée à la fin. Cette page explique comment les sessions démarrent, ce qui se passe à l’intérieur et ce qui est conservé une fois terminées.
+
+<SectionTab as="h2" sectionId="how-sessions-start">Démarrage des sessions</SectionTab>
+
+Une session peut débuter par l’un des trois points d’entrée suivants :
+
+- **Depuis l’interface web :** cliquez sur **Nouvelle session** dans un projet. Voir le [guide de démarrage / Web](/vibe/code/vibe-code-web/get-started#quickstart).
+- **Depuis le Vibe CLI :** précédez un prompt de `&` pour l’**envoyer** vers une session cloud. Voir le [guide de démarrage / CLI](/vibe/code/vibe-code-web/get-started#quickstart).
+- **En téléportant une session CLI active :** lancez `/teleport` dans la session locale active. La même session se poursuit alors dans le cloud, avec l’historique et l’état de la branche conservés.
+
+:::tip
+Teleport est la solution la plus propre pour quitter une session locale devenue trop longue pour votre machine. La sandbox cloud prend le relais avec le même historique et la même branche. Voir [Téléportation du CLI vers le web](/vibe/code/cli/teleport-cli-web).
+:::
+
+Une fois la session créée, son cycle de vie reste identique quel que soit le point d’entrée.
+
+<SectionTab as="h2" sectionId="sandbox-creation">Création de la sandbox</SectionTab>
+
+Lorsqu’une session est initiée, Vibe Code Web crée un **sandbox cloud isolée** pour cet usage. Cet environnement est dédié à la session : aucun élément d’autres sessions ou d’autres utilisateurs n’y sera exécuté.
+
+La sandbox dispose :
+
+- d’un shell restreint ;
+- d’un accès aux dépôts GitHub sélectionnés (lecture et écriture, via votre token d’accès utilisateur) ;
+- d’une politique d’accès sortant réseau. Voir [Environnement sandbox](/vibe/code/vibe-code-web/sandbox-environment#network-posture).
+
+La sandbox est supprimée à la fin de la session.
+
+:::note
+Cette section décrit la sandbox du point de vue de la session. Pour connaître les composants en fonctionnement et leur comportement, voir [Environnement sandbox](/vibe/code/vibe-code-web/sandbox-environment).
+:::
+
+<SectionTab as="h2" sectionId="repository-checkout">Clonage des dépôts</SectionTab>
+
+L’agent clone les dépôts sélectionnés pour le projet, sur la branche choisie lors de la création de la session. Un projet peut inclure un ou plusieurs dépôts issus d’un même propriétaire GitHub. Le clonage utilise le token d’accès utilisateur de l’application GitHub Mistral : toutes les opérations Git (commit, branche, push) sont ainsi attribuées à votre compte.
+
+<SectionTab as="h2" sectionId="agent-loop">Boucle de l’agent</SectionTab>
+
+À l’intérieur de la sandbox, l’agent exécute une boucle :
+
+1. **Lit** les fichiers liés à votre prompt.
+2. **Planifie** l’action suivante.
+3. **Modifie** le code ou **exécute une commande** (shell, tests, build).
+4. **Rend compte** dans la vue de la session (commandes, fichiers modifiés, résultats intermédiaires).
+5. **Demande** des précisions si nécessaire, puis **attend** votre réponse.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/vibe_code_web_agent_loop.svg'}
+  alt="Schéma du déroulement de la boucle agent Vibe Code, en cinq étapes (Lire, Planifier, Agir, Rapporter, Demander) reliées dans une boucle vers Lire"
+  centered
+  className="border-none!"
+/>
+</div>
+
+:::info
+La boucle se poursuit jusqu’à ce qu’une limite soit atteinte, que la tâche soit naturellement terminée, ou que l’agent ait besoin d’une réponse. Voir [Limites et cycle de vie](/vibe/code/vibe-code-web/limits-and-lifecycle) pour plus de détails.
+:::
+
+<SectionTab as="h2" sectionId="what-you-see">Ce qui s’affiche pendant une session</SectionTab>
+
+La vue de session présente :
+
+| Élément | Description |
+|---|---|
+| **Flux d’activité** | Commandes exécutées par l’agent, avec les résultats, dans l’ordre chronologique. |
+| **Modifications de fichiers** | Liste des fichiers modifiés pendant la session. |
+| **État de la branche** | Branche sur laquelle l’agent effectue ses commits. |
+| **Pull request** | Une fois ouverte par l’agent, un lien direct vers la pull request GitHub. |
+| **Champ d’entrée** | Pour répondre aux questions ou envoyer un nouveau prompt. |
+
+Le flux d’activité sert de **journal d’audit** : chaque commande ou modification de fichier est visible tant que la session reste active.
+
+:::tip
+Vibe Code Web permet de suivre les progrès de la session et d’ouvrir la branche ou la pull request produite. L’examen du code, les commentaires, les vérifications requises et la fusion **se font dans GitHub**.
+:::
+<SectionTab as="h2" sectionId="output">Résultat : branche et pull request</SectionTab>
+
+À la fin de la session, le résultat est matérialisé par :
+
+- Une **branche** sur le dépôt cible, avec les commits de l’agent ;
+- Une **pull request** ouverte contre la branche de base, avec un descriptif du travail effectué.
+
+C’est à vous de relire, compléter, fusionner ou refermer la pull request selon votre workflow habituel GitHub. Les protections de branches, relectures requises, règles `CODEOWNERS` et vérifications de statut s’appliquent normalement.
+
+<SectionTab as="h2" sectionId="iteration">Itération après une pull request</SectionTab>
+
+La création de la pull request ne clôt pas automatiquement la session. Tant que la session et la sandbox restent actifs, vous pouvez envoyer des instructions complémentaires :
+
+- Saisir un nouveau prompt dans la vue de session ;
+- Coller un commentaire de relecteur et demander à l’agent d’y répondre ;
+- Coller le résultat d’un CI en échec et demander une correction à l’agent.
+
+L’agent réutilise le même sandbox et la même branche : le contexte de la session est donc préservé d’une itération à l’autre.
+
+:::warning
+Une fois la sandbox supprimée, la session **ne peut pas être reprise**. Pour continuer, ouvrez une nouvelle session.
+:::
+
+<SectionTab as="h2" sectionId="next">Prochaines étapes</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/vibe/code/vibe-code-web/sandbox-environment" title="Environnement sandbox" description="Contenu de l’image cloud et éléments configurables actuellement." />
+  <LinkCard href="/vibe/code/vibe-code-web/security" title="Sécurité" description="Risques d’injection de prompt et gestion des données." />
+  <LinkCard href="/vibe/code/vibe-code-web/limits-and-lifecycle" title="Limites et cycle de vie" description="Cycle de vie des sessions, fins de session et persistance." />
+</UsefullLinkContainer>

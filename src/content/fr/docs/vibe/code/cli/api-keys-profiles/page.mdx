@@ -1,0 +1,127 @@
+---
+title: Clés API et profils
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+{/* TODO (devs): le slug de la page utilise « profils », mais la CLI n’a pas le concept explicite de « profils ». Aujourd’hui, la configuration peut varier selon le preset du fournisseur, le preset du modèle, l’agent et le Projet. Confirmer si « profils » est le bon terme pour le lancement, ou renommer la page par exemple « Clés API et identifiants ». */}
+
+# Clés API et profils
+
+La CLI Vibe Code requiert une **clé API Mistral** pour interroger les modèles hébergés. Cette page explique comment créer votre clé, la fournir à la CLI, et basculer entre plusieurs comptes ou fournisseurs.
+
+:::info
+Un nouveau **flux de connexion via le navigateur** est en cours de déploiement pour la CLI et l’extension VS Code. Une fois activé, vous n’aurez plus à manipuler votre clé API dans les configurations courantes : ce flux provisionne et stocke vos identifiants automatiquement. Le contenu de cette page reste utile pour le dépannage, l’automatisation ou si vous souhaitez utiliser une clé API personnalisée.
+:::
+
+<SectionTab as="h2" sectionId="where-to-create">Où créer votre clé API</SectionTab>
+
+L’emplacement de création de votre clé API dépend de votre offre :
+
+- **Utilisateurs avec une offre Mistral** (Free, Pro ou supérieure, y compris Pro via Google, Apple, Free Mobile ou Orange) : créez votre clé depuis [Code › Vibe CLI](https://console.mistral.ai/codestral/cli).
+- **Plan Experiment ou Scale (API à l’usage)** : créez votre clé depuis [Organization › API keys](https://admin.mistral.ai/organization/api-keys).
+
+{/* TODO (devs): vérifier que ces deux chemins sont toujours corrects pour Vibe Code au lancement, et si l’URL pour les clés Mistral doit être /codestral/cli ou /codestral/vibe. */}
+
+:::tip
+**Protégez vos clés :**
+
+- **Utilisez la clé la moins permissive** nécessaire pour la tâche.
+- **Faites tourner régulièrement vos clés** et révoquez celles inutilisées dans la console.
+- **Ne collez jamais de clés API** dans les prompts, journaux, captures d’écran ou tickets de support.
+:::
+
+<SectionTab as="h2" sectionId="give-key">Fournir la clé API à la CLI</SectionTab>
+
+La CLI accepte **trois méthodes** de fourniture de clé, listées par ordre de priorité (la plus haute en premier).
+
+<SectionTab as="h3" variant="secondary" sectionId="interactive-setup">1. Configuration interactive (recommandée)</SectionTab>
+
+Lors du premier lancement, la CLI démarre un assistant de configuration si aucune clé n’est détectée :
+
+```bash
+vibe
+```
+
+Vous pouvez relancer la configuration à tout moment :
+
+```bash
+vibe --setup
+```
+
+Votre clé est alors enregistrée dans `~/.vibe/.env` pour les sessions futures.
+
+<SectionTab as="h3" variant="secondary" sectionId="env-var">2. Variable d’environnement</SectionTab>
+
+Exportez la clé dans votre shell :
+
+```bash
+export MISTRAL_API_KEY="your_mistral_api_key"
+```
+
+La variable d’environnement a priorité sur la valeur dans `~/.vibe/.env`.
+
+{/* TODO (devs): confirmer l’ordre de priorité entre la variable d’environnement `MISTRAL_API_KEY` et le fichier `~/.vibe/.env` (env var > fichier .env lors du lancement). */}
+
+<SectionTab as="h3" variant="secondary" sectionId="env-file">3. Fichier `.env`</SectionTab>
+
+Vous pouvez aussi modifier directement `~/.vibe/.env` :
+
+```bash
+MISTRAL_API_KEY=your_mistral_api_key
+```
+
+La CLI charge automatiquement `~/.vibe/.env` au démarrage.
+
+:::note
+Le fichier `.env` sert **uniquement aux identifiants**. La configuration générale de la CLI doit être placée dans `config.toml`. Consultez [Configuration](/vibe/code/cli/configuration).
+:::
+
+<SectionTab as="h2" sectionId="switch-providers">Changer de compte ou de fournisseur</SectionTab>
+
+La CLI gère plusieurs fournisseurs et modèles via des **presets** dans `config.toml`. Utilisez-les pour basculer, par exemple, entre une clé Mistral pour la production et une clé d’un autre fournisseur compatible OpenAI pour des tests.
+
+Définissez un preset fournisseur et un preset modèle :
+
+```toml
+[[providers]]
+name = "openrouter"
+api_base = "https://openrouter.ai/api/v1"
+api_key_env_var = "OPENROUTER_API_KEY"
+api_style = "openai"
+backend = "generic"
+
+[[models]]
+name = "mistralai/devstral-2512:free"
+provider = "openrouter"
+alias = "devstral-openrouter"
+temperature = 0.2
+input_price = 0.0
+output_price = 0.0
+```
+
+Définissez le modèle actif :
+
+```toml
+active_model = "devstral-openrouter"
+```
+
+Exportez ensuite la variable d’environnement correspondante :
+
+```bash
+export OPENROUTER_API_KEY="your_openrouter_api_key"
+```
+
+Vous pouvez aussi changer le modèle actif à tout moment depuis la CLI avec `/config` ou `/model`.
+
+<SectionTab as="h2" sectionId="plan-billing">Notes sur l’offre et la facturation</SectionTab>
+
+Les offres Vibe Pro incluent un **crédit mensuel Vibe**. Une fois ce crédit épuisé, le comportement dépend d’un interrupteur dans le panneau Admin sous [Abonnements › Abonnement Vibe](https://admin.mistral.ai/subscriptions) :
+
+- **Interrupteur désactivé (par défaut)** : Vibe est suspendu jusqu’à la prochaine période de facturation.
+- **Interrupteur activé** : Vibe reste actif et la consommation supplémentaire est facturée à l’usage.
+
+Cet interrupteur est **désactivé par défaut** sur tous les abonnements et **ne peut pas être activé pour les offres Vibe Pro achetées via des partenaires** (Google, Apple, Free Mobile, Orange). Dans ces cas, Vibe est suspendu dès que le crédit mensuel est consommé.
+
+{/* TODO (devs): vérifier la formulation pour l’offre/la facturation au lancement de Vibe Code. La base Help Center utilise cette formulation exacte ; vérifier toute évolution. */}

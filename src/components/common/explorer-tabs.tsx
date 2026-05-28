@@ -16,6 +16,7 @@ import {
   ExplorerTabsProvider,
   useExplorerTabsContext,
 } from '@/contexts/explorer-tabs-context';
+import { useLingo } from '@lingo.dev/react';
 
 type ExplorerTabsProps = {
   className?: string;
@@ -30,6 +31,7 @@ export function ExplorerTabs({
   children,
   mode = 'default',
 }: ExplorerTabsProps) {
+  const l = useLingo();
   const pathname = usePathname();
   const parentContext = useExplorerTabsContext();
   const items = React.Children.toArray(children).filter((child: any) =>
@@ -182,7 +184,7 @@ export function ExplorerTabs({
                 setValue(undefined);
               }}
             >
-              Close
+              {l.text('Close', { context: 'Command to close the current tab' })}
             </UITabsTrigger>
           )}
         </UITabsList>
@@ -199,7 +201,7 @@ export function ExplorerTabs({
           <UITabsContent value="empty" className="px-2">
             <div className="flex items-center not-prose gap-2">
               <p className="text-base text-foreground/50">
-                Select a tab above to see its content.
+                {l.text('Select a tab above to see its content.', { context: 'Prompt to select a tab' })}
               </p>
             </div>
           </UITabsContent>

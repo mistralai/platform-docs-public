@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral Mini Transcribe',
-  description: `An efficient audio input model, fine-tuned and optimized for transcription purposes only.`,
-  shortDescription: `An efficient audio input model, fine-tuned and optimized for transcription purposes.`,
+  describe: (l) => ({
+    description: l.text(`An efficient audio input model, fine-tuned and optimized for transcription purposes only.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`An efficient audio input model, fine-tuned and optimized for transcription purposes.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'voxtral-mini-transcribe-25-07',
-  releaseDate: 'July 15, 2025',
+  releaseDate: '2025-07-15',
   version: '25.07',
   frontier: true,
   class: 'Specialist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 4.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

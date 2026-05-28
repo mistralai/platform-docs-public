@@ -1,0 +1,147 @@
+---
+title: Travailler avec la CLI
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Utiliser le CLI
+
+Une fois le CLI installé et votre clé API configurée, vous pouvez commencer le travail au quotidien. Le CLI fonctionne en **deux modes** : *interactif* pour le chat et l’exploration, et *programmatique* pour les scripts et l’intégration continue (CI).
+
+<SectionTab as="h2" sectionId="start">Démarrer le CLI dans votre projet</SectionTab>
+
+Rendez-vous à la racine de votre projet et lancez :
+
+```bash
+vibe
+```
+
+Vous pouvez aussi démarrer avec un prompt initial :
+
+```bash
+vibe "Refactorisez la fonction principale dans cli/main.py pour la rendre plus modulaire."
+```
+
+Le CLI lance une interface de chat dans le terminal. Depuis cette interface, vous pouvez enchainer les tâches de codage, référencer des fichiers, exécuter des commandes shell et changer d’agent sans quitter le terminal.
+
+<SectionTab as="h2" sectionId="interactive-mode">Mode interactif</SectionTab>
+
+Le mode interactif est le mode par défaut. Utilisez-le pour explorer, enchaîner plusieurs tâches, ou pour tout travail nécessitant une relecture et des interactions.
+
+<SectionTab as="h3" variant="secondary" sectionId="reference-files">Référencez des fichiers avec `@`</SectionTab>
+
+Ajoutez le préfixe `@` devant un chemin pour joindre un fichier à votre prompt. Le CLI propose l’autocomplétion pendant la saisie :
+
+```text
+> Lis le fichier @src/agent.py et suggère des améliorations.
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="builtin-commands">Exécutez des commandes intégrées avec `/`</SectionTab>
+
+Tapez `/` pour ouvrir le sélecteur de commandes avec autocomplétion. Utilisez-le pour des commandes intégrées comme `/help`, `/model`, `/config`, ou toute commande liée à une compétence installée. Voir [Commandes et raccourcis](/vibe/code/cli/commands-shortcuts) pour la liste complète.
+
+```text
+> /model
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="shell-commands">Exécutez des commandes shell avec `!`</SectionTab>
+
+Ajoutez le préfixe `!` devant une commande pour l’exécuter directement dans le shell, sans passer par l’agent :
+
+```text
+> !ls -l
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="cloud-session">Envoyez un prompt à une session cloud avec `&`</SectionTab>
+
+Ajoutez le préfixe `&` devant votre prompt pour l’exécuter dans une sandbox Vibe Code Web. Le CLI vous renvoie un lien vers la session cloud.
+
+```text
+> & corriger les tests en échec
+```
+
+Voir [Téléportation du CLI vers le web](/vibe/code/cli/teleport-cli-web) pour les prérequis et limitations.
+
+<SectionTab as="h3" variant="secondary" sectionId="in-session-shortcuts">Raccourcis en session utiles</SectionTab>
+
+| Raccourci | Action |
+|---|---|
+| `Shift+Tab` | Faites défiler les agents (par défaut, plan, accept-edits, auto-approve). |
+| `Ctrl+O` | Afficher/masquer la sortie des outils. |
+| `Ctrl+G` | Modifier votre saisie en cours dans un éditeur externe. |
+| `Échap` | Interrompre l’opération en cours. |
+
+Voir [Commandes et raccourcis](/vibe/code/cli/commands-shortcuts) pour la liste exhaustive des commandes slash et raccourcis.
+
+<SectionTab as="h2" sectionId="programmatic-mode">Mode programmatique</SectionTab>
+
+Le mode programmatique est conçu pour **les scripts, les tâches CI, et tout usage non interactif**. Utilisez l’option `--prompt` pour exécuter une seule tâche et quitter :
+
+```bash
+vibe --prompt "Analyse la base de code" --max-turns 5 --output json
+```
+
+Le mode programmatique ne lance pas l’interface de chat et désactive les outils interactifs comme la demande de précision. Par défaut, il utilise l’agent `auto-approve`.
+
+Options utiles :
+
+- `--max-turns N` limite le nombre de tours de l’assistant. **Recommandé** pour borner la durée.
+- `--enabled-tools TOOL` limite les outils accessibles à l’agent. Accepte noms exacts, glob (`bash*`), et regex avec préfixe `re:` (`re:^serena_.*$`).
+- `--output text|json|streaming` définit le format de sortie.
+
+:::warning
+Le CLI expose aussi une option `--max-price DOLLARS`, mais les valeurs de prix sous-jacentes proviennent du fichier de configuration et peuvent être absentes ou obsolètes. Considérez le coût affiché comme **purement indicatif** : ne vous fiez pas à cette valeur pour un contrôle budgétaire strict.
+:::
+
+<SectionTab as="h2" sectionId="approval">Choisir la gestion des validations par le CLI</SectionTab>
+
+Le CLI intègre plusieurs agents par défaut. Sélectionnez-en un avec `--agent` :
+
+```bash
+vibe --agent plan
+vibe --agent accept-edits
+vibe --agent auto-approve
+```
+
+Changez d’agent en cours de session (mode interactif uniquement) avec `Shift+Tab`. Définissez l’agent interactif par défaut dans `config.toml` :
+
+```toml
+default_agent = "plan"
+```
+
+Voir [Agents](/vibe/code/cli/agents) pour la liste complète et leurs comportements.
+
+<SectionTab as="h2" sectionId="review-changes">Vérifiez les changements avant application</SectionTab>
+
+Pour les tâches impliquant de nombreuses modifications de fichiers ou commandes shell, le CLI :
+
+1. Affiche un **aperçu** du changement ou de la commande avant exécution.
+2. **Demande une confirmation**, sauf si l’agent actif valide automatiquement.
+3. **Affiche le résultat** après chaque étape.
+
+:::tip
+Utilisez l’agent `plan` pour obtenir un aperçu en lecture seule avant toute modification. Voir [Agents](/vibe/code/cli/agents).
+:::
+
+<SectionTab as="h2" sectionId="trust-folders">Dossiers de confiance</SectionTab>
+
+Le CLI vérifie que le dossier de travail courant est approuvé avant de charger la configuration projet, les compétences ou les fichiers d’agent. La première fois que vous lancez le CLI en **mode interactif** depuis un nouveau dossier contenant des fichiers à approuver, il vous demande de confirmer ce dossier.
+
+La vérification s’applique en **mode interactif** et **mode programmatique**, mais la confirmation utilisateur n’est affichée qu’en mode interactif. En mode programmatique, utilisez `vibe --trust` pour accorder une confiance temporaire à l’exécution en cours.
+
+Les dossiers approuvés sont conservés dans `~/.vibe/trusted_folders.toml`.
+
+<SectionTab as="h2" sectionId="resume">Reprendre ou continuer une session</SectionTab>
+
+Le CLI peut reprendre là où votre travail s’est arrêté :
+
+- `vibe --continue` (ou `-c`) reprend la session la plus récente.
+- `vibe --resume SESSION_ID` relance une session spécifique. Les IDs partiels sont acceptés.
+- `/resume` (ou `/continue`) dans une session ouvre un navigateur des sessions précédentes.
+
+La reprise de session nécessite l’activation des logs, qui est activée par défaut. Si la fonction de reprise ne fonctionne plus après modification de la configuration, vérifiez que la journalisation est toujours activée dans `~/.vibe/config.toml` :
+
+```toml
+log_interactions = true
+```

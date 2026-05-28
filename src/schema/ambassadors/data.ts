@@ -375,124 +375,31 @@ export const AMBASSADORS_DATA = [
 ] as const;
 
 export const AMBASSADOR_BENEFITS = [
-  {
-    id: 'free-credits',
-    title: 'Free credits',
-    description:
-      'Mistral Ambassadors will receive free API credits on Studio.',
-    icon: 'credits',
-  },
-  {
-    id: 'feature-preview',
-    title: 'Feature preview',
-    description:
-      'Mistral Ambassadors will be part of our early access program, can directly engage with our product teams through feature discussions, and provide valuable feedback to our products.',
-    icon: 'preview',
-  },
-  {
-    id: 'recognition',
-    title: 'Recognition',
-    description:
-      'Public recognition and features on our website and on our Discord.',
-    icon: 'recognition',
-  },
-  {
-    id: 'vip-experience',
-    title: 'VIP experience',
-    description:
-      'Ambassadors will receive early invites and access to our events and will have a dedicated channel on Discord and Slack to engage with Mistral team members and fellow Ambassadors.',
-    icon: 'vip',
-  },
+  { id: 'free-credits', icon: 'credits' },
+  { id: 'feature-preview', icon: 'preview' },
+  { id: 'recognition', icon: 'recognition' },
+  { id: 'vip-experience', icon: 'vip' },
 ] as const;
 
 export const AMBASSADOR_RESPONSIBILITIES = [
-  {
-    id: 'community-support',
-    title: 'Community Support',
-    description:
-      'Actively participate in community discussions and help fellow developers with Mistral AI questions.',
-    icon: 'support',
-  },
-  {
-    id: 'content-creation',
-    title: 'Content Creation',
-    description:
-      'Create tutorials, blog posts, or other educational content showcasing Mistral AI capabilities.',
-    icon: 'content',
-  },
-  {
-    id: 'feedback-provider',
-    title: 'Feedback Provider',
-    description:
-      'Provide valuable feedback on new features and help shape the future of Mistral AI products.',
-    icon: 'feedback',
-  },
-  {
-    id: 'event-participation',
-    title: 'Event Participation',
-    description:
-      'Participate in Mistral AI events, webinars, and community gatherings as a representative.',
-    icon: 'events',
-  },
+  { id: 'community-support', icon: 'support' },
+  { id: 'content-creation', icon: 'content' },
+  { id: 'feedback-provider', icon: 'feedback' },
+  { id: 'event-participation', icon: 'events' },
 ] as const;
 
 export const AMBASSADOR_REQUIREMENTS = [
-  {
-    id: 'experience',
-    title: 'Technical Experience',
-    description:
-      'Demonstrated experience with AI/ML technologies and familiarity with Mistral AI models.',
-    icon: 'experience',
-  },
-  {
-    id: 'community-involvement',
-    title: 'Community Involvement',
-    description:
-      'Active participation in AI/ML communities through forums, social media, or open source contributions.',
-    icon: 'community',
-  },
-  {
-    id: 'communication',
-    title: 'Communication Skills',
-    description:
-      'Strong written and verbal communication skills to effectively engage with community members.',
-    icon: 'communication',
-  },
-  {
-    id: 'commitment',
-    title: 'Time Commitment',
-    description:
-      'Ability to dedicate time regularly to ambassador activities and community engagement.',
-    icon: 'commitment',
-  },
+  { id: 'experience', icon: 'experience' },
+  { id: 'community-involvement', icon: 'community' },
+  { id: 'communication', icon: 'communication' },
+  { id: 'commitment', icon: 'commitment' },
 ] as const;
 
 export const APPLICATION_CRITERIA = [
-  {
-    id: 'passion',
-    title: 'Passion',
-    description: 'Genuine passion for Mistral AI.',
-    icon: 'lamp',
-  },
-  {
-    id: 'expertise',
-    title: 'Expertise',
-    description:
-      'Knowledge and experience in AI, machine learning, or a related field.',
-    icon: 'air-balloon',
-  },
-  {
-    id: 'mistral-advocacy',
-    title: 'Mistral advocacy',
-    description: 'Has previously advocated for Mistral AI.',
-    icon: 'codestral',
-  },
-  {
-    id: 'commitment',
-    title: 'Commitment',
-    description: 'Willingness to commit to the program for at least 6 months.',
-    icon: 'magnifying-glass',
-  },
+  { id: 'passion', icon: 'lamp' },
+  { id: 'expertise', icon: 'air-balloon' },
+  { id: 'mistral-advocacy', icon: 'codestral' },
+  { id: 'commitment', icon: 'magnifying-glass' },
 ] as const;
 
 export const APPLICATION_INFO = {

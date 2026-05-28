@@ -1,0 +1,106 @@
+---
+id: agents_basics
+title: Agents et Conversations
+slug: agents_basics
+sidebar_position: 2
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import AgentCreationTab from './agent_creation/_page.mdx'
+import AgentUpdateTab from './agent_update/_page.mdx'
+
+import StartingTab from './starting/_page.mdx'
+import ContinueTab from './continue/_page.mdx'
+import RetrieveTab from './retrieve/_page.mdx'
+import RestartTab from './restart/_page.mdx'
+import StreamingTab from './streaming/_page.mdx'
+
+# Agents & Conversations
+
+Agents est une fonctionnalité qui permet aux développeurs de créer des modèles prédéfinis avec leurs propres prompts système et outils. Conversations est quant à elle une fonctionnalité qui permet aux développeurs de créer un historique d'interactions avec un assistant utilisant des Agents ou nos modèles directement.
+
+<SectionTab as="h1" sectionId="objects">Objets</SectionTab>
+
+Nous introduisons trois nouveaux objets principaux utilisés par notre API :
+- **Agents** : Un ensemble de valeurs présélectionnées pour augmenter les capacités du modèle, telles que les outils, les instructions et les paramètres de complétion.
+- **Conversation** : Un historique d'interactions, d'événements passés et d'entrées avec un assistant, tels que des messages et des exécutions d'outils. Les Conversations peuvent être initiées par un Agent ou un modèle.
+- **Entry** : Une action qui peut être créée par l'utilisateur ou un assistant. Elle apporte une représentation plus flexible et expressive des interactions entre un utilisateur et un ou plusieurs assistants. Cela permet un meilleur contrôle de la description des événements.
+
+:::tip
+Vous pouvez créer des Conversations sans créer d'Agents. Ces deux API sont indépendantes.
+:::
+
+Pour tous les détails, consultez nos spécifications API [Agents](https://docs.mistral.ai/api/#tag/beta.agents) et [Conversations](https://docs.mistral.ai/api/#tag/beta.conversations).
+
+<SectionTab as="h1" sectionId="agents">Agents</SectionTab>
+
+## Création et gestion des Agents
+
+Les Agents sont un ensemble de valeurs présélectionnées, telles que les outils, les instructions et les paramètres de complétion, qui définiront le comportement du modèle.
+
+<ExplorerTabs id="agents">
+  <ExplorerTab value="agent-creation" label="Création d'Agent">
+    <AgentCreationTab/>
+  </ExplorerTab>
+  <ExplorerTab value="agent-update" label="Mise à jour d'Agent">
+    <AgentUpdateTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="conversations">Conversations</SectionTab>
+
+## Conversations
+
+Les Conversations sont quant à elles un historique d'interactions avec un assistant. Elles sont plus flexibles et expressives que l'API Chat Completion, permettant un meilleur contrôle de la description des événements.
+
+Une fois votre agent créé, vous pouvez **démarrer** des conversations à tout moment tout en gardant la même conversation persistante. Vous démarrez d'abord une conversation en fournissant :
+- `agent_id` : L'ID de l'agent, créé lors de la création de l'Agent.
+- `inputs` : Le message pour démarrer la conversation. Il peut s'agir d'une chaîne de caractères avec le premier message ou question de l'utilisateur, ou de l'historique des messages.
+
+:::tip
+Vous pouvez démarrer et continuer des conversations sans créer d'Agents. Ces deux API sont indépendantes, dans ce cas vous pouvez utiliser le paramètre `model` au lieu de `agent_id`.
+:::
+
+La création d'une Conversation renverra un ID de conversation.
+
+Pour **continuer** la conversation et ajouter les échanges au fur et à mesure, vous fournissez deux valeurs :
+- `conversation_id` : L'ID créé lors du démarrage ou de l'ajout de la conversation qui correspond à l'historique de conversation stocké en interne.
+- `inputs` : Le message ou la réponse suivant(e). Il peut s'agir d'une chaîne de caractères ou d'une liste de messages.
+
+Un nouvel ID de Conversation est fourni à chaque ajout.
+
+Vous pouvez également **désactiver** le stockage automatique avec `store=False` ; cela empêchera le nouvel historique d'être stocké sur notre cloud.
+
+Si l'agent a des guardrails configurés, ils sont automatiquement appliqués à toutes les conversations. Vous pouvez les remplacer en passant un champ `guardrails` directement sur les requêtes `POST /v1/conversations` avec un modèle. Voir [Guardrails personnalisés](/studio-api/safety-moderation#custom-guardrails) pour plus de détails.
+
+Nous fournissons également le paramètre `handoff_execution`, qui dispose actuellement de deux modes : `server` ou `client`.
+- `server` : Exécute le handoff comme prévu en interne sur nos serveurs cloud ; c'est le paramètre par défaut.
+- `client` : Lorsqu'un handoff est déclenché, une réponse est fournie directement à l'utilisateur, lui permettant de gérer le handoff avec contrôle.
+
+Pour plus d'informations concernant les handoffs, consultez [cette section](/studio-api/agents/handoffs).
+
+<SectionTab as="h2" variant="secondary" sectionId="conversations_management">Comment gérer les conversations</SectionTab>
+
+Vous trouverez ci-dessous des exemples de création et de gestion de conversations.
+
+<ExplorerTabs id="conversations">
+  <ExplorerTab value="starting" label="Démarrage">
+    <StartingTab/>
+  </ExplorerTab>
+  <ExplorerTab value="continue" label="Continuer">
+    <ContinueTab/>
+  </ExplorerTab>
+  <ExplorerTab value="retrieve" label="Récupérer">
+    <RetrieveTab/>
+  </ExplorerTab>
+  <ExplorerTab value="restart" label="Redémarrer">
+    <RestartTab/>
+  </ExplorerTab>
+  <ExplorerTab value="streaming" label="Streaming">
+    <StreamingTab/>
+  </ExplorerTab>
+</ExplorerTabs>

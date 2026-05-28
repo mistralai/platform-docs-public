@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mixtral 8x22B',
-  description: `A large open MoE model competing with much larger dense models.`,
-  shortDescription: `A large open MoE model competing with much larger dense models.`,
+  describe: (l) => ({
+    description: l.text(`A large open MoE model competing with much larger dense models.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A large open MoE model competing with much larger dense models.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mixtral-8x22b-0-1-0-3',
-  releaseDate: 'April 17, 2024',
+  releaseDate: '2024-04-17',
   version: '0.1-0.3',
   frontier: false,
   class: 'Generalist',
@@ -47,8 +49,8 @@ export default {
   paperlink: null,
   contextLength: '64k',
   ratings: { 
-    speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 0.0,
+    performance: 0.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -66,7 +68,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: 'November 30, 2024', retirementDate: 'March 30, 2025', replacement: 'Mistral Small 3.2'},
+  metadata: {deprecationDate: '2024-11-30', retirementDate: '2025-03-30', replacement: 'Mistral Small 3.2'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

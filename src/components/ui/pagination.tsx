@@ -1,9 +1,12 @@
+'use client';
+
 import * as React from 'react';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
 } from 'lucide-react';
+import { useLingo } from '@lingo.dev/react';
 
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -72,6 +75,7 @@ function PaginationPrevious({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { label?: string }) {
+  const l = useLingo();
   return (
     <Button
       asChild
@@ -79,14 +83,14 @@ function PaginationPrevious({
       className="text-primary hover:text-primary/80"
     >
       <PaginationLink
-        aria-label="Go to previous page"
+        aria-label={l.text('Go to previous page', { context: 'Screen-reader label on the previous-page arrow button in the docs pagination footer' })}
         size="default"
         className={cn('gap-1 px-2.5 sm:pl-2.5', className)}
         {...props}
       >
         <ChevronLeftIcon />
         <span className="hidden min-[320px]:block first-letter:capitalize">
-          {props.label || 'Previous'}
+          {props.label || l.text('Previous', { context: 'Fallback label on the previous-page button in the docs pagination footer when no page title is available' })}
         </span>
       </PaginationLink>
     </Button>
@@ -97,6 +101,7 @@ function PaginationNext({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { label?: string }) {
+  const l = useLingo();
   return (
     <Button
       asChild
@@ -104,13 +109,13 @@ function PaginationNext({
       className="text-primary hover:text-primary/80"
     >
       <PaginationLink
-        aria-label="Go to next page"
+        aria-label={l.text('Go to next page', { context: 'Screen-reader label on the next-page arrow button in the docs pagination footer' })}
         size="default"
         className={cn('gap-1 px-2.5 sm:pr-2.5', className)}
         {...props}
       >
         <span className="hidden min-[320px]:block first-letter:capitalize">
-          {props.label || 'Next'}
+          {props.label || l.text('Next', { context: 'Fallback label on the next-page button in the docs pagination footer when no page title is available' })}
         </span>
         <ChevronRightIcon />
       </PaginationLink>
@@ -122,6 +127,7 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<'span'>) {
+  const l = useLingo();
   return (
     <span
       aria-hidden
@@ -130,7 +136,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{l.text('More pages', { context: 'Screen-reader-only label on the "..." ellipsis in the pagination UI indicating more pages exist between shown page numbers' })}</span>
     </span>
   );
 }

@@ -27,9 +27,9 @@ Prebuild scripts (run automatically by `pnpm build`):
 
 ### Route Groups (App Router)
 
-- `src/app/(docs)/` — Main documentation pages with sidebar layout. Each page is a folder with `page.mdx`, `page.md`, or `page.tsx`.
-- `src/app/(api)/` — API reference pages (generated from OpenAPI via `@speakeasy-api/docs-md`)
-- `src/app/(no-sidebar-pages)/` — Pages without sidebar (e.g., blog)
+- `src/app/[locale]/(docs)/` — Main documentation pages with sidebar layout. Each page is a folder with `page.mdx`, `page.md`, or `page.tsx`.
+- `src/app/[locale]/(api)/` — API reference pages (generated from OpenAPI via `@speakeasy-api/docs-md`)
+- `src/app/[locale]/(no-sidebar-pages)/` — Pages without sidebar (e.g., blog)
 - `src/app/api/` — API routes (e.g., OG image generation)
 
 ### Content & Sidebar System

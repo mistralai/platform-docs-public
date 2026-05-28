@@ -1,0 +1,74 @@
+---
+id: observability
+title: Observabilité
+sidebar_position: 6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Observabilité des workflows
+
+Ce guide couvre les traces OpenTelemetry pour le diagnostic au niveau de l'exécution.
+
+<SectionTab as="h1" sectionId="traces-opentelemetry">Traces (OpenTelemetry)</SectionTab>
+
+Les traces capturent les détails d'exécution (spans, timings, erreurs) et sont optimisées pour le débogage et l'analyse de performance. Elles sont indépendantes des événements de tâches personnalisés.
+
+<SectionTab as="h2" variant="secondary" sectionId="activity-observability">Observabilité des activités</SectionTab>
+
+Les activités génèrent automatiquement des spans. Utilisez le paramètre `name` pour les rendre plus lisibles :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(name="Processing customer emails")
+async def process_emails(params: ActivityParams) -> ActivityResult:
+    # Your activity code
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="trace-sampling">Échantillonnage des traces</SectionTab>
+
+La collecte de traces est échantillonnée. Par défaut, le worker utilise un échantillonneur basé sur le parent avec un taux configurable, ce qui permet de respecter les décisions en amont.
+
+**En bref :** pour un contrôle optimal de l'échantillonnage, transmettez un header `traceparent` au point d'entrée de votre workflow (ou à la périphérie de l'API). Cela vous permet de forcer l'activation ou la désactivation de l'échantillonnage et de propager la trace parente de manière cohérente.
+
+<SectionTab as="h2" variant="secondary" sectionId="fetching-workflow-traces">Récupération des traces de workflow</SectionTab>
+
+Trois méthodes sont disponibles pour récupérer les données de trace d'une exécution donnée :
+
+- **`get_workflow_execution_trace_otel()`** — Renvoie les données de trace OpenTelemetry brutes (spans avec timings, attributs et relations parent-enfant). Utilisez cette méthode pour alimenter vos propres backends d'observabilité (Jaeger, Grafana Tempo, etc.).
+- **`get_workflow_execution_trace_summary()`** — Renvoie un résumé de haut niveau de l'exécution : durée totale, nombre d'activités, nombre d'erreurs. Utile pour les tableaux de bord et les vérifications rapides de statut.
+- **`get_workflow_execution_trace_events()`** — Renvoie une liste chronologique des événements de l'exécution. Définissez `include_internal_events=False` pour filtrer les événements internes à la plateforme et voir uniquement vos événements de workflow et d'activité.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+# Get raw OpenTelemetry trace data (spans, timings, attributes)
+trace = client.workflows.executions.get_workflow_execution_trace_otel(
+    execution_id=execution_id,
+)
+
+# Get high-level summary (duration, activity count, errors)
+summary = client.workflows.executions.get_workflow_execution_trace_summary(
+    execution_id=execution_id,
+)
+
+# Get chronological event list
+events = client.workflows.executions.get_workflow_execution_trace_events(
+    execution_id=execution_id,
+    include_internal_events=False,  # Hide system events
+)
+```
+
+  </TabItem>
+</Tabs>

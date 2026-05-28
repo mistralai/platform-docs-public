@@ -1,15 +1,14 @@
 import * as React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type AppName = 'lechat' | 'studio' | 'admin' | 'vibe';
+type AppName = 'studio' | 'admin' | 'vibe';
 
 const APP_LABEL: Record<AppName, string> = {
-  lechat: 'Le Chat',
   studio: 'Studio',
   admin: 'Admin',
-  vibe: 'Mistral Vibe',
+  vibe: 'Vibe',
 };
 
 interface AppLinkProps {
@@ -21,7 +20,7 @@ interface AppLinkProps {
 
 /**
  * Inline navigation pill for links that point to a specific location
- * inside a Mistral product (Le Chat, Studio, Admin).
+ * inside a Mistral product (Vibe, Studio, Admin).
  *
  * Renders as:  [ Admin  ›  Organization  ›  Billing ↗ ]
  *

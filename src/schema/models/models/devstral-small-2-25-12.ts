@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Devstral Small 2',
-  description: `Our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
-  shortDescription: `Model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
+  describe: (l) => ({
+    description: l.text(`Our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'devstral-small-2-25-12',
-  releaseDate: 'December 9, 2025',
+  releaseDate: '2025-12-09',
   version: '25.12',
   frontier: false,
   class: 'Specialist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'March 31, 2026', replacement: 'Devstral 2'},
+  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-03-31', replacement: 'Devstral 2'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

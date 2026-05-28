@@ -1,33 +1,40 @@
 import { ModelColor } from '@/lib/colors';
 import type { AvatarIconVariant } from '@/lib/icons';
 import { EndpointKey } from './endpoints';
+import type { Lingo } from '@lingo.dev/react';
 
 export type StarRating = 0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 
-export interface ModelRating {
-  stars: StarRating;
-  label: string;
-}
+export type PricingDenominator =
+  | '/M Tokens'
+  | '/M Chars'
+  | '/Min'
+  | '/1000 Pages'
+  | '/1000 Annotated Pages';
+
+export type ModelClass = 'Generalist' | 'Specialist';
+export type ModelType = 'Premier' | 'Open' | 'Labs';
+export type ModelStatus = 'Deprecated' | 'Retired' | 'Active';
 
 export interface ModelPricingFlat {
   type: 'flat';
   free: boolean;
   price: number;
-  denominator: string;
+  denominator: PricingDenominator;
 }
 export interface ModelPricingRange {
   type: 'range';
   free: boolean;
   input: number;
-  denominator: string;
+  denominator: PricingDenominator;
   output: number;
 }
 
 export interface ModelPricingCustom {
   type: 'custom';
   free: boolean;
-  input: { type: 'range' | 'flat'; price: number; denominator: string }[];
-  output: { type: 'range' | 'flat'; price: number; denominator: string }[];
+  input: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator }[];
+  output: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator }[];
 }
 
 export type ModelPricing =
@@ -208,31 +215,40 @@ export interface ModelAvatar {
   icon: AvatarIconVariant;
   backgroundColor: ModelColor;
 }
+export interface ModelDescriptions {
+  description: string;
+  shortDescription: string;
+}
+
 export interface ModelTemplate<
   K extends string = string,
   S extends string = string,
 > {
   name: K;
-  description: string;
-  shortDescription: string;
+  /**
+   * Localizable description pair. Called at render time with a Lingo instance
+   * obtained from `useLingo()` (client) or `getLingo()` (server).
+   */
+  describe: (l: Lingo) => ModelDescriptions;
   slug: S;
+  /** ISO 8601 date string (YYYY-MM-DD). */
   releaseDate?: string;
   version?: string;
   frontier: boolean;
-  class: 'Generalist' | 'Specialist';
-  type: 'Premier' | 'Open' | 'Labs';
+  class: ModelClass;
+  type: ModelType;
   legacy?: boolean;
-  status: 'Deprecated' | 'Retired' | 'Active';
+  status: ModelStatus;
   avatar?: ModelAvatar;
   bloglink?: string | null;
   paperlink?: string | null;
   weights: ModelWeight[];
   contextLength?: string | undefined | null;
   ratings: {
-    speed: ModelRating;
-    performance: ModelRating;
-    input: ModelRating;
-    output: ModelRating;
+    speed: StarRating;
+    performance: StarRating;
+    input: StarRating;
+    output: StarRating;
   };
   pricing: ModelPricing;
   identifiers: ModelIdentifier;
@@ -241,7 +257,9 @@ export interface ModelTemplate<
   metadata?: {
     parameters?: string;
     deprecated?: boolean;
+    /** ISO 8601 date string (YYYY-MM-DD). */
     deprecationDate?: string;
+    /** ISO 8601 date string (YYYY-MM-DD). */
     retirementDate?: string;
     replacement?: K;
   };

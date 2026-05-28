@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Small 4',
-  description: `Our powerful hybrid model unifying instruct, reasoning, and coding capabilities in a single model. 119B parameters with 6.5B active.`,
-  shortDescription: `Hybrid model unifying instruct, reasoning, and coding in a single efficient model.`,
+  describe: (l) => ({
+    description: l.text(`Our powerful hybrid model unifying instruct, reasoning, and coding capabilities in a single model. 119B parameters with 6.5B active.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Hybrid model unifying instruct, reasoning, and coding in a single efficient model.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-small-4-0-26-03',
-  releaseDate: 'March 16, 2026',
+  releaseDate: '2026-03-16',
   version: '26.03',
   frontier: true,
   class: 'Generalist',
@@ -33,10 +35,10 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: {
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.5, label: 'Very Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 3.5, label: 'Fast' },
+    speed: 4.0,
+    performance: 3.5,
+    input: 4.0,
+    output: 3.5,
   },
   pricing: {
     type: 'custom',

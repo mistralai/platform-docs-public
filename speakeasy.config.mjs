@@ -10,7 +10,7 @@ const OPENAPI_YAML = './openapi.yaml';
  */
 const framework = {
   rendererType: 'mdx',
-  componentPackageName: '@/app/(api)/components/speakeasy',
+  componentPackageName: '@/app/[locale]/(api)/components/speakeasy',
   elementIdSeparator: '_',
 
   buildPagePath(slug) {
@@ -60,7 +60,7 @@ description: Welcome to Mistral AI's Api Reference
     });
 
     writeFileSync(
-      './src/app/(api)/components/sidebar-metadata.json',
+      './src/content/en/api/sidebar-metadata.json',
       JSON.stringify(sortedMetadata, null, '  ')
     );
   },
@@ -70,7 +70,7 @@ description: Welcome to Mistral AI's Api Reference
 export default {
   spec: OPENAPI_YAML,
   output: {
-    pageOutDir: './src/app/(api)/api',
+    pageOutDir: './src/content/en/api',
     framework,
     aboutPage: false,
     generateRequestBodyExamples: true,

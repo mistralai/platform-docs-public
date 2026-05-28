@@ -1,6 +1,7 @@
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
+import { useLingo } from '@lingo.dev/react';
 
 export const MobileMenuProvider = Dialog.Root;
 
@@ -13,6 +14,7 @@ export const MobileMenuContent = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const l = useLingo();
   return (
     <Dialog.Portal>
       <Dialog.Overlay
@@ -31,9 +33,9 @@ export const MobileMenuContent = ({
         }}
         className="fixed focus:outline-none pointer-events-none top-header group/menu-content left-0 right-0 z-[10000]"
       >
-        <Dialog.Title className="sr-only">Mobile Menu</Dialog.Title>
+        <Dialog.Title className="sr-only">{l.text('Mobile Menu', { context: 'Screen-reader-only title for the mobile navigation dialog' })}</Dialog.Title>
         <Dialog.Description className="sr-only">
-          Mobile Menu Links
+          {l.text('Mobile Menu Links', { context: 'Screen-reader-only description for the mobile navigation dialog' })}
         </Dialog.Description>
         {children}
       </Dialog.Content>

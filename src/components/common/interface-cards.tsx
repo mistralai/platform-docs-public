@@ -1,73 +1,62 @@
 'use client';
 
 import React from 'react';
+import { useLingo } from '@lingo.dev/react';
 import { useInterfaceSection } from './interface-section-provider';
 import { TabsOpener } from './tabs-opener';
 
-const INTERFACES = [
-    {
-        id: 'le-chat',
-        title: 'Le Chat',
-        logo: '/assets/logos/le-chat.svg',
-        audience: 'Business users, analysts, content creators',
-        audienceShort: 'Business & Creators',
-        color: 'text-[#C4001D]',
-        bgColor: 'bg-[#C4001D]/10',
-        borderColor: 'border-[#C4001D]/20',
-        hoverBorder: 'hover:border-[#C4001D]/50',
-        activeBorder: 'border-[#C4001D]/50',
-        description: 'Our collaborative AI workspace, the primary interface for anyone who wants to interact with AI without writing code.',
-        href: 'https://chat.mistral.ai',
-        ctaText: 'Go to Le Chat'
-    },
-    {
-        id: 'studio',
-        title: 'Studio',
-        logo: '/assets/logos/studio.svg',
-        audience: 'Developers, data scientists, AI engineers',
-        audienceShort: 'Developers & Engineers',
-        color: 'text-[#2563EB]',
-        bgColor: 'bg-[#2563EB]/10',
-        borderColor: 'border-[#2563EB]/20',
-        hoverBorder: 'hover:border-[#2563EB]/50',
-        activeBorder: 'border-[#2563EB]/50',
-        description: 'The developer console. It provides everything you need to build, test, and optimize AI applications on the Mistral API.',
-        href: 'https://console.mistral.ai',
-        ctaText: 'Try Studio'
-    },
-    {
-        id: 'mistral-vibe',
-        title: 'Mistral Vibe',
-        logo: '/assets/logos/mistral-vibe.png',
-        audience: 'Developers, engineers, terminal power users',
-        audienceShort: 'Developers & Engineers',
-        color: 'text-[#7C3AED]',
-        bgColor: 'bg-[#7C3AED]/10',
-        borderColor: 'border-[#7C3AED]/20',
-        hoverBorder: 'hover:border-[#7C3AED]/50',
-        activeBorder: 'border-[#7C3AED]/50',
-        description: 'The open-source, terminal-native coding agent powered by Devstral. Scan files, maintain multi-file context, and execute commands from your terminal.',
-        href: 'https://github.com/mistralai/mistral-vibe',
-        ctaText: 'Try Vibe'
-    },
-    {
-        id: 'admin',
-        title: 'Admin',
-        logo: '/assets/logos/admin.svg',
-        audience: 'IT admins, billing managers, organization owners',
-        audienceShort: 'IT & Operations',
-        color: 'text-[#FF8205]',
-        bgColor: 'bg-[#FF8205]/10',
-        borderColor: 'border-[#FF8205]/20',
-        hoverBorder: 'hover:border-[#FF8205]/50',
-        activeBorder: 'border-[#FF8205]/50',
-        description: "The control plane. It manages your organization's account, team structure, billing, and security policies.",
-        href: 'https://admin.mistral.ai',
-        ctaText: 'Go to Admin'
-    }
-];
-
 export function InterfaceCards() {
+    const l = useLingo();
+    const INTERFACES = [
+        {
+            id: 'vibe',
+            title: 'Vibe',
+            logo: '/assets/logos/vibe.svg',
+            audience: l.text('All users: chat in the web app, code in the terminal or editor', { context: 'Intended audience for the Vibe product' }),
+            audienceShort: l.text('Everyone', { context: 'Short audience label for the Vibe product' }),
+            color: 'text-[#FA500F]',
+            bgColor: 'bg-[#FA500F]/10',
+            borderColor: 'border-[#FA500F]/20',
+            hoverBorder: 'hover:border-[#FA500F]/50',
+            hoverText: 'group-hover:text-[#FA500F]',
+            activeBorder: 'border-[#FA500F]/50',
+            description: l.text("Mistral's unified agent. Work mode for chat-driven productivity, Code mode for the terminal and editor, Chat mode for quick conversations.", { context: 'Description of the Vibe product' }),
+            href: 'https://chat.mistral.ai',
+            ctaText: l.text('Open Vibe', { context: 'Call to open Vibe' }),
+        },
+        {
+            id: 'studio',
+            title: 'Studio',
+            logo: '/assets/logos/studio.svg',
+            audience: l.text('Developers, data scientists, AI engineers', { context: 'Intended audience for the Studio product' }),
+            audienceShort: l.text('Developers & Engineers', { context: 'Short audience label for developer-focused products' }),
+            color: 'text-[#0082E6]',
+            bgColor: 'bg-[#0082E6]/10',
+            borderColor: 'border-[#0082E6]/20',
+            hoverBorder: 'hover:border-[#0082E6]/50',
+            hoverText: 'group-hover:text-[#0082E6]',
+            activeBorder: 'border-[#0082E6]/50',
+            description: l.text('The developer console. It provides everything you need to build, test, and optimize AI applications on the Mistral API.', { context: 'Description of the Studio product' }),
+            href: 'https://console.mistral.ai',
+            ctaText: l.text('Try Studio', { context: 'Call to open Studio' }),
+        },
+        {
+            id: 'admin',
+            title: l.text('Admin', { context: 'Name of the Mistral admin console' }),
+            logo: '/assets/logos/admin.svg',
+            audience: l.text('IT admins, billing managers, organization owners', { context: 'Intended audience for the admin console' }),
+            audienceShort: l.text('IT & Operations', { context: 'Short audience label for the admin console' }),
+            color: 'text-[#4a4a5e]',
+            bgColor: 'bg-[#4a4a5e]/10',
+            borderColor: 'border-[#4a4a5e]/20',
+            hoverBorder: 'hover:border-[#4a4a5e]/50',
+            hoverText: 'group-hover:text-[#4a4a5e]',
+            activeBorder: 'border-[#4a4a5e]/50',
+            description: l.text("The control plane. It manages your organization's account, team structure, billing, and security policies.", { context: 'Description of the admin console' }),
+            href: 'https://admin.mistral.ai',
+            ctaText: l.text('Go to Admin', { context: 'Call to open the admin console' }),
+        }
+    ];
     const { scrollToSection } = useInterfaceSection();
 
     return (

@@ -1,0 +1,43 @@
+---
+id: core-concepts-events
+title: Événements
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Événements
+
+Chaque action significative dans le cycle de vie d’un workflow génère un **événement** : démarrage du workflow, planification d’une activité, fin d’une activité, réception d’un signal, clôture du workflow. Ces événements sont enregistrés dans l’ordre, formant un journal à ajouts exclusivement appelé **historique d’exécution**.
+
+<SectionTab as="h1" sectionId="why-events-matter">Pourquoi les événements sont essentiels</SectionTab>
+
+L’historique d’exécution rend possible une exécution durable. C’est la source de vérité pour l’état d’un workflow. Lorsqu’un worker doit reprendre un workflow (après un crash, un redémarrage ou une réaffectation de tâche), il rejoue l’historique d’exécution depuis le début.
+
+Pendant le rejeu, le code du workflow s’exécute à nouveau depuis le début, mais les activités déjà complétées ne sont pas rejouées : leurs résultats sont relus depuis l’historique. Le workflow retrouve exactement le point où il avait été interrompu, sans nécessiter de code de récupération spécifique de votre part.
+
+Le rejeu fiable dépend du caractère déterministe du code du workflow. Voir [Workflows > Déterminisme](/studio-api/workflows/getting-started/core_concepts/workflows#determinism) pour comprendre la contrainte et comment le SDK l’applique.
+
+<SectionTab as="h1" sectionId="event-types">Types d’événements</SectionTab>
+
+| Type | Déclenché lorsque |
+|------|------------------|
+| `WORKFLOW_EXECUTION_STARTED` | Un workflow démarre |
+| `WORKFLOW_EXECUTION_COMPLETED` | Un workflow se termine avec succès |
+| `WORKFLOW_EXECUTION_FAILED` | Un workflow se termine sur une erreur non gérée |
+| `WORKFLOW_EXECUTION_CANCELED` | Un workflow est annulé |
+| `WORKFLOW_EXECUTION_CONTINUED_AS_NEW` | Un workflow réinitialise son historique |
+| `WORKFLOW_TASK_TIMED_OUT` | Une tâche du workflow dépasse sa limite de temps |
+| `WORKFLOW_TASK_FAILED` | Une tâche du workflow rencontre une erreur |
+| `ACTIVITY_TASK_STARTED` | Une activité démarre |
+| `ACTIVITY_TASK_COMPLETED` | Une activité se termine avec succès |
+| `ACTIVITY_TASK_RETRYING` | Une activité est réessayée |
+| `ACTIVITY_TASK_FAILED` | Une activité échoue |
+
+<SectionTab as="h1" sectionId="history-limits">Limites de l’historique</SectionTab>
+
+Chaque historique d’exécution est borné : **51 200 événements** ou **50 Mo**, selon la première limite atteinte. Pour les workflows très longs ou traitant un grand volume de tâches, la plateforme propose un mécanisme appelé [**continue-as-new**](/studio-api/workflows/building-workflows/continue_as_new), qui permet à un workflow de transférer son état essentiel dans un nouvel historique sans interrompre l’exécution.
+
+:::note
+Les événements décrits ici sont des **événements d’historique d’exécution** : l’enregistrement interne des progrès d’un workflow, utilisé pour la durabilité et le rejeu. La plateforme prend aussi en charge des **événements en streaming** consommables en temps réel par des systèmes externes. Ceux-ci sont un concept distinct, détaillé dans la section [Streaming](/studio-api/workflows/building-workflows/streaming).
+:::

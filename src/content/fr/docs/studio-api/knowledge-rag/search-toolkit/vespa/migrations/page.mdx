@@ -1,0 +1,110 @@
+---
+title: Gérer le schéma
+sidebar_position: 3
+sidebar_label: Gérer le schéma
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+Gérez les schémas de votre application Vespa à l'aide de migrations Python. Pour comprendre les notions de schéma, de champ et de classement, consultez [Anatomie d'une application Vespa](../anatomy).
+
+<SectionTab as="h2" sectionId="creating-and-evolving-schemas">Création et évolution des schémas</SectionTab>
+
+Utilisez les migrations pour définir et modifier vos schémas. Les migrations sont des fichiers Python placés dans `vespa_app/migrations/` ; elles sont append-only, ordonnées par timestamp et rejouées à chaque déploiement.
+
+Générez une nouvelle migration :
+
+```bash
+uv run mistral-vespa generate-migration --app-dir ./vespa_app <name>
+```
+
+Cette commande crée un fichier horodaté avec une classe de base :
+
+```python
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration
+
+
+class MyMigration(VespaMigration):
+    def migrate(self) -> None:
+        pass  # Définissez vos modifications ici
+```
+
+<SectionTab as="h2" sectionId="defining-a-schema">Définir un schéma</SectionTab>
+
+Utilisez `create_default_schema` pour générer un schéma directement compatible avec `VespaSearchIndex` :
+
+```python
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition, SearchMode
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_default_schema, set_app_name
+
+
+class InitialSchema(VespaMigration):
+    def migrate(self) -> None:
+        set_app_name("myapp")
+        create_default_schema(
+            name="articles",
+            mode=SearchMode.INDEX,
+            embedding_dimensions=1024,
+            schema_version=1,
+            additional_fields=[
+                FieldDefinition.TextField(name="title"),
+                FieldDefinition.TimestampField(name="created_at"),
+            ],
+        )
+```
+
+Cette commande crée un schéma avec tous les champs nécessaires au pipeline (fragments, embeddings, métadonnées, etc.), complétés par les champs propres à votre projet via `additional_fields`.
+
+Si vous souhaitez un contrôle total sur la liste des champs, utilisez `create_schema` et définissez chaque champ explicitement.
+
+### Ajouter des champs à un schéma existant
+
+Utilisez `add_field` dans une nouvelle migration pour ajouter des champs après la création du schéma initial :
+
+```python
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, add_field
+
+
+class AddViewCount(VespaMigration):
+    def migrate(self) -> None:
+        add_field("articles", FieldDefinition.CountField(name="view_count"))
+```
+
+Positionnez `multi_dimensional=True` pour les champs de type tableau (par exemple : embeddings par fragment ou fragments de texte). Les dimensions d'embedding se définissent une seule fois avec `create_schema(embedding_dimensions=...)`.
+
+### Schémas multiples
+
+Appelez plusieurs fois `create_schema()` ou `create_default_schema()` pour enregistrer plusieurs types de documents au sein d'une même application. Chaque schéma génère son propre fichier `.sd` et son profil de requête. Les noms des schémas doivent être uniques.
+
+<SectionTab as="h2" sectionId="migration-helpers">Outils d'aide à la migration</SectionTab>
+
+| Outil | Description |
+|---|---|
+| `set_app_name(name)` | Définit le nom de l'application (obligatoire dans la première migration) |
+| `create_default_schema(...)` | Crée un schéma avec les champs requis par `VespaSearchIndex` (recommandé) |
+| `create_schema(...)` | Crée un schéma avec une liste de champs explicite (pour un contrôle total) |
+| `add_field(schema, field)` | Ajoute un champ à un schéma existant |
+| `add_query_profiles(...)` | Ajoute ou met à jour des profils de requête |
+| `add_schema_rank_profiles(schema, paths)` | Ajoute des fichiers de profils de classement personnalisés |
+| `add_schema_model_files(schema, paths)` | Ajoute des fichiers de modèle ML |
+| `add_schema_custom_document_summary(...)` | Ajoute des résumés de documents personnalisés |
+
+<SectionTab as="h2" sectionId="deploying">Déploiement</SectionTab>
+
+`mistral-vespa migrate` détecte les migrations, les exécute dans l'ordre, construit le package de l'application et le télécharge. Pour plus de détails, consultez les guides [Développement local](../local-development) et [Déploiement et exploitation](../operations).
+
+<SectionTab as="h2" sectionId="optional-snapshot">Snapshot facultatif</SectionTab>
+
+```bash
+uv run mistral-vespa generate \
+  --app-dir ./vespa_app \
+  --path ./vespa.lock
+```
+
+Écrit le package de l'application sur le disque pour inspection ou validation CI. Ce fichier n'est pas utilisé lors du déploiement.
+
+<SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Anatomie d'une application Vespa](../anatomy)** — Concepts : schémas, champs, profils de classement, migrations
+- **[Développement local](../local-development)** — Boucle complète de développement local
+- **[Référence CLI](../cli)** — Liste complète des options CLI

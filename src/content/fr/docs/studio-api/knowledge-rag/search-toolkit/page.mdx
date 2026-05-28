@@ -1,0 +1,97 @@
+---
+title: "Search Toolkit"
+sidebar_position: 0
+sidebar_label: "Aperçu"
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Search Toolkit
+
+Search Toolkit est un framework Python pour concevoir des systèmes de recherche d'information (IR) prêts pour la production. Il fournit des composants modulaires, extensibles pour l'ingestion, la recherche et l'évaluation, indépendants du backend et interchangeables à volonté.
+
+Les LLM ne sont pas entraînés sur vos données privées. Pour que leurs réponses s'appuient sur vos propres documents, il vous faut une chaîne de récupération capable d'ingérer, d'indexer et d'interroger vos contenus. Search Toolkit réunit tous les modules nécessaires pour bâtir cette chaîne de valeur.
+
+<SectionTab as="h1" sectionId="key-features">Fonctionnalités clés</SectionTab>
+
+### [Ingestion](ingestion)
+
+- **Extraction multi-format** : PDF/DOCX/PPTX via Mistral OCR, HTML, tableurs, e-mails, texte brut
+- **Chargement de fichiers** : depuis le système de fichiers local ou via des loaders personnalisés pour toute source
+- **Fragmentation flexible** : découpe par caractère, token, adaptée au markdown ou selon un séparateur
+- **Enrichissement** : ajoutez des métadonnées personnalisées ou des résumés générés par LLM sur vos documents et fragments
+- **Indexation** : indexez dans des bases vectorielles pour la recherche sémantique
+
+### [Récupération](retrieval)
+
+- **Stratégies multiples** : recherche vectorielle (sémantique) avec reranking optionnel
+- **Prétraitement des requêtes** : améliorez les requêtes utilisateur avec reformulation ou extension par LLM
+- **Reranking** : reranker LLM, cross-encoder ou rerankers personnalisés
+- **Cache sémantique** : mise en cache des résultats selon la similarité de requêtes pour éviter les récupérations inutiles
+
+
+<SectionTab as="h1" sectionId="architecture">Architecture</SectionTab>
+
+**L'ingestion** transforme les documents bruts en fragments consultables. Un **FileLoader** lit les octets bruts depuis une source ; un **DocumentExtractor** les transforme en document structuré ; un **TextSplitter** les découpe en fragments ; un éventuel **ChunkEnricher** ajoute des métadonnées ; un **Embedder** produit des vecteurs pour l'indexation dans une base vectorielle.
+
+**La récupération** identifie les fragments pertinents pour une requête. Un **query preprocessor** (facultatif) réécrit ou étend la requête ; un **Retriever** interroge la base vectorielle ; un **Reranker** (facultatif) recalcule le score des résultats avant retour.
+
+Les deux workflows sont orchestrés par des classes de haut niveau (`Pipeline` pour l'ingestion, `QueryEngine` pour la récupération) qui gèrent la connexion et l'exécution des composants. Chaque composant est interchangeable : utilisez les implémentations proposées ou vos propres modules.
+
+### Composants
+
+| Composant | Options intégrées |
+|-----------|-------------------|
+| **Loaders de fichiers** | `FilesystemFileLoader`, loaders personnalisés |
+| **Extracteurs** | `MistralOCRExtractor`, `PlainTextExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor` |
+| **Text splitters** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `SeparatorTextSplitter` |
+| **Enrichers** | `SummaryEnricher`, `ChunkEnricher` personnalisé |
+| **Embedders** | `MistralEmbedder`, `Embedder` personnalisé |
+| **Stockage** | Vespa ou base vectorielle personnalisée |
+| **Retrievers** | `VectorRetriever` |
+| **Rerankers** | `LLMReRanker`, `CrossEncoderReRanker`, `RRFRanker` |
+| **Prétraitement** | `LLMQueryRewriter`, `LLMQueryExtension` |
+| **Caching** | `SemanticCache` avec `InMemoryCacheBackend` |
+
+<SectionTab as="h1" sectionId="packages">Installation & Extras</SectionTab>
+
+Installez le package principal :
+
+```bash
+uv add mistralai-search-toolkit
+```
+
+Des modules complémentaires ajoutent des fonctionnalités spécialisées :
+
+| Extra | Description |
+|-------|-------------|
+| `vespa` | Plugin Vespa pour le stockage vectoriel et la recherche sémantique |
+| `extractor-pymupdf` | Extraction avancée de PDF avec PyMuPDF Pro |
+| `extractor-spreadsheet` | Analyse de tableurs (Excel, CSV, format Calamine) |
+| `extractor-email` | Analyse de fichiers e-mail (formats EML, MSG) |
+| `html-converter-markdownify` | Conversion HTML vers Markdown |
+| `text-splitter-langchain` | Stratégies de découpe additionnelles avec LangChain |
+| `storage-gcs` | Intégration Google Cloud Storage |
+| `storage-azure` | Intégration Azure Blob Storage |
+| `all` | Tous les modules complémentaires |
+
+Installez les extras avec le package principal :
+
+```bash
+uv add "mistralai-search-toolkit[vespa]"
+uv add "mistralai-search-toolkit[vespa,extractor-pymupdf]"
+uv add "mistralai-search-toolkit[all]"  # Installe tous les extras
+```
+
+Tous les packages sont disponibles sur [PyPI](https://pypi.org/project/mistralai-search-toolkit/).
+
+:::info
+Nécessite **Python 3.12+**. Nous recommandons [uv](https://docs.astral.sh/uv/) pour la gestion des dépendances.
+:::
+
+<SectionTab as="h1" sectionId="next-steps">Prochaines étapes</SectionTab>
+
+- **[Guide de démarrage](quickstart)** : créez un pipeline ingestion/récupération de bout en bout.
+- **[Index de recherche](search-index)** : configurez votre base vectorielle.
+- **[Ingestion](ingestion)** : chargez, extrayez, fragmentez, enrichissez et indexez vos documents.
+- **[Récupération](retrieval)** : configurez la recherche vectorielle et le reranking optionnel.

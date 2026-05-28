@@ -1,0 +1,128 @@
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+<SectionTab sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Comment valider le format des données ?">
+
+- API Mistral : nous validons actuellement chaque fichier lors du téléchargement du dataset.
+
+- `mistral-finetune` : vous pouvez exécuter le [script de validation des données](https://github.com/mistralai/mistral-finetune/blob/main/utils/validate_data.py) pour valider les données et exécuter le [script de reformatage des données](https://github.com/mistralai/mistral-finetune/blob/main/utils/reformat_data.py) pour reformater les données au bon format :
+<Tabs>
+  <TabItem value="bash" label="bash">
+  ```bash
+  # download the reformat script
+  wget https://raw.githubusercontent.com/mistralai/mistral-finetune/main/utils/reformat_data.py
+  # download the validation script
+  wget https://raw.githubusercontent.com/mistralai/mistral-finetune/main/utils/validate_data.py
+  # reformat data
+  python reformat_data.py data.jsonl
+  # validate data
+  python validate_data.py data.jsonl
+  ```
+  </TabItem>
+</Tabs>
+  Notez cependant que ces scripts peuvent ne pas détecter tous les cas problématiques. Vous devrez peut-être valider et corriger manuellement certains cas limites spécifiques dans vos données.
+  </FaqItem>
+  <FaqItem question="Quelle est la limite de taille des données d'entraînement ?">
+
+Bien que la limite de taille pour un fichier de données d'entraînement individuel soit de 512 Mo, il n'y a aucune limitation sur le nombre de fichiers que vous pouvez télécharger. Vous pouvez télécharger plusieurs fichiers et les référencer lors de la création du job.
+  </FaqItem>
+  <FaqItem question="Quelle est la limite de taille des données de validation ?">
+
+La limite de taille pour les données de validation est de 1 Mo. En règle générale :
+
+`validation_set_max_size = min(1MB, 5% of training data)`
+  </FaqItem>
+  <FaqItem question="Que se passe-t-il si j'essaie de créer un job qui existe déjà ?">
+
+Lors de la création du job, vous recevrez une erreur `409 Conflict` si un job similaire est déjà en cours d'exécution / validé / en file d'attente. Ce mécanisme permet d'éviter de créer par inadvertance des jobs en double, économisant ainsi des ressources et évitant la redondance.
+  </FaqItem>
+  <FaqItem question="Que se passe-t-il si je télécharge un fichier déjà existant ?">
+
+Si un fichier téléchargé correspond à un fichier existant en termes de contenu et de nom, le fichier préexistant est renvoyé au lieu d'en créer un nouveau.
+  </FaqItem>
+  <FaqItem question="Combien d'epochs contient le processus d'entraînement ?">
+
+En règle générale : Num epochs = max_steps / file_of_training_jsonls_in_MB. Par exemple, si votre fichier d'entraînement fait 100 Mo et que vous définissez max_steps=1000, le processus d'entraînement effectuera environ 10 epochs.
+  </FaqItem>
+  <FaqItem question="Où puis-je trouver des informations sur le coût / délai estimé / nombre de tokens / nombre de passages sur chaque fichier ?">
+
+API Mistral : lorsque vous créez un job de fine-tuning, vous devriez automatiquement voir ces informations avec l'argument par défaut `auto_start=False`.
+
+Notez que l'argument `dry_run=True` sera supprimé en septembre.
+
+`mistral-finetune` : vous pouvez utiliser le script suivant pour le savoir : https://github.com/mistralai/mistral-finetune/blob/main/utils/validate_data.py. Ce script accepte un fichier d'entraînement .yaml en entrée et renvoie le nombre de tokens sur lesquels le modèle est entraîné.
+  </FaqItem>
+  <FaqItem question="Comment estimer le coût d'un job de fine-tuning ?">
+
+Pour l'API Mistral, vous pouvez utiliser l'argument `auto_start=False` comme mentionné dans la question précédente.
+  </FaqItem>
+  <FaqItem question="Quel est le learning rate recommandé ?">
+
+Pour le fine-tuning LoRA, nous recommandons 1e-4 (par défaut) ou 1e-5.
+
+Notez que le learning rate que nous définissons est le learning rate maximal, et non un learning rate constant. Le learning rate suit un schéma de warmup linéaire et de décroissance en cosinus. Durant la phase de warmup, le learning rate augmente linéairement d'une petite valeur initiale à une valeur plus élevée sur un certain nombre d'étapes d'entraînement. Après la phase de warmup, le learning rate décroît selon une fonction cosinus.
+  </FaqItem>
+  <FaqItem question="L'API de fine-tuning est-elle compatible avec le format de données OpenAI ?">
+
+Oui, nous prenons en charge le format OpenAI.
+  </FaqItem>
+  <FaqItem question="Que faire si la taille de mon fichier dépasse 500 Mo et que j'obtiens le message d'erreur `413 Request Entity Too Large` ?">
+
+Vous pouvez diviser votre fichier de données en morceaux. Voici un exemple :
+
+<Tabs>
+  <TabItem value="python" label="python">
+```py
+import json
+from datasets import load_dataset
+
+# get data from hugging face
+
+ds = load_dataset("HuggingFaceH4/ultrachat_200k",split="train_gen")
+
+# save data into .jsonl. This file is about 1.3GB
+
+with open('train.jsonl', 'w') as f:
+for line in ds:
+json.dump(line, f)
+f.write('\n')
+
+# reformat data
+
+!wget https://raw.githubusercontent.com/mistralai/mistral-finetune/main/utils/reformat_data.py
+!python reformat_data.py train.jsonl
+
+# Split file into three chunks
+
+input_file = "train.jsonl"
+output_files = ["train_1.jsonl", "train_2.jsonl", "train_3.jsonl"]
+
+# open the output files
+
+output_file_objects = [open(file, "w") for file in output_files]
+
+# counter for output files
+
+counter = 0
+with open(input_file, "r") as f_in: # read the input file line by line
+for line in f_in: # parse the line as JSON
+data = json.loads(line) # write the data to the current output file
+output_file_objects[counter].write(json.dumps(data) + "\n") # increment the counter
+counter = (counter + 1) % 3
+
+# close the output files
+
+for file in output_file_objects:
+file.close()
+
+# now you should see three jsonl files under 500MB
+
+```
+  </TabItem>
+</Tabs>
+  </FaqItem>
+</Faq>

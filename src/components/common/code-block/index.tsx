@@ -5,6 +5,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import oneDarkCustom, { onelightCustom } from './one-dark-custom';
+import { useLingo } from '@lingo.dev/react';
 
 // Register only the languages we actually use across docs + cookbooks.
 // This avoids pulling in ~190 prism language modules.
@@ -74,6 +75,7 @@ export function CodeBlock({
   highlight,
   wrapLongLines = true,
 }: CodeBlockProps) {
+  const l = useLingo();
   const [copied, setCopied] = useState(false);
 
   const extractLanguage = (className?: string): string => {
@@ -150,7 +152,7 @@ export function CodeBlock({
             'opacity-0 group-hover/code-block:opacity-100 transition-opacity',
             'hover:border-primary hover:text-primary'
           )}
-          aria-label="Copy code to clipboard"
+          aria-label={l.text('Copy code to clipboard', { context: 'Accessible label for copying code' })}
         >
           {copied ? (
             <Check className="h-[1em] w-[1em]" />
@@ -196,7 +198,7 @@ export function CodeBlock({
             'opacity-0 group-hover/code-block:opacity-100 transition-opacity',
             'hover:border-primary hover:text-primary'
           )}
-          aria-label="Copy code to clipboard"
+          aria-label={l.text('Copy code to clipboard', { context: 'Accessible label for copying code' })}
         >
           {copied ? (
             <Check className="h-[1em] w-[1em]" />

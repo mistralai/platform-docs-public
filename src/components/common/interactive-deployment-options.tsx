@@ -4,49 +4,50 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EarthIcon, LockIcon, CheckIcon, ChevronRightIcon } from '@/components/icons/pixel';
 import { cn } from '@/lib/utils';
-
-const DEPLOYMENT_OPTIONS = [
-    {
-        id: 'saas',
-        title: 'SaaS (Studio)',
-        icon: EarthIcon,
-        color: 'text-[#FF8205]',
-        bgColor: 'bg-[#FF8205]/10',
-        borderColor: 'border-[#FF8205]/20',
-        activeBorder: 'border-[#FF8205]/50',
-        dataLocation: 'Mistral cloud',
-        managedBy: 'Mistral AI',
-        bestFor: 'Instant access, no infrastructure to manage',
-        description: 'The fastest way to get started. Build with Mistral models hosted on our secure, highly-available infrastructure.',
-        features: [
-            'Zero setup required',
-            'Automatic model updates',
-            'Pay-as-you-go or committed throughput',
-            'Global availability'
-        ]
-    },
-    {
-        id: 'vpc',
-        title: 'Cloud private (VPC)',
-        icon: LockIcon,
-        color: 'text-[#FF8205]',
-        bgColor: 'bg-[#FF8205]/10',
-        borderColor: 'border-[#FF8205]/20',
-        activeBorder: 'border-[#FF8205]/50',
-        dataLocation: 'Your cloud account',
-        managedBy: 'Cloud partner',
-        bestFor: 'Data stays in your VPC; use existing cloud credits',
-        description: 'Deploy Mistral models within your existing cloud account via certified partners like AWS, Azure, GCP, or IBM.',
-        features: [
-            'Data never leaves your VPC',
-            'Burn down existing cloud commits',
-            'Integrate with internal tools securely',
-            'Managed by the cloud provider'
-        ]
-    },
-];
+import { useLingo } from '@lingo.dev/react';
 
 export function InteractiveDeploymentOptions() {
+    const l = useLingo();
+    const DEPLOYMENT_OPTIONS = [
+        {
+            id: 'saas',
+            title: l.text('SaaS (Studio)', { context: 'Name of the SaaS deployment option for Mistral Studio' }),
+            icon: EarthIcon,
+            color: 'text-[#FF8205]',
+            bgColor: 'bg-[#FF8205]/10',
+            borderColor: 'border-[#FF8205]/20',
+            activeBorder: 'border-[#FF8205]/50',
+            dataLocation: l.text('Mistral cloud', { context: 'Value for the "Data Location" field of the SaaS deployment option' }),
+            managedBy: 'Mistral AI',
+            bestFor: l.text('Instant access, no infrastructure to manage', { context: 'Value for the "Best For" field of the SaaS deployment option' }),
+            description: l.text('The fastest way to get started. Build with Mistral models hosted on our secure, highly-available infrastructure.', { context: 'Description of the SaaS deployment option' }),
+            features: [
+                l.text('Zero setup required', { context: 'Feature of the SaaS deployment option' }),
+                l.text('Automatic model updates', { context: 'Feature of the SaaS deployment option' }),
+                l.text('Pay-as-you-go or committed throughput', { context: 'Feature of the SaaS deployment option' }),
+                l.text('Global availability', { context: 'Feature of the SaaS deployment option' }),
+            ],
+        },
+        {
+            id: 'vpc',
+            title: l.text('Cloud private (VPC)', { context: 'Name of the private cloud deployment option' }),
+            icon: LockIcon,
+            color: 'text-[#FF8205]',
+            bgColor: 'bg-[#FF8205]/10',
+            borderColor: 'border-[#FF8205]/20',
+            activeBorder: 'border-[#FF8205]/50',
+            dataLocation: l.text('Your cloud account', { context: 'Value for the "Data Location" field of the VPC deployment option' }),
+            managedBy: l.text('Cloud partner', { context: 'Value for the "Managed By" field of the VPC deployment option' }),
+            bestFor: l.text('Data stays in your VPC; use existing cloud credits', { context: 'Value for the "Best For" field of the VPC deployment option' }),
+            description: l.text('Deploy Mistral models within your existing cloud account via certified partners like AWS, Azure, GCP, or IBM.', { context: 'Description of the private cloud deployment option' }),
+            features: [
+                l.text('Data never leaves your VPC', { context: 'Feature of the private cloud deployment option' }),
+                l.text('Burn down existing cloud commits', { context: 'Feature of the private cloud deployment option' }),
+                l.text('Integrate with internal tools securely', { context: 'Feature of the private cloud deployment option' }),
+                l.text('Managed by the cloud provider', { context: 'Feature of the private cloud deployment option' }),
+            ],
+        },
+    ];
     const [activeOption, setActiveOption] = useState(DEPLOYMENT_OPTIONS[0].id);
 
     const activeData = DEPLOYMENT_OPTIONS.find((o) => o.id === activeOption);
@@ -55,7 +56,7 @@ export function InteractiveDeploymentOptions() {
         <div className="flex flex-col gap-8 my-8 w-full">
             {/* Overview text */}
             <div className="text-muted-foreground text-lg max-w-2xl">
-                Both deployment options expose a compatible REST API. Applications built against Studio can be pointed at a VPC instance with only a base URL change.
+                {l.text('Both deployment options expose a compatible REST API. Applications built against Studio can be pointed at a VPC instance with only a base URL change.', { context: 'Explanation of the two AI model deployment options' })}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -144,15 +145,15 @@ export function InteractiveDeploymentOptions() {
                                     <div className={cn('rounded-xl border bg-card p-6 shadow-sm', activeData.activeBorder)}>
                                         <div className="grid grid-cols-2 gap-y-6 gap-x-4 mb-6">
                                             <div>
-                                                <div className="text-sm font-medium text-muted-foreground mb-1">Data Location</div>
+                                                <div className="text-sm font-medium text-muted-foreground mb-1">{l.text('Data Location', { context: 'Label for where deployment data is hosted' })}</div>
                                                 <div className="font-semibold text-foreground">{activeData.dataLocation}</div>
                                             </div>
                                             <div>
-                                                <div className="text-sm font-medium text-muted-foreground mb-1">Managed By</div>
+                                                <div className="text-sm font-medium text-muted-foreground mb-1">{l.text('Managed By', { context: 'Label for who manages the deployment' })}</div>
                                                 <div className="font-semibold text-foreground">{activeData.managedBy}</div>
                                             </div>
                                             <div className="col-span-2">
-                                                <div className="text-sm font-medium text-muted-foreground mb-1">Best For</div>
+                                                <div className="text-sm font-medium text-muted-foreground mb-1">{l.text('Best For', { context: 'Label for the best-fit use case' })}</div>
                                                 <div className="font-semibold text-foreground">{activeData.bestFor}</div>
                                             </div>
                                         </div>

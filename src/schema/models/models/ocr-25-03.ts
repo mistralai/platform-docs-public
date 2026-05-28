@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'OCR',
-  description: `Our first OCR optimized model.`,
-  shortDescription: `Our first OCR optimized model.`,
+  describe: (l) => ({
+    description: l.text(`Our first OCR optimized model.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our first OCR optimized model.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'ocr-25-03',
-  releaseDate: 'March 6, 2025',
+  releaseDate: '2025-03-06',
   version: '25.03',
   frontier: false,
   class: 'Specialist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: null,
   ratings: { 
-    speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 0.0,
+    performance: 0.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -36,7 +38,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'OCR 3'},
+  metadata: {deprecationDate: '2025-12-02', retirementDate: '2025-12-31', replacement: 'OCR 3'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

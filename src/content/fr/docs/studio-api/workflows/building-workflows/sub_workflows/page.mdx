@@ -1,0 +1,138 @@
+---
+id: child-workflows
+title: Workflows enfants
+sidebar_position: 8
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Workflows enfants
+
+Un workflow peut exécuter d'autres workflows en tant que **workflows enfants**, ce qui permet des schémas d'orchestration hiérarchiques.
+
+<SectionTab as="h1" sectionId="when-to-use">Quand utiliser un workflow enfant vs une activité</SectionTab>
+
+Les deux permettent de composer du travail — choisissez selon la nécessité d'un historique durable séparé :
+
+| Utilisez un **workflow enfant** si... | Utilisez une **activité** si... |
+| --- | --- |
+| L'unité de travail est elle-même de longue durée, avec ses propres relances ou nécessite son propre historique d'événements que vous pouvez rejouer indépendamment | L'unité de travail est un effet de bord unique (écriture en base, appel d'API, appel LLM) qui doit être relancé comme un tout |
+| Vous souhaitez inspecter, signaler ou interroger ce sous-processus depuis l'extérieur | Vous n'avez pas besoin d'observabilité externe au-delà de l'historique du parent |
+| Vous voulez l'exécuter sur un autre worker / déploiement | Le worker parent peut l'exécuter directement |
+
+Les workflows enfants sont plus lourds que les activités : ils ont leur propre exécution, historique et politique de relance. Privilégiez d'abord une activité ; n'utilisez un workflow enfant que si vous avez besoin de sa durabilité indépendante.
+
+<SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+Exécutez un workflow enfant et attendez son résultat :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+
+@workflows.activity()
+async def process_item(value: str) -> str:
+    return f"processed:{value}"
+
+
+class ChildInput(BaseModel):
+    value: str
+
+
+@workflows.workflow.define(name="child_workflow")
+class ChildWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: ChildInput) -> str:
+        return await process_item(params.value)
+
+
+class ParentInput(BaseModel):
+    data: str
+
+
+@workflows.workflow.define(name="parent_workflow")
+class ParentWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: ParentInput) -> str:
+        child_result = await workflows.execute_workflow(
+            ChildWorkflow, params=ChildInput(value=params.data)
+        )
+        return f"Parent got: {child_result}"
+
+
+async def main():
+    result = await workflows.execute_workflow(
+        ParentWorkflow,
+        params=ParentInput(data="hello"),
+    )
+    print(result)
+```
+
+  </TabItem>
+  <TabItem value="output" label="Sortie">
+
+```
+Parent got: processed:hello
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="fire-and-forget">Exécution sans attendre</SectionTab>
+
+Lancez un workflow enfant sans attendre son résultat en passant `wait=False` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+handle = await workflow.execute_workflow(
+    ChildWorkflow,
+    params=child_params,
+    execution_timeout=timedelta(hours=1),
+    wait=False,
+)
+# Le parent poursuit immédiatement — l'enfant s'exécute de façon indépendante
+# Vous pouvez attendre le résultat plus tard si besoin : result = await handle
+```
+
+  </TabItem>
+</Tabs>
+
+Par défaut, `wait=False` place la politique de fermeture du parent à `ABANDON`, donc le workflow enfant poursuit son exécution même si le parent se termine.
+
+<SectionTab as="h1" sectionId="parent-close-policy">Politique de fermeture du parent</SectionTab>
+
+Redéfinissez la politique de fermeture par défaut avec le paramètre `parent_close_policy` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows import ParentClosePolicy
+
+handle = await workflow.execute_workflow(
+    ChildWorkflow,
+    params=child_params,
+    execution_timeout=timedelta(hours=1),
+    wait=False,
+    parent_close_policy=ParentClosePolicy.TERMINATE,
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="observing-child-events">Observation des événements enfant</SectionTab>
+
+Chaque workflow enfant possède son propre ID d'exécution et son historique d'événements. Chaque événement contient `workflow_context.parent_workflow_exec_id` et `workflow_context.root_workflow_exec_id`, ce qui vous permet de vous abonner à un parent et à tous ses descendants en un seul flux, en filtrant sur `root_workflow_exec_id`.
+
+Pour un workflow racine sans parent, `parent_workflow_exec_id` vaut `null` et `root_workflow_exec_id` correspond à l'ID d'exécution du workflow.
+
+Voir [Consommer des événements en streaming > Consommer les événements d'arbres de workflows](/studio-api/workflows/building-workflows/consuming_events#consuming-events-from-workflow-trees) pour le schéma d'abonnement.

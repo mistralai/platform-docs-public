@@ -4,11 +4,13 @@ import Image from 'next/image';
 export default function NotFoundCat({
   title = '¿Meow? Page not found.',
   description = 'The page you’re looking for was either moved or doesn’t exist.',
+  imageAlt = 'Not Found',
   className,
   children,
 }: {
   title?: string;
   description?: string;
+  imageAlt?: string;
   className?: string;
   children?: React.ReactNode;
 }) {
@@ -21,7 +23,7 @@ export default function NotFoundCat({
     >
       <Image
         src="/assets/sprites/cat_sleeping.gif"
-        alt="Not Found"
+        alt={imageAlt}
         className="relative -mt-4 ml-6"
         width={180}
         height={146}

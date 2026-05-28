@@ -1,0 +1,57 @@
+---
+id: continue-as-new
+title: Continue-As-New
+sidebar_position: 10
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Continue-As-New
+
+Continue-As-New réinitialise l’historique des événements du workflow tout en conservant son état, ce qui permet d’exécuter des workflows sans limite de durée sans atteindre la taille maximale de l’historique.
+
+<SectionTab as="h1" sectionId="when-to-use">Quand l’utiliser</SectionTab>
+
+- Workflows de longue durée qui s’exécutent indéfiniment
+- Lorsque l’historique du workflow approche la limite de taille (~50 000 événements ou 50 Mo)
+- Workflows devant tourner pendant des semaines ou des mois
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+Lorsque `continue_as_new()` est appelé, l’exécution en cours se termine et une nouvelle exécution démarre à zéro avec l’état fourni. L’historique des événements est réinitialisé, mais l’état transmis à `continue_as_new()` est conservé.
+
+**Important :** La méthode `run` de votre workflow doit accepter l’état à conserver comme paramètres afin de pouvoir le restaurer lors d’une reprise avec Continue-As-New.
+
+Utilisez `workflows.workflow.should_continue_as_new()` pour vérifier si l’exécution en cours approche de la limite d’historique : la fonction renvoie `True` lorsque l’historique est presque saturé.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+class ProcessorState(BaseModel):
+    page: int = 0
+    total_processed: int = 0
+
+@workflows.workflow.define(name="long-running-processor")
+class LongRunningProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, page: int = 0, total_processed: int = 0):  # State parameters are required
+        while True:
+            # Process current page
+            result = await process_page(page)
+            total_processed += result.count
+            page += 1
+
+            # When history grows large, restart with a fresh history
+            if workflows.workflow.should_continue_as_new():
+                workflows.workflow.continue_as_new(ProcessorState(page=page, total_processed=total_processed))
+```
+
+  </TabItem>
+</Tabs>
+
+Pour le concept associé sur la page Workflows de référence, voir [Créer des workflows > Workflows > Continue-as-new](/studio-api/workflows/building-workflows/workflows#continue-as-new) et [Principes de base > Workflows > Déterminisme](/studio-api/workflows/getting-started/core_concepts/workflows#determinism).

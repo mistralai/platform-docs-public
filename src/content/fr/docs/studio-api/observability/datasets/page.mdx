@@ -1,0 +1,280 @@
+---
+id: observability_datasets
+title: Jeux de données
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Datasets
+
+Les Datasets sont des **ensembles soigneusement sélectionnés d'historiques de conversations** utilisés pour évaluer la qualité des modèles et créer des tests de non-régression.
+
+Contrairement au trafic brut dans [Explorer](./explorer), les enregistrements d'un Dataset sont **modifiables** : vous pouvez corriger les messages, ajouter les sorties attendues, retirer le bruit et ajuster les données directement depuis l’interface Studio.
+
+<SectionTab as="h1" sectionId="record-structure">Contenu d’un enregistrement</SectionTab>
+
+Chaque enregistrement comprend trois parties :
+
+| Champ          | Contenu                                               | Objectif                                      |
+|----------------|------------------------------------------------------|-----------------------------------------------|
+| **Conversation**   | Messages système, saisies utilisateur, réponses de l’assistant et appels d’outils. | Les données centrales évaluées par les Judges. |
+| **Propriétés** | Métadonnées personnalisées : sortie attendue, catégorie, consignes de notation, difficulté, etc. | Les Judges se réfèrent aux propriétés dans leurs consignes via `{{ properties.* }}`. |
+| **Source**     | Origine de l'enregistrement : `EXPLORER`, `UPLOADED_FILE`, `DIRECT_INPUT` ou `PLAYGROUND`. | Permet de remonter à l'origine de l'enregistrement. |
+
+### Properties
+
+Les Properties font des Datasets bien plus qu'une simple liste de conversations. Elles vous permettent d'associer un **contexte structuré** à chaque enregistrement :
+
+- `expected_output` : la réponse idéale, permettant à un Judge de la comparer.
+- `category` : le type de requête (par exemple, `billing`, `technical`, `general`).
+- `grading_guidance` : instructions spécifiques sur la façon dont le Judge doit évaluer cet enregistrement.
+- `difficulty` : un marqueur de difficulté pour segmenter les résultats par complexité.
+
+:::tip
+Les Judges peuvent référencer n'importe quelle propriété dans leurs instructions en utilisant `{{ properties.your_field_name }}`. Voir [Lignes directrices pour les instructions](./judges#setting-instructions) pour plus de détails.
+:::
+
+<SectionTab as="h1" sectionId="add-data">Ajouter des données à un Dataset</SectionTab>
+
+Cliquez sur **New dataset**, puis choisissez une source :
+
+### Créer manuellement
+
+Ajoutez des enregistrements à la main dans Studio. Définissez les tours de conversation, puis associez propriétés et métadonnées.
+
+Utile pour :
+- Des tests de régression ciblant un cas limite connu.
+- Des exemples de référence avec des sorties attendues soigneusement élaborées.
+- Des scénarios spécifiques qui n'apparaissent pas naturellement dans le trafic de production.
+
+:::info
+Les propriétés peuvent être saisies sous forme de paires clé-valeur ou collées au format JSON brut pour une édition en masse.
+:::
+
+### Depuis le Playground
+
+Importez des conversations depuis le [Playground](https://console.mistral.ai/build/playground) — utile si vous avez testé des agents ou des prompts et souhaitez réutiliser ces conversations sans les recréer manuellement.
+
+### Depuis une Campaign
+
+Importez **tout ou partie** des enregistrements d'une Campaign, **y compris les annotations du Judge en tant que propriétés**. Cela vous permet de créer des Datasets organisés à partir du trafic évalué.
+
+### Depuis Explorer
+
+Sélectionnez des événements dans [Explorer](./explorer) et cliquez sur **Export to Dataset**. Voir le [guide Explorer](./explorer#export-to-datasets) pour plus de détails.
+
+### Depuis un fichier
+
+Importez un fichier JSONL pour importer des enregistrements en masse. Chaque ligne doit être un objet JSON avec `messages` et éventuellement `properties` :
+
+```json
+{"messages": [{"role": "user", "content": "How do I reset my password?"}, {"role": "assistant", "content": "Go to Settings > Security > Reset password."}], "properties": {"expected_output": "Clear reset instructions", "category": "account"}}
+{"messages": [{"role": "user", "content": "What's the rate limit?"}], "properties": {"expected_output": "Tier-specific rate limit info", "category": "technical"}}
+```
+
+:::info
+Les imports peuvent prendre du temps. Vérifiez le statut en cliquant sur le bouton **Import Tasks**.
+:::
+
+<SectionTab as="h1" sectionId="download-data">Exporter un Dataset</SectionTab>
+
+Cliquez sur **Actions → Export to JSONL** pour exporter un Dataset sous forme de fichier JSONL. Chaque ligne contient un enregistrement avec sa conversation et ses propriétés.
+
+<SectionTab as="h1" sectionId="best-practices">Bonnes pratiques</SectionTab>
+
+### Organisez vos enregistrements
+
+Cliquez sur n'importe quel enregistrement pour le modifier :
+
+- **Messages** : corrigez les fautes de frappe, clarifiez les entrées ambiguës ou reformulez la conversation pour mieux représenter un cas de test.
+- **Properties** : ajoutez `expected_output`, `grading_guidance` ou toute métadonnée nécessaire à vos Judges.
+
+### Supprimez les enregistrements peu pertinents
+
+Éliminez les enregistrements qui ajoutent du bruit :
+
+- **Duplicatas** : conversations similaires qui sur-représentent un scénario.
+- **Hors périmètre** : enregistrements qui ne correspondent pas à l'objectif du Dataset.
+- **Ambigus** : conversations pour lesquelles même un humain ne pourrait pas évaluer la réponse de manière fiable.
+
+### Testez avant de vous engager
+
+Exécutez un Judge sur un seul enregistrement avant de lancer une Campaign complète. C'est le moyen le plus rapide de vérifier que vos instructions et propriétés fonctionnent ensemble. Voir [Validez avant de passer à l'échelle](./judges#validation-before-scale).
+
+### Maintenir la qualité des Datasets
+
+Si vous réutilisez vos Datasets dans le temps (ce qui est conseillé) :
+
+- **Nommez-les explicitement.** Mentionnez le périmètre et la date : `support_billing_baseline_2025_06`, jamais `test_data`.
+- **Renseignez l’origine.** Notez la provenance des enregistrements et les corrections effectuées.
+- **Gérez les versions de référence.** Figez un Dataset de référence entre deux usages. Créez une nouvelle version en cas de modifications.
+- **Ne mélangez pas des tâches sans lien.** Séparez « qualité du support » et « précision de la génération de code » dans des Datasets distincts.
+- **Vérifiez l’équilibre des classes.** Si 90 % des enregistrements sont des cas simples, le Dataset ne révélera pas vraiment les problèmes.
+
+<SectionTab as="h1" sectionId="sdk-access">[Développeur] Accès programmatique aux Datasets</SectionTab>
+
+Le [SDK](/resources/sdks) permet de créer des Datasets, d’importer des enregistrements et de gérer vos données via le code.
+
+<ExplorerTabs id="datasets-sdk">
+  <ExplorerTab value="create" label="Créer un Dataset">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Créer un Dataset vide
+dataset = mistral.beta.observability.datasets.create(
+    name="Customer Support Analysis Set",
+    description="Exemples sélectionnés pour analyser la qualité du support"
+)
+
+print(f"Dataset created: {dataset.id}")
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Créer un Dataset vide
+dataset = mistral.beta.observability.datasets.create(
+    name="Customer Support Analysis Set",
+    description="Exemples sélectionnés pour analyser la qualité du support"
+)
+
+print(f"Dataset created: {dataset.id}")
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="add-records" label="Ajouter des enregistrements">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Ajouter un enregistrement avec des messages et des propriétés
+record = mistral.beta.observability.datasets.create_record(
+    dataset_id=dataset.id,
+    payload={
+        "messages": [
+            {"role": "user", "content": "How do I reset my password?"},
+            {"role": "assistant", "content": "You can reset your password by..."}
+        ],
+        "model": "mistral-medium-latest"
+    },
+    properties={
+        "expected_output": "Clear password reset instructions",
+        "category": "account_management",
+        "difficulty": "easy"
+    }
+)
+print(f"Record added: {record.id}")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="import" label="Importer depuis un fichier ou Explorer">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Importer depuis un fichier JSONL
+# Commencez par télécharger le fichier pour obtenir un file_id :
+uploaded_file = mistral.files.upload(
+    file={"file_name": "records.jsonl", "content": open("records.jsonl", "rb")}
+)
+
+import_task = mistral.beta.observability.datasets.import_from_file(
+    dataset_id=dataset.id,
+    file_id=uploaded_file.id
+)
+print(f"Import started: {import_task.id} ({import_task.status})")
+
+# Importer depuis les résultats de recherche Explorer
+result = mistral.beta.observability.chat_completion_events.search(
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-02-01T00:00:00Z"},
+                {"field": "timestamp", "op": "lte", "value": "2026-02-07T00:00:00Z"}
+            ]
+        }
+    },
+    page_size=100
+)
+
+res = mistral.beta.observability.datasets.import_from_explorer(
+    dataset_id=dataset.id,
+    completion_event_ids=[
+        event.event_id for event in result.completion_events.results
+    ]
+)
+print(f"Imported {len(result.completion_events.results)} events into dataset")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="list-records" label="Lister les enregistrements">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Lister les enregistrements d’un Dataset
+result = mistral.beta.observability.datasets.list_records(
+    dataset_id=dataset.id,
+    page_size=50
+)
+
+for record in result.records.results:
+    first_msg = record.payload.messages[0]
+    print(f"Record: {first_msg.get('content', '')[:60]}...")
+    print(f"  Properties: {record.properties}")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Les scores de campagne sont bruyants. Est-ce dû au Dataset ou au Judge ?">
+  Commencez par examiner le Dataset. Analysez les enregistrements à faible score : les entrées sont-elles ambiguës ? Les propriétés (sortie attendue, consignes d'évaluation) sont-elles suffisamment claires ? Corrigez d’abord le Dataset, puis ajustez les instructions du Judge.
+  </FaqItem>
+  <FaqItem question="Mon Dataset est trop large et les résultats sont difficiles à interpréter">
+  Fractionnez-le en Datasets thématiques plus petits. Un Dataset `support_billing` et un Dataset `support_technical` fourniront des résultats plus lisibles qu’un Dataset unique `support` qui mélange tout.
+  </FaqItem>
+
+</Faq>

@@ -1,0 +1,50 @@
+---
+title: Sécurité
+sidebar_position: 6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Sécurité
+
+Cette page décrit le modèle de sécurité des exécutions d'agents autonomes dans Vibe Code Web : comment gérer le contenu non fiable lu par l'agent, et comment les données de session sont conservées.
+
+Pour la posture réseau, l'isolation par sandbox, et les accès permis au sein de la sandbox, voir [Environnement sandbox](/vibe/code/vibe-code-web/sandbox-environment). Pour l'authentification GitHub et la gestion des tokens, voir [Dépôts GitHub et autorisations](/vibe/code/vibe-code-web/github-repositories-permissions).
+
+<SectionTab as="h2" sectionId="prompt-injection">Risque d'attaque par injection de prompt</SectionTab>
+
+Quand l'agent lit du contenu en dehors de votre prompt (un fichier du repo, la sortie d'une commande, une URL récupérée, un commentaire sur une pull request, la description d'une issue), ce contenu est traité comme donnée servant au raisonnement. **Du contenu non fiable peut tenter d'influencer le comportement de l'agent.** Ce risque est appelé attaque par injection de prompt.
+
+Les vecteurs courants à surveiller :
+
+- Fichiers du dépôt (README, documentation, workflows dans `.github/`, exemples de données).
+- Résultats de commandes shell exécutées par l'agent.
+- Pages web ou API récupérées par l'agent.
+- Commentaires de revue et descriptions d'issues introduits dans un prompt de suivi.
+
+Mesures appliquées par Vibe Code Web :
+
+- Toutes les commandes et modifications de fichiers sont visibles dans le **flux d'activité**, permettant d'identifier tout comportement inattendu.
+- Les **protections de branches GitHub, revues obligatoires, statuts requis et `CODEOWNERS`** s'appliquent toujours à ce que l'agent pousse.
+
+Ce que vous devez faire :
+
+- Suivre le flux d'activité pendant l'exécution de la session.
+- Limiter la portée des tâches : un prompt ciblé facilite la détection d'instructions injectées.
+- Relire le code final sur GitHub avant la fusion.
+- Utiliser les protections de branches, revues obligatoires, statuts requis et `CODEOWNERS` pour les branches sensibles.
+
+<SectionTab as="h2" sectionId="data-handling">Gestion des données</SectionTab>
+
+Les fichiers présents dans la sandbox et les résultats des actions de l'agent sont traités uniquement pendant la session. La sandbox est supprimée à la fin de la session. Tout ce qui doit persister doit être validé dans le dépôt.
+
+L'activité de session (prompts, messages de l'agent, sortie des commandes, historique des modifications de fichiers) est conservée conformément à votre offre et à la politique de données Mistral applicable. Les modalités de conservation varient selon l'offre. Consultez la documentation de votre offre ou la [Politique de confidentialité Mistral](https://mistral.ai/terms#privacy-policy) pour plus de détails.
+
+<SectionTab as="h2" sectionId="next">Étapes suivantes</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/vibe/code/vibe-code-web/sandbox-environment" title="Environnement sandbox" description="Isolation, image par défaut, posture réseau, identifiants et persistance." />
+  <LinkCard href="/vibe/code/vibe-code-web/github-repositories-permissions" title="Dépôts GitHub et autorisations" description="Tokens d’application, attribution et périmètres d’accès." />
+  <LinkCard href="/vibe/code/vibe-code-web/limits-and-lifecycle" title="Limites et cycle de vie" description="Cycle de vie d’une session, états de fin et persistance." />
+</UsefullLinkContainer>

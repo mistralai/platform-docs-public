@@ -154,14 +154,14 @@ if (
 }
 
 // --- rawmdx:export ---
-// Output: public/<top-dir>.md or public/<top-dir>/<...>.md mirroring (docs)/
+// Output: public/<top-dir>.md or public/<top-dir>/<...>.md mirroring src/content/en/docs.
 const rawMdxStamp = path.join(ROOT, 'public', '.rawmdx-built');
 const rawMdxExportScript = fingerprint(
   [path.join(ROOT, 'src', 'scripts', 'export-raw-mdx.ts')],
   TS_EXTS
 );
 const rawMdxFingerprint = fingerprint(
-  [path.join(ROOT, 'src', 'app', '(docs)')],
+  [path.join(ROOT, 'src', 'content', 'en', 'docs')],
   ['.md', '.mdx'],
   [`export-raw-mdx:${rawMdxExportScript}`]
 );

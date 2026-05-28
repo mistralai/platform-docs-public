@@ -1,0 +1,134 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock'; 
+
+Le paramètre `stop` est une liste de chaînes qui **arrêtera la génération de tokens par le modèle dès qu'une des chaînes est rencontrée**.
+Si une chaîne de la liste est générée, le modèle s'arrête et répond avec le texte généré jusqu'à présent, avant la chaîne d'arrêt.
+La sortie ne contiendra donc pas la chaîne d'arrêt.
+
+<Tabs>
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France?",
+        },
+    ],
+    stop=["."],
+)
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France?",
+        },
+    ],
+    stop=["."],
+)
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env["MISTRAL_API_KEY"];
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+    const result = await client.chat.complete({
+        model: "mistral-medium-latest",
+        messages: [
+            { role: "user", content: "What is the capital of France?" },
+        ],
+        stop: ["."],
+    });
+}
+
+main();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "model": "mistral-medium-latest",
+    "messages": [
+        {
+        "role": "user",
+        "content": "What is the capital of France?"
+        }
+    ],
+    "stop": ["."]
+    }'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "ce42f12c1bbd46299947ce77bc0d892c",
+  "created": 1757436077,
+  "model": "mistral-medium-latest",
+  "usage": {
+    "prompt_tokens": 10,
+    "total_tokens": 18,
+    "completion_tokens": 8
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "The capital of France is **Paris**"
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+</Tabs>

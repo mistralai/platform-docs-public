@@ -1,0 +1,94 @@
+---
+id: amazon_bedrock
+title: Amazon Bedrock
+sidebar_position: 3.22
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Amazon Bedrock
+
+Les modèles ouverts et commerciaux de Mistral AI peuvent être déployés sur la plateforme cloud Amazon Bedrock sous forme d'endpoints entièrement gérés. Amazon Bedrock est un service serverless, vous n'avez donc aucune infrastructure à gérer.
+
+À ce jour, les modèles suivants sont disponibles :
+- Mistral Large 3 (25.12)
+- Ministral 3 3B, 8B, 14B (25.12)
+- Mistral Large (24.07, 24.02)
+- Mistral Small (24.02)
+- Mixtral 8x7B
+- Mistral 7B
+- Pixtral Large (25.02)
+
+<SectionTab as="h1" sectionId="getting-started">Premiers pas</SectionTab>
+
+Les sections suivantes décrivent les étapes pour déployer et interroger un modèle Mistral sur la plateforme Amazon Bedrock.
+
+Les éléments suivants sont requis :
+
+- Accès à un **compte AWS** dans une région qui prend en charge le service Amazon Bedrock et offre l'accès au modèle de votre choix : consultez [la documentation Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/models-regions.html) pour la disponibilité des modèles par région.
+- Un **principal IAM** AWS (utilisateur, rôle) avec les permissions suffisantes, voir [la documentation AWS](https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html) pour plus de détails.
+- Un **environnement de code** local configuré avec les composants SDK AWS pertinents, à savoir :
+    - l'AWS CLI : voir [la documentation AWS](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) pour la procédure d'installation.
+    - la bibliothèque Python `boto3` : voir la [documentation AWS](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) pour la procédure d'installation.
+
+<SectionTab as="h2" variant="secondary" sectionId="requesting-access-to-the-model">Demander l'accès au modèle</SectionTab>
+
+Suivez les instructions de [la documentation AWS](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) pour débloquer l'accès au modèle Mistral de votre choix.
+
+<SectionTab as="h2" variant="secondary" sectionId="querying-the-model">Interroger le modèle</SectionTab>
+
+Les modèles Amazon Bedrock sont accessibles via l'API Converse.
+
+Avant d'exécuter les exemples ci-dessous, assurez-vous de :
+
+- Configurer correctement les informations d'authentification pour votre environnement de développement. [La documentation AWS](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) fournit une explication détaillée des étapes requises.
+- Créer un environnement virtuel Python avec le package `boto3` (version >= `1.34.131`).
+- Définir les variables d'environnement suivantes :
+    - `AWS_REGION` : La région où le modèle est déployé (par exemple `us-west-2`),
+    - `AWS_BEDROCK_MODEL_ID` : L'identifiant du modèle (par exemple `mistral.mistral-large-2407-v1:0`).
+
+<Tabs>
+    <TabItem value="python" label="Python">
+
+        ```python
+        import boto3
+        import os
+
+        region = os.environ.get("AWS_REGION")
+        model_id = os.environ.get("AWS_BEDROCK_MODEL_ID")
+
+        bedrock_client = boto3.client(service_name='bedrock-runtime', region_name=region)
+
+        user_msg = "Who is the best French painter? Answer in one short sentence."
+        messages = [{"role": "user", "content": [{"text": user_msg}]}]
+        temperature = 0.0
+        max_tokens = 1024
+
+        params = {"modelId": model_id,
+                  "messages": messages,
+                  "inferenceConfig": {"temperature": temperature,
+                                      "maxTokens": max_tokens}}
+
+        resp = bedrock_client.converse(**params)
+
+        print(resp["output"]["message"]["content"][0]["text"])
+        ```
+    </TabItem>
+        <TabItem value="cli" label="AWS CLI">
+            ```shell
+             aws bedrock-runtime converse \
+             --region $AWS_REGION \
+             --model-id $AWS_BEDROCK_MODEL_ID \
+             --messages '[{"role": "user", "content": [{"text": "Who is the best French painter? Answer in one short sentence."}]}]'
+            ```
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="going-further">Aller plus loin</SectionTab>
+
+Pour plus de détails et d'exemples, consultez les ressources suivantes :
+
+- [Dépôt GitHub AWS avec plusieurs exemples et cas d'usage exploitant les modèles Mistral](https://github.com/aws-samples/mistral-on-aws).
+- [Documentation AWS sur l'API Converse](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html).
+- [Documentation AWS sur les requêtes d'inférence pour les modèles Mistral](https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-mistral.html#model-parameters-mistral-request-response).

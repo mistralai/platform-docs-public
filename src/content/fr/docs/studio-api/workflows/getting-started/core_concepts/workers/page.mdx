@@ -1,0 +1,81 @@
+---
+id: core-concepts-workers
+title: Workers
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Workers
+
+Un worker est le processus qui exécute réellement votre code. Les workers se connectent à la plateforme Workflows, enregistrent les workflows et activités qu'ils connaissent et sondent les tâches à traiter. Quand la plateforme planifie une étape de workflow ou une activité, un worker disponible la prend en charge et l'exécute.
+
+Les workers sont sans état et interchangeables. N'importe quel worker ayant enregistré un workflow ou une activité donné peut l'exécuter ; il n'y a aucune affinité entre une exécution et un worker spécifique. Vous pouvez donc lancer autant de workers que nécessaire : la plateforme distribue automatiquement les tâches entre eux.
+
+:::tip
+**Enregistrement automatique** : au démarrage d'un worker, tous ses workflows et activités sont automatiquement enregistrés auprès de la plateforme. Il n'y a aucune étape d'enregistrement séparée, de manifeste de déploiement ou de schéma à maintenir. Définissez votre workflow, pointez le worker dessus et vous pouvez l'appeler directement.
+:::
+
+Les workers sont également tolérants aux pannes du point de vue de la plateforme : si un worker plante en cours d'exécution, la plateforme détecte l'absence de [heartbeat](/studio-api/workflows/getting-started/core_concepts/activities#long-running-activities-heartbeats) et réattribue la tâche en cours à un autre worker. Le workflow reprend sans perte de données, car l'historique des événements contient tout ce qui est nécessaire pour reconstruire l'état.
+
+<SectionTab as="h1" sectionId="starting-a-worker">
+Démarrage d'un worker
+</SectionTab>
+
+Appelez `run_worker()` avec la liste des classes de workflow que le worker doit gérer. Le worker se connecte à la plateforme, enregistre tout et commence à sonder les tâches à traiter. Il s'exécute jusqu'à ce que le processus soit arrêté.
+
+```python
+import asyncio
+import mistralai.workflows as workflows
+
+async def main():
+    await workflows.run_worker([MyWorkflow])
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+La variable d'environnement `MISTRAL_API_KEY` détermine à quel espace de travail le worker se connecte. Tous les workers partageant la même clé rejoignent le [déploiement](/studio-api/workflows/getting-started/core_concepts/deployments) nommé par `DEPLOYMENT_NAME` et partagent ses files de tâches.
+
+```bash
+MISTRAL_API_KEY=your_key DEPLOYMENT_NAME=invoice-service uv run python my_worker.py
+```
+
+<SectionTab as="h1" sectionId="execution-flow">
+Flux d'exécution
+</SectionTab>
+
+De bout en bout, une exécution suit ces étapes :
+
+1. Une exécution de workflow est déclenchée (via l'API, une planification ou Studio).
+2. Une tâche est ajoutée à la file d'attente.
+3. Un worker disponible récupère la tâche et commence l'exécution du workflow.
+4. Lorsque le workflow appelle une activité, une tâche d'activité est ajoutée à la file.
+5. Tout worker disponible prend en charge la tâche d'activité et l'exécute.
+6. Le résultat est consigné dans l'historique d'exécution.
+7. Le workflow reprend avec le résultat de l'activité et poursuit son exécution.
+
+<SectionTab as="h1" sectionId="worker-info">
+Infos worker
+</SectionTab>
+
+Pour vérifier qu'un worker est bien connecté et consulter sa configuration, appelez l'endpoint `whoami` :
+
+```bash
+curl -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  https://api.mistral.ai/v1/workflows/workers/whoami
+```
+
+```json
+{
+  "scheduler_url": "...",
+  "namespace": "mistral-workflows",
+  "tls": false
+}
+```
+
+| Champ | Description |
+|-------|-------------|
+| `scheduler_url` | L'endpoint de la plateforme auquel le worker est connecté |
+| `namespace` | La frontière d'isolation pour les workflows de cet espace de travail |
+| `tls` | Indique si la connexion au scheduler est chiffrée |

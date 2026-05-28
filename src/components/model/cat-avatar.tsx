@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 
 import { cn } from '@/lib/utils';
 import { PixelGrid } from '../common/pixel-grid';

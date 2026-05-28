@@ -1,9 +1,5 @@
 import {
   AMBASSADORS_DATA,
-  AMBASSADOR_BENEFITS,
-  AMBASSADOR_RESPONSIBILITIES,
-  AMBASSADOR_REQUIREMENTS,
-  APPLICATION_CRITERIA,
   APPLICATION_INFO,
   type AmbassadorData,
   type AmbassadorBenefit,
@@ -82,31 +78,18 @@ export const placeholderAmbassador = allAmbassadors.find(
   ambassador => ambassador.isPlaceholder
 );
 
-export const ambassadorBenefits: Benefit[] = AMBASSADOR_BENEFITS.map(
-  benefit => ({
-    ...benefit,
-  })
-);
-
-export const ambassadorResponsibilities: Responsibility[] =
-  AMBASSADOR_RESPONSIBILITIES.map(responsibility => ({
-    ...responsibility,
-  }));
-
-export const ambassadorRequirements: Requirement[] =
-  AMBASSADOR_REQUIREMENTS.map(requirement => ({
-    ...requirement,
-  }));
-
 export const applicationInfo: ApplicationInfo = {
   ...APPLICATION_INFO,
 };
 
-export const applicationCriteria: Criterion[] = APPLICATION_CRITERIA.map(
-  criterion => ({
-    ...criterion,
-  })
-);
+// Locale-aware getters (titles + descriptions)
+export {
+  getAmbassadorBenefits,
+  getAmbassadorResponsibilities,
+  getAmbassadorRequirements,
+  getApplicationCriteria,
+  ambassadorSpecialty,
+} from './i18n';
 
 // Export types from data
 export type {

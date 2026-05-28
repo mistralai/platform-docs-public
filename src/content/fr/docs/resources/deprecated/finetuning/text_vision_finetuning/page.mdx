@@ -1,0 +1,145 @@
+---
+id: text_vision_finetuning
+title: Fine-tuning texte et vision
+slug: text_vision_finetuning
+sidebar_position: 1
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+
+import DatasetFormatTab from './dataset_format_tab/_page.mdx';
+import UploadFileTab from './upload_file_tab/_page.mdx';
+import FinetuningJobTab from './finetuning_job_tab/_page.mdx';
+import ListRetrieveCancelJobsTab from './list_retrieve_cancel_jobs_tab/_page.mdx';
+
+# Fine-tuning texte et vision
+
+:::warning[Déprécié]
+Cette fonctionnalité est dépréciée et n'est plus activement supportée.
+:::
+
+Le fine-tuning vous permet d'adapter un modèle de langage pré-entraîné à vos besoins spécifiques en l'entraînant sur votre jeu de données. Ce guide explique comment affiner des modèles texte et vision, de la préparation de vos données à l'entraînement, que vous cherchiez à améliorer la compréhension d'un domaine spécifique ou à vous adapter à un style conversationnel unique.
+
+Vous pouvez effectuer le fine-tuning directement dans [AI Studio](https://console.mistral.ai/build/finetuned-models) ou via notre API.
+
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
+
+### Jeu de données
+
+Pour affiner un modèle, vous devez fournir un jeu de données contenant les données sur lesquelles vous souhaitez entraîner le modèle. Il est également recommandé de disposer d'un jeu de validation et d'un jeu de test.
+
+Le jeu de données doit être dans un format spécifique, et vous pouvez le télécharger sur Mistral Cloud avant de lancer la tâche de fine-tuning.
+
+<ExplorerTabs id="dataset">
+  <ExplorerTab value="dataset-format" label="Format du jeu de données">
+    <DatasetFormatTab/>
+  </ExplorerTab>
+  <ExplorerTab value="upload-a-file" label="Télécharger un fichier">
+    <UploadFileTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="jobs-management">Gestion des tâches</SectionTab>
+
+### Créer et gérer les tâches de fine-tuning
+
+Pour créer votre modèle personnalisé, vous devez créer une tâche de fine-tuning. Vous pouvez gérer entièrement les tâches via notre API, de la création au démarrage, en passant par le suivi et l'annulation.
+
+<ExplorerTabs id="jobs-management">
+  <ExplorerTab value="fine-tuning-job" label="Tâche de fine-tuning">
+    <FinetuningJobTab/>
+  </ExplorerTab>
+  <ExplorerTab value="List/retrieve/cancel-jobs" label="Lister/récupérer/annuler les tâches">
+    <ListRetrieveCancelJobsTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="fine-tuned-models">Modèle affiné</SectionTab>
+
+### Utiliser et supprimer les modèles affinés
+
+Une fois votre tâche de fine-tuning terminée, vous pouvez utiliser votre modèle personnalisé affiné dans vos applications.
+
+<SectionTab as="h2" variant="secondary" sectionId="use-finetuned-model">Utiliser un modèle affiné</SectionTab>
+
+Voici un exemple d'utilisation d'un modèle affiné pour classifier vos données.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+# You will be able to see the fine-tuned model name via `retrieved_job.fine_tuned_model`
+chat_response = client.chat.complete(
+    model=retrieved_job.fine_tuned_model,
+    messages = [{"role":'user', "content":'What is the best French cheese?'}]
+)
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// You will be able to see the fine-tuned model name via `retrievedJob.fine_tuned_model`
+const chatResponse = await client.chat.complete({
+  model: retrievedJob.fine_tuned_model,
+  messages: [{ role: 'user', content: 'What is the best French cheese?' }],
+});
+```
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "ft:open-mistral-7b:XXX:20240430:XXX",
+    "messages": [{"role": "user", "content": "Who is the most renowned French painter?"}]
+  }'
+```
+
+  </TabItem>
+
+</Tabs>
+
+
+<SectionTab as="h2" variant="secondary" sectionId="delete-finetuned-model">Supprimer un modèle affiné</SectionTab>
+
+Vous pouvez supprimer un modèle affiné si vous n'en avez plus besoin.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+client.models.delete(model_id=retrieved_job.fine_tuned_model)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.models.delete({ modelId: retrieved_job.fine_tuned_model });
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location --request DELETE 'https://api.mistral.ai/v1/models/ft:classifier:ministral-3b-latest:XXX:20250401:XXX' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+import FAQ from '../../../../_guides/finetuning_sections/_04_faq/page.mdx';
+
+<FAQ />

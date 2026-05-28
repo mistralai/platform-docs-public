@@ -1,0 +1,177 @@
+import { Sidebar, SidebarProvider } from '@/components/ui/sidebar';
+import PageContent from '@/components/layout/page-content';
+import { ApiSidebarItem, ApiSidebarMetadataItem } from '../schema/api-sidebar';
+import { ApiDocsSidebar } from '../components/sidebar';
+import { ApiBreadcrumb } from '@/components/layout/api-breadcrumb';
+import { ActiveElementHashProvider } from '../components/hash-auto-change';
+import { DocsVariantProvider } from '@/contexts/docs-variant';
+import { ApiPagination } from '../components/pagination';
+import { Button } from '@/components/ui/button';
+import { DownloadIcon } from '@/components/icons/pixel';
+import Link from 'next/link';
+import { getApiSidebarMetadata } from '@/lib/content/localized-api-sidebar';
+import type { Locale } from '@/i18n/config';
+import { getLingo } from '@/i18n/server';
+
+export const dynamic = 'force-static';
+
+export default async function DocsLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = (await params) as { locale: Locale };
+  const l = await getLingo(locale);
+  const sidebarMetadata = await getApiSidebarMetadata(locale);
+  const flattenedSidebar = flattenSidebar(sidebarMetadata, l);
+  return (
+    <ActiveElementHashProvider>
+      <SidebarProvider>
+        <DocsVariantProvider variant="api">
+          <Sidebar
+            className="h-fold sticky top-header overflow-y-auto scrollbar-none shrink-0"
+            collapsible="none"
+          >
+            <div>
+              <ApiDocsSidebar sidebar={flattenedSidebar}>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/openapi.yaml" download="mistral-openapi.yaml">
+                    <DownloadIcon className="size-4" />
+                    {l.text('Download OpenAPI Spec', { context: 'Button to download the OpenAPI specification as YAML' })}
+                  </Link>
+                </Button>
+              </ApiDocsSidebar>
+            </div>
+          </Sidebar>
+          <div className="flex flex-1 gap-8 min-w-0 lg:pr-sides">
+            <div className="flex flex-col flex-1 min-w-0">
+              <ApiBreadcrumb sidebar={flattenedSidebar} />
+              <PageContent
+                as="main"
+                className="max-lg:contents group/mdx-wrapper !px-0 items-start"
+                data-wrapper-type="api-content"
+              >
+                {children}
+                <ApiPagination
+                  items={flattenedSidebar}
+                  overrides={{
+                    pathSlugMap: {
+                      '/api': ['api', 'endpoint', 'chat'],
+                    },
+                  }}
+                />
+              </PageContent>
+            </div>
+          </div>
+        </DocsVariantProvider>
+      </SidebarProvider>
+    </ActiveElementHashProvider>
+  );
+}
+
+const flattenSidebar = (
+  sidebar: ApiSidebarMetadataItem[],
+  l: Awaited<ReturnType<typeof getLingo>>,
+): ApiSidebarItem[] => {
+  const stableEndpoints: ApiSidebarItem[] = [];
+  const betaEndpoints: ApiSidebarItem[] = [];
+  const deprecatedEndpoints: ApiSidebarItem[] = [];
+
+  const gettingStartedCategory: ApiSidebarItem = {
+    type: 'category',
+    label: l.text('Getting Started', { context: 'Heading for introductory API documentation' }),
+    href: '/api/endpoint/chat',
+    children: [],
+    clickable: true,
+    pagination: { prev: undefined, next: undefined },
+  };
+
+  const betaCategory: ApiSidebarItem = {
+    type: 'category',
+    label: l.text('Beta', { context: 'Heading for beta API endpoints' }),
+    href: '/api/endpoint/beta/agents',
+    children: [],
+    clickable: true,
+    pagination: { prev: undefined, next: undefined },
+  };
+
+  const deprecatedCategory: ApiSidebarItem = {
+    type: 'category',
+    label: l.text('Deprecated', { context: 'Heading for deprecated API endpoints' }),
+    href: '/api/endpoint/deprecated/fine-tuning',
+    children: [],
+    clickable: true,
+    pagination: { prev: undefined, next: undefined },
+  };
+
+  const traverse = (node: ApiSidebarMetadataItem) => {
+    const targetCategory = node.slug.includes('deprecated')
+      ? deprecatedEndpoints
+      : node.slug.includes('beta')
+        ? betaEndpoints
+        : stableEndpoints;
+
+    targetCategory.push({
+      type: 'category',
+      label: node.sidebarLabel,
+      href: !node.slug ? '/api' : `/api/${node.slug}`,
+      clickable: true,
+      pagination: { prev: undefined, next: undefined },
+      children: node.tags.flatMap(tag =>
+        tag.operations.map(
+          operation =>
+            ({
+              type: 'endpoint',
+              label: operation.summary,
+              href: `/api/${node.slug}#${operation.elementId}`,
+              children: [],
+              method: operation.method,
+              path: operation.path,
+              elementId: operation.elementId,
+              clickable: true,
+              pagination: { prev: undefined, next: undefined },
+            }) satisfies ApiSidebarItem
+        )
+      ),
+    });
+  };
+
+  for (const item of sidebar) {
+    traverse(item);
+  }
+
+  gettingStartedCategory.children = stableEndpoints;
+  betaCategory.children = betaEndpoints;
+  deprecatedCategory.children = deprecatedEndpoints;
+
+  const result = [
+    gettingStartedCategory,
+    betaCategory,
+    deprecatedCategory,
+  ] satisfies ApiSidebarItem[];
+
+  const allItems: ApiSidebarItem[] = [] satisfies ApiSidebarItem[];
+
+  for (const item of result) {
+    if (item.children && item.children.length > 0) {
+      allItems.push(...item.children);
+    }
+  }
+
+  for (let i = 0; i < allItems.length; i++) {
+    const current = allItems[i];
+    const prev = i > 0 ? allItems[i - 1] : undefined;
+    const next = i < allItems.length - 1 ? allItems[i + 1] : undefined;
+
+    current.pagination = {
+      prev:
+        prev && prev.href ? { href: prev.href, title: prev.label } : undefined,
+      next:
+        next && next.href ? { href: next.href, title: next.label } : undefined,
+    };
+  }
+
+  return result;
+};

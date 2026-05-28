@@ -1,0 +1,124 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Un fichier batch pour les sorties structurées, avec `v1/chat/completions` comme endpoint et `ministral-3b-latest` comme modèle, ressemblerait à ceci :
+
+<Tabs groupId="code">
+    <TabItem value="file" label="Fichier batch" default>
+
+```bash
+{"custom_id": "0", "body": {"messages": [{"role": "user", "content": "What's 1+1?"}],"response_format": {"type": "json_schema","json_schema": {"schema": {"properties": {"result": {"title": "Result","type": "integer"}},"required": ["result"],"title": "Math","type": "object","additionalProperties": false},"name": "math","strict": true}},"max_tokens": 256,"temperature": 0}}
+{"custom_id": "1", "body": {"messages": [{"role": "user", "content": "What is the best French wine?"}],"response_format": {"type": "json_schema","json_schema": {"schema": {"properties": {"name": {"title": "Name","type": "string"},"region": {"title": "Region","type": "string"},"year": {"title": "Year","type": "integer"}},"required": ["name", "region", "year"],"title": "Wine","type": "object","additionalProperties": false},"name": "wine","strict": true}},"max_tokens": 256,"temperature": 0}}
+{"custom_id": "2", "body": {"messages": [{"role": "system","content": "Extract the books information."},{"role": "user","content": "I recently read To Kill a Mockingbird by Harper Lee."}],"response_format": {"type": "json_schema","json_schema": {"schema": {"properties": {"name": {"title": "Name","type": "string"},"authors": {"items": {"type": "string"},"title": "Authors","type": "array"}},"required": ["name", "authors"],"title": "Book","type": "object","additionalProperties": false},"name": "book","strict": true}},"max_tokens": 256,"temperature": 0}}
+```
+
+    </TabItem>
+    <TabItem value="output" label="Fichier résultat">
+
+```bash
+{"id":"batch-987bdeb0-1-b0a976ba-2a4f-4584-a4fa-9b140abdcd52","custom_id":"0","response":{"status_code":200,"body":{"id":"bf1b188307c2437587de243f5f715663","object":"chat.completion","model":"ministral-3b-latest","usage":{"prompt_tokens":10,"completion_tokens":7,"total_tokens":17},"created":1761577783,"choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"{\"result\": 2}","tool_calls":null}}]}},"error":null}
+{"id":"batch-987bdeb0-2-6bc67f66-34be-4db3-a9ea-a437d882dce0","custom_id":"1","response":{"status_code":200,"body":{"id":"afd9bc37072a4d3e8a01999e8822984a","object":"chat.completion","model":"ministral-3b-latest","usage":{"prompt_tokens":10,"completion_tokens":28,"total_tokens":38},"created":1761577783,"choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"{\"name\": \"Château Lafite Rothschild\", \"region\": \"Bordeaux\", \"year\": 2018}","tool_calls":null}}]}},"error":null}
+{"id":"batch-987bdeb0-3-f8edcc0f-728f-49e7-9cd8-c8c18422ed02","custom_id":"2","response":{"status_code":200,"body":{"id":"01d5ee676f2c4c389e1f2346a2c5f934","object":"chat.completion","model":"ministral-3b-latest","usage":{"prompt_tokens":21,"completion_tokens":24,"total_tokens":45},"created":1761577783,"choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","content":"{\n  \"name\": \"To Kill a Mockingbird\",\n  \"authors\": [\"Harper Lee\"]\n}","tool_calls":null}}]}},"error":null}
+```
+
+    </TabItem>
+</Tabs>
+
+En tant que fichier JSONL, chaque ligne représente une requête vers l'endpoint API et le modèle.
+
+<SectionTab as="h2" variant="secondary" sectionId="structured-outputs-explained">Explication</SectionTab>
+
+Le corps de la requête suit le même format que l'endpoint que vous souhaitez utiliser pour votre traitement batch, à l'exception de l'identifiant du modèle qui sera fourni uniquement lors de la création du job pour lancer l'exécution du batch. Ci-dessous, nous fournissons un exemple de ligne avec sorties structurées :
+
+<Tabs>
+    <TabItem value="file" label="Exemple" default>
+
+```py
+{
+    "custom_id": "2", # Un ID comme métadonnée qui sera renvoyé dans le fichier de sortie pour identifier la requête
+    "body": { # Le corps de la requête
+        "max_tokens": 256, # Max tokens correspondant au nombre maximal de tokens générés pour les complétions de chat
+        "temperature": 0, # La température à utiliser pour l'échantillonnage
+        "messages": [ # Les messages pour générer des complétions de chat avec sorties structurées
+            {
+                "role": "system", # Le rôle de l'auteur du message
+                "content": "Extract the books information." # Le contenu du message
+            },
+            {
+                "role": "user", # Le rôle de l'auteur du message
+                "content": "I recently read To Kill a Mockingbird by Harper Lee." # Le contenu du message, ici nous voulons extraire les informations du livre
+            }
+        ],
+        "response_format": { # Le format de réponse à utiliser pour la complétion de chat
+            "type": "json_schema", # Définir le type sur json_schema pour utiliser des sorties structurées personnalisées, "json_mode" si vous voulez utiliser le mode JSON uniquement par défaut
+            "json_schema": { # Le schéma json à utiliser pour les sorties structurées
+                "schema": { # Le schéma correspondant
+                    "properties": { # Les propriétés du schéma
+                        "name": { # Le nom du livre
+                            "title": "Name",
+                            "type": "string"
+                        },
+                        "authors": { # Les auteurs du livre
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Authors",
+                            "type": "array"
+                        }
+                    },
+                    "required": [ # Les propriétés requises
+                        "name", 
+                        "authors"
+                    ],
+                    "title": "Book", # Le titre du schéma
+                    "type": "object", # Le type du schéma
+                    "additionalProperties": false # Autoriser ou non des propriétés supplémentaires
+                },
+                "name": "book", # Le nom du schéma
+                "strict": true # Utiliser ou non le mode strict, toujours recommandé de définir comme true pour les sorties structurées
+            }
+        }
+    }
+}
+```
+
+    </TabItem>
+    <TabItem value="output" label="Résultat exemple">
+
+```py
+{
+  "id": "batch-987bdeb0-3-f8edcc0f-728f-49e7-9cd8-c8c18422ed02", # L'ID de la requête
+  "custom_id": "2", # La métadonnée d'ID personnalisé fournie dans le fichier d'entrée
+  "response": { # Le corps de la réponse de la requête
+    "status_code": 200,
+    "body": {
+      "id": "01d5ee676f2c4c389e1f2346a2c5f934",
+      "object": "chat.completion",
+      "model": "ministral-3b-latest",
+      "usage": {
+        "prompt_tokens": 21,
+        "completion_tokens": 24,
+        "total_tokens": 45
+      },
+      "created": 1761577783,
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"name\": \"To Kill a Mockingbird\",\n  \"authors\": [\"Harper Lee\"]\n}",
+            "tool_calls": null
+          }
+        }
+      ]
+    }
+  },
+  "error": null
+}
+```
+
+    </TabItem>
+</Tabs>
+
+Pour plus d'informations concernant les sorties structurées, consultez la documentation [Sorties structurées](/studio-api/conversations/structured-output) et la [spécification API](../api/endpoint/chat#operation-chat_completion_v1_chat_completions_post) des chat completions correspondantes.

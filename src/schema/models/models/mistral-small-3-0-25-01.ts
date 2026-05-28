@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Small 3.0',
-  description: `A small efficient and powerfull 24B open model for personal or commercial use.`,
-  shortDescription: `A small efficient and powerfull 24B open model for personal or commercial use.`,
+  describe: (l) => ({
+    description: l.text(`A small efficient and powerfull 24B open model for personal or commercial use.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A small efficient and powerfull 24B open model for personal or commercial use.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-small-3-0-25-01',
-  releaseDate: 'January 30, 2025',
+  releaseDate: '2025-01-30',
   version: '25.01',
   frontier: false,
   class: 'Generalist',
@@ -47,8 +49,8 @@ export default {
   paperlink: null,
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -66,7 +68,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'connectors', 'batching'],
 
   },
-  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
+  metadata: {deprecationDate: '2025-11-06', retirementDate: '2025-11-30', replacement: 'Mistral Small 3.2'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

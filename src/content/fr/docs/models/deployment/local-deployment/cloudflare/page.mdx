@@ -1,0 +1,78 @@
+---
+id: cloudflare
+title: Cloudflare Workers AI
+sidebar_position: 3.34
+---
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Déployer avec Cloudflare Workers AI
+[Cloudflare](https://www.cloudflare.com/en-gb/) est une entreprise spécialisée dans la performance et la sécurité web qui fournit des services de réseau de distribution de contenu (CDN), de protection DDoS, de sécurité Internet et de serveur de noms de domaine distribué. Cloudflare a lancé Workers AI, qui permet aux développeurs d'exécuter des modèles LLM alimentés par des GPU serverless sur le réseau mondial de Cloudflare.
+
+Pour en savoir plus sur les modèles Mistral sur Workers AI, vous pouvez consulter la [page de documentation dédiée de Cloudflare](https://developers.cloudflare.com/workers-ai/models/mistral-7b-instruct-v0.1/).
+
+<SectionTab as="h1" sectionId="setup">Configuration</SectionTab>
+
+Pour configurer Workers AI sur Cloudflare, vous devez créer un compte sur le [tableau de bord Cloudflare](https://dash.cloudflare.com/), obtenir votre identifiant de compte et générer un jeton avec les autorisations Workers AI. Vous pouvez ensuite envoyer une requête de complétion :
+
+<Tabs>
+  <TabItem value="cloudflare-curl" label="curl" default>
+
+```bash
+curl https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/@cf/mistral/mistral-7b-instruct-v0.1 \
+  -X POST \
+  -H "Authorization: Bearer {API_TOKEN}" \
+  -d '{ "messages": [{ "role": "user", "content": "[INST] 2 + 2 ? [/INST]" }]}'
+```
+  </TabItem>
+  <TabItem value="cloudflare-node" label="typescript">
+
+```typescript
+async function run(model, prompt) {
+  const messages = [{ role: 'user', content: prompt }];
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/${model}`,
+    {
+      headers: { Authorization: 'Bearer {API_TOKEN}' },
+      method: 'POST',
+      body: JSON.stringify({ messages }),
+    }
+  );
+  const result = await response.json();
+  return result;
+}
+run('@cf/mistral/mistral-7b-instruct-v0.1', '[INST] 2 + 2 ? [/INST]').then(
+  response => {
+    console.log(JSON.stringify(response));
+  }
+);
+```
+  </TabItem>
+  <TabItem value="cloudflare-python" label="python">
+
+```python
+import requests
+
+API_BASE_URL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/run/"
+headers = {"Authorization": "Bearer {API_TOKEN}"}
+
+def run(model, prompt):
+    input = {
+        "messages": [
+            { "role": "user", "content": prompt }
+        ]
+    }
+    response = requests.post(f"{API_BASE_URL}{model}", headers=headers, json=input)
+    return response.json()
+
+output = run("@cf/mistral/mistral-7b-instruct-v0.1", "[INST] 2 + 2 = ? [/INST]")
+print(output)
+```
+  </TabItem>
+</Tabs>
+
+Voici la sortie que vous devriez recevoir :
+
+```python
+{'result': {'response': '2 + 2 = 4.'}, 'success': True, 'errors': [], 'messages': []}
+```

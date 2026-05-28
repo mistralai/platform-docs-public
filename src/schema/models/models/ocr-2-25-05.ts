@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'OCR 2',
-  description: `Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`,
-  shortDescription: `Our OCR service powering our Document AI stack.`,
+  describe: (l) => ({
+    description: l.text(`Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our OCR service powering our Document AI stack.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'ocr-2-25-05',
-  releaseDate: 'May 22, 2025',
+  releaseDate: '2025-05-22',
   version: '25.05',
   frontier: false,
   class: 'Specialist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: null,
   ratings: { 
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 4.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -37,7 +39,7 @@ export default {
     features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
 
   },
-  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'OCR 3'},
+  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'OCR 3'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

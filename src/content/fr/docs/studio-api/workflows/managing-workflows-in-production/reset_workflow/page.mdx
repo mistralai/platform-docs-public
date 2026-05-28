@@ -1,0 +1,95 @@
+---
+id: reset-workflow
+title: Réinitialiser les workflows
+sidebar_position: 8
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Réinitialiser les workflows
+
+Réinitialisez une exécution de workflow pour la redémarrer depuis un point précis dans son historique d'événements.
+
+<SectionTab as="h1" sectionId="when-to-reset">Quand réinitialiser</SectionTab>
+
+La réinitialisation est utile quand un workflow reste bloqué — par exemple à cause d'une erreur de non-déterminisme après une modification du code — ou quand il ne peut pas se terminer en raison d'un bug qui a depuis été corrigé.
+
+:::warning
+La réinitialisation ne doit être utilisée **qu'après avoir corrigé le problème sous-jacent**. Toute progression réalisée après le point de réinitialisation sera perdue.
+:::
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+Lorsque vous réinitialisez un workflow :
+
+1. L'exécution en cours est terminée
+2. Une nouvelle exécution est créée sous le même ID d'exécution
+3. Tous les événements jusqu'au point de réinitialisation sont copiés dans la nouvelle exécution
+4. Le workflow rejoue depuis le point de réinitialisation en utilisant la **dernière version de votre code**
+
+Cela signifie que toute correction de bug que vous avez déployée prendra effet lorsque le workflow reprendra.
+
+<SectionTab as="h1" sectionId="usage">Usage</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+client.workflows.executions.reset_workflow(
+    execution_id="your-execution-id",
+    event_id=42,  # Must be a WORKFLOW_TASK_COMPLETED event
+    reason="Bug fixed in activity logic",
+    exclude_signals=True,  # Optional: skip replaying signals after this point
+    exclude_updates=True   # Optional: skip replaying updates after this point
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="parameters">Paramètres</SectionTab>
+
+| Paramètre | Type | Obligatoire | Description |
+|-----------|------|----------|-------------|
+| `execution_id` | `str` | Oui | L'exécution à réinitialiser |
+| `event_id` | `int` | Oui | ID de l'événement vers lequel réinitialiser (doit être un événement `WORKFLOW_TASK_COMPLETED`) |
+| `reason` | `str` | Oui | Raison de la réinitialisation (enregistrée dans l'historique d'événements) |
+| `exclude_signals` | `bool` | Non | Ignorer la relecture des signaux reçus après le point de réinitialisation |
+| `exclude_updates` | `bool` | Non | Ignorer la relecture des mises à jour reçues après le point de réinitialisation |
+
+<SectionTab as="h1" sectionId="finding-the-reset-point">Trouver le point de réinitialisation</SectionTab>
+
+Utilisez l'API des événements de trace pour trouver des points de réinitialisation valides :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+events = client.workflows.executions.get_workflow_execution_trace_events(
+    execution_id=execution_id,
+    include_internal_events=True,
+)
+
+# Filter for WORKFLOW_TASK_COMPLETED events
+valid_reset_points = [
+    e for e in events
+    if e.event_type == "WORKFLOW_TASK_COMPLETED"
+]
+```
+
+  </TabItem>
+</Tabs>
+
+Si vous fournissez un ID d'événement invalide, l'API renvoie une erreur `WF_1001` avec un champ `valid_reset_events` listant les alternatives valides.
+
+<SectionTab as="h1" sectionId="best-practices">Bonnes pratiques</SectionTab>
+
+1. **Corrigez d'abord la cause racine** — réinitialiser sans corriger le bug reproduira le même échec
+2. **Fournissez toujours une raison** — elle est enregistrée dans l'historique d'événements pour l'audit
+3. **Utilisez `exclude_signals` avec précaution** — ignorer les signaux signifie que toute entrée externe reçue après le point de réinitialisation ne sera pas rejouée
+4. **Testez votre correction** — déployez et testez la correction sur un espace de travail de développement avant de réinitialiser les workflows de production

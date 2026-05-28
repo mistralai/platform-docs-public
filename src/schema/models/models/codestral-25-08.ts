@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Codestral',
-  description: `Our cutting-edge language model for code completion released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM) and code generation.`,
-  shortDescription: `Our cutting-edge language model for code completion released end of July 2025.`,
+  describe: (l) => ({
+    description: l.text(`Our cutting-edge language model for code completion released end of July 2025, Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM) and code generation.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our cutting-edge language model for code completion released end of July 2025.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'codestral-25-08',
-  releaseDate: 'July 30, 2025',
+  releaseDate: '2025-07-30',
   version: '25.08',
   frontier: true,
   class: 'Specialist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 4.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

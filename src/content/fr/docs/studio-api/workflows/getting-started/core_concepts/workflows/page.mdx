@@ -1,0 +1,141 @@
+---
+id: core-concepts-workflows
+title: Workflows
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Workflows
+
+Un workflow est la **couche de composition** de votre application : il définit **quoi faire et quand**, tandis que les [activités](/studio-api/workflows/getting-started/core_concepts/activities) définissent **comment** le faire. Un workflow orchestre les activités, attend des événements externes, gère les minuteries et décide de la suite à donner selon les résultats obtenus.
+
+Les workflows peuvent s’exécuter sur n’importe quelle durée, de quelques secondes à plusieurs mois. Ils résistent aux redémarrages de processus, aux pannes d’infrastructure ou aux erreurs temporaires sans perdre leur état. Ceci est possible car la plateforme enregistre chaque [événement](/studio-api/workflows/getting-started/core_concepts/events) significatif du cycle de vie du workflow et utilise cet historique pour reconstituer l’état si nécessaire.
+
+<SectionTab as="h1" sectionId="defining-a-workflow">Définir un workflow</SectionTab>
+
+Pour définir un workflow, appliquez le décorateur `@workflows.workflow.define` sur une classe et le décorateur `@workflows.workflow.entrypoint` sur la méthode qui démarre le workflow :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+class ReportParams(BaseModel):
+    report_type: str
+    include_details: bool = False
+
+@workflows.workflow.define(name="report_workflow")
+class ReportWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: ReportParams) -> dict:
+        result = await process_report(params.report_type)
+        return {"result": result, "details": params.include_details}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="workflow-input">Entrée du workflow</SectionTab>
+
+La méthode `run` accepte tout type sérialisable en JSON : modèles Pydantic, dictionnaires classiques ou types primitifs. La plateforme valide les entrées et génère dans tous les cas des schémas pour l’UI de la Console.
+
+Quand le point d’entrée accepte un seul `BaseModel` Pydantic, ses champs deviennent les clés de l’entrée au niveau supérieur :
+
+```json
+{"report_type": "daily", "include_details": true}
+```
+
+Pour les workflows acceptant plusieurs formats d’entrée, utilisez une union de modèles :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+class PromptInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    prompt: str
+
+class CountInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    count: int
+
+@workflows.workflow.define(name="flexible_workflow")
+class FlexibleWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: PromptInput | CountInput) -> str:
+        if isinstance(params, PromptInput):
+            return f"prompt: {params.prompt}"
+        return f"count: {params.count}"
+```
+
+  </TabItem>
+</Tabs>
+
+Le SDK valide l’entrée pour chaque membre dans l’ordre et transmet le premier correspondant. Utilisez `extra="forbid"` sur chaque modèle pour garantir des discriminations fiables et des messages d’erreur précis.
+
+<SectionTab as="h1" sectionId="determinism">Déterminisme</SectionTab>
+
+Il existe une contrainte fondamentale dans le code d’un workflow : **il doit être déterministe**. Dans les mêmes conditions de départ, un workflow doit toujours produire la même séquence d’opérations.
+
+C’est nécessaire pour la relecture. Quand un worker redémarre ou restaure un workflow, il réexécute tout le code du début, en comparant chaque opération à l’historique enregistré. Si le code produit une séquence différente (par exemple si vous utilisez `datetime.now()` et obtenez un nouvel horodatage, ou `random()` et obtenez un autre nombre), la relecture diverge de l’historique et le workflow échoue sur une erreur de non-déterminisme.
+
+C’est pour cela qu’il faut utiliser les remplacements fournis par le SDK pour les opérations non déterministes :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows import workflow
+
+current_time = workflow.now()    # pas datetime.now()
+request_id   = workflow.uuid4()  # pas uuid.uuid4()
+rand_value   = workflow.random() # pas random.random()
+```
+
+  </TabItem>
+</Tabs>
+
+Toute opération qui interagit avec l’extérieur (appel à une API, requête dans une base de données, lecture de fichier) doit être réalisée dans une activité, pas dans le workflow lui-même.
+
+Le SDK applique le déterminisme par défaut : un bac à sable intercepte les appels aux API non déterministes connues et lève immédiatement une erreur, évitant ainsi qu’un bug subtil ne se révèle qu’à la relecture. Vous pouvez désactiver ce contrôle à deux niveaux :
+
+- **Par workflow** : passer `enforce_determinism=False` à `@workflows.workflow.define`.
+- **Au niveau de tout le worker** : définir la variable d’environnement `DEFAULT_ENFORCE_DETERMINISM` (ce qui positionne `config.worker.default_enforce_determinism` à `False`).
+
+Il est fortement recommandé de maintenir ce contrôle activé. Sinon, un appel non déterministe ne déclenche pas d’erreur sur le moment mais corrompt silencieusement l’historique du workflow, ce qui provoquera une erreur de divergence lors de la prochaine relecture (après un redémarrage de worker ou une reprise suite à un crash), généralement plusieurs heures ou jours plus tard.
+
+<SectionTab as="h1" sectionId="execution-timeout">Timeout d’exécution</SectionTab>
+
+Chaque workflow possède un `execution_timeout` : c’est la limite stricte sur sa durée totale, en incluant tous les réessais et itérations [continue-as-new](/studio-api/workflows/building-workflows/continue_as_new). La valeur par défaut est d’une heure. Pour exécuter un workflow plus longtemps, il faut l’activer explicitement :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+
+@workflows.workflow.define(name="long_running_workflow", execution_timeout=timedelta(days=7))
+class LongRunningWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: MyParams) -> MyResult:
+        ...
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="limitations">Limites</SectionTab>
+
+**Délai maximal de 2 secondes entre activités.** Le code d’un workflow doit s’exécuter en moins de 2 secondes entre deux appels d’activité. Déplacez toute opération lourde dans des activités.
+
+**Aucun I/O dans les workflows.** Tous les appels réseau, requêtes base de données et accès fichiers doivent être réalisés dans des activités.
+
+**Limite d’entrée/sortie de 2 Mo.** Chaque exécution de workflow est limitée à 2 Mo à l’entrée et 2 Mo à la sortie. Pour les charges utiles plus volumineuses, utilisez [l’externalisation de payload](/studio-api/workflows/building-workflows/payload_offloading) pour transférer les données dans votre propre stockage d’objets.
+
+**Limite d’historique d’exécution.** Chaque exécution est limitée à 51 200 événements ou 50 Mo. Voir [Événements](/studio-api/workflows/getting-started/core_concepts/events) pour plus de détails.

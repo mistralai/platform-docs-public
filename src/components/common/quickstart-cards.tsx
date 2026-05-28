@@ -1,59 +1,38 @@
-import Link from 'next/link';
+'use client';
+
+import { Link } from '@/i18n/navigation.client';
 import { ArrowRightIcon } from '@/components/icons/pixel';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { PixelGrid } from '@/components/common/pixel-grid';
 import { PRODUCT_COLORS, PRODUCT_LOGOS } from '@/schema/content/getting-started';
-
-const QUICKSTART_ROLES = [
-  {
-    title: 'Le Chat',
-    description: "Use Le Chat's collaborative AI workspace. No code required.",
-    logo: PRODUCT_LOGOS['le-chat'],
-    href: '/getting-started/quickstarts/le-chat',
-    color: PRODUCT_COLORS['le-chat'],
-  },
-  {
-    title: 'Admin',
-    description: 'Set up and manage your Mistral organization and security.',
-    logo: PRODUCT_LOGOS['admin'],
-    href: '/getting-started/quickstarts/admin',
-    color: PRODUCT_COLORS['admin'],
-  },
-  {
-    title: 'Developer',
-    description: 'Build with the Mistral API, from your first request to agents and RAG.',
-    logo: PRODUCT_LOGOS['developer'],
-    href: '/getting-started/quickstarts/developer',
-    color: PRODUCT_COLORS['developer'],
-  },
-];
-
-const DOC_LINKS = [
-  {
-    title: 'Le Chat documentation',
-    description: 'Explore conversations, Canvas, search, and integrations.',
-    logo: PRODUCT_LOGOS['le-chat'],
-    href: '/le-chat/overview',
-    color: PRODUCT_COLORS['le-chat'],
-  },
-  {
-    title: 'Studio & API documentation',
-    description: 'Build with chat completions, agents, RAG, and more.',
-    logo: PRODUCT_LOGOS['studio'],
-    href: '/studio-api/overview',
-    color: PRODUCT_COLORS['studio'],
-  },
-  {
-    title: 'Admin documentation',
-    description: 'Manage organizations, SSO, billing, and access controls.',
-    logo: PRODUCT_LOGOS['admin'],
-    href: '/admin/security-access/back-office',
-    color: PRODUCT_COLORS['admin'],
-  },
-];
+import { useLingo } from '@lingo.dev/react';
 
 export function QuickstartDocLinks() {
+  const l = useLingo();
+  const DOC_LINKS = [
+    {
+      title: l.text('Vibe documentation', { context: 'Title of the Vibe documentation link on the quickstart doc-links row' }),
+      description: l.text('Productivity in Work, coding in Code, legacy features in Chat.', { context: 'Description of the Vibe documentation link on the quickstart doc-links row' }),
+      logo: PRODUCT_LOGOS['vibe'],
+      href: '/vibe/overview',
+      color: PRODUCT_COLORS['vibe'],
+    },
+    {
+      title: l.text('Studio & API documentation', { context: 'Title of the Studio & API documentation link on the quickstart doc-links row' }),
+      description: l.text('Build with chat completions, agents, RAG, and more.', { context: 'Description of the Studio & API documentation link on the quickstart doc-links row' }),
+      logo: PRODUCT_LOGOS['studio'],
+      href: '/studio-api/overview',
+      color: PRODUCT_COLORS['studio'],
+    },
+    {
+      title: l.text('Admin documentation', { context: 'Title of the Admin documentation link on the quickstart doc-links row' }),
+      description: l.text('Manage organizations, SSO, billing, and access controls.', { context: 'Description of the Admin documentation link on the quickstart doc-links row' }),
+      logo: PRODUCT_LOGOS['admin'],
+      href: '/admin/security-access/back-office',
+      color: PRODUCT_COLORS['admin'],
+    },
+  ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8 not-prose">
       {DOC_LINKS.map((link) => {
@@ -83,8 +62,39 @@ export function QuickstartDocLinks() {
 }
 
 export function QuickstartCards() {
+  const l = useLingo();
+  const QUICKSTART_ROLES = [
+    {
+      title: 'Vibe Work',
+      description: l.text('Vibe in the web and mobile chat UI. Run multi-step tasks, no code required.', { context: 'Subtitle describing the Vibe Work mode' }),
+      logo: PRODUCT_LOGOS['vibe-work'],
+      href: '/getting-started/quickstarts/vibe-work',
+      color: PRODUCT_COLORS['vibe-work'],
+    },
+    {
+      title: 'Vibe Code',
+      description: l.text('Vibe in your terminal, editor, or as remote sessions. Reads files, edits code, opens PRs.', { context: 'Subtitle describing the Vibe Code mode' }),
+      logo: PRODUCT_LOGOS['vibe-code'],
+      href: '/getting-started/quickstarts/vibe-code',
+      color: PRODUCT_COLORS['vibe-code'],
+    },
+    {
+      title: l.text('Developer', { context: 'Role label for a developer using the API' }),
+      description: l.text('Build with the Mistral API, from your first request to agents and RAG.', { context: 'Subtitle under the Developer heading on the Developer quickstart role selector' }),
+      logo: PRODUCT_LOGOS['developer'],
+      href: '/getting-started/quickstarts/developer',
+      color: PRODUCT_COLORS['developer'],
+    },
+    {
+      title: l.text('Admin', { context: 'Name of the Mistral admin console' }),
+      description: l.text('Set up and manage your Mistral organization and security.', { context: 'Subtitle under the Admin heading on the Admin quickstart role selector' }),
+      logo: PRODUCT_LOGOS['admin'],
+      href: '/getting-started/quickstarts/admin',
+      color: PRODUCT_COLORS['admin'],
+    },
+  ];
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8 not-prose">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-8 not-prose">
       {QUICKSTART_ROLES.map((card) => {
         return (
           <Link

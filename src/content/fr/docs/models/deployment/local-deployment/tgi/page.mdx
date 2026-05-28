@@ -1,0 +1,142 @@
+---
+id: tgi
+title: TGI
+sidebar_position: 3.35
+---
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Text Generation Inference
+
+Text Generation Inference (TGI) est une boîte à outils pour déployer et servir des modèles de langage de grande taille (LLM). TGI permet une génération de texte haute performance pour les LLM open source les plus populaires. Parmi ses fonctionnalités, on trouve la quantification, le parallélisme tensoriel, le streaming de tokens, le batching continu, la flash attention, le guidage, et bien plus encore.
+La façon la plus simple de démarrer avec TGI est d'utiliser le conteneur Docker officiel.
+
+<SectionTab as="h1" sectionId="deploying">Déploiement</SectionTab>
+
+<Tabs>
+  <TabItem value="mistral7b" label="Mistral-7B" default>
+```bash
+model=mistralai/Mistral-7B-Instruct-v0.3
+```
+  </TabItem>
+  <TabItem value="mixtral8x7b" label="Mixtral-8X7B">
+```bash
+model=mistralai/Mixtral-8x7B-Instruct-v0.1
+```
+  </TabItem>
+  <TabItem value="mixtral8x22b" label="Mixtral-8X22B">
+```bash
+model=mistralai/Mixtral-8x22B-Instruct-v0.1
+```
+  </TabItem>
+</Tabs>
+
+```bash
+volume=$PWD/data # share a volume with the Docker container to avoid downloading weights every run
+docker run --gpus all --shm-size 1g -p 8080:80 -v $volume:/data  \
+    -e HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN \
+    ghcr.io/huggingface/text-generation-inference:2.0.3 \
+    --model-id $model
+```
+
+Cela démarrera une instance TGI exposant une API de type OpenAI, comme documenté dans la [section API](/api).
+Assurez-vous de définir la variable d'environnement `HUGGING_FACE_HUB_TOKEN` avec votre [jeton d'accès utilisateur Hugging Face](https://huggingface.co/docs/hub/security-tokens). Pour utiliser les modèles Mistral, vous devez d'abord visiter la page du modèle correspondant et remplir le petit formulaire. Vous obtenez ensuite automatiquement l'accès au modèle.
+Si le modèle ne tient pas dans votre GPU, vous pouvez également utiliser des méthodes de quantification (AWQ, GPTQ, etc.). Vous trouverez toutes les options de lancement TGI dans [leur documentation](https://huggingface.co/docs/text-generation-inference/en/basic_tutorials/launcher).
+
+<SectionTab as="h1" sectionId="using-the-api">Utilisation de l'API</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="chat-compatible-endpoint">Avec l'endpoint compatible Chat</SectionTab>
+
+TGI prend en charge l'[API Messages](https://huggingface.co/docs/text-generation-inference/en/messages_api), qui est compatible avec l'API Mistral et OpenAI Chat Completion.
+
+<Tabs>
+  <TabItem value="mistralclient" label="Avec MistralClient" default>
+```python
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
+
+# Initialize the client but point it to TGI
+client = MistralClient(api_key="-", endpoint="http://127.0.0.1:8080")
+chat_response = client.chat(
+    model="-",
+    messages=[
+      ChatMessage(role="user", content="What is the best French cheese?")
+    ]
+)
+print(chat_response.choices[0].message.content)
+```
+  </TabItem>
+  <TabItem value="openai" label="Avec le client OpenAI">
+```python
+from openai import OpenAI
+
+# Initialize the client but point it to TGI
+client = OpenAI(api_key="-", base_url="http://127.0.0.1:8080/v1")
+chat_response = client.chat.completions.create(
+    model="-",
+    messages=[
+      {"role": "user", "content": "What is deep learning?"}
+    ]
+)
+print(chat_response)
+```
+  </TabItem>
+  <TabItem value="curl" label="Avec cURL">
+```bash
+curl http://127.0.0.1:8080/v1/chat/completions \
+    -X POST \
+    -d '{
+  "model": "tgi",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is deep learning?"
+    }
+  ]
+}' \
+    -H 'Content-Type: application/json'
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="generate-endpoint">Utilisation de l'endpoint Generate</SectionTab>
+
+Si vous souhaitez plus de contrôle sur ce que vous envoyez au serveur, vous pouvez utiliser l'endpoint `generate`. Dans ce cas, vous êtes responsable du formatage du prompt avec le bon template et les bons stop tokens.
+
+<Tabs>
+  <TabItem value="python" label="Avec Python" default>
+```python
+# Make sure to install the huggingface_hub package before
+from huggingface_hub import InferenceClient
+
+client = InferenceClient(model="http://127.0.0.1:8080")
+client.text_generation(prompt="What is Deep Learning?")
+```
+  </TabItem>
+  <TabItem value="typescript" label="Avec JavaScript">
+```typescript
+async function query() {
+  const response = await fetch('http://127.0.0.1:8080/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      inputs: 'What is Deep Learning?',
+    }),
+  });
+  return response.json();
+}
+
+query().then(response => {
+  console.log(response);
+});
+```
+  </TabItem>
+  <TabItem value="curl" label="Avec cURL">
+```bash
+curl 127.0.0.1:8080/generate \
+-X POST \
+-d '{"inputs":"What is Deep Learning?","parameters":{"max_new_tokens":20}}' \
+-H 'Content-Type: application/json'
+```
+  </TabItem>
+</Tabs>

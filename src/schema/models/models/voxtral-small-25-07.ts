@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral Small',
-  description: `Our first model with audio input capabilities for instruct use cases.`,
-  shortDescription: `Our first model with audio input capabilities for instruct use cases.`,
+  describe: (l) => ({
+    description: l.text(`Our first model with audio input capabilities for instruct use cases.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our first model with audio input capabilities for instruct use cases.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'voxtral-small-25-07',
-  releaseDate: 'July 15, 2025',
+  releaseDate: '2025-07-15',
   version: '25.07',
   frontier: true,
   class: 'Specialist',
@@ -33,8 +35,8 @@ export default {
   paperlink: 'https://arxiv.org/pdf/2507.13264',
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

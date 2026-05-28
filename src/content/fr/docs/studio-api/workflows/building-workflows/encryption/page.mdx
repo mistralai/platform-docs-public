@@ -1,0 +1,101 @@
+---
+id: encryption
+title: Chiffrement
+sidebar_position: 13
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Chiffrement
+
+Chiffrez toutes les charges utiles (entrées de workflow, E/S d'activité, données de signal) avant qu'elles ne quittent votre worker. La plateforme stocke les données chiffrées, et seuls vos workers peuvent les déchiffrer.
+
+| Mode | Entrée du workflow | E/S activité | Stocké dans notre base de données |
+|------|-------------------|--------------|-------------------------|
+| Par défaut | clair | clair | oui (clair) |
+| Chiffrement | chiffré | chiffré | oui (chiffré) |
+
+:::info
+Le chiffrement peut être combiné avec [l'externalisation des charges utiles](/studio-api/workflows/building-workflows/payload_offloading) : les charges externalisées sont chiffrées avant de quitter votre worker, et l'orchestrateur ne voit qu'une référence chiffrée.
+:::
+
+<SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
+
+Installez l'extra de chiffrement :
+
+```bash
+uv add "mistralai[workflow-payload-encryption]"
+```
+
+Cela installe `cryptography`, utilisé par le SDK pour le chiffrement AES-GCM.
+
+<SectionTab as="h1" sectionId="generate-key">Générez une clé</SectionTab>
+
+Générez une clé AES-GCM 256 bits :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+key = AESGCM.generate_key(bit_length=256)
+print(key.hex())
+```
+
+  </TabItem>
+</Tabs>
+
+Enregistrez la clé dans votre gestionnaire de secrets. Toute personne ayant cette clé pourra lire les données de votre workflow.
+
+<SectionTab as="h1" sectionId="configure-workers">Configurez vos workers</SectionTab>
+
+Deux modes sont disponibles :
+
+- `full` : chaque charge utile est chiffrée.
+- `partial` : seuls les champs typés comme `EncryptedStrField` sont chiffrés.
+
+<Tabs>
+  <TabItem value="full" label="Chiffrement complet">
+
+```bash
+TEMPORAL_PAYLOAD_ENCRYPTION__MODE=full
+TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<your_hex_key>
+```
+
+  </TabItem>
+  <TabItem value="partial" label="Chiffrement partiel">
+
+```bash
+TEMPORAL_PAYLOAD_ENCRYPTION__MODE=partial
+TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<your_hex_key>
+```
+
+```python
+from mistralai.extra.workflows.encoding import EncryptedStrField
+
+class PIIPayload(BaseModel):
+    user_id: str                  # clair
+    ssn: EncryptedStrField        # chiffré
+```
+
+  </TabItem>
+</Tabs>
+
+Les charges utiles chiffrées apparaissent sous forme de `<encrypted>` dans les traces d'exécution et l'interface Studio.
+
+<SectionTab as="h1" sectionId="key-rotation">Rotation des clés</SectionTab>
+
+Pour effectuer une rotation sans coupure, procédez ainsi :
+
++ **Générez une nouvelle clé** avec la méthode ci-dessus.
++ **Promouvez la nouvelle clé** et conservez l'ancienne comme clé secondaire pour que les workers puissent encore déchiffrer les exécutions en cours :
+
+    ```bash
+    TEMPORAL_PAYLOAD_ENCRYPTION__MAIN_KEY=<new_key>
+    TEMPORAL_PAYLOAD_ENCRYPTION__SECONDARY_KEY=<old_key>
+    ```
+
++ **Attendez** que les workflows démarrés avant la rotation soient terminés. Ce délai dépend de votre rétention plus la durée des workflows (30 jours par défaut).
++ **Retirez l'ancienne clé** en supprimant la variable `SECONDARY_KEY`.

@@ -1,0 +1,186 @@
+---
+id: deployments
+title: Déploiements
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Deployments
+
+Un deployment est un groupe nommé de workers qui possède un ensemble de définitions de workflows et reçoit toutes les exécutions pour ces définitions. Il permet l'isolation des workers dans des espaces de travail partagés et le routage automatique des exécutions.
+
+<SectionTab as="h1" sectionId="setting-deployment_name">Définir DEPLOYMENT_NAME</SectionTab>
+
+`DEPLOYMENT_NAME` est **obligatoire** au démarrage du worker. Le worker échoue immédiatement au boot s'il n'est pas défini.
+
+```bash
+DEPLOYMENT_NAME=invoice-service MISTRAL_API_KEY=your-key uv run python worker.py
+```
+
+Caractères valides : alphanumériques, tirets, underscores (128 caractères maximum).
+
+`WORKER_NAME` identifie le processus worker individuel et est visible dans la console et l'API. Sa valeur par défaut est `socket.gethostname()`.
+
+<SectionTab as="h1" sectionId="worker-isolation">Isolation des workers</SectionTab>
+
+Dans un espace de travail partagé, plusieurs développeurs peuvent exécuter des workers simultanément sans interférence. Chaque deployment ne reçoit que les exécutions pour les définitions de workflows qu'il a enregistrées.
+
+```bash
+# Développeur A
+DEPLOYMENT_NAME=alice MISTRAL_API_KEY=shared-key uv run python worker.py
+
+# Développeur B
+DEPLOYMENT_NAME=bob MISTRAL_API_KEY=shared-key uv run python worker.py
+```
+
+Les exécutions d'Alice arrivent sur les workers d'Alice. Les exécutions de Bob arrivent sur les workers de Bob.
+
+<SectionTab as="h1" sectionId="execution-routing">Routage des exécutions</SectionTab>
+
+Lorsqu'un seul deployment actif possède un workflow, les exécutions sont routées automatiquement — aucune configuration supplémentaire nécessaire :
+
+```python
+execution = await client.execute_workflow(
+    workflow_identifier="invoice_processor",
+    input_data=InputData(invoice_id="INV-001"),
+)
+```
+
+Lorsque deux deployments actifs enregistrent le même nom de workflow, la plateforme ne peut pas router automatiquement et renvoie `409 Conflict` :
+
+```json
+{
+  "code": "AMBIGUOUS_WORKFLOW",
+  "deployments": ["alice", "bob"]
+}
+```
+
+Résolvez en passant explicitement `deployment_name` :
+
+```python
+execution = await client.execute_workflow(
+    workflow_identifier="invoice_processor",
+    deployment_name="alice",
+    input_data=InputData(invoice_id="INV-001"),
+)
+```
+
+<SectionTab as="h1" sectionId="conflict-detection">Détection des conflits</SectionTab>
+
+Lorsqu'un worker enregistre un nom de workflow déjà possédé par un deployment actif différent, la plateforme avertit immédiatement. L'enregistrement n'est pas bloqué — l'avertissement est renvoyé dans la réponse d'enregistrement et apparaît dans les logs du worker :
+
+```json
+{
+  "warnings": [
+    "Workflow 'invoice_processor' is also registered by active deployment 'bob'"
+  ]
+}
+```
+
+Le conflit se résout automatiquement lorsque l'un des deployments devient inactif (ses workers s'arrêtent).
+
+Plusieurs workers dans le **même** deployment enregistrant les mêmes définitions constituent un scaling horizontal — aucun avertissement n'est produit.
+
+<SectionTab as="h1" sectionId="deployment-lifecycle">Cycle de vie du deployment</SectionTab>
+
+Un deployment est **actif** tant qu'au moins un de ses workers a émis un heartbeat dans la fenêtre de liveness. Les workers émettent un heartbeat automatiquement toutes les ~10 secondes. Lorsque tous les workers s'arrêtent, le deployment devient **inactif** après expiration de la fenêtre de liveness (50 secondes en production, configurable).
+
+Les deployments inactifs ne reçoivent pas d'exécutions et ne sont pas comptés comme conflictuels lors de la vérification d'ambiguïté.
+
+<SectionTab as="h1" sectionId="horizontal-scaling">Scaling horizontal</SectionTab>
+
+Exécutez plusieurs workers sous le même `DEPLOYMENT_NAME` pour augmenter le débit. Les exécutions sont distribuées entre tous les workers actifs du deployment.
+
+En production, déployez les workers comme un `Deployment` ou `StatefulSet` Kubernetes avec des replicas pointant vers le même `DEPLOYMENT_NAME`. La plateforme équilibre automatiquement la charge des tâches.
+
+<SectionTab as="h1" sectionId="listing-deployments">Lister les deployments</SectionTab>
+
+Listez tous les deployments actifs dans votre espace de travail :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+response = client.workflows.deployments.list_deployments()
+for deployment in response.deployments:
+    print(deployment.name, deployment.is_active)
+```
+
+  </TabItem>
+  <TabItem value="api" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/workflows/deployments \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "deployments": [
+    {
+      "id": "019d2585-21fc-7063-90ae-31a283c784a1",
+      "name": "invoice-service",
+      "is_active": true,
+      "created_at": "2026-03-25 15:02:55.234755+00:00",
+      "updated_at": "2026-04-02 17:42:34.960883+00:00"
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Passez `workflow_name` pour filtrer par workflow, ou `active_only=false` pour inclure les deployments inactifs.
+
+Inspectez un deployment spécifique et ses workers individuels :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+deployment = client.workflows.deployments.get_deployment(name="invoice-service")
+print(deployment.name, deployment.is_active)
+for worker in deployment.workers:
+    print(worker.name, worker.updated_at)
+```
+
+  </TabItem>
+  <TabItem value="api" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/workflows/deployments/invoice-service \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "id": "019d2585-21fc-7063-90ae-31a283c784a1",
+  "name": "invoice-service",
+  "is_active": true,
+  "created_at": "2026-03-25 15:02:55.234755+00:00",
+  "updated_at": "2026-04-02 17:42:41.828219+00:00",
+  "workers": [
+    {
+      "name": "my-worker-host",
+      "created_at": "2026-03-25 15:15:07.911486+00:00",
+      "updated_at": "2026-04-02 15:42:13.679937+00:00"
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>

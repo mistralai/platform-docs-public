@@ -1,0 +1,254 @@
+---
+id: conversational-workflows
+title: Workflows conversationnels
+sidebar_position: 0
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Workflows conversationnels
+
+Les workflows conversationnels sont conçus pour être intégrés dans des interfaces de conversation, permettant à un utilisateur de déclencher un workflow, d'interagir avec celui-ci en fournissant des entrées pendant son exécution et de suivre sa progression.
+
+Le principal espace de rendu pour ces workflows est **Vibe Work**, où les utilisateurs ajoutent des workflows publiés via le menu `+`. Consultez [Exécuter des workflows dans Vibe Work](/vibe/work/workflows) pour l'expérience côté utilisateur.
+
+Cette section présente les bases : envoyer des messages, attendre une réponse de l'utilisateur et diffuser les réponses de l'agent. Les sujets spécialisés disposent de leurs propres sous-pages :
+
+- [Formulaires et confirmations](/studio-api/workflows/interacting-with-workflows/conversational_workflows/forms_and_confirmations) : saisies structurées et confirmations rapides.
+- [Suivi de progression](/studio-api/workflows/interacting-with-workflows/conversational_workflows/progress_tracking) : afficher une checklist des étapes avec des mises à jour en temps réel.
+- [Canvas](/studio-api/workflows/interacting-with-workflows/conversational_workflows/canvas) : retourner du contenu enrichi (markdown, code, schémas) et permettre à l'utilisateur de l'éditer.
+- [UI d'outil](/studio-api/workflows/interacting-with-workflows/conversational_workflows/tool_ui) : afficher des composants et visualiser l'exécution de l'outil.
+- [Publier dans Vibe](/studio-api/workflows/interacting-with-workflows/conversational_workflows/publish_in_vibe) : proposer un workflow comme assistant dans Vibe Work.
+
+<SectionTab as="h1" sectionId="getting-started">Premiers pas</SectionTab>
+
+Pour utiliser les fonctionnalités conversationnelles des workflows, installez le plugin Mistral :
+
+```bash
+uv add 'mistralai-workflows[mistralai]'
+```
+
+Le workflow conversationnel le plus simple envoie un message d'assistant à l'utilisateur, puis attend sa réponse. Héritez de `InteractiveWorkflow` et utilisez `send_assistant_message()` suivi de `wait_for_input()` avec `ChatInput` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="greeting-workflow",
+    workflow_display_name="Greeting",
+    workflow_description="Un workflow conversationnel simple",
+)
+class GreetingWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Envoyer un message à l'utilisateur
+        await workflows_mistralai.send_assistant_message(
+            "Bonjour ! Je suis là pour vous aider à démarrer. Comment vous appelez-vous ?"
+        )
+
+        # Attendre la réponse de l'utilisateur
+        user_input = await self.wait_for_input(
+            workflows_mistralai.ChatInput()
+        )
+
+        name = user_input.message[0].text if user_input.message else "ami"
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=f"Ravi de vous rencontrer, {name} !")]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_getting-started_greeting-workflow.png"
+    alt="Le workflow greeting s’exécutant dans Vibe Work, affichant un message d’assistant demandant le nom de l’utilisateur."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Le workflow de salutation dans Vibe Work.</legend>
+</figure>
+
+`send_assistant_message()` affiche un message à l'utilisateur dans l'interface de chat de Vibe Work. Il accepte aussi l’argument optionnel `canvas` pour inclure une `CanvasResource` avec le texte (voir [Canvas](/studio-api/workflows/interacting-with-workflows/conversational_workflows/canvas#canvas-editing-human-in-the-loop)). `ChatInput()` met en pause le workflow et attend la réponse de l’utilisateur. Vous pouvez également passer un `prompt` à `ChatInput()` pour ajouter du contexte dans le placeholder, et `suggestions` pour proposer des choix préremplis que l’utilisateur peut sélectionner.
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_chat-input.png"
+    alt="L’état d’entrée de chat dans Vibe Work, affichant le champ d’entrée de message en attente de la réponse utilisateur."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Champ de saisie en attente de la réponse utilisateur dans Vibe Work.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="timeout">Temps d’attente</SectionTab>
+
+`wait_for_input()` accepte le paramètre optionnel `timeout`. Si l’utilisateur ne répond pas dans le délai imparti, une exception `asyncio.TimeoutError` est levée. Ce délai peut être un `timedelta` ou un nombre de secondes (`float`). Par défaut, le workflow attend indéfiniment.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+
+# Attendre la réponse utilisateur, mais passer en timeout après 5 minutes
+user_input = await self.wait_for_input(
+    workflows_mistralai.ChatInput(),
+    timeout=timedelta(minutes=5),
+)
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+Enveloppez l'appel dans un bloc `try`/`except asyncio.TimeoutError` pour gérer le temps d’attente sans interrompre le workflow.
+:::
+
+<SectionTab as="h1" sectionId="streaming-agent-responses">Diffusion des réponses de l’agent</SectionTab>
+
+Avec des agents utilisant `RemoteSession(stream=True)`, les réponses sont diffusées automatiquement dans l’interface utilisateur sous forme d’événements personnalisés. Aucun code supplémentaire n’est requis :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="expense-analysis-workflow",
+    workflow_display_name="Expense Analysis",
+    workflow_description="Analyse des dépenses propulsée par l’IA",
+)
+class ExpenseAnalysisWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, expense_data: str) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Créer une session de streaming : les réponses seront
+        # automatiquement diffusées à l’interface utilisateur à mesure de leur génération
+        session = workflows_mistralai.RemoteSession(stream=True)
+
+        analyst_agent = workflows_mistralai.Agent(
+            model="mistral-medium-2508",
+            name="expense-analyst",
+            description="Analyse les notes de frais pour vérifier leur conformité à la politique",
+            instructions="""Vous êtes un analyste de notes de frais. Passez en revue les dépenses et fournissez un retour sur :
+1. La conformité à la politique
+2. Les motifs inhabituels
+3. Des pistes d’optimisation
+
+Soyez concis et professionnel.""",
+        )
+
+        # La réponse de l’agent diffuse automatiquement les événements personnalisés via des patches JSON pour mettre à jour l’IU.
+        await workflows_mistralai.Runner.run(
+            agent=analyst_agent,
+            inputs=f"Analysez ce rapport de dépenses :\n\n{expense_data}",
+            session=session,
+        )
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text="Analyse terminée.")]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+Quand `stream=True`, la sortie texte de l’agent est diffusée jeton par jeton vers l’IU, offrant une expérience réactive pour les réponses longues.
+:::
+
+<SectionTab as="h1" sectionId="complete-example">Exemple complet</SectionTab>
+
+Voici un workflow d’approbation de notes de frais combinant to-do list, saisie utilisateur et analyse IA diffusée :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="full-expense-workflow",
+    workflow_display_name="Traitement de notes de frais complet",
+    workflow_description="Workflow complet de gestion de notes de frais avec analyse IA et validation",
+)
+class FullExpenseWorkflow(workflows.InteractiveWorkflow):
+    @workflows.workflow.entrypoint
+    async def run(self, expense_data: str) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        # Définir les étapes du workflow
+        analyze_item = workflows_mistralai.TodoListItem(
+            title="Analyse IA",
+            description="Analyser la dépense pour conformité"
+        )
+        review_item = workflows_mistralai.TodoListItem(
+            title="Validation manager",
+            description="Validation par le manager"
+        )
+        process_item = workflows_mistralai.TodoListItem(
+            title="Traitement",
+            description="Traitement final"
+        )
+
+        async with workflows_mistralai.TodoList(
+            items=[analyze_item, review_item, process_item]
+        ) as todo_list:
+            # Étape 1 : Analyse IA avec diffusion (via context manager)
+            async with analyze_item:
+                session = workflows_mistralai.RemoteSession(stream=True)
+                analyst = workflows_mistralai.Agent(
+                    model="mistral-medium-2508",
+                    name="expense-analyst",
+                    description="Analyste conformité notes de frais",
+                    instructions="Analysez la dépense pour vérifier la conformité. Soyez bref.",
+                )
+
+                await workflows_mistralai.Runner.run(
+                    agent=analyst,
+                    inputs=expense_data,
+                    session=session,
+                )
+
+            # Étape 2 : Validation manager (via context manager)
+            async with review_item:
+                decision = await self.wait_for_input(
+                    workflows_mistralai.ChatInput(
+                        "Validez-vous ou refusez-vous cette dépense ? Veuillez expliquer.",
+                        suggestions=[
+                            [workflows_mistralai.TextChunk(text="Oui, valider cette dépense")],
+                            [workflows_mistralai.TextChunk(text="Refuser")],
+                        ],
+                    )
+                )
+
+            # Étape 3 : Traitement (avec gestion manuelle du statut pour la logique conditionnelle)
+            await process_item.set_status("in_progress")
+            decision_text = decision.message[0].text if decision.message else ""
+            if "valider" in decision_text.lower():
+                result = f"Dépense validée. {decision_text}"
+            else:
+                result = f"Dépense refusée. {decision_text}"
+            await process_item.set_status("done")
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=result)]
+        )
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(workflows.run_worker([FullExpenseWorkflow]))
+```
+
+  </TabItem>
+</Tabs>

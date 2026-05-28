@@ -1,0 +1,344 @@
+---
+id: connectors_confirmation
+title: Validation humaine
+sidebar_position: 4
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Validation humaine (human-in-the-loop)
+
+Certains appels d'outils, comme l'envoi d'un e-mail ou la modification de données, sont plus sûrs avec une validation humaine. Le paramètre `requires_confirmation` vous permet d'intercepter ces appels avant leur exécution, afin qu'un utilisateur ou votre système puisse **approuver ou refuser chaque action**.
+
+:::info
+Cela fonctionne pour tous les types d'outils : Connecteurs, outils intégrés (tels que `web_search_premium`) et fonctions locales (Python SDK uniquement).
+:::
+
+Vous pouvez implémenter le flux de validation de deux manières :
+
+- **[API REST](#raw-api)** : gérez vous-même les ID de conversation et les ID d'appels d'outils. Fonctionne avec n'importe quel langage ou client HTTP.
+- **[SDK Python](#python-sdk)** : utilisez `RunContext` et `DeferredToolCallsException` pour un flux de plus haut niveau qui gère la plomberie pour vous.
+
+<SectionTab as="h1" sectionId="configuration">Configuration</SectionTab>
+
+Ajoutez `requires_confirmation` à la `tool_configuration` de n'importe quel Connecteur ou outil intégré, et listez les noms d'outils qui nécessitent une approbation :
+
+```json
+[
+  {
+    "type": "connector",
+    "connector_id": "gmail",
+    "tool_configuration": {
+      "requires_confirmation": ["gmail_search"]
+    }
+  },
+  {
+    "type": "web_search_premium",
+    "tool_configuration": {
+      "requires_confirmation": ["web_search", "news_search"]
+    }
+  }
+]
+```
+
+<SectionTab as="h1" sectionId="raw-api">Flux avec l'API REST</SectionTab>
+
+Le flux de validation comporte deux étapes :
+
+1. [Démarrer la conversation](#start-conversation) et obtenir un `function.call` en attente.
+2. [Approuver](#approve) ou [refuser](#deny) l'appel pour reprendre la conversation.
+
+<SectionTab as="h2" variant="secondary" sectionId="start-conversation">Démarrer la conversation</SectionTab>
+
+L'API renvoie une entrée `function.call` en attente au lieu d'exécuter l'outil.
+
+```bash
+RESPONSE=$(curl -s -X POST "https://api.mistral.ai/v1/conversations" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-medium-latest",
+    "inputs": "What is the title of my latest email?",
+    "tools": [
+      {
+        "type": "connector",
+        "connector_id": "gmail",
+        "tool_configuration": {
+          "requires_confirmation": ["gmail_search"]
+        }
+      }
+    ]
+  }')
+
+CONVERSATION_ID=$(echo "$RESPONSE" | jq -r '.conversation_id')
+TOOL_CALL_ID=$(echo "$RESPONSE" | jq -r '.outputs[0].tool_call_id')
+```
+
+La réponse contient un `function.call` en attente :
+
+```json
+{
+  "conversation_id": "conv_abc123...",
+  "outputs": [
+    {
+      "type": "function.call",
+      "tool_call_id": "WJfo42Ow3",
+      "name": "gmail_search",
+      "arguments": "{\"limit\": 1}",
+      "confirmation_status": "pending"
+    }
+  ]
+}
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="approve">Approuver l'appel d'outil</SectionTab>
+
+Envoyez `"allow"` pour exécuter l'outil et obtenir la réponse du modèle.
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/conversations/$CONVERSATION_ID" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool_confirmations": [
+      {"tool_call_id": "'$TOOL_CALL_ID'", "confirmation": "allow"}
+    ]
+  }'
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="deny">Refuser l'appel d'outil</SectionTab>
+
+Envoyez `"deny"` pour rejeter l'appel. Le modèle gère le refus de manière appropriée.
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/conversations/$CONVERSATION_ID" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool_confirmations": [
+      {"tool_call_id": "'$TOOL_CALL_ID'", "confirmation": "deny"}
+    ]
+  }'
+```
+
+:::tip
+Plusieurs appels d'outils peuvent être en attente simultanément. Vous pouvez les approuver ou les refuser individuellement ou par lot dans une seule requête.
+:::
+
+<SectionTab as="h1" sectionId="python-sdk">Flux avec le SDK Python</SectionTab>
+
+:::info
+`DeferredToolCallsException` nécessite `mistralai` **v2.4+** et l'extra `mcp` (`pip install mistralai[mcp]`). Si vous utilisez une version antérieure, utilisez le [flux API REST](#raw-api).
+:::
+
+Le SDK Python fournit `RunContext` et `DeferredToolCallsException` pour gérer les flux de validation sans avoir à gérer vous-même les ID de conversation et les ID d'appels d'outils.
+
+`run_async` exécute la boucle de conversation et lève `DeferredToolCallsException` lorsqu'un outil nécessite une validation. Appelez `dc.confirm()` ou `dc.reject()` sur chaque appel différé, puis rebouclez pour reprendre.
+
+<SectionTab as="h2" variant="secondary" sectionId="local-functions">Fonctions locales</SectionTab>
+
+Enregistrez des fonctions Python locales avec `register_func` et définissez `requires_confirmation=True` pour les fonctions qui nécessitent une approbation.
+
+```python
+import asyncio
+import os
+import random
+
+from mistralai.client import Mistral
+from mistralai.extra.run.context import RunContext
+from mistralai.extra.exceptions import DeferredToolCallsException
+
+
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    temp = random.randint(10, 30)
+    return f"The weather in {city} is {random.choice(['sunny', 'cloudy'])}, {temp}C"
+
+
+def book_flight(destination: str, date: str) -> str:
+    """Book a flight to a destination."""
+    return f"Flight booked to {destination} on {date}. Confirmation: FL-{random.randint(10000, 99999)}"
+
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    conversation_id = None
+    pending_inputs = [
+        {"role": "user", "content": "I need a vacation somewhere warm next Friday. Can you help?"}
+    ]
+
+    while True:
+        async with RunContext(model="mistral-large-latest") as run_ctx:
+            run_ctx.conversation_id = conversation_id
+            run_ctx.register_func(get_weather, requires_confirmation=False)
+            run_ctx.register_func(book_flight, requires_confirmation=True)
+
+            try:
+                result = await client.beta.conversations.run_async(
+                    run_ctx=run_ctx,
+                    inputs=pending_inputs,
+                    instructions="You are a travel assistant. Check the weather and book a flight to the warmest destination.",
+                )
+                print(result.output_entries)
+                break
+
+            except DeferredToolCallsException as deferred:
+                conversation_id = deferred.conversation_id
+
+                pending_inputs = []
+                for dc in deferred.deferred_calls:
+                    print(f"[APPROVAL REQUIRED] {dc.tool_name}({dc.arguments})")
+                    approved = input("Approve? (y/n): ").strip().lower() == "y"
+                    pending_inputs.append(dc.confirm() if approved else dc.reject("Denied by user"))
+
+
+asyncio.run(main())
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="connector-confirmation">Outils Connecteur</SectionTab>
+
+Les outils Connecteur fonctionnent de la même manière. `run_async` lève `DeferredToolCallsException` lorsque le serveur renvoie un `function.call` avec `confirmation_status: "pending"`.
+
+```python
+import asyncio
+import os
+
+from mistralai.client import Mistral
+from mistralai.extra.exceptions import DeferredToolCallsException
+from mistralai.extra.run.context import RunContext
+
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    conversation_id = None
+    pending_inputs = [{"role": "user", "content": "Summarize my latest emails from Gmail."}]
+
+    while True:
+        async with RunContext(model="mistral-large-latest") as run_ctx:
+            run_ctx.conversation_id = conversation_id
+
+            try:
+                result = await client.beta.conversations.run_async(
+                    run_ctx=run_ctx,
+                    inputs=pending_inputs,
+                    instructions="You are a helpful assistant. Use Gmail to access the user's emails.",
+                    tools=[
+                        {
+                            "type": "connector",
+                            "connector_id": "gmail",
+                            "tool_configuration": {
+                                "requires_confirmation": ["gmail_search"],
+                            },
+                        },
+                    ],
+                )
+                for entry in result.output_entries:
+                    if hasattr(entry, "content"):
+                        print(entry.content)
+                break
+
+            except DeferredToolCallsException as deferred:
+                conversation_id = deferred.conversation_id
+
+                pending_inputs = []
+                for dc in deferred.deferred_calls:
+                    print(f"[APPROVAL REQUIRED] {dc.tool_name}({dc.arguments})")
+                    approved = input("Approve? (y/n): ").strip().lower() == "y"
+                    pending_inputs.append(dc.confirm() if approved else dc.reject("Denied by user"))
+
+
+asyncio.run(main())
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="stateless">Sans état (sérialiser et reprendre)</SectionTab>
+
+Pour les API web où la validation se produit dans une requête séparée (par exemple, le frontend renvoie l'approbation), sérialisez l'état différé et reconstruisez-le ultérieurement.
+
+<Tabs groupId="stateless">
+  <TabItem value="start" label="Démarrer et sérialiser" default>
+
+```python
+import asyncio, json, os
+from mistralai.client import Mistral
+from mistralai.extra.run.context import RunContext
+from mistralai.extra.exceptions import DeferredToolCallsException
+
+
+def book_flight(destination: str, date: str) -> str:
+    """Book a flight to a destination."""
+    return f"Flight booked to {destination} on {date}"
+
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    async with RunContext(model="mistral-large-latest") as run_ctx:
+        run_ctx.register_func(book_flight, requires_confirmation=True)
+
+        try:
+            result = await client.beta.conversations.run_async(
+                run_ctx=run_ctx,
+                inputs=[{"role": "user", "content": "Book me a flight to Paris next Friday."}],
+                instructions="You are a travel assistant. Book the flight directly.",
+            )
+            print("No confirmation needed:", result.output_as_text)
+
+        except DeferredToolCallsException as deferred:
+            # Sérialiser et envoyer au frontend / stocker en base de données
+            print(json.dumps(deferred.to_dict()))
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="resume" label="Désérialiser et reprendre">
+
+```python
+import asyncio, json, os
+from mistralai.client import Mistral
+from mistralai.extra.run.context import RunContext
+from mistralai.extra.exceptions import DeferredToolCallsException
+
+
+def book_flight(destination: str, date: str) -> str:
+    """Book a flight to a destination."""
+    return f"Flight booked to {destination} on {date}"
+
+
+async def main():
+    state = json.loads(os.environ["DEFERRED_STATE"])
+    deferred = DeferredToolCallsException.from_dict(state)
+
+    # Construire les validations à partir de l'entrée utilisateur
+    pending_inputs = list(deferred.executed_results)
+    for dc in deferred.deferred_calls:
+        print(f"Tool: {dc.tool_name}, Args: {dc.arguments}")
+        pending_inputs.append(dc.confirm())  # or dc.reject("reason")
+
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+    async with RunContext(model="mistral-large-latest") as run_ctx:
+        run_ctx.conversation_id = deferred.conversation_id
+        run_ctx.register_func(book_flight, requires_confirmation=True)
+
+        result = await client.beta.conversations.run_async(
+            run_ctx=run_ctx,
+            inputs=pending_inputs,
+            instructions="You are a travel assistant. Book the flight directly.",
+        )
+        print("Final response:", result.output_as_text)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+`deferred.executed_results` contient les résultats des outils qui se sont exécutés avant le point de différé. Préfixez-les toujours lors de la reprise afin que le modèle dispose du contexte complet.
+:::

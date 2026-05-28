@@ -1,0 +1,573 @@
+---
+id: evaluation
+title: Évaluation
+sidebar_position: 1.7
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/evaluation/evaluation.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Ouvrir dans Colab"/>
+</a>
+
+De nombreuses entreprises sont confrontées au défi d'évaluer si un modèle de langage (LLM) convient à leurs cas d'usage spécifiques et de déterminer quels LLM offrent les meilleures performances. Il est essentiel d'évaluer si un modèle peut effectivement en remplacer un autre et de s'assurer que le LLM choisi répond aux exigences uniques de l'entreprise. Cependant, le processus d'évaluation des LLM peut être complexe et source de confusion. Ce guide propose une approche complète pour évaluer les LLM dans diverses applications. Nous commencerons par discuter de l'objectif de l'évaluation, de la création de jeux de données d'évaluation, puis nous approfondirons trois méthodes d'évaluation principales avec des exemples de code Python détaillés dans des notebooks.
+
+- Quelle tâche précise voulez-vous résoudre ?
+- Comment créer un jeu de données d'évaluation ?
+- Comment évaluer ?
+  - Évaluation basée sur des métriques
+  - Évaluation basée sur un LLM
+  - Évaluation basée sur l'humain
+
+## Quelle est votre tâche ?
+
+Avant de commencer le processus d'évaluation, il est important de réfléchir à la tâche exacte que vous souhaitez résoudre avec le LLM. Il est crucial que la tâche soit définie avec précision.
+
+Quelques mauvais exemples :
+
+- Être un assistant utile (Que signifie « utile » dans votre contexte ?)
+- Convertir le texte en code (Quel type de texte et de code ?)
+- Améliorer la qualité des documents (Qu'est-ce qu'une qualité élevée par rapport à une qualité faible ?)
+
+Quelques bons exemples :
+
+- Être un assistant pour les réclamations clients. Veillez à répondre aux réclamations de manière polie et utile et à donner des réponses concises ne dépassant pas 3 phrases.
+- Veillez à informer l'utilisateur si vous ne connaissez pas la réponse.
+- Convertir du pseudo-code en code Python
+- Reformuler les documents en corrigeant toutes les fautes d'orthographe et de grammaire et en donnant au texte un ton plus professionnel
+- Extraire toutes les informations pertinentes des dossiers médicaux (ce cas d'usage serait soumis à des réglementations applicables spécifiques)
+- Résumer différents types de documents, tels que des accords juridiques, des articles de presse ou des articles scientifiques
+
+Différents objectifs et cas d'usage peuvent nécessiter différentes stratégies d'évaluation. Certains cas d'usage peuvent privilégier la précision, tandis que d'autres peuvent mettre l'accent sur la concision et l'utilité. Il est donc crucial de savoir exactement quelle tâche vous souhaitez résoudre avant de commencer un processus d'évaluation.
+
+## Comment créer un jeu de données d'évaluation ?
+
+Il existe de nombreux benchmarks publics disponibles pour évaluer les modèles de langage (LLM) tels que MMLU, GSMK8 et d'autres. La première question à se poser est de savoir si ces benchmarks existants peuvent être utilisés pour vos cas d'usage spécifiques. Si c'est le cas, commencez par le jeu de données de benchmark existant.
+
+Cependant, nous observons souvent que les benchmarks existants sont de nature académique et peuvent ne pas couvrir les cas d'usage clients réels ou n'aborder qu'un périmètre limité. Il est donc souvent préférable de créer votre propre jeu de données d'évaluation.
+
+Une fois que vous avez établi vos objectifs et déterminé si les benchmarks existants conviennent, vous pouvez procéder à la création de jeux de données d'évaluation personnalisés adaptés à vos cas d'usage spécifiques.
+
+### Données étiquetées
+
+Dans de nombreux cas, il est important de créer des données étiquetées. Par exemple, si votre tâche consiste à utiliser un LLM pour extraire des informations de dossiers médicaux soumis à des réglementations spécifiques applicables, vous pouvez utiliser l'annotation humaine pour étiqueter les données et obtenir la réponse de référence incluant toutes les informations que vous souhaitez extraire, par exemple `{"age": 60, "gender": "male", "diagnosis": "diabetes", "weight": 210, "smoking": "yes"}`.
+
+De quelle quantité d'annotation de données avez-vous besoin ? Cela dépend de la tâche. Vous devez toujours privilégier la qualité à la quantité. Si vous disposez de données de haute qualité, 100 cas de test peuvent suffire pour fournir un signal significatif.
+
+De plus, il est recommandé d'avoir un benchmark discriminant, c'est-à-dire ni trop facile, ni trop difficile. Si chaque modèle testé atteint plus de 90 % de précision, les différences entre eux pourraient ne pas être significatives, ce qui indique la nécessité d'un meilleur benchmark. L'objectif est de créer des données pouvant différencier les modèles efficacement. Créer des données discriminantes peut être difficile, concentrez-vous donc sur votre tâche spécifique. Potentiellement, plusieurs modèles fonctionnent suffisamment bien pour vos besoins. Un bon jeu de données d'évaluation devrait conduire à des performances cohérentes avec les tailles de modèles, c'est-à-dire que les modèles plus grands fonctionnent aussi bien ou mieux que leurs homologues plus petits (sauf si les modèles plus petits ont été spécifiquement entraînés pour vos objectifs).
+
+Voici quelques exemples de différents prompts et réponses de référence pour diverses capacités :
+
+| Tâche                   | Prompt/Contexte                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Réponse de référence/Critères                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Extraction d'informations | Un patient de sexe masculin de 60 ans, M. Johnson, s'est présenté avec des symptômes de soif accrue, de mictions fréquentes, de fatigue et de perte de poids inexpliquée. Lors de l'évaluation, il a été diagnostiqué diabétique, confirmé par des taux de glycémie élevés. M. Johnson pèse 210 lbs. Il s'est vu prescrire de la Metformine à prendre deux fois par jour au cours des repas. Il a été noté lors de la consultation que le patient est fumeur actif.         | `{"age": 60, "gender": "male", "diagnosis": "diabetes", "weight": 210, "smoking": "yes"}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Génération de code Python | Écrivez une fonction python pour vérifier si le nombre donné est impair ou non en utilisant un opérateur bitwise.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `assert is_odd(5) == True`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Résumé          | Résumez ce qui suit en un court paragraphe pour des élèves de CE2 : "L'eau est un composé chimique composé de deux atomes d'hydrogène liés à un atome d'oxygène, avec la formule chimique H2O. Les atomes d'hydrogène sont liés à l'atome d'oxygène via des liaisons covalentes polaires, ce qui signifie que les électrons dans la liaison ne sont pas partagés également entre les atomes, ce qui entraîne une légère charge négative sur l'atome d'oxygène et une légère charge positive sur les atomes d'hydrogène. Cela donne aux molécules d'eau une structure courbée, ou en forme de V, et leur permet de former des liaisons hydrogène avec d'autres molécules d'eau, qui sont responsables de nombreuses propriétés uniques de l'eau, comme son point d'ébullition élevé et sa tension superficielle." | L'eau est une substance spéciale composée de deux minuscules parties appelées atomes, plus précisément, deux atomes d'hydrogène et un atome d'oxygène. Ces atomes sont collés ensemble d'une manière qui crée une forme courbée, ce qui donne à l'eau des propriétés incroyables. Par exemple, l'eau peut s'accrocher à elle-même, ce qui l'aide à rester ensemble sous forme liquide et ne pas simplement se transformer en gaz. Cela donne aussi à l'eau un point d'ébullition élevé, ce qui signifie qu'elle a besoin de beaucoup de chaleur pour se transformer en gaz. Les propriétés uniques de l'eau en font une partie importante de nos vies et de notre planète.                                                                                                             |
+| Multilingue           | Traduisez ce devoir universitaire en espagnol avancé pour un cours d'écriture avancé : "Écrivez un essai personnel de 500 mots sur un moment crucial dans votre famille, décrivant l'événement, son impact sur les relations familiales et les émotions et pensées qui l'ont entouré. Votre essai doit avoir une structure claire, avec une introduction, un corps et une conclusion, et utiliser un langage expressif et précis. Il sera évalué sur la base de la clarté, de la cohérence, de la profondeur et de l'originalité."                                                                                                                                                                                                  | Escriba un ensayo personal de 500 palabras sobre un momento crucial en su familia, describiendo el evento, su impacto en las relaciones familiares, y las emociones y pensamientos que lo rodearon. Su ensayo debe tener una estructura clara, con una introducción, un cuerpo y una conclusión, y utilizar un lenguaje expresivo y preciso. Será evaluado sobre la base de claridad, coherencia, profundidad y originalidad.                                                                                                                                                                                                                                             |
+| Chat                   | Vous êtes un tuteur de 5ème pour un cours de latin, votre travail est d'aider les élèves à mémoriser leur liste de mots hebdomadaire pour le test. Vous ne donnez pas les réponses à vos élèves mais les aidez plutôt à trouver la réponse par eux-mêmes. Commencez votre session de tutorat en demandant à votre élève quelle liste de mots il doit mémoriser. N'oubliez pas d'être encourageant et de demander aux élèves de "montrer leur travail", c'est-à-dire d'expliquer comment ils sont arrivés à cette réponse.                                                                                                                                                                                                | Bonjour ! J'espère que vous passez une excellente journée. En tant que votre tuteur de latin, je suis là pour vous aider avec votre test de liste de mots hebdomadaire. Alors, commençons ! Pourriez-vous me dire quelle liste de mots vous devez mémoriser cette semaine ? N'oubliez pas, l'objectif n'est pas seulement de se souvenir des mots, mais aussi de comprendre leur signification et comment les utiliser en contexte. <br/> Une fois que vous aurez choisi un mot, j'aimerais que vous essayiez de vous rappeler sa signification ou de l'utiliser dans une phrase. Ensuite, j'aimerais que vous "montriez votre travail" en expliquant comment vous êtes arrivé à cette réponse. Cela aidera à renforcer votre compréhension et facilitera la mémorisation. Cela vous convient ? Plongeons-nous dans le vif du sujet ! |
+
+### Données non étiquetées :
+
+Dans certains cas, vous ne pourrez peut-être pas créer facilement des données étiquetées. Vous pouvez utiliser un LLM pour générer les données nécessaires. Par exemple, vous pouvez demander à un LLM de générer des questions et des réponses basées sur un texte donné. Voici deux modèles de prompt pour générer des questions et des réponses :
+
+- Modèle de prompt pour générer des questions basées sur le contexte :
+
+```
+Context information is below.
+---------------------
+{context_str}
+---------------------
+Given the context information and not prior knowledge. Generate {num_questions_per_chunk} questions based on the context. The questions should be diverse in nature across the document. Restrict the questions to the context information provided.
+```
+
+- Modèle de prompt pour générer des réponses basées sur le contexte et la question générée par le modèle de prompt précédent :
+
+```
+Context information is below
+---------------------
+{context_str}
+---------------------
+Given the context information and not prior knowledge,
+answer the query.
+Query: {generated_query_str}
+Answer:
+```
+
+Cependant, les données générées par LLM nécessitent généralement un affinage et un filtrage supplémentaires. Il est préférable d'avoir des questions issues de sources réelles, en particulier d'experts. Néanmoins, les données générées par LLM peuvent rester utiles lorsque les données réelles sont difficiles à obtenir ou rares.
+
+## Comment évaluer
+
+## Évaluation basée sur des métriques
+
+L'évaluation basée sur des métriques est l'approche standard dans de nombreuses évaluations de benchmark publiques. Il existe plusieurs métriques qui peuvent être utilisées pour évaluer et comparer les réponses générées par le modèle avec les réponses de référence. Les plus populaires sont le taux de correspondance exacte, le rappel, la précision et le score F1.
+
+- **Taux de correspondance exacte** : cette métrique mesure la proportion de réponses générées par le modèle qui correspondent parfaitement aux réponses de référence. Elle offre une évaluation stricte de la capacité du modèle à générer des réponses précises.
+- **Rappel** : le rappel calcule la fraction d'informations pertinentes des réponses de référence qui est récupérée avec succès par les réponses générées par le modèle. Un rappel élevé indique que le modèle peut capturer davantage d'informations pertinentes.
+- **Précision** : la précision évalue la fraction d'informations pertinentes dans les réponses générées par le modèle. Une précision élevée signifie que le modèle génère des réponses plus précises et pertinentes.
+- **Score F1** : le score F1 est la moyenne harmonique du rappel et de la précision, fournissant une évaluation équilibrée de la performance du modèle en termes de ces deux métriques.
+
+Outre ces métriques populaires, il existe d'autres métriques d'évaluation NLP telles que BLEU (Bilingual Evaluation Understudy) et ROUGE (Recall-Oriented Understudy for Gisting Evaluation). BLEU est principalement utilisé pour les tâches de traduction automatique, tandis que ROUGE est couramment appliqué pour la synthèse de texte. Cependant, en raison de préoccupations concernant leur fiabilité et le potentiel de résultats trompeurs, nous ne les recommandons pas.
+
+<details>
+<summary><b> Exemple 1 : évaluer l'extraction d'informations avec le taux de correspondance exacte</b></summary>
+
+### Exemple 1 : évaluer l'extraction d'informations avec le taux de correspondance exacte
+
+#### Données d'évaluation
+
+Ce premier exemple implique l'extraction d'informations sur les patients à partir de notes médicales. Pour effectuer l'évaluation, les notes médicales et la réponse correcte/attendue (appelée « réponse de référence ») sont nécessaires dans les données d'évaluation. Voici deux exemples de cas de test :
+
+```py
+prompts = {
+    "Johnson": {
+        "medical_notes": "A 60-year-old male patient, Mr. Johnson, presented with symptoms of increased thirst, frequent urination, fatigue, and unexplained weight loss. Upon evaluation, he was diagnosed with diabetes, confirmed by elevated blood sugar levels. Mr. Johnson's weight is 210 lbs. He has been prescribed Metformin to be taken twice daily with meals. It was noted during the consultation that the patient is a current smoker. ",
+        "golden_answer": {
+            "age": 60,
+            "gender": "male",
+            "diagnosis": "diabetes",
+            "weight": 210,
+            "smoking": "yes",
+        },
+    },
+    "Smith": {
+        "medical_notes": "Mr. Smith, a 55-year-old male patient, presented with severe joint pain and stiffness in his knees and hands, along with swelling and limited range of motion. After a thorough examination and diagnostic tests, he was diagnosed with arthritis. It is important for Mr. Smith to maintain a healthy weight (currently at 150 lbs) and quit smoking, as these factors can exacerbate symptoms of arthritis and contribute to joint damage.",
+        "golden_answer": {
+            "age": 55,
+            "gender": "male",
+            "diagnosis": "arthritis",
+            "weight": 150,
+            "smoking": "yes",
+        },
+    },
+}
+```
+
+#### Comment évaluer ?
+
+- Étape 1 : Définir le modèle de prompt
+
+Nous avons conçu un prompt qui intègre les notes médicales comme contexte. De plus, nous attendons du modèle qu'il fournisse une sortie au format JSON suivant un schéma JSON prédéfini, garantissant que le modèle produise la sortie souhaitée avec précision. Il convient de noter que lors de l'appel de nos modèles, nous avons spécifié le format de réponse comme `{"type": "json_object"}` pour garantir une sortie JSON cohérente.
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+def run_mistral(user_message, model="mistral-large-latest"):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role": "user", "content": user_message}]
+    chat_response = client.chat.complete(
+        model=model,
+        messages=messages,
+        response_format={"type": "json_object"},
+    )
+    return chat_response.choices[0].message.content
+
+
+# define prompt template
+prompt_template = """
+Extract information from the following medical notes:
+{medical_notes}
+
+Return json format with the following JSON schema:
+
+{{
+        "age": {{
+            "type": "integer"
+        }},
+        "gender": {{
+            "type": "string",
+            "enum": ["male", "female", "other"]
+        }},
+        "diagnosis": {{
+            "type": "string",
+            "enum": ["migraine", "diabetes", "arthritis", "acne", "common cold"]
+        }},
+        "weight": {{
+            "type": "integer"
+        }},
+        "smoking": {{
+            "type": "string",
+            "enum": ["yes", "no"]
+        }},
+
+}}
+"""
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+def run_mistral(user_message, model="mistral-large-latest"):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role": "user", "content": user_message}]
+    chat_response = client.chat.complete(
+        model=model,
+        messages=messages,
+        response_format={"type": "json_object"},
+    )
+    return chat_response.choices[0].message.content
+
+
+# define prompt template
+prompt_template = """
+Extract information from the following medical notes:
+{medical_notes}
+
+Return json format with the following JSON schema:
+
+{{
+        "age": {{
+            "type": "integer"
+        }},
+        "gender": {{
+            "type": "string",
+            "enum": ["male", "female", "other"]
+        }},
+        "diagnosis": {{
+            "type": "string",
+            "enum": ["migraine", "diabetes", "arthritis", "acne", "common cold"]
+        }},
+        "weight": {{
+            "type": "integer"
+        }},
+        "smoking": {{
+            "type": "string",
+            "enum": ["yes", "no"]
+        }},
+
+}}
+"""
+```
+
+    </TabItem>
+</Tabs>
+
+- Étape 2 : Définir comment nous comparons la réponse du modèle avec la réponse de référence
+
+À l'étape 2, nous avons écrit une fonction pour comparer deux objets JSON, l'un étant la réponse du modèle et l'autre la réponse de référence. Dans cet exemple, nous calculons le pourcentage de valeurs correspondantes parmi les clés JSON pour évaluer la précision de la sortie JSON.
+
+```py
+import json
+
+def compare_json_objects(obj1, obj2):
+    total_fields = 0
+    identical_fields = 0
+    common_keys = set(obj1.keys()) & set(obj2.keys())
+    for key in common_keys:
+        identical_fields += obj1[key] == obj2[key]
+    percentage_identical = (identical_fields / max(len(obj1.keys()), 1)) * 100
+    return percentage_identical
+```
+
+- Étape 3 : Calculer le taux de correspondance exacte sur les cas de test
+  Maintenant, nous sommes en mesure de passer en revue chaque cas de test individuellement. Pour chaque cas, nous pouvons créer un message utilisateur basé sur le modèle de prompt que nous avons déjà défini. Nous récupérons ensuite les réponses du LLM et les comparons aux réponses correctes. Après avoir calculé le taux de correspondance exacte pour chaque cas de test, nous pouvons calculer le taux de correspondance exacte moyen global sur tous les cas.
+
+```py
+accuracy_rates = []
+
+# for each test case
+for name in prompts:
+
+    # define user message
+    user_message = prompt_template.format(medical_notes=prompts[name]["medical_notes"])
+
+    # run LLM
+    response = json.loads(run_mistral(user_message))
+
+    # calculate accuracy rate for this test case
+    accuracy_rates.append(
+        compare_json_objects(response, prompts[name]["golden_answer"])
+    )
+
+# calculate accuracy rate across test cases
+sum(accuracy_rates) / len(accuracy_rates)
+```
+
+</details>
+
+<details>
+<summary><b> Exemple 2 : évaluer la génération de code</b></summary>
+
+### Exemple 2 : évaluer la génération de code
+
+#### Données d'évaluation
+
+Notre deuxième exemple implique la génération de code Python et l'évaluation du code généré. Pour effectuer l'évaluation, les instructions Python et les tests unitaires correspondants sont nécessaires pour les données d'évaluation. Voici deux exemples de tels ensembles de données d'évaluation :
+
+```py
+python_prompts = {
+    "sort_string": {
+        "prompt": "Write a python function to sort the given string.",
+        "test": "assert sort_string(\"data\") == \"aadt\""
+    },
+    "is_odd": {
+        "prompt": "Write a python function to check whether the given number is odd or not using bitwise operator.",
+        "test": "assert is_odd(5) == True"
+    }
+}
+```
+
+#### Comment évaluer ?
+
+- Étape 1 : Définir le modèle de prompt
+
+Nous avons conçu un prompt qui génère des extraits de code Python à partir de descriptions de tâches spécifiques.
+
+````py
+def run_mistral(user_message, model="mistral-large-latest"):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role":"user", "content": user_message}]
+    chat_response = client.chat.complete(
+        model=model,
+        messages=messages,
+        response_format={"type": "json_object"},
+    )
+    return chat_response.choices[0].message.content
+
+
+# define prompt template
+prompt_template = """Write a Python function to execute the following task: {task}
+Return only valid Python code. Do not give any explanation.
+Never start with ```python.
+Always start with def {name}(.
+"""
+````
+
+- Étape 2 : Décider comment évaluer la génération de code
+
+Ensuite, nous pouvons utiliser `code_eval.compute` pour évaluer si le code généré réussit les tests unitaires prédéfinis. `predictions` est une liste de sorties de code générées par le LLM et `references` est une liste de tests unitaires pour chaque prédiction.
+
+:::warning[ ]
+Ce code est conçu pour exécuter du code généré par un modèle, qui peut ne pas être totalement fiable. Bien qu'il soit peu probable que le code généré par le modèle cause intentionnellement du tort, il est fortement recommandé d'exécuter cette suite d'évaluation dans un environnement sandbox, en l'isolant de votre système principal et de votre réseau.
+:::
+
+```py
+from evaluate import load
+
+os.environ["HF_ALLOW_CODE_EVAL"] = "1"
+code_eval = load("code_eval")
+
+# example using code_eval:
+pass_at_1, results = code_eval.compute(
+    references=['assert is_odd(5) == True'],
+    predictions=[['def is_odd(n):\n    return n & 1 != 0']],
+    k=[1])
+
+# example output:
+# ({'pass@1': 1.0},
+#  defaultdict(list,
+#              {0: [(0,
+#                 {'task_id': 0,
+#                  'passed': True,
+#                  'result': 'passed',
+#                  'completion_id': 0})]}))
+```
+
+- Étape 3 : Calculer le taux de précision sur les cas de test
+
+Maintenant, nous pouvons parcourir tous les cas de test, créer un message utilisateur basé sur le modèle de prompt, utiliser le LLM pour produire du code Python, et évaluer le code généré pour chaque cas de test.
+
+```py
+refs = []
+preds = []
+
+for name in python_prompts:
+
+    # define user message
+    user_message = prompt_template.format(
+        task=python_prompts[name]["prompt"], name=name
+    )
+
+    # run LLM
+    response = run_mistral(user_message)
+
+    refs.append(python_prompts[name]["test"])
+    preds.append([response])
+
+# evaluate code generation
+pass_at_1, results = code_eval.compute(references=refs, predictions=preds)
+
+pass_at_1
+
+# example output
+# {'pass@1': 1.0}
+```
+
+</details>
+
+## Évaluation basée sur un LLM
+
+Utiliser un Large Language Model (LLM) pour évaluer ou juger la sortie d'un autre LLM est une pratique courante, en particulier lorsque les données labellisées et les réponses de référence ne sont pas disponibles ou insuffisantes. Le [papier MT Bench](https://arxiv.org/pdf/2306.05685) a exploré l'efficacité du LLM en tant que juge et a révélé que les LLM puissants peuvent obtenir des résultats similaires à ceux des humains. Les LLM peuvent traiter et évaluer de grandes quantités de données en un temps relativement court, ce qui les rend très scalables et efficaces comparés à l'évaluation humaine, qui nécessite souvent beaucoup de temps et de ressources.
+
+Il existe plusieurs approches pour utiliser les LLM comme juges, notamment la notation à point unique, la notation basée sur référence et la notation par paires.
+
+- **Notation à point unique** : le LLM attribue un score unique à une sortie générée en fonction de sa qualité ou de sa précision. Ce score est généralement attribué selon des instructions de notation spécifiques. La notation à point unique est une approche simple et efficace, mais elle peut ne pas toujours capturer les nuances de sorties complexes variées.
+- **Notation basée sur référence** : le LLM compare une sortie générée à une ou plusieurs sorties de référence et attribue un score en fonction de leur similarité. Cette approche est souvent utilisée dans les tâches de traduction automatique, où il peut exister plusieurs traductions valides pour une entrée donnée. Cependant, la notation basée sur référence nécessite la disponibilité d'une réponse de référence, qui peut ne pas toujours être disponible.
+- **Notation par paires** : le LLM compare deux sorties générées et attribue un score en fonction de leur qualité ou précision relative. Cette approche est souvent utilisée dans des tâches telles que la génération de dialogue, où il peut exister plusieurs réponses valides à une requête donnée. En comparant des paires de réponses, le LLM peut déterminer laquelle est la plus pertinente ou cohérente, et attribuer un score en conséquence.
+
+Il est également essentiel de reconnaître les limites et défis potentiels. Par exemple, les LLM peuvent présenter des biais inhérents. Les LLM développés par une entreprise ont tendance à favoriser les réponses générées par les modèles de cette même entreprise. Il est difficile d'assurer une évaluation équitable et précise. D'après notre expérience, Mistral Large présente relativement peu de favoritisme.
+
+<details>
+<summary><b> Exemple 3 : évaluer la génération de résumés avec un LLM</b></summary>
+
+### Exemple 3 : évaluer la génération de résumés avec un LLM
+
+#### Données d'évaluation
+
+Dans cet exemple, nous générons des résumés d'articles de presse et utilisons la notation à point unique par LLM pour évaluer la qualité du résumé. Pour mener l'évaluation, utilisons un exemple d'article de presse que nous prévoyons de résumer.
+
+```py
+news = (
+    "BRUSSELS (Reuters) - Theresa May looked despondent , with deep rings under her eyes, EU chief executive Jean-Claude Juncker told aides after dining with the British prime minister last week, a German newspaper said on Sunday. The report by a Frankfurter Allgemeine Zeitung correspondent whose leaked account of a Juncker-May dinner in April caused upset in London, said Juncker thought her marked by battles over Brexit with her own Conservative ministers as she asked for EU help to create more room for maneuver at home. No immediate comment was available from Juncker s office, which has a policy of not commenting on reports of meetings. The FAZ said May, who flew in for a hastily announced dinner in Brussels with the European Commission president last Monday ahead of an EU summit, seemed to Juncker anxious, despondent and disheartened , a woman who trusts hardly anyone but is also not ready for a clear-out to free herself . As she later did over dinner on Thursday with fellow EU leaders, May asked for help to overcome British divisions. She indicated that back home friend and foe are at her back plotting to bring her down, the paper said. May said she had no room left to maneuver. The Europeans have to create it for her. May s face and appearance spoke volumes, Juncker later told his colleagues, the FAZ added. She has deep rings under her eyes. She looks like someone who can t sleep a wink. She smiles for the cameras, it went on, but it looks forced , unlike in the past, when she could shake with laughter. Now she needs all her strength not to lose her poise. As with the April dinner at 10 Downing Street, when the FAZ reported that Juncker thought May in another galaxy in terms of Brexit expectations, both sides issued statements after last week s meeting saying talks were constructive and friendly . They said they agreed negotiations should be accelerated . May dismissed the dinner leak six months ago as Brussels gossip , though officials on both sides said the report in the FAZ did little to foster an atmosphere of trust which they agree will be important to reach a deal. German Chancellor Angela Merkel was also reported to have been irritated by that leak. Although the summit on Thursday and Friday rejected May s call for an immediate start to talks on the future relationship, leaders made a gesture to speed up the process and voiced hopes of opening a new phase in December. Some said they understood May s difficulties in forging consensus in London.",
+)
+```
+
+#### Comment évaluer ?
+
+- Étape 1 : Générer un résumé de l'actualité fournie
+
+Commençons par utiliser un modèle plus petit, `open-mistral-7b`, pour générer un résumé de l'article d'actualité fourni. Si vous avez d'autres articles d'actualité à résumer, veuillez générer un résumé pour chacun. Par souci de simplicité dans cet exemple, nous ne montrerons qu'un seul échantillon d'actualité.
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+def run_mistral(user_message, model="open-mistral-7b", is_json=False):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role":"user", "content":user_message}]
+
+    if is_json:
+        chat_response = client.chat.complete(
+            model=model, messages=messages, response_format={"type": "json_object"}
+        )
+    else:
+        chat_response = client.chat.complete(model=model, messages=messages)
+
+    return chat_response.choices[0].message.content
+
+summary_prompt = f"""
+Summarize the following news. Write the summary based on the following criteria: relevancy and readability. Consider the sources cited, the quality of evidence provided, and any potential biases or misinformation.
+
+## News:
+{news}
+"""
+
+summary = run_mistral(summary_prompt)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+def run_mistral(user_message, model="open-mistral-7b", is_json=False):
+    client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    messages = [{"role":"user", "content":user_message}]
+
+    if is_json:
+        chat_response = client.chat.complete(
+            model=model, messages=messages, response_format={"type": "json_object"}
+        )
+    else:
+        chat_response = client.chat.complete(model=model, messages=messages)
+
+    return chat_response.choices[0].message.content
+
+summary_prompt = f"""
+Summarize the following news. Write the summary based on the following criteria: relevancy and readability. Consider the sources cited, the quality of evidence provided, and any potential biases or misinformation.
+
+## News:
+{news}
+"""
+
+summary = run_mistral(summary_prompt)
+```
+
+    </TabItem>
+</Tabs>
+
+- Étape 2 : Définir les métriques et les grilles d'évaluation
+
+Pour évaluer avec précision la qualité des résumés générés, nous devons établir des métriques et des grilles d'évaluation claires et bien définies. Ces directives jouent un rôle essentiel en guidant le LLM dans son processus d'évaluation. N'hésitez pas à intégrer différentes métriques et à créer des grilles adaptées à vos besoins spécifiques.
+
+```py
+eval_rubrics = [
+    {
+        "metric": "relevancy",
+        "rubrics": """
+        Score 1: The summary is not relevant to the original text.
+        Score 2: The summary is somewhat relevant to the original text, but has significant flaws.
+        Score 3: The summary is mostly relevant to the original text, and effectively conveys its main ideas and arguments.
+        Score 4: The summary is highly relevant to the original text, and provides additional value or insight.
+        """
+    },
+    {
+        "metric": "readability",
+        "rubrics": """
+        Score 1: The summary is difficult to read and understand.
+        Score 2: The summary is somewhat readable, but has significant flaws.
+        Score 3: The summary is mostly readable and easy to understand.
+        Score 4: The summary is highly readable and engaging.
+        """
+    },
+
+]
+```
+
+- Étape 3 : Utiliser un LLM plus puissant (par exemple, Mistral Large) comme juge
+
+Il est préférable d'utiliser un LLM plus puissant tel que Mistral Large comme juge pour garantir une évaluation plus précise et complète des résumés générés. Dans le prompt, nous fournissons les métriques d'évaluation spécifiques, les grilles associées, l'article d'actualité original et le résumé généré. Ces informations permettent au LLM d'évaluer le résumé de manière systématique selon les critères prédéfinis. Dans cet exemple, nous évaluons chaque métrique séparément pour mieux comprendre les performances du modèle de résumé dans différents aspects. Vous pouvez toutefois également choisir de combiner toutes les métriques pour une évaluation plus générale.
+
+```py
+scoring_prompt = """
+Please read the provided news article and its corresponding summary. Based on the specified evaluation metric and rubrics, assign an integer score between 1 and 4 to the summary. Then, return a JSON object with the metric as the key and the evaluation score as the value.
+
+# Evaluation metric:
+{metric}
+
+# Evaluation rubrics:
+{rubrics}
+
+# News article
+{news}
+
+# Summary
+{summary}
+
+"""
+for i in eval_rubrics:
+    eval_output = run_mistral(
+        scoring_prompt.format(
+            news=news, summary=summary, metric=i["metric"], rubrics=i["rubrics"]
+        ),
+        model="mistral-large-latest",
+        is_json=True,
+    )
+    print(eval_output)
+
+# example output:
+# {"relevancy": 2}
+# {"readability": 3}
+```
+
+</details>
+
+## Évaluation humaine
+
+L'évaluation humaine offre probablement les résultats les plus précis et fiables. Cependant, il est difficile et coûteux de l'intégrer à grande échelle. Malgré ces contraintes, inclure une évaluation humaine au développement d'un jeu de données reste très précieux grâce à son efficacité.
+
+Une méthode courante d'évaluation humaine consiste à recourir au crowdsourcing. Par exemple, le célèbre [classement LMSYS](https://chat.lmsys.org/) utilise le crowdsourcing pour faire évaluer deux modèles anonymes en posant des questions à chacun, puis recueille les votes afin de déterminer le meilleur. LMSYS a ainsi collecté plus de 300 000 votes humains pour établir un classement LLM basé sur l'Elo. De nombreuses entreprises utilisent aussi l'évaluation humaine pour leurs propres benchmarks, en s'appuyant souvent sur des plateformes de crowdsourcing pour faciliter le processus.
+
+Si vous implémentez le crowdsourcing pour l'évaluation humaine, vous pouvez opter pour une méthode simple : demander simplement aux votants de choisir le meilleur modèle. Si votre cas d'usage nécessite des critères plus précis, vous pouvez aussi fournir des consignes aux votants, en ciblant des aspects comme l'empathie, la fluidité ou d'autres critères pertinents.

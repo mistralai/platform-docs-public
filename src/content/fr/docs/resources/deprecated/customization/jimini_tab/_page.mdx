@@ -1,0 +1,171 @@
+import { SectionTab } from '@/components/layout/section-tab';
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/H2jAsddS4LA?si=x_iRPIF5FON_Q-WR" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+*Vidéo 1 : Intégration des modèles Mistral affinés dans notre produit [Jimini Analyzer](https://jimini.ai/).*
+
+La vidéo commence par présenter l'intégration du modèle affiné sur [BSARD](https://arxiv.org/pdf/2108.11792) dans notre outil d'analyse de documents juridiques. Contrairement au modèle de base, la version affinée **liste avec précision les articles de loi pertinents** au format Markdown, offrant une vue d'ensemble claire et concise de la législation applicable.
+
+Le reste de la vidéo met en avant l'intégration du template affiné sur [Multi EURLEX](https://arxiv.org/pdf/2109.00904) dans notre outil de traduction juridique, ce qui permet des traductions plus précises de la terminologie juridique complexe, comme « _Gerichtsgesetzbuch_ » pour « _Code judiciaire_ ». Cette amélioration garantit que nos traductions **reflètent avec exactitude le sens juridique voulu, apportant ainsi une plus grande valeur à nos clients**.
+
+<SectionTab variant="secondary" sectionId="description">Description</SectionTab>
+
+Dans le cadre du développement d'un copilote juridique, l'affinage d'un modèle présente plusieurs intérêts pour nous :
+
+- **_Il peut apprendre au modèle à générer des réponses dans un format et un ton spécifiques._**
+
+Pour garantir que notre copilote juridique produise des réponses fiables, bien sourcées et formatées de manière professionnelle, nous avons affiné le modèle `mistral-small`, en nous concentrant sur **l'amélioration de la structure des réponses et du sourçage**.
+
+Pour ce premier cas d'usage, démontré sur le jeu de données [_BSARD_](https://arxiv.org/pdf/2108.11792), nous utilisons la **distillation** depuis le modèle plus performant `mistral-large`. Cette approche **réduit les coûts**, économise des tokens (plus besoin d'un prompt complexe) et **diminue la latence** en utilisant un modèle compact, efficace et affiné.
+
+- **_Il peut également servir à spécialiser le modèle pour un domaine ou un sujet spécifique afin d'améliorer ses performances sur des tâches spécifiques au domaine, comme la traduction juridique._**
+
+Nos **racines européennes** et notre engagement envers nos clients européens nous poussent à exceller dans la traduction juridique français-allemand. En exploitant les solides capacités multilingues de `mistral-small` et en l'affinant spécifiquement pour les termes juridiques sur le jeu de données [Multi EURLEX](https://arxiv.org/pdf/2109.00904), nous avons considérablement amélioré la traduction de la terminologie juridique.
+
+<SectionTab variant="secondary" sectionId="jimini-company-description">Présentation de l'entreprise</SectionTab>
+
+Chez [Jimini AI](https://jimini.ai/), nous sommes dédiés à la création d'un **copilote juridique de pointe**, conçu pour assister les professionnels du droit dans l'automatisation de leurs tâches les plus fastidieuses et chronophages, comme la recherche juridique ou la traduction de documents juridiques. L'accès à l'API d'affinage de [Mistral AI](https://mistral.ai/) nous a offert une opportunité idéale pour nous concentrer sur deux de nos cas d'usage clés.
+
+<SectionTab variant="secondary" sectionId="bsard-data">BSARD - Données</SectionTab>
+
+Nous avons utilisé le [Belgian Statutory Article Retrieval Dataset (BSARD)](https://aclanthology.org/2022.acl-long.468/), un jeu de données français complet pour l'étude de la recherche d'information juridique, afin d'affiner `mistral-small-latest` et améliorer la précision et la qualité juridiques de ses réponses. Il comprend plus de 22 600 articles législatifs issus du droit belge ainsi qu'environ 1 100 questions juridiques.
+
+Nous avons créé un jeu de données synthétique de _Questions-Réponses_ (QA) en utilisant le modèle `mistral-large-latest` pour générer des réponses de référence basées sur des directives expertement élaborées, développées méticuleusement **en collaboration avec des professionnels du droit**. Nous avons ensuite divisé le jeu de données en un ensemble d'_entraînement_ (80 %) et un ensemble d'_évaluation_ (20 %).
+
+Pour déterminer la durée d'entraînement optimale, nous avons suivi la règle empirique selon laquelle chaque token doit être vu trois fois (dans notre cas, 220 étapes d'entraînement, soit environ 30 minutes).
+
+Pour régler le `learning_rate`, nous avons choisi de mesurer des capacités tierces et plus génériques que les critères juridiques afin de garantir que le modèle ne régresse pas en raison d'un oubli catastrophique. À cette fin, nous avons évalué les performances du modèle en utilisant les métriques de [fidélité](https://docs.ragas.io/en/stable/concepts/metrics/faithfulness.html) et de [pertinence](https://docs.ragas.io/en/stable/references/metrics.html#ragas.metrics.AnswerRelevancy) de [RAGAS](https://arxiv.org/abs/2309.15217) sur un jeu de données propriétaire _généraliste_.
+
+![Évaluation RAGAS sur BSARD](/img/stories/results_bsard.png)
+_Figure 1 : Évaluation basée sur RAGAS de la fidélité et de la pertinence des réponses des modèles `mistral-small-latest` et `mistral-small-fine-tuned` pour différents taux d'apprentissage et différents nombres d'étapes._
+
+Nous avons donc sélectionné un `learning_rate` de `1e-6`, pour lequel nous observons une légère amélioration par rapport à `mistral-small-latest`, ainsi qu'un équilibre entre les deux critères. Il ne semble donc pas y avoir de régression des capacités générales du modèle.
+
+En complément de cette première vérification, nous avons utilisé l'intégration très utile de l'endpoint d'affinage de Mistral AI avec [Weights & Biases](https://wandb.ai/site) pour suivre nos entraînements, et nous avons notamment mesuré l'évolution de la `perplexity` du modèle, qui semble converger efficacement sous ce régime d'entraînement (où chaque token est vu 3 fois).
+
+![Courbes d'entraînement BSARD](/img/stories/bsard_curves.png)
+*Figure 2 : Perplexité et perte d'évaluation pendant l'affinage sur BSARD suivies dans *Weights & Biases*.*
+
+<SectionTab variant="secondary" sectionId="bsard-eval">BSARD - Évaluation</SectionTab>
+
+Pour évaluer l'efficacité de notre processus d'affinage, nous avons employé la méthodologie _LLM-as-a-Judge_. Plus précisément, nous nous sommes inspirés de l'approche d'échelle additive développée par [Yuan et al](https://arxiv.org/abs/2401.10020). et récemment utilisée pour la [constitution du jeu de données FineWeb-Edu](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1). Nous avons ensuite adapté la méthodologie en la transformant en un système de score de préférence, noté dans la suite `legal_quality` :
+
+```text
+Étant donné les deux réponses suivantes, comparez-les selon les critères suivants :
+
+- Citation explicite et précise du ou des article(s) de loi pertinent(s), comme « d'après l'article 123 du Code Civil ». Les références implicites (comme « d'après l'extrait fourni ») ou générales (comme « d'après le Code Civil ») ne sont pas acceptées.
+
+- Argumentation claire et logique de chaque élément énoncé, incluant l'identifiant précis de l'article de loi correspondant.
+
+- Réponse bien structurée avec formatage Markdown, rédaction claire et sans ambiguïtés. Les références aux sources sont obligatoires.
+
+---
+
+Pour chaque critère, attribuez un point à la réponse qui satisfait le mieux le critère. Si les deux réponses sont égales, attribuez 1 point aux deux. Soyez strict ; si aucune réponse ne remplit parfaitement un critère, n'attribuez pas de point. Justifiez brièvement votre score total en 100 mots maximum. Concluez avec le score de chaque réponse sous forme d'entier entre 0 et 3.
+
+Retournez les informations au format JSON selon ce schéma :
+
+{
+    "justification": "string",
+    "score_answer_1": int,
+    "score_answer_2": int
+}
+
+Question :
+{question}
+
+
+Réponse 1 :
+{answer_1}
+
+Réponse 2 :
+{answer_2}
+
+JSON :
+```
+
+Ces critères ont été établis et affinés méticuleusement sur la base des retours de plusieurs experts juridiques.
+
+Nous avons mené une évaluation rigoureuse de plusieurs candidats `Judge LLMs`, notamment `gpt-3.5-turbo`, `mixtral` et `mistral-large`. Les résultats de notre analyse ont révélé que `mistral-large` démontrait la corrélation la plus élevée avec les préférences des experts, et a donc été sélectionné comme `Judge LLM`.
+
+<SectionTab variant="secondary" sectionId="bsard-results">BSARD - Résultats</SectionTab>
+
+![Évaluation BSARD sur la qualité juridique](/img/stories/legal_quality.png)
+_Figure 3 : Évaluation LLM-as-a-judge de `mistral-small-latest` et `mistral-small-finetuned` basée sur la qualité juridique de leurs réponses._
+
+Nous observons une amélioration significative, avec une augmentation du score de 1,42 à 1,73, soit une **amélioration de 20 % !**
+
+Cette progression est également perceptible dans les applications pratiques. L'exemple démontré dans la vidéo témoigne de cette amélioration :
+_(Pour les lecteurs non francophones, nous avons traduit les réponses françaises originales en anglais)_
+
+**Question :**
+
+```text
+Quels sont les risques si j'arrête de payer mon crédit à la consommation ?
+```
+
+**Réponse de `mistral-small-finetuned` :**
+
+```text
+Si vous arrêtez de payer votre crédit à la consommation, vous vous exposez à plusieurs conséquences :
+
+1. Délai de paiement et suspension de procédure : Le juge peut vous accorder des délais de paiement modérés et suspendre les poursuites (Art. 1244, Code Civil).
+
+2. Facilités de paiement : Vous pouvez demander des facilités de paiement au juge de paix, mais seulement après que le créancier ait refusé de vous accorder ces facilités. Cette procédure est régie par les articles 1337bis à 1337octies du Code Judiciaire.
+
+3. Déchéance du terme ou condition résolutoire : Si vous ne respectez pas les modalités de paiement et que le contrat le prévoit, le créancier peut prononcer la déchéance du terme ou la condition résolutoire. Cependant, les conditions de déchéance du terme ou de condition résolutoire sont strictement réglementées par l'article VII.105 du Code de Droit Économique. Par exemple, une clause de déchéance du terme ou de condition résolutoire ne peut être appliquée que si vous êtes en défaut de paiement d'au moins deux montants d'échéance ou d'une somme équivalente à 20 % du montant total dû.
+
+4. Pénalités et intérêts de retard : En cas de retard de paiement, le créancier peut réclamer le capital impayé et en souffrance, le montant impayé et en souffrance du coût total du crédit pour le consommateur, le montant des intérêts de retard convenus calculés sur le capital impayé et en souffrance, ainsi que le montant des frais convenus pour les lettres de rappel et les mises en demeure (Art. VII.106, Code de Droit Économique).
+
+5. Reprise du bien financé : Si le bien financé fait l'objet d'une clause de réserve de propriété ou d'une promesse de gage avec mandat irrévocable, le créancier peut reprendre le bien si vous ne respectez pas vos obligations de paiement. Cependant, si vous avez déjà payé 40 % ou plus du prix au comptant du bien, celui-ci ne peut être repris que par décision judiciaire ou par un accord écrit conclu après mise en demeure par lettre recommandée (Art. VII.108, Code de Droit Économique).
+```
+
+**Réponse de `mistral-small-latest` :**
+
+```text
+Si vous continuez à ne pas payer, cela peut entraîner la résiliation du contrat ou la déchéance du terme. Dans ce cas, le créancier peut réclamer le solde restant, le coût total du crédit pour le consommateur, et des pénalités ou indemnités dans certaines limites. Enfin, si la situation perdure, le créancier peut engager des procédures de recouvrement, qui peuvent inclure une saisie sur salaire ou une saisie de votre compte bancaire. Votre situation financière pourrait alors se dégrader considérablement.
+```
+
+La réponse de `mistral-small-finetuned` est claire et bien structurée, étayée par des références juridiques précises, alors que la réponse de `mistral-small-latest` ne l'est pas.
+
+<SectionTab variant="secondary" sectionId="multi-eurlex-data">Multi EURLEX - Données</SectionTab>
+
+Pour améliorer notre outil de traduction juridique, nous avons également affiné `mistral-small-latest` sur des documents juridiques. À cette fin, nous avons sélectionné un sous-ensemble du jeu de données [Multi EURLEX](https://arxiv.org/pdf/2109.00904), qui se compose de 35 000 documents juridiques européens en français traduits en allemand.
+
+![Courbes d'entraînement Multi EURLEX](/img/stories/eurlex_curves.png)
+
+*Figure 4 : Perplexité et perte d'évaluation pendant l'affinage sur Multi EURLEX suivies dans *Weights & Biases*.*
+
+<SectionTab variant="secondary" sectionId="multi-eurlex-eval">Multi EURLEX - Évaluation</SectionTab>
+
+Afin d'évaluer le modèle affiné sur des exemples pertinents pour nos cas d'usage, nous avons sélectionné 50 textes contenant des termes juridiques complexes à traduire du français vers l'allemand (comme _« Clause de non-concurrence »_, parfois traduit par _« Nicht-Konkurrenz-Klausel »_ au lieu de _« Wettbewerbsverbotsklausel »_).
+
+Nous avons ensuite soumis les triplets (`exemple`, `mistral_base_translation`, `mistral_finetuned_translation`) en aveugle à un expert juridique bilingue, qui a sélectionné la traduction juridique la plus précise pour chaque exemple.
+
+<SectionTab variant="secondary" sectionId="multi-eurlex-results">Multi EURLEX - Résultats</SectionTab>
+
+L'expert juridique a préféré la traduction juridique du modèle affiné dans 38 cas sur 50, avec 9 cas ex æquo. Ainsi, le modèle affiné est **meilleur ou au moins aussi bon que le modèle de base dans 94 % des cas**.
+
+|                          Exemple                           |                   `mistral-small-latest`                   | `mistral-small-finetuned`                                     |
+| :--------------------------------------------------------: | :--------------------------------------------------------: | ------------------------------------------------------------- |
+| Le vice de procédure a conduit à l'annulation du jugement. | Die Prozessirregularität führte zur Aufhebung des Urteils. | Der Verfahrensmangel hat zur Nichtigkeit des Urteils geführt. |
+
+_Tableau 1 : Comparaison de `mistral-small-latest` et de sa version affinée sur Multi EURLEX. Le modèle affiné utilise « Verfahrensmangel » et « Nichtigkeit des Urteils », qui sont les termes juridiques précis et corrects._
+
+<SectionTab variant="secondary" sectionId="jimini-conclusion">Conclusion</SectionTab>
+
+Nos premiers tests d'affinage du modèle `mistral-small` via l'endpoint de Mistral AI ont donné des résultats prometteurs. **Le modèle affiné excelle dans la génération de réponses structurées et bien sourcées, et traduit avec précision les termes juridiques complexes**, démontrant son potentiel pour des applications juridiques spécialisées.
+
+La capacité d'affinage rapide et l'intégration de _Weights & Biases_ ont rendu le processus efficace et simple, nous permettant de **développer rapidement des modèles spécialisés rentables**.
+
+Nous améliorerons davantage nos résultats en collaborant étroitement avec nos clients avocats pour affiner les performances des modèles. De plus, nous prévoyons d'étendre les cas d'usage pour inclure la synthèse juridique, l'analyse de contrats et la rédaction juridique.
+
+Nous remercions Mistral AI de nous avoir permis de tester leur API d'affinage en tant que bêta-testeurs. L'endpoint d'affinage de Mistral AI s'est révélé être un outil inestimable pour notre développement d'IA juridique - ces expériences ne sont qu'un début !
+
+<SectionTab variant="secondary" sectionId="jimini-references">Références</SectionTab>
+
+- BSARD : [article](https://arxiv.org/abs/2108.11792)
+- FineWeb-Edu : [article de blog](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1)
+- Multi EURLEX : [article](https://arxiv.org/pdf/2109.00904)
+- RAGAS : [article](https://arxiv.org/abs/2309.15217) & [bibliothèque](https://github.com/explodinggradients/ragas)
+- Self-Rewarding Language Model, _Yuan et al._ : [article](https://arxiv.org/abs/2401.10020)
+- Weights & Biases : [site web](https://wandb.ai/site)

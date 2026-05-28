@@ -1,4 +1,12 @@
-export const redirects = [
+import { targetLocales } from "./route-utils";
+
+type RedirectRule = {
+  source: string;
+  destination: string;
+  permanent: boolean;
+};
+
+const rawRedirects: RedirectRule[] = [
   // ============================================================================
   // TEMPORARY REDIRECTS — REMOVE ONCE CDN/CLOUDFLARE REDIRECTS ARE LIVE
   // ----------------------------------------------------------------------------
@@ -95,7 +103,7 @@ export const redirects = [
   { source: "/capabilities/document_ai/basic_ocr", destination: "/studio-api/document-processing/basic_ocr", permanent: true },
   { source: "/capabilities/document_ai/annotations", destination: "/studio-api/document-processing/annotations", permanent: true },
   { source: "/capabilities/document_ai/document_qna", destination: "/studio-api/document-processing/document_qna", permanent: true },
-  { source: "/capabilities/code_generation", destination: "/mistral-vibe/using-fim-api", permanent: true },
+  { source: "/capabilities/code_generation", destination: "/vibe/code", permanent: true },
   { source: "/capabilities/embeddings", destination: "/studio-api/knowledge-rag/embeddings", permanent: true },
   { source: "/capabilities/function_calling", destination: "/studio-api/conversations/function-calling", permanent: true },
   { source: "/capabilities/citations", destination: "/studio-api/conversations/citations", permanent: true },
@@ -142,10 +150,6 @@ export const redirects = [
   { source: "/deployment/self-deployment/cerebrium", destination: "/models/deployment/local-deployment/cerebrium", permanent: true },
   { source: "/deployment/self-deployment/cloudflare", destination: "/models/deployment/local-deployment/cloudflare", permanent: true },
   { source: "/deployment/self-deployment/tgi", destination: "/models/deployment/local-deployment/tgi", permanent: true },
-  { source: "/mistral-vibe/introduction", destination: "/mistral-vibe/terminal", permanent: true },
-  { source: "/mistral-vibe/introduction/install", destination: "/mistral-vibe/terminal/install", permanent: true },
-  { source: "/mistral-vibe/introduction/quickstart", destination: "/mistral-vibe/terminal/quickstart", permanent: true },
-  { source: "/mistral-vibe/introduction/configuration", destination: "/mistral-vibe/terminal/configuration", permanent: true },
   { source: "/workflows", destination: "/studio-api/workflows/getting-started/introduction", permanent: true },
   { source: "/workflows/getting-started/introduction", destination: "/studio-api/workflows/getting-started/introduction", permanent: true },
   { source: "/studio-api/workflows/getting-started/introduction", destination: "/studio-api/workflows/getting-started/overview", permanent: true },
@@ -188,65 +192,274 @@ export const redirects = [
   { source: "/deprecated/finetuning/classifier_factory", destination: "/resources/deprecated/finetuning/classifier_factory", permanent: true },
   { source: "/deprecated/guardrailing/mistral_moderation_2411", destination: "/resources/deprecated/guardrailing/mistral_moderation_2411", permanent: true },
   { source: "/deprecated/guardrailing/safe_prompt", destination: "/resources/deprecated/guardrailing/safe_prompt", permanent: true },
-  // Old /vibe/mistral-vibe/ → new /mistral-vibe/
+  // ============================================================================
+  // Vibe restructure (2026-05-28): /mistral-vibe/* (previous production) and
+  // legacy /vibe/vibe-code/* paths → new /vibe/code/* tree.
+  // ============================================================================
+  // Previous production /mistral-vibe/* → new /vibe/code/*
   {
-    source: "/vibe/mistral-vibe",
-    destination: "/mistral-vibe/terminal",
+    source: "/mistral-vibe",
+    destination: "/vibe/code/overview",
     permanent: true,
   },
   {
-    source: "/vibe",
-    destination: "/mistral-vibe/terminal",
-    permanent: true,
-  },
-  // Vibe Code → Mistral Vibe restructure
-  {
-    source: "/vibe/vibe-code/terminal/:path*",
-    destination: "/mistral-vibe/terminal/:path*",
+    source: "/mistral-vibe/overview",
+    destination: "/vibe/code/overview",
     permanent: true,
   },
   {
-    source: "/vibe/vibe-code/agents-skills/:path*",
-    destination: "/mistral-vibe/agents-skills/:path*",
+    source: "/mistral-vibe/terminal",
+    destination: "/vibe/code/cli/install-setup",
     permanent: true,
   },
   {
-    source: "/vibe/vibe-code/local/:path*",
-    destination: "/mistral-vibe/local/:path*",
+    source: "/mistral-vibe/terminal/install",
+    destination: "/vibe/code/cli/install-setup",
     permanent: true,
   },
   {
-    source: "/vibe/vibe-code/using-fim-api/:path*",
-    destination: "/mistral-vibe/using-fim-api/:path*",
+    source: "/mistral-vibe/terminal/quickstart",
+    destination: "/vibe/code/cli/install-setup",
     permanent: true,
   },
   {
-    source: "/vibe/vibe-code",
-    destination: "/mistral-vibe/terminal",
+    source: "/mistral-vibe/terminal/configuration",
+    destination: "/vibe/code/cli/configuration",
     permanent: true,
   },
-  // External links: /mistral-vibe/introduction → /mistral-vibe/terminal
+  {
+    source: "/mistral-vibe/local",
+    destination: "/vibe/code/cli/offline-models",
+    permanent: true,
+  },
+  {
+    source: "/mistral-vibe/agents-skills",
+    destination: "/vibe/code/cli/agents",
+    permanent: true,
+  },
+  {
+    source: "/mistral-vibe/using-fim-api/:path*",
+    destination: "/vibe/code",
+    permanent: true,
+  },
+  {
+    source: "/mistral-vibe/using-fim-api",
+    destination: "/vibe/code",
+    permanent: true,
+  },
   {
     source: "/mistral-vibe/introduction/:path*",
-    destination: "/mistral-vibe/terminal/:path*",
+    destination: "/vibe/code/cli/install-setup",
     permanent: true,
   },
   {
     source: "/mistral-vibe/introduction",
-    destination: "/mistral-vibe/terminal",
+    destination: "/vibe/code/cli/install-setup",
     permanent: true,
   },
-  // Le Chat root → overview (landing page moved to /products)
+  // Legacy /vibe/vibe-code/* (pre-mistral-vibe restructure) → /vibe/code/*
   {
-    source: "/le-chat",
-    destination: "/le-chat/overview",
-    permanent: false,
+    source: "/vibe/vibe-code/terminal/install",
+    destination: "/vibe/code/cli/install-setup",
+    permanent: true,
   },
-  // Typo fallback for an externally shared URL (TEMP)
+  {
+    source: "/vibe/vibe-code/terminal/quickstart",
+    destination: "/vibe/code/cli/install-setup",
+    permanent: true,
+  },
+  {
+    source: "/vibe/vibe-code/terminal/configuration",
+    destination: "/vibe/code/cli/configuration",
+    permanent: true,
+  },
+  {
+    source: "/vibe/vibe-code/terminal",
+    destination: "/vibe/code/cli/install-setup",
+    permanent: true,
+  },
+  {
+    source: "/vibe/vibe-code/local/:path*",
+    destination: "/vibe/code/cli/offline-models",
+    permanent: true,
+  },
+  {
+    source: "/vibe/vibe-code/agents-skills/:path*",
+    destination: "/vibe/code/cli/agents",
+    permanent: true,
+  },
+  {
+    source: "/vibe/vibe-code/using-fim-api/:path*",
+    destination: "/vibe/code",
+    permanent: true,
+  },
+  {
+    source: "/vibe/vibe-code",
+    destination: "/vibe/code/overview",
+    permanent: true,
+  },
+  {
+    source: "/vibe/mistral-vibe",
+    destination: "/vibe/code/overview",
+    permanent: true,
+  },
+  // Category root URLs without a page.mdx (mirror _category_.json links)
+  {
+    source: "/vibe",
+    destination: "/vibe/overview",
+    permanent: true,
+  },
+  {
+    source: "/vibe/work",
+    destination: "/vibe/work/get-started",
+    permanent: true,
+  },
+  {
+    source: "/vibe/code",
+    destination: "/vibe/code/overview",
+    permanent: true,
+  },
+  {
+    source: "/vibe/code/cli",
+    destination: "/vibe/code/cli/install-setup",
+    permanent: true,
+  },
+  {
+    source: "/vibe/code/vs-code-extension",
+    destination: "/vibe/code/vs-code-extension/install-authenticate",
+    permanent: true,
+  },
+  {
+    source: "/vibe/code/vibe-code-web",
+    destination: "/vibe/code/vibe-code-web/get-started",
+    permanent: true,
+  },
+  {
+    source: "/vibe/chat-legacy",
+    destination: "/vibe/chat-legacy/agents",
+    permanent: true,
+  },
+  // Le Chat: Vibe Code Workflow article migrated to Vibe Code Web
+  {
+    source: "/le-chat/content-creation/vibe-code-workflow",
+    destination: "/vibe/code/vibe-code-web/get-started",
+    permanent: true,
+  },
   {
     source: "/le-chat/content-creation/vibe-code-worfklow",
-    destination: "/le-chat/content-creation/vibe-code-workflow",
-    permanent: false,
+    destination: "/vibe/code/vibe-code-web/get-started",
+    permanent: true,
+  },
+  // Le Chat → Vibe (full /le-chat/* tree moved to /vibe/work/* and /vibe/chat-legacy/*)
+  {
+    source: "/le-chat/conversation/chat",
+    destination: "/vibe/work/get-started",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/conversation/work-mode",
+    destination: "/vibe/work/get-started",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/conversation/voice-mode",
+    destination: "/vibe/work/voice-mode",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/conversation/think-mode",
+    destination: "/vibe/chat-legacy/think-mode",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/content-creation/canvas",
+    destination: "/vibe/work/files-and-canvas",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/content-creation/code-interpreter",
+    destination: "/vibe/chat-legacy/code-interpreter",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/content-creation/image-generation",
+    destination: "/vibe/work/image-generation",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/research-analysis/open-url",
+    destination: "/vibe/work/web-search-open-url",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/research-analysis/web-search",
+    destination: "/vibe/work/web-search-open-url",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/research-analysis/deep-research",
+    destination: "/vibe/chat-legacy/deep-research",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/research-analysis/files-upload",
+    destination: "/vibe/work/files-and-canvas",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/connectors/mcp-connectors",
+    destination: "/vibe/work/connectors/mcp-connectors",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/connectors/knowledge-connectors",
+    destination: "/vibe/work/connectors/knowledge-connectors",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/connectors",
+    destination: "/vibe/work/connectors",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/projects",
+    destination: "/vibe/work/projects",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/libraries",
+    destination: "/vibe/work/libraries",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/agents",
+    destination: "/vibe/chat-legacy/agents",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/custom-instructions",
+    destination: "/vibe/work/custom-instructions",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/knowledge-integrations/memories",
+    destination: "/vibe/chat-legacy/memories",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/overview",
+    destination: "/vibe/work/get-started",
+    permanent: true,
+  },
+  {
+    source: "/le-chat/:path*",
+    destination: "/vibe/work/get-started",
+    permanent: true,
+  },
+  {
+    source: "/le-chat",
+    destination: "/vibe/work/get-started",
+    permanent: true,
   },
   // Guide redirects
   {
@@ -360,7 +573,7 @@ export const redirects = [
   },
   {
     source: "/capabilities/fim",
-    destination: "/mistral-vibe/using-fim-api",
+    destination: "/vibe/code",
     permanent: true,
   },
   {
@@ -420,7 +633,7 @@ export const redirects = [
   },
   {
     source: "/capabilities/code_generation/:path*",
-    destination: "/mistral-vibe/overview",
+    destination: "/vibe/code/overview",
     permanent: true,
   },
   // Built-in tools flatten
@@ -578,19 +791,98 @@ export const redirects = [
     destination: "/resources/changelogs",
     permanent: true,
   },
+  // Platform overview rename: le-chat-studio-admin -> platform-overview
+  {
+    source: "/getting-started/le-chat-studio-admin",
+    destination: "/getting-started/platform-overview",
+    permanent: true,
+  },
   {
     source: "/getting-started/platform-overview/vibe",
-    destination: "/getting-started/le-chat-studio-admin",
+    destination: "/getting-started/platform-overview",
     permanent: true,
   },
   {
     source: "/getting-started/platform-overview/tiers-and-editions",
-    destination: "/getting-started/le-chat-studio-admin",
+    destination: "/getting-started/platform-overview",
+    permanent: true,
+  },
+  // Studio workflows: publish_in_le_chat folder renamed to publish_in_vibe
+  {
+    source: "/studio-api/workflows/interacting-with-workflows/conversational_workflows/publish_in_le_chat",
+    destination: "/studio-api/workflows/interacting-with-workflows/conversational_workflows/publish_in_vibe",
+    permanent: true,
+  },
+  // Quickstart category indexes removed: all roll up to the home page (/) Quickstarts section
+  {
+    source: "/getting-started/quickstarts",
+    destination: "/",
     permanent: true,
   },
   {
-    source: "/getting-started/platform-overview",
-    destination: "/getting-started/le-chat-studio-admin",
+    source: "/getting-started/quickstarts/vibe-work",
+    destination: "/",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/vibe-code",
+    destination: "/",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/studio",
+    destination: "/",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/developer",
+    destination: "/",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/admin",
+    destination: "/",
+    permanent: true,
+  },
+  // Quickstart restructure: le-chat -> vibe-work, vibe -> vibe-code
+  {
+    source: "/getting-started/quickstarts/le-chat",
+    destination: "/",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/le-chat/draft-research-report",
+    destination: "/getting-started/quickstarts/vibe-work/first-task",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/vibe-work/draft-research-report",
+    destination: "/getting-started/quickstarts/vibe-work/first-task",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/le-chat/analyze-data",
+    destination: "/getting-started/quickstarts/vibe-work/analyze-data",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/le-chat/create-custom-agent",
+    destination: "/getting-started/quickstarts/vibe-work/create-first-skill",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/vibe",
+    destination: "/",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/vibe/install-and-first-prompt",
+    destination: "/getting-started/quickstarts/vibe-code/install-cli",
+    permanent: true,
+  },
+  {
+    source: "/getting-started/quickstarts/vibe/scaffold-a-project",
+    destination: "/getting-started/quickstarts/vibe-code/scaffold-a-project",
     permanent: true,
   },
   {
@@ -598,4 +890,23 @@ export const redirects = [
     destination: "/models/model-selection-guide",
     permanent: true,
   },
-]
+];
+
+// Locale-prefix every rule for target locales so e.g. /fr/old redirects to
+// /fr/new. The default locale remains unprefixed.
+const LOCALE_PREFIX = `/:locale(${targetLocales.join("|")})`;
+
+const isExternalDestination = (destination: string) => /^https?:\/\//.test(destination);
+
+const localeAwareLegacyRedirects = rawRedirects.map(rule => ({
+  ...rule,
+  source: `${LOCALE_PREFIX}${rule.source}`,
+  destination: isExternalDestination(rule.destination)
+    ? rule.destination
+    : `${LOCALE_PREFIX}${rule.destination}`,
+}));
+
+export const redirects = [
+  ...rawRedirects,
+  ...localeAwareLegacyRedirects,
+];

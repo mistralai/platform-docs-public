@@ -1,0 +1,87 @@
+---
+title: Limites connues
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Limitations connues
+
+Cette page documente les limitations actuelles de la plateforme Mistral. Nous travaillons activement à les résoudre. Consultez les [changelogs](/resources/changelogs) pour les mises à jour.
+
+<SectionTab as="h2" sectionId="context-window">Fenêtre de contexte</SectionTab>
+
+| Modèle | Longueur de contexte maximale |
+|-------|-------------------|
+| Mistral Small | 32 768 tokens |
+| Mistral Medium | 32 768 tokens |
+| Mistral Large | 131 072 tokens |
+| Codestral | 32 768 tokens |
+| Ministral 3B / 8B | 131 072 tokens |
+| Pixtral Large | 131 072 tokens |
+
+- Les requêtes dépassant la fenêtre de contexte du modèle renvoient une erreur `400 Bad Request`.
+- Le décompte de tokens inclut les tokens d'entrée et de sortie. Planifiez votre `max_tokens` en conséquence.
+
+<SectionTab as="h2" sectionId="rate-limits">Limites de taux</SectionTab>
+
+Les limites de taux varient selon le niveau d'abonnement et le modèle. Lorsqu'elles sont dépassées, l'API renvoie `429 Too Many Requests`.
+
+- Les **requêtes par seconde** et les **tokens par minute** sont appliqués de manière indépendante.
+- Les limites s'appliquent par clé API, pas par espace de travail.
+- Le [traitement par batch](/studio-api/batch-processing) n'est pas comptabilisé dans les limites de taux en temps réel.
+
+:::tip
+Consultez l'en-tête de réponse `X-RateLimit-Remaining` pour surveiller votre utilisation avant d'atteindre la limite.
+:::
+
+<SectionTab as="h2" sectionId="file-uploads">Téléchargement de fichiers</SectionTab>
+
+- Taille maximale de fichier : **512 Mo**
+- Formats supportés pour l'OCR : PDF, PNG, JPG, JPEG, TIFF, BMP, GIF, WEBP
+- Les fichiers téléchargés sont conservés pendant 30 jours sauf suppression anticipée.
+
+<SectionTab as="h2" sectionId="batch-processing">Traitement par batch</SectionTab>
+
+- Taille maximale du fichier batch : **512 Mo**.
+- Nombre maximal de requêtes par batch : **100 000**.
+- Les jobs batch sont traités de manière asynchrone ; le temps de complétion dépend de la profondeur de la file d'attente et de la complexité des requêtes.
+- Les résultats de batch sont disponibles au téléchargement pendant **24 heures** après la complétion.
+
+<SectionTab as="h2" sectionId="streaming">Streaming</SectionTab>
+
+- Les connexions en streaming expirent après **10 minutes** d'inactivité.
+- `stream_options.include_usage` doit être explicitement défini pour recevoir l'utilisation des tokens dans les événements de stream.
+- Certaines bibliothèques HTTP clientes peuvent mettre en mémoire tampon les réponses streamées ; assurez-vous que l'encodage de transfert fragmenté est géré correctement.
+
+<SectionTab as="h2" sectionId="function-calling">Appels de fonction</SectionTab>
+
+- Nombre maximal d'outils par requête : **128**.
+- Les descriptions d'outils sont incluses dans le décompte de tokens. Les descriptions longues réduisent le contexte disponible pour les messages.
+- Les appels de fonction parallèles sont supportés mais peuvent renvoyer les appels dans n'importe quel ordre.
+- `tool_choice: "any"` force un appel d'outil mais ne garantit pas quel outil sera sélectionné.
+
+<SectionTab as="h2" sectionId="json-mode">Mode JSON</SectionTab>
+
+- Lorsque `response_format: {"type": "json_object"}` est défini, le modèle renvoie toujours du JSON valide.
+- Vous devez inclure "JSON" dans le prompt système ou utilisateur. Sinon, le modèle peut produire un flux infini d'espaces blancs.
+- Le mode JSON ne garantit pas l'adhésion à un schéma spécifique. Utilisez les appels de fonction pour des sorties structurées.
+
+<SectionTab as="h2" sectionId="vision">Vision</SectionTab>
+
+- Taille maximale d'image : **20 Mo** par image.
+- Formats supportés : PNG, JPG, JPEG, GIF, WEBP.
+- Le nombre maximal d'images par requête dépend du modèle et du budget total de tokens.
+- Les images sont redimensionnées en interne ; les très petites images peuvent perdre en détail.
+
+<SectionTab as="h2" sectionId="audio">Transcription audio</SectionTab>
+
+- Formats supportés : WAV, MP3, FLAC, OGG, WEBM.
+- Durée audio maximale : **60 minutes**.
+- Taille maximale de fichier : **500 Mo**.
+- La transcription est optimisée pour la parole claire ; un bruit de fond important réduit la précision.
+
+<SectionTab as="h2" sectionId="regional-availability">Disponibilité régionale</SectionTab>
+
+- L'API Mistral est servie depuis des centres de données européens par défaut.
+- Certains modèles peuvent ne pas être disponibles dans toutes les régions. Consultez la [page des modèles](/models) pour les détails.

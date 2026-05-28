@@ -1,5 +1,6 @@
 import DesktopHeaderLinks from './header-links';
 import { ThemeToggle } from '@/components/layout/header/theme-toggle';
+import { LanguageDropdown } from '@/components/layout/header/language-dropdown';
 import { SearchInput } from '@/components/layout/sidebar/search-input';
 import {
   MobileMenuProvider,
@@ -13,8 +14,11 @@ import { BrandProductDropdown } from './brand-dropdown';
 import MistralLogoSolid from '@/components/icons/assets/mistral-logo-solid';
 import { ArrowRightIcon } from '@/components/icons/pixel';
 import { DynamicStudioCta } from './dynamic-studio-cta';
+import { getLingo } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 
-export default function Header() {
+export default async function Header({ locale }: { locale: Locale }) {
+  const l = await getLingo(locale);
   return (
     <MobileMenuProvider>
       <header className="flex items-center sticky top-0 h-header z-100 max-w-[1920px] px-sides w-full mx-auto pointer-events-none gap-">
@@ -45,15 +49,16 @@ export default function Header() {
             <div className="w-64 pointer-events-auto">
               <SearchInput />
             </div>
+            <LanguageDropdown />
             <ThemeToggle />
-            <HeaderCta href="https://mistral.ai/contact?utm_source=docs&utm_medium=header_cta&utm_campaign=studio_trial" target='_blank' variant="secondary" className="pointer-events-auto">Reach out</HeaderCta>
+            <HeaderCta href="https://mistral.ai/contact?utm_source=docs&utm_medium=header_cta&utm_campaign=studio_trial" target='_blank' variant="secondary" className="pointer-events-auto">{l.text('Reach out', { context: 'Call to contact Mistral' })}</HeaderCta>
             <DynamicStudioCta className='pointer-events-auto' />
           </div>
         </div>
       </header>
 
       <MobileMenuContent>
-        <MobileMenu />
+        <MobileMenu locale={locale} />
       </MobileMenuContent>
     </MobileMenuProvider>
   );

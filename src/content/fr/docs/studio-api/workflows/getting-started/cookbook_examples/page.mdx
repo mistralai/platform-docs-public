@@ -1,0 +1,174 @@
+---
+id: cookbook-examples
+title: Exemples de cookbook
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Exemples de cookbook
+
+Utilisez les modèles de cookbook Workflows lorsque vous souhaitez démarrer avec des exemples complets. Chaque cookbook illustre un schéma différent, comme la validation humaine, le traitement parallèle ou les sous-workflows.
+
+Après la configuration, chaque projet généré intègre le code du workflow, des données d'exemple, un point d'entrée du worker et des commandes utilitaires pour lancer l'exemple.
+
+<SectionTab as="h1" sectionId="before-you-begin">
+  Avant de commencer
+</SectionTab>
+
+Avant d'exécuter un cookbook, assurez-vous d'avoir&nbsp;:
+
+1. Un [compte Mistral](https://console.mistral.ai/).
+2. Python 3.12 installé.
+3. [uvx](https://docs.astral.sh/uv/guides/tools/) disponible dans votre shell.
+4. Une [clé API Mistral](https://console.mistral.ai/home?profile_dialog=api-keys) pour l'espace de travail sur lequel vous souhaitez lancer vos workflows.
+
+Vous pouvez consulter la chronologie d'exécution ou réaliser une étape de validation humaine dans [Studio](https://console.mistral.ai/build/workflows/executions).
+
+<SectionTab as="h1" sectionId="set-up-a-cookbook-project">
+  Configurer un projet cookbook
+</SectionTab>
+
+Exécutez la commande de configuration et sélectionnez le modèle de cookbook que vous souhaitez générer&nbsp;:
+
+```bash
+uvx mistralai-workflows-cli setup
+```
+
+Une fois la configuration terminée, placez-vous dans le dossier du projet généré et lancez les exemples&nbsp;:
+
+```bash
+cd my-workflow # ou le nom du dossier créé
+make start-examples
+```
+
+Cela enregistre les workflows cookbook auprès de votre espace de travail et laisse le worker prêt à traiter les exécutions. Vous pouvez lancer une exécution soit depuis un second terminal avec la commande d'exemple présente dans chaque cookbook, soit depuis [Studio](https://console.mistral.ai/build/workflows).
+
+<SectionTab as="h1" sectionId="available-cookbooks">
+  Cookbooks disponibles
+</SectionTab>
+
+| Cookbook           | Ce qu'il démontre                                         | Nom du workflow principal dans Studio |
+| ------------------ | -------------------------------------------------------- | ------------------------------------- |
+| Cargo release      | Validation humaine, sous-workflows, sorties structurées   | `cargo-release-compliance`            |
+| Insurance claims   | Activités parallèles, reprises sur erreur, routage déterministe | `insurance-claims-triage`             |
+| Code modernization | Sous-workflows parallèles, validation de syntaxe, validation humaine | `code-modernization`                  |
+
+<SectionTab as="h1" sectionId="cargo-release">
+  Conformité cargo et marchandises dangereuses
+</SectionTab>
+
+### Ce que fait ce cookbook
+
+Ce cookbook automatise la libération de cargaison pour la logistique maritime. Il extrait le document d’expédition, classe la cargaison, réalise les contrôles pour marchandises dangereuses si nécessaire, vérifie la conformité douanière et suspend l’exécution pour une validation manuelle en cas d’anomalie détectée.
+
+Utilisez cet exemple pour comprendre l’utilisation de `wait_for_input()`, des sous-workflows, et des sorties typées des LLM dans un processus de bout en bout.
+
+### Comment l'exécuter
+
+Lancez le parcours par défaut avec le document d'exemple fourni&nbsp;:
+
+```bash
+make execute-cargo-release
+```
+
+Lancez le parcours anomalie pour déclencher une validation humaine&nbsp;:
+
+```bash
+make execute-cargo-release \
+  input='{"document_uri":"examples/cargo_release/sample_data/shipping_doc_anomaly.png","shipment_id":"BL-2024-RTD-004812"}'
+```
+
+Vous pouvez aussi démarrer `cargo-release-compliance` dans [Studio](https://console.mistral.ai/build/workflows?workflowSearch=cargo-release-compliance) avec cet input&nbsp;:
+
+```json
+{
+  "document_uri": "examples/cargo_release/sample_data/shipping_doc_anomaly.png",
+  "shipment_id": "BL-2024-HAM-009371"
+}
+```
+
+### À quoi faire attention
+
+Dans [Studio](https://console.mistral.ai/build/workflows/executions), inspectez le sous-workflow de vérification des marchandises dangereuses, puis repérez l'événement `wait_for_input` sur le parcours anomalie. Approuvez ou bloquez l'expédition, et vérifiez que le workflow parent reprend à l'étape de validation plutôt que de réexécuter les étapes précédentes.
+
+<SectionTab as="h1" sectionId="insurance-claims">
+  Triage des sinistres avec analyse visuelle
+</SectionTab>
+
+### Ce que fait ce cookbook
+
+Ce cookbook trie un dossier de sinistre à partir des textes et photos. Il analyse les photos en parallèle, contrôle la description pour détecter des incohérences, attribue un niveau de gravité déterministe, évalue le risque de fraude et retourne un rapport de triage structuré.
+
+Utilisez cet exemple pour voir comment un workflow associe exécution d’activités en parallèle, routage déterministe et sorties structurées.
+
+### Comment l'exécuter
+
+Lancez le workflow par défaut&nbsp;:
+
+```bash
+make execute-insurance-claims
+```
+
+Vous pouvez fournir vos propres données&nbsp;:
+
+```bash
+make execute-insurance-claims input='{"claim_id":"CLM-001","claimant_name":"Jane","description":"Ma voiture a été accidentée.","photos":["examples/insurance_claims/sample_data/photos/claim_low_scratch_door.jpg"]}'
+```
+
+Ou démarrer le workflow dans [Studio](https://console.mistral.ai/build/workflows?workflowSearch=insurance-claims-triage) avec ces données&nbsp;:
+
+```json
+{
+  "claim_id": "CLM-2024-001",
+  "claimant_name": "Maria Gonzalez",
+  "description": "Ma voiture a été percutée à une intersection.",
+  "photos": [
+    "examples/insurance_claims/sample_data/photos/claim_high_totaled_front.jpg",
+    "examples/insurance_claims/sample_data/photos/claim_high_totaled_side.jpg"
+  ]
+}
+```
+
+### À quoi faire attention
+
+Dans [Studio](https://console.mistral.ai/build/workflows/executions), vérifiez que les activités `analyze_photo` démarrent en parallèle, puis inspectez les étapes de cohérence, le scoring de fraude et le rapport final typé. L'aiguillage est défini par le code du workflow, pas par un appel à un modèle séparé.
+
+<SectionTab as="h1" sectionId="code-modernization">
+  Assistant de modernisation de code
+</SectionTab>
+
+### Ce que fait ce cookbook
+
+Ce cookbook modernise une base de code Python existante, fichier par fichier. Le workflow parent scanne le dépôt, déclenche un sous-workflow par fichier, valide le code généré dans un sous-processus, regroupe les résultats dans un jeu de modifications et suspend l’exécution pour validation humaine avant de soumettre une proposition de PR.
+
+Utilisez cet exemple pour apprendre à combiner du fan-out de sous-workflows et une validation humaine robuste.
+
+### Comment l'exécuter
+
+Lancez le workflow par défaut&nbsp;:
+
+```bash
+make execute-code-modernization
+```
+
+Vous pouvez aussi démarrer `code-modernization` dans [Studio](https://console.mistral.ai/build/workflows?workflowSearch=code-modernization) avec cet input&nbsp;:
+
+```json
+{
+  "repo_path": "examples/code_modernization/sample_data/legacy_repo",
+  "target": "Python 2.7 → 3.12"
+}
+```
+
+### À quoi faire attention
+
+Dans [Studio](https://console.mistral.ai/build/workflows/executions), vérifiez que chaque fichier source apparaît comme sa propre exécution fille. Après la fin des sous-workflows, repérez la pause `wait_for_input`, approuvez ou refusez le jeu de modifications, puis assurez-vous que le workflow ne crée la PR qu'après validation.
+
+<SectionTab as="h1" sectionId="next-steps">
+  Prochaines étapes
+</SectionTab>
+
+Quand un modèle de cookbook vous convient, ouvrez les fichiers de workflow générés dans `src/workflows/` et adaptez les activités, les modèles d'entrée et les cheminements d'exécution à votre cas d'usage.
+
+Pour comprendre l'architecture de ces exemples, poursuivez avec [Concepts fondamentaux - Workflows](/studio-api/workflows/getting-started/core_concepts/workflows) et [Construire des workflows](/studio-api/workflows/building-workflows/workflows).

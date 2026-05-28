@@ -1,0 +1,157 @@
+---
+title: Configuration
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Configuration
+
+La CLI Vibe Code se configure via un **fichier `config.toml`**. Cette page explique où se trouve ce fichier, comment l’ouvrir et les paramètres les plus courants à personnaliser.
+
+<SectionTab as="h2" sectionId="file-locations">Emplacements des fichiers de configuration</SectionTab>
+
+La CLI recherche `config.toml` dans cet ordre :
+
+1. `./.vibe/config.toml` dans le répertoire de travail courant (**au niveau du projet**).
+2. `~/.vibe/config.toml` dans votre dossier personnel (**au niveau utilisateur**).
+
+La configuration projet a priorité sur la configuration utilisateur. La configuration du projet n’est chargée que si le dossier de travail est [approuvé](/vibe/code/safety-approvals-permissions#trusted-folders).
+
+<SectionTab as="h2" sectionId="open">Ouvrir votre fichier de configuration</SectionTab>
+
+Ouvrez `~/.vibe/config.toml` avec votre éditeur par défaut :
+
+```bash
+# macOS
+open ~/.vibe/config.toml
+
+# Linux
+xdg-open ~/.vibe/config.toml
+
+# Windows (PowerShell)
+Invoke-Item ~\.vibe\config.toml
+```
+
+Vous pouvez également ouvrir le menu de configuration depuis une session avec la commande slash `/config`.
+
+<SectionTab as="h2" sectionId="vibe-home">Répertoire racine de Vibe</SectionTab>
+
+Par défaut, la CLI stocke sa configuration et son état dans `~/.vibe/`. Modifiez l’emplacement avec la variable d’environnement `VIBE_HOME` :
+
+```bash
+export VIBE_HOME="/chemin/vers/votre/dossier/vibe/personnalisé"
+```
+
+`VIBE_HOME` détermine l’emplacement des éléments suivants :
+
+- `config.toml` : configuration principale.
+- `.env` : clés API et identifiants de fournisseurs.
+- `agents/` : profils d’agents personnalisés.
+- `prompts/` : prompts système personnalisés.
+- `skills/` : Skills personnalisées.
+- `tools/` : outils personnalisés.
+- `logs/` : journaux des sessions et de l’application.
+
+<SectionTab as="h2" sectionId="working-directory">Répertoire de travail</SectionTab>
+
+Utilisez `--workdir` pour pointer la CLI vers un projet qui n’est pas le dossier courant :
+
+```bash
+vibe --workdir /chemin/vers/projet
+```
+
+Utilisez `--add-dir` pour donner à la CLI un accès en lecture à un autre dossier, le temps d’une session.
+
+<SectionTab as="h2" sectionId="common-sections">Sections courantes de configuration</SectionTab>
+
+`config.toml` accepte de nombreuses clés et sections principales. Les plus courantes sont listées ici, chacune renvoyant vers une page dédiée.
+
+<SectionTab as="h3" variant="secondary" sectionId="default-agent">Agent par défaut</SectionTab>
+
+Définissez l’agent interactif par défaut :
+
+```toml
+default_agent = "plan"
+```
+
+Ce réglage ne concerne que les sessions interactives. En mode programmatique, le mode `auto-approve` est utilisé si `--agent` n’est pas précisé. Voir [Agents](/vibe/code/cli/agents).
+
+<SectionTab as="h3" variant="secondary" sectionId="providers-models">Fournisseurs et modèles</SectionTab>
+
+Définissez les préréglages de fournisseurs, de modèles, et le modèle actif :
+
+```toml
+active_model = "devstral-openrouter"
+
+[[providers]]
+name = "openrouter"
+api_base = "https://openrouter.ai/api/v1"
+api_key_env_var = "OPENROUTER_API_KEY"
+api_style = "openai"
+backend = "generic"
+
+[[models]]
+name = "mistralai/devstral-2512:free"
+provider = "openrouter"
+alias = "devstral-openrouter"
+```
+
+Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles).
+
+<SectionTab as="h3" variant="secondary" sectionId="mcp-servers">Serveurs MCP</SectionTab>
+
+Ajoutez des serveurs Model Context Protocol sous `mcp_servers`. Voir [Serveurs MCP](/vibe/code/cli/mcp-servers).
+
+<SectionTab as="h3" variant="secondary" sectionId="skills">Skills</SectionTab>
+
+Activez, désactivez ou ajoutez des chemins de Skills :
+
+```toml
+skill_paths = ["/chemin/vers/Skills/personnalisées"]
+enabled_skills = ["code-review", "test-*"]
+disabled_skills = ["experimental-*"]
+```
+
+`enabled_skills` et `disabled_skills` interagissent comme suit :
+
+- Si `enabled_skills` est **défini et non vide**, seules les Skills dont le nom correspond à un motif de cette liste sont disponibles.
+- Sinon, toutes les Skills détectées sont disponibles, sauf celles dont le nom correspond à un motif de `disabled_skills`.
+
+Voir [Skills](/vibe/code/cli/skills).
+
+<SectionTab as="h3" variant="secondary" sectionId="tool-permissions">Autorisations et filtres d’outils</SectionTab>
+
+Restreignez les outils accessibles à l’agent :
+
+```toml
+enabled_tools = ["serena_*"]
+disabled_tools = ["mcp_*", "grep"]
+```
+
+Les filtres d’outils acceptent les **noms exacts**, les **glob patterns** et les **regex** avec le préfixe `re:`. Des autorisations spécifiques peuvent aussi être définies dans des blocs `[tools.<tool_name>]`. Voir [Sécurité, validations et permissions](/vibe/code/safety-approvals-permissions#tool-permissions).
+
+<SectionTab as="h3" variant="secondary" sectionId="updates-telemetry">Mises à jour et télémétrie</SectionTab>
+
+Gérez la mise à jour automatique, les notifications et la télémétrie :
+
+```toml
+enable_auto_update = true
+enable_notifications = true
+enable_telemetry = true
+```
+
+| Paramètre | Par défaut | Détails |
+|---|---|---|
+| `enable_auto_update` | `true` | Vibe vérifie les nouvelles versions et se met à jour en arrière-plan. **Nous vous recommandons vivement de laisser cette option activée** afin de toujours bénéficier des dernières corrections. Vous pouvez aussi relancer le script d’installation à tout moment pour une mise à jour manuelle. |
+| `enable_notifications` | `true` | Notifications du système d’exploitation quand Vibe termine une tâche longue ou demande votre intervention (par exemple, lorsqu’une demande d’approbation attend). |
+| `enable_telemetry` | `true` | Envoie à Mistral des données anonymes d’utilisation et d’erreur. Sert à améliorer le produit (diagnostics de crash, usage des fonctions, performance). Aucun prompt, contenu de fichier ou sortie de modèle n’est transmis. Désactivez-la pour une utilisation strictement hors ligne. |
+
+<SectionTab as="h2" sectionId="precedence">Ordre de prise en compte de la configuration</SectionTab>
+
+Lorsque le même paramètre est défini à plusieurs endroits, la CLI les applique dans cet ordre (**priorité décroissante**) :
+
+1. **Options en ligne de commande** (par exemple, `--agent`, `--workdir`).
+2. **Variables d’environnement** (par exemple, `MISTRAL_API_KEY`, `VIBE_HOME`).
+3. **Projet** `./.vibe/config.toml`.
+4. **Utilisateur** `~/.vibe/config.toml`.

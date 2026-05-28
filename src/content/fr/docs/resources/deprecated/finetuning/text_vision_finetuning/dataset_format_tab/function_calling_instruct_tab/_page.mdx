@@ -1,0 +1,83 @@
+Données conversationnelles avec utilisation d'outils entre l'utilisateur et l'assistant, qui peuvent être à un seul tour ou multi-tours. Exemple :
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant with access to the following functions to help the user. You can use the functions if needed."
+    },
+    {
+      "role": "user",
+      "content": "Can you help me generate an anagram of the word 'listen'?"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "TX92Jm8Zi",
+          "type": "function",
+          "function": {
+            "name": "generate_anagram",
+            "arguments": "{\"word\": \"listen\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "{\"anagram\": \"silent\"}",
+      "tool_call_id": "TX92Jm8Zi"
+    },
+    {
+      "role": "assistant",
+      "content": "The anagram of the word 'listen' is 'silent'."
+    },
+    {
+      "role": "user",
+      "content": "That's amazing! Can you generate an anagram for the word 'race'?"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "3XhQnxLsT",
+          "type": "function",
+          "function": {
+            "name": "generate_anagram",
+            "arguments": "{\"word\": \"race\"}"
+          }
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_anagram",
+        "description": "Generate an anagram of a given word",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "word": {
+              "type": "string",
+              "description": "The word to generate an anagram of"
+            }
+          },
+          "required": ["word"]
+        }
+      }
+    }
+  ]
+}
+```
+
+- Les données conversationnelles doivent être stockées sous la clé `"messages"` sous forme de liste.
+- Chaque message est un dictionnaire contenant les clés `"role"` et `"content"` ou `"tool_calls"`. `"role"` doit être l'une des valeurs suivantes : `"system"`, `"user"`, `"assistant"` ou `"tool"`.
+- Seuls les messages de type `"assistant"` peuvent avoir une clé `"tool_calls"`, représentant l'assistant effectuant un appel à un outil disponible.
+- Un message assistant avec une clé `"tool_calls"` ne peut pas avoir de clé `"content"` et doit être suivi d'un message `"tool"`, qui à son tour doit être suivi d'un autre message assistant.
+- Le `"tool_call_id"` des messages tool doit correspondre à l'`"id"` d'au moins un des messages assistant précédents.
+- Les `"id"` et `"tool_call_id"` sont des chaînes générées aléatoirement de exactement 9 caractères. Nous recommandons de les générer automatiquement dans un script de préparation de données comme fait [ici](https://github.com/mistralai/mistral-finetune/blob/208b25c0f7299bb78d06cea25b82adee03834319/utils/reformat_data_glaive.py#L74).
+- La clé `"tools"` doit inclure les définitions de tous les outils utilisés dans la conversation.
+- Le calcul de la perte est effectué uniquement sur les tokens correspondant aux messages assistant (`"role" == "assistant"`).

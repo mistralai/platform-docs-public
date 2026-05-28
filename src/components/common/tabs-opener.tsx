@@ -12,6 +12,8 @@ export interface TabOption {
     logo?: string;
     color?: string;
     bgColor?: string;
+    hoverBorder?: string;
+    hoverText?: string;
 }
 
 export interface TabsOpenerProps {
@@ -33,7 +35,10 @@ export function TabsOpener({ options, onChange, className }: TabsOpenerProps) {
                         onClick={() => onChange?.(option.id)}
                         whileHover={{ y: -3, scale: 1.02 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                        className="group flex flex-col items-center justify-center p-5 rounded-xl border border-border/40 bg-transparent text-center w-full relative overflow-hidden cursor-pointer hover:bg-card/50 hover:border-border/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className={cn(
+                            "group flex flex-col items-center justify-center p-5 rounded-xl border border-border/40 bg-transparent text-center w-full relative overflow-hidden cursor-pointer hover:bg-card/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            option.hoverBorder ?? "hover:border-border/70"
+                        )}
                     >
                         <div className="relative z-10 flex flex-col items-center w-full">
                             {option.logo ? (
@@ -49,7 +54,10 @@ export function TabsOpener({ options, onChange, className }: TabsOpenerProps) {
                                     <Icon className={cn('size-5', option.color || 'text-muted-foreground')} />
                                 </div>
                             ) : null}
-                            <h3 className="text-base font-semibold transition-colors mt-3 mb-0 text-center text-foreground/80 group-hover:text-foreground">
+                            <h3 className={cn(
+                                "text-base font-semibold transition-colors mt-3 mb-0 text-center text-foreground/80",
+                                option.hoverText ?? "group-hover:text-foreground"
+                            )}>
                                 {option.title}
                             </h3>
                         </div>

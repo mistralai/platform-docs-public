@@ -1,0 +1,172 @@
+---
+title: Sécurité, approbations et autorisations
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+# Sécurité, validations et autorisations
+
+Vibe Code peut lire des fichiers, modifier du code, exécuter des commandes shell et appeler des outils externes **en votre nom**. Pour vous garantir un contrôle total sur ce qui s’exécute et ce qui change, Vibe Code repose sur des **contrôles en couches** :
+
+- **Agents** : des profils de configuration ; ils regroupent un prompt système, la sélection d’outils et les règles d'approbation. Ils définissent ce qui est validé automatiquement.
+- **Dossiers de confiance** : ils déterminent si Vibe peut charger la configuration projet, les compétences et les fichiers d’agent depuis le répertoire courant.
+- **Permissions par outil** : vous affinez ou assouplissez l’accès pour chaque outil.
+
+Vibe demande également une confirmation à chaque fois qu’un outil tente de lire, écrire ou exécuter une commande **en dehors du répertoire de travail courant**, quel que soit l’agent actif.
+
+Cette page détaille le fonctionnement de ces contrôles et leurs interactions.
+
+<SectionTab as="h2" sectionId="agent-modes">Agents</SectionTab>
+
+L’agent actif définit la façon dont Vibe demande une validation avant d’exécuter des outils ; il peut également modifier le prompt système, le prompt de compaction, le modèle, les outils disponibles et d’autres paramètres.
+
+Utilisez l’un des agents intégrés ci-dessous. Pour changer, définir un agent par défaut ou créer le vôtre, consultez la section Agents dans la [CLI](/vibe/code/cli/agents) ou l’[extension VS Code](/vibe/code/vs-code-extension/agents).
+
+| Agent | Comportement d’approbation | Usage recommandé |
+|---|---|---|
+| `default` | Demande une validation avant d’exécuter tout outil. | Travail quotidien pour valider chaque action. |
+| `plan` | Lecture seule. Validation automatique pour la lecture, bloque modifications et commandes. | Exploration d’une base de code inconnue ou conception d’une approche avant toute modification. |
+| `accept-edits` | Valide automatiquement les modifications de fichiers. Demande toujours pour les commandes shell ou actions sensibles. | Refactoring d’ampleur déjà délimité. |
+| `auto-approve` | Valide automatiquement chaque action, y compris les commandes shell. | Environnements de confiance et isolés uniquement. **À utiliser avec discernement**. |
+
+:::warning
+`default_agent` ne s’applique que dans les sessions interactives. En **mode programmatique** (`vibe --prompt …`), Vibe bascule sur `auto-approve` si `--agent` n’est pas précisé, et les outils interactifs comme `ask_user_question` sont désactivés. Utilisez explicitement `--agent plan` si vous souhaitez une exécution programmatique en lecture seule.
+:::
+
+<SectionTab as="h2" sectionId="trusted-folders">Dossiers de confiance</SectionTab>
+
+Un projet peut embarquer sa propre configuration Vibe (agents, compétences, serveurs MCP, permissions d’outils) dans un répertoire `.vibe/` à la racine du repository. Comme ces paramètres **modifient le comportement de Vibe**, Vibe ne les charge que depuis les répertoires que **vous avez explicitement approuvés**.
+
+Fonctionnement :
+
+- Lorsqu’une session interactive démarre dans un répertoire contenant des fichiers à approuver (comme `.vibe/config.toml`) et que l’état de confiance est inconnu, Vibe demande si le dossier peut être approuvé.
+- Les dossiers de confiance sont enregistrés dans `~/.vibe/trusted_folders.toml`.
+- Si vous refusez ou n’avez pas encore approuvé un dossier, la configuration projet est ignorée et Vibe affiche un avertissement. La configuration utilisateur dans `~/.vibe/` reste active.
+
+:::tip
+Avant d’accorder la confiance à un répertoire, traitez sa configuration `.vibe/` comme n’importe quel autre code du dépôt : auditez-la, en particulier les définitions de serveurs MCP et les permissions d’outils, car elles peuvent donner accès à des services externes ou à des commandes locales.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="temporary-trust">Confiance temporaire (CLI)</SectionTab>
+
+Le flag `vibe --trust` approuve le dossier de travail pour la seule exécution en cours et ne persiste pas.
+
+**Le mode programmatique ne demande jamais de validation de confiance.** Utilisez `--trust` pour accorder une confiance temporaire lors d’un script Vibe.
+
+```bash
+# Autoriser le projet courant pour une seule exécution
+vibe --trust --prompt "Lancer la suite de tests et résumer les échecs"
+```
+
+<SectionTab as="h2" sectionId="tool-permissions">Permissions par outil</SectionTab>
+
+Au-delà des agents, vous pouvez restreindre ou ouvrir l’accès à des outils spécifiques dans `config.toml`. Cela s’applique aussi bien aux outils intégrés (`read_file`, `write_file`, `bash`, `grep`, etc.), qu’aux outils MCP ou connecteurs.
+
+<SectionTab as="h3" variant="secondary" sectionId="enable-disable-tools">Activer ou désactiver des outils</SectionTab>
+
+Activez/désactivez globalement des outils par nom exact, motif ou regex :
+
+```toml
+# Autoriser seulement la lecture et la recherche
+enabled_tools = ["read_file", "grep", "task"]
+
+# Ou désactiver une classe d’outils
+disabled_tools = ["bash"]
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="set-permissions">Définir les permissions par outil</SectionTab>
+
+Définissez quand Vibe doit demander l’autorisation avant d’utiliser un outil, ou l’autoriser systématiquement :
+
+```toml
+[tools.read_file]
+permission = "always"
+
+[tools.bash]
+permission = "ask"
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="bash-allow-deny">Listes d’autorisation et de blocage Bash</SectionTab>
+
+Pour l’outil `bash`, vous pouvez accorder ou bloquer des **commandes précises**. Certaines commandes sûres (`ls`, `pwd`, `cat`, `echo`, etc.) sont autorisées par défaut ; ajoutez les vôtres pour étoffer la liste :
+
+```toml
+[tools.bash]
+permission = "ask"
+allow = ["git status", "pnpm test"]
+deny = ["rm -rf *"]
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="mcp-and-connector-tools">Outils MCP et connecteurs</SectionTab>
+
+Les outils MCP sont référencés comme `{server_name}_{tool_name}`. Par exemple, pour autoriser systématiquement un outil `get` exposé par un serveur MCP nommé `fetch_server` :
+
+```toml
+[tools.fetch_server_get]
+permission = "always"
+```
+
+Consultez [Serveurs MCP](/vibe/code/cli/mcp-servers) pour la configuration complète, et [Configuration](/vibe/code/cli/configuration) pour la priorité entre réglages utilisateur et projet.
+
+<SectionTab as="h2" sectionId="approval-model">Modèle d’approbation</SectionTab>
+
+Le modèle de validation est cohérent sur la CLI, l’extension VS Code et Vibe Code Web. L’interface de validation diffère selon la surface :
+
+<ExplorerTabs>
+<ExplorerTab value="cli" label="CLI" default>
+
+Les demandes de validation apparaissent dans le chat. Utilisez le clavier :
+
+| Touche | Action |
+|---|---|
+| `Entrée` ou `1` ou `Y` | Valider l’action. |
+| `2`, `3`, `4` | Valider avec une portée plus large (par exemple, autoriser systématiquement cet outil). |
+| `N` | Refuser l’action. |
+| `Haut` / `Bas` | Naviguer entre les options. |
+| `Échap` | Interrompre l’agent. |
+
+L’agent actif et le mode de validation s’affichent dans la barre d’état. Changez en cours de session avec `/config` ou redémarrez avec `vibe --agent <name>`.
+
+</ExplorerTab>
+<ExplorerTab value="vscode" label="Extension VS Code">
+
+Les demandes de validation apparaissent dans le panneau latéral Mistral Vibe.
+
+| Raccourci | Action |
+|---|---|
+| `Mod+Y`* | Valider l’action. |
+| `Mod+Alt+Y`* | Valider une option alternative. |
+| `Mod+Shift+Y`* | Appliquer un niveau d’autorisation supérieur (ex : autoriser tout le temps). |
+| `Mod+Alt+N`* | Refuser l’action. |
+| `Échap` | Annuler ou retirer le focus de l’input courant. |
+
+**`Mod` désigne `Command` sous macOS et `Ctrl` sous Windows ou Linux.*
+
+:::info
+La sélection de l’agent se fait via le sélecteur en bas du panneau (voir [Agents](/vibe/code/vs-code-extension/agents)). Une interface dédiée pour les permissions par outil arrive bientôt ; en attendant, configurez-les dans les mêmes fichiers `config.toml` que la CLI.
+:::
+
+</ExplorerTab>
+<ExplorerTab value="web" label="Vibe Code Web">
+
+Vibe Code Web exécute les sessions dans un environnement géré, connecté à un dépôt GitHub. Les validations apparaissent dans l’interface web ; les actions au niveau du dépôt (création de branches, push, pull requests) respectent les autorisations GitHub accordées lors de la connexion au repo.
+
+:::info
+Le déploiement de Vibe Code Web est en cours. Les labels exacts de validation, la liste des actions en sandbox et les scopes GitHub sont en finalisation. Voir [Dépôts GitHub et autorisations](/vibe/code/vibe-code-web/github-repositories-permissions) et [Limites et cycle de vie](/vibe/code/vibe-code-web/limits-and-lifecycle).
+:::
+
+</ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" sectionId="best-practices">Bonnes pratiques</SectionTab>
+
+- **Commencez en mode `plan` pour un code inconnu.** Explorez et concevez avant d’accorder la modification ou l’accès shell.
+- **Validez vos commits avant les opérations risquées.** Cela permet un retour immédiat en arrière (`git reset --hard`).
+- **Utilisez `accept-edits` pour les refactorings de portée délimitée** et vérifiez le diff avant de valider.
+- **Réservez `auto-approve` aux environnements temporaires** (conteneurs, runners CI, VMs éphémères). Ne l’utilisez jamais sur des machines contenant des clés SSH, identifiants cloud ou accès production.
+- **Faites confiance de façon réfléchie.** Vérifiez la configuration `.vibe/` d’un dépôt lors de la première utilisation, et après chaque modification.
+- **Renforcez la sécurité des outils MCP et connecteurs.** Tout ce qui interagit avec des systèmes externes devrait être en `permission = "ask"` même sous `accept-edits`.
+- **Versionnez votre configuration `.vibe/`** afin que l’équipe puisse relire et reproduire les décisions de sécurité.
+- **Révoquez les accès devenus inutiles.** Les connexions GitHub dans Vibe Code Web, les identifiants MCP ou les autorisations de connecteurs doivent être supprimés à la fin d’un projet.

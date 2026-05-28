@@ -1,0 +1,211 @@
+---
+id: observability_campaigns
+title: Campagnes
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Campagnes
+
+Les Campagnes permettent d'**annoter en lot le trafic de production** à l'aide d'un [Judge](./judges). Vous définissez un filtre, sélectionnez un Judge, et la Campagne **exécute le Judge sur chaque événement correspondant**, en écrivant les annotations dans [Explorer](./explorer).
+
+<SectionTab as="h1" sectionId="when-to-use">Quand utiliser les Campagnes</SectionTab>
+
+Les Campagnes sont l'outil adapté lorsque vous souhaitez **évaluer le trafic de production existant** à grande échelle. Scénarios courants :
+
+- **Détecter les comportements problématiques :** votre agent peut être impoli, hors-sujet ou donner des réponses inexactes. Lancez une Campagne avec un Judge d'impolitesse ou de qualité pour le découvrir.
+- **Taguer le trafic pour l'analyse :** classifiez un lot d'événements (par exemple, `code` / `search` / `general`) et filtrez par catégorie dans Explorer.
+- **Créer des Datasets annotés :** exécutez une Campagne, puis exportez les événements annotés vers un Dataset.
+
+<SectionTab as="h1" sectionId="how-to-run">Comment exécuter une Campagne</SectionTab>
+
+#### Prérequis : créer un Judge
+
+Avant de créer une Campagne, vous avez besoin d'un [Judge](./judges) qui définit vos critères de qualité.
+
+Une Campagne utilise **un seul Judge**. Pour effectuer plusieurs vérifications sur le même trafic, créez des Campagnes distinctes.
+
+#### Étape 1 : Filtrer les événements
+
+Sélectionnez une **plage temporelle**, puis **ajoutez des conditions de filtrage** pour affiner le périmètre (voir [syntaxe des filtres Explorer](./explorer#filter-language)).
+
+:::tip
+Si votre filtre renvoie trop d'événements, définissez un **nombre maximum d'événements** (de 100 à 10 000).
+:::
+
+#### Étape 2 : Lancer la Campagne
+
+Démarrez la Campagne. Elle s'exécute en arrière-plan : vous pouvez fermer l'onglet et vérifier la progression ultérieurement dans les détails de la Campagne.
+
+#### Étape 3 : Analyser les résultats
+
+Une fois terminés, les événements correspondants apparaissent **avec annotations** dans la colonne **sortie du Judge**. À partir de là, vous pouvez :
+
+- **Filtrer par valeur d'annotation** pour faire remonter les événements signalés (par exemple, étiquetés `rude` ou notés en dessous de 3).
+- **Inspecter les événements individuels** pour vérifier les évaluations du Judge.
+- **Exporter vers un Dataset** pour examen ou analyse complémentaire.
+
+<SectionTab as="h1" sectionId="sdk-access">[Développeur] Utiliser les Campagnes de manière programmatique</SectionTab>
+
+Le [SDK](/resources/sdks) permet de **créer et surveiller des Campagnes depuis le code**. Utile pour les vérifications de qualité planifiées, les pipelines d'alerte automatisés ou l'intégration CI/CD.
+
+<ExplorerTabs id="campaigns-sdk">
+  <ExplorerTab value="create" label="Créer une Campagne">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Create a Campaign to annotate last week's support conversations
+campaign = mistral.beta.observability.campaigns.create(
+    name="Support Quality Review - Week 3",
+    description="Evaluate quality of customer support responses from last week",
+    judge_id="judge-456",  # replace with your Judge ID
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-01-15T00:00:00Z"},
+                {"field": "timestamp", "op": "lt", "value": "2026-01-22T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"}
+            ]
+        }
+    },
+    max_nb_events=5000
+)
+
+print(f"Campaign created: {campaign.id} — {campaign.name}")
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+mistral = Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+)
+
+# Create a Campaign to annotate last week's support conversations
+campaign = mistral.beta.observability.campaigns.create(
+    name="Support Quality Review - Week 3",
+    description="Evaluate quality of customer support responses from last week",
+    judge_id="judge-456",  # replace with your Judge ID
+    search_params={
+        "filters": {
+            "AND": [
+                {"field": "timestamp", "op": "gte", "value": "2026-01-15T00:00:00Z"},
+                {"field": "timestamp", "op": "lt", "value": "2026-01-22T00:00:00Z"},
+                {"field": "model_name", "op": "eq", "value": "mistral-medium-2508"}
+            ]
+        }
+    },
+    max_nb_events=5000
+)
+
+print(f"Campaign created: {campaign.id} — {campaign.name}")
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="monitor" label="Surveiller et lire les résultats">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# Check Campaign status
+status = mistral.beta.observability.campaigns.fetch_status(
+    campaign_id=campaign.id
+)
+print(f"Status: {status.status}")
+
+# List annotated events once the Campaign completes
+annotated_events = mistral.beta.observability.campaigns.list_events(
+    campaign_id=campaign.id,
+    page_size=100
+)
+
+for event in annotated_events.completion_events.results:
+    # Annotations are stored in extra_fields with the Judge ID as key
+    annotation = event.extra_fields.get("__judge_<judge-id>")
+    print(f"Event {event.event_id}: {annotation}")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+  <ExplorerTab value="manage" label="Lister et supprimer">
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# List all Campaigns
+campaigns = mistral.beta.observability.campaigns.list(page_size=20)
+for c in campaigns.campaigns.results:
+    print(f"{c.name} (id: {c.id})")
+
+# Search Campaigns by name
+support_campaigns = mistral.beta.observability.campaigns.list(q="support")
+
+# Get Campaign details
+campaign = mistral.beta.observability.campaigns.fetch(
+    campaign_id="campaign-123"  # replace with your Campaign ID
+)
+print(f"Campaign: {campaign.name}")
+
+# Delete a Campaign
+mistral.beta.observability.campaigns.delete(
+    campaign_id="campaign-123"  # replace with your Campaign ID
+)
+print("Campaign deleted")
+```
+
+    </TabItem>
+</Tabs>
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="La création de la Campagne a échoué avec une erreur de filtre">
+  Si aucun événement ne correspond à votre filtre, l'API ne créera pas la Campagne et renverra une erreur. Vérifiez vos conditions de filtrage, en particulier la plage temporelle. Essayez d'abord d'exécuter le même filtre dans Explorer pour confirmer qu'il renvoie des résultats.
+  </FaqItem>
+  <FaqItem question="Puis-je modifier le filtre après avoir démarré une Campagne ?">
+  Non. Les filtres sont verrouillés au démarrage de la Campagne. Si le périmètre est incorrect, créez une nouvelle Campagne avec le filtre adéquat.
+  </FaqItem>
+  <FaqItem question="Les annotations ne semblent pas correctes">
+  Le problème vient probablement du Judge, et non de la Campagne. Revoyez les instructions du Judge et testez-le sur quelques enregistrements individuels. Voir [Judges — valider avant de passer à l'échelle](./judges#validation-before-scale).
+  </FaqItem>
+  <FaqItem question="J'ai besoin de plus de 10 000 événements">
+  Divisez le travail en plusieurs Campagnes avec des filtres non chevauchants (par exemple, par plage de dates ou par modèle). Chaque Campagne peut traiter jusqu'à 10 000 événements.
+  </FaqItem>
+  <FaqItem question="Combien de temps prend une Campagne ?">
+  Cela dépend du nombre d'événements et du débit du modèle du Judge. Les Campagnes s'exécutent de manière asynchrone. Vous n'avez pas besoin de garder l'onglet ouvert. Vérifiez l'état de la Campagne dans l'interface ou via le SDK.
+  </FaqItem>
+  <FaqItem question="Si je supprime une Campagne, les annotations sont-elles perdues ?">
+  Non. Les annotations sont écrites directement sur les événements dans Explorer. Supprimer une Campagne retire la définition de la Campagne, mais les annotations qu'elle a produites restent sur les événements.
+  </FaqItem>
+</Faq>

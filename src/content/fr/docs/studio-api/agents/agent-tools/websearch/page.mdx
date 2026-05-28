@@ -1,0 +1,275 @@
+---
+id: websearch
+title: Recherche web
+slug: websearch
+sidebar_position: 2
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Recherche web
+
+La recherche web est la capacité de **parcourir le web à la recherche d'informations**. Cet outil ne se contente pas de corriger les limitations des modèles qui ne sont pas à jour en raison de leurs données d'entraînement, mais leur permet également de récupérer des informations récentes ou d'accéder à des sites web spécifiques.
+
+Un outil pratique pour tout agent qui doit être à jour avec le monde.
+
+<Image
+  url={['/img/websearch_connector.png', '/img/websearch_connector_dark.png']}
+  alt="websearch_graph"
+  width="400px"
+  centered
+/>
+
+Notre [outil](/studio-api/agents/agent-tools#built-in-tools) intégré pour la recherche web permet à n'importe lequel de nos modèles d'accéder au web à tout moment pour rechercher des sites et des sources d'informations pertinentes afin de répondre à la requête donnée.
+
+Il existe deux versions :
+- `web_search` : un outil de recherche web simple qui permet l'accès à un moteur de recherche.
+- `web_search_premium` : un outil de recherche web plus complexe qui permet l'accès à la fois à un moteur de recherche et aux articles d'actualité via la vérification intégrée des fournisseurs d'actualités.
+
+<SectionTab as="h1" sectionId="create-a-websearch-agent">Créer un agent de recherche web</SectionTab>
+
+Vous pouvez créer un agent avec accès à la recherche web en la fournissant comme l'un des outils.  
+Notez que vous pouvez toujours ajouter d'autres outils à l'agent, le modèle est libre de rechercher sur le web ou non à la demande.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+websearch_agent = client.beta.agents.create(
+    model="mistral-medium-latest",
+    description="Agent able to search information over the web, such as news, weather, sport results...",
+    name="Websearch Agent",
+    instructions="You have the ability to perform web searches with `web_search` to find up-to-date information.",
+    tools=[{"type": "web_search"}],
+    completion_args={
+        "temperature": 0.3,
+        "top_p": 0.95,
+    }
+)
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const websearchAgent = await client.beta.agents.create({
+  model: "mistral-medium-latest",
+  name: "WebSearch Agent",
+  instructions: "Use your websearch abilities when answering requests you don't know.",
+  description: "Agent able to fetch new information on the web.",
+  tools: [{ type: "web_search" }],
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-medium-latest",
+     "name": "Websearch Agent",
+     "description": "Agent able to search information over the web, such as news, weather, sport results...",
+     "instructions": "You have the ability to perform web searches with `web_search` to find up-to-date information.",
+     "tools": [
+       {
+         "type": "web_search"
+       }
+     ],
+     "completion_args": {
+       "temperature": 0.3,
+       "top_p": 0.95
+     }
+  }'
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "model": "mistral-medium-latest",
+  "name": "Websearch Agent",
+  "description": "Agent able to search information over the web, such as news, weather, sport results...",
+  "id": "ag_06835b734cc47dec8000b5f8f860b672",
+  "version": 0,
+  "created_at": "2025-05-27T12:59:32.803403Z",
+  "updated_at": "2025-05-27T12:59:32.803405Z",
+  "instructions": "You have the ability to perform web searches with `web_search` to find up-to-date information.",
+  "tools": [
+    {
+      "type": "web_search"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Comme pour les autres agents, lors de la création vous recevrez un identifiant d'agent correspondant à l'agent créé que vous pouvez utiliser pour démarrer une conversation.
+
+<SectionTab as="h1" sectionId="how-it-works">Comment ça fonctionne</SectionTab>
+
+Maintenant que notre agent de recherche web est prêt, nous pouvons à tout moment l'utiliser pour lui poser des questions sur des événements récents.
+
+<SectionTab as="h2" variant="secondary" sectionId="conversation-with-websearch">Conversations avec la recherche web</SectionTab>
+
+Pour démarrer une conversation avec notre agent de recherche web, nous pouvons utiliser le code suivant :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+response = client.beta.conversations.start(
+    agent_id=websearch_agent.id,
+    inputs="Who won the last European Football cup?"
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+  
+```typescript
+let conversation = await client.beta.conversations.start({
+      agentId: agent.id,
+      inputs:"Who is Albert Einstein?",
+      //store:false
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "inputs": "Who won the last European Football cup?",
+     "stream": false,
+     "agent_id": "<agent_id>"
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "conversation_id": "conv_06835b734f2776bb80008fa7a309bf5a",
+  "outputs": [
+    {
+      "type": "tool.execution",
+      "name": "web_search",
+      "object": "entry",
+      "created_at": "2025-05-27T12:59:33.171501Z",
+      "completed_at": "2025-05-27T12:59:34.828228Z",
+      "id": "tool_exec_06835b7352be74d38000b3523a0cce2e"
+    },
+    {
+      "type": "message.output",
+      "content": [
+        {
+          "type": "text",
+          "text": "The last winner of the European Football Cup was Spain, who won the UEFA Euro 2024 by defeating England 2-1 in the final"
+        },
+        {
+          "type": "tool_reference",
+          "tool": "web_search",
+          "title": "UEFA Euro Winners List from 1960 to today - MARCA in English",
+          "url": "https://www.marca.com/en/football/uefa-euro/winners.html",
+          "source": "brave"
+        },
+        {
+          "type": "tool_reference",
+          "tool": "web_search",
+          "title": "UEFA Euro winners: Know the champions - full list",
+          "url": "https://www.olympics.com/en/news/uefa-european-championships-euro-winners-list-champions",
+          "source": "brave"
+        },
+        {
+          "type": "tool_reference",
+          "tool": "web_search",
+          "title": "Full list of UEFA European Championship winners",
+          "url": "https://www.givemesport.com/football-european-championship-winners/",
+          "source": "brave"
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ],
+      "object": "entry",
+      "created_at": "2025-05-27T12:59:35.457474Z",
+      "completed_at": "2025-05-27T12:59:36.156233Z",
+      "id": "msg_06835b7377517a3680009b05207112ce",
+      "agent_id": "ag_06835b734cc47dec8000b5f8f860b672",
+      "model": "mistral-medium-latest",
+      "role": "assistant"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 188,
+    "completion_tokens": 55,
+    "total_tokens": 7355,
+    "connector_tokens": 7112,
+    "connectors": {
+      "web_search": 1
+    }
+  },
+  "object": "conversation.response"
+}
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="explanation-of-the-output">Explication de la sortie</SectionTab>
+
+Ci-dessous, nous expliquerons les différentes sorties de la réponse de l'exemple précédent :
+
+- **`tool.execution`** : cette entrée correspond à l'exécution de l'outil de recherche web. Elle inclut des métadonnées sur l'exécution, telles que :
+  - `name` : le nom de l'outil, qui dans ce cas est `web_search`.
+  - `object` : le type d'objet, qui est `entry`.
+  - `type` : le type d'entrée, qui est `tool.execution`.
+  - `created_at` et `completed_at` : horodatages indiquant quand l'exécution de l'outil a commencé et s'est terminée.
+  - `id` : un identifiant unique pour l'exécution de l'outil.
+
+- **`message.output`** : cette entrée correspond à la réponse générée par notre agent. Elle inclut des métadonnées sur le message, telles que :
+  - `content` : le contenu réel du message, qui dans ce cas est une liste de fragments. Ces fragments correspondent aux fragments de texte, la réponse réelle du modèle, entrelacés avec des fragments de référence. Ces fragments de référence sont utilisés pour les citations lors de l'utilisation d'outils liés à la génération augmentée par récupération (RAG). Dans ce cas, ils fournissent la source de l'information avec laquelle il vient de répondre, ce qui est extrêmement utile pour la recherche web. Cela permet un retour transparent sur la provenance de la réponse du modèle pour chaque section et fait mentionné. La section `content` comprend :
+    - `type` : le type de fragment, qui peut être `text` ou `tool_reference`.
+    - `text` : le contenu textuel réel du message.
+    - `tool` : le nom de l'outil utilisé pour la référence, qui dans ce cas est `web_search`.
+    - `title` : le titre de la source de référence.
+    - `url` : l'URL de la source de référence.
+    - `source` : la source de la référence.
+  - `object` : le type d'objet, qui est `entry`.
+  - `type` : le type d'entrée, qui est `message.output`.
+  - `created_at` et `completed_at` : horodatages indiquant quand le message a été créé et complété.
+  - `id` : un identifiant unique pour le message.
+  - `agent_id` : un identifiant unique pour l'agent qui a généré le message.
+  - `model` : le modèle utilisé pour générer le message, qui dans ce cas est `mistral-medium-latest`.
+  - `role` : le rôle du message, qui est `assistant`.
+
+<SectionTab as="h3" variant="secondary" sectionId="more">Plus d'informations</SectionTab>
+
+Un autre outil qui utilise les références est l'outil Document Library — voir le [guide des bibliothèques](/studio-api/knowledge-rag/libraries#connecting-libraries-to-agents) pour plus de détails.
+Pour en savoir plus sur les citations, consultez le [guide des citations](/studio-api/conversations/citations).

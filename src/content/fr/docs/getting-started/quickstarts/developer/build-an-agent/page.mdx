@@ -1,0 +1,228 @@
+---
+title: Créer un agent avec des outils
+sidebar_label: Créer un agent avec des outils
+sidebar_position: 2
+description: "Créez un agent IA qui appelle des fonctions externes et renvoie des données réelles en 10 minutes environ."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+
+# Créer un agent avec des outils
+
+Permettez à un modèle Mistral d'accéder à des fonctions externes qu'il peut appeler pendant la conversation.
+
+- Définissez un schéma d'outil qui décrit votre fonction
+- Envoyez un message qui déclenche l'appel d'un outil
+- Exécutez la fonction localement et transmettez le résultat au modèle
+
+Ce schéma s'applique à toute source de données : API, base de données ou service interne.
+
+**Durée estimée :** ~10 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Une clé API Mistral (voir [Obtenir votre clé API](/getting-started/quickstarts/developer/first-api-request#step-1) si vous n'en avez pas)
+- Python 3.9+ ou Node.js 18+ installé
+- Le SDK Mistral installé (voir [Installer le SDK](/getting-started/quickstarts/developer/first-api-request#step-2) si vous ne l'avez pas déjà fait)
+
+<SectionTab as="h2" sectionId="step-1">Étape 1 : définir un outil</SectionTab>
+
+Définissez la fonction que le modèle pourra appeler. Cet exemple crée un outil `get_weather` qui accepte le nom d'une ville.
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+```python
+import json
+import os
+from mistralai import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+# Définir le schéma de l'outil
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather for a given city.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string",
+                        "description": "The city name, e.g. 'Paris'."
+                    }
+                },
+                "required": ["city"]
+            }
+        }
+    }
+]
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const tools = [
+  {
+    type: 'function' as const,
+    function: {
+      name: 'get_weather',
+      description: 'Get the current weather for a given city.',
+      parameters: {
+        type: 'object',
+        properties: {
+          city: {
+            type: 'string',
+            description: "The city name, e.g. 'Paris'.",
+          },
+        },
+        required: ['city'],
+      },
+    },
+  },
+];
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="step-2">Étape 2 : envoyer une requête avec l'outil</SectionTab>
+
+Posez une question au modèle qui nécessite l'outil. Le modèle retourne une réponse `tool_calls` à la place d'une réponse textuelle.
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+```python
+messages = [
+    {"role": "user", "content": "What's the weather in Paris today?"}
+]
+
+response = client.chat.complete(
+    model="mistral-medium-latest",
+    messages=messages,
+    tools=tools,
+)
+
+tool_call = response.choices[0].message.tool_calls[0]
+print(f"Model wants to call: {tool_call.function.name}")
+print(f"With arguments: {tool_call.function.arguments}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+const messages = [
+  { role: 'user' as const, content: "What's the weather in Paris today?" },
+];
+
+const response = await client.chat.complete({
+  model: 'mistral-medium-latest',
+  messages,
+  tools,
+});
+
+const toolCall = response.choices[0].message.toolCalls[0];
+console.log(`Model wants to call: ${toolCall.function.name}`);
+console.log(`With arguments: ${toolCall.function.arguments}`);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="step-3">Étape 3 : exécuter la fonction et retourner le résultat</SectionTab>
+
+Exécutez votre fonction avec les arguments fournis par le modèle, puis renvoyez le résultat afin que le modèle puisse produire une réponse en langage naturel.
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+```python
+# Simule la fonction (remplacez par un appel à une API réelle)
+def get_weather(city: str) -> dict:
+    return {"city": city, "temperature": "18°C", "condition": "Partly cloudy"}
+
+# Exécute l'appel d'outil
+args = json.loads(tool_call.function.arguments)
+result = get_weather(**args)
+
+# Retourne le résultat au modèle
+messages.append(response.choices[0].message)
+messages.append({
+    "role": "tool",
+    "name": tool_call.function.name,
+    "content": json.dumps(result),
+    "tool_call_id": tool_call.id,
+})
+
+final_response = client.chat.complete(
+    model="mistral-medium-latest",
+    messages=messages,
+    tools=tools,
+)
+
+print(final_response.choices[0].message.content)
+# "The weather in Paris is 18°C and partly cloudy."
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+// Simule la fonction (remplacez par un appel à une API réelle)
+function getWeather(city: string) {
+  return { city, temperature: '18°C', condition: 'Partly cloudy' };
+}
+
+// Exécute l'appel d'outil
+const args = JSON.parse(toolCall.function.arguments);
+const result = getWeather(args.city);
+
+// Retourne le résultat au modèle
+messages.push(response.choices[0].message);
+messages.push({
+  role: 'tool' as const,
+  name: toolCall.function.name,
+  content: JSON.stringify(result),
+  toolCallId: toolCall.id,
+});
+
+const finalResponse = await client.chat.complete({
+  model: 'mistral-medium-latest',
+  messages,
+  tools,
+});
+
+console.log(finalResponse.choices[0].message.content);
+# "The weather in Paris is 18°C and partly cloudy."
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="verify">Vérification</SectionTab>
+
+Un enchaînement réussi imprime une réponse en langage naturel qui inclut la valeur de retour de l'outil. Le modèle :
+
+- A détecté que la requête nécessitait des données externes
+- A généré une demande structurée `tool_calls`
+- A intégré le résultat de votre fonction dans une réponse conversationnelle
+
+Utilisez `tool_choice: "any"` pour forcer le modèle à toujours appeler un outil, ou `tool_choice: "auto"` (par défaut) pour le laisser choisir.
+
+<SectionTab as="h2" sectionId="whats-next">Et après</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/getting-started/quickstarts/developer/rag-document-search" title="RAG avec recherche documentaire" />
+  <LinkCard href="/#quickstarts" title="Tous les quickstarts développeur" />
+</UsefullLinkContainer>

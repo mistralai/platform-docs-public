@@ -5,12 +5,14 @@ import { MODEL_COLORS, getModelColorFallback } from '@/lib/colors';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { ModelAvatar } from './avatar';
 import { PixelGrid } from '@/components/common/pixel-grid';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import Image from 'next/image';
 import { ModelTypeBadge } from './type-badge';
+import type { Lingo } from '@lingo.dev/react';
 
 export interface ModelCardProps extends React.ComponentProps<'a'> {
   model: Model;
+  l: Lingo;
   showParameters?: boolean;
   variant?: 'card' | 'compact' | 'mini';
   pixelEffect?: boolean;
@@ -19,6 +21,7 @@ export interface ModelCardProps extends React.ComponentProps<'a'> {
 
 export function ModelCard({
   model,
+  l,
   variant = 'compact',
   pixelEffect = true,
   className,
@@ -26,6 +29,7 @@ export function ModelCard({
   overrideColor,
   ...props
 }: ModelCardProps) {
+  const { description, shortDescription } = model.describe(l);
   const isLegacy = model.status === 'Deprecated' || model.status === 'Retired';
   // Get color and icon from avatar or fallback based on model name
   const modelIcon = model.avatar?.icon || getModelIconFallback(model.name);
@@ -77,7 +81,7 @@ export function ModelCard({
             <span>{model.name}</span>
           </h3>
           <p className="text-sm text-foreground/50 group-hover:text-foreground/70 line-clamp-2 text-ellipsis overflow-hidden">
-            {model.shortDescription || model.description}
+            {shortDescription || description}
           </p>
         </div>
       </Link>
@@ -158,7 +162,7 @@ export function ModelCard({
         </div>
         <div className="flex gap-2 justify-between items-baseline">
           <p className="text-sm text-foreground/70 line-clamp-2 text-ellipsis overflow-hidden">
-            {model.shortDescription || model.description}
+            {shortDescription || description}
           </p>
           {showParameters && (
             <div className="text-xs text-foreground/80 font-mono font-bold">

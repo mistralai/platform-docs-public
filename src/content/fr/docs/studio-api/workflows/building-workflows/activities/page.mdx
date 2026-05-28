@@ -1,0 +1,32 @@
+---
+id: activities
+title: Activités
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Activités
+
+Cette page présente les modèles pratiques pour concevoir des activités. Pour les principes de base (atomicité, gestion des reprises, logique de relecture), consultez [Concepts de base > Activités](/studio-api/workflows/getting-started/core_concepts/activities).
+
+Une activité est une unité de travail qui effectue des calculs, des appels API, de l’I/O fichier, des appels LLM ou toute autre opération à effet de bord. Caractéristiques principales :
+
+- **Sans risque en cas de ré-exécution** : une reprise après un échec partiel maintient le système dans un état cohérent. Les effets de bord convergent vers le même résultat observable (c’est la notion précise d’*idempotence* ; le résultat n’a pas besoin d’être strictement identique à l’octet près).
+- **Exécution isolée** : chaque activité s’exécute dans son propre processus, avec des reprises automatiques en cas d’échec.
+- **I/O sérialisable en JSON** : les entrées et sorties acceptent tous types compatibles JSON, tels que `str`, `int`, `dict` ou `list`.
+- **Limite par appel** : 2 Mo d’entrée ou de sortie par appel. Pour les charges plus volumineuses, voir [Externalisation des charges](/studio-api/workflows/building-workflows/payload_offloading).
+
+<SectionTab as="h1" sectionId="topics">Sujets</SectionTab>
+
+- [Notions de base](/studio-api/workflows/building-workflows/activities/basics) : définition des activités, configuration des timeouts et des reprises, heartbeat, granularité, imbrication. **Commencez ici.**
+- [Activités locales](/studio-api/workflows/building-workflows/activities/local_activities) : exécutez des activités sous la seconde directement dans le worker du workflow pour éviter la latence de planification.
+- [Sessions worker « collantes »](/studio-api/workflows/building-workflows/activities/sticky_worker_sessions) : fixez une séquence d’activités sur le même worker pour partager une ressource en mémoire (par exemple, un modèle ML chargé ou une connexion base de données).
+
+<SectionTab as="h1" sectionId="choosing-an-activity-flavor">Choisir un type d’activité</SectionTab>
+
+| Mode                | Surtaxe de routage | Isolation du worker | Partage de ressource  | Idéal pour                                         |
+| ------------------- | ----------------- | -------------------| --------------------- | -------------------------------------------------- |
+| Activité standard   | Standard          | Oui                | Non                  | Appels API, logique complexe, tout ce qui se relance|
+| Session collante    | Standard          | Oui                | Oui (en mémoire)      | Réutilisation d’un modèle ou d’une connexion base   |
+| Activité locale     | Aucune            | Non                | N/A                  | Calculs purs sous la seconde, recherches rapides    |

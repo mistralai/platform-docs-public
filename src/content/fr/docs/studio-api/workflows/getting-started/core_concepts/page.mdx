@@ -1,0 +1,68 @@
+---
+id: core-concepts
+title: Concepts clés
+sidebar_label: Concepts clés
+sidebar_position: 0
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Concepts clés
+
+Cette section présente les éléments fondamentaux de Mistral Workflows et leurs interactions. Chaque composant possède sa propre page de présentation approfondie : commencez ici pour une vue d’ensemble.
+
+<SectionTab as="h2" sectionId="mental-model">Le modèle mental</SectionTab>
+
+Tout commence à l’**API Workflows** : l’orchestrateur appelé pour démarrer, interroger ou signaler des exécutions. Pour tous les détails sur les endpoints, consultez la [référence API](/api/endpoint/workflows).
+
+Votre code s’exécute hors de l’API, dans des **Workers** : des processus que vous déployez pour se connecter à l’API et récupérer des tâches. Le code exécuté par un worker est divisé en deux :
+
+- Un **Workflow** : votre logique d’orchestration ; un code déterministe qui décide des actions, de leur ordre d’exécution et de la gestion des résultats.
+- Les **Activities** : les unités de travail réel appelées par le workflow : requête LLM, requête HTTP, écriture en base de données, appel d’outil. Les effets de bord s’y produisent.
+
+Démarrer un workflow crée une **Execution** : un run unique avec son propre identifiant, son résultat, et un historique d’**Events**. Les events consignent chaque étape : `started`, `activity completed`, `signal received`, etc. Ils sont diffusés en direct vers les clients et conservés dans l’historique d’exécution.
+
+Les workers appartiennent à un **Deployment** : un groupe identifié par un nom qui possède un ensemble de définitions de workflow et partage ses files de tâches.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/workflows_mental_model.svg'}
+  alt="Diagramme du modèle mental des Workflows"
+  centered
+  className="border-none!"
+/>
+</div>
+
+| Terme | Définition |
+|------|------------|
+| **API Workflows** | L’orchestrateur. Le point d’entrée pour démarrer, interroger ou signaler des exécutions. |
+| **Worker** | Un processus que vous déployez, connecté à l’API, qui exécute votre code de workflow et d’activité. |
+| **Workflow** | La logique d’orchestration. Définit ce qui se passe, dans quel ordre, et la gestion des résultats. Déterministe (relancer le workflow depuis la même histoire donne toujours le même plan). |
+| **Activity** | Unité de travail réel appelée par le workflow : appel d’un LLM, requête HTTP, écriture en base, ou lancement d’un outil. C’est ici que les effets de bord se produisent. |
+| **Execution** | Exécution unique d’un workflow. Identifiant unique, historique d’événements, résultat. |
+| **Event** | Trace d’un événement survenu lors d’une exécution, par exemple : `started`, `activity completed`, `signal received`. Événements diffusés en temps réel et stockés dans l’historique. |
+| **Deployment** | Groupe nommé de workers partageant les définitions de workflow et files de tâches. |
+
+<SectionTab as="h2" sectionId="how-it-fits-together">Comment tout s’articule</SectionTab>
+
+Un run type se déroule de la façon suivante :
+
+1. Un client (votre code, Studio, Vibe Work, ou une planification) appelle l’API Workflows pour démarrer une exécution.
+2. L’orchestrateur enregistre la requête comme event et envoie une tâche dans la file du bon déploiement.
+3. Un worker du déploiement récupère la tâche, instancie la classe workflow et lance le point d’entrée.
+4. Le workflow appelle des activities. Chaque appel devient une tâche que n’importe quel worker du déploiement peut exécuter.
+5. Chaque étape est enregistrée comme event dans l’historique de l’exécution. Les clients peuvent suivre le flux en direct ou consulter l’historique plus tard.
+6. Si un worker tombe en panne en cours de run, un autre reprend à partir de l’historique enregistré. L’exécution continue.
+
+L’orchestrateur ne détient jamais votre code : il se contente de dispatcher les tâches. Ce sont les workers qui exécutent votre code et se connectent vers l’extérieur. C’est pourquoi les workflows peuvent tourner dans votre réseau privé sans trafic entrant depuis la plateforme.
+
+<SectionTab as="h2" sectionId="deep-dive">Pour approfondir</SectionTab>
+
+Une fois le modèle assimilé, explorez chaque composant :
+
+- [Workflows](/studio-api/workflows/getting-started/core_concepts/workflows) — logique d’orchestration, déterminisme, replay.
+- [Activities](/studio-api/workflows/getting-started/core_concepts/activities) — unités de travail, relance, heartbeats.
+- [Executions](/studio-api/workflows/getting-started/core_concepts/executions) — cycle de vie, statuts, executions vs runs.
+- [Events](/studio-api/workflows/getting-started/core_concepts/events) — historique d’events, replay, streaming.
+- [Workers](/studio-api/workflows/getting-started/core_concepts/workers) — modèle de processus, enregistrement, tolérance aux pannes.
+- [Deployments](/studio-api/workflows/getting-started/core_concepts/deployments) — regroupement des workers, isolation, scaling.

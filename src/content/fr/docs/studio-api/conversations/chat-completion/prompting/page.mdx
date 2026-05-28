@@ -1,0 +1,231 @@
+---
+id: prompting_capabilities
+title: Prompting
+sidebar_position: 2
+---
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import ClassificationTab from './classification_tab/_page.mdx';
+import SummarizationTab from './summarization_tab/_page.mdx';
+import PersonalizationTab from './personalization_tab/_page.mdx';
+import EvaluationTab from './evaluation_tab/_page.mdx';
+
+# Prompting
+Lorsque vous commencez à utiliser les modèles Mistral, votre première interaction s'articulera autour des **prompts**. Maîtriser l'art de rédiger des prompts efficaces est essentiel pour générer des réponses de haute qualité à partir des modèles Mistral ou d'autres LLM.
+
+<SectionTab as="h1" sectionId="main-concepts">Concepts principaux</SectionTab>
+
+### L'art de rédiger des prompts
+
+Ci-dessous, nous abordons les concepts fondamentaux du prompting et comment rédiger des prompts efficaces pour maximiser les capacités de nos modèles.
+
+<SectionTab as="h2" variant="secondary" sectionId="system-prompt">Prompt système</SectionTab>
+Lorsque vous fournissez des instructions, il existe deux niveaux d'entrée que vous pouvez donner au modèle : `system` et `user`.
+- Le **prompt `system`** est fourni au début de la conversation. Il définit le contexte général et les instructions pour le comportement du modèle et est généralement géré par le développeur.
+- Le **prompt `user`** est fourni pendant la conversation pour donner au modèle un contexte ou des instructions spécifiques pour l'interaction en cours.
+:::note
+En tant que développeur, vous pouvez toujours utiliser les prompts `user` pour fournir un contexte ou des instructions supplémentaires pendant la conversation si nécessaire.
+Si vous ne pouvez pas contrôler le prompt `system`, vous pouvez toujours inclure le contexte général et les instructions dans le prompt `user` en les concaténant avec la requête réelle.
+**Exemple avec séparation des rôles :**
+```json
+{
+    "role": "system",
+    "content": "system_prompt"
+},
+{
+    "role": "user",
+    "content": "user_prompt"
+}
+```
+**Exemple concaténé :**
+```json
+{
+    "role": "user",
+    "content": "system_prompt\n\nUser: user_prompt"
+}
+```
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="purpose">Définir un objectif</SectionTab>
+Également appelé roleplaying, c'est la première étape dans la rédaction d'un prompt et consiste à définir un **objectif clair**. Une approche courante consiste à commencer par une définition concise du rôle et de la tâche, telle que :
+*"Vous êtes un \<rôle\>, votre tâche est de \<tâche\>."*
+Cette technique simple mais puissante aide à orienter le modèle vers un domaine et une tâche spécifiques, en s'assurant qu'il comprend rapidement le contexte et le résultat attendu.
+
+<SectionTab as="h2" variant="secondary" sectionId="structure">Structure</SectionTab>
+Lorsque vous donnez des instructions, **organisez-les de manière hiérarchique ou avec une structure claire**, par exemple en les divisant en sections et sous-sections claires. **Le prompt doit être clair et complet.**
+Une règle empirique utile est d'**imaginer que vous écrivez pour quelqu'un sans contexte préalable** — cette personne devrait pouvoir comprendre et exécuter la tâche uniquement en lisant le prompt.
+Exemple de prompt bien structuré :
+```
+Vous êtes un modèle de détection de langue, votre tâche est de détecter la langue du texte donné.
+# Langues disponibles
+Sélectionnez la langue dans la liste suivante :
+- Anglais : "en"
+- Français : "fr"
+- Espagnol : "es"
+- Allemand : "de"
+Toute langue non répertoriée doit être classée comme "autre" avec le code "on".
+# Format de réponse
+Votre réponse doit suivre ce format :
+{"language_iso": <language_code>}
+# Exemples
+Voici des exemples d'entrées et de sorties attendues :
+## Anglais
+Utilisateur : Hello, how are you?
+Réponse : {"language_iso": "en"}
+## Français
+Utilisateur : Bonjour, comment allez-vous?
+Réponse : {"language_iso": "fr"}
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="formatting">Formatage</SectionTab>
+Le formatage est essentiel pour rédiger des prompts efficaces. Il vous permet de **mettre en évidence explicitement** différentes sections, rendant la structure intuitive pour le modèle et les développeurs. Le **Markdown** et/ou les **balises de style XML** sont idéaux car ils sont :
+- **Lisibles** : faciles à parcourir pour les humains.
+- **Analysables** : simples pour extraire des informations par programmation.
+- **Familiers** : probablement vus massivement pendant l'entraînement du modèle.
+Un bon formatage aide non seulement le modèle à comprendre le prompt, mais **facilite également l'itération et la maintenance** de l'application pour les développeurs.
+
+<SectionTab as="h2" variant="secondary" sectionId="example-prompting">Prompting par exemples</SectionTab>
+Le prompting par exemples est une technique où vous fournissez **quelques exemples de tâches** pour améliorer la compréhension du modèle, la précision et surtout le **format de sortie**.
+
+<SectionTab as="h3" variant="secondary" sectionId="few-shot">Few-shot prompting</SectionTab>
+Un exemple spécifique de cette technique est le **few-shot prompting**, où des interactions artificielles entre l'utilisateur et le modèle sont incluses dans l'historique de la conversation. En revanche, le **zero-shot prompting** n'implique aucun exemple.
+Exemple direct dans un prompt :
+```
+[...]
+# Exemples
+Entrée : Hello, how are you?
+Sortie : {"language_iso": "en"}
+[...]
+```
+Structure standard du few-shot prompting :
+```json
+[
+    {
+        "role": "system",
+        "content": "Vous êtes un modèle de détection de langue. Votre tâche est de détecter la langue du texte donné.\n[...]"
+    },
+    {
+        "role": "user",
+        "content": "Hello, how are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "{\"language_iso\": \"en\"}"
+    },
+    {
+        "role": "user",
+        "content": "Bonjour, comment allez-vous?"
+    },
+    {
+        "role": "assistant",
+        "content": "{\"language_iso\": \"fr\"}"
+    }
+]
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="structured-outputs">Sorties structurées</SectionTab>
+Une fois votre prompt prêt, vous pouvez vous concentrer sur la sortie. Pour garantir que le modèle génère des réponses structurées et prévisibles, nous offrons la possibilité d'imposer un format de sortie JSON spécifique. Cela est particulièrement utile pour les tâches nécessitant une **structure cohérente** qui peut être facilement analysée et traitée par programmation.
+Si cette technique était utilisée dans l'exemple ci-dessus, elle garantirait que les réponses du modèle sont cohérentes en termes de formatage et permettrait également d'imposer les catégories à utiliser.
+Si vous êtes intéressé, pour plus de détails sur l'utilisation des sorties structurées, vous pouvez consulter la documentation [Sorties structurées](/studio-api/conversations/structured-output).
+
+<SectionTab as="h2" variant="secondary" sectionId="advice">Conseils</SectionTab>
+Lors de la création d'un prompt, il est important de rester flexible et d'expérimenter. Différents modèles de différents laboratoires, et même une simple mise à jour, peuvent changer le comportement du modèle et un prompt cohérent peut être impacté par ces changements.
+Par conséquent, n'hésitez pas à revisiter vos prompts et à observer l'impact. Comme vous itéreriez sur votre code et l'entraînement de votre modèle, vous devriez itérer sur vos prompts et évaluer l'impact de vos modifications.
+
+<SectionTab as="h1" sectionId="avoid">Ce qu'il faut éviter</SectionTab>
+
+### Ce qu'il faut éviter
+
+Nous listons ci-dessous des conseils « bons à savoir » sur ce qu'il vaut mieux ne pas faire. La liste n'est pas exhaustive et peut dépendre de votre cas d'usage — mais ces points sont à garder en tête lors de la rédaction de vos prompts.
+
+<SectionTab as="h2" variant="secondary" sectionId="subjective-and-blurry">Évitez les termes subjectifs et flous</SectionTab>
+- Évitez les adjectifs quantitatifs flous : « trop long », « trop court », « beaucoup », « peu », etc.
+  - Préférez des mesures objectives.
+- Évitez les termes flous comme « choses », « trucs », « rédigez un rapport *intéressant* », « rendez-le *meilleur* », etc.
+  - Précisez ce que vous entendez exactement par « intéressant », « meilleur », etc.
+
+<SectionTab as="h2" variant="secondary" sectionId="contradictions">Évitez les contradictions</SectionTab>
+À mesure que votre prompt système s'allonge, de légères contradictions peuvent apparaître.  
+Exemple :
+  - « Si les nouvelles données sont liées à un enregistrement de base de données existant, mettez à jour cet enregistrement. »
+  - « Si les données sont nouvelles, créez un nouvel enregistrement. »
+  - Ceci est ambigu car de nouvelles données pourraient soit mettre à jour un enregistrement existant, soit en créer un nouveau.
+
+Préférez un arbre de décision :
+  ```markdown
+  ## Comment mettre à jour les enregistrements de base de données
+  Suivez ces étapes :
+  - Si les données n'incluent pas d'information nouvelle (c'est-à-dire qu'elles existent déjà dans un enregistrement) :
+      - Ignorez ces données.
+  - Sinon, si les données ne sont liées à aucun enregistrement existant dans la même table :
+      - Créez un nouvel enregistrement.
+  - Sinon, si l'enregistrement lié contient plus de 100 caractères :
+      - Créez un nouvel enregistrement.
+  - Sinon, si les données contredisent directement l'enregistrement existant :
+      - Supprimez l'enregistrement existant et créez-en un nouveau.
+  - Sinon :
+      - Mettez à jour l'enregistrement existant pour inclure les nouvelles données.
+  ```
+
+<SectionTab as="h2" variant="secondary" sectionId="">Ne faites pas compter les mots aux LLM</SectionTab>
+- À éviter : « Si l'enregistrement est trop long, divisez-le en plusieurs enregistrements. »
+- À éviter : « Si l'enregistrement contient plus de 100 caractères, divisez-le en plusieurs enregistrements. »
+- Préférez fournir le nombre de caractères en entrée :
+  ```
+  Enregistrements existants :
+    - { record: "User: Alice, Age: 30", charCount: 15 }
+    - { record: "User: Bob, Age: 25", charCount: 13 }
+  Nouvelles données :
+    - { data: "User: Charlie, Age: 35", charCount: 17 }
+  ```
+
+<SectionTab as="h2" variant="secondary" sectionId="">Ne générez pas trop de tokens</SectionTab>
+Les modèles ingèrent les tokens plus rapidement qu'ils ne les génèrent. Si vous utilisez des sorties structurées, ne demandez au modèle de générer que le strict nécessaire.  
+Mauvais exemples : 
+- Générer le contenu complet d'un enregistrement pour une opération `NO_OP`.
+- Générer un livre entier d'un seul coup.
+
+Ne générez que la mise à jour ou les données nécessaires.
+
+<SectionTab as="h2" variant="secondary" sectionId="">Préférez les échelles verbalisées</SectionTab>
+Si vous avez besoin qu'un modèle note quelque chose, utilisez une échelle verbalisée pour de meilleures performances.  
+**À éviter :**  
+```
+« Notez ces options sur une échelle de 1 à 5, 1 étant très peu pertinent et 5 étant très pertinent. »
+```
+
+**Préférez :**  
+```
+Notez ces options avec cette échelle :
+- Très faible : si l'option est très peu pertinente
+- Faible : si l'option n'est pas assez bonne
+- Neutre : si l'option n'est pas particulièrement intéressante
+- Bonne : si l'option mérite d'être considérée
+- Très bonne : pour les options très pertinentes
+```
+Vous pouvez ensuite convertir cette échelle verbalisée en échelle numérique si besoin.
+
+<SectionTab as="h1" sectionId="prompting-examples">Exemples de prompting</SectionTab>
+Nous vous présentons ci-dessous des exemples de prompts illustrant quatre capacités de prompting différentes :
+- Classification
+- Résumé
+- Personnalisation
+- Évaluation
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/prompting/prompting_capabilities.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+<ExplorerTabs id="prompting-examples" mode="close">
+    <ExplorerTab value="classification" label="Classification">
+        <ClassificationTab/>
+    </ExplorerTab>
+    <ExplorerTab value="summarization" label="Résumé">
+        <SummarizationTab/>
+    </ExplorerTab>
+    <ExplorerTab value="personalization" label="Personnalisation">
+        <PersonalizationTab/>
+    </ExplorerTab>
+    <ExplorerTab value="evaluation" label="Évaluation">
+         <EvaluationTab/>
+    </ExplorerTab>
+</ExplorerTabs>

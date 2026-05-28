@@ -1,0 +1,102 @@
+---
+id: core-concepts-executions
+title: Exécutions
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Exécutions
+
+Une exécution correspond à une invocation unique d’un workflow. Chaque exécution possède un `execution_id` unique (généré automatiquement ou spécifié par l’appelant) et progresse selon une séquence d’états pendant son déroulement.
+
+<SectionTab as="h1" sectionId="triggering-an-execution">Déclencher une exécution</SectionTab>
+
+Vous pouvez lancer une exécution de workflow depuis le code client en utilisant le SDK Mistral. Le `workflow_identifier` doit correspondre au `name` que vous avez passé à `@workflows.workflow.define()`. Si vous ne fournissez pas d’`execution_id`, la plateforme en génère un automatiquement.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_key")
+
+execution = client.workflows.execute_workflow(
+    workflow_identifier="my_workflow",
+    input={"data": "hello"},
+    execution_id="my-run-2024-01-15",  # identifiant personnalisé optionnel
+)
+print(execution.model_dump_json(indent=2))
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "workflow_name": "my_workflow",
+  "execution_id": "my-run-2024-01-15",
+  "root_execution_id": "my-run-2024-01-15",
+  "status": "RUNNING",
+  "start_time": "2026-04-02T08:45:45.578013Z",
+  "end_time": null,
+  "result": null,
+  "parent_execution_id": null,
+  "total_duration_ms": null
+}
+```
+
+  </TabItem>
+</Tabs>
+
+L’objet `execution` renvoyé contient l’`execution_id` et son état initial (généralement `RUNNING`). Vous pouvez aussi déclencher des exécutions depuis [Studio](https://console.mistral.ai/), depuis [Vibe Work](https://chat.mistral.ai/) ou à l’aide d’un planning.
+
+<SectionTab as="h1" sectionId="execution-statuses">États d’exécution</SectionTab>
+
+Une exécution commence à l’état `RUNNING`, peut passer par des états transitoires et se termine dans l’un des états terminaux suivants.
+
+**États terminaux** (l’exécution est terminée et n’évoluera plus) :
+
+- `COMPLETED` : terminée avec succès
+- `FAILED` : arrêtée suite à une erreur non gérée
+- `CANCELED` : arrêtée proprement
+- `TERMINATED` : arrêt forcé
+- `TIMED_OUT` : a dépassé l’`execution_timeout`
+- `CONTINUED_AS_NEW` : historique réinitialisé via continue-as-new (une nouvelle exécution prend le relais avec un nouvel `execution_id`)
+
+**État transitoire** :
+
+- `RETRYING_AFTER_ERROR` : échec et reprogrammée pour une nouvelle tentative ; l’exécution reste dans cet état jusqu’à résolution vers un état terminal
+
+<SectionTab as="h1" sectionId="reading-execution-state">Lire l’état d’une exécution</SectionTab>
+
+Pour consulter une exécution après l’avoir déclenchée, récupérez-la par son identifiant :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+execution = client.workflows.executions.get_workflow_execution(execution_id="my-run-2024-01-15")
+print(execution.status, execution.result)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  https://api.mistral.ai/v1/workflows/executions/my-run-2024-01-15
+```
+
+  </TabItem>
+</Tabs>
+
+Pour le journal complet des événements, utilisez l’endpoint history (`GET /v1/workflows/executions/{execution_id}/history`). Pour suivre la progression en temps réel pendant l’exécution du workflow, consultez [Streaming](/studio-api/workflows/building-workflows/streaming).
+
+<SectionTab as="h1" sectionId="executions-vs-runs">Exécutions vs runs</SectionTab>
+
+Une **exécution** est l’invocation d’un workflow avec un `execution_id` stable sur toute sa durée de vie. Un **run** est une tentative individuelle à l’intérieur de cette exécution. La plupart du temps, une exécution comporte un seul run. Mais en cas de réinitialisation du workflow à un état antérieur, un nouveau run débute sous le même `execution_id`.
+
+Un seul run peut être actif à la fois. Les endpoints API (`/cancel`, `/terminate`, `/signals`, `/queries`, `/updates`) ciblent toujours le **dernier run** de l’exécution.

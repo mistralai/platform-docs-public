@@ -3,61 +3,71 @@ import {
   MISTRAL_API_REFERENCE_URL,
   MISTRAL_STUDIO_URL,
 } from '@/lib/constants';
+import { stripLocale } from '@/i18n/utils';
+
+export type HeaderLinkId =
+  | 'getting-started'
+  | 'models'
+  | 'products'
+  | 'developers'
+  | 'admin'
+  | 'api';
 
 export type HeaderLink = {
-  label: string;
+  id: HeaderLinkId;
   href: string;
   /** URL prefixes that activate this tab */
   pathPrefixes: string[];
-  /** Sidebar section labels this tab owns */
-  sidebarSections: string[];
+  /** Top-level sidebar item hrefs this tab owns (locale-invariant) */
+  sidebarItemHrefs: string[];
 };
 
 export const headerLinks: HeaderLink[] = [
   {
-    label: 'Getting Started',
+    id: 'getting-started',
     href: '/',
     pathPrefixes: ['/', '/getting-started'],
-    sidebarSections: ['Getting started'],
+    sidebarItemHrefs: ['/'],
   },
   {
-    label: 'Models',
+    id: 'models',
     href: '/models',
     pathPrefixes: ['/models'],
-    sidebarSections: ['Models'],
+    sidebarItemHrefs: ['/models'],
   },
   {
-    label: 'Products',
+    id: 'products',
     href: '/products',
-    pathPrefixes: ['/products', '/le-chat', '/studio-api', '/mistral-vibe'],
-    sidebarSections: ['Le Chat', 'Studio', 'Mistral Vibe'],
+    pathPrefixes: ['/products', '/studio-api', '/vibe'],
+    sidebarItemHrefs: ['/studio-api/overview', '/vibe/overview'],
   },
   {
-    label: 'Developers',
+    id: 'developers',
     href: '/developers',
     pathPrefixes: ['/developers', '/resources', '/community'],
-    sidebarSections: ['Resources', 'Community'],
+    sidebarItemHrefs: ['/resources', '/community'],
   },
   {
-    label: 'Admin',
+    id: 'admin',
     href: '/admin',
     pathPrefixes: ['/admin'],
-    sidebarSections: ['Admin', 'Admin Quickstarts', 'Security & Access', 'User Management & Fin Ops'],
+    sidebarItemHrefs: ['/admin'],
   },
   {
-    label: 'API',
+    id: 'api',
     href: '/api',
     pathPrefixes: ['/api'],
-    sidebarSections: ['API Reference', 'Endpoints', 'Getting Started', 'Beta', 'Beta Features', 'Deprecated'],
+    sidebarItemHrefs: ['/api'],
   },
 ];
 
 /** Determine which header tab is active for a given pathname */
 export function getActiveHeaderTab(pathname: string): HeaderLink {
+  const stripped = stripLocale(pathname);
   // Check non-root tabs first (more specific paths)
   for (const link of headerLinks) {
     if (link.href === '/') continue;
-    if (link.pathPrefixes.some(p => pathname.startsWith(p))) {
+    if (link.pathPrefixes.some(p => stripped.startsWith(p))) {
       return link;
     }
   }
@@ -65,15 +75,24 @@ export function getActiveHeaderTab(pathname: string): HeaderLink {
   return headerLinks[0];
 }
 
-/** Get sidebar section labels for the active tab */
-export function getActiveSidebarSections(pathname: string): string[] {
-  return getActiveHeaderTab(pathname).sidebarSections;
+/** Get top-level sidebar item hrefs for the active tab */
+export function getActiveSidebarItemHrefs(pathname: string): string[] {
+  return getActiveHeaderTab(pathname).sidebarItemHrefs;
 }
 
-export const headerDropdownData = [
+export type HeaderDropdownId = 'vibe' | 'ai-studio' | 'docs-api' | 'admin';
+
+export type HeaderDropdownItem = {
+  id: HeaderDropdownId;
+  href: string;
+  bg: string;
+  isExternal?: boolean;
+  section: 'default' | 'admin';
+};
+
+export const headerDropdownData: HeaderDropdownItem[] = [
   {
-    id: 'le-chat',
-    label: 'Le Chat',
+    id: 'vibe',
     href: `${MISTRAL_CHAT_URL}`,
     bg: 'bg-primary',
     isExternal: true,
@@ -81,7 +100,6 @@ export const headerDropdownData = [
   },
   {
     id: 'ai-studio',
-    label: 'Studio',
     href: `${MISTRAL_STUDIO_URL}`,
     bg: 'bg-[#6060F8]',
     isExternal: true,
@@ -89,14 +107,12 @@ export const headerDropdownData = [
   },
   {
     id: 'docs-api',
-    label: 'Docs & API',
     href: `/`,
     bg: 'bg-foreground/10 text-foreground',
     section: 'default',
   },
   {
     id: 'admin',
-    label: 'Admin',
     href: 'https://admin.mistral.ai',
     isExternal: true,
     bg: 'bg-foreground/10 text-foreground',

@@ -1,0 +1,94 @@
+---
+id: skypilot
+title: SkyPilot
+sidebar_position: 3.33
+---
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Déployer avec SkyPilot
+[SkyPilot](https://skypilot.readthedocs.io/en/latest/) est un framework pour exécuter des LLM, de l'IA et des jobs batch sur n'importe quel cloud, offrant des économies maximales, une disponibilité GPU optimale et une exécution gérée. Nous fournissons un exemple de configuration SkyPilot qui déploie nos modèles.
+
+<SectionTab as="h1" sectionId="skypilot-configuration">Configuration SkyPilot</SectionTab>
+
+Après avoir [installé SkyPilot](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html), vous devez créer un fichier de configuration qui indique à SkyPilot comment et où déployer votre serveur d'inférence, en utilisant notre conteneur Docker pré-construit :
+
+<Tabs>
+<TabItem value="mistral7b" label="Mistral-7B" default>
+```yaml
+resources:
+  cloud: ${CLOUD_PROVIDER}
+  accelerators: A10G:1
+  ports:
+    - 8000
+run: |
+  docker run --gpus all -p 8000:8000 ghcr.io/mistralai/mistral-src/vllm:latest \
+                   --host 0.0.0.0 \
+                   --model mistralai/Mistral-7B-Instruct-v0.2 \
+                   --tensor-parallel-size 1
+```
+  </TabItem>
+  <TabItem value="mixtral8x7b" label="Mixtral-8X7B">
+```yaml
+resources:
+  cloud: ${CLOUD_PROVIDER}
+  accelerators: A100-80GB:2
+  ports:
+    - 8000
+run: |
+  docker run --gpus all -p 8000:8000 ghcr.io/mistralai/mistral-src/vllm:latest \
+                   --host 0.0.0.0 \
+                   --model mistralai/Mixtral-8x7B-Instruct-v0.1 \
+                   --tensor-parallel-size 2
+```
+  </TabItem>
+  <TabItem value="mixtral8x22b" label="Mixtral-8X22B">
+```yaml
+resources:
+  cloud: ${CLOUD_PROVIDER}
+  accelerators: A100-80GB:4
+  ports:
+    - 8000
+run: |
+  docker run --gpus all -p 8000:8000 ghcr.io/mistralai/mistral-src/vllm:latest \
+                   --host 0.0.0.0 \
+                   --model mistralai/Mixtral-8x22B-Instruct-v0.1 \
+                   --tensor-parallel-size 4
+```
+  </TabItem>
+</Tabs>
+
+Une fois ces variables d'environnement définies, vous pouvez utiliser `sky launch` pour lancer le serveur d'inférence avec le nom de modèle approprié, par exemple avec `mistral-7b` :
+
+```bash
+sky launch -c mistral-7b mistral-7b-v0.1.yaml --region us-east-1
+```
+
+:::caution
+Déployé de cette manière, le modèle sera accessible au monde entier. Vous **devez** le sécuriser, soit en l'exposant exclusivement sur votre réseau privé (modifiez l'option Docker `--host` pour cela), soit en ajoutant un load-balancer avec un mécanisme d'authentification devant, soit en configurant correctement le réseau de votre instance.
+:::
+
+<SectionTab as="h1" sectionId="test-it-out">Testez !</SectionTab>
+
+Pour récupérer facilement l'adresse IP du cluster `mistral-7b` déployé, vous pouvez utiliser :
+
+```bash
+sky status --ip mistral-7b
+```
+
+Vous pouvez ensuite utiliser `curl` pour envoyer une requête de complétion :
+
+```bash
+IP=$(sky status --ip cluster-name)
+curl http://$IP:8000/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+      "model": "mistralai/Mistral-7B-v0.1",
+      "prompt": "My favourite condiment is",
+      "max_tokens": 25
+  }'
+```
+
+<SectionTab as="h1" sectionId="usage-quotas">Quotas d'utilisation</SectionTab>
+
+De nombreux fournisseurs cloud exigent que vous demandiez explicitement l'accès aux instances GPU puissantes. Consultez le [guide de SkyPilot](https://skypilot.readthedocs.io/en/latest/cloud-setup/quota.html) sur la procédure à suivre.

@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import React from 'react';
 import { ArrowRightIcon, PageIcon } from '../icons/pixel';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation.client';
 import { useSearch as useSearchHook } from '@/hooks/use-search';
 import { KeyboardKey } from '../ui/keyboard-key';
 import { Drawer, DrawerContent } from '../ui/drawer';
@@ -21,6 +21,7 @@ import { Hit } from '@/hooks/use-search';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import clsx from 'clsx';
+import { useLingo } from '@lingo.dev/react';
 import useLocalStorageState from '@/hooks/use-local-storage-state';
 
 type SearchContextType = {
@@ -42,6 +43,7 @@ export const useSearch = () => {
 };
 
 export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
+  const l = useLingo();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -124,8 +126,8 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
           />
           <footer className="flex gap-6 py-4 px-6 border-t font-semibold bg-input justify-between items-center">
             <div className="flex gap-6">
-              <CommandFooter text="Go to Page" cmd=" ↵ " />
-              <CommandFooter text="Close" cmd=" Esc " />
+              <CommandFooter text={l.text('Go to Page', { context: 'Command palette hint for opening the selected result' })} cmd=" ↵ " />
+              <CommandFooter text={l.text('Close', { context: 'Command palette hint for closing search' })} cmd=" Esc " />
             </div>
             <label className="text-sm text-muted-foreground flex items-center gap-2">
               <Checkbox
@@ -137,7 +139,7 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
                 }}
               />
               <span className="text-sm text-muted-foreground">
-                Show only docs
+                {l.text('Show only docs', { context: 'Filter to show documentation pages only' })}
               </span>
             </label>
           </footer>
@@ -163,6 +165,7 @@ const SearchShell = ({
   handleSelect: (href: string) => void;
   isMobile?: boolean;
 }) => {
+  const l = useLingo();
   const listRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     let raf: number;
@@ -178,7 +181,7 @@ const SearchShell = ({
     <>
       <CommandInput
         className="h-12"
-        placeholder="Search documentation..."
+        placeholder={l.text('Search documentation...', { context: 'Placeholder for searching documentation' })}
         value={q}
         autoFocus={!isMobile}
         ref={inputRef}
@@ -204,7 +207,11 @@ const SearchShell = ({
           </div>
         </CommandEmpty>
         <CommandGroup
-          heading={q.length > 0 ? `${hits.length} results` : 'Recommended'}
+          heading={
+            q.length > 0
+              ? l.text('{count} results', { values: { count: hits.length }, context: 'Heading showing the number of search results' })
+              : l.text('Recommended', { context: 'Heading for recommended documentation pages' })
+          }
           className={cn('p-4', hits.length === 0 && 'hidden')}
         >
           {hits.map(item =>

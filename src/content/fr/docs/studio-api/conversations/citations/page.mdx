@@ -1,0 +1,481 @@
+---
+id: citations
+title: Citations et références
+sidebar_position: 9
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+## Citations et références
+
+Les citations permettent aux modèles de fonder leurs réponses et de fournir des références, ce qui en fait une fonctionnalité puissante pour la génération augmentée par récupération (RAG) et les applications agentiques. Cette fonctionnalité permet au modèle de fournir la source de l'information extraite d'un document ou d'un fragment de données provenant d'un appel d'outil.
+
+Nos modèles ont été profondément entraînés pour se fonder sur des documents et fournir des sources, avec une fonctionnalité intégrée pour extraire les références et les citations.
+
+:::tip
+Avant de continuer, nous vous recommandons de lire la documentation [Chat Completions](/studio-api/conversations/chat-completion) pour en savoir plus sur l'API de chat completions et comment l'utiliser avant de poursuivre.
+:::
+
+<SectionTab as="h1" sectionId="usage">Utilisation</SectionTab>
+
+### Comment utiliser les citations et les références
+
+Pour fournir des documents au modèle, vous pouvez inclure les sources en tant que réponse d'appel de fonction.  
+Voici un exemple de références, dans ce cas depuis Wikipédia, utilisant des appels d'outils.
+
+<SectionTab as="h2" variant="secondary" sectionId="setup">Configurer l'outil</SectionTab>
+
+Pour utiliser les citations et les références, vous devez configurer un appel d'outil qui renverra les références.
+
+**Exemple de références**
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+references = {
+  "0": {
+    "url": "https://en.wikipedia.org/wiki/2024_Nobel_Peace_Prize",
+    "title": "2024 Nobel Peace Prize",
+    "snippets": [
+      [
+        "The 2024 Nobel Peace Prize, an international peace prize established according to Alfred Nobel's will, was awarded to Nihon Hidankyo (the Japan Confederation of A- and H-Bomb Sufferers Organizations), for their activism against nuclear weapons, assisted by victim/survivors (known as Hibakusha) of the atomic bombings of Hiroshima and Nagasaki in 1945.",
+        "They will receive the prize at a ceremony on 10 December 2024 at Oslo, Norway."
+      ]
+    ],
+    "description": None,
+    "date": "2024-11-26T17:39:55.057454",
+    "source": "wikipedia"
+  },
+  "1": {
+    "url": "https://en.wikipedia.org/wiki/Climate_Change",
+    "title": "Climate Change",
+    "snippets": [
+      [
+        "Present-day climate change includes both global warming—the ongoing increase in global average temperature—and its wider effects on Earth's climate system. Climate change in a broader sense also includes previous long-term changes to Earth's climate. The current rise in global temperatures is driven by human activities, especially fossil fuel burning since the Industrial Revolution. Fossil fuel use, deforestation, and some agricultural and industrial practices release greenhouse gases. These gases absorb some of the heat that the Earth radiates after it warms from sunlight, warming the lower atmosphere. Carbon dioxide, the primary gas driving global warming, has increased in concentration by about 50% since the pre-industrial era to levels not seen for millions of years."
+      ]
+    ],
+    "description": None,
+    "date": "2024-11-26T17:39:55.057454",
+    "source": "wikipedia"
+  },
+  "2": {
+    "url": "https://en.wikipedia.org/wiki/Artificial_Intelligence",
+    "title": "Artificial Intelligence",
+    "snippets": [
+      [
+        "Artificial intelligence (AI) refers to the capability of computational systems to perform tasks typically associated with human intelligence, such as learning, reasoning, problem-solving, perception, and decision-making. It is a field of research in computer science that develops and studies methods and software that enable machines to perceive their environment and use learning and intelligence to take actions that maximize their chances of achieving defined goals. Such machines may be called AIs."
+      ]
+    ],
+    "description": None,
+    "date": "2024-11-26T17:39:55.057454",
+    "source": "wikipedia"
+  }
+}
+```
+  </TabItem>
+</Tabs>
+
+Ensuite, vous devez définir l'outil qui sera utilisé pour récupérer les informations depuis la source externe.
+Dans ce cas, nous allons créer un outil `get_information` qui renverra les références mentionnées précédemment.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+get_information_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_information",
+        "description": "Get information from external source.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": False
+        },
+        "strict": True
+    },
+}
+
+def get_information():
+    return json.dumps(references)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="initialize-client">Initialiser le client</SectionTab>
+
+Pour commencer, vous devez initialiser le client avec votre clé API comme d'habitude.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral, ToolMessage
+import json
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-latest"
+
+client = Mistral(api_key=api_key)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral, ToolMessage
+import json
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-latest"
+
+client = Mistral(api_key=api_key)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="set-up-chat-history">Configurer l'historique de conversation</SectionTab>
+
+Vous pouvez configurer l'historique de conversation avec le message utilisateur initial et le message système optionnel.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+chat_history = [
+    {
+        "role": "system",
+        "content": "Answer the user by providing references to the source of the information."
+    },
+    {
+        "role": "user",
+        "content": "Who won the Nobel Prize in 2024?"
+    }
+]
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="make-initial-chat-request">Effectuer la requête de conversation initiale</SectionTab>
+
+Vous pouvez effectuer la requête de conversation initiale au modèle avec l'historique de conversation et l'outil.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+chat_response = client.chat.complete(
+    model=model,
+    messages=chat_history,
+    tools=[get_information_tool],
+)
+
+tool_call = chat_response.choices[0].message.tool_calls[0]
+chat_history.append(chat_response.choices[0].message)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "mistral-small-latest",
+    "messages": [
+        {
+            "content": "Answer the user by providing references to the source of the information using the tool available.",
+            "role": "system"
+        },
+        {
+            "content": "Who won the Nobel Prize in 2024?",
+            "role": "user"
+        }
+    ],
+    "stream": false,
+    "tools": [
+        {
+            "function": {
+                "name": "get_information",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": false
+                },
+                "description": "Get information from external source.",
+                "strict": true
+            },
+            "type": "function"
+        }
+    ]
+}'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "3af5113805d6422cb3f89199786dc1e1",
+  "created": 1756910314,
+  "model": "mistral-small-latest",
+  "usage": {
+    "prompt_tokens": 70,
+    "total_tokens": 90,
+    "completion_tokens": 20
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "PxtchOaKx",
+            "function": {
+              "name": "get_information",
+              "arguments": "{\"query\": \"Nobel Prize winners 2024\"}"
+            },
+            "index": 0
+          }
+        ],
+        "content": ""
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Le modèle souhaite appeler l'outil `get_information` pour récupérer les informations depuis la source externe.
+
+De notre côté, nous pouvons gérer l'appel d'outil et ajouter le résultat à l'historique de conversation.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+result = get_information()
+
+tool_call_result = ToolMessage(
+    content=result,
+    tool_call_id=tool_call.id,
+    name=tool_call.function.name,
+)
+
+# Append the tool call message to the chat_history
+chat_history.append(tool_call_result)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="make-final-chat-request">Effectuer la requête de conversation finale</SectionTab>
+
+Enfin, vous pouvez effectuer la requête de conversation finale au modèle avec l'historique de conversation mis à jour, en fournissant la **requête d'origine**, l'**appel d'outil** du modèle et le **résultat de l'outil**.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+chat_response = client.chat.complete(
+    model=model,
+    messages=chat_history,
+    tools=[get_information_tool],
+)
+```
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "mistral-small-latest",
+    "messages": [
+        {
+            "content": "Answer the user by providing references to the source of the information using the tool available.",
+            "role": "system"
+        },
+        {
+            "content": "Who won the Nobel Prize in 2024?",
+            "role": "user"
+        },
+        {
+            "content": "",
+            "tool_calls": [
+                {
+                    "function": {
+                        "name": "get_information",
+                        "arguments": "{}"
+                    },
+                    "id": "3DHY8663m",
+                    "index": 0
+                }
+            ],
+            "prefix": false,
+            "role": "assistant"
+        },
+        {
+            "content": "{\"0\": {\"url\": \"https://en.wikipedia.org/wiki/2024_Nobel_Peace_Prize\", \"title\": \"2024 Nobel Peace Prize\", \"snippets\": [[\"The 2024 Nobel Peace Prize, an international peace prize established according to Alfred Nobel'\''s will, was awarded to Nihon Hidankyo (the Japan Confederation of A- and H-Bomb Sufferers Organizations), for their activism against nuclear weapons, assisted by victim/survivors (known as Hibakusha) of the atomic bombings of Hiroshima and Nagasaki in 1945.\", \"They will receive the prize at a ceremony on 10 December 2024 at Oslo, Norway.\"]], \"description\": null, \"date\": \"2024-11-26T17:39:55.057454\", \"source\": \"wikipedia\"}, \"1\": {\"url\": \"https://en.wikipedia.org/wiki/Climate_Change\", \"title\": \"Climate Change\", \"snippets\": [[\"Present-day climate change includes both global warming—the ongoing increase in global average temperature—and its wider effects on Earth'\''s climate system. Climate change in a broader sense also includes previous long-term changes to Earth'\''s climate. The current rise in global temperatures is driven by human activities, especially fossil fuel burning since the Industrial Revolution. Fossil fuel use, deforestation, and some agricultural and industrial practices release greenhouse gases. These gases absorb some of the heat that the Earth radiates after it warms from sunlight, warming the lower atmosphere. Carbon dioxide, the primary gas driving global warming, has increased in concentration by about 50% since the pre-industrial era to levels not seen for millions of years.\"]], \"description\": null, \"date\": \"2024-11-26T17:39:55.057454\", \"source\": \"wikipedia\"}, \"2\": {\"url\": \"https://en.wikipedia.org/wiki/Artificial_Intelligence\", \"title\": \"Artificial Intelligence\", \"snippets\": [[\"Artificial intelligence (AI) refers to the capability of computational systems to perform tasks typically associated with human intelligence, such as learning, reasoning, problem-solving, perception, and decision-making. It is a field of research in computer science that develops and studies methods and software that enable machines to perceive their environment and use learning and intelligence to take actions that maximize their chances of achieving defined goals. Such machines may be called AIs.\"]], \"description\": null, \"date\": \"2024-11-26T17:39:55.057454\", \"source\": \"wikipedia\"}}",
+            "tool_call_id": "3DHY8663m",
+            "name": "get_information",
+            "role": "tool"
+        }
+    ],
+    "stream": false,
+    "tools": [
+        {
+            "function": {
+                "name": "get_information",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": false
+                },
+                "description": "Get information from external source.",
+                "strict": true
+            },
+            "type": "function"
+        }
+    ]
+}'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "60b20a6ea61649248662aa0178dd8f57",
+  "created": 1756913113,
+  "model": "mistral-small-latest",
+  "usage": {
+    "prompt_tokens": 706,
+    "total_tokens": 802,
+    "completion_tokens": 96
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "The 2024 Nobel Peace Prize was awarded to Nihon Hidankyo (the Japan Confederation of A- and H-Bomb Sufferers Organizations) for their activism against nuclear weapons, with assistance from the Hibakusha, survivors of the atomic bombings of Hiroshima and Nagasaki in 1945. The award ceremony will take place on December 10, 2024, in Oslo, Norway "
+          },
+          {
+            "type": "reference",
+            "reference_ids": [
+              0
+            ]
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Comme vous pouvez le constater, le modèle a fourni la réponse à la requête de l'utilisateur ainsi que la référence à la source de l'information.
+
+Vous pouvez extraire et afficher ces références de la réponse comme vous le souhaitez.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai.models import TextChunk, ReferenceChunk
+
+refs_used = []
+
+# Print the main response and save each reference
+for chunk in chat_response.choices[0].message.content:
+    if isinstance(chunk, TextChunk):
+        print(chunk.text, end="")
+    elif isinstance(chunk, ReferenceChunk):
+        refs_used += chunk.reference_ids
+
+# Print references only
+if refs_used:
+    print("\n\nSources:")
+    for i, ref in enumerate(set(refs_used), 1):
+        reference = json.loads(result)[str(ref)]
+        print(f"\n{i}. {reference['title']}: {reference['url']}")
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client.models import TextChunk, ReferenceChunk
+
+refs_used = []
+
+# Print the main response and save each reference
+for chunk in chat_response.choices[0].message.content:
+    if isinstance(chunk, TextChunk):
+        print(chunk.text, end="")
+    elif isinstance(chunk, ReferenceChunk):
+        refs_used += chunk.reference_ids
+
+# Print references only
+if refs_used:
+    print("\n\nSources:")
+    for i, ref in enumerate(set(refs_used), 1):
+        reference = json.loads(result)[str(ref)]
+        print(f"\n{i}. {reference['title']}: {reference['url']}")
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+The 2024 Nobel Peace Prize was awarded to Nihon Hidankyo (the Japan Confederation of A- and H-Bomb Sufferers Organizations) for their activism against nuclear weapons, with assistance from the Hibakusha, survivors of the atomic bombings of Hiroshima and Nagasaki in 1945. The award ceremony will take place on December 10, 2024, in Oslo, Norway .
+
+Sources:
+
+1. 2024 Nobel Peace Prize: https://en.wikipedia.org/wiki/2024_Nobel_Peace_Prize
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
+
+Vous pouvez trouver un cookbook complet explorant les citations et les références en tirant parti du RAG avec Wikipédia [ici](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/mistral-reference-rag.ipynb).  
+Ce modèle vous aidera à démarrer avec la recherche web et l'ancrage documentaire avec citations.

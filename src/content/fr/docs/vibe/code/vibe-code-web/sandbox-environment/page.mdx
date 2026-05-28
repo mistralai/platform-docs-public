@@ -1,0 +1,93 @@
+---
+title: Environnement sandbox
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Environnement sandbox
+
+Chaque session Vibe Code Web s’exécute dans un **sandbox cloud isolée** provisionné uniquement pour cette exécution. Cette page présente le contenu par défaut de la sandbox ainsi que ce qui est conservé ou supprimé une fois la sandbox fermé.
+
+<SectionTab as="h2" sectionId="isolation">Isolation</SectionTab>
+
+Chaque session possède son propre sandbox :
+
+- Monolocataire pendant toute la durée de la session.
+- Aucune donnée partagée avec d'autres sessions ou utilisateurs.
+- Supprimé à la fin de la session.
+
+:::info
+La sandbox **ne peut pas accéder à votre machine locale**. L’agent fonctionne à partir du dépôt, de l’image par défaut et via les connexions réseau sortantes.
+:::
+
+<SectionTab as="h2" sectionId="default-image">Image par défaut</SectionTab>
+
+La sandbox lance une image Linux par défaut avec une base d’outils essentiels pour développeurs :
+
+- Un shell POSIX ;
+- Git, avec les identifiants de l’application Mistral GitHub configurés ;
+- Les runtimes courants et leurs gestionnaires de paquets ;
+- Un ensemble standard d’outils en ligne de commande.
+
+L’image est **maintenue par Mistral** et mise à jour régulièrement. Les versions des outils peuvent évoluer au fil des mises à jour de l’image par défaut.
+
+:::note
+Si votre projet dépend d’outils, de runtimes, ou de paquets système non présents dans l’image par défaut, l’agent les installe au démarrage de la session. **La configuration avancée de la sandbox sera bientôt disponible**.
+:::
+
+<SectionTab as="h2" sectionId="network-posture">Gestion réseau</SectionTab>
+
+La sandbox dispose d’un **accès Internet sortant géré par Mistral**, ce qui permet à l’agent d’installer des dépendances, de récupérer de la documentation et d’utiliser les API tierces nécessaires au projet. L’accès entrant depuis Internet vers la sandbox est bloqué.
+
+Concrètement :
+
+- L’agent peut installer des dépendances, accéder à des URL publiques ou appeler des API publiques.
+- L’agent ne peut pas exposer la sandbox comme un serveur accessible publiquement.
+- Les appels sortants peuvent être soumis à des limitations qui évoluent dans le temps.
+
+:::note
+Il n’existe actuellement pas de liste personnalisable d’adresses autorisées ni de contrôle du réseau de la sandbox. Voir [Fonctionnalités à venir](/vibe/code/vibe-code-web/limits-and-lifecycle#follow-ups).
+:::
+
+<SectionTab as="h2" sectionId="credentials">Identifiants et accès</SectionTab>
+
+La sandbox a accès à :
+
+- Le **token d’accès utilisateur de l’application Mistral GitHub**, utilisé pour les opérations Git sur les dépôts sélectionnés. Voir [Dépôts GitHub et autorisations](/vibe/code/vibe-code-web/github-repositories-permissions) pour le modèle de token.
+- Un jeu réduit de variables gérées (ID de session, URL du dépôt, nom de branche).
+
+Il **n’a pas** accès à :
+
+- Votre machine locale, votre système de fichiers ou votre shell.
+- Les dépôts non autorisés par vous.
+- Les sessions ou sandboxes d’autres utilisateurs.
+- Les services internes de Mistral non nécessaires au fonctionnement de l’agent.
+
+:::tip
+Considérez la sandbox comme un job CI. Utilisez uniquement des identifiants de test ou les moins privilégiés possible. N’exposez jamais de secrets de production à la sandbox.
+:::
+
+<SectionTab as="h2" sectionId="filesystem">Système de fichiers et persistance</SectionTab>
+
+| Chemin | Comportement |
+|---|---|
+| **Dépôt cloné** | Conserve les modifications d’une itération à l’autre au sein d’une même session. Perdu à la fin de la session. |
+| **Artefacts de build** | Supprimés avec la sandbox sauf si validés dans le dépôt. |
+| **Autres fichiers temporaires** | Supprimés avec la sandbox. |
+
+La branche du dépôt ou la pull request constitue la sortie persistante. Les fichiers de la sandbox et les artefacts de build sont supprimés lors de la fermeture de la sandbox, sauf s’ils sont validés sur GitHub.
+
+<SectionTab as="h2" sectionId="resource-limits">Limites de ressources</SectionTab>
+
+Les ressources de calcul et de stockage de la sandbox sont calibrées pour des tâches de développement courantes. Les quotas (CPU, RAM, disque) peuvent varier selon l’offre et le déploiement. Les calculs longue durée, l’entraînement de modèles volumineux ou les chaînes de build lourdes sont hors périmètre.
+
+Pour les limites de temps d’exécution et d’inactivité, consultez [Limites et cycle de vie](/vibe/code/vibe-code-web/limits-and-lifecycle).
+
+<SectionTab as="h2" sectionId="next">Étapes suivantes</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/vibe/code/vibe-code-web/security" title="Sécurité" description="Risque d’injection de prompt et gestion des données." />
+  <LinkCard href="/vibe/code/vibe-code-web/limits-and-lifecycle" title="Limites et cycle de vie" description="Cycle de vie des sessions, états de fin et persistance." />
+</UsefullLinkContainer>

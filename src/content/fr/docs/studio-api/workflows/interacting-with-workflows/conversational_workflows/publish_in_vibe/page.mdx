@@ -1,0 +1,137 @@
+---
+id: publish-in-vibe
+title: Publier dans Vibe
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Publier dans Vibe
+
+Pour publier un workflow conversationnel en tant qu'assistant disponible dans Vibe (en particulier dans **Vibe Work**, l'interface de chat web et mobile), votre workflow doit renvoyer un `ChatAssistantWorkflowOutput`. Le nom de la classe reflète le protocole sous-jacent (un assistant compatible chat) et ce même contrat alimente l'expérience côté utilisateur documentée ici : [Exécuter des workflows dans Vibe Work](/vibe/work/workflows). La valeur de sortie n'est pas affichée telle quelle, mais nous imposons une interface commune pour garantir l'interopérabilité sur toutes les surfaces.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="expense-summary-workflow",
+    workflow_display_name="Expense Summary",
+    workflow_description="Generates a summary of expenses",
+)
+class ExpenseSummaryWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, department: str) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        summary = f"Expense summary for {department}: Total $12,500"
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=summary)]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="tagging-input-variants">Étiquetage des variantes d'entrée</SectionTab>
+
+Lorsqu'un workflow accepte plusieurs types d'entrée, les clients doivent pouvoir choisir la variante appropriée. Le décorateur `@input_tag` ajoute un champ `x-input-tag` au schéma JSON du modèle, permettant ainsi aux clients d'identifier et de sélectionner la bonne variante.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from pydantic import BaseModel
+
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.plugins.mistralai import input_tag
+
+
+class FullParams(BaseModel):
+    config: str
+    options: dict[str, str]
+
+
+@input_tag("simplified")
+class SimpleParams(BaseModel):
+    prompt: str
+
+
+@workflows.workflow.define(
+    name="multi-client-workflow",
+    workflow_display_name="Multi-Client",
+)
+class MultiClientWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: FullParams | SimpleParams) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        if isinstance(params, SimpleParams):
+            resolved = params.prompt
+        else:
+            resolved = params.config
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=f"Received: {resolved}")]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+`SimpleParams.model_json_schema()` contient désormais `"x-input-tag": "simplified"`. Les clients consultent les membres de l'union dans le `input_schema` du workflow et sélectionnent la variante correspondant à leur tag reconnu.
+
+<SectionTab as="h1" sectionId="error-handling">Gestion des erreurs</SectionTab>
+
+Pour indiquer qu'un workflow a échoué, il suffit de faire passer `isError=True` dans la sortie. Le texte est alors utilisé comme message d'erreur à afficher à l'utilisateur et le workflow est marqué comme échoué dans la conversation :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+
+
+@workflows.workflow.define(
+    name="expense-validation-workflow",
+    workflow_display_name="Expense Validation",
+    workflow_description="Validates expense data",
+)
+class ExpenseValidationWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, expense_id: str) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        expense = lookup_expense(expense_id)
+        if expense is None:
+            return workflows_mistralai.ChatAssistantWorkflowOutput(
+                content=[workflows_mistralai.TextOutput(text=f"Expense {expense_id} not found.")],
+                isError=True,
+            )
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[workflows_mistralai.TextOutput(text=f"Expense {expense_id} is valid.")]
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="structured-content">Contenu structuré</SectionTab>
+
+`ChatAssistantWorkflowOutput` accepte un champ optionnel `structuredContent` (`dict[str, Any]`) permettant d'associer des données structurées arbitraires à la sortie du workflow.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+return workflows_mistralai.ChatAssistantWorkflowOutput(
+    content=[workflows_mistralai.TextOutput(text="Done.")],
+    structuredContent={"tool": "web_search", "results": [{"url": "https://example.com"}]},
+)
+```
+
+  </TabItem>
+</Tabs>

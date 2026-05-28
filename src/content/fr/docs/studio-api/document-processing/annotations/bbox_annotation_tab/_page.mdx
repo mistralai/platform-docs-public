@@ -1,0 +1,387 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+Voici un exemple d'utilisation de nos fonctionnalités d'annotation BBox.
+
+<SectionTab as="h3" variant="secondary" sectionId="bbox-define-the-data-model">Définir le modèle de données</SectionTab>
+
+Tout d'abord, définissez les formats de réponse pour `BBox Annotation`, en utilisant soit des schémas Pydantic ou Zod pour nos SDK, soit un schéma JSON pour un appel API curl.
+
+Les schémas Pydantic/Zod/JSON acceptent des objets imbriqués, des tableaux, des énumérations, etc.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel
+
+# BBOX Annotation response formats
+class Image(BaseModel):
+  image_type: str
+  short_description: str
+  summary: str
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { z } from 'zod';
+
+// BBOX Annotation response formats
+const ImageSchema = z.object({
+  image_type: z.string(),
+  short_description: z.string(),
+  summary: z.string(),
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl json schema">
+
+```bash
+{
+  "type": "json_schema",
+  "json_schema": {
+    "schema": {
+      "properties": {
+        "document_type": {
+          "title": "Document_Type",
+          "type": "string"
+        },
+        "short_description": {
+          "title": "Short_Description",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_type",
+        "short_description",
+        "summary"
+      ],
+      "title": "BBOXAnnotation",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "name": "document_annotation",
+    "strict": true
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+Vous pouvez également fournir une description pour chaque entrée ; la description sera utilisée comme information détaillée et instructions pendant l'annotation ; par exemple :
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+from pydantic import BaseModel, Field
+
+# BBOX Annotation response formats
+class Image(BaseModel):
+  image_type: str = Field(..., description="The type of the image.")
+  short_description: str = Field(..., description="A description in english describing the image.")
+  summary: str = Field(..., description="Summarize the image.")
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { z } from 'zod';
+
+// Define the schema for the Image type
+const ImageSchema = z.object({
+  image_type: z.string().describe("The type of the image."),
+  short_description: z.string().describe("A description in English describing the image."),
+  summary: z.string().describe("Summarize the image."),
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl json schema">
+
+```bash
+{
+  "type": "json_schema",
+  "json_schema": {
+    "schema": {
+      "properties": {
+        "document_type": {
+          "title": "Document_Type",
+          "description": "The type of the image.",
+          "type": "string"
+        },
+        "short_description": {
+          "title": "Short_Description",
+          "description": "A description in English describing the image.",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "description": "Summarize the image.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_type",
+        "short_description",
+        "summary"
+      ],
+      "title": "BBOXAnnotation",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "name": "document_annotation",
+    "strict": true
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="bbox-start-request">Démarrer la requête</SectionTab>
+
+Ensuite, effectuez une requête et assurez-vous que la réponse respecte les structures définies en utilisant `bbox_annotation_format` défini sur les schémas correspondants :
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.extra import response_format_from_pydantic_model
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document=DocumentURLChunk(
+      document_url="https://arxiv.org/pdf/2410.07073"
+    ),
+    bbox_annotation_format=response_format_from_pydantic_model(Image),
+    include_image_base64=True
+  )
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.extra import response_format_from_pydantic_model
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document=DocumentURLChunk(
+      document_url="https://arxiv.org/pdf/2410.07073"
+    ),
+    bbox_annotation_format=response_format_from_pydantic_model(Image),
+    include_image_base64=True
+  )
+```
+
+        </TabItem>
+    </Tabs>
+    </TabItem>
+    <TabItem value="typescript" label="typescript" default>
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { responseFormatFromZodObject } from '@mistralai/mistralai/extra/structChat.js';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function processDocument() {
+  try {
+    const response = await client.ocr.process({
+      model: "mistral-ocr-latest",
+      document: {
+        type: "document_url",
+        documentUrl: "https://arxiv.org/pdf/2410.07073"
+      },
+      bboxAnnotationFormat: responseFormatFromZodObject(ImageSchema),
+      includeImageBase64: true,
+    });
+
+    console.log(response);
+  } catch (error) {
+    console.error("Error processing document:", error);
+  }
+}
+
+processDocument();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location 'https://api.mistral.ai/v1/ocr' \
+--header 'Content-Type: application/json' \
+--header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+--data '{
+    "model": "mistral-ocr-latest",
+    "document": {"document_url": "https://arxiv.org/pdf/2410.07073"},
+    "bbox_annotation_format": {
+        "type": "json_schema",
+        "json_schema": {
+            "schema": {
+                "properties": {
+                    "document_type": {"title": "Document_Type", "description": "The type of the image.", "type": "string"},
+                    "short_description": {"title": "Short_Description", "description": "A description in English describing the image.", "type": "string"},
+                    "summary": {"title": "Summary", "description": "Summarize the image.", "type": "string"}
+                },
+                "required": ["document_type", "short_description", "summary"],
+                "title": "BBOXAnnotation",
+                "type": "object",
+                "additionalProperties": false
+            },
+            "name": "document_annotation",
+            "strict": true
+        }
+    },
+    "include_image_base64": true
+}'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Pixtral 12B \n\n![img-0.jpeg](img-0.jpeg)\n\n## Résumé\n\nNous présentons Pixtral 12B, un modèle de langage multimodal de 12 milliards de paramètres. Pixtral 12B est entraîné pour comprendre à la fois les images naturelles et les documents, atteignant des performances de pointe sur divers benchmarks multimodaux, surpassant un grand nombre de modèles plus volumineux. Contrairement à de nombreux modèles open source, Pixtral est également un modèle textuel avancé pour sa taille et ne sacrifie pas les performances en langage naturel pour exceller dans les tâches multimodales. Pixtral utilise un nouvel encodeur de vision entraîné from scratch, qui lui permet d'ingérer des images à leur résolution et leur ratio d'aspect naturels. Cela offre aux utilisateurs une flexibilité sur le nombre de tokens utilisés pour traiter une image. Pixtral est également capable de traiter un nombre quelconque d'images dans sa fenêtre de contexte longue de 128 K tokens. Pixtral 12B surpasse considérablement d'autres modèles open de tailles similaires (Llama-3.2 11B \\& Qwen-2-VL 7B). Il surpasse également des modèles open beaucoup plus volumineux comme Llama-3.2 90B tout en étant 7 fois plus petit. Nous contribuons en outre un benchmark open source, MM-MT-Bench, pour évaluer les modèles vision-langage dans des scénarios pratiques, et fournissons une analyse détaillée et du code pour des protocoles d'évaluation standardisés pour les LLM multimodaux. Pixtral 12B est publié sous licence Apache 2.0.\n\nPage web : https://mistral.ai/news/pixtral-12b/\nCode d'inférence : https://github.com/mistralai/mistral-inference/\nCode d'évaluation : https://github.com/mistralai/mistral-evals/\n\n## 1 Introduction\n\nCet article décrit Pixtral 12B, un modèle de langage multimodal entraîné pour comprendre à la fois les images et le texte, publié avec des poids ouverts sous licence Apache 2.0. Pixtral est un modèle affiné sur instructions qui est pré-entraîné sur des documents à grande échelle entrelacés d'images et de texte, et est donc capable de conversations multi-tours et multi-images.\n\nPixtral est doté d'un nouvel encodeur de vision qui est entraîné avec une nouvelle implémentation de RoPE-2D, lui permettant de traiter les images à leur résolution et leur ratio d'aspect natifs. De cette manière, le modèle peut traiter de manière flexible les images à basse résolution dans des environnements contraints en latence, tout en traitant les images à haute résolution lorsqu'un raisonnement fin est requis.\nLorsqu'il est comparé à des modèles de taille similaire dans le même environnement d'évaluation, nous constatons que Pixtral offre de solides capacités de raisonnement multimodal sans sacrifier les performances de raisonnement textuel seul.",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 413,
+          "top_left_y": 563,
+          "bottom_right_x": 1286,
+          "bottom_right_y": 862,
+          "image_base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...",
+          "image_annotation": "{\n  \"image_type\": \"Logo\",\n  \"short_description\": \"Un logo rendu en 3D du texte 'Mistral AI' avec un schéma de couleurs dégradé passant de l'orange au jaune.\",\n  \"summary\": \"L'image présente un logo rendu en 3D du texte 'Mistral AI'. Le texte est stylisé avec un schéma de couleurs dégradé qui passe d'un orange chaud à un jaune vif, lui donnant une apparence vibrante et moderne. Les lettres sont légèrement inclinées vers la droite, ajoutant une touche dynamique au design global.\"\n}"
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "![img-1.jpeg](img-1.jpeg)\n\nFigure 1 : Performances de Pixtral. Pixtral surpasse tous les modèles open de sa catégorie de poids sur les tâches multimodales avec une marge substantielle. Gauche : Performances sur MM-MT-Bench, un nouveau benchmark multimodal, multi-tours, suivant des instructions conçu pour refléter l'utilisation réelle des modèles de langage multimodaux. Droite : Performances sur le classement public LMSys (Vision arena, octobre 2024).\n\nPar exemple, notre modèle égale ou dépasse les performances de modèles comme Qwen2-VL 7B [23] et Llama-3.2 11B [6] sur des benchmarks multimodaux populaires comme MMMU [24] et MathVista [14], tout en surpassant la plupart des modèles open source sur des tâches textuelles populaires comme MATH [7] et HumanEval [26]. Pixtral surpasse même des modèles beaucoup plus volumineux comme Llama-3.2 90B [6], ainsi que des modèles fermés tels que Claude-3 Haiku [1] et Gemini-1.5 Flash 8B [18], sur des benchmarks multimodaux.\n\nLors de l'évaluation de Pixtral et des modèles de référence, nous avons constaté que les protocoles d'évaluation pour les modèles de langage multimodaux ne sont pas standardisés et que de petits changements dans la configuration peuvent modifier de manière spectaculaire les performances de certains modèles. Nous fournissons une analyse approfondie de notre expérience de réévaluation des modèles vision-langage selon un protocole d'évaluation commun.\n\nPlus précisément, nous identifions deux problèmes avec l'évaluation :\n\n- Prompts : Plusieurs benchmarks ont des prompts par défaut qui sont sous-spécifiés et réduisent de manière spectaculaire les performances des principaux modèles fermés [16, 1] par rapport aux chiffres annoncés.\n- Métriques d'évaluation : Les métriques officielles nécessitent généralement une correspondance exacte, qui note les générations de modèles comme correctes seulement si elles correspondent exactement à la réponse de référence. Cependant, cette métrique pénalise les réponses qui sont substantiellement correctes mais dans un format légèrement différent (par ex., \"6.0\" vs \"6\").\n\nPour atténuer ces problèmes, nous proposons des prompts « explicites » qui spécifient explicitement le format requis par la réponse de référence. Nous analysons en outre l'impact de l'analyse flexible pour divers modèles, publiant le code d'évaluation et les prompts dans un effort pour établir des protocoles d'évaluation équitables et standardisés ${ }^{1}$.\n\nDe plus, bien que les benchmarks multimodaux actuels évaluent principalement la réponse à des questions courtes ou à choix multiples étant donné une image d'entrée, ils ne capturent pas entièrement l'utilité d'un modèle pour des cas d'usage pratiques (par ex. dans un environnement d'assistant multi-tours à réponses longues). Pour résoudre ce problème, nous publions en open source une nouvelle évaluation multimodale multi-tours : MM-MT-Bench ${ }^{2}$. Nous constatons que les performances sur MM-MT-Bench sont fortement corrélées avec les classements ELO sur le LMSys Vision Leaderboard.\n\nPixtral excelle dans le suivi d'instructions multimodales, surpassant les modèles open source comparables sur le benchmark MM-MT-Bench (voir Figure 1). Sur la base des préférences humaines sur le LMSys Vision Leaderboard, Pixtral 12B est actuellement le modèle Apache 2.0 le mieux classé, surpassant considérablement d'autres modèles open tels que Llama-3.2 11B [6] et Qwen2-VL 7B [23]. Il est même mieux classé que plusieurs modèles fermés tels que Claude-3 Opus \\& Claude-3 Sonnet [1], et plusieurs modèles plus volumineux tels que Llama-3.2 90B [6].\n\n[^0]\n[^0] :    ${ }^{1}$ https://github.com/mistralai/mistral-evals/\n    ${ }^{2}$ https://huggingface.co/datasets/mistralai/MM-MT-Bench",
+      "images": [
+        {
+          "id": "img-1.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 193,
+          "bottom_right_x": 1405,
+          "bottom_right_y": 675,
+          "image_base64": "...",
+          "image_annotation": "{\n  \"image_type\": \"nuage de points\",\n  \"short_description\": \"Cette image montre deux nuages de points comparant les performances et le coût de divers modèles d'IA.\",\n  \"summary\": \"L'image se compose de deux nuages de points. Le graphique de gauche compare les performances sur MM-MT-Bench par rapport au coût/nombre de paramètres (en milliards) pour différents modèles d'IA. Le graphique de droite compare les performances sur LMSys-Vision ELO par rapport au même coût/nombre de paramètres. Dans les deux graphiques, le modèle Pixtral 12B est mis en évidence comme ayant le meilleur rapport performance/coût. D'autres modèles comme Qwen-2-VL 72B, Llama-3.2 90B et Llama-3.2 11B sont également affichés, avec des performances et des métriques de coût variables. Les graphiques indiquent que Pixtral 12B offre un équilibre solide entre performances et efficacité des coûts.\"\n}"
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 2,
+      "markdown": "![img-2.jpeg](img-2.jpeg)\n\nFigure 2 : Encodeur de vision Pixtral. Pixtral utilise un nouvel encodeur de vision, qui est entraîné from scratch pour prendre en charge nativement des tailles et des ratios d'aspect d'image variables. Les masques d'attention diagonaux par blocs permettent le packing de séquences pour le batching, tandis que les encodages RoPE-2D facilitent les tailles d'image variables. Notez que le masque d'attention et les encodages de position sont fournis au transformateur de vision en tant qu'entrée supplémentaire et utilisés uniquement dans les couches d'auto-attention.\n\n# 2 Détails architecturaux \n\nPixtral 12B est basé sur l'architecture transformer [22] et se compose d'un décodeur multimodal pour effectuer un raisonnement de haut niveau, et d'un encodeur de vision pour permettre au modèle d'ingérer des images. Les principaux paramètres du modèle sont résumés dans le Tableau 1.\n\n### 2.1 Décodeur multimodal\n\nPixtral 12B est construit sur Mistral Nemo 12B [15], un modèle de langage de 12 milliards de paramètres de type décodeur uniquement qui atteint de solides performances sur une gamme de tâches de connaissance et de raisonnement.\n\n| Paramètres | Décodeur | Encodeur |\n| :-- | --: | --: |\n| dim | 5120 | 1024 |\n| n_layers | 40 | 24 |\n| head_dim | 128 | 64 |\n| hidden_dim | 14336 | 4096 |\n| n_heads | 32 | 16 |\n| n_kv_heads | 8 | 16 |\n| context_len | 131072 | 4096 |\n| vocab_size | 131072 | - |\n| patch_size | - | 16 |\n\nTableau 1 : Paramètres du décodeur et de l'encodeur.\n\n### 2.2 Encodeur de vision\n\nAfin que Pixtral 12B puisse ingérer des images, nous entraînons un nouvel encodeur de vision from scratch, nommé PixtralViT. Ici, notre objectif est d'instancier une architecture simple capable de traiter des images sur une large gamme de résolutions et de ratios d'aspect. Pour ce faire, nous construisons un transformateur de vision [5] de 400 millions de paramètres (voir Tableau 1) et apportons quatre modifications clés par rapport aux architectures standard [17] :\nTokens de rupture : Afin d'aider le modèle à distinguer les images ayant le même nombre de patches (même surface) mais des ratios d'aspect différents, nous incluons des tokens [IMAGE BREAK] entre les lignes d'image [2]. Nous incluons également un token [IMAGE END] à la fin d'une séquence d'image.\nGating dans FFN : Au lieu de la couche feedforward standard dans le bloc d'attention, nous utilisons du gating dans la couche cachée [19].\nSequence packing : Afin de traiter efficacement les images dans un seul batch, nous aplatissons les images le long de la dimension de séquence et les concaténons [3]. Nous construisons un masque diagonal par blocs pour garantir qu'il n'y a pas de fuite d'attention entre les patches de différentes images.\nRoPE-2D : Nous remplaçons les encodages de position absolus et appris traditionnels pour les patches d'image par des encodages de position relatifs et rotatifs [11, 20] dans les couches d'auto-attention. Alors que les encodages de position appris doivent être interpolés pour traiter de nouvelles tailles d'image (souvent au détriment des performances), les encodages de position relatifs se prêtent naturellement aux tailles d'image variables.",
+      "images": [
+        {
+          "id": "img-2.jpeg",
+          "top_left_x": 309,
+          "top_left_y": 191,
+          "bottom_right_x": 1387,
+          "bottom_right_y": 655,
+          "image_base64": "...",
+          "image_annotation": "{\n  \"image_type\": \"diagramme\",\n  \"short_description\": \"Un diagramme illustrant l'architecture du modèle Pixtral-ViT.\",\n  \"summary\": \"Le diagramme montre l'architecture du modèle Pixtral-ViT, qui traite les patches d'image à travers différentes étapes. En commençant par les patches d'image, le modèle applique des encodages de position RoPE-2D et un masque d'attention diagonal par blocs. Les données traitées sont ensuite introduites dans un transformateur bidirectionnel, suivi d'un projecteur vision-langage, et enfin, des embeddings de sortie sont générés. Le diagramme inclut également des représentations visuelles des encodages de position et des mécanismes d'attention utilisés dans le modèle.\"\n}"
+        }
+      ],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    ...
+    {
+      "index": 23,
+      "markdown": "|  | Mathvista <br> 2017 | MMMU <br> 2017 | ChartQA <br> 2017 | DocVQA <br> 2017 | VQAr2 <br> 2017 March | MM-MT-Bench <br> 2017 to 2020 | LMSys-Vision <br> Nov 2017 |\n| :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |\n| Pixtral 12B | 58.3 | 52.0 | 81.8 | 90.7 | 78.6 | 6.05 | 1076 |\n| Qwen-2-VL 7B [23] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 53.7 | 48.1 | 41.2 | 94.5 | 75.9 | 5.45 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.3) | 63.7 | 50.6 | 83.4 | 94.5 | 82.1 | - | 1040 |\n| Annoncé | 58.2 | 54.1 | 83.0 | 94.5 | - | - |  |\n| Llama-3.2 11B [6] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 24.3 | 23.0 | 14.8 | 91.1 | 67.1 | 4.79 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.4) | 47.9 | 46.6 | 78.5 | 91.1 | 67.1 | - | 1032 |\n| Annoncé | 51.5 | 50.7 | 83.4 | 88.4 | 75.2 | - |  |\n| Molmo-D 7B [4] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 12.3 | 24.3 | 27.0 | 72.2 | 57.1 | 3.72 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.6) | 43.2 | 47.0 | 76.7 | 72.2 | 70.0 | - | - |\n| Annoncé | 51.6 | 45.3 | 84.1 | 92.2 | 85.6 | - |  |\n| LLaVA-OneVision 7B [9] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 36.1 | 45.1 | 67.2 | 90.5 | 78.4 | 4.12 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.5) | 63.1 | 48.1 | 80.2 | 90.5 | 83.7 | - | - |\n| Annoncé | 63.2 | 48.8 | 80.0 | 87.5 | - | - |  |\n| Molmo 72B [4] |  |  |  |  |  |  | - |\n| Mesuré (Correspondance exacte) | 52.2 | 52.7 | 75.6 | 86.5 | 75.2 | 3.51 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.6) | 61.3 | 52.9 | 82.3 | 86.5 | 75.5 | - | - |\n| Annoncé | 58.6 | 54.1 | 87.3 | 93.5 | 86.5 | - |  |\n| Llama-3.2 90B [6] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 49.1 | 53.7 | 33.8 | 85.7 | 67.0 | 5.50 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.4) | 57.5 | 60.2 | 91.7 | 91.5 | 67.0 | - | 1071 |\n| Annoncé | 57.3 | 60.3 | 85.5 | 90.1 | 78.1 | - |  |\n| Claude-3 Haiku [1] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 44.8 | 50.4 | 69.6 | 74.6 | 68.4 | 5.46 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.2) | 44.8 | 51.3 | 79.8 | 74.6 | 68.4 | - | 1000 |\n| Annoncé | 46.4 | 50.2 | 81.7 | 88.8 | - | - |  |\n| Gemini-1.5-Flash 8B[18,17, [18] |  |  |  |  |  |  |  |\n| Mesuré (Correspondance exacte) | 56.9 | 50.7 | 78.0 | 79.5 | 65.5 | 5.93 |  |\n| Mesuré (Évaluation personnalisée, voir Section E.2) | 57.1 | 50.7 | 78.2 | 79.5 | 69.2 | - | 1111 |\n| Annoncé | - | 50.3 | - | 75.6 | - | - |  |\n\nTableau 8 : Reproduction des performances annoncées des modèles précédents. Dans le Tableau 2, nous effectuons une réévaluation équitable de tous les modèles via le même harnais d'évaluation, avec le même prompt et la même métrique. Ici, nous nous efforçons de retrouver les performances annoncées de tous les modèles en ajustant les paramètres d'évaluation pour chaque modèle individuellement. Nous soulignons que Pixtral 12B, comme les modèles fermés performants (par ex. Gemini-1.5-Flash 8B [18] et Claude-3 Haiku [1]), est capable d'annoncer de solides performances sans de telles interventions.",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    }
+  ],
+  "model": "mistral-ocr-2505-completion",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 24,
+    "doc_size_bytes": 12640953
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="bbox-example-output">Exemple de sortie d'annotation BBox</SectionTab>
+
+La fonctionnalité BBox Annotation permet d'extraire des données et d'annoter des images qui ont été extraites du document original. Ci-dessous, vous avez l'une des images d'un document extraite par notre processeur OCR.
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/img-1.jpeg"
+    alt="bbox-image"
+    width="800"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+L'image extraite est fournie dans un format encodé en base64.
+
+```json
+{ 
+  "image_base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGB{LONG_MIDDLE_SEQUENCE}KKACiiigAooooAKKKKACiiigD//2Q==..." 
+}
+```
+
+Et vous pouvez annoter l'image avec le schéma de modèle que vous souhaitez. Ci-dessous, vous avez un exemple de sortie.
+
+```json
+{
+  "image_type": "nuage de points",
+  "short_description": "Comparaison de différents modèles en fonction des performances et du coût.",
+  "summary": "L'image se compose de deux nuages de points comparant divers modèles sur deux métriques de performance différentes par rapport à leur coût ou leur nombre de paramètres. Le graphique de gauche montre les performances sur MM-MT-Bench, tandis que le graphique de droite montre les performances sur LMSys-Vision ELO. Chaque point représente un modèle différent, l'axe des x indiquant le coût ou le nombre de paramètres en milliards (B) et l'axe des y indiquant le score de performance. La région ombrée dans les deux graphiques met en évidence le meilleur rapport performance/coût, Pixtral 12B étant positionné dans cette région dans les deux graphiques, suggérant qu'il offre un bon équilibre entre performances et efficacité des coûts. D'autres modèles comme Qwen-2-VL 72B et Qwen-2-VL 7B montrent également des performances élevées mais à des coûts variables."
+}
+```

@@ -1,0 +1,163 @@
+---
+id: cerebrium
+title: Cerebrium
+sidebar_position: 3.34
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Déployer avec Cerebrium
+
+[Cerebrium](https://www.cerebrium.ai/) est une plateforme d'infrastructure IA serverless qui facilite la création et le déploiement d'applications basées sur l'IA. Ils proposent des GPU serverless avec des temps de démarrage à froid faibles, plus de 12 variétés de puces GPU qui passent automatiquement à l'échelle, et vous ne payez que pour le calcul que vous utilisez.
+
+<SectionTab as="h1" sectionId="setup-cerebrium">Configurer Cerebrium</SectionTab>
+
+Tout d'abord, nous installons Cerebrium et nous connectons pour nous authentifier.
+
+```bash
+pip install cerebrium
+cerebrium login
+```
+
+Ensuite, créons notre premier projet.
+
+```bash
+cerebrium init mistral-vllm
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="setup-environement-and-hardware">Configurer l'environnement et le matériel</SectionTab>
+
+Vous configurez votre environnement et votre matériel dans le fichier **cerebrium.toml** créé par la fonction init ci-dessus. Ici, nous utilisons un GPU Ampere A10, etc.
+Vous pouvez en savoir plus [ici](https://docs.cerebrium.ai/cerebrium/environments/custom-images).
+
+```toml
+[cerebrium.deployment]
+name = "mistral-vllm"
+python_version = "3.11"
+docker_base_image_url = "debian:bookworm-slim"
+include = "[./*, main.py, cerebrium.toml]"
+exclude = "[.*]"
+
+[cerebrium.hardware]
+cpu = 2
+memory = 14.0
+compute = "AMPERE_A10"
+gpu_count = 1
+provider = "aws"
+region = "us-east-1"
+
+[cerebrium.dependencies.pip]
+sentencepiece = "latest"
+torch = ">=2.0.0"
+vllm = "latest"
+transformers = ">=4.35.0"
+accelerate = "latest"
+xformers = "latest"
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="setup-inference">Configurer l'inférence</SectionTab>
+
+Exécuter du code dans Cerebrium revient à écrire du Python normal sans syntaxe spéciale. Dans votre fichier **main.py**, spécifiez ce qui suit :
+
+```python
+from vllm import LLM, SamplingParams
+from huggingface_hub import login
+from cerebrium import get_secret
+
+# Your huggingface token (HF_AUTH_TOKEN) should be stored in your project secrets on your Cerebrium dashboard
+login(token=get_secret("HF_AUTH_TOKEN"))
+
+# Initialize the model
+llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.3", dtype="bfloat16", max_model_len=20000, gpu_memory_utilization=0.9)
+
+```
+
+Nous devons ajouter notre token Hugging Face à nos [Secrets Cerebrium](https://docs.cerebrium.ai/cerebrium/environments/using-secrets) car l'utilisation du modèle Mistral nécessite une authentification. Assurez-vous que le token Hugging Face que vous avez ajouté dispose des permissions <b>WRITE</b>. Lors du premier déploiement, il téléchargera le modèle et le stockera sur le disque, de sorte que pour les appels suivants, il chargera le modèle depuis le disque.
+
+Ajoutez ce qui suit à votre fichier main.py :
+
+```python
+def run(prompt: str, temperature: float = 0.8, top_p: float = 0.75, top_k: int = 40, max_tokens: int = 256, frequency_penalty: int = 1):
+
+    sampling_params = SamplingParams(
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k,
+        max_tokens=max_tokens,
+        frequency_penalty=frequency_penalty
+    )
+
+    outputs = llm.generate([item.prompt], sampling_params)
+
+    generated_text = []
+    for output in outputs:
+        generated_text.append(output.outputs[0].text)
+
+    return {"result": generated_text}
+```
+
+Chaque fonction dans Cerebrium est appelable via un endpoint API. Le code au niveau le plus élevé (c'est-à-dire hors fonction) n'est instancié que lors du premier démarrage du conteneur, de sorte que pour les appels suivants, il exécutera simplement le code défini dans la fonction que vous appelez.
+
+Notre fichier main.py final devrait ressembler à ceci :
+
+```python
+from vllm import LLM, SamplingParams
+from huggingface_hub import login
+from cerebrium import get_secret
+
+# Your huggingface token (HF_AUTH_TOKEN) should be stored in your project secrets on your Cerebrium dashboard
+login(token=get_secret("HF_AUTH_TOKEN"))
+
+# Initialize the model
+llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.3", dtype="bfloat16", max_model_len=20000, gpu_memory_utilization=0.9)
+
+def run(prompt: str, temperature: float = 0.8, top_p: float = 0.75, top_k: int = 40, max_tokens: int = 256, frequency_penalty: int = 1):
+
+    sampling_params = SamplingParams(
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k,
+        max_tokens=max_tokens,
+        frequency_penalty=frequency_penalty
+    )
+
+    outputs = llm.generate([item.prompt], sampling_params)
+
+    generated_text = []
+    for output in outputs:
+        generated_text.append(output.outputs[0].text)
+
+    return {"result": generated_text}
+```
+
+<SectionTab as="h1" sectionId="run-on-the-cloud">Exécuter dans le cloud</SectionTab>
+
+```bash
+cerebrium deploy
+```
+
+Vous verrez votre application se déployer, installer les packages pip et télécharger le modèle. Une fois terminé, il affichera une requête CURL que vous pouvez utiliser pour appeler votre endpoint. N'oubliez pas de terminer l'URL par la fonction que vous souhaitez appeler - dans ce cas /run.
+
+```CURL
+curl --location --request POST 'https://api.cortex.cerebrium.ai/v4/p-<YOUR PROJECT ID>/mistral-vllm/run' \
+--header 'Authorization: Bearer <YOUR TOKEN HERE>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "prompt: "What is the capital city of France?"
+}'
+```
+
+Vous devriez alors recevoir un message ressemblant à ceci :
+
+```json
+{
+  "run_id": "nZL6mD8q66u4lHTXcqmPCc6pxxFwn95IfqQvEix0gHaOH4gkHUdz1w==",
+  "message": "Finished inference request with run_id: `nZL6mD8q66u4lHTXcqmPCc6pxxFwn95IfqQvEix0gHaOH4gkHUdz1w==`",
+  "result": {
+    "result": ["\nA: Paris"]
+  },
+  "status_code": 200,
+  "run_time_ms": 151.24988555908203
+}
+```

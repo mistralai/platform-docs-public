@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Ministral 8B',
-  description: `Powerful edge model with extremely high performance/price ratio. Learn more in our [blog post](https://mistral.ai/news/ministraux/)`,
-  shortDescription: `Powerful edge model with extremely high performance/price ratio.`,
+  describe: (l) => ({
+    description: l.text(`Powerful edge model with extremely high performance/price ratio. Learn more in our [blog post](https://mistral.ai/news/ministraux/)`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Powerful edge model with extremely high performance/price ratio.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'ministral-8b-24-1',
-  releaseDate: 'October 9, 2024',
+  releaseDate: '2024-10-09',
   version: '24.1',
   frontier: false,
   class: 'Generalist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 2.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'December 2, 2025', retirementDate: 'December 31, 2025', replacement: 'Ministral 3 8B'},
+  metadata: {deprecationDate: '2025-12-02', retirementDate: '2025-12-31', replacement: 'Ministral 3 8B'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

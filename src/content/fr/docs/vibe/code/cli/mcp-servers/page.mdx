@@ -1,0 +1,125 @@
+---
+title: Serveurs MCP
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+# Serveurs MCP
+
+Les serveurs MCP étendent le Vibe Code CLI avec des **outils externes** via le [Model Context Protocol](https://modelcontextprotocol.io). Configurez-les dans `config.toml` sous `mcp_servers` ; leurs outils deviennent alors disponibles pour Vibe comme tout outil natif.
+
+Les serveurs MCP sont **configurés par l'utilisateur**. Pour les intégrations gérées par Mistral, consultez plutôt [Connectors](/vibe/code/cli/connectors).
+
+:::info
+**Limite connue :** le CLI ne prend pas encore en charge les serveurs MCP nécessitant une authentification OAuth. Utilisez le transport `stdio` ou `http` avec une clé API ou d'autres identifiants statiques.
+:::
+
+<SectionTab as="h2" sectionId="transports">Transports pris en charge</SectionTab>
+
+| Transport | À utiliser lorsque |
+|---|---|
+| `http` | Le serveur est accessible via HTTP standard. |
+| `streamable-http` | Le serveur est accessible en HTTP et prend en charge les réponses en streaming. |
+| `stdio` | Le serveur est un processus local lancé depuis une commande. |
+
+<SectionTab as="h2" sectionId="add">Ajouter un serveur MCP</SectionTab>
+
+Ajoutez une table `[[mcp_servers]]` dans `config.toml`. Les champs obligatoires dépendent du transport.
+
+<ExplorerTabs>
+<ExplorerTab value="http" label="HTTP" default>
+
+```toml
+[[mcp_servers]]
+name = "my_http_server"
+transport = "http"
+url = "http://localhost:8000"
+headers = { "Authorization" = "Bearer my_token" }
+api_key_env = "MY_API_KEY_ENV_VAR"
+api_key_header = "Authorization"
+api_key_format = "Bearer {token}"
+```
+
+</ExplorerTab>
+<ExplorerTab value="streamable" label="Streamable HTTP">
+
+```toml
+[[mcp_servers]]
+name = "my_streamable_server"
+transport = "streamable-http"
+url = "http://localhost:8001"
+headers = { "X-API-Key" = "my_api_key" }
+```
+
+</ExplorerTab>
+<ExplorerTab value="stdio" label="Processus local (stdio)">
+
+```toml
+[[mcp_servers]]
+name = "fetch_server"
+transport = "stdio"
+command = "uvx"
+args = ["mcp-server-fetch"]
+env = { "DEBUG" = "1", "LOG_LEVEL" = "info" }
+```
+
+</ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" sectionId="fields">Champs communs</SectionTab>
+
+| Champ | Utilité |
+|---|---|
+| `name` | Alias court pour le serveur. Utilisé comme préfixe dans le nom des outils. |
+| `transport` | `http`, `streamable-http` ou `stdio`. |
+| `url` | URL de base pour les transports HTTP. |
+| `command` / `args` | Commande et arguments pour le transport stdio. |
+| `headers` | Entêtes HTTP supplémentaires pour les transports HTTP. |
+| `api_key_env` | Variable d'environnement contenant la clé API. |
+| `env` | Variables d'environnement passées au processus serveur (stdio). |
+| `startup_timeout_sec` | Durée d'attente du démarrage du serveur. |
+| `tool_timeout_sec` | Durée d'attente d'une exécution d'outil. |
+
+<SectionTab as="h2" sectionId="permissions">Nomination et autorisations des outils</SectionTab>
+
+Les outils MCP sont exposés selon le format `{server_name}_{tool_name}`. Configurez les autorisations par outil comme pour les outils natifs :
+
+```toml
+[tools.fetch_server_get]
+permission = "always"
+
+[tools.my_http_server_query]
+permission = "ask"
+```
+
+Vous pouvez aussi restreindre les outils MCP actifs via `enabled_tools` et `disabled_tools` :
+
+```toml
+# N’activer que les outils de serena
+enabled_tools = ["serena_*"]
+
+# Désactiver tous les outils MCP et grep
+disabled_tools = ["mcp_*", "grep"]
+```
+
+Les filtres prennent en charge les **noms exacts**, les **motifs globaux** et les **regex** avec le préfixe `re:`.
+
+<SectionTab as="h2" sectionId="browse">Parcourir les serveurs MCP depuis le CLI</SectionTab>
+
+Depuis une session CLI :
+
+```text
+/mcp
+```
+
+Indiquez un nom de serveur pour répertorier ses outils :
+
+```text
+/mcp fetch_server
+```
+
+:::note
+`/connectors` est un alias de `/mcp`.
+:::

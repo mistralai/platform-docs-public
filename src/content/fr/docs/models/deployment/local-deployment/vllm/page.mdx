@@ -1,0 +1,123 @@
+---
+id: vllm
+title: vLLM
+sidebar_position: 3.31
+---
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import BatchNemoTab from './batch_nemo_tab/_page.mdx';
+import BatchSmallTab from './batch_small_tab/_page.mdx';
+import BatchPixtralTab from './batch_pixtral_tab/_page.mdx';
+import ServerNemoTab from './server_nemo_tab/_page.mdx';
+import ServerSmallTab from './server_small_tab/_page.mdx';
+import ServerPixtralTab from './server_pixtral_tab/_page.mdx';
+
+# vLLM
+[vLLM](https://github.com/vllm-project/vllm) est un moteur open-source d'inférence et de service pour LLM. Il constitue une plateforme particulièrement adaptée pour déployer les modèles Mistral en local.
+
+<SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Les exigences matérielles pour vLLM sont listées sur sa [page de documentation d'installation](https://docs.vllm.ai/en/latest/getting_started/installation.html).
+- Par défaut, vLLM récupère les poids du modèle depuis Hugging Face. Pour accéder aux dépôts des modèles Mistral, vous devez être authentifié sur Hugging Face, donc un jeton d'accès `HF_TOKEN` avec la permission `READ` sera nécessaire. Vous devez également vous assurer d'avoir accepté les conditions d'accès sur chaque page de fiche modèle.
+- Si vous disposez déjà des artefacts du modèle sur votre infrastructure, vous pouvez les utiliser directement en pointant vLLM vers leur chemin local au lieu d'un ID de modèle Hugging Face. Dans ce scénario, vous pourrez sauter toutes les étapes de configuration liées à Hugging Face.
+
+<SectionTab as="h1" sectionId="getting-started">Démarrage</SectionTab>
+
+Les sections suivantes vous guideront dans le processus de déploiement et d'interrogation des modèles Mistral sur vLLM.
+
+<SectionTab as="h2" variant="secondary" sectionId="installing-vllm">Installation de vLLM</SectionTab>
+
+- Créez un environnement virtuel Python et installez le package `vllm` (version `>=0.6.1.post1` pour garantir une compatibilité maximale avec tous les modèles Mistral).
+- Authentifiez-vous sur le Hub HuggingFace en utilisant votre jeton d'accès `$HF_TOKEN` :
+  ```bash
+  huggingface-cli login --token $HF_TOKEN
+  ```
+
+<SectionTab as="h2" variant="secondary" sectionId="offline-mode-inference">Inférence en mode hors ligne</SectionTab>
+
+Lorsque vous utilisez vLLM en **mode hors ligne**, le modèle est chargé et utilisé pour des charges d'inférence par lots ponctuelles.
+
+<ExplorerTabs groupId="code">
+  <ExplorerTab value="vllm-batch-nemo" label="Entrée textuelle (Mistral NeMo)" default>
+    <BatchNemoTab/>
+  </ExplorerTab>
+  <ExplorerTab value="vllm-batch-small" label="Entrée textuelle (Mistral Small)">
+    <BatchSmallTab/>
+  </ExplorerTab>
+  <ExplorerTab value="vllm-batch-pixtral" label="Entrée image + texte (Pixtral-12B)">
+    <BatchPixtralTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="server-mode-inference">Inférence en mode serveur</SectionTab>
+
+En **mode serveur**, vLLM démarre un serveur HTTP qui attend en continu que des clients se connectent et envoient des requêtes de manière concurrente. Le serveur expose une API REST qui implémente le protocole OpenAI, vous permettant de réutiliser directement le code existant s'appuyant sur l'API OpenAI.
+
+<ExplorerTabs>
+    <ExplorerTab value="vllm-server-text-nemo" label="Entrée textuelle (Mistral NeMo)">
+        <ServerNemoTab/>
+    </ExplorerTab>
+    <ExplorerTab value="vllm-server-text-small" label="Entrée textuelle (Mistral Small)">
+        <ServerSmallTab/>
+    </ExplorerTab>
+    <ExplorerTab value="vllm-server-mm" label="Entrée image + texte (Pixtral-12B)">
+        <ServerPixtralTab/>
+    </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="deploying-with-docker">Déploiement avec Docker</SectionTab>
+
+Si vous souhaitez déployer vLLM comme serveur d'inférence conteneurisé, vous pouvez utiliser l'image Docker officielle du projet (voir plus de détails dans la [documentation Docker de vLLM](https://docs.vllm.ai/en/latest/serving/deploying_with_docker.html)).
+
+- Définissez la variable d'environnement du jeton d'accès HuggingFace dans votre shell :
+  ```bash
+  export HF_TOKEN=your-access-token
+  ```
+- Exécutez la commande Docker pour démarrer le conteneur :
+  <Tabs>
+      <TabItem value="vllm-docker-nemo" label="Mistral NeMo">
+          ```bash
+          docker run --runtime nvidia --gpus all \
+              -v ~/.cache/huggingface:/root/.cache/huggingface \
+              --env "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}" \
+              -p 8000:8000 \
+              --ipc=host \
+              vllm/vllm-openai:latest \
+              --model mistralai/Mistral-NeMo-Instruct-2407 \
+              --tokenizer_mode mistral \
+              --load_format mistral \
+              --config_format mistral
+          ```
+      </TabItem>
+      <TabItem value="vllm-docker-small" label="Mistral Small">
+          ```bash
+          docker run --runtime nvidia --gpus all \
+              -v ~/.cache/huggingface:/root/.cache/huggingface \
+              --env "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}" \
+              -p 8000:8000 \
+              --ipc=host \
+              vllm/vllm-openai:latest \
+              --model mistralai/Mistral-Small-Instruct-2409 \
+              --tokenizer_mode mistral \
+              --load_format mistral \
+              --config_format mistral
+          ```
+      </TabItem>
+      <TabItem value="vllm-docker-pixtral" label="Pixtral-12B">
+          ```bash
+          docker run --runtime nvidia --gpus all \
+              -v ~/.cache/huggingface:/root/.cache/huggingface \
+              --env "HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}" \
+              -p 8000:8000 \
+              --ipc=host \
+              vllm/vllm-openai:latest \
+              --model mistralai/Pixtral-12B-2409 \
+              --tokenizer_mode mistral \
+              --load_format mistral \
+              --config_format mistral
+          ```
+      </TabItem>
+  </Tabs>
+Une fois le conteneur démarré et en cours d'exécution, vous pourrez exécuter l'inférence sur votre modèle en utilisant le même code que dans un déploiement autonome.

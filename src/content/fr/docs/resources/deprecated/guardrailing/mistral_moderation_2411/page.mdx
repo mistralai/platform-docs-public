@@ -1,0 +1,73 @@
+---
+id: mistral-moderation-2411
+title: Mistral Moderation 2411
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Mistral Moderation 2411
+
+:::warning 
+**Obsolète** : `mistral-moderation-2411` est obsolète. Migrez vers [`mistral-moderation-2603`](/studio-api/safety-moderation) et mettez à jour vos configurations de garde-fous `moderation_llm_v1` vers `moderation_llm_v2`.
+:::
+
+<SectionTab as="h1" sectionId="model">Modèle</SectionTab>
+
+`mistral-moderation-2411` a été remplacé par `mistral-moderation-2603`, qui introduit des catégories de politique mises à jour (`Dangerous`, `Criminal`, `Jailbreaking`).
+
+<SectionTab as="h1" sectionId="policy-categories">Catégories de politique</SectionTab>
+
+| Catégorie | Description |
+| --- | --- |
+| Sexual | Contenu qui décrit, représente ou promeut explicitement des activités sexuelles, de la nudité ou des services sexuels. |
+| Hate and Discrimination | Contenu exprimant des préjugés ou de l'hostilité envers des individus ou des groupes sur la base de caractéristiques protégées. |
+| Violence and Threats | Contenu qui décrit, glorifie, incite ou menace de violence physique contre des individus ou des groupes. |
+| Dangerous and Criminal Content | Contenu qui promeut des activités illégales ou des comportements extrêmement dangereux. *(Ancienne catégorie — remplacée par les catégories séparées `Dangerous` et `Criminal` dans `mistral-moderation-2603`.)* |
+| Self-Harm | Contenu qui promeut ou encourage l'automutilation délibérée, le suicide ou les troubles alimentaires. |
+| Health | Contenu qui contient ou tente d'obtenir des conseils médicaux détaillés ou personnalisés. |
+| Financial | Contenu qui contient ou tente d'obtenir des conseils financiers détaillés ou personnalisés. |
+| Law | Contenu qui contient ou tente d'obtenir des conseils juridiques détaillés ou personnalisés. |
+| PII | Contenu qui demande ou partage des informations personnelles identifiables. |
+
+<SectionTab as="h1" sectionId="custom-guardrails">Garde-fous personnalisés (moderation_llm_v1)</SectionTab>
+
+La configuration de garde-fou `moderation_llm_v1` repose sur `mistral-moderation-2411`. Elle est obsolète — utilisez `moderation_llm_v2` à la place.
+
+```json
+{
+  "block_on_error": true,
+  "moderation_llm_v1": {
+    "custom_category_thresholds": {
+      "sexual": 0.1,
+      "selfharm": 0.1
+    },
+    "ignore_other_categories": false,
+    "action": "block"
+  }
+}
+```
+
+Une requête bloquée renvoie un code `403` avec :
+
+```json
+{
+  "error": {
+    "message": "Content blocked by guardrail",
+    "status": 403
+  },
+  "guardrails": {
+    "results": {
+      "moderation_llm_v1": {
+        "model_name": "mistral-moderation-2411",
+        "decisions": {
+          "sexual": { "threshold": 0.1, "score": 0.3, "violated": true },
+          "selfharm": { "threshold": 0.1, "score": 0.05, "violated": false }
+        },
+        "violated": true,
+        "action": "block"
+      }
+    }
+  }
+}
+```

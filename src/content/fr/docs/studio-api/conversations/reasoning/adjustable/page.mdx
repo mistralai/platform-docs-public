@@ -1,0 +1,196 @@
+---
+id: adjustable_reasoning
+title: Raisonnement ajustable
+sidebar_position: 1
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+# Ajustable
+
+Le raisonnement ajustable est disponible sur `mistral-small-latest` et `mistral-medium-3-5` via le paramètre `reasoning_effort`, qui contrôle la profondeur de réflexion du modèle et l’apparition éventuelle de traces de réflexion dans la réponse.
+
+:::tip
+Avant de continuer, nous vous recommandons de lire la documentation [Chat Completions](/studio-api/conversations/chat-completion) pour en savoir plus sur l’API de chat completions et son utilisation avant d’aller plus loin.
+:::
+
+<SectionTab as="h1" sectionId="before-you-start">
+  Avant de commencer
+</SectionTab>
+
+### Modèle
+
+- `mistral-small-latest` : Prend en charge le raisonnement ajustable via le paramètre `reasoning_effort`. Aucune configuration supplémentaire n’est requise — il suffit d’ajouter le paramètre à toute requête de chat completion.
+- `mistral-medium-3-5` : Prend en charge le raisonnement ajustable via le paramètre `reasoning_effort`. Pour les cas d’usage agentiques et de code, il est recommandé d’utiliser `reasoning_effort="high"`.
+
+Le paramètre `reasoning_effort` permet de contrôler la manière dont le raisonnement apparaît dans la sortie :
+
+- `reasoning_effort = "high"` : la réponse inclut un bloc de réflexion complet avant la réponse finale, ce qui augmente la consommation de tokens.
+- `reasoning_effort = "none"` : le modèle réfléchit au minimum et le bloc de réflexion est omis dans la réponse.
+
+:::note
+`reasoning_effort` est également disponible sur les endpoints [Agents](/api/endpoint/beta/agents) et [Conversations](/api/endpoint/beta/conversations) via l’API, dans le champ `completion_args`. La prise en charge SDK arrive bientôt.
+:::
+
+<SectionTab as="h1" sectionId="usage">
+  Utilisation
+</SectionTab>
+
+<SectionTab
+  as="h2"
+  variant="secondary"
+  sectionId="adjustable-reasoning-with-chat-completions"
+>
+  Raisonnement ajustable avec chat completions
+</SectionTab>
+
+Voici un exemple via notre endpoint [chat completions](https://docs.mistral.ai/api/#tag/chat) :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?",
+        },
+    ],
+    reasoning_effort="high"
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-small-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?",
+        },
+    ],
+    reasoning_effort="high"
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+  const chatResponse = await client.chat.complete({
+    model: 'mistral-small-latest',
+    messages: [
+      {
+        role: 'user',
+        content:
+          'John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?',
+      },
+    ],
+    reasoning_effort: "high"
+  });
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "mistral-small-latest",
+    "messages": [
+     {
+        "role": "user",
+        "content": "John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?"
+      }
+    ],
+    "reasoning_effort": "high"
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+```json
+{
+  "id":"0d93cd053f4c4b3ca627ccd07cf2f18c",
+  "created":1773842038,
+  "model":"mistral-small-latest",
+  "usage":
+    {
+      "prompt_tokens":77,
+      "total_tokens":1191,
+      "completion_tokens":1114,
+      "prompt_tokens_details":
+        {
+          "cached_tokens":0
+          }
+    },
+  "object":"chat.completion",
+  "choices":
+    [
+      {
+        "index":0,
+        "finish_reason":"stop",
+        "message":
+          {
+            "role":"assistant",
+            "tool_calls":null,
+            "content":
+            [
+              {"type":"thinking",
+              "thinking":
+                [
+                  {
+                    "type":"text",
+                    "text":"Très bien, essayons de déterminer l’âge de John. John fait partie de 4 enfants. Il y a trois sœurs et un frère (John). La consigne mentionne \"la première sœur\", \"la deuxième sœur\", \"la troisième sœur\", donc trois sœurs et John, le frère : quatre enfants au total.\n\nD’abord, la première sœur a 4 ans. Notons cela : appelons les sœurs S1, S2, S3, et John J.\n\nDonnées :\n- S1 = 4 ans (âge actuel)\n- L’an prochain, la deuxième sœur aura deux fois l’âge de la première sœur. L’an prochain, S1 aura 5 ans et S2 aura alors 10 ans ? Vérifions cela.\n\nIl est précisé : \"L’an prochain, la deuxième sœur aura deux fois l’âge de la première sœur.\" Donc l’année prochaine, S2 = 2 × âge de S1 l’an prochain.\n\nS1 a actuellement 4 ans, donc l’an prochain 5 ans. Donc S2 fera 2 × 5 = 10 ans l’an prochain. S2 a donc aujourd’hui 10 - 1 = 9 ans.\n\nVérifions : si S2 a X ans aujourd’hui, l’an prochain elle aura X+1 ans. S1 aura 4+1 = 5 ans. Donc X+1 = 2 × 5 → X+1=10 → X=9.\n\nEnsuite, \"la troisième sœur a deux ans de plus que la deuxième sœur\" : S3 = S2 + 2. S2 fait 9 ans, S3 donc 11.\n\nPuis, \"la troisième sœur a la moitié de l’âge de son grand frère\". Le grand frère ici est John (puisqu’on précise \"son grand frère\"). Donc John est plus âgé que S3.\n\nS3 = (1/2) × J → J = 2 × S3.\n\nS3 vaut 11, donc J = 22.\n\nVérifions toutes les étapes :\n\nÂges actuels :\nS1 = 4\n\nL’an prochain, S1 aura 5 ans. S2 aura alors 9 + 1 = 10 ans, soit deux fois S1 : correct.\n\nS3 = 9 + 2 = 11 : correct.\n\nS3 (11) vaut la moitié de l’âge de son grand frère (John), donc John a 22 (plus âgé que 11) : correct.\n\nToutes les conditions sont remplies. Donc John a 22 ans."}]},{"type":"text","text":"Posons les âges des sœurs ainsi :\n- \\( S_1 \\) : âge de la première sœur\n- \\( S_2 \\) : âge de la deuxième sœur\n- \\( S_3 \\) : âge de la troisième sœur\n- \\( J \\) : âge de John\n\nD’après l’énoncé, on dispose des informations suivantes :\n1. La première sœur a actuellement 4 ans : \\( S_1 = 4 \\).\n2. L’an prochain, la deuxième sœur aura deux fois l’âge de la première : \\( S_2 + 1 = 2 \\times (S_1 + 1) \\).\n3. La troisième sœur a deux ans de plus que la deuxième : \\( S_3 = S_2 + 2 \\).\n4. La troisième sœur a la moitié de l’âge de son grand frère : \\( S_3 = \\frac{1}{2}J \\).\n\nCalculons l’âge de la deuxième sœur :\n\\[ S_2 + 1 = 2 \\times (4 + 1) \\]\n\\[ S_2 + 1 = 2 \\times 5 \\]\n\\[ S_2 + 1 = 10 \\]\n\\[ S_2 = 9 \\]\n\nPuis l’âge de la troisième :\n\\[ S_3 = S_2 + 2 \\]\n\\[ S_3 = 9 + 2 \\]\n\\[ S_3 = 11 \\]\n\nEnfin, l’âge de John :\n\\[ S_3 = \\frac{1}{2}J \\]\n\\[ 11 = \\frac{1}{2}J \\]\n\\[ J = 22 \\]\n\nDonc John a \\(\\boxed{22}\\) ans."}
+                    }
+                  ]
+            }
+        }
+    ]
+}
+```
+  </TabItem>
+</Tabs>

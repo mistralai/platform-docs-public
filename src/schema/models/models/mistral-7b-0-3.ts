@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral 7B',
-  description: `A minor update to our first open model.`,
-  shortDescription: `A minor update to our first open model.`,
+  describe: (l) => ({
+    description: l.text(`A minor update to our first open model.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A minor update to our first open model.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-7b-0-3',
-  releaseDate: 'May 22, 2024',
+  releaseDate: '2024-05-22',
   version: '0.3',
   frontier: false,
   class: 'Generalist',
@@ -47,8 +49,8 @@ export default {
   paperlink: null,
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 0.0, label: 'Slow' },
-    performance: { stars: 0.0, label: 'Basic' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 0.0,
+    performance: 0.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -66,7 +68,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: 'November 30, 2024', retirementDate: 'March 30, 2025', replacement: 'Ministral 3 8B'},
+  metadata: {deprecationDate: '2024-11-30', retirementDate: '2025-03-30', replacement: 'Ministral 3 8B'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

@@ -1,0 +1,180 @@
+---
+title: Configurer RAG avec la recherche documentaire
+sidebar_label: RAG avec la recherche documentaire
+sidebar_position: 3
+description: « Téléchargez des documents dans une Bibliothèque de connaissances et interrogez-les avec la generation augmentée par récupération en moins de 10 minutes. »
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+
+# Configurer le RAG avec la recherche documentaire
+
+Téléchargez des documents dans une Bibliothèque et interrogez-les dans une Chat completion.
+
+- Créez une Bibliothèque et téléchargez un fichier
+- Le modèle extrait les passages pertinents de vos documents
+- Les réponses sont fondées sur votre contenu, plutôt que sur des connaissances générales
+
+**Durée estimée :** environ 10 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Une clé API Mistral (voir [Obtenir votre clé API](/getting-started/quickstarts/developer/first-api-request#step-1) si vous n’en avez pas encore)
+- Python 3.9+ ou Node.js 18+ installé
+- Le SDK Mistral installé (voir [Installer le SDK](/getting-started/quickstarts/developer/first-api-request#step-2) si ce n’est pas déjà fait)
+- Un document à télécharger (PDF, TXT ou DOCX)
+
+<SectionTab as="h2" sectionId="step-1">Étape 1 : créer une Bibliothèque</SectionTab>
+
+Une Bibliothèque est un conteneur de documents dans lequel le modèle peut effectuer des recherches pendant les conversations.
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+```python
+import os
+from mistralai import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+# Créer une bibliothèque
+library = client.files.upload(
+    file=open("company-handbook.pdf", "rb"),
+    purpose="retrieval",
+)
+print(f"File uploaded: {library.id}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const library = await client.files.upload({
+  file: fs.createReadStream('company-handbook.pdf'),
+  purpose: 'retrieval',
+});
+console.log(`File uploaded: ${library.id}`);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F "file=@company-handbook.pdf" \
+  -F "purpose=retrieval"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="step-2">Étape 2 : attendre le traitement</SectionTab>
+
+Nous traitons et indexons le document pour la recherche. Vérifiez son statut avant de faire une requête.
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+```python
+import time
+
+# Attendre que le fichier soit traité
+while True:
+    file_info = client.files.retrieve(file_id=library.id)
+    if file_info.status == "processed":
+        print("File ready for retrieval")
+        break
+    print(f"Status: {file_info.status}... waiting")
+    time.sleep(2)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+// Attendre que le fichier soit traité
+let fileInfo = await client.files.retrieve({ fileId: library.id });
+while (fileInfo.status !== 'processed') {
+  console.log(`Status: ${fileInfo.status}... waiting`);
+  await new Promise((r) => setTimeout(r, 2000));
+  fileInfo = await client.files.retrieve({ fileId: library.id });
+}
+console.log('File ready for retrieval');
+```
+
+  </TabItem>
+</Tabs>
+
+Nous traitons en général les petits fichiers (moins de 10 pages) en moins de 30 secondes. Les documents volumineux peuvent prendre quelques minutes.
+
+<SectionTab as="h2" sectionId="step-3">Étape 3 : interroger avec le RAG</SectionTab>
+
+Posez une question en incluant la référence du fichier : le modèle va d’abord extraire les passages pertinents avant de répondre.
+
+<Tabs groupId="language">
+  <TabItem value="python" label="Python" default>
+
+```python
+response = client.chat.complete(
+    model="mistral-medium-latest",
+    messages=[
+        {
+            "role": "user",
+            "content": "What is our company's remote work policy?",
+        }
+    ],
+    documents=[{"type": "file", "id": library.id}],
+)
+
+print(response.choices[0].message.content)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+const response = await client.chat.complete({
+  model: 'mistral-medium-latest',
+  messages: [
+    {
+      role: 'user',
+      content: "What is our company's remote work policy?",
+    },
+  ],
+  documents: [{ type: 'file', id: library.id }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="verify">Étape 4 : vérifier</SectionTab>
+
+La réponse doit s’appuyer sur les informations contenues dans votre document téléchargé, et non sur des connaissances générales. Par exemple, si vous avez téléchargé un manuel d’entreprise et posé une question sur la politique de télétravail, vous pouvez obtenir un extrait comme :
+
+> « Selon le manuel, les employés peuvent télétravailler jusqu’à 3 jours par semaine avec l’accord du responsable. Les demandes de télétravail doivent être soumises via le portail RH… »
+
+Vérifiez :
+
+- La présence de détails, de noms ou de politiques spécifiques extraits du document
+- Que la réponse s'appuie sur le contenu téléchargé et non sur des conseils génériques
+- Une réduction du taux d’hallucinations par rapport à la même question sans documents
+
+Si la réponse paraît générique, vérifiez que le statut du fichier est `processed` et que le paramètre `documents` est bien inclus dans votre requête.
+
+<SectionTab as="h2" sectionId="whats-next">Et après</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/#quickstarts" title="Tous les quickstarts développeur" />
+  <LinkCard href="/getting-started/platform-overview" title="Présentation de la plateforme" />
+</UsefullLinkContainer>

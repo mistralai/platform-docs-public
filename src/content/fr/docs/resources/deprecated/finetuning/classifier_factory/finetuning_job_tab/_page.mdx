@@ -1,0 +1,151 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+Un job de fine-tuning correspond à une seule exécution d'entraînement. Vous pouvez créer un job de fine-tuning avec les paramètres suivants :
+
+<SectionTab as="h3" variant="secondary" sectionId="create-fine-tuning-job">Créer un job de fine-tuning</SectionTab>
+
+- model : le modèle spécifique que vous souhaitez fine-tuner. Le choix est `ministral-3b-latest`.
+- training_files : une collection d'ID de fichiers d'entraînement, qui peut être constituée d'un seul fichier ou de plusieurs fichiers.
+- validation_files : une collection d'ID de fichiers de validation, qui peut être constituée d'un seul fichier ou de plusieurs fichiers.
+- hyperparameters : deux hyperparamètres ajustables, "training_steps" et "learning_rate", que les utilisateurs peuvent modifier.
+- auto_start :
+  - `auto_start=True` : votre job sera lancé immédiatement après validation.
+  - `auto_start=False` (par défaut) : vous pouvez démarrer manuellement l'entraînement après validation en envoyant une requête POST à `/fine_tuning/jobs/<uuid>/start`.
+- integrations : intégrations externes que nous prenons en charge, telles que Weights and Biases pour le suivi des métriques pendant l'entraînement.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# create a fine-tuning job
+created_jobs = client.fine_tuning.jobs.create(
+    model="ministral-3b-latest",
+    job_type="classifier",
+    training_files=[{"file_id": training_data.id, "weight": 1}],
+    validation_files=[validation_data.id],
+    hyperparameters={
+        "training_steps": 10,
+        "learning_rate":0.0001
+    },
+    auto_start=False,
+#   integrations=[
+#       {
+#           "project": "finetuning",
+#           "api_key": "WANDB_KEY",
+#       }
+#   ]
+)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+const createdJob = await client.fineTuning.jobs.create({
+  model: 'ministral-3b-latest',
+  jobType: 'classifier',
+  trainingFiles: [{ fileId: training_data.id, weight: 1 }],
+  validationFiles: [validation_data.id],
+  hyperparameters: {
+    trainingSteps: 10,
+    learningRate: 0.0001,
+  },
+  autoStart: false,
+  //  integrations:[
+  //      {
+  //          project: "finetuning",
+  //          apiKey: "WANDB_KEY",
+  //      }
+  //  ],
+});
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/fine_tuning/jobs \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "model": "ministral-3b-latest",
+  "job_type": "classifier",
+  "training_files": [
+    "<uuid>"
+  ],
+  "validation_files": [
+    "<uuid>"
+  ],
+  "hyperparameters": {
+    "training_steps": 10,
+    "learning_rate": 0.0001
+  },
+  "auto_start": false
+}'
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="job-status">Statut du job</SectionTab>
+
+Après avoir créé un job de fine-tuning, vous pouvez vérifier le statut du job avec :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python 
+client.fine_tuning.jobs.get(job_id = created_jobs.id)
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.fineTuning.jobs.get({ jobId: createdJob.id });
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/fine_tuning/jobs/<jobid> \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="start-fine-tuning-job">Démarrer un job de fine-tuning</SectionTab>
+
+Initialement, le statut du job sera `"QUEUED"`. Après un court instant, le statut passera à `"VALIDATED"`. À ce stade, vous pouvez procéder au démarrage du job de fine-tuning :
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+
+```python
+# start a fine-tuning job
+client.fine_tuning.jobs.start(job_id = created_jobs.id)
+
+created_jobs
+```
+
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.fineTuning.jobs.start({ jobId: createdJob.id });
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/fine_tuning/jobs/<jobid>/start \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+    </TabItem>
+</Tabs>

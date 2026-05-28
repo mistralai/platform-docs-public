@@ -1,0 +1,75 @@
+---
+title: Embedders
+description: Convertissez du texte en embeddings vectoriels pour la recherche sémantique.
+sidebar_position: 7
+sidebar_label: Embedders
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Embedders
+
+Les embedders convertissent le texte en embeddings vectoriels pour la recherche sémantique. Les embeddings capturent le sens sémantique du texte, permettant de retrouver des concepts similaires même exprimés différemment.
+
+<SectionTab as="h1" sectionId="embedder-api">API des Embedders</SectionTab>
+
+Tous les embedders implémentent la classe abstraite `Embedder`, qui fournit trois méthodes :
+
+| Méthode | Signature | Description |
+|---------|-----------|-------------|
+| `embed` | `(texts: list[str]) -> EmbeddingResult` | Méthode principale — génère les embeddings pour un lot de chaînes. |
+| `embed_chunks` | `(chunks: list[DocumentChunk]) -> list[DocumentChunk]` | Embedde des fragments et retourne des copies avec les embeddings renseignés. |
+| `embed_query` | `(text: str) -> list[float]` | Embedde une seule chaîne et retourne le vecteur correspondant. |
+
+Seule `embed` est abstraite. `embed_chunks` et `embed_query` sont des méthodes concrètes s'appuyant dessus.
+
+### `EmbeddingResult`
+
+Retourné par `embed` :
+
+```python
+from pydantic import BaseModel
+
+class EmbeddingResult(BaseModel):
+    embeddings: list[list[float]]  # Un embedding par entrée
+    total_tokens: int              # Nombre total de tokens consommés
+```
+
+<SectionTab as="h1" sectionId="mistral-embedder">Embedder Mistral</SectionTab>
+
+Utilisez l'API d'embeddings de Mistral.
+
+**Installation** : Core library (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.embedders import MistralEmbedder
+
+client = Mistral(api_key="your-api-key")
+embedder = MistralEmbedder(
+    client=client,
+    model_name="mistral-embed",  # Optionnel
+)
+embedded_chunks = await embedder.embed_chunks(chunks)
+```
+
+<SectionTab as="h1" sectionId="custom-embedders">Embedders personnalisés</SectionTab>
+
+Implémentez la classe de base `Embedder` avec une unique méthode `embed` :
+
+```python
+from mistralai.search.toolkit.embedders import Embedder, EmbeddingResult
+
+
+class MyEmbedder(Embedder):
+    async def embed(self, texts: list[str]) -> EmbeddingResult:
+        embeddings = my_provider.embed(texts)
+        return EmbeddingResult(
+            embeddings=embeddings,
+            total_tokens=sum(len(t.split()) for t in texts),
+        )
+```
+
+`embed_chunks` et `embed_query` sont héritées automatiquement.

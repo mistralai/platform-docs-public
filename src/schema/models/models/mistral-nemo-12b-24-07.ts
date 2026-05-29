@@ -80,7 +80,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'August 31, 2026', replacement: 'Ministral 3 8B'},
+  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'July 31, 2026', replacement: 'Ministral 3 8B'},
   playground: '',
   legacy: false,
 } as const satisfies StaticModel;

@@ -55,7 +55,7 @@ export default {
     features: ['chat-completions', 'function-calling', 'agents-conversations', 'structured-outputs'],
 
   },
-  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'August 31, 2026'},
+  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'June 30, 2026'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;

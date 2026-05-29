@@ -7,25 +7,25 @@ sidebar_position: 2
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Déploiements
+# Deployments
 
-Un déploiement est un groupe nommé de workers qui possède un ensemble de définitions de workflow et reçoit toutes les exécutions associées. Il permet d'isoler les workers dans des espaces de travail partagés et gère automatiquement l’acheminement des exécutions.
+Un deployment est un groupe nommé de workers qui possède un ensemble de définitions de workflows et reçoit toutes les exécutions pour ces définitions. Il permet l'isolation des workers dans des espaces de travail partagés et le routage automatique des exécutions.
 
 <SectionTab as="h1" sectionId="setting-deployment_name">Définir DEPLOYMENT_NAME</SectionTab>
 
-`DEPLOYMENT_NAME` est **obligatoire** au démarrage du worker. Si la variable n’est pas renseignée, le worker échoue immédiatement au lancement.
+`DEPLOYMENT_NAME` est **obligatoire** au démarrage du worker. Le worker échoue immédiatement au boot s'il n'est pas défini.
 
 ```bash
 DEPLOYMENT_NAME=invoice-service MISTRAL_API_KEY=your-key uv run python worker.py
 ```
 
-Caractères autorisés : alphanumérique, tiret, souligné (128 caractères maximum).
+Caractères valides : alphanumériques, tirets, underscores (128 caractères maximum).
 
-`WORKER_NAME` identifie le processus worker individuel et s’affiche dans la console et l’API. Sa valeur par défaut est `socket.gethostname()`.
+`WORKER_NAME` identifie le processus worker individuel et est visible dans la console et l'API. Sa valeur par défaut est `socket.gethostname()`.
 
 <SectionTab as="h1" sectionId="worker-isolation">Isolation des workers</SectionTab>
 
-Dans un espace de travail partagé, plusieurs développeurs peuvent exécuter des workers simultanément sans interférer. Chaque déploiement ne reçoit que les exécutions des définitions de workflow qu’il a enregistrées.
+Dans un espace de travail partagé, plusieurs développeurs peuvent exécuter des workers simultanément sans interférence. Chaque deployment ne reçoit que les exécutions pour les définitions de workflows qu'il a enregistrées.
 
 ```bash
 # Développeur A
@@ -35,11 +35,11 @@ DEPLOYMENT_NAME=alice MISTRAL_API_KEY=shared-key uv run python worker.py
 DEPLOYMENT_NAME=bob MISTRAL_API_KEY=shared-key uv run python worker.py
 ```
 
-Les exécutions d’Alice sont prises en charge par les workers d’Alice. Celles de Bob sont prises en charge par les workers de Bob.
+Les exécutions d'Alice arrivent sur les workers d'Alice. Les exécutions de Bob arrivent sur les workers de Bob.
 
-<SectionTab as="h1" sectionId="execution-routing">Acheminement des exécutions</SectionTab>
+<SectionTab as="h1" sectionId="execution-routing">Routage des exécutions</SectionTab>
 
-Lorsqu’un seul déploiement actif détient un workflow, les exécutions sont automatiquement dirigées — aucune configuration supplémentaire n’est nécessaire :
+Lorsqu'un seul deployment actif possède un workflow, les exécutions sont routées automatiquement — aucune configuration supplémentaire nécessaire :
 
 ```python
 execution = await client.execute_workflow(
@@ -48,7 +48,7 @@ execution = await client.execute_workflow(
 )
 ```
 
-Si deux déploiements actifs enregistrent le même nom de workflow, la plateforme ne peut pas effectuer l’acheminement automatiquement et retourne une erreur `409 Conflict` :
+Lorsque deux deployments actifs enregistrent le même nom de workflow, la plateforme ne peut pas router automatiquement et renvoie `409 Conflict` :
 
 ```json
 {
@@ -57,7 +57,7 @@ Si deux déploiements actifs enregistrent le même nom de workflow, la plateform
 }
 ```
 
-Pour résoudre le conflit, indiquez `deployment_name` explicitement :
+Résolvez en passant explicitement `deployment_name` :
 
 ```python
 execution = await client.execute_workflow(
@@ -69,7 +69,7 @@ execution = await client.execute_workflow(
 
 <SectionTab as="h1" sectionId="conflict-detection">Détection des conflits</SectionTab>
 
-Quand un worker enregistre un nom de workflow déjà détenu par un autre déploiement actif, la plateforme affiche un avertissement immédiat. L’enregistrement n’est pas bloqué — l’avertissement est retourné dans la réponse et apparaît dans les logs du worker :
+Lorsqu'un worker enregistre un nom de workflow déjà possédé par un deployment actif différent, la plateforme avertit immédiatement. L'enregistrement n'est pas bloqué — l'avertissement est renvoyé dans la réponse d'enregistrement et apparaît dans les logs du worker :
 
 ```json
 {
@@ -79,29 +79,25 @@ Quand un worker enregistre un nom de workflow déjà détenu par un autre déplo
 }
 ```
 
-Le conflit se résout automatiquement dès que l’un des déploiements devient inactif (quand ses workers s’arrêtent).
+Le conflit se résout automatiquement lorsque l'un des deployments devient inactif (ses workers s'arrêtent).
 
-Plusieurs workers dans un **même** déploiement qui enregistrent les mêmes définitions participent au scaling horizontal — aucun avertissement n’est généré.
+Plusieurs workers dans le **même** deployment enregistrant les mêmes définitions constituent un scaling horizontal — aucun avertissement n'est produit.
 
-:::tip
-Pour restreindre les clés API autorisées à enregistrer des workflows dans un déploiement, consultez [Déploiements sécurisés](/studio-api/workflows/managing-workflows-in-production/hardened_deployments).
-:::
+<SectionTab as="h1" sectionId="deployment-lifecycle">Cycle de vie du deployment</SectionTab>
 
-<SectionTab as="h1" sectionId="deployment-lifecycle">Cycle de vie du déploiement</SectionTab>
+Un deployment est **actif** tant qu'au moins un de ses workers a émis un heartbeat dans la fenêtre de liveness. Les workers émettent un heartbeat automatiquement toutes les ~10 secondes. Lorsque tous les workers s'arrêtent, le deployment devient **inactif** après expiration de la fenêtre de liveness (50 secondes en production, configurable).
 
-Un déploiement est considéré comme **actif** dès qu’au moins l’un de ses workers envoie un heartbeat dans la fenêtre de liveness. Les workers envoient un heartbeat toutes les ~10 secondes automatiquement. Quand tous les workers sont arrêtés, le déploiement passe à l’état **inactif** après l’expiration de la fenêtre de liveness (50 secondes en production, valeur configurable).
+Les deployments inactifs ne reçoivent pas d'exécutions et ne sont pas comptés comme conflictuels lors de la vérification d'ambiguïté.
 
-Un déploiement inactif ne reçoit plus d’exécution et n’est pas pris en compte lors de la détection des conflits.
+<SectionTab as="h1" sectionId="horizontal-scaling">Scaling horizontal</SectionTab>
 
-<SectionTab as="h1" sectionId="horizontal-scaling">Scalabilité horizontale</SectionTab>
+Exécutez plusieurs workers sous le même `DEPLOYMENT_NAME` pour augmenter le débit. Les exécutions sont distribuées entre tous les workers actifs du deployment.
 
-Exécutez plusieurs workers sous le même `DEPLOYMENT_NAME` pour augmenter le débit. Les exécutions sont réparties sur l’ensemble des workers actifs du déploiement.
+En production, déployez les workers comme un `Deployment` ou `StatefulSet` Kubernetes avec des replicas pointant vers le même `DEPLOYMENT_NAME`. La plateforme équilibre automatiquement la charge des tâches.
 
-Pour la production, déployez les workers dans un objet Kubernetes `Deployment` ou `StatefulSet`, avec plusieurs replicas pointant sur le même `DEPLOYMENT_NAME`. La plateforme répartit la charge automatiquement.
+<SectionTab as="h1" sectionId="listing-deployments">Lister les deployments</SectionTab>
 
-<SectionTab as="h1" sectionId="listing-deployments">Lister les déploiements</SectionTab>
-
-Listez tous les déploiements actifs de votre espace de travail :
+Listez tous les deployments actifs dans votre espace de travail :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -144,9 +140,9 @@ curl https://api.mistral.ai/v1/workflows/deployments \
   </TabItem>
 </Tabs>
 
-Vous pouvez transmettre `workflow_name` pour filtrer par workflow, ou `active_only=false` pour inclure les déploiements inactifs.
+Passez `workflow_name` pour filtrer par workflow, ou `active_only=false` pour inclure les deployments inactifs.
 
-Inspectez un déploiement précis et ses workers individuels :
+Inspectez un deployment spécifique et ses workers individuels :
 
 <Tabs>
   <TabItem value="python" label="Python">

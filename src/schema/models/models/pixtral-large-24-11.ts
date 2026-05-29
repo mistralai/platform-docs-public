@@ -54,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'Mistral Large 3'},
+metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'Mistral Medium 3.5'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

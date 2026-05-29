@@ -10,12 +10,12 @@ import { SectionTab } from '@/components/layout/section-tab';
 Les retrievers récupèrent des segments à partir des backends de stockage. Le Search Toolkit prend en charge les retrievers vectoriels, par mot-clé et hybrides.
 
 :::info[Nom de la collection]
-Search Toolkit utilise `collection_name` pour identifier quelle collection ou index interroger. Celui-ci doit correspondre au nom utilisé lors de [l’ingestion](../../ingestion) au moment de l’indexation de vos documents.
+Search Toolkit utilise `collection_name` pour identifier quelle collection ou index interroger. Celui-ci doit correspondre au nom utilisé lors de [l’ingestion](/studio-api/knowledge-rag/search-toolkit/ingestion) au moment de l’indexation de vos documents.
 :::
 
 <SectionTab as="h1" sectionId="vector-retriever">Retriever vectoriel</SectionTab>
 
-`VectorRetriever` effectue une recherche sémantique sur la requête fournie. Il nécessite un [vector store](../../search-index) ainsi qu’un [embedder](../../ingestion/embedders).
+`VectorRetriever` effectue une recherche sémantique sur la requête fournie. Il nécessite un [vector store](/studio-api/knowledge-rag/search-toolkit/core-components/storage-backends) ainsi qu’un [embedder](/studio-api/knowledge-rag/search-toolkit/core-components/embedders).
 
 ```python
 from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
@@ -34,7 +34,7 @@ results = await retriever.retrieve(
 
 <SectionTab as="h1" sectionId="keyword-retriever">Retriever par mot-clé</SectionTab>
 
-`KeywordRetriever` effectue une recherche lexicale sur la requête fournie. Il nécessite un [keyword store](../../search-index).
+`KeywordRetriever` effectue une recherche lexicale sur la requête fournie. Il nécessite un [keyword store](/studio-api/knowledge-rag/search-toolkit/core-components/storage-backends).
 
 ```python
 from mistralai.search.toolkit.retrieval.retrievers import KeywordRetriever
@@ -74,115 +74,3 @@ Où :
 - `k` = constante RRF (valeur par défaut : 60)
 - `rank_i` = Rang provenant du retriever i
 :::
-
-# Retrievers
-
-Les retrievers effectuent la recherche dans votre index. Le Search Toolkit propose des retrievers vectoriels (sémantiques) pour la recherche sémantique dans vos documents.
-
-<SectionTab as="h2" sectionId="available-retrievers">Retrievers disponibles</SectionTab>
-
-| Retriever | Objectif |
-|-----------|----------|
-| **[Vector Retriever](#vector-retriever)** | Recherche sémantique à l'aide d'embeddings |
-| **[Custom Retrievers](#custom-retrievers)** | Logique de recherche personnalisée |
-
-<SectionTab as="h1" sectionId="vector-retriever">Vector Retriever</SectionTab>
-
-Réalise une recherche sémantique à l'aide d'embeddings. Permet de retrouver des fragments dont le sens est similaire à la requête, même s'ils utilisent des mots différents.
-
-**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
-
-**Exemple** :
-
-```python
-from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
-
-retriever = VectorRetriever(
-    client=vector_store,  # Client de store vectoriel (Vespa ou implémentation personnalisée)
-    embedder=embedder,    # MistralEmbedder ou un Embedder personnalisé
-)
-
-results = await retriever.retrieve(
-    query="What is semantic search?",
-    top_k=10,
-)
-```
-
-**Options de configuration** :
-
-| Option | Type | Défaut  | Objectif |
-|--------|------|---------|----------|
-| `client` | VectorStoreClient | Obligatoire | Store vectoriel utilisé pour la recherche |
-| `embedder` | Embedder | Obligatoire | Embedder pour la vectorisation des requêtes |
-
-**Filtrage** :
-
-Filtrez sur les métadonnées pour restreindre les résultats :
-
-```python
-results = await retriever.retrieve(
-    query="machine learning",
-    top_k=10,
-    filter={"category": "tutorials", "year": 2024},  # Selon prise en charge du store
-)
-```
-
-:::info
-La prise en charge du filtrage dépend de votre backend de store vectoriel. Vespa gère nativement le filtrage sur les métadonnées.
-:::
-
-**Quand l'utiliser :**
-- Recherche sémantique générale dans vos documents
-- Identifier du contenu conceptuellement similaire
-- Gérer naturellement les synonymes et les reformulations
-
-<SectionTab as="h1" sectionId="custom-retrievers">Custom retrievers</SectionTab>
-
-Implémentez le protocole `Retriever` pour une logique de recherche personnalisée :
-
-```python
-from mistralai.search.toolkit.retrieval.retrievers import Retriever
-from mistralai.search.toolkit.indices import SearchResult
-
-class CustomRetriever(Retriever):
-    """Retriever sur-mesure, logique spécifique au domaine."""
-
-    async def retrieve(
-        self,
-        query: str,
-        top_k: int = 10,
-        filter: dict | None = None,
-    ) -> list[SearchResult]:
-        """Récupère les fragments pertinents pour la requête."""
-        # 1. Prétraitement de la requête
-        processed_query = self._preprocess(query)
-
-        # 2. Recherche avec une logique personnalisée
-        results = await self._search(processed_query, top_k, filter)
-
-        # 3. Post-traitement ou enrichissement des résultats
-        enhanced_results = self._enhance(results)
-
-        return enhanced_results
-
-    def _preprocess(self, query: str) -> str:
-        # Prétraitement spécifique (stemming, lemmatisation, etc.)
-        return query.lower().strip()
-
-    async def _search(self, query: str, top_k: int, filter: dict) -> list[SearchResult]:
-        # Implémentation personnalisée de la recherche
-        ...
-
-    def _enhance(self, results: list[SearchResult]) -> list[SearchResult]:
-        # Enrichir les résultats avec du contexte additionnel
-        ...
-
-# Utilisation dans QueryEngine
-query_engine = QueryEngine(retriever=CustomRetriever())
-```
-
-<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
-
-- [Présentation de la retrieval](../retrieval) — Architecture du pipeline de retrieval
-- [Rerankers](rerankers) — Réordonnez les résultats pour un meilleur classement
-- [Prétraitement des requêtes](preprocessing) — Améliorez les requêtes avant la recherche

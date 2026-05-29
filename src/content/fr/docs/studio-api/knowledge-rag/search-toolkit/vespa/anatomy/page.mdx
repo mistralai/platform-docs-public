@@ -1,15 +1,15 @@
 ---
-title: Anatomie d’une application Vespa
+title: Anatomie d'une application Vespa
 sidebar_position: 2
-sidebar_label: Anatomie d’une application
+sidebar_label: Anatomie d'une application
 ---
 import { SectionTab } from '@/components/layout/section-tab';
 
-Cette page présente les concepts qui composent une application Vespa : le package d’application, les schémas, les champs, les profils de ranking et les profils de requête. Pour apprendre à les créer et les configurer, consultez [Gérer les schémas](migrations).
+Cette page présente les concepts qui composent une application Vespa : le package d'application, les schémas, les champs, les profils de classement et les profils de requête. Pour savoir comment créer et configurer ces éléments, consultez [Gérer le schéma](migrations).
 
-<SectionTab as="h2" sectionId="application-package">Package d’application</SectionTab>
+<SectionTab as="h2" sectionId="application-package">Package d'application</SectionTab>
 
-Un package d’application Vespa est un ensemble de fichiers de configuration qui indiquent au cluster comment stocker et classer les documents :
+Un package d'application Vespa est un ensemble de fichiers de configuration qui indiquent au cluster comment stocker et classer les documents :
 
 ```
 <app-package>/
@@ -21,109 +21,109 @@ Un package d’application Vespa est un ensemble de fichiers de configuration qu
         └── types/root.xml        # Types de profils de requête
 ```
 
-Vous n’écrivez jamais ces fichiers manuellement. Ils sont générés en mémoire à partir de vos [migrations](migrations) et téléchargés sur le cluster Vespa. Vous pouvez les inspecter avec `mistral-vespa generate` (voir [référence CLI](cli)).
+Vous n'écrivez jamais ces fichiers à la main. Ils sont générés en mémoire à partir de vos [migrations](migrations) et téléchargés sur le cluster Vespa. Vous pouvez les inspecter avec `mistral-vespa generate` (voir [référence CLI](cli)).
 
-<SectionTab as="h2" sectionId="migrations-building-the-application-package">Migrations : génération du package d’application</SectionTab>
+<SectionTab as="h2" sectionId="migrations-building-the-application-package">Migrations : construction du package d'application</SectionTab>
 
-Les migrations sont des fichiers Python qui constituent la **source de vérité** de votre package d’application. Au lieu d’écrire manuellement des schémas et des fichiers de configuration, vous définissez les schémas, les champs et le ranking via des migrations Python.
+Les migrations sont des fichiers Python qui constituent la **source de vérité** de votre package d'application. Au lieu d'écrire à la main les définitions de schéma et de configuration, vous décrivez schémas, champs et classement dans des migrations Python.
 
 **Fonctionnement :**
 
 1. Créez des fichiers de migration dans `vespa_app/migrations/` qui décrivent vos schémas et votre configuration
-2. Exécutez `mistral-vespa migrate` pour valider toutes les migrations dans l’ordre
-3. Le système de migration génère l’ensemble du package d’application en mémoire
+2. Exécutez `mistral-vespa migrate` pour lancer l'ensemble des migrations dans l'ordre
+3. Le système de migration construit en mémoire le package d'application complet
 4. Le package est déployé sur votre cluster Vespa
 
-**Propriétés des migrations :**
+**Caractéristiques des migrations :**
 
-- **Append-only** — ajoutez de nouveaux fichiers pour chaque modification, ne modifiez jamais les fichiers existants
+- **Ajout uniquement** — ajoutez de nouveaux fichiers pour chaque modification, n'éditez jamais les fichiers existants
 - **Ordonnées** — triées par préfixe de timestamp, exécutées séquentiellement à chaque déploiement
-- **Versionnées** — la seule chose que vous poussez dans votre dépôt
-- **Idempotentes** — sans effet de bord même en cas de réexécution
+- **Sous contrôle de version** — le seul élément que vous poussez dans votre dépôt
+- **Idempotentes** — il est possible de les rejouer sans effets indésirables
 
-Cette approche vous permet de versionner et faire évoluer vos schémas comme n’importe quel code source, avec tout l’historique et la possibilité de revoir les modifications.
+Cette méthode vous permet de versionner et de faire évoluer vos schémas comme n'importe quel code source, avec un historique complet et la possibilité de relire l'ensemble des modifications.
 
 <SectionTab as="h2" sectionId="schemas">Schémas</SectionTab>
 
-Un schéma définit un type de document. Il déclare les champs contenus dans le document, la manière dont ils sont indexés et comment les résultats sont ordonnés. Chaque schéma produit un fichier `.sd` et un profil de requête dans le package d’application.
+Un schéma définit un type de document. Il déclare les champs d'un document, la façon dont ils sont indexés, et la méthode de classement des résultats. Chaque schéma produit un fichier `.sd` et un profil de requête dans le package d'application.
 
 Une application peut contenir plusieurs schémas, chacun représentant un type de document différent (par exemple, `articles`, `comments`). Les noms doivent être uniques.
 
 ### Mode "Recherche"
 
-Chaque schéma fonctionne selon deux modes&nbsp;:
+Chaque schéma fonctionne dans l'un des deux modes :
 
 | Mode | Description |
 |---|---|
-| `SearchMode.INDEX` | Recherche indexée classique — BM25, ANN/HNSW, ranking en deux phases |
-| `SearchMode.STREAMING` | Recherche en streaming — plus proche voisin exact, filtrage par attribut, ranking en une seule phase |
+| `SearchMode.INDEX` | Recherche indexée traditionnelle — BM25, ANN/HNSW, classement en deux phases |
+| `SearchMode.STREAMING` | Recherche en streaming — recherche des plus proches voisins exacte, filtrage par attribut, classement en une seule phase |
 
 <SectionTab as="h2" sectionId="fields">Champs</SectionTab>
 
-Les champs définissent les données qu'un document contient et la manière dont elles sont utilisées pour l'indexation et le ranking. Le plugin propose cinq types de champs&nbsp;:
+Les champs définissent quelles données un document contient et comment ces données sont utilisées pour l'indexation et le classement. Le plugin propose cinq types de champs :
 
-| Type de champ | Utilisation | Indexation Vespa | Fonctions de ranking générées |
+| Type de champ | Utilité | Indexation Vespa | Fonctions de classement générées |
 |---|---|---|---|
 | `EmbeddingField` | Vecteurs d'embedding pour la recherche sémantique | attribute + index HNSW | Distance, similarité cosinus |
-| `TextField` | Texte pour la recherche par mot-clé/BM25 | index + summary | BM25, correspondance champ |
-| `StringField` | Métadonnées stockées, non recherchables | attribute + summary | Aucune |
-| `TimestampField` | Ranking basé sur le temps (`long`) | attribute + summary | Fraîcheur, boost récence |
-| `CountField` | Ranking numérique (`int`) | attribute + summary | Normalisation, boost |
+| `TextField` | Texte pour la recherche par mot-clé/BM25 | index + summary | BM25, correspondance de champ |
+| `StringField` | Métadonnées stockées, non recherchables | attribute + summary | Aucun |
+| `TimestampField` | Classement temporel (type : `long`) | attribute + summary | Fraîcheur, bonus récent |
+| `CountField` | Classement numérique (type : `int`) | attribute + summary | Normalisation, bonus |
 
-Les champs peuvent être à valeur unique ou multi-dimensionnels (tableaux). Par exemple, les embeddings par fragment et les fragments de texte sont des champs multi-dimensionnels.
+Les champs peuvent être mono-valués ou multi-dimensionnels (tableaux). Par exemple, les embeddings et fragments de texte par fragment sont des champs multi-dimensionnels.
 
 ### Ensemble de champs par défaut
 
-Le plugin génère un ensemble de champs par défaut qui inclut tous les champs `TextField`. Cet ensemble sert à déterminer sur quels champs la recherche s'effectue lors de l'utilisation de `userQuery()` dans YQL. Les autres types de champs sont exclus.
+Le plugin génère un ensemble de champs par défaut contenant tous les champs de type `TextField`. Cet ensemble définit quels champs sont recherchés lors de l'utilisation de `userQuery()` dans YQL. Les autres types de champs sont exclus.
 
-<SectionTab as="h2" sectionId="ranking-profiles">Profils de ranking</SectionTab>
+<SectionTab as="h2" sectionId="ranking-profiles">Profils de classement</SectionTab>
 
-Le plugin génère quatre profils de ranking par schéma&nbsp;:
+Le plugin génère quatre profils de classement par schéma :
 
-| Profil | Utilisation |
+| Profil | Utilité |
 |---|---|
-| `root` | Profil de base incluant toutes les fonctions générées automatiquement et personnalisées |
-| `match-only` | Utilisé pour la phase de récupération, sans ranking appliqué |
-| `weighted-rank1` | Phase 1&nbsp;: combinaison linéaire des fonctions de phase 1 avec des poids configurables côté requête |
-| `weighted-rank2` | Phase 1 + 2&nbsp;: ajoute les fonctions de phase 2 sur la base de `weighted-rank1` |
+| `root` | Profil de base incluant toutes les fonctions générées et personnalisées |
+| `match-only` | Utilisé pour évaluer la phase de récupération, sans classement appliqué |
+| `weighted-rank1` | Phase 1 : combinaison linéaire des fonctions de la phase 1 avec poids ajustables lors de la requête |
+| `weighted-rank2` | Phases 1 + 2 : ajoute les fonctions de phase 2 au-dessus de `weighted-rank1` |
 
-### Ranking en plusieurs phases
+### Classement en phases
 
-Vespa classe les documents en plusieurs phases pour équilibrer rapidité et qualité&nbsp;:
+Vespa classe les documents en plusieurs phases pour équilibrer vitesse et qualité :
 
-1. **Première phase** — appliquée à tous les documents correspondants. Doit être rapide. Utilise des fonctions type BM25, distance d'embedding, fraîcheur.
-2. **Seconde phase** — reclasse le top k des documents extraits en phase&nbsp;1. Permet d'utiliser des fonctions plus complexes comme la correspondance champ, le score logarithmique ou des modèles ML.
-3. **Phase globale** (optionnel) — s'applique sur l'ensemble des résultats fusionnés dans le nœud conteneur.
+1. **Première phase** — appliquée à tous les documents correspondants. Doit être rapide. Utilise des fonctions comme BM25, distance d'embedding, fraîcheur.
+2. **Deuxième phase** — reclasse les k meilleurs documents de la phase 1. Peut utiliser des fonctions plus coûteuses, comme la correspondance de champ, le scoring logarithmique ou les modèles ML.
+3. **Phase globale** (optionnelle) — exécutée sur le résultat fusionné dans le nœud conteneur.
 
-Le plugin associe chaque fonction générée automatiquement à la phase la plus adaptée selon le type de champ.
+Le plugin associe chaque fonction générée automatiquement à la phase appropriée, selon le type de champ.
 
 ### Profils pondérés
 
-Les profils `weighted-rank1` et `weighted-rank2` vous permettent **d’ajuster le ranking à la requête** en modifiant les poids des fonctions, sans changer le schéma.
+Les profils `weighted-rank1` et `weighted-rank2` vous permettent d'**ajuster le classement lors de la requête** en modifiant les poids des fonctions sans changer le schéma.
 
 ```
-Phase 1 : bm25_title_weight * bm25_title +
-          content_embedding_distance_weight * content_embedding_distance +
-          freshness_created_at_weight * freshness_created_at
+Phase 1 : bm25_title_weight * bm25_title +
+         content_embedding_distance_weight * content_embedding_distance +
+         freshness_created_at_weight * freshness_created_at
 
-Phase 2 : firstPhase +
-          match_title_weight * match_title +
-          log_freshness_created_at_weight * log_freshness_created_at
+Phase 2 : firstPhase +
+         match_title_weight * match_title +
+         log_freshness_created_at_weight * log_freshness_created_at
 ```
 
-Tous les poids sont initialisés à `0`. Il suffit d’attribuer une valeur non nulle à un ou plusieurs pour activer le ranking.
+Tous les poids sont initialisés à `0`. Pour activer le classement, définissez un ou plusieurs poids sur une valeur non nulle.
 
 <SectionTab as="h2" sectionId="query-profiles">Profils de requête</SectionTab>
 
-Le plugin crée un profil de requête par schéma (nommé via `default_query_profile_name`, par défaut le nom du schéma). Il comprend :
+Le plugin génère un profil de requête par schéma (nommé via `default_query_profile_name`, par défaut le nom du schéma). Il inclut :
 
-- Une requête YQL pour la recherche hybride (si des embeddings sont présents) ou une recherche par mot-clé
-- Le profil de ranking `weighted-rank2` en valeur par défaut
-- Des champs de type « query » pour pondérer les fonctions
+- Une requête YQL pour la recherche hybride (si des embeddings sont présents) ou la recherche par mot-clé
+- Le profil de classement `weighted-rank2` par défaut
+- Des champs de type requête pour les poids des fonctions
 
-Pour plus d’informations, voir [Profils de requête](query-profiles) et la [documentation Vespa sur les profils de requête](https://docs.vespa.ai/en/querying/query-profiles.html).
+Pour plus de détails, voir [Profils de requête](query-profiles) et la [documentation Vespa sur les profils de requête](https://docs.vespa.ai/en/querying/query-profiles.html).
 
 <SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
 
-- **[Gérer les schémas](migrations)** : Création de schémas, champs et ranking via des migrations
-- **[Gérer le ranking](query-profiles)** : Configurer le ranking à la requête
+- **[Gérer le schéma](migrations)** — Créer schémas, champs et classement via migrations
+- **[Gérer le classement](query-profiles)** — Configurer le classement lors de la requête

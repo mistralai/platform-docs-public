@@ -16,82 +16,68 @@ Les LLM ne sont pas entraînés sur vos données privées. Pour que leurs répon
 
 ### [Ingestion](search-toolkit/ingestion)
 
-- **Extraction multi-format** : PDF/DOCX/PPTX via Mistral OCR, HTML, tableurs, e-mails, texte brut
-- **Chargement de fichiers** : depuis le système de fichiers local ou via des loaders personnalisés pour toute source
-- **Fragmentation flexible** : découpe par caractère, token, adaptée au markdown ou selon un séparateur
-- **Enrichissement** : ajoutez des métadonnées personnalisées ou des résumés générés par LLM sur vos documents et fragments
-- **Indexation** : indexez dans des bases vectorielles pour la recherche sémantique
+- **Extraction multi-format** : PDF/DOCX/PPTX via Mistral OCR, HTML, feuilles de calcul, e-mails, texte brut
+- **Chargement de fichiers** : Importation depuis le système de fichiers local ou implémentation de chargeurs sur mesure pour toute source
+- **Découpage flexible** : à partir de caractères, de jetons, en tenant compte du markdown, ou par séparateur
+- **Enrichissement** : Ajoute des métadonnées personnalisées ou des résumés générés par LLM au document ou à chaque segment
+- **Indexation** : Indexation simultanée dans des bases vectorielles et à mots-clés
 
-### [Récupération](search-toolkit/retrieval)
+### [Recherche](search-toolkit/retrieval)
 
-- **Stratégies multiples** : recherche vectorielle (sémantique) avec reranking optionnel
-- **Prétraitement des requêtes** : améliorez les requêtes utilisateur avec reformulation ou extension par LLM
-- **Reranking** : reranker LLM, cross-encoder ou rerankers personnalisés
-- **Cache sémantique** : mise en cache des résultats selon la similarité de requêtes pour éviter les récupérations inutiles
+- **Multiples stratégies** : vectorielle (sémantique), mots-clés (BM25) ou hybride avec fusion RRF
+- **Prétraitement des requêtes** : Optimisez les recherches par reformulation ou extension des requêtes via LLM
+- **Rerankers** : Reranker LLM, cross-encoder ou personnalisés
+- **Cache sémantique** : Mise en cache des résultats selon la similarité des requêtes, pour éviter les appels redondants
 
 
 <SectionTab as="h1" sectionId="architecture">Architecture</SectionTab>
 
-**L'ingestion** transforme les documents bruts en fragments consultables. Un **FileLoader** lit les octets bruts depuis une source ; un **DocumentExtractor** les transforme en document structuré ; un **TextSplitter** les découpe en fragments ; un éventuel **ChunkEnricher** ajoute des métadonnées ; un **Embedder** produit des vecteurs pour l'indexation dans une base vectorielle.
+L’**ingestion** transforme des documents bruts en segments exploitables pour la recherche. Un **FileLoader** lit les données brutes à la source, un **DocumentExtractor** les convertit en documents structurés, un **TextSplitter** segmente ces documents, un **ChunkEnricher** (optionnel) ajoute des métadonnées, puis un **Embedder** produit les vecteurs pour indexer les segments dans une base vectorielle ou à mots-clés.
 
-**La récupération** identifie les fragments pertinents pour une requête. Un **query preprocessor** (facultatif) réécrit ou étend la requête ; un **Retriever** interroge la base vectorielle ; un **Reranker** (facultatif) recalcule le score des résultats avant retour.
+La **recherche** permet de retrouver les segments pertinents pour une requête donnée. Un **préprocesseur de requête** (optionnel) réécrit ou enrichit la requête, un ou plusieurs **Retrievers** interrogent l’index (vectoriel, mots-clés, hybride), puis un **Reranker** (optionnel) réordonne les résultats avant la restitution.
 
-Les deux workflows sont orchestrés par des classes de haut niveau (`Pipeline` pour l'ingestion, `QueryEngine` pour la récupération) qui gèrent la connexion et l'exécution des composants. Chaque composant est interchangeable : utilisez les implémentations proposées ou vos propres modules.
+Les deux workflows sont orchestrés par des classes de haut niveau (`Pipeline` pour l’ingestion, `QueryEngine` pour la recherche) qui assurent la connexion et l’exécution des composants. Chaque composant est interchangeable : utilisez ceux inclus ou intégrez les vôtres.
 
 ### Composants
 
 | Composant | Options intégrées |
-|-----------|-------------------|
-| **Loaders de fichiers** | `FilesystemFileLoader`, loaders personnalisés |
-| **Extracteurs** | `MistralOCRExtractor`, `PlainTextExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor` |
-| **Text splitters** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `SeparatorTextSplitter` |
+|-----------|------------------|
+| **File Loaders** | `FilesystemFileLoader`, chargeurs sur mesure |
+| **Extractors** | `MistralOCRExtractor`, `PlainTextExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor` |
+| **Text Splitters** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `SeparatorTextSplitter` |
 | **Enrichers** | `SummaryEnricher`, `ChunkEnricher` personnalisé |
 | **Embedders** | `MistralEmbedder`, `Embedder` personnalisé |
-| **Stockage** | Vespa ou base vectorielle personnalisée |
-| **Retrievers** | `VectorRetriever` |
+| **Storage** | `VespaClient` (vectoriel + mots-clés), `VectorStoreClient` / `KeywordStoreClient` personnalisés |
+| **Retrievers** | `VectorRetriever`, `KeywordRetriever` |
 | **Rerankers** | `LLMReRanker`, `CrossEncoderReRanker`, `RRFRanker` |
-| **Prétraitement** | `LLMQueryRewriter`, `LLMQueryExtension` |
+| **Preprocessing** | `LLMQueryRewriter`, `LLMQueryExtension` |
 | **Caching** | `SemanticCache` avec `InMemoryCacheBackend` |
 
-<SectionTab as="h1" sectionId="packages">Installation & Extras</SectionTab>
+<SectionTab as="h1" sectionId="packages">Packages</SectionTab>
 
-Installez le package principal :
+| Package | Description |
+|---------|-------------|
+| `mistralai-search-toolkit` | SDK principal : pipelines, retrievers, rerankers, embedders, évaluation |
+| `mistralai-search-toolkit[vespa]` | Extension Vespa pour stockage vectoriel et mots-clés |
+| `mistralai-search-toolkit[html2md]` | Conversion HTML vers Markdown |
+| `mistralai-search-toolkit[email]` | Analyse des fichiers e-mail (EML, MSG) |
 
-```bash
-uv add mistralai-search-toolkit
-```
-
-Des modules complémentaires ajoutent des fonctionnalités spécialisées :
-
-| Extra | Description |
-|-------|-------------|
-| `vespa` | Plugin Vespa pour le stockage vectoriel et la recherche sémantique |
-| `extractor-pymupdf` | Extraction avancée de PDF avec PyMuPDF Pro |
-| `extractor-spreadsheet` | Analyse de tableurs (Excel, CSV, format Calamine) |
-| `extractor-email` | Analyse de fichiers e-mail (formats EML, MSG) |
-| `html-converter-markdownify` | Conversion HTML vers Markdown |
-| `text-splitter-langchain` | Stratégies de découpe additionnelles avec LangChain |
-| `storage-gcs` | Intégration Google Cloud Storage |
-| `storage-azure` | Intégration Azure Blob Storage |
-| `all` | Tous les modules complémentaires |
-
-Installez les extras avec le package principal :
+Installez le package principal et les extensions dont vous avez besoin :
 
 ```bash
-uv add "mistralai-search-toolkit[vespa]"
-uv add "mistralai-search-toolkit[vespa,extractor-pymupdf]"
-uv add "mistralai-search-toolkit[all]"  # Installe tous les extras
+pip install mistralai-search-toolkit
+pip install "mistralai-search-toolkit[vespa]"
 ```
 
-Tous les packages sont disponibles sur [PyPI](https://pypi.org/project/mistralai-search-toolkit/).
+Les packages sont disponibles sur [PyPI](https://pypi.org/project/mistralai-search-toolkit/).
 
 :::info
-Nécessite **Python 3.12+**. Nous recommandons [uv](https://docs.astral.sh/uv/) pour la gestion des dépendances.
+Les packages requièrent **Python 3.12+**. Nous recommandons d’utiliser [uv](https://docs.astral.sh/uv/) pour la gestion des dépendances.
 :::
 
-<SectionTab as="h1" sectionId="next-steps">Prochaines étapes</SectionTab>
+<SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
 
-- **[Guide de démarrage](search-toolkit/quickstart)** : créez un pipeline ingestion/récupération de bout en bout.
-- **[Index de recherche](search-toolkit/search-index)** : configurez votre base vectorielle.
-- **[Ingestion](search-toolkit/ingestion)** : chargez, extrayez, fragmentez, enrichissez et indexez vos documents.
-- **[Récupération](search-toolkit/retrieval)** : configurez la recherche vectorielle et le reranking optionnel.
+- **[Guide de démarrage](search-toolkit/quickstart)** — créez de bout en bout votre première chaîne d’ingestion et de recherche.
+- **[Index de recherche](search-toolkit/search-index)** — configurez votre base vectorielle ou à mots-clés.
+- **[Ingestion](search-toolkit/ingestion)** — importez, extrayez, segmentez, enrichissez et indexez vos documents.
+- **[Recherche](search-toolkit/retrieval)** — configurez la recherche vectorielle, mots-clés ou hybride avec reranking optionnel.

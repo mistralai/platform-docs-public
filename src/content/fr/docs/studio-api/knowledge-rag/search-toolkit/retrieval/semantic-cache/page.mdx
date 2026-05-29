@@ -85,114 +85,28 @@ result = await cached_engine.search("What is RAG?", top_k=10)
 
 <SectionTab as="h1" sectionId="configuration">Configuration</SectionTab>
 
-# Cache sémantique
+### InMemoryCacheBackend
 
-Le cache sémantique associe les requêtes selon leur sens plutôt que par correspondance exacte de chaîne. Si une requête est sémantiquement proche d'une précédente requête en cache, le cache renvoie les résultats mémorisés : cela évite l'embedding, la récupération, le prétraitement et le reranking.
+| Paramètre | Par défaut | Description |
+|-----------|------------|-------------|
+| `dim` | *(obligatoire)* | Dimension des embeddings |
+| `max_entries` | `1000` | Nombre maximal d’entrées avant éviction |
+| `ttl_seconds` | `None` | Durée de vie d’une entrée en secondes (`None` = pas d’expiration) |
+| `eviction_policy` | `LRU` | Stratégie d’éviction : `LRU`, `LFU`, ou `FIFO` |
 
-<SectionTab as="h1" sectionId="basic-setup">Configurer le cache sémantique</SectionTab>
+### SemanticCache
 
-**Installation** : Bibliothèque principale (aucune dépendance additionnelle)
+| Paramètre | Par défaut | Description |
+|-----------|----------|-------------|
+| `similarity_threshold` | `0.95` | Similarité cosinus minimale pour un hit |
 
-**Exemple** :
+<SectionTab as="h1" sectionId="metrics">Métriques</SectionTab>
 
-```python
-from mistralai.search.toolkit.retrieval.cache import (
-    CachedQueryEngine,
-    InMemoryCacheBackend,
-    SemanticCache,
-    EvictionPolicy,
-)
-
-# 1. Créez un backend de cache
-backend = InMemoryCacheBackend(
-    dim=1024,                          # Dimension de l'embedding
-    max_entries=500,                   # Nombre maximal de requêtes en cache
-    ttl_seconds=3600,                  # Expiration après 1 heure
-    eviction_policy=EvictionPolicy.LRU,
-)
-
-# 2. Créez le cache sémantique
-cache = SemanticCache(
-    backend=backend,
-    similarity_threshold=0.95,  # 95 % de similarité cosinus = cache hit
-)
-
-# 3. Encapsulez votre QueryEngine
-cached_engine = CachedQueryEngine(
-    engine=query_engine,
-    cache=cache,
-    embedder=embedder,  # Utilisé pour générer l'embedding des requêtes entrantes
-)
-
-# 4. Utilisation normale : la mise en cache est transparente
-result = await cached_engine.search("What is RAG?", top_k=10)
-# Premier appel : embedding + récupération → mis en cache
-# Deuxième appel avec requête similaire : cache hit → instantané
-```
-
-**Fonctionnement** :
-
-1. La requête arrive
-2. L'embedder convertit la requête en vecteur
-3. Le cache recherche les vecteurs en cache les plus similaires
-4. Si similarité > seuil : retourne les résultats en cache (rapide)
-5. Sinon : exécute le pipeline complet de récupération, puis stocke les résultats (lent, mais mis en cache pour la suite)
-
-<SectionTab as="h1" sectionId="configuration">Configuration</SectionTab>
-
-**Options du backend** :
-
-| Option | Valeur par défaut | Fonction |
-|--------|------------------|----------|
-| `dim` | *(requis)* | Dimension de l'embedding (1024 pour mistral-embed) |
-| `max_entries` | 1000 | Nombre maximal de requêtes en cache avant éviction |
-| `ttl_seconds` | None | Expiration des entrées en secondes (None = pas d'expiration) |
-| `eviction_policy` | LRU | LRU, LFU ou FIFO |
-
-**Sensibilité du cache** :
-
-| Réglage | Effet | Cas d'usage |
-|---------|-------|-------------|
-| `similarity_threshold=0.99` | Très strict, moins de hits | Correspondance d'exactitude |
-| `similarity_threshold=0.95` | Équilibré (par défaut) | Cas les plus courants |
-| `similarity_threshold=0.90` | Permissif, plus de hits | Réponses approximatives acceptées |
-
-```python
-# Sensibilité élevée (correspondance stricte)
-cache = SemanticCache(
-    backend=InMemoryCacheBackend(dim=1024, max_entries=500),
-    similarity_threshold=0.99,
-)
-
-# Sensibilité faible (correspondance large)
-cache = SemanticCache(
-    backend=InMemoryCacheBackend(dim=1024, max_entries=500),
-    similarity_threshold=0.90,
-)
-```
-
-**Stratégies d'éviction** :
-
-- **LRU** (« Least Recently Used ») — Éjecte les entrées les moins récemment utilisées
-- **LFU** (« Least Frequently Used ») — Éjecte les entrées les moins fréquemment utilisées
-- **FIFO** (« First In First Out ») — Éjecte les entrées les plus anciennes
-
-```python
-backend = InMemoryCacheBackend(
-    dim=1024,
-    max_entries=500,
-    eviction_policy=EvictionPolicy.LFU,  # Cibler les requêtes les plus fréquentes
-)
-```
-
-<SectionTab as="h1" sectionId="monitoring">Monitorer avec des métriques</SectionTab>
-
-Surveillez les performances du cache :
+Passez une instance de `CacheMetrics` pour suivre la performance du cache. Les métriques sont thread-safe et peuvent être consultées à tout moment.
 
 ```python
 from mistralai.search.toolkit.retrieval.cache import CacheMetrics
 
-# Créez le tracker de métriques
 metrics = CacheMetrics()
 
 cached_engine = CachedQueryEngine(
@@ -202,185 +116,140 @@ cached_engine = CachedQueryEngine(
     metrics=metrics,
 )
 
-# Soumettez les requêtes
-for query in queries:
-    result = await cached_engine.search(query)
-
-# Vérifiez les performances
-snapshot = metrics.snapshot()
-print(f"Hit rate: {snapshot.hit_rate:.1%}")
-print(f"Avg hit similarity: {snapshot.avg_hit_similarity:.3f}")
-print(f"Total requests: {snapshot.total_requests}")
-print(f"Evictions: {snapshot.evictions}")
+snap = metrics.snapshot()
 ```
 
-**Métriques disponibles** :
+### Métriques disponibles
 
 | Métrique | Description |
 |----------|-------------|
-| `hit_rate` | Part des requêtes servies depuis le cache |
-| `avg_hit_similarity` | Similarité cosinus moyenne lors des hits du cache |
-| `total_requests` | Nombre total de requêtes traitées |
-| `avg_embed_time_ms` | Temps moyen d'embedding par requête |
-| `avg_lookup_time_ms` | Temps moyen de recherche dans le cache par requête |
-| `avg_retrieval_time_ms` | Temps moyen de récupération lors d'un cache miss |
-| `evictions` | Nombre total d'évictions pour cause de capacité |
-| `errors` | Nombre total d'erreurs dans le cache ou sur l'embedder |
+| `hits` | Nombre total de hits du cache |
+| `misses` | Nombre total de misses |
+| `errors` | Nombre total d’erreurs du cache (non bloquantes) |
+| `total_queries` | Nombre total de requêtes (`hits + misses`) |
+| `hit_rate` | Taux de hit, entre 0.0 et 1.0 |
+| `miss_rate` | Taux de miss, entre 0.0 et 1.0 |
+| `avg_hit_similarity` | Similarité cosinus moyenne sur les hits |
+| `total_embed_time_ms` | Temps total passé à faire les embeddings (ms) |
+| `total_lookup_time_ms` | Temps total passé à consulter le cache (ms) |
+| `avg_embed_time_ms` | Temps moyen d’embedding par requête (ms) |
+| `avg_lookup_time_ms` | Temps moyen de lookup cache par requête (ms) |
+| `evictions` | Nombre total d’entrées évincées |
+| `stores` | Nombre total d’entrées stockées en cache |
 
-**Exemple de monitoring** :
+### Journalisation des métriques
+
+Utilisez `log_summary()` pour émettre un log structuré via structlog :
 
 ```python
-# Suivre les performances dans le temps
-if snapshot.hit_rate > 0.5:
-    print(f"✓ Bon hit rate: {snapshot.hit_rate:.1%}")
-    print(f"  Similarité moyenne: {snapshot.avg_hit_similarity:.3f}")
-else:
-    print(f"⚠ Hit rate faible: {snapshot.hit_rate:.1%}")
-    print(f"  Essayez de baisser similarity_threshold")
-
-if snapshot.evictions > max_entries * 0.1:
-    print(f"⚠ Taux d'éviction élevé")
-    print(f"  Augmentez max_entries ou passez en LFU")
+metrics.log_summary()
+# Affiche : Cache metrics summary  hits=42 misses=8 hit_rate=84.0% errors=0 ...
 ```
+
+### Réinitialisation des métriques
+
+```python
+metrics.reset()
+```
+
+### Évaluer l’efficacité du cache
+
+Ces métriques permettent d’évaluer :
+
+- **Le cache est-il utile ?** Regardez `hit_rate`. En dessous de 20 % sur votre trafic en production, le cache ne justifie peut-être pas son coût.
+- **Le seuil de similarité est-il trop élevé ?** Si `hit_rate` est faible et que `avg_hit_similarity` est élevé, les requêtes sont proches mais pas assez pour franchir le seuil. Essayez de baisser `similarity_threshold`.
+- **L’embedding est-il trop lent ?** Comparez `avg_embed_time_ms` à la latence de votre retrieval. Si l’embedding est plus long que la récupération, la mise en cache peut ajouter du temps sur les misses.
+- **Le cache est-il trop petit ?** Si `evictions` est élevé par rapport à `stores`, cela signifie que les entrées sont évincées trop tôt. Augmentez `max_entries`.
 
 <SectionTab as="h1" sectionId="fault-tolerance">Tolérance aux pannes</SectionTab>
 
-Toutes les opérations de cache sont non bloquantes. Si le cache ou l'embedder lance une exception, la requête passe automatiquement sur le chemin sans mise en cache :
+Toutes les opérations cache sont **non bloquantes**. Si le cache ou l’embedder lève une exception :
+
+1. L’erreur est journalisée comme un avertissement
+2. La requête passe en mode non-caché
+3. La métrique `errors` est incrémentée
+
+Activer le cache ne dégrade jamais la fiabilité de votre pipeline existant.
+
+<SectionTab as="h1" sectionId="cache-backends">Backends de cache</SectionTab>
+
+### InMemoryCacheBackend
+
+Utilise LSH (Locality-Sensitive Hashing) pour la recherche par similarité en sous-linéaire, sans dépendance externe. Il s’agit du backend par défaut.
 
 ```python
-# Même en cas d'échec du cache, la récupération continue
-cached_engine = CachedQueryEngine(
-    engine=query_engine,
-    cache=cache,
-    embedder=embedder,
-)
+from mistralai.search.toolkit.retrieval.cache import InMemoryCacheBackend, SemanticCache, EvictionPolicy
 
-# Si l'embedder ou le cache déclenche une exception :
-# - Exception enregistrée dans les logs
-# - La requête suit le pipeline standard
-# - Le résultat n'est PAS mis en cache
-# - La fiabilité de la pipeline n'est pas affectée
-
-result = await cached_engine.search(query="...", top_k=10)
-# Retourne toujours un résultat ; la mise en cache fonctionne en best effort
-```
-
-**Surveiller les erreurs** :
-
-```python
-snapshot = metrics.snapshot()
-if snapshot.errors > 0:
-    print(f"Cache errors: {snapshot.errors}")
-    print("Consultez les logs pour les détails — la récupération fonctionne sans impact")
-```
-
-<SectionTab as="h1" sectionId="cache-invalidation">Gestion du cache</SectionTab>
-
-**Invalidation par espace de nom** :
-
-```python
-# Invalider le cache pour un namespace précis
-await cache.invalidate(namespace="query_engine")
-
-# Toutes les entrées de ce namespace sont supprimées
-```
-
-**Vider l'ensemble du cache** :
-
-```python
-# Supprime toutes les entrées en cache
-await cache.clear()
-```
-
-**Expiration automatique (TTL)** :
-
-```python
-# Les entrées expirent automatiquement après ttl_seconds
 backend = InMemoryCacheBackend(
     dim=1024,
     max_entries=500,
-    ttl_seconds=3600,  # Expiration 1 heure
-)
-
-# Les entrées expirées sont supprimées à l'accès ou lors d'une éviction
-```
-
-**Gestion manuelle** (pour les backends personnalisés) :
-
-```python
-from mistralai.search.toolkit.retrieval.cache import CacheBackend
-
-class CustomCacheBackend(CacheBackend):
-    async def invalidate_old_entries(self, before_timestamp: float):
-        """Supprime les entrées antérieures au timestamp."""
-        ...
-
-    async def get_cache_size(self) -> int:
-        """Renvoie la taille actuelle du cache (en entrées)."""
-        ...
-```
-
-<SectionTab as="h1" sectionId="best-practices">Bonnes pratiques</SectionTab>
-
-**1. Surveillez le hit rate** :
-
-```python
-# Suivre l'efficacité du cache
-if metrics.snapshot().hit_rate < 0.2:
-    # Le cache n'est pas utilisé efficacement
-    # Actions :
-    # - Abaisser similarity_threshold
-    # - Augmenter max_entries
-    # - Analyser les patterns de requêtes
-    ...
-```
-
-**2. Adapter la taille du cache** :
-
-```python
-# Selon le volume attendu et la mémoire disponible
-# Embedding 1024-dim ≈ 4 Ko par entrée
-backend = InMemoryCacheBackend(
-    dim=1024,
-    max_entries=1000,  # ~4 Mo de cache
     ttl_seconds=3600,
+    eviction_policy=EvictionPolicy.LRU,
+    num_bits=10,     # Bits LSH par hash (plus élevé = moins de candidats)
+    num_tables=5,    # Tables de hash LSH (plus élevé = meilleur recall)
 )
+cache = SemanticCache(backend=backend, similarity_threshold=0.92)
 ```
 
-**3. Utiliser avec la récupération multi-étapes** :
+**À privilégier pour :** déploiements en production, tests, usage sans dépendances externes.
+
+**Avantages :** Pas d’I/O disque, aucune librairie externe, thread-safe, rapide pour les caches de petite à moyenne taille.
+
+**Inconvénient :** Les entrées ne survivent pas au redémarrage du processus.
+
+### Backend personnalisé
+
+Implémentez l’ABC `CacheBackend` pour brancher n’importe quel stockage (Redis, pgvector, etc.) :
 
 ```python
-# Le caching est pertinent quand les étapes suivantes sont coûteuses
-cached_engine = CachedQueryEngine(
-    engine=QueryEngine(
-        retriever=vector_retriever,
-        rerankers=[
-            LLMReRanker(llm_provider=llm, top_k=10),  # Coûteux !
-        ],
-    ),
-    cache=cache,
-    embedder=embedder,
-)
+from mistralai.search.toolkit.retrieval.cache import CacheBackend, CacheEntry
 
-# Le cache permet d'éviter le reranking LLM coûteux lors d'un hit
+class RedisCacheBackend(CacheBackend):
+    @property
+    def max_entries(self) -> int:
+        return 1000
+
+    async def search(self, query_embedding, namespace, n_results):
+        ...
+
+    async def store(self, entry: CacheEntry) -> None:
+        ...
+
+    async def delete(self, entry_id: str):
+        ...
+
+    async def get_all(self, namespace=None):
+        ...
+
+    async def count(self, namespace=None) -> int:
+        ...
+
+    async def clear(self):
+        ...
+
+    async def update_hit(self, entry: CacheEntry):
+        ...
 ```
 
-**4. Seuils selon l'usage** :
+<SectionTab as="h1" sectionId="cache-invalidation">Invalidation du cache</SectionTab>
+
+Invalidez des entrées quand les données sous-jacentes changent :
 
 ```python
-# Conservateur (réponses précises)
-similarity_threshold=0.98
+from mistralai.search.toolkit.retrieval.cache import (
+    InMemoryCacheBackend,
+    SemanticCache,
+)
 
-# Équilibré (Q&R courantes)
-similarity_threshold=0.95
+backend = InMemoryCacheBackend(dim=1024)
+cache = SemanticCache(backend=backend)
 
-# Permissif (réponses approximatives ok)
-similarity_threshold=0.90
+# Invalider un namespace spécifique
+removed = await cache.invalidate(namespace="query_engine")
+
+# Invalider toutes les entrées
+removed = await cache.invalidate()
+
+# Vider tout le cache
+await cache.clear()
 ```
-
-<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
-
-- [Vue d'ensemble de la récupération](../retrieval) — Architecture du pipeline de récupération
-- [Retrievers](retrievers) — Recherche vectorielle
-- [Rerankers](rerankers) — Raffinement post-récupération
-- [Prétraitement des requêtes](preprocessing) — Optimiser la requête avant récupération

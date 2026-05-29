@@ -7,17 +7,23 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Guide de démarrage
 
-Créez un pipeline RAG en cinq minutes : importez des documents dans un vecteur store, puis effectuez une recherche dessus.
+Créez un pipeline RAG en 5 minutes : ingérez des documents dans un vecteur store, puis effectuez des recherches dessus.
 
 <SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
 
 - **Python 3.12+**
 - **Docker** (pour exécuter Vespa en local)
-- Une **clé API Mistral** à obtenir sur [console.mistral.ai](https://console.mistral.ai/)
+- Une **clé API Mistral** à récupérer sur [console.mistral.ai](https://console.mistral.ai/)
 
 <SectionTab as="h1" sectionId="install">Installation</SectionTab>
 
-Installez Search Toolkit avec le plugin Vespa en utilisant [uv](https://docs.astral.sh/uv/) :
+Installez Search Toolkit avec le plugin Vespa :
+
+```bash
+pip install "mistralai-search-toolkit[vespa]"
+```
+
+Ou avec [uv](https://docs.astral.sh/uv/) :
 
 ```bash
 uv add "mistralai-search-toolkit[vespa]"
@@ -25,7 +31,7 @@ uv add "mistralai-search-toolkit[vespa]"
 
 <SectionTab as="h1" sectionId="setup-vespa">Configurer Vespa</SectionTab>
 
-Démarrez une instance Vespa locale avec Docker :
+Lancez une instance locale de Vespa avec Docker :
 
 ```bash
 docker run --detach \
@@ -49,55 +55,9 @@ Définissez votre clé API Mistral :
 export MISTRAL_API_KEY=your-api-key
 ```
 
-<SectionTab as="h1" sectionId="define-schema">Définir le schéma</SectionTab>
+<SectionTab as="h1" sectionId="ingest">Ingestion de documents</SectionTab>
 
-Créez une migration pour décrire la structure de vos documents :
-
-```bash
-mistral-vespa generate-migration \
-  --app-dir ./vespa/migrations \
-  initial_schema
-```
-
-Complétez le fichier généré :
-
-```python
-from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition, SearchMode
-from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_default_schema, set_app_name
-
-
-class InitialSchema(VespaMigration):
-    def migrate(self) -> None:
-        set_app_name("my_quickstart")
-        create_default_schema(
-            name="quickstart_collection",
-            mode=SearchMode.INDEX,
-            embedding_dimensions=1024,
-            schema_version=1,
-            additional_fields=[
-                FieldDefinition.TextField(name="title"),
-            ],
-        )
-```
-
-Pour obtenir plus de détails sur la gestion et le déploiement d’applications Vespa, consultez [Gérer et déployer des applications Vespa](vespa).
-
-<SectionTab as="h1" sectionId="deploy-schema">Déployer à partir des migrations</SectionTab>
-
-Déployez le schéma sur votre instance Vespa locale :
-
-```bash
-mistral-vespa migrate \
-  --app-dir ./vespa/migrations \
-  --config-server http://localhost:19071 \
-  --query-port 8080
-```
-
-Cela construit le package applicatif à partir de vos migrations en mémoire, le déploie, et attend que l’application soit prête.
-
-<SectionTab as="h1" sectionId="ingest">Ingestion des documents</SectionTab>
-
-Créez un pipeline qui charge des fichiers, extrait le texte, segmente en fragments, génère des embeddings et indexe dans Vespa :
+Créez un pipeline qui charge les fichiers, extrait le texte, segmente en morceaux, génère les embeddings, puis indexe dans Vespa :
 
 ```python
 import asyncio
@@ -109,46 +69,51 @@ from mistralai.search.toolkit.ingestion.extractors import PlainTextExtractor
 from mistralai.search.toolkit.ingestion.loaders import FilesystemFileLoader
 from mistralai.search.toolkit.ingestion.pipelines import Pipeline
 from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
-from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
-from vespa_app import app
+from mistralai.search.toolkit.plugins.vespa import VespaClient, VespaConfig
 
 
 async def main():
     mistral_client = Mistral(api_key="your-api-key")
 
-    # Configuration Vespa
-    config = VespaClientConfig(
-        endpoint="http://localhost:8080",
+    # Configuration de Vespa
+    vector_store = VespaClient(
+        config=VespaConfig(
+            collection_name="quickstart_collection",
+            query_endpoint="http://localhost:8080",
+            feed_endpoint="http://localhost:8080",
+            embedding_model="mistral-embed",
+        ),
+        query_profile=None,  # Non requis pour l’ingestion
     )
-    vector_store = app.get_search_index(config, collection_name="quickstart_collection")
 
     # Création du pipeline
     pipeline = Pipeline(
         loader=FilesystemFileLoader(),
         extractor=PlainTextExtractor(),
         text_splitter=CharacterTextSplitter(chunk_size=500),
-        embedder=MistralEmbedder(client=mistral_client, model_name="mistral-embed"),
+        embedder=MistralEmbedder(client=mistral_client),
         vector_store=vector_store,
     )
 
-    # Ingestion des documents
+    # Création de l’index et ingestion
+    await vector_store.create_index()
     await pipeline.run(
         documents=[Path("doc1.txt"), Path("doc2.txt")],
         collection_name="quickstart_collection",
     )
-    print("Documents importés.")
+    print("Documents ingérés !")
 
 
 asyncio.run(main())
 ```
 
-Ce pipeline enchaîne cinq étapes :
+Le pipeline enchaîne cinq étapes :
 
-1. **`FilesystemFileLoader`** lit les octets du fichier depuis le disque.
-2. **`PlainTextExtractor`** extrait le contenu texte. Pour les PDF, utilisez à la place `MistralOCRExtractor`.
-3. **`CharacterTextSplitter`** découpe le texte en fragments de 500 caractères.
-4. **`MistralEmbedder`** génère un embedding vectoriel pour chaque fragment.
-5. **`vector_store`** (Vespa) indexe chaque fragment et stocke l’embedding pour la recherche vectorielle.
+1. **`FilesystemFileLoader`** lit les fichiers bruts depuis le disque.
+2. **`PlainTextExtractor`** extrait le texte du fichier. Pour les PDF, utilisez plutôt `MistralOCRExtractor`.
+3. **`CharacterTextSplitter`** découpe le texte en segments de 500 caractères.
+4. **`MistralEmbedder`** génère un embedding vectoriel pour chaque segment.
+5. **`VespaClient`** indexe chaque segment, stocke à la fois l’embedding (recherche vectorielle) et le texte brut (pour la recherche par mots-clés).
 
 <SectionTab as="h1" sectionId="search">Recherche</SectionTab>
 
@@ -159,21 +124,33 @@ import asyncio
 
 from mistralai.client import Mistral
 from mistralai.search.toolkit.embedders import MistralEmbedder
-from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from mistralai.search.toolkit.plugins.vespa import VespaClient, VespaConfig
+from mistralai.search.toolkit.plugins.vespa.search import (
+    VespaQueryProfile,
+    VespaQueryProfileConfig,
+)
 from mistralai.search.toolkit.retrieval import QueryEngine
 from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
-from vespa_app import app
 
 
 async def main():
     mistral_client = Mistral(api_key="your-api-key")
-    embedder = MistralEmbedder(client=mistral_client, model_name="mistral-embed")
+    embedder = MistralEmbedder(client=mistral_client)
 
-    # Configuration Vespa pour la recherche
-    config = VespaClientConfig(
-        endpoint="http://localhost:8080",
+    # Configurez Vespa avec un profil de requête spécifique à la recherche
+    query_profile = VespaQueryProfile(
+        config=VespaQueryProfileConfig(name="default", version=None),
+        namespace="quickstart_collection",
     )
-    vector_store = app.get_search_index(config, collection_name="quickstart_collection")
+    vector_store = VespaClient(
+        config=VespaConfig(
+            collection_name="quickstart_collection",
+            query_endpoint="http://localhost:8080",
+            feed_endpoint="http://localhost:8080",
+            embedding_model="mistral-embed",
+        ),
+        query_profile=query_profile,
+    )
 
     # Création du moteur de requête
     query_engine = QueryEngine(
@@ -197,7 +174,7 @@ asyncio.run(main())
 
 <SectionTab as="h1" sectionId="pdf-ingestion">Ingestion de PDF avec OCR</SectionTab>
 
-Pour des fichiers PDF, remplacez `PlainTextExtractor` par `MistralOCRExtractor` et utilisez `MarkdownTextSplitter` pour un découpage adapté à la structure du document :
+Pour les documents PDF, remplacez `PlainTextExtractor` par `MistralOCRExtractor` et utilisez `MarkdownTextSplitter` pour une découpe tenant compte de la structure :
 
 ```python
 from mistralai.search.toolkit.ingestion.extractors import MistralOCRExtractor

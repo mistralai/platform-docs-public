@@ -7,17 +7,17 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Recherche
 
-La recherche identifie les fragments pertinents pour une requête utilisateur donnée. Le Search Toolkit prend en charge les stratégies de recherche vectorielle (sémantique), par mot-clé (BM25), et hybride. Elles peuvent être combinées pour de meilleurs résultats.
+La recherche identifie les segments pertinents correspondant à une requête utilisateur. Le Search Toolkit prend en charge les recherches vectorielles (sémantiques), par mot-clé (BM25) et hybrides, qu’il est possible de combiner pour optimiser les résultats.
 
-Un **préprocesseur de requête** (optionnel) transforme la requête brute avant la recherche — il peut la réécrire pour plus de clarté ou la décliner en plusieurs variantes.
+Un **préprocesseur de requête** optionnel transforme la requête brute avant la recherche : réécriture pour plus de clarté ou expansion en plusieurs variantes.
 
-Un ou plusieurs **Retrievers** exécutent la recherche sur l'index. Ils peuvent fonctionner en parallèle et leurs résultats sont fusionnés.
+Un ou plusieurs **Retrievers** exécutent la recherche sur l’index. Ils peuvent fonctionner en parallèle et leurs résultats sont fusionnés.
 
-Un **Reranker** optionnel réévalue les résultats fusionnés avec une méthode de scoring plus précise — LLM, cross-encoder ou fusion de rangs entre plusieurs ensembles de résultats.
+Un **Reranker** optionnel réévalue les résultats fusionnés à l’aide d’une stratégie de score plus précise — un LLM, un cross-encoder ou une fusion de classement sur plusieurs ensembles de résultats.
 
 <SectionTab as="h1" sectionId="query-engine">Moteur de requête</SectionTab>
 
-`QueryEngine` orchestre le pipeline de recherche. Il accepte un ou plusieurs retrievers, un prétraitement de requête optionnel et des rerankers optionnels :
+`QueryEngine` orchestre le pipeline de recherche. Il accepte un ou plusieurs retrievers, un prétraitement optionnel de la requête et des rerankers également optionnels :
 
 ```python
 from mistralai.search.toolkit.retrieval import QueryEngine
@@ -28,7 +28,7 @@ from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
 query_engine = QueryEngine(
     retriever=vector_retriever,       # Accepte aussi une liste de retrievers
     query_rewriter=query_rewriter,    # Optionnel
-    rerankers=[llm_reranker],         # Optionnel, prend en charge ReRanker et GroupedRanker
+    rerankers=[llm_reranker],         # Optionnel : accepte ReRanker et GroupedRanker
 )
 
 result = await query_engine.search(
@@ -42,11 +42,249 @@ print(f"Original query: {result.original_query}")
 print(f"Results: {len(result.results)}")
 ```
 
-<SectionTab as="h1" sectionId="components">Composants</SectionTab>
+<SectionTab as="h1" sectionId="retrievers">Retrievers</SectionTab>
 
-Chaque composant du pipeline de recherche est documenté en détail avec exemples et bonnes pratiques :
+### VectorRetriever
 
-- **[Retrievers](retrieval/retrievers)** — VectorRetriever, KeywordRetriever et patterns hybrides
-- **[Rerankers](retrieval/rerankers)** — LLMReRanker, CrossEncoderReRanker, fusion RRF et rerankers personnalisés
-- **[Prétraitement des requêtes](retrieval/preprocessing)** — Réécriture et expansion des requêtes pour améliorer la qualité de la recherche
-- **[Cache sémantique](retrieval/semantic-cache)** — Mise en cache des résultats par similarité de requête pour réduire la latence
+Effectue une recherche sémantique à l’aide d’embeddings :
+
+```python
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
+
+retriever = VectorRetriever(client=vector_store, embedder=embedder)
+
+results = await retriever.retrieve(
+    query="What is semantic search?",
+    top_k=10,
+    filter={"category": "documentation"},
+)
+```
+
+### KeywordRetriever
+
+Effectue une recherche lexicale (BM25) :
+
+```python
+from mistralai.search.toolkit.retrieval.retrievers import KeywordRetriever
+
+retriever = KeywordRetriever(client=keyword_store)
+results = await retriever.retrieve(query="exact keyword match")
+```
+
+### Recherche hybride
+
+Combinez la recherche vectorielle et par mot-clé en utilisant plusieurs retrievers avec un `RRFRanker` pour fusionner les résultats via la méthode Reciprocal Rank Fusion :
+
+```python
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever, KeywordRetriever
+from mistralai.search.toolkit.retrieval.rerankers import RRFRanker, LLMReRanker
+
+query_engine = QueryEngine(
+    retriever=[
+        VectorRetriever(client=vector_store, embedder=embedder),
+        KeywordRetriever(client=keyword_store),
+    ],
+    rerankers=[
+        RRFRanker(rrf_k=60, top_k=10),   # Fusionne les résultats des deux retrievers
+        LLMReRanker(llm_provider=llm, top_k=5),  # Puis rerank les résultats fusionnés
+    ],
+)
+
+result = await query_engine.search(query="What is RAG?")
+```
+
+:::info
+RRF combine les classements provenant de plusieurs sources en se basant uniquement sur le rang, sans prendre en compte les scores : `RRF = sum(1 / (k + rank_i))` où `k` vaut 60 par défaut.
+:::
+
+<SectionTab as="h1" sectionId="rerankers">Rerankers</SectionTab>
+
+Les rerankers réévaluent les résultats obtenus pour améliorer la qualité du classement. La récupération initiale est rapide mais approximative ; les rerankers appliquent un scoring plus sophistiqué.
+
+Le Search Toolkit propose deux types :
+- **`ReRanker`** — agit sur une seule liste de résultats (par ex. : `LLMReRanker`, `CrossEncoderReRanker`)
+- **`GroupedRanker`** — agit sur plusieurs groupes de résultats à fusionner (par ex. : `RRFRanker`)
+
+Les deux peuvent être chaînés dans la liste `rerankers` de QueryEngine et sont appliqués dans l’ordre.
+
+### LLMReRanker
+
+Utilise un LLM pour reclasser les résultats grâce à une compréhension approfondie :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import LLMReRanker
+from mistralai.search.toolkit.llm import MistralChat, LLMConfig
+
+llm = MistralChat(
+    client=mistral_client,
+    config=LLMConfig(
+        model="mistral-small-latest",
+        temperature=0.1,
+        response_format={"type": "json_object"},
+    ),
+)
+
+reranker = LLMReRanker(llm_provider=llm, top_k=10)
+```
+
+### CrossEncoderReRanker
+
+Utilise un modèle cross-encoder hébergé pour reclasser les résultats :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import CrossEncoderReRanker
+
+reranker = CrossEncoderReRanker(
+    base_url="http://localhost:8080",
+    model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+    top_k=10,
+)
+```
+
+### RRFRanker
+
+Fusionne les résultats de plusieurs retrievers en utilisant la méthode Reciprocal Rank Fusion :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import RRFRanker
+
+reranker = RRFRanker(rrf_k=60, top_k=10)
+```
+
+### Rerankers personnalisés
+
+Implémentez `ReRanker` pour le reclassement d’une seule liste ou `GroupedRanker` pour la fusion multi-groupes :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import ReRanker
+from mistralai.search.toolkit.indices import SearchResult
+
+
+class MetadataReRanker(ReRanker):
+    async def rerank(
+        self, query: str, search_results: list[SearchResult]
+    ) -> list[SearchResult]:
+        for result in search_results:
+            if result.chunk.metadata.get("verified"):
+                result.score *= 1.5
+        return sorted(search_results, key=lambda x: x.score, reverse=True)
+```
+
+<SectionTab as="h1" sectionId="preprocessing">Prétraitement de requête</SectionTab>
+
+Le prétraitement de la requête améliore les requêtes utilisateur avant la recherche proprement dite. Ces techniques augmentent la latence, mais peuvent améliorer notablement la qualité des résultats selon votre domaine et vos données.
+
+### LLMQueryRewriter
+
+Utilise un LLM pour reformuler les requêtes afin qu’elles correspondent plus probablement au contenu indexé :
+
+```python
+from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
+from mistralai.search.toolkit.llm import MistralChat, LLMConfig
+
+rewriter = LLMQueryRewriter(
+    llm_provider=MistralChat(
+        client=mistral_client,
+        config=LLMConfig(model="mistral-small-latest"),
+    ),
+)
+
+result = await rewriter.rewrite("rag mistral")
+# "What is Retrieval-Augmented Generation with Mistral AI?"
+```
+
+### LLMQueryExtension
+
+Décompose une requête en plusieurs sous-requêtes explorant différentes facettes de la question. Chaque sous-requête lance une recherche indépendante ; les résultats sont ensuite combinés pour une couverture plus large.
+
+```python
+from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryExtension
+
+extender = LLMQueryExtension(llm_provider=llm, num_queries=3)
+
+result = await extender.extend("How does RAG work?")
+# extended_queries: ["What is RAG?", "How does retrieval work in RAG?", "How does generation work in RAG?"]
+```
+
+:::caution
+N sous-requêtes impliquent N recherches et N embeddings. Cela augmente la latence et le coût de manière proportionnelle.
+:::
+
+<SectionTab as="h1" sectionId="semantic-cache">Cache sémantique</SectionTab>
+
+Le cache sémantique associe les requêtes selon leur sens, et non leur formulation exacte. Si une requête est jugée sémantiquement similaire à une requête déjà mise en cache, le cache retourne les résultats stockés : aucune étape d’embedding, de recherche, de réécriture ou de reranking n’est alors nécessaire.
+
+```python
+from mistralai.search.toolkit.retrieval.cache import (
+    CachedQueryEngine,
+    CacheMetrics,
+    EvictionPolicy,
+    InMemoryCacheBackend,
+    SemanticCache,
+)
+
+# 1. Créez un backend de cache
+backend = InMemoryCacheBackend(
+    dim=1024,
+    max_entries=500,
+    ttl_seconds=3600,
+    eviction_policy=EvictionPolicy.LRU,
+)
+
+# 2. Créez le cache sémantique
+cache = SemanticCache(
+    backend=backend,
+    similarity_threshold=0.92,
+)
+
+# 3. Enveloppez le moteur de requête (métriques en option)
+metrics = CacheMetrics()
+cached_engine = CachedQueryEngine(
+    engine=query_engine,
+    cache=cache,
+    embedder=embedder,
+    metrics=metrics,
+)
+
+# 4. Utilisation normale – le cache est transparent
+result = await cached_engine.search("What is RAG?")
+
+# 5. Vérifiez les performances
+snap = metrics.snapshot()
+print(f"Hit rate: {snap.hit_rate:.1%}")
+```
+
+### Configuration
+
+| Paramètre | Défaut | Description |
+|-----------|--------|-------------|
+| `dim` | *(obligatoire)* | Dimension de l’embedding |
+| `max_entries` | `1000` | Nombre maximum d’entrées avant éviction |
+| `ttl_seconds` | `None` | Expiration des entrées (`None` = pas d’expiration) |
+| `eviction_policy` | `LRU` | `LRU`, `LFU` ou `FIFO` |
+| `similarity_threshold` | `0.95` | Similarité cosinus minimale pour un cache hit |
+
+### Métriques
+
+| Métrique | Description |
+|----------|-------------|
+| `hit_rate` | Fraction de requêtes servies via le cache |
+| `avg_hit_similarity` | Similarité cosinus moyenne lors d’un cache hit |
+| `avg_embed_time_ms` | Durée moyenne d’embedding par requête |
+| `avg_lookup_time_ms` | Temps moyen de recherche dans le cache par requête |
+| `evictions` | Nombre total d’entrées supprimées |
+
+### Tolérance aux pannes
+
+Toutes les opérations de cache sont non fatales. Si le cache ou l’embeddeur déclenche une exception, la requête suit le chemin standard (hors cache) et la métrique `errors` est incrémentée. L’ajout de la mise en cache ne diminue jamais la fiabilité du pipeline.
+
+### Invalidation du cache
+
+```python
+# Invalider un namespace spécifique
+await cache.invalidate(namespace="query_engine")
+
+# Vider tout le cache
+await cache.clear()
+```

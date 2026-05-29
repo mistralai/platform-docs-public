@@ -297,33 +297,53 @@ vector_store = VespaClient(
 )
 ```
 
-#### Exemple d'override
+### Backends personnalisés
 
-Imposez l'utilisation d'un protocole différent pour certaines extensions de fichiers :
+Implémentez `VectorStoreClient` ou `KeywordStoreClient` pour intégrer votre propre solution de stockage :
 
 ```python
-router = RoutedPipeline(
-    pipelines={
-        "ocr": ocr_pipeline,
-        "html": html_pipeline,
-        "plain_text": text_pipeline,
-        "xlsx": spreadsheet_pipeline,
-    },
-    protocol_overrides={
-        ".doc": "ocr",  # Force legacy docs through OCR instead of legacy_office
-    },
-)
+from mistralai.search.toolkit.indices import VectorStoreClient, VectorSearchQuery, SearchResult
+from mistralai.search.toolkit.document import Document
 
-document = await router.run_file(file=file)
+
+class MyVectorStore(VectorStoreClient):
+    async def create_index(self) -> bool: ...
+    async def upsert(self, document: Document) -> bool: ...
+    async def search(self, query: VectorSearchQuery) -> list[SearchResult]: ...
+    async def delete_document(self, doc_id: str) -> None: ...
 ```
 
-<SectionTab as="h1" sectionId="components">Composants</SectionTab>
+<SectionTab as="h1" sectionId="embedders">Embedders</SectionTab>
 
-Chaque composant d'ingestion est documenté en détail, avec les options de configuration, les bonnes pratiques et de nombreux exemples :
+Les embedders transforment du texte en vecteurs d'embedding pour la recherche sémantique.
 
-- **[Loaders de fichiers](ingestion/loaders)** — Chargez des fichiers depuis le système de fichiers, un stockage cloud ou des sources personnalisées
-- **[Extracteurs de documents](ingestion/extractors)** — Extrait le contenu de PDF, HTML, tableurs et autres (7 formats pris en charge)
-- **[Diviseurs de texte](ingestion/splitters)** — Découpent les documents en fragments de taille et de recouvrement optimaux
-- **[Enrichisseurs de fragment](ingestion/enrichers)** — Ajoutent des métadonnées personnalisées pour le filtrage et le classement
-- **[Embedders](ingestion/embedders)** — Convertissent le texte en vecteurs pour la recherche sémantique
-- **[Index de recherche](search-index)** — Stocke et permet la recherche parmi les fragments indexés
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.embedders import MistralEmbedder
+
+embedder = MistralEmbedder(
+    client=Mistral(api_key="your-api-key"),
+    model_name="mistral-embed",
+)
+
+# Générez les embeddings des segments pour l'indexation
+embedded_chunks = await embedder.embed_chunks(chunks)
+
+# Embedding d'une requête unique
+vector = await embedder.embed_query("What is RAG?")
+```
+
+Implémentez un embedder personnalisé en sous-classant `Embedder` et en fournissant une méthode `embed` :
+
+```python
+from mistralai.search.toolkit.embedders import Embedder, EmbeddingResult
+
+
+class MyEmbedder(Embedder):
+    async def embed(self, texts: list[str]) -> EmbeddingResult:
+        embeddings = my_provider.embed(texts)
+        return EmbeddingResult(
+            embeddings=embeddings,
+            total_tokens=sum(len(t.split()) for t in texts),
+        )
+```

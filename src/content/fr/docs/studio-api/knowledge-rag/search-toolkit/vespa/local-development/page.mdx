@@ -5,20 +5,20 @@ sidebar_label: Développement local
 ---
 import { SectionTab } from '@/components/layout/section-tab';
 
-Ce guide détaille le cycle complet du développement local : création d'un schéma, déploiement en local, alimentation et requête de documents, puis itération avec de nouvelles migrations. Consultez [Gérer les schémas](migrations) pour apprendre à gérer les schémas et la [référence CLI](cli) pour la liste complète des options.
+Ce guide décrit le cycle complet de développement local : création d’un schéma, déploiement local, alimentation et requêtage de documents, puis itération avec de nouvelles migrations. Consultez [Gérer les schémas](migrations) pour savoir comment les administrer et la [référence CLI](cli) pour l’ensemble des options.
 
 <SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
 
-- Plugin Vespa Search Toolkit installé ([Installation](../#installation))
-- Docker installé et en cours d'exécution
+- Plugin Vespa du Search Toolkit installé ([Installation](../#installation))
+- Docker installé et lancé
 
-<SectionTab as="h2" sectionId="step-1-create-your-first-migration">Étape 1 : créer votre première migration</SectionTab>
+<SectionTab as="h2" sectionId="step-1-create-your-first-migration">Étape 1 : Créer votre première migration</SectionTab>
 
 ```bash
 uv run mistral-vespa generate-migration --app-dir ./vespa_app initial_schema
 ```
 
-Complétez le fichier généré :
+Complétez le fichier généré :
 
 ```python
 from mistralai.search.toolkit.plugins.vespa.app.schemas.app import (
@@ -44,13 +44,13 @@ class InitialSchema(VespaMigration):
         )
 ```
 
-La fonction `create_default_schema()` inclut par défaut tous les champs nécessaires au VespaSearchIndex. Utilisez `additional_fields` pour ajouter des champs adaptés à votre cas d'usage. Pour un contrôle total sur la liste des champs, utilisez `create_schema()` et définissez-les explicitement.
+`create_default_schema()` inclut par défaut tous les champs requis pour VespaSearchIndex. Utilisez `additional_fields` pour ajouter des champs personnalisés selon vos besoins. Pour contrôler précisément la liste des champs, utilisez `create_schema()` avec une définition explicite.
 
 :::info
-**Les fonctions de fragments sont générées automatiquement lorsqu'un champ fragment est présent.** Si un schéma inclut à la fois un champ d'embedding multi-dimensionnel et un champ texte multi-dimensionnel, le plugin génère automatiquement `best_chunks`, `chunk_scores` et les helpers associés.
+**Les fonctions de fragment sont générées automatiquement lorsqu’un champ fragment est présent.** Si un schéma comporte à la fois un champ d’embedding multi-dimensionnel et un champ texte multi-dimensionnel, le plugin génère automatiquement `best_chunks`, `chunk_scores` et les helpers associés.
 :::
 
-<SectionTab as="h2" sectionId="step-2-start-a-local-vespa-instance">Étape 2 : lancer une instance Vespa locale</SectionTab>
+<SectionTab as="h2" sectionId="step-2-start-a-local-vespa-instance">Étape 2 : Démarrer une instance locale de Vespa</SectionTab>
 
 ```bash
 uv run mistral-vespa local up --query-port 18080 --config-port 19171 --name vespa-dev
@@ -58,10 +58,10 @@ uv run mistral-vespa local up --query-port 18080 --config-port 19171 --name vesp
 
 | Port  | Service         | Utilisation                  |
 |-------|-----------------|-----------------------------|
-| 18080 | Container HTTP  | Alimentation et requête     |
-| 19171 | Config server   | Déploiement de l'application|
+| 18080 | Container HTTP  | Requêtes et alimentation     |
+| 19171 | Config server   | Déploiements d’applications  |
 
-<SectionTab as="h2" sectionId="step-3-deploy-from-migrations">Étape 3 : déployer depuis les migrations</SectionTab>
+<SectionTab as="h2" sectionId="step-3-deploy-from-migrations">Étape 3 : Déployer depuis les migrations</SectionTab>
 
 ```bash
 uv run mistral-vespa migrate \
@@ -70,11 +70,11 @@ uv run mistral-vespa migrate \
   --query-port 18080
 ```
 
-`mistral-vespa migrate` construit le package de l'application à partir des migrations en mémoire, le déploie et interroge l'endpoint de requête jusqu'à la mise en ligne de l'application.
+`mistral-vespa migrate` construit le paquet applicatif à partir des migrations en mémoire, le déploie et interroge l’endpoint de requête jusqu’à ce que l’application soit disponible.
 
-<SectionTab as="h2" sectionId="step-4-feed-and-query-documents">Étape 4 : alimenter et interroger des documents</SectionTab>
+<SectionTab as="h2" sectionId="step-4-feed-and-query-documents">Étape 4 : Alimenter et interroger les documents</SectionTab>
 
-Alimentez un document :
+Alimentez un document :
 
 ```bash
 curl -X POST \
@@ -87,7 +87,7 @@ curl -X POST \
   "http://localhost:18080/document/v1/articles/articles/docid/doc1"
 ```
 
-Effectuez une recherche :
+Lancez une requête de recherche :
 
 ```bash
 curl -H "Content-Type: application/json" \
@@ -95,9 +95,9 @@ curl -H "Content-Type: application/json" \
   "http://localhost:18080/search/"
 ```
 
-<SectionTab as="h2" sectionId="step-5-modify-the-schema">Étape 5 : modifier le schéma</SectionTab>
+<SectionTab as="h2" sectionId="step-5-modify-the-schema">Étape 5 : Modifier le schéma</SectionTab>
 
-Créez une nouvelle migration pour faire évoluer le schéma :
+Créez une nouvelle migration pour faire évoluer le schéma :
 
 ```bash
 uv run mistral-vespa generate-migration \
@@ -105,7 +105,7 @@ uv run mistral-vespa generate-migration \
   add_view_count
 ```
 
-Mettez à jour le fichier généré :
+Modifiez le fichier généré :
 
 ```python
 from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition
@@ -117,7 +117,7 @@ class AddViewCount(VespaMigration):
         add_field("articles", FieldDefinition.CountField(name="view_count"))
 ```
 
-Prévisualisez la modification :
+Prévisualisez la modification :
 
 ```bash
 uv run mistral-vespa migrate \
@@ -127,7 +127,7 @@ uv run mistral-vespa migrate \
   --dry-run
 ```
 
-Appliquez-la (supprimez `--dry-run`) :
+Appliquez-la (retirer `--dry-run`) :
 
 ```bash
 uv run mistral-vespa migrate \
@@ -136,22 +136,22 @@ uv run mistral-vespa migrate \
   --query-port 18080
 ```
 
-<SectionTab as="h2" sectionId="understanding-schema-changes">Comprendre les changements de schéma</SectionTab>
+<SectionTab as="h2" sectionId="understanding-schema-changes">Comprendre les modifications de schéma</SectionTab>
 
-Ce qui se passe lorsque vous modifiez le schéma d'une application en cours d'exécution :
+Que se passe-t-il en cas de modification du schéma d’une application en cours d’exécution :
 
-| Changement                        | Comportement                                                                |
-|------------------------------------|----------------------------------------------------------------------------|
-| **Ajout de nouveaux champs**       | Aucun problème. Le nouveau champ est vide tant qu'aucun document ne l'utilise. |
-| **Modification de l'indexation**   | Vespa lance un réindexage en tâche de fond. Incohérence temporaire possible. |
-| **Suppression d'un champ**         | Toutes les données et index du champ sont supprimés.                          |
-| **Changement de type de champ**    | Perte de données. Mieux vaut ajouter un champ, migrer les données, puis supprimer l'ancien. |
+| Changement                        | Comportement                                                  |
+|-----------------------------------|---------------------------------------------------------------|
+| **Ajout d’un nouveau champ**       | Aucun problème. Le champ reste vide tant qu’aucun document n’écrit dedans. |
+| **Modification de l’indexation**  | Vespa lance un réindexage en arrière-plan. Incohérences temporaires possibles. |
+| **Suppression d’un champ**        | Toutes les données et index liés à ce champ sont supprimés.     |
+| **Changement de type d’un champ** | Perte de données. Il est préférable d’ajouter un nouveau champ, migrer les données, puis supprimer l’ancien. |
 
-Pour plus de détails, consultez la [documentation Vespa sur la modification des schémas](https://docs.vespa.ai/en/reference/schemas/schemas.html#modifying-schemas).
+Pour plus d’informations, consultez la [documentation Vespa sur la modification des schémas](https://docs.vespa.ai/en/reference/schemas/schemas.html#modifying-schemas).
 
 <SectionTab as="h2" sectionId="custom-ranking-profiles-and-extra-assets">Profils de classement personnalisés et ressources supplémentaires</SectionTab>
 
-Ajoutez des profils de classement personnalisés ou des fichiers de modèle depuis une migration :
+Ajoutez des profils de classement personnalisés ou des fichiers de modèle depuis une migration :
 
 ```python
 from pathlib import Path
@@ -167,11 +167,11 @@ class AddCustomRankingProfile(VespaMigration):
         )
 ```
 
-Vous pouvez utiliser le même principe pour `add_schema_model_files`, `add_schema_custom_document_summary` et `add_query_profiles`.
+Vous pouvez utiliser la même approche pour `add_schema_model_files`, `add_schema_custom_document_summary` et `add_query_profiles`.
 
-<SectionTab as="h2" sectionId="optional-generate-a-vespalock-snapshot">Optionnel : générer un snapshot `vespa.lock`</SectionTab>
+<SectionTab as="h2" sectionId="optional-generate-a-vespalock-snapshot">Optionnel : générer un snapshot `vespa.lock`</SectionTab>
 
-Si votre dépôt conserve un package de référence généré pour CI ou relecture :
+Si votre dépôt conserve un package de référence généré pour le CI ou la relecture :
 
 ```bash
 uv run mistral-vespa generate \
@@ -179,12 +179,12 @@ uv run mistral-vespa generate \
   --path ./vespa.lock
 ```
 
-Régénérez-le après chaque modification de schéma. Le déploiement doit toujours se faire depuis les migrations avec `mistral-vespa migrate`.
+Générez-le à chaque modification de schéma. Le déploiement doit toujours passer par les migrations avec `mistral-vespa migrate`.
 
-<SectionTab as="h2" sectionId="ide-support">Prise en charge des IDE</SectionTab>
+<SectionTab as="h2" sectionId="ide-support">Prise en charge IDE</SectionTab>
 
-Utilisez un IDE avec le plugin Vespa pour la coloration syntaxique, l'autocomplétion, la navigation entre fonctions et profils, et la détection d'erreurs. Consultez la [documentation sur la prise en charge des IDE Vespa](https://docs.vespa.ai/en/applications/ide-support.html).
+Utilisez un IDE doté du plugin Vespa pour bénéficier de la coloration syntaxique, de l’auto-complétion, de la navigation entre fonctions et profils, et de la détection d’erreurs. Voir la [documentation sur la prise en charge Vespa dans les IDE](https://docs.vespa.ai/en/applications/ide-support.html).
 
 <SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
 
-- **[Déployer et opérer](operations)** — Déploiement en production et vérification de l'état
+- **[Déployer et opérer](operations)** — Déploiement en production et contrôles d’intégrité

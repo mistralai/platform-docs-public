@@ -1,0 +1,669 @@
+---
+id: sampling
+title: Échantillonnage
+sidebar_position: 1.5
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Échantillonnage : introduction aux paramètres d’échantillonnage
+
+Nous allons aborder ici les paramètres d’échantillonnage qui influencent les réponses des modèles de langage à grande échelle (LLM). Ce guide présente des paramètres comme la **Température**, **N**, **Top P**, la **Presence Penalty** et la **Frequency Penalty**, et explique comment les régler. Que vous souhaitiez générer du contenu original ou obtenir des réponses précises, comprendre ces réglages est essentiel.
+
+Voyons en détail chaque paramètre et comment adapter le comportement des LLM.
+
+<details>
+
+<summary><b>Nombre de complétions N</b></summary>
+
+## N Completions
+
+**N** représente le nombre de complétions à retourner pour chaque requête. Ce paramètre est utile lorsque vous souhaitez générer plusieurs réponses pour une seule entrée. Chaque complétion sera une réponse unique générée par le modèle, offrant une variété de résultats parmi lesquels choisir.
+
+### Points clés
+
+- **Réponses multiples** : En définissant `N` sur une valeur supérieure à 1, vous pouvez obtenir plusieurs réponses pour la même entrée.
+- **Efficacité des coûts** : Les tokens d'entrée ne sont facturés qu'une seule fois, quel que soit le nombre de complétions demandées. Cela rend rentable l'exploration de différentes possibilités.
+
+### Exemple
+
+Voici un exemple d'utilisation du paramètre `N` dans l'API :
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 1, # Increasing randomness and diversity of the output, this is required to be higher than 0 to have diverse outputs
+    n = 10 # Number of completions
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 1, # Increasing randomness and diversity of the output, this is required to be higher than 0 to have diverse outputs
+    n = 10 # Number of completions
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+### Résultat
+
+```
+Phoenix.
+Dragon
+Dragon
+Unicorn
+Unicorn
+Phoenix
+Unicorn
+Dragon
+Dragon.
+Unicorn
+```
+
+Dans cet exemple, le modèle génère 10 réponses pour le même prompt d'entrée. Cela vous permet de voir une variété de réponses possibles et de choisir celle qui correspond le mieux à vos besoins.
+
+</details>
+
+<details>
+
+<summary><b>Temperature</b></summary>
+
+## Temperature
+
+**Temperature** dans les grands modèles de langage (LLM) contrôle la diversité des résultats. Des valeurs plus faibles rendent le modèle plus déterministe, en se concentrant sur les réponses probables pour plus de précision. Des valeurs plus élevées augmentent la créativité et la diversité. Lors de la génération de texte, les LLM prédisent des tokens avec des probabilités associées à l'aide d'une fonction softmax. Temperature met à l'échelle ces probabilités : des températures plus élevées aplatissent la distribution, rendant les résultats plus variés, tandis que des températures plus faibles amplifient les différences, favorisant les tokens les plus probables.
+
+## Visualisation
+
+Pour mieux comprendre le principe sous-jacent et son impact sur la distribution de probabilité, voici une visualisation de Temperature avec un prompt simple :
+_« Quelle est la meilleure créature mythique ? Répondez en un seul mot. »_
+
+<div style={{ textAlign: 'center' }}>
+  <img src="/img/barplot.png" alt="Example Image" width="800"/>
+
+<sub><sup>Exemple de graphique à barres comparant la distribution avec différentes valeurs de `Temperature` et les 5 tokens les plus probables en utilisant Mistral 7B avec une précision de 4 bits.</sup></sub>
+
+</div>
+
+**Temperature** affecte significativement la distribution de probabilité dans les LLM. Avec une Temperature de 0, le modèle génère toujours le token le plus probable, par exemple « **Dragon** ». Augmenter la Temperature à 0,2 introduit de la variabilité, permettant des tokens comme « **Un** » (comme dans « **Un**icorn »). Des augmentations supplémentaires révèlent des tokens plus divers : le troisième token pourrait toujours être « **Drag** » (pour « **Drag**on »), mais le quatrième pourrait commencer « **Peg**asus », et le cinquième, « **Phoenix** ». Des températures plus élevées rendent les tokens moins probables plus susceptibles d'être sélectionnés, augmentant ainsi la diversité des résultats du modèle.
+
+## API
+
+Vous pouvez définir facilement une valeur de température via nos clients, expérimentons avec notre API.
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 0.1,
+    n = 10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 0.1,
+    n = 10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+```
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+```
+
+Le modèle a répondu principalement avec Dragon ! Essayons avec une température plus élevée pour obtenir des résultats plus divers, définissons-la à `temperature = 1`.
+
+```
+Unicorn
+Dragon
+Phoenix
+Unicorn
+Dragon
+Phoenix.
+Dragon.
+Phoenix
+Dragon
+Unicorn.
+```
+
+Les résultats se sont révélés beaucoup plus diversifiés, le modèle répondant plus fréquemment avec une créature différente, nous avons « Dragon », « Unicorn » et « Phoenix ».
+
+## La meilleure Temperature
+
+Il n'existe pas de Temperature universelle pour tous les cas d'usage, mais certaines directives peuvent vous aider à trouver la meilleure pour vos applications.
+
+### Déterminisme
+
+- **Exigences** : Tâches nécessitant des réponses cohérentes et précises, telles que les mathématiques, la classification, la santé ou le raisonnement.
+- **Temperature** : Utilisez des valeurs très faibles, parfois non nulles pour ajouter une légère unicité.
+
+Par exemple, un agent de classification doit utiliser une Temperature de 0 pour toujours choisir le meilleur token. Un assistant de chat mathématique peut utiliser des valeurs de Temperature très faibles pour éviter les répétitions tout en maintenant la précision.
+
+### Créativité
+
+- **Exigences** : Tâches nécessitant du texte diversifié et unique, comme le brainstorming, l'écriture de romans, la création de slogans ou le jeu de rôle.
+- **Temperature** : Utilisez des valeurs élevées, mais évitez des températures excessivement élevées pour prévenir les résultats aléatoires et incohérents.
+
+Considérez le compromis : des températures plus élevées augmentent la créativité mais peuvent diminuer la qualité et la précision.
+
+</details>
+
+<details>
+
+<summary><b>Top P</b></summary>
+
+# Top P
+
+**Top P** est un paramètre qui limite les tokens considérés par un modèle de langage en fonction d'un seuil de probabilité. Il aide à se concentrer sur les tokens les plus probables, améliorant la qualité des résultats.
+
+## Visualisation
+
+Pour ces exemples, nous définissons d'abord la Temperature, puis appliquons un Top P de 50 %. Notez qu'une Temperature de 0 est déterministe, rendant Top P non pertinent dans ce cas.
+
+Le processus est le suivant :
+
+1. Appliquer la Temperature.
+2. Utiliser Top P (0,5) pour ne conserver que les tokens les plus probables.
+3. Ajuster les probabilités des tokens restants.
+
+Nous allons visualiser la distribution de probabilité des tokens pour différentes valeurs de température pour la question :
+
+- « Quelle est la meilleure créature mythique ? Répondez en un seul mot. »
+
+<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <img src="/img/top_barplot.png" alt="Example Image" style={{ width: '85%' }} />
+    <br/><sub><sup>Différentes valeurs de Temperature et les 5 tokens les plus probables en utilisant Mistral 7B avec une précision de 4 bits.</sup></sub>
+    </div>
+
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <span style={{ fontSize: '24px' }}>&darr;</span>
+    </div>
+
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <img src="/img/top_barplot_black.png" alt="Example Image" style={{ width: '85%' }} />
+    <br/><sub><sup>Top P ne considère que les tokens les plus probables jusqu'à atteindre 50 % de probabilité.</sup></sub>
+    </div>
+
+    <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+    <span style={{ fontSize: '24px' }}>&darr;</span>
+    </div>
+
+    <div style={{ textAlign: 'center' }}>
+    <img src="/img/top_barplot_final.png" alt="Example Image" style={{ width: '85%' }} />
+    <br/><sub><sup>Les probabilités des autres tokens sont définies à 0, et les probabilités des tokens restants sont ajustées.</sup></sub>
+    </div>
+
+</div>
+
+Top P garantit que seuls les tokens de haute qualité sont considérés, maintenant la qualité des résultats en excluant les tokens peu probables. Il est difficile d'équilibrer Temperature et Top P, il est donc recommandé d'en fixer un et d'ajuster l'autre. Vous devez toutefois expérimenter pour trouver les meilleurs paramètres pour votre cas d'usage !
+
+### En résumé
+
+1. **Rôle de Top P** : Top P limite les tokens considérés en fonction d'un seuil de probabilité, en se concentrant sur les tokens les plus probables pour améliorer la qualité de la sortie.
+2. **Interaction avec Temperature** : Top P est appliqué après Temperature.
+3. **Impact sur les sorties** : Top P évite de considérer les tokens très improbables, préservant ainsi la qualité et la cohérence de la sortie.
+4. **Équilibre entre Temperature et Top P** : Il est difficile d'équilibrer les deux paramètres. Commencez par fixer un paramètre et ajustez l'autre, expérimentez pour trouver les réglages optimaux.
+
+### Exemple
+
+Voici un exemple d'utilisation du paramètre `Top P` avec notre client python :
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature=1,
+    top_p=0.5,
+    n=10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature=1,
+    top_p=0.5,
+    n=10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+### Sortie
+
+```py
+Unicorn
+Unicorn
+Unicorn
+Unicorn
+Dragon
+Unicorn
+Dragon
+Dragon
+Dragon
+Dragon
+```
+
+### Tableau de sortie
+
+| Temperature 0.1 | Temperature 1 | Temperature 1 & Top P 50% |
+| :-------------: | :-----------: | :-----------------------: |
+|     Dragon      |    Unicorn    |          Unicorn          |
+|     Dragon      |    Dragon     |          Unicorn          |
+|     Dragon      |    Phoenix    |          Unicorn          |
+|     Dragon      |    Unicorn    |          Unicorn          |
+|     Dragon      |    Dragon     |          Dragon           |
+|     Dragon      |   Phoenix.    |          Unicorn          |
+|     Dragon      |    Dragon.    |          Dragon           |
+|     Dragon      |    Phoenix    |          Dragon           |
+|     Dragon      |    Dragon     |          Dragon           |
+|     Dragon      |   Unicorn.    |          Dragon           |
+
+Dans cet exemple, le modèle génère une réponse en ne considérant que les meilleurs tokens qui atteignent cumulativement un seuil de probabilité de 50 %. Cela garantit que la sortie conserve une certaine diversité uniforme tout en ne prenant que les meilleurs tokens, dans ce cas seulement 2 tokens atteignent le seuil de 50 %.
+
+</details>
+
+<details>
+
+<summary><b>Pénalités</b></summary>
+
+# Pénalité de présence/fréquence
+
+## Pénalité de présence
+
+**Pénalité de présence** détermine dans quelle mesure le modèle pénalise la répétition de mots ou de phrases. Elle encourage le modèle à utiliser un plus large éventail de mots et de phrases, rendant la sortie plus diverse et créative.
+
+- **Plage** : [-2, 2]
+- **Par défaut** : 0
+
+Une pénalité de présence plus élevée encourage le modèle à éviter de répéter des mots ou des phrases qui sont déjà apparus dans la sortie, assurant un texte plus varié et créatif.
+
+La pénalité de présence est spécifiquement un **ajustement ponctuel** appliqué à tous les tokens qui ont été utilisés au moins une fois. Elle réduit la probabilité de répéter un token qui est déjà apparu. Cela encourage le modèle à utiliser une gamme diversifiée de tokens, favorisant la créativité et la variété dans la sortie.
+
+## Pénalité de fréquence
+
+**Pénalité de fréquence** est un paramètre qui pénalise la répétition de mots en fonction de leur fréquence dans le texte généré. Elle contribue à promouvoir la diversité et à réduire la répétition dans la sortie.
+
+- **Plage** : [-2, 2]
+- **Par défaut** : 0
+
+Une pénalité de fréquence plus élevée décourage le modèle de répéter des mots qui sont déjà apparus fréquemment dans la sortie. Cela garantit que le texte généré est plus varié et moins répétitif.
+
+La pénalité de fréquence est spécifiquement une valeur qui augmente avec la fréquence d'apparition d'un token dans le texte généré, **une pénalité cumulative**, plus le token est échantillonné plus la pénalité est élevée. Elle réduit la probabilité de répéter un token qui est déjà apparu fréquemment. Cela garantit que le texte généré est plus varié et moins répétitif.
+
+### Différences entre pénalité de présence et pénalité de fréquence
+
+- **Pénalité de présence** : Il s'agit d'une contribution additive ponctuelle qui s'applique à tous les tokens qui ont été échantillonnés au moins une fois. Elle encourage le modèle à inclure une gamme diversifiée de tokens dans le texte généré.
+- **Pénalité de fréquence** : Il s'agit d'une contribution proportionnelle à la fréquence à laquelle un token particulier a déjà été échantillonné. Elle décourage le modèle de répéter trop fréquemment les mêmes mots ou phrases dans le texte généré.
+
+Les deux paramètres peuvent être ajustés pour façonner la qualité et la diversité du texte généré. Les meilleures valeurs pour ces paramètres peuvent différer selon la tâche spécifique et le résultat souhaité.
+
+<Tabs>
+  <TabItem value="no-penalty" label="No Penalty" default>
+
+### Exemple sans pénalité de présence
+
+Voici un exemple de ce à quoi ressemble la sortie sans le paramètre `Presence Penalty` :
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+### Sortie sans pénalité de présence
+
+```
+1. "The Shattered Crown"
+2. "Whispers of the Old Magic"
+3. "Echoes of the Forgotten Realm"
+4. "The Chronicles of the Silver Moon"
+5. "The Enchanted Forest's Secret"
+6. "The Last Dragon's Legacy"
+7. "The Shadowed Path"
+8. "The Song of the Siren's Call"
+9. "The Lost City of the Stars"
+10. "The Whispering Winds of Destiny"
+```
+
+</TabItem>
+  <TabItem value="presence-penalty" label="Presence Penalty" default>
+
+### Exemple avec pénalité de présence
+
+Voici un exemple d'utilisation du paramètre `Presence Penalty` dans l'API :
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0,
+    presence_penalty=2
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0,
+    presence_penalty=2
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+### Sortie avec pénalité de présence
+
+```
+1. "The Shattered Crown"
+2. "Whispers of the Old Magic"
+3. "Echoes of Eternity"
+4. "Shadows of the Forgotten Realm"
+5. "Chronicles of the Enchanted Forest"
+6. "The Last Dragon's Roar"
+7. "Mysteries of the Hidden City"
+8. "Legends of the Lost Kingdom"
+9. "The Whispering Winds"
+10. "The Unseen War"
+```
+
+> La liste de sortie est déjà légèrement différente de la première, étant impactée par la pénalité de présence des tokens présents. Par exemple, nous avons moins de `The` comme token par rapport à la sortie sans pénalité de présence.
+
+</TabItem>
+
+<TabItem value="frequency-penalty" label="Frequency Penalty">
+
+### Exemple avec pénalité de fréquence
+
+Voici un exemple d'utilisation du paramètre `Frequency Penalty` dans l'API :
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0,
+    frequency_penalty=2
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {"role": "user",
+        "content": "List 10 possible titles for a fantasy book. Give a list only."}
+        ],
+    temperature=0,
+    frequency_penalty=2
+)
+
+print(chat_response.choices[0].message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+### Résultat avec pénalité de fréquence
+
+```
+1. "The Shattered Crown"
+2. "Whispers of the Old Magic"
+3. "Echoes of Eternity"
+4. "The Forgotten Realm"
+5. "Shadows of the Lost City"
+6. "Chronicles of the Enchanted Forest"
+7. The Last Dragon's Roar
+8."The Veil Between Worlds"
+9."The Song of the Siren's Call"
+10."Legends in Stone"
+```
+
+> Le résultat est déjà plus diversifié qu'auparavant, mais notez qu'après la 7e valeur de la liste, des jetons tels que `_"` et les guillemets simples commencent également à être fortement affectés, ce qui montre à quel point l'impact de la pénalité de fréquence est important sur le long terme en tant que pénalité cumulative.
+
+</TabItem>
+</Tabs>
+
+**Les pénalités sont un paramètre sensible qui peut avoir un impact significatif sur les requêtes à contexte long et à sortie longue. Elles peuvent également aider à éviter les boucles hautement répétitives dans lesquelles le modèle pourrait autrement tomber, ce qui en fait un paramètre précieux.**
+
+</details>

@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Embed',
-  description: `Our state-of-the-art semantic for extracting representation of code extracts`,
-  shortDescription: `Our state-of-the-art semantic for extracting representation of code extracts`,
+  describe: (l) => ({
+    description: l.text(`Our state-of-the-art semantic for extracting representation of code extracts`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our state-of-the-art semantic for extracting representation of code extracts`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-embed-23-12',
-  releaseDate: 'December 11, 2023',
+  releaseDate: '2023-12-11',
   version: '23.12',
   frontier: false,
   class: 'Generalist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: '8k',
   ratings: { 
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 4.0,
+    performance: 2.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

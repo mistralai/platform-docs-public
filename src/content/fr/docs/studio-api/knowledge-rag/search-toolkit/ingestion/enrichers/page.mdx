@@ -1,0 +1,73 @@
+---
+title: Enrichisseurs de fragments
+description: Ajoutez des métadonnées personnalisées aux fragments lors de l’ingestion.
+sidebar_position: 6
+sidebar_label: Enrichisseurs de fragments
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les enrichisseurs de fragments ajoutent des métadonnées personnalisées aux fragments lors de l’ingestion. Utilisez-les pour associer des informations provenant de sources externes, de classifications, d’étiquettes ou de toute métadonnée calculée.
+
+<SectionTab as="h1" sectionId="summary-enricher">Enrichisseur de résumé</SectionTab>
+
+Génère un résumé du document à l’aide d’un LLM et l’injecte éventuellement dans les fragments et/ou dans les métadonnées du document.
+
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.enrichment import SummaryEnricher, SummaryConfig, SummarizeRequestConfig
+from mistralai.search.toolkit.llm import MistralChat, LLMConfig
+
+mistral_client = Mistral(api_key="your-api-key")
+llm = MistralChat(client=mistral_client, config=LLMConfig(model="mistral-small-latest"))
+
+# Paramètres par défaut
+enricher = SummaryEnricher(llm_provider=llm)
+
+# Comportement personnalisé du résumé
+enricher = SummaryEnricher(
+    llm_provider=llm,
+    summary_config=SummaryConfig(
+        request_config=SummarizeRequestConfig(
+            prompt="Faites un résumé de ce document en 3 phrases.",
+            max_tokens=256,
+        ),
+    ),
+)
+```
+
+Par défaut, `SummaryEnricher` est non bloquant : si la génération du résumé échoue, l’erreur est enregistrée et les fragments d’origine sont retournés sans modification. Pour rendre la génération du résumé obligatoire à l’ingestion, activez `SummaryRequestOptions(fail_on_generation_error=True)` dans `SummaryConfig`.
+
+<SectionTab as="h1" sectionId="creating-custom-enrichers">Créer des enrichisseurs personnalisés</SectionTab>
+
+Implémentez l’interface `ChunkEnricher` :
+
+```python
+from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
+from mistralai.search.toolkit.document import DocumentChunk, Document
+
+class EntityTagger(ChunkEnricher):
+    """Ajoute des tags d'entités aux fragments."""
+
+    async def enrich_chunks(
+        self, chunks: list[DocumentChunk], document: Document, concurrency: int = 10
+    ) -> tuple[list[DocumentChunk], Document]:
+        enriched = []
+        for chunk in chunks:
+            entities = await self._extract_entities(chunk.content)
+            updated_metadata = chunk.metadata.model_copy(update={"entities": entities})
+            enriched.append(chunk.model_copy(update={"metadata": updated_metadata}))
+
+        return enriched, document
+
+    async def _extract_entities(self, text: str) -> list[str]:
+        entities = []
+        # ... logique d’extraction d’entités ...
+        return entities
+
+enricher = EntityTagger()
+enriched_chunks, document = await enricher.enrich_chunks(chunks, document)
+
+for chunk in enriched_chunks:
+    print(f"Entities: {chunk.metadata.get('entities', [])}")
+```

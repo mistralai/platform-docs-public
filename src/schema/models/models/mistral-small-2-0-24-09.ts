@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Small 2.0',
-  description: `An update to our efficient small model with open weights under an MRL license.`,
-  shortDescription: `An update to our efficient small model with open weights under an MRL license.`,
+  describe: (l) => ({
+    description: l.text(`An update to our efficient small model with open weights under an MRL license.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`An update to our efficient small model with open weights under an MRL license.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-small-2-0-24-09',
-  releaseDate: 'September 17, 2024',
+  releaseDate: '2024-09-17',
   version: '24.09',
   frontier: false,
   class: 'Generalist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '32k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 2.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Mistral Small 3.2'},
+  metadata: {deprecationDate: '2025-11-06', retirementDate: '2025-11-30', replacement: 'Mistral Small 3.2'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

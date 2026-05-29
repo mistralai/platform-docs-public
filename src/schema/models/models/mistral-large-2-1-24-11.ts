@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Large 2.1',
-  description: `Our top-tier large model for high-complexity tasks with the lastest version released November 2024.`,
-  shortDescription: `Our top-tier large model for high-complexity tasks with the lastest version released November 2024.`,
+  describe: (l) => ({
+    description: l.text(`Our top-tier large model for high-complexity tasks with the lastest version released November 2024.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our top-tier large model for high-complexity tasks with the lastest version released November 2024.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-large-2-1-24-11',
-  releaseDate: 'November 18, 2024',
+  releaseDate: '2024-11-18',
   version: '24.11',
   frontier: false,
   class: 'Generalist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: { 
-    speed: { stars: 1.0, label: 'Slow' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 1.0,
+    performance: 4.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'February 27, 2026', retirementDate: 'May 31, 2026', replacement: 'Mistral Medium 3.5'},
+metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'Mistral Medium 3.5'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

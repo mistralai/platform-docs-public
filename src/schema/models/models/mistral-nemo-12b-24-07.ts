@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Nemo 12B',
-  description: `Our best multilingual open source model released July 2024.`,
-  shortDescription: `Our best multilingual open source model released July 2024.`,
+  describe: (l) => ({
+    description: l.text(`Our best multilingual open source model released July 2024.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our best multilingual open source model released July 2024.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-nemo-12b-24-07',
-  releaseDate: 'July 18, 2024',
+  releaseDate: '2024-07-18',
   version: '24.07',
   frontier: false,
   class: 'Generalist',
@@ -61,8 +63,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 2.0, label: 'Moderate' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 2.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -80,7 +82,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'July 31, 2026', replacement: 'Ministral 3 8B'},
+  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-07-31', replacement: 'Ministral 3 8B'},
   playground: '',
   legacy: false,
 } as const satisfies StaticModel;

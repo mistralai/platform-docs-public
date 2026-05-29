@@ -31,14 +31,18 @@ const getExpandedPaths = (
 
   const traverse = (items: SideBarTreeNode[]) => {
     items.forEach(item => {
-      if (item.href) {
-        const categoryPathText = item.href.split('/');
-        const pathKey = categoryPathText.join('/');
-        const categoryPath = categoryPathText.filter(Boolean);
+      // Use `categoryPath` (slug-based topology identity) so that ancestor
+      // detection works even when a category has a `link` override pointing
+      // at a leaf page outside its own subtree.
+      const identity = item.categoryPath ?? item.href;
+      if (identity) {
+        const segments = identity.split('/');
+        const pathKey = segments.join('/');
+        const slugSegments = segments.filter(Boolean);
 
         if (
           targetSlugs.some((targetSlug: any) =>
-            isPathContained(categoryPath, targetSlug)
+            isPathContained(slugSegments, targetSlug)
           )
         ) {
           expandedPaths.add(pathKey);

@@ -1,0 +1,74 @@
+---
+title: Chargeurs de fichiers
+description: Chargez des fichiers depuis diverses sources dans des objets File pour l'ingestion.
+sidebar_position: 2
+sidebar_label: Chargeurs de fichiers
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les chargeurs de fichiers permettent d'importer des fichiers depuis différentes sources dans des objets `File`, qui peuvent ensuite être traités par des extracteurs de documents.
+
+<SectionTab as="h1" sectionId="filesystem-file-loader">Chargeur de fichiers système</SectionTab>
+
+Chargez des fichiers depuis le système de fichiers local. À utiliser pour le développement et les tests en local.
+
+:::warning[Chemins fiables uniquement]
+`FilesystemFileLoader` lit n'importe quel chemin local que vous lui transmettez. Utilisez-le uniquement avec des chemins fiables et validés, contrôlés par votre application. Ne transmettez jamais directement des entrées utilisateur arbitraires à `load_file(...)` ou à une chaîne d'ingestion utilisant ce chargeur, sinon un attaquant pourrait accéder à des fichiers sensibles comme `/etc/passwd`.
+:::
+
+**Installation** : Bibliothèque principale (aucun module supplémentaire requis)
+
+**Exemple** :
+
+```python
+from pathlib import Path
+from mistralai.search.toolkit.ingestion.loaders import FilesystemFileLoader
+
+loader = FilesystemFileLoader()
+file = await loader.load_file(Path("/path/to/document.pdf"))
+```
+
+Si vous ingérez des documents fournis par des utilisateurs, stockez-les d'abord dans un emplacement contrôlé (par exemple S3, Azure Blob Storage, GCS ou un dossier géré par votre application), puis transmettez le chemin résolu ou la clé de l'objet créée par votre backend.
+
+<SectionTab as="h1" sectionId="creating-custom-loaders">Créer des chargeurs personnalisés</SectionTab>
+
+Implémentez le protocole `FileLoader` pour des sources personnalisées :
+
+```python
+from pathlib import Path
+import aiohttp
+from mistralai.search.toolkit.ingestion.loaders import FileLoader
+from mistralai.search.toolkit.ingestion import File
+
+class HTTPFileLoader(FileLoader):
+    """Charger des fichiers depuis des URL HTTP/HTTPS."""
+
+    def __init__(self, base_url: str = ""):
+        self.base_url = base_url
+
+    async def load_file(self, path: Path | str) -> File:
+        url = f"{self.base_url}{path}" if self.base_url else str(path)
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                content = await response.read()
+                filename = url.split("/")[-1]
+
+                return File(
+                    path=url,
+                    name=filename,
+                    raw=content,
+                )
+
+loader = HTTPFileLoader(base_url="https://example.com/documents/")
+file = await loader.load_file("report.pdf")
+```
+
+<SectionTab as="h1" sectionId="comparison">Comparaison</SectionTab>
+
+| Chargeur | Installation | Cas d'usage |
+|----------|--------------|--------------|
+| **FilesystemFileLoader** | Bibliothèque principale | Fichiers locaux |
+| **Personnalisé** | — | Toute source (S3, Azure, GCS, HTTP, etc.) |

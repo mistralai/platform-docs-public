@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Moderation 2',
-  description: `Our latest moderation model with 128k context window and jailbreaking detection. Strong performance on complex multilingual data including long multi-turn conversations.`,
-  shortDescription: `Our latest moderation model with 128k context window and jailbreaking detection.`,
+  describe: (l) => ({
+    description: l.text(`Our latest moderation model with 128k context window and jailbreaking detection. Strong performance on complex multilingual data including long multi-turn conversations.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our latest moderation model with 128k context window and jailbreaking detection.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-moderation-26-03',
-  releaseDate: 'March 2026',
+  releaseDate: '2026-03-01',
   version: '26.03',
   frontier: true,
   class: 'Specialist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: {
-    speed: { stars: 5.0, label: 'Very Fast' },
-    performance: { stars: 3.5, label: 'Smart' }, input: { stars: 5.0, label: 'Very Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 5.0,
+    performance: 3.5, input: 5.0, output: 2.0 },
   pricing: {
     type: 'flat',
     free: true,

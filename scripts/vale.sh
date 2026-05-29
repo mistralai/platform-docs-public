@@ -19,6 +19,6 @@ if ! command -v vale &>/dev/null; then
   exit 1
 fi
 
-echo -e "${DIM}Running Vale on src/app/(docs)/...${NC}"
+echo -e "${DIM}Running Vale on src/content/en/...${NC}"
 echo ""
-vale "src/app/(docs)/" "$@"
+vale src/content/en/ "$@"

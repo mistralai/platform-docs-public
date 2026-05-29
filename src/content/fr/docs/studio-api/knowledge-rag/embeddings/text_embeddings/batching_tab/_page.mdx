@@ -1,0 +1,82 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+L'API Embeddings de Mistral AI est conçue pour traiter le texte par lots afin d'améliorer l'efficacité et la vitesse. Dans cet exemple, nous allons le démontrer en chargeant le jeu de données Symptom2Disease depuis [Kaggle](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease), qui contient 1 200 lignes avec deux colonnes : « label » et « text ». La colonne « label » indique la catégorie de maladie, tandis que la colonne « text » décrit les symptômes associés à cette maladie.
+
+Nous avons écrit une fonction `get_embeddings_by_chunks` qui divise les données en morceaux puis envoie chaque morceau à l'API Embeddings de Mistral AI pour obtenir les embeddings. Nous avons ensuite enregistré les embeddings comme nouvelle colonne dans le dataframe. Notez que l'API proposera le découpage automatique à l'avenir, afin que les utilisateurs n'aient pas besoin de diviser manuellement les données en morceaux avant de les envoyer.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import pandas as pd
+
+df = pd.read_csv(
+    "https://raw.githubusercontent.com/mistralai/cookbook/main/data/Symptom2Disease.csv",
+    index_col=0,
+)
+
+def get_embeddings_by_chunks(data, chunk_size):
+    chunks = [data[x : x + chunk_size] for x in range(0, len(data), chunk_size)]
+    embeddings_response = [
+        client.embeddings.create(model=model, inputs=c) for c in chunks
+    ]
+    return [d.embedding for e in embeddings_response for d in e.data]
+
+df["embeddings"] = get_embeddings_by_chunks(df["text"].tolist(), 50)
+df.head()
+```
+
+  </TabItem>
+</Tabs>
+
+<img src="/img/guides/embeddings1.png" alt="drawing" width="700" className='mx-auto' />
+
+<SectionTab as="h3" variant="secondary" sectionId="t-sne-embeddings-visualization">Visualisation des embeddings avec t-SNE</SectionTab>
+
+Nous avons mentionné précédemment que nos embeddings ont 1 024 dimensions, ce qui les rend impossibles à visualiser directement. Ainsi, pour visualiser nos embeddings, nous pouvons utiliser une technique de réduction de dimensionnalité telle que t-SNE pour projeter nos embeddings dans un espace de dimension inférieure plus facile à visualiser.
+
+Dans cet exemple, nous transformons nos embeddings en 2 dimensions et créons un nuage de points 2D montrant les relations entre les embeddings de différentes maladies.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import seaborn as sns
+from sklearn.manifold import TSNE
+import numpy as np
+
+tsne = TSNE(n_components=2, random_state=0).fit_transform(np.array(df['embeddings'].to_list()))
+ax = sns.scatterplot(x=tsne[:, 0], y=tsne[:, 1], hue=np.array(df['label'].to_list()))
+sns.move_legend(ax, 'upper left', bbox_to_anchor=(1, 1))
+```
+
+  </TabItem>
+</Tabs>
+
+<img src="/img/guides/embeddings2.png" alt="drawing" width="600" className='mx-auto' />
+
+<SectionTab as="h3" variant="secondary" sectionId="comparison-with-fasttext">Comparaison avec fastText</SectionTab>
+
+Nous pouvons le comparer à fastText, un modèle d'embeddings open source populaire. Cependant, en examinant le graphique des embeddings t-SNE, nous constatons que les embeddings fastText ne parviennent pas à créer des séparations claires entre les points de données ayant les mêmes labels.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import fasttext.util
+
+fasttext.util.download_model('en', if_exists='ignore')  # English
+ft = fasttext.load_model('cc.en.300.bin')
+
+df['fasttext_embeddings'] = df['text'].apply(lambda x: ft.get_word_vector(x).tolist())
+
+tsne = TSNE(n_components=2, random_state=0).fit_transform(np.array(df['fasttext_embeddings'].to_list()))
+ax = sns.scatterplot(x=tsne[:, 0], y=tsne[:, 1], hue=np.array(df['label'].to_list()))
+sns.move_legend(ax, 'upper left', bbox_to_anchor=(1, 1))
+```
+
+  </TabItem>
+</Tabs>
+
+<img src="/img/guides/embeddings3.png" alt="drawing" width="600" className='mx-auto' />

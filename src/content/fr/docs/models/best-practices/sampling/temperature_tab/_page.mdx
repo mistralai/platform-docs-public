@@ -1,0 +1,133 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+La **température** dans les grands modèles de langage (LLM) contrôle la diversité des sorties. Des valeurs basses rendent le modèle plus déterministe, en se concentrant sur les réponses probables pour plus de précision. Des valeurs élevées augmentent la créativité et la diversité. Lors de la génération de texte, les LLM prédisent des tokens avec des probabilités associées en utilisant une fonction softmax. La température ajuste ces probabilités : des températures élevées aplatissent la distribution, rendant les sorties plus variées, tandis que des températures basses amplifient les différences, favorisant les tokens les plus probables.
+
+:::note
+Bien qu'intuitivement, définir `temperature` à 0 devrait rendre les sorties entièrement déterministes et cohérentes (même prompt et mêmes paramètres = même sortie de complétion), en réalité, même avec un échantillonnage glouton à `temperature=0`, de **légères variations** peuvent parfois survenir en raison de différences matérielles et d'erreurs d'arrondi. Ces variations sont plus perceptibles lorsque les probabilités de sortie sont très proches. Cet effet devient particulièrement évident lors de complétions longues (en entrée et/ou en sortie), où un seul token différent peut créer une séquence entièrement nouvelle, produisant des sorties significativement différentes pour le même prompt — même avec un échantillonnage glouton.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="visualization">Visualisation</SectionTab>
+
+Pour mieux comprendre le principe sous-jacent et son impact sur la distribution de probabilité, voici une visualisation de la température avec un prompt simple :
+_« Quelle est la meilleure créature mythique ? Répondez en un seul mot. »_
+
+<div style={{ textAlign: 'center' }}>
+  <img src="/img/barplot.png" alt="Exemple d'image" width="800" className='mx-auto'/>
+
+<sub><sup>Exemple de diagramme en barres comparant la distribution avec différentes valeurs de `Temperature` et les 5 tokens principaux en utilisant Mistral 7B avec une précision de 4 bits.</sup></sub>
+
+</div>
+
+La **température** affecte significativement la distribution de probabilité dans les LLM. À une température de 0, le modèle génère toujours le token le plus probable, par exemple « **Dragon** ». Augmenter la température à 0,2 introduit de la variabilité, permettant des tokens comme « **Li** » (comme dans « **Li**corne »). D'autres augmentations révèlent des tokens plus divers : le troisième token pourrait toujours être « **Drag** » (pour « **Drag**on »), mais le quatrième pourrait commencer « **Pég** », et le cinquième, « **Phén** » (pour « **Phén**ix »). Des températures plus élevées rendent les tokens moins probables plus susceptibles d'apparaître, augmentant la diversité des sorties du modèle.
+
+<SectionTab as="h2" variant="secondary" sectionId="api">API</SectionTab>
+
+Vous pouvez définir facilement une valeur de température via nos clients, expérimentons avec notre API.
+
+<Tabs groupId="sdk-version">
+    <TabItem value="v1" label="V1" default>
+
+```py
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 0.1,
+    n = 10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+    <TabItem value="v2" label="V2">
+
+```py
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "ministral-3b-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model = model,
+    messages = [
+        {
+            "role": "user",
+            "content": "What is the best mythical creature? Answer with a single word.",
+        },
+    ],
+    temperature = 0.1,
+    n = 10
+)
+
+for i, choice in enumerate(chat_response.choices):
+    print(choice.message.content)
+```
+
+    </TabItem>
+</Tabs>
+
+```
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+Dragon
+```
+
+Le modèle a principalement répondu Dragon ! Essayons avec une température plus élevée pour obtenir des sorties plus diversifiées, définissons-la à `temperature = 1`.
+
+```
+Unicorn
+Dragon
+Phoenix
+Unicorn
+Dragon
+Phoenix.
+Dragon.
+Phoenix
+Dragon
+Unicorn.
+```
+
+Les sorties sont devenues beaucoup plus diversifiées, le modèle répondant avec une créature différente plus fréquemment : « Dragon », « Unicorn » et « Phoenix ».
+
+<SectionTab as="h2" variant="secondary" sectionId="best-temperature">La meilleure température</SectionTab>
+
+Il n'existe pas de température universelle pour tous les cas d'usage, mais certaines recommandations peuvent vous aider à trouver la meilleure pour vos applications.
+
+<SectionTab as="h3" variant="tertiary" sectionId="determinism">Déterminisme</SectionTab>
+
+- **Exigences** : tâches nécessitant des réponses cohérentes et précises, telles que les mathématiques, la classification, la santé ou le raisonnement.
+- **Température** : utilisez des valeurs très basses, parfois non nulles pour ajouter une légère unicité.
+
+Par exemple, un agent de classification doit utiliser une température de 0 pour toujours choisir le meilleur token. Un assistant de discussion mathématique peut utiliser des valeurs de température très basses pour éviter la répétition tout en maintenant la précision.
+
+<SectionTab as="h3" variant="tertiary" sectionId="creativity">Créativité</SectionTab>
+
+- **Exigences** : tâches nécessitant un texte diversifié et unique, comme le brainstorming, l'écriture de romans, la création de slogans ou le jeu de rôle.
+- **Température** : utilisez des valeurs élevées, mais évitez des températures excessivement élevées pour prévenir des sorties aléatoires et incohérentes.
+
+Considérez le compromis : des températures plus élevées augmentent la créativité mais peuvent diminuer la qualité et la précision.

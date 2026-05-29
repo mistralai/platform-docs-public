@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Devstral 2',
-  description: `Our frontier code agents model for solving software engineering tasks; excels at using tools to explore codebases, editing multiple files and power software engineering agents.`,
-  shortDescription: `Our frontier code agents model for solving software engineering tasks.`,
+  describe: (l) => ({
+    description: l.text(`Our frontier code agents model for solving software engineering tasks; excels at using tools to explore codebases, editing multiple files and power software engineering agents.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our frontier code agents model for solving software engineering tasks.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'devstral-2-25-12',
-  releaseDate: 'December 9, 2025',
+  releaseDate: '2025-12-09',
   version: '25.12',
   frontier: true,
   class: 'Specialist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 4.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'July 31, 2026', replacement: 'Mistral Medium 3.5'},
+  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-07-31', replacement: 'Mistral Medium 3.5'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;

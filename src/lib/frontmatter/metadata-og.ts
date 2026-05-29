@@ -3,7 +3,7 @@ import * as acorn from 'acorn';
 import { BASE_URL, OG_IMAGE_DIMENSIONS } from '../constants';
 
 type Options = {
-  appDocsRoot?: string;
+  contentRoot?: RegExp;
   apiBase?: string;
   maxTitle?: number;
   maxDescription?: number;
@@ -12,21 +12,18 @@ type Options = {
 const clamp = (s: string, n: number) => (s.length > n ? s.slice(0, n) : s);
 
 export const remarkOgFromPath: Plugin<[Options?]> = (opts = {}) => {
-  const appDocsRoot = (opts.appDocsRoot ?? 'src/app/(docs)').replace(
-    /\\/g,
-    '/'
-  );
+  const contentRoot = opts.contentRoot ?? /src\/content\/[^/]+\/docs/;
   const apiBase = opts.apiBase ?? '/api/og';
   const MAX_TITLE = opts.maxTitle ?? 120;
   const MAX_DESC = opts.maxDescription ?? 180;
 
   return function (tree: any, file: any) {
     const abs = String(file.path || '').replace(/\\/g, '/');
-    const i = abs.indexOf(appDocsRoot);
+    const match = contentRoot.exec(abs);
 
     let slug = '';
-    if (i >= 0) {
-      const rel = abs.slice(i + appDocsRoot.length);
+    if (match) {
+      const rel = abs.slice(match.index + match[0].length);
       slug = rel
         .replace(/^\/+/, '')
         .replace(/\/page\.mdx$/i, '')

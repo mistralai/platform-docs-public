@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral TTS',
-  description: `Our state-of-the-art text-to-speech model with zero-shot voice cloning. Supports 9 languages, streaming with ~90ms time-to-first-audio, and no transcript required for voice prompts.`,
-  shortDescription: `State-of-the-art TTS with zero-shot voice cloning and multilingual support.`,
+  describe: (l) => ({
+    description: l.text(`Our state-of-the-art text-to-speech model with zero-shot voice cloning. Supports 9 languages, streaming with ~90ms time-to-first-audio, and no transcript required for voice prompts.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`State-of-the-art TTS with zero-shot voice cloning and multilingual support.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'voxtral-tts-26-03',
-  releaseDate: 'March 23, 2026',
+  releaseDate: '2026-03-23',
   version: '26.03',
   frontier: true,
   class: 'Specialist',
@@ -33,10 +35,10 @@ export default {
   paperlink: null,
   contextLength: null,
   ratings: {
-    speed: { stars: 4.5, label: 'Very Fast' },
-    performance: { stars: 4.0, label: 'Smart' },
-    input: { stars: 4.5, label: 'Very Fast' },
-    output: { stars: 4.0, label: 'Fast' },
+    speed: 4.5,
+    performance: 4.0,
+    input: 4.5,
+    output: 4.0,
   },
   pricing: {
     type: 'custom',

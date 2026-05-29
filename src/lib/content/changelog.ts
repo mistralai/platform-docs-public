@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ChangelogEntry } from '@/schema/content/changelog';
+import { defaultLocale, type Locale } from '@/i18n/config';
 
 export interface TimelineData {
   year: string;
@@ -25,23 +26,45 @@ function parseTags(tagsValue: any): string[] {
   return [];
 }
 
-export async function getAllChangelogEntries(
-  importFunc?: (file: string) => Promise<{ metadata: any; default: any }>
-): Promise<ChangelogEntry[]> {
-  const doImport = importFunc
-    ? importFunc
-    : (file: string) => import(`../../../changelog/${file}`);
-  const changelogDir = path.join(process.cwd(), 'changelog');
+type ChangelogImporter = (
+  locale: Locale,
+  file: string
+) => Promise<{ metadata: any; default: any }>;
 
-  if (!fs.existsSync(changelogDir)) {
+const defaultImporter: ChangelogImporter = (locale, file) => {
+  switch (locale) {
+    case 'en':
+      return import(`../../../changelog/en/${file}`);
+    case 'fr':
+      return import(`../../../changelog/fr/${file}`);
+    default:
+      return locale satisfies never;
+  }
+};
+
+function resolveEntryLocale(locale: Locale, file: string): Locale {
+  if (locale === defaultLocale) return defaultLocale;
+  const translated = path.join(process.cwd(), 'changelog', locale, file);
+  return fs.existsSync(translated) ? locale : defaultLocale;
+}
+
+export async function getAllChangelogEntries(
+  locale: Locale = defaultLocale,
+  importFunc?: ChangelogImporter
+): Promise<ChangelogEntry[]> {
+  const doImport = importFunc ?? defaultImporter;
+  const sourceDir = path.join(process.cwd(), 'changelog', defaultLocale);
+
+  if (!fs.existsSync(sourceDir)) {
     return [];
   }
 
-  const files = fs.readdirSync(changelogDir);
+  const files = fs.readdirSync(sourceDir);
   const mdxFiles = files.filter(file => file.endsWith('.mdx'));
 
   const entryPromises: Promise<ChangelogEntry>[] = mdxFiles.map(async file => {
-    const { metadata, default: Component } = await doImport(file);
+    const effective = resolveEntryLocale(locale, file);
+    const { metadata, default: Component } = await doImport(effective, file);
     const slug = file.replace('.mdx', '');
 
     let date = metadata.date;
@@ -81,24 +104,29 @@ export function getMonthFromDate(dateString: string): string {
 }
 
 export async function generateTimelineFromChangelogs(
-  importFunc?: (file: string) => Promise<{ metadata: any; default: any }>
+  locale: Locale = defaultLocale,
+  importFunc?: ChangelogImporter
 ): Promise<TimelineData[]> {
   try {
-    const entries = await getAllChangelogEntries(importFunc);
+    const entries = await getAllChangelogEntries(locale, importFunc);
 
     const timelineMap = new Map<string, Set<string>>();
+    const monthKeyToLabel = new Map<string, string>();
 
     entries.forEach(entry => {
       const date = new Date(entry.date);
       const year = date.getFullYear().toString();
-      const month = date
+      const monthKey = date
         .toLocaleDateString('en-US', { month: 'long' })
         .toLowerCase();
+      const monthLabel = date.toLocaleDateString(locale, { month: 'long' });
+
+      monthKeyToLabel.set(monthKey, monthLabel);
 
       if (!timelineMap.has(year)) {
         timelineMap.set(year, new Set());
       }
-      timelineMap.get(year)?.add(month);
+      timelineMap.get(year)?.add(monthKey);
     });
 
     const timeline: TimelineData[] = [];
@@ -130,9 +158,9 @@ export async function generateTimelineFromChangelogs(
 
       timeline.push({
         year,
-        months: sortedMonths.map(month => ({
-          month,
-          href: `/resources/changelogs#${month}-${year}`,
+        months: sortedMonths.map(monthKey => ({
+          month: monthKeyToLabel.get(monthKey) ?? monthKey,
+          href: `/resources/changelogs#${monthKey}-${year}`,
         })),
       });
     });

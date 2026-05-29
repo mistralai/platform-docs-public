@@ -10,7 +10,8 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
-import { glossaryData } from './glossary-data';
+import { getGlossaryData } from './glossary-data';
+import { useLingo } from '@lingo.dev/react';
 
 const LETTERS = ['All', ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))];
 
@@ -23,8 +24,10 @@ function slugify(input: string) {
 }
 
 export function InteractiveGlossary() {
+    const l = useLingo();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLetter, setSelectedLetter] = useState('All');
+    const glossaryData = useMemo(() => getGlossaryData(l), [l]);
 
     const filteredTerms = useMemo(() => {
         return glossaryData.filter(item => {
@@ -41,7 +44,7 @@ export function InteractiveGlossary() {
                 <div className="relative mb-4">
                     <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search glossary terms... (e.g. RAG, OCR)"
+                        placeholder={l.text('Search glossary terms... (e.g. RAG, OCR)', { context: 'Placeholder in the glossary search box' })}
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value);
@@ -78,8 +81,8 @@ export function InteractiveGlossary() {
             {/* Results */}
             {filteredTerms.length === 0 ? (
                 <div className="py-20 text-center flex flex-col items-center justify-center opacity-70">
-                    <p className="text-xl font-medium text-muted-foreground">No terms found matching &quot;{searchQuery}&quot;</p>
-                    <p className="mt-2 text-sm text-muted-foreground">Try adjusting your filters or search query.</p>
+                    <p className="text-xl font-medium text-muted-foreground">{l.text('No terms found matching "{query}"', { values: { query: searchQuery }, context: 'Empty-state message when the glossary search returns no results' })}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{l.text('Try adjusting your filters or search query.', { context: 'Secondary hint in the glossary empty state' })}</p>
                 </div>
             ) : (
                 <Accordion type="multiple" className="w-full not-prose">

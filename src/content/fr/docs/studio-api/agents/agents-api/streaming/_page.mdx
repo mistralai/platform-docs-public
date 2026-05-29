@@ -1,0 +1,132 @@
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+Vous pouvez également diffuser les sorties en flux, que ce soit au démarrage d'une conversation, lors de sa poursuite ou de son redémarrage.
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+
+    <Tabs groupId="code">
+    <TabItem value="Start" label="Démarrer" default>
+    ```py
+    response = client.beta.conversations.start_stream(
+        agent_id=websearch_agent.id,
+        inputs="Who is Albert Einstein?"
+    )
+    ```
+    </TabItem>
+    <TabItem value="Continue" label="Continuer">
+    ```py
+    response = client.beta.conversations.append_stream(
+        conversation_id=response.conversation_id,
+        inputs="Translate to French."
+    )
+    ```
+    </TabItem>
+    <TabItem value="restart" label="Redémarrer">
+    ```py
+    response = client.beta.conversations.restart_stream(
+        conversation_id=response.conversation_id,
+        from_entry_id="msg_0684fe18d08278058000efa70b28fa5a",
+        inputs="Translate to Portuguese."
+    )
+    ```
+    </TabItem>
+    </Tabs>
+</TabItem>
+
+<TabItem value="typescript" label="typescript">
+    <Tabs groupId="typescript">
+    <TabItem value="start" label="Démarrer">
+```typescript
+let stream = await client.beta.conversations.startStream({
+    agentId: websearchAgent.id,
+    inputs: "Who is albert Enstein?"
+});
+```
+    </TabItem>
+    <TabItem value="continue" label="Continuer">
+```typescript
+let stream = await client.beta.conversations.appendStream({
+    conversationId: conversation.conversationId,
+    conversationAppendStreamRequest: {
+        inputs: "Who is albert Enstein?"
+    }
+});
+```
+    </TabItem>
+    <TabItem value="restart" label="Redémarrer">
+```typescript
+let stream = await client.beta.conversations.restartStream({
+    conversationId: conversation.conversationId,
+    conversationRestartStreamRequest: {
+        fromEntryId: conversationMessages.messages[conversationMessages.messages.length - 1 ].id?.toString() || '',
+        inputs: "Who is albert Enstein?"
+    }
+});
+```
+    </TabItem>
+    </Tabs>
+</TabItem>
+
+<TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: text/event-stream' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "inputs": "Who is Albert Einstein?",
+    "stream": true,
+    "agent_id": "ag_06811008e6e07cb48000fd3f133e1771"
+}'
+```
+</TabItem>
+</Tabs>
+
+Lors de la diffusion en flux, vous disposerez d'indices spécifiques pour les différents types de contenu. Ceux-ci incluent :
+- `conversation.response.started` : Début de la réponse de la conversation.
+- `conversation.response.done` : La réponse est terminée.
+- `conversation.response.error` : Une erreur s'est produite.
+- `message.output.delta` : Fragment de contenu, généralement des tokens correspondant à la réponse du modèle.
+- `tool.execution.started` : L'exécution d'un outil a démarré.
+- `tool.execution.done` : L'outil a terminé son exécution.
+- `agent.handoff.started` : Le transfert vers un autre agent a démarré.
+- `agent.handoff.done` : Le transfert est terminé.
+- `function.call.delta` : Fragment de contenu, généralement des tokens correspondant à l'appel de l'outil fonction.
+
+<SectionTab variant="secondary" sectionId="streaming-output">Exemple de sortie en flux</SectionTab>
+
+```
+event: conversation.response.started
+data: {"type":"conversation.response.started","conversation_id":"conv_067f2a98c1a773678000ce73a36b785a"}
+
+event: tool.execution.started
+data: {"type":"tool.execution.started","output_index":0,"id":"tool_exec_067f2a98ca357c8b8000ea212104b290","name":"web_search"}
+
+event: tool.execution.done
+data: {"type":"tool.execution.done","output_index":0,"id":"tool_exec_067f2a98ca357c8b8000ea212104b290","name":"web_search"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-latest","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":"The"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-latest","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" last"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-latest","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" European"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":0,"model":"mistral-medium-latest","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" Football"}
+
+...
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":2,"model":"mistral-medium-latest","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":" tournament"}
+
+event: message.output.delta
+data: {"type":"message.output.delta","output_index":1,"id":"msg_067f2a9925d674ea8000e63c68ae0474","content_index":2,"model":"mistral-medium-latest","agent_id":"ag_067f2a39ddd67bf68000fa921bc0c25d","role":"assistant","content":"."}
+
+event: conversation.response.done
+data: {"type":"conversation.response.done","usage":{"prompt_tokens":18709,"total_tokens":18892,"completion_tokens":183}}
+```

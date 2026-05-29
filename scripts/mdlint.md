@@ -41,7 +41,7 @@ pnpm mdlint:apply my-audit.csv
 
 ## Configuration
 
-The config lives in `.markdownlint-cli2.jsonc` at the repo root. It targets `src/app/(docs)/**/*.mdx`.
+The config lives in `.markdownlint-cli2.jsonc` at the repo root. It targets `src/content/**/*.mdx`.
 
 ### Rules reference
 

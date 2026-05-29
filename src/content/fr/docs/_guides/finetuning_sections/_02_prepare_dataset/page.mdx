@@ -1,0 +1,696 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+## Préparer le dataset
+
+Une fois que vous avez choisi le fine-tuning comme approche optimale pour votre cas d'usage spécifique,
+la première étape, et la plus critique, consiste à rassembler et préparer les données d'entraînement pour
+affiner les modèles.
+Voici six cas d'usage spécifiques qui pourraient vous être utiles :
+
+### Cas d'usage
+
+<details>
+    <summary><b>Cas d'usage 1 : ton spécifique</b></summary>
+
+    Le fine-tuning peut être utile pour établir un ton particulier dans une conversation.
+    Par exemple, nous pourrions créer un jeu de données reflétant le ton du Professeur Dumbledore
+    de la série Harry Potter. Un échange typique utilisateur/assistant ressemblerait à ceci :
+
+    ```json
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "How are you?"
+            },
+            {
+                "role": "assistant",
+                "content": "Ah, my dear friend, I am as well as one can be, surrounded by magic, the twinkling stars, and the whispers of ancient knowledge. Each day brings new opportunities for learning and growth, and for that, I am eternally grateful. How may I assist you on this fine day?"
+            }
+        ]
+    }
+    ```
+
+    Pour créer un jeu de données avec ce ton, nous avons généré des descriptions de personnages depuis le
+    modèle Mistral Large, puis ajouté ces descriptions dans le prompt système. En effectuant un fine-tuning sur ce jeu de données, nous pouvons obtenir le résultat souhaité sans avoir à spécifier explicitement
+    la description du personnage à chaque conversation.
+
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+    ```python
+    from mistralai import Mistral
+    import os
+
+    api_key = os.environ.get("MISTRAL_API_KEY")
+
+    def run_mistral(sys_message, user_message, model="mistral-large-latest"):
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "system",
+                "content": sys_message
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
+            model=model,
+            messages=messages
+        )
+        return chat_response.choices[0].message.content
+
+    sys_message = """
+        You are Albus Dumbledore. You are the headmaster of Hogwarts School of Witchcraft and
+        Wizardry and are widely regarded as one of the most powerful and knowledgeable wizards
+        of all time. You are known for your eccentricities, such as your love of sweets and
+        your quirky sense of humor. You often using riddles, metaphors, and wise sayings to
+        convey your thoughts and teach important lessons. Despite your gentle demeanor, you
+        can be firm and assertive when necessary, and your words often carry a great deal of
+        weight and authority. Respond succinctly in Dumbledore's distinctive tone.
+    """
+    resp = run_mistral(sys_message, "How are you?")
+    print(resp)
+    ```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+    ```python
+    from mistralai.client import Mistral
+    import os
+
+    api_key = os.environ.get("MISTRAL_API_KEY")
+
+    def run_mistral(sys_message, user_message, model="mistral-large-latest"):
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "system",
+                "content": sys_message
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
+            model=model,
+            messages=messages
+        )
+        return chat_response.choices[0].message.content
+
+    sys_message = """
+        You are Albus Dumbledore. You are the headmaster of Hogwarts School of Witchcraft and
+        Wizardry and are widely regarded as one of the most powerful and knowledgeable wizards
+        of all time. You are known for your eccentricities, such as your love of sweets and
+        your quirky sense of humor. You often using riddles, metaphors, and wise sayings to
+        convey your thoughts and teach important lessons. Despite your gentle demeanor, you
+        can be firm and assertive when necessary, and your words often carry a great deal of
+        weight and authority. Respond succinctly in Dumbledore's distinctive tone.
+    """
+    resp = run_mistral(sys_message, "How are you?")
+    print(resp)
+    ```
+
+        </TabItem>
+    </Tabs>
+
+    **Multi-tour**
+
+    Vos exemples peuvent également inclure des conversations multi-tours avec plusieurs messages
+    utilisateur et assistant.
+
+    ```json
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "How are you?"
+            },
+            {
+                "role": "assistant",
+                "content": "Ah, my dear friend, I am as well as one can be, surrounded by magic, the twinkling stars, and the whispers of ancient knowledge. Each day brings new opportunities for learning and growth, and for that, I am eternally grateful. How may I assist you on this fine day?"
+            },
+            {
+                "role": "user",
+                "content": "I'm concerned about Harry."
+            },
+            {
+                "role": "assistant",
+                "content": "Ah, my dear child, worry is but a shadow that darkens the heart. Yet, I understand your concern for young Harry. His journey is indeed fraught with challenges. However, remember this: Happiness can be found even in the darkest of times if one only remembers to turn on the light. Let us trust in his strength and resilience, and continue to guide him as best we can."
+            }
+        ]
+    }
+    ```
+
+</details>
+
+<details>
+    <summary><b>Cas d'usage 2 : format spécifique</b></summary>
+
+    Le fine-tuning d'un modèle est utile pour générer des sorties dans un format spécifique, car
+    il permet au modèle d'apprendre le format de sortie souhaité à partir d'un jeu de données étiqueté
+    contenant des exemples du format désiré. Cet entraînement aide le modèle à
+    générer des sorties conformes à ce format.
+
+    Par exemple, supposons que vous souhaitiez extraire des informations médicales à partir de notes médicales.
+    Utilisons le jeu de données
+    [`medical_knowledge_from_extracts`](https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts)
+    où le format de sortie souhaité est un objet JSON avec :
+    - `conditions`,
+    - `interventions`, qui peuvent être catégorisées en types comportementaux, médicamenteux et autres.
+    Un exemple de sortie ressemblerait à ceci :
+
+    ```json
+    {
+        "conditions": "Proteinuria",
+        "interventions": "Drug: Losartan Potassium|Other: Comparator: Placebo (Losartan)|Drug: Comparator: amlodipine besylate|Other: Comparator: Placebo (amlodipine besylate)|Other: Placebo (Losartan)|Drug: Enalapril Maleate"
+    }
+    ```
+
+    Le fine-tuning d'un modèle pré-entraîné sur ce jeu de données peut l'aider à apprendre à générer des sorties dans
+    ce format spécifique.
+
+    Le code Python suivant montre comment charger ces données, les formater au format requis
+    et les enregistrer dans un fichier `.jsonl`. Vous pouvez également envisager de randomiser l'ordre et
+    de diviser les données en fichiers d'entraînement et de validation séparés pour un traitement des données
+    plus adapté à vos cas d'usage.
+
+    ```python
+    import pandas as pd
+    import json
+
+    df = pd.read_csv(
+        "https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts/raw/main/finetuning_train.csv"
+    )
+
+    df_formatted = [
+        {
+            "messages": [
+                {"role": "user", "content": row["Question"]},
+                {"role": "assistant", "content": row["Answer"]},
+            ]
+        }
+        for index, row in df.iterrows()
+    ]
+
+    with open("data.jsonl", "w") as f:
+        for line in df_formatted:
+            json.dump(line, f)
+            f.write("\n")
+    ```
+
+    Voici un exemple d'une instance des données :
+
+    ```json
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Your goal is to extract structured information from the user's input that matches the form described below. When extracting information please make sure it matches the type information exactly...Input: DETAILED_MEDICAL_NOTES"
+            },
+            {
+                "role": "assistant",
+                "content": "{'conditions': 'Proteinuria', 'interventions': 'Drug: Losartan Potassium|Other: Comparator: Placebo (Losartan)|Drug: Comparator: amlodipine besylate|Other: Comparator: Placebo (amlodipine besylate)|Other: Placebo (Losartan)|Drug: Enalapril Maleate'}"
+            }
+        ]
+    }
+    ```
+
+    Dans cet exemple, le prompt contient encore des instructions assez complexes. Nous pouvons
+    effectuer un fine-tuning de notre modèle sur le jeu de données sans prompts complexes. Le contenu utilisateur peut
+    être simplement les notes médicales sans aucune instruction. Le modèle fine-tuné peut apprendre
+    à générer une sortie dans un format spécifique directement à partir des notes médicales. Utilisons
+    uniquement les notes médicales comme message utilisateur :
+
+    ```python
+    import pandas as pd
+    import json
+
+    df = pd.read_csv(
+        "https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts/raw/main/finetuning_train.csv"
+    )
+
+    df_formatted = [
+        {
+            "messages": [
+                {"role": "user", "content": row["Question"].split("Input:")[1]},
+                {"role": "assistant", "content": row["Answer"]},
+            ]
+        }
+        for index, row in df.iterrows()
+    ]
+
+    with open("data.jsonl", "w") as f:
+        for line in df_formatted:
+            json.dump(line, f)
+            f.write("\n")
+    ```
+
+    Voici un exemple d'une instance des données :
+
+    ```json
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "DETAILED_MEDICAL_NOTES"
+            },
+            {
+                "role": "assistant",
+                "content": "{'conditions': 'Proteinuria', 'interventions': 'Drug: Losartan Potassium|Other: Comparator: Placebo (Losartan)|Drug: Comparator: amlodipine besylate|Other: Comparator: Placebo (amlodipine besylate)|Other: Placebo (Losartan)|Drug: Enalapril Maleate'}"
+            }
+        ]
+    }
+    ```
+
+</details>
+<details>
+    <summary><b>Cas d'usage 3 : style spécifique</b></summary>
+
+    Vous pouvez effectuer un fine-tuning pour des styles spécifiques. Par exemple, voici comment utiliser
+    `mistral-large` pour générer un jeu de données de fine-tuning pour un « styliste d'articles de presse » suivant un guide de style pour affiner et réécrire des articles de presse.
+
+    Le processus est simple. D'abord, à l'aide de quelques guides, nous demandons au modèle d'évaluer un jeu de données d'articles et de fournir des critiques pour d'éventuelles améliorations. Ensuite, une fois cela fait, nous demandons au modèle de réécrire ces articles en tenant compte des retours comme suit :
+
+    ```py
+    def process_refined_news(args):
+        line, system, instruction = args
+        record = json.loads(line)
+
+        news_article = record.get("news")
+        critique= record.get("critique")
+        status = record.get("status")
+
+        time.sleep(1)
+
+        try:
+        if status == "SUCCESS":
+
+            answer = CLIENT.chat.complete(
+                model="mistral-large-latest",
+                messages= [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": news_article},
+                    {"role": "assistant", "content": critique},
+                    {"role": "user", "content": instruction},
+                ],
+                temperature=0.2,
+                max_tokens=2048
+            )
+            new_news = answer.choices[0].message.content
+
+            result = json.dumps({"news": news_article, "critique": critique, "refined_news": new_news, "status": "SUCCESS"})
+
+        else:
+            result = json.dumps({"news": news_article, "critique": critique, "refined_news": critique, "status": "ERROR"})
+        except Exception as e:
+            result = json.dumps({"news": news_article, "critique": critique, "refined_news": str(e), "status": "ERROR"})
+
+        random_hash = secrets.token_hex(4)
+
+        with open(f"./data/refined_news_{random_hash}.jsonl", "w") as f:
+            f.write(result)
+
+        return result
+    ```
+
+
+    ```py
+    system = "Polish and restructure the news articles to align them with the high standards of clarity, accuracy, and elegance set by the style guide. You are presented with a news article. Identify the ten (or fewer) most significant stylistic concerns and provide examples of how they can be enhanced."
+
+    instruction = """
+    Now, I want you to incorporate the feedback and critiques into the news article and respond with the enhanced version, focusing solely on stylistic improvements without altering the content.
+    You must provide the entire article enhanced.
+    Do not make ANY comments, only provide the new article improved.
+    Do not tell me what you changed, only provide the new article taking into consideration the feedback you provided.
+    The new article needs to have all the content of the original article but with the feedback into account.
+    """
+
+    data_path = "./generated_news_critiques.jsonl"
+    with open(data_path, "r") as f:
+        lines = f.readlines()
+        lines = [(line, system, instruction) for line in lines]
+
+        results = process_map(process_refined_news, lines, max_workers=20, chunksize=1)
+
+    with open("./generated_refined_news.jsonl", "w") as f:
+        for result in results:
+            f.write(result + "\n")
+    ```
+
+    Le notebook complet est disponible ici :
+        <a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/data_generation/data_generation_refining_news.ipynb">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+        </a>
+
+</details>
+<details>
+    <summary><b>Cas d'usage 4 : code</b></summary>
+
+    Le fine-tuning est une méthode très efficace pour adapter un modèle pré-entraîné à une
+    tâche spécifique d'un domaine, comme générer des requêtes SQL à partir de texte en langage naturel.
+    En effectuant un fine-tuning du modèle sur un jeu de données pertinent, il peut apprendre de nouvelles caractéristiques et patterns
+    uniques à la tâche en question. Par exemple, dans le cas de l'intégration texte-vers-SQL,
+    nous pouvons utiliser le jeu de données
+    [sql-create-context](https://huggingface.co/datasets/b-mc2/sql-create-context) qui
+    contient des questions SQL avec le contexte de la table SQL, pour entraîner le modèle à
+    produire la syntaxe SQL correcte.
+
+    Pour formater les données pour le fine-tuning, nous pouvons utiliser du code Python pour prétraiter les données d'entrée et
+    de sortie au format approprié pour le modèle. Voici un exemple de formatage des données pour la génération texte-vers-SQL :
+
+    ```python
+    import pandas as pd
+    import json
+
+    df = pd.read_json(
+        "https://huggingface.co/datasets/b-mc2/sql-create-context/resolve/main/sql_create_context_v4.json"
+    )
+
+    df_formatted = [
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"""
+            You are a powerful text-to-SQL model. Your job is to answer questions about a database. You are given a question and context regarding one or more tables.
+
+            You must output the SQL query that answers the question.
+
+            ### Input:
+            {row["question"]}
+
+            ### Context:
+            {row["context"]}
+
+            ### Response:
+            """,
+                },
+                {"role": "assistant", "content": row["answer"]},
+            ]
+        }
+        for index, row in df.iterrows()
+    ]
+
+    with open("data.jsonl", "w") as f:
+        for line in df_formatted:
+            json.dump(line, f)
+            f.write("\n")
+    ```
+
+    Voici un exemple des données formatées :
+
+    ```json
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "\n        You are a powerful text-to-SQL model. Your job is to answer questions about a database. You are given a question and context regarding one or more tables. \n\n        You must output the SQL query that answers the question.\n        \n        ### Input:\n        How many heads of the departments are older than 56 ?\n        \n        ### Context:\n        CREATE TABLE head (age INTEGER)\n        \n        ### Response:\n        "
+        },
+        {
+          "role": "assistant",
+          "content": "SELECT COUNT(*) FROM head WHERE age > 56"
+        }
+      ]
+    }
+    ```
+
+</details>
+
+<details>
+    <summary><b>Cas d'usage 5 : augmentation spécifique à un domaine dans RAG</b></summary>
+
+    Le fine-tuning peut améliorer les performances de Q&A dans un workflow RAG standard. Par exemple,
+    [cette étude](https://arxiv.org/pdf/2404.11792.pdf) a démontré de meilleures performances
+    en RAG en utilisant un modèle d'embedding fine-tuné et un LLM fine-tuné.
+    [Une autre recherche](https://arxiv.org/pdf/2403.10131) a introduit le Retrieval Augmented
+    Fine-Tuning (RAFT), une méthode qui effectue un fine-tuning d'un LLM pour non seulement répondre aux questions
+    basées sur les documents pertinents, mais aussi ignorer les documents non pertinents, ce qui entraîne
+    une amélioration substantielle des performances RAG dans tous les domaines spécialisés.
+
+    En général, pour générer un jeu de données de fine-tuning pour RAG, nous partons du `context`
+    qui est le texte original du document qui vous intéresse. À partir du
+    `context`, vous pouvez générer des `questions` et des `réponses` pour obtenir des
+    triplets requête-contexte-réponse. Voici deux templates de prompts pour générer des questions et des réponses :
+
+    * Template de prompt pour générer des questions basées sur le contexte :
+
+        ```
+        Context information is below.
+        ---------------------
+        {context_str}
+        ---------------------
+        Given the context information and not prior knowledge. Generate {num_questions_per_chunk}
+        questions based on the context. The questions should be diverse in nature across the
+        document. Restrict the questions to the context information provided.
+        ```
+
+    * Template de prompt pour générer des réponses basées sur le contexte et la question générée
+      depuis le template de prompt précédent :
+
+        ```
+        Context information is below
+        ---------------------
+        {context_str}
+        ---------------------
+        Given the context information and not prior knowledge,
+        answer the query.
+        Query: {generated_query_str}
+        Answer:
+        ```
+
+</details>
+<details>
+    <summary><b>Cas d'usage 6 : transfert de connaissances</b></summary>
+
+    L'un des cas d'usage importants du fine-tuning est la distillation de connaissances depuis un
+    modèle plus grand. La distillation de connaissances est un processus qui consiste à transférer les
+    connaissances apprises par un modèle plus grand et plus complexe, appelé modèle enseignant, vers
+    un modèle plus petit et plus simple, appelé modèle étudiant. Le fine-tuning joue un rôle
+    crucial dans ce processus car il permet au modèle étudiant d'apprendre à partir de la sortie du modèle
+    enseignant et d'adapter ses poids en conséquence.
+
+    Supposons que nous ayons des données de notes médicales nécessitant un étiquetage. Dans un scénario réel,
+    nous n'avons souvent pas la vérité terrain pour les étiquettes. Par exemple, considérons
+    les notes médicales du jeu de données
+    [`medical_knowledge_from_extracts`](https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts)
+    que nous avons utilisé dans le cas d'usage 2. Supposons que nous n'ayons pas la vérité
+    vérifiée pour les étiquettes. Dans ce cas, nous pouvons exploiter le modèle phare Mistral Large pour
+    créer les étiquettes, sachant qu'il peut produire des résultats plus fiables et précis.
+    Par la suite, nous pouvons effectuer un fine-tuning d'un modèle plus petit en utilisant la sortie générée par
+    Mistral Large.
+
+    La fonction Python ci-dessous charge notre jeu de données et génère des étiquettes (dans les
+    messages assistant) depuis Mistral Large :
+
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+    ```python
+    from mistralai import Mistral
+    import pandas as pd
+    import json
+    import os
+
+    api_key = os.environ.get("MISTRAL_API_KEY")
+
+    def run_mistral(user_message, model="mistral-large-latest"):
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
+            model=model, response_format={"type": "json_object"}, messages=messages
+        )
+        return chat_response.choices[0].message.content
+
+
+    # load dataset and select top 10 rows as an example
+    df = pd.read_csv(
+        "https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts/resolve/main/finetuning_train.csv"
+    ).head(10)
+
+    # use Mistral Large to provide output
+    df_formatted = [
+        {
+            "messages": [
+                {"role": "user", "content": row["Question"].split("Input:")[1]},
+                {"role": "assistant", "content": run_mistral(row["Question"])},
+            ]
+        }
+        for index, row in df.iterrows()
+    ]
+
+    with open("data.jsonl", "w") as f:
+        for line in df_formatted:
+            json.dump(line, f)
+            f.write("\n")
+    ```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+    ```python
+    from mistralai.client import Mistral
+    import pandas as pd
+    import json
+    import os
+
+    api_key = os.environ.get("MISTRAL_API_KEY")
+
+    def run_mistral(user_message, model="mistral-large-latest"):
+        client = Mistral(api_key=api_key)
+        messages = [
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+        chat_response = client.chat.complete(
+            model=model, response_format={"type": "json_object"}, messages=messages
+        )
+        return chat_response.choices[0].message.content
+
+
+    # load dataset and select top 10 rows as an example
+    df = pd.read_csv(
+        "https://huggingface.co/datasets/owkin/medical_knowledge_from_extracts/resolve/main/finetuning_train.csv"
+    ).head(10)
+
+    # use Mistral Large to provide output
+    df_formatted = [
+        {
+            "messages": [
+                {"role": "user", "content": row["Question"].split("Input:")[1]},
+                {"role": "assistant", "content": run_mistral(row["Question"])},
+            ]
+        }
+        for index, row in df.iterrows()
+    ]
+
+    with open("data.jsonl", "w") as f:
+        for line in df_formatted:
+            json.dump(line, f)
+            f.write("\n")
+    ```
+
+        </TabItem>
+    </Tabs>
+
+    Voici un exemple d'une instance des données :
+
+    ```json
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Randomized trial of the effect of an integrative medicine approach to the management of asthma in adults on disease-related quality of life and pulmonary function.  The purpose of this study was to test the effectiveness of an integrative medicine approach to the management of asthma compared to standard clinical care on quality of life (QOL) and clinical outcomes. This was a prospective parallel group repeated measurement randomized design. Participants were adults aged 18 to 80 years with asthma. The intervention consisted of six group sessions on the use of nutritional manipulation, yoga techniques, and journaling. Participants also received nutritional supplements: fish oil, vitamin C, and a standardized hops extract. The control group received usual care. Primary outcome measures were the Asthma Quality of Life Questionnaire (AQLQ), The Medical Outcomes Study Short Form-12 (SF-12), and standard pulmonary function tests (PFTs). In total, 154 patients were randomized and included in the intention-to-treat analysis (77 control, 77 treatment). Treatment participants showed greater improvement than controls at 6 months for the AQLQ total score (P<.001) and for three subscales, Activity (P< 0.001), Symptoms (P= .02), and Emotion (P<.001). Treatment participants also showed greater improvement than controls on three of the SF-12 subscales, Physical functioning (P=.003); Role limitations, Physical (P< .001); and Social functioning (P= 0.03), as well as in the aggregate scores for Physical and Mental health (P= .003 and .02, respectively). There was no change in PFTs in either group. A low-cost group-oriented integrative medicine intervention can lead to significant improvement in QOL in adults with asthma. Output:"
+        },
+        {
+          "role": "assistant",
+          "content": "{\"conditions\": \"asthma\", \"drug_or_intervention\": \"integrative medicine approach with nutritional manipulation, yoga techniques, journaling, fish oil, vitamin C, and a standardized hops extract\"}"
+        }
+      ]
+    }
+    ```
+
+</details>
+<details>
+    <summary><b>Cas d'usage 7 : agents pour l'appel de fonction</b></summary>
+
+    Le fine-tuning joue un rôle crucial dans le façonnement du processus de raisonnement et de prise de décision
+    des agents, lorsqu'il s'agit de déterminer quelles actions entreprendre et quels outils utiliser.
+    En fait, les capacités d'appel de fonction de Mistral sont obtenues grâce au fine-tuning sur
+    des données d'appel de fonction. Cependant, dans certains scénarios, les capacités natives d'appel de fonction
+    peuvent ne pas suffire, en particulier lors de la manipulation d'outils et de domaines spécifiques.
+    Dans de tels cas, il devient impératif d'envisager un fine-tuning en utilisant vos propres données d'agent
+    pour l'appel de fonction. En effectuant un fine-tuning avec vos propres données, vous pouvez améliorer significativement
+    les performances et la précision de l'agent, lui permettant de sélectionner les bons outils et actions.
+
+    Voici un exemple simple visant à entraîner le modèle à appeler la fonction `generate_anagram()`
+    lorsque nécessaire. Pour des cas d'usage plus complexes, vous pourriez étendre votre liste `tools`
+    à 100 fonctions ou plus et créer des exemples diversifiés démontrant l'appel de
+    différentes fonctions à différents moments. Cette approche permet au modèle d'apprendre un éventail plus large
+    de fonctionnalités et de comprendre le contexte approprié pour l'utilisation de chaque fonction.
+
+    ```json
+    {
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant with access to the following functions to help the user. You can use the functions if needed."
+            },
+            {
+                "role": "user",
+                "content": "Can you help me generate an anagram of the word 'listen'?"
+            },
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": "TX92Jm8Zi",
+                        "type": "function",
+                        "function": {
+                            "name": "generate_anagram",
+                            "arguments": "{\"word\": \"listen\"}"
+                        }
+                    }
+                ]
+            },
+            {
+                "role": "tool",
+                "content": "{\"anagram\": \"silent\"}",
+                "tool_call_id": "TX92Jm8Zi"
+            },
+            {
+                "role": "assistant",
+                "content": "The anagram of the word 'listen' is 'silent'."
+            },
+            {
+                "role": "user",
+                "content": "That's amazing! Can you generate an anagram for the word 'race'?"
+            },
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "id": "3XhQnxLsT",
+                        "type": "function",
+                        "function": {
+                            "name": "generate_anagram",
+                            "arguments": "{\"word\": \"race\"}"
+                        }
+                    }
+                ]
+            }
+        ],
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "generate_anagram",
+                    "description": "Generate an anagram of a given word",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "word": {
+                                "type": "string",
+                                "description": "The word to generate an anagram of"
+                            }
+                        },
+                        "required": ["word"]
+                    }
+                }
+            }
+        ]
+    }
+    ```
+
+</details>

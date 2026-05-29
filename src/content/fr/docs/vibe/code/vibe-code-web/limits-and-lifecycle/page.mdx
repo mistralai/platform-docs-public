@@ -1,0 +1,129 @@
+---
+title: Limites et cycle de vie
+sidebar_label: Limites et cycle de vie
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Limites et cycle de vie
+
+Une session Vibe Code Web est **une exécution de l’agent Vibe Code sur un dépôt GitHub dans un environnement cloud géré**. Cette page explique comment une session démarre, ses états possibles, ce qui est conservé, ce qui est supprimé, et les limites applicables.
+
+<SectionTab as="h2" sectionId="lifecycle">Cycle de vie</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="phases">Phases</SectionTab>
+
+| Phase | Description |
+|---|---|
+| **Démarrage** | Vibe Code Web crée un environnement cloud isolé. |
+| **Clonage** | Le dépôt GitHub et la branche sélectionnés sont clonés dans l’environnement. |
+| **Exécution** | L’agent lit les fichiers, exécute des commandes, édite le code et pose des questions complémentaires si besoin. |
+| **Revue** | Vous examinez la branche, les commits ou la pull request créés par l’agent. |
+| **Fin** | L’environnement est supprimé à l’arrêt, expiration ou erreur de la session. |
+
+Une branche poussée ou une pull request **n’interrompt pas automatiquement la session**. Vous pouvez continuer à itérer en envoyant de nouveaux prompts, des commentaires de revue ou en réagissant à des échecs CI.
+
+<SectionTab as="h3" variant="secondary" sectionId="active-states">États actifs</SectionTab>
+
+Pendant la durée de vie d’une session, son état opérationnel est l’un des suivants :
+
+| État | Signification |
+|---|---|
+| **Actif** | L’agent exécute des commandes, modifie du code ou réfléchit. |
+| **En attente de réponse** | L’agent a besoin d’une précision et attend votre retour. |
+| **En pause** | L’agent a terminé l’étape en cours et attend la prochaine instruction. |
+| **Arrêté** | La session est terminée. Voir [États de fin](#end-states) pour la raison. |
+
+Vous pouvez consulter toutes les sessions actives de vos projets via la barre latérale de Vibe Code Web.
+
+<SectionTab as="h3" variant="secondary" sectionId="end-states">États de fin</SectionTab>
+
+| État de fin | Explication |
+|---|---|
+| **Terminée** | L’agent a atteint un point d’arrêt naturel. |
+| **Expirée** | La session a atteint la durée maximale ou une limite d’inactivité. |
+| **Erreur** | Échec lors de la préparation de l’environnement ou de l’exécution de l’agent. |
+
+Dans tous les cas, **les branches et pull requests GitHub déjà créées par Vibe Code Web restent dans votre dépôt**.
+
+:::note
+Les fonctions d’annulation, d’interruption et d’arrêt manuel ne sont pas encore disponibles. Voir [Fonctionnalités de suivi](#follow-ups).
+:::
+
+<SectionTab as="h2" sectionId="limits-quotas-models">Limites, quotas et modèles</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="session-limits">Limites de session</SectionTab>
+
+| Limite | Valeur actuelle |
+|---|---|
+| Durée maximale d’une session | 24 heures |
+| Délai d’inactivité en attente de réponse | 3 heures |
+| Sessions simultanées par utilisateur | Variable selon le plan |
+
+Les limites de session dépendent de votre plan et du statut de déploiement.
+
+<SectionTab as="h3" variant="secondary" sectionId="daily-quotas">Quotas journaliers</SectionTab>
+
+| Type d’utilisateur | Limite |
+|---|---|
+| Utilisateurs gratuits | 2 sessions par jour, là où l’accès est autorisé |
+| Utilisateurs payants | 100 sessions par jour |
+
+<SectionTab as="h3" variant="secondary" sectionId="model-behavior">Comportement du modèle</SectionTab>
+
+| Source de la session | Comportement du modèle |
+|---|---|
+| Vibe Code Web | Utilise Mistral Medium 3.5 |
+| Vibe CLI avec modèle Mistral sélectionné | Utilise le modèle Mistral sélectionné |
+| Vibe CLI avec modèle non-Mistral sélectionné | Utilise par défaut Mistral Medium 3.5 |
+
+<SectionTab as="h2" sectionId="after-session">Après une session</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="persistence">Ce qui est conservé</SectionTab>
+
+| Donnée | Statut |
+|---|---|
+| **Fichiers de l’environnement** | Supprimés quand l’environnement est supprimé en fin de session. |
+| **Artefacts de build** | Supprimés avec l’environnement sauf s’ils sont commités sur GitHub. |
+| **Branches GitHub** | Restent dans votre dépôt. |
+| **Commits et pull requests** | Restent dans votre dépôt et poursuivent votre workflow GitHub habituel. |
+| **Historique de session** | Conservé selon votre plan et la politique de rétention applicable. |
+
+L’historique est consultable après chaque exécution, mais une session inactive ne peut pas être reprise une fois l’environnement supprimé. Pour continuer, démarrez une nouvelle session.
+
+:::note
+Vibe Code Web s’exécute dans un **environnement cloud, pas sur votre machine**. Utilisez le CLI ou l’extension VS Code pour les tâches qui nécessitent des fichiers locaux, services locaux, secrets locaux, runtimes non pris en charge ou des dépendances matérielles.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="visibility">Visibilité et partage</SectionTab>
+
+Les sessions sont **personnelles** : chaque session appartient à son créateur et n’est visible que par cet utilisateur dans la barre latérale de Vibe Code Web.
+
+Pour collaborer sur les résultats produits par l’agent, partagez la branche GitHub ou la pull request générée. Vos coéquipiers peuvent relire et commenter via le flux GitHub habituel.
+
+<SectionTab as="h2" sectionId="follow-ups">Fonctionnalités de suivi</SectionTab>
+
+Les capacités ci-dessous sont prévues après le lancement du 28 mai. Elles sont détaillées pour vous permettre de vous organiser en conséquence.
+
+| Domaine | Capacité prévue |
+|---|---|
+| **Déclencheurs** | Lancer une session depuis Slack ou un événement GitHub. |
+| **Portabilité** | Reprendre une session distante localement via le CLI. |
+| **Contrôle de session** | Approbations pour actions sensibles, annulation, interruption, pilotage. |
+| **Visibilité** | Notifications, interface de revue et diff enrichie. |
+| **Personnalisation de l’environnement** | Configuration avancée, scripts d’installation, secrets projet et variables d’environnement. |
+
+<SectionTab as="h2" sectionId="common-issues">Problèmes fréquents</SectionTab>
+
+| Problème | Vérifications conseillées |
+|---|---|
+| La session semble bloquée | Vérifiez si elle **attend des informations**, a expiré ou a perdu l’accès GitHub. |
+| Le clonage du dépôt est lent | Les gros dépôts prennent plus de temps. Si le clonage échoue, réessayez ou ciblez un dépôt ou une branche plus petits. |
+| Les commandes du projet échouent | L’environnement n’a peut-être pas les services locaux, outils spécifiques à l’OS, GPU ou dépendances privées requis. Voir [Environnement cloud](/vibe/code/vibe-code-web/sandbox-environment). |
+| Autorisation GitHub révoquée ou expirée | Reconnectez l’application Mistral GitHub sur [github.com/settings/installations](https://github.com/settings/installations). |
+| Approbation du propriétaire d’organisation en attente | L’utilisation de l’application Mistral GitHub peut nécessiter la validation par le propriétaire de l’organisation. |
+| Dépôt non sélectionné lors de l’installation de l’application GitHub | Ouvrez la configuration de l’application sur GitHub et ajoutez le dépôt à la liste des dépôts sélectionnés. |
+| Le dépôt appartient à un autre propriétaire GitHub | Un projet n’inclut que les dépôts d’un même propriétaire GitHub. Créez un autre projet pour l’autre propriétaire. |
+| Impossible de reprendre une session inactive | Une fois l’environnement supprimé, impossible de la reprendre. Démarrez une nouvelle session pour continuer. |

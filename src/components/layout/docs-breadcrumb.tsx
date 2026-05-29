@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation.client';
 import {
   TopCategoryCta,
   BreadcrumbHome,
@@ -13,6 +13,8 @@ import {
 } from '@/lib/content/breadcrumb-stuff';
 import { SidebarItem } from '@/schema';
 import { getActiveHeaderTab } from '@/schema/content/header';
+import { headerLinkLabel } from '@/schema/content/i18n';
+import { useLingo } from '@lingo.dev/react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
@@ -59,6 +61,7 @@ const GenericBreadcrumbItemComponent = ({ item }: { item: BreadcrumbItem }) => {
 export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
   const { setOpenMobile, openMobile } = useSidebar();
   const pathname = usePathname();
+  const l = useLingo();
   const slug =
     pathname === '/'
       ? ['getting-started', 'introduction']
@@ -88,11 +91,10 @@ export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
   // Prepend the active header tab as a virtual breadcrumb segment
   // Skip for "Getting Started" (root tab) since those pages are already at the root level
   if (activeTab.href !== '/') {
-    // If the first sidebar breadcrumb item has the same label as the tab, replace it
-    // to avoid "Developers > Developers" or "Products > Products"
+    const activeTabLabel = headerLinkLabel(activeTab.id, l);
     if (
       breadcrumbItems.length > 0 &&
-      breadcrumbItems[0].label.toLowerCase() === activeTab.label.toLowerCase()
+      breadcrumbItems[0].label.toLowerCase() === activeTabLabel.toLowerCase()
     ) {
       breadcrumbItems[0] = {
         ...breadcrumbItems[0],
@@ -100,7 +102,7 @@ export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
       };
     } else {
       breadcrumbItems.unshift({
-        label: activeTab.label,
+        label: activeTabLabel,
         href: activeTab.href,
       });
     }

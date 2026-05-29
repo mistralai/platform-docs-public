@@ -1,0 +1,113 @@
+---
+id: on-behalf-of
+title: Workflows on-behalf-of
+sidebar_position: 12
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Workflows « on-behalf-of »
+
+:::warning
+Les workflows on-behalf-of nécessitent un [déploiement renforcé](/studio-api/workflows/managing-workflows-in-production/hardened_deployments). Ils ne peuvent pas être enregistrés dans un déploiement non renforcé.
+:::
+
+Certains workflows doivent agir **au nom de l’utilisateur qui les a déclenchés** — par exemple, accéder aux connecteurs de l’utilisateur, interroger des ressources limitées à son espace de travail ou appeler l’API Mistral avec son identité. Le mode on-behalf-of (OBO) rend cela possible.
+
+Quand un workflow est marqué comme OBO, la plateforme capture l’identité de l’utilisateur déclencheur au moment de l’exécution et la rend disponible pour le worker. Le worker obtient alors des identifiants temporaires représentant cet utilisateur, sans jamais accéder à sa clé API ni à son token de session.
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+À l’exécution, la plateforme associe l’identité de l’utilisateur déclencheur au contexte d’exécution. Lorsqu’une activité requiert des identifiants utilisateur, le SDK :
+
+1. Récupère le token d’exécution depuis le contexte du workflow courant.
+2. L’échange auprès de la plateforme contre un JWT temporaire représentant l’utilisateur déclencheur.
+3. Injecte le JWT dans l’en-tête `Authorization` de chaque requête sortante.
+4. Met en cache et renouvelle le JWT automatiquement.
+
+Pour l’activité, le client se comporte comme un client Mistral standard : l’échange d’identité est totalement transparent.
+
+<SectionTab as="h1" sectionId="enabling-obo-mode">Activation du mode OBO</SectionTab>
+
+Indiquez `on_behalf_of=True` dans la définition du workflow :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.workflow.define(name="user_report", on_behalf_of=True)
+class UserReportWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, report_type: str) -> dict:
+        ...
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="using-user-credentials-in-activities">Utilisation des identifiants utilisateur dans les activités</SectionTab>
+
+Dans une activité, créez un client Mistral avec `use_executor_credentials=True` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+
+import mistralai.workflows as workflows
+from mistralai.workflows.client import get_mistral_client
+
+@workflows.workflow.define(name="user_search", on_behalf_of=True)
+class UserSearchWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, query: str) -> str:
+        return await search_with_user_identity(query)
+
+@workflows.activity(start_to_close_timeout=timedelta(seconds=30))
+async def search_with_user_identity(query: str) -> str:
+    client = get_mistral_client(use_executor_credentials=True)
+    response = await client.chat.complete_async(
+        model="mistral-medium-latest",
+        messages=[{"role": "user", "content": query}],
+    )
+    return response.choices[0].message.content
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="mixing-worker-and-user-credentials">Combiner identifiants worker et utilisateur</SectionTab>
+
+Vous pouvez appeler l’API Mistral **en tant que worker** dans un workflow OBO, par exemple pour s’assurer que les requêtes sont limitées par l’espace de travail du worker et non par celui de l’utilisateur. Créez un deuxième client avec `use_executor_credentials=False` (valeur par défaut) :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(start_to_close_timeout=timedelta(seconds=30))
+async def my_activity(query: str) -> str:
+    # Appelle l’API en tant qu’utilisateur déclencheur
+    user_client = get_mistral_client(use_executor_credentials=True)
+
+    # Appelle l’API en tant que worker (utilise la clé API du worker)
+    worker_client = get_mistral_client(use_executor_credentials=False)
+    ...
+```
+
+  </TabItem>
+</Tabs>
+
+Cela vous permet de choisir la bonne identité à chaque appel dans une même activité.
+
+<SectionTab as="h1" sectionId="constraints">Contraintes</SectionTab>
+
+:::warning
+`on_behalf_of=True` **ne peut pas** être combiné avec `schedules`. Les exécutions planifiées n’ont pas d’utilisateur déclencheur, donc le contexte d’identité serait indéfini. Cela est vérifié à la fois lors du décorateur et de l’enregistrement.
+:::
+
+- L’appelant doit disposer d’une identité utilisateur complète. Les exécutions déclenchées par des clés API sans en-têtes `user_id` / `organization_id` sont rejetées.
+- Le JWT d’identité est temporaire et limité à l’exécution. Si l’exécution se termine, le JWT ne peut plus être renouvelé.

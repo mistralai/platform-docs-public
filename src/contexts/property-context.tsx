@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useMemo, useRef } from 'react';
-import { DisplayTypeInfo, PropertyAnnotations } from '@/app/(api)/types/shared';
+import { DisplayTypeInfo, PropertyAnnotations } from '@/app/[locale]/(api)/types/shared';
 
 export interface PropertyContextData {
   // Core property information

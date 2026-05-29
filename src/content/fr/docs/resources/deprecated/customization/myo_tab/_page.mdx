@@ -1,0 +1,113 @@
+import { SectionTab } from '@/components/layout/section-tab';
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Z6cCDmZmU_U?si=bv_RkuNYxQ2Xo2p9" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<SectionTab variant="secondary" sectionId="myo-company-information">Informations sur l'entreprise</SectionTab>
+
+[Myo](https://myo.fit) développe une IA multimodale pour la santé cérébrale. Nous étudions actuellement la relation entre les microARN et diverses pathologies neurologiques, notamment la manière dont ces biomarqueurs peuvent être utilisés pour la détection précoce et le suivi de ces maladies. AmiRA est un outil interne propulsé par les modèles commerciaux et open source de Mistral AI pour aider à comprendre les fonctions de certains miARN dans les résultats d'échantillons et leurs gènes cibles associés.
+
+<SectionTab variant="secondary" sectionId="myo-description">Description</SectionTab>
+
+Ce projet démontre le fine-tuning de modèles Mistral et leur utilisation dans un système RAG pour :
+
+1. L'association/prédiction de maladies à partir d'une molécule de miARN donnée
+2. Une plus grande précision et pertinence scientifiques lors de la détermination de la fonction des molécules de miARN.
+
+Ce projet sert principalement de preuve de concept, montrant que les LLM et les agents peuvent nous aider à explorer les biomarqueurs et leurs relations avec les résultats de santé avec une ingénierie appropriée.
+
+<SectionTab variant="secondary" sectionId="myo-data-training">Données et entraînement</SectionTab>
+
+Les titres et résumés de 9839 articles PubMed ont été extraits. Trois questions pour chaque article ont ensuite été générées à l'aide de l'API de function calling `mistral-large-latest` et de prompting traditionnel. Voici un exemple de prompt :
+
+```python
+def generate_questions(molecule, title, abstract):
+ prompt = f"""
+     Based on the following molecule, title, and abstract, generate scientific questions to be
+     put in a function. Here is the information:\n\n
+     Molecule: {molecule}\nTitle: {title}\nAbstract: {abstract}
+
+     Ask your questions in a way that does not mention the abstract or the title of the work.
+     Treat information from the title/abstract as new/general knowledge, and   ask questions framed off of that.
+   """
+ response = MISTRAL_CLIENT.chat(
+     model=MISTRAL_MODEL,
+     messages=[ChatMessage(role="user", content=prompt)],
+     tools=tools,
+     tool_choice="any"
+ )
+ return response
+```
+
+Après la génération des questions, les réponses pour chaque question ont ensuite été générées à l'aide de mistral-large latest. Voici un exemple de prompt :
+
+```python
+def generate_answer(molecule, title, abstract, question):
+     prompt = f"""
+         Based on the following molecule, title, and abstract, and question, generate an answer:
+
+         Molecule: {molecule}\nTitle: {title}\nAbstract: {abstract}\nQuestion: {question}\nAnswer:
+
+         Answer the question given only context information and not prior knowledge.
+         Answer in a way that does not mention the abstract or the title of the work.
+         Treat the provided information as general knowledge, and answer the questions
+         framed off of that.
+       """
+     response = MISTRAL_CLIENT.chat(
+         model=MISTRAL_MODEL,
+         messages=[ChatMessage(role="user", content=prompt)],
+     )
+     return response.choices[0].message.content.strip()
+```
+
+Avec du multithreading sur 2 cœurs CPU, la génération des questions et réponses a pris environ 2,5 heures. Sur les 9839 lignes d'origine, 9414 ont passé le traitement des données en raison de diverses erreurs.
+
+Cela nous laisse environ 28000 paires question/réponse à fournir au modèle pour l'entraînement. Voici un exemple de paire Q/R :
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the role of hsa-miR-335-5p in the development of type 2 diabetes mellitus (T2DM) and which genes does it potentially regulate?"
+    },
+    {
+      "role": "assistant",
+      "content": "The role of hsa-miR-335-5p in the development of type 2 diabetes mellitus (T2DM) is that it potentially regulates the expression of various candidate genes. These genes include procollagen C-endopeptidase enhancer 2, connective tissue growth factor, family with sequence similarity 105, member A, protein phosphatase 1 regulatory inhibitor subunit 1A, and C-C motif chemokine receptor 4. The specific mechanisms through which hsa-miR-335-5p regulates these genes and contributes to the development of T2DM are not detailed in the provided information. However, it is suggested that understanding these regulatory networks could potentially be useful for the molecular diagnosis and targeted therapy of T2DM."
+    }
+  ]
+}
+```
+
+<SectionTab variant="secondary" sectionId="myo-rag-pipeline">Pipeline RAG</SectionTab>
+
+Une simple recherche dans une table (Pandas Dataframe) a été utilisée pour faire remonter les informations pertinentes sur chaque miARN présent dans les chaînes de requête, et des résumés complets ont été fournis au modèle. Le nombre de résultats n'a jamais dépassé 12, et la limite de la fenêtre de contexte n'a jamais été atteinte.
+
+![](/img/stories/rag.png)
+
+Les embeddings pour chaque article et résumé de titre ont été pré-calculés et stockés dans le dataframe, et la similarité cosinus a été utilisée pour faire remonter les **_k_** articles les plus pertinents avant de les fournir au modèle. Le nombre de résultats fournis au modèle variait en fonction du nombre d'entrées présentes pour chaque molécule (c'est-à-dire s'il n'y a qu'une seule entrée, k sera égal à 1. S'il y a 30 entrées, obtenir les 12 meilleures via similarité cosinus).
+
+Le modèle a également la possibilité de prendre la requête brute et d'effectuer des recherches dans le dataframe pour recueillir plus d'informations ou de contexte à sa propre discrétion.
+
+<SectionTab variant="secondary" sectionId="myo-benchmarking-and-results">Benchmarking et résultats</SectionTab>
+
+Pour l'association et la prédiction de maladies, 150 questions aléatoires issues d'un [article de benchmarking sur l'association miARN-maladies publié en 2019](https://pubmed.ncbi.nlm.nih.gov/31594544/) ont été échantillonnées. Cet ensemble de données était complètement séparé de toute donnée d'entraînement utilisée ou de tout article PubMed extrait pour créer les données d'entraînement.
+
+Le modèle fine-tuné a surpassé à la fois `mistral-small-latest` et `mistral-large-latest` dans les réponses aux questions, sans avoir explicitement vu de données affiliées au benchmark. Les valeurs ci-dessous sont les moyennes sur 3 tentatives.
+
+![](/img/stories/test.png)
+
+L'un des avantages du fine-tuning est que vous pouvez obtenir de meilleures performances avec des modèles plus petits, et donc plus rapides. Ci-dessous figure la latence moyenne pour chaque appel API pour les trois mêmes exécutions ci-dessus.
+
+![](/img/stories/latency.png)
+
+<SectionTab variant="secondary" sectionId="myo-example-responses">Exemples de réponses</SectionTab>
+
+L'objectif du modèle fine-tuné n'est pas de réussir des tests, mais de fournir un meilleur contexte pour les systèmes RAG. Il est donc naturel de vouloir évaluer les sorties réelles du modèle en utilisation. Ci-dessous figurent deux exemples de la sortie du modèle fine-tuné par rapport à des sorties similaires de `mistral-large-latest` et `mistral-small-latest`. Dans les situations où le modèle était forcé de « deviner » la réponse à une question, il a fourni un contexte correct à partir de ses propres connaissances, basées sur les informations qu'il a recueillies dans les articles inclus dans son entraînement.
+
+| mistral-finetune                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | mistral-small-latest                                                                                                                                                                                                                                                                            |
+| :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Letter: D: gastrointestinal neoplasms -- This is based on the information provided in the context that hsa-miR-106a-5p is identified as one of the key miRNAs associated with the regulation of hub genes in SARS-CoV-2 infections. However, a direct association with gastrointestinal neoplasms is not explicitly mentioned. The option D: gastrointestinal neoplasms is chosen as hsa-miR-106a has been previously reported in literature to be associated with various types of cancers, including colorectal cancer, which falls under gastrointestinal neoplasms. [Pubmed paper related to this response](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10451182/#:~:text=2.1.%20Colorectal%20Cancer,metastases%20%5B12%5D.) | vascular disease -- Letter: A, B, C, or D not mentioned in the context, so I can't definitively answer. However, hsa-let-7e has been associated with various diseases including some types of cancer, but the context provided doesn't specify its association with any of the listed diseases. |
+
+| mistral-finetune                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | mistral-large-latest                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Letter: D: hypertension (This is an educated guess as the context does not explicitly mention hsa-mir-146b being associated with any of the provided diseases. However, hsa-mir-146b has been studied in relation to hypertension in the literature.) [Pubmed paper related to this response](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6941490/#:~:text=Increased%20miR%2D146b%2D5p%20abundance%20has%20been%20reported%20in%20clinical%20studies%20of%20renal%20pathology%20and%20experimental%20disease%20models%3B%20including%20hypertension%2C%20AKI%2C%20renal%20fibrosis%2C%20and%20CKD.) | I'm sorry for any confusion, but the provided context does not contain any specific information linking hsa-mir-23b to a particular disease. Therefore, I'm unable to provide a precise answer based on the given options. If I were to make an educated guess without additional information, it would not be reliable or accurate. I recommend further research or consultation with a medical professional or a relevant database for the most accurate information. |

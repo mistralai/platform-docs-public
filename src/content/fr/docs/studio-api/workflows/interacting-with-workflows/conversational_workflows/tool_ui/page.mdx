@@ -1,0 +1,368 @@
+---
+id: tool-ui
+title: Interface d'outil
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Interface d’outil
+
+Affichez des composants d’interface riches et interactifs dans l’interface de chat Vibe Work et visualisez l’exécution des outils avec un retour d’état structuré. Utilisez les composants d’interface pour la mise en page et la visualisation ; exploitez les états UI des outils pour montrer en temps réel ce que font vos outils.
+
+<SectionTab as="h1" sectionId="rich-ui-components">Composants d’interface riches</SectionTab>
+
+Les workflows peuvent afficher des composants d’interface riches et interactifs dans le chat Vibe Work via la bibliothèque de composants du design system. Les composants sont définis comme objets Python et envoyés comme ressources `UIComponentResource`.
+
+<SectionTab as="h2" variant="secondary" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows.plugins.mistralai.conversational_ui_components import (
+    Badge,
+    Card,
+    Column,
+    Markdown,
+    Row,
+)
+
+
+@workflows.workflow.define(
+    name="report-workflow",
+    workflow_display_name="Report",
+    workflow_description="Generate a rich UI report",
+)
+class ReportWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
+        report = Card(
+            title="Summary",
+            children=[
+                Row(
+                    children=[
+                        Markdown(content="**Score:** 0.82"),
+                        Badge(variant="success", children="Pass"),
+                    ],
+                ),
+            ],
+        )
+
+        await workflows_mistralai.send_assistant_message(
+            [
+                workflows_mistralai.TextOutput(text="Here is your report:"),
+                workflows_mistralai.ResourceOutput(
+                    resource=workflows_mistralai.UIComponentResource(component=report),
+                ),
+            ]
+        )
+
+        return workflows_mistralai.ChatAssistantWorkflowOutput(
+            content=[
+                workflows_mistralai.ResourceOutput(
+                    resource=workflows_mistralai.UIComponentResource(component=report),
+                ),
+            ],
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_rich-ui-component_report.png"
+    alt="Un composant d’interface riche affiché dans Vibe Work, montrant une carte avec un score et un badge de réussite."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Composant d’interface riche dans Vibe Work.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="available-components">Composants disponibles</SectionTab>
+
+Tous les composants sont importés depuis `mistralai.workflows.plugins.mistralai.conversational_ui_components`.
+
+| Composant    | Description                                   | Propriétés principales                                                |
+| ------------ | --------------------------------------------- | --------------------------------------------------------------------- |
+| `Alert`      | Messages importants avec niveaux de sévérité  | `title`, `variant` (info/warning/error/success), `children`           |
+| `Avatar`     | Image d’avatar utilisateur                    | `src`, `alt`, `text`, `size`                                          |
+| `Badge`      | Petit libellé pour indicateurs de statut      | `variant` (default/primary/success/warning/error), `size`, `children` |
+| `ButtonLink` | Lien présenté comme un bouton                 | `href`, `variant`, `size`, `external`, `children`                     |
+| `Card`       | Conteneur avec titre/description optionnels   | `title`, `description`, `padding`, `children`                         |
+| `Chart`      | Graphique linéaire ou en barres               | `variant` (line/bar), `data`, `xAxis`, `yAxis`, `title`               |
+| `Column`     | Conteneur vertical                           | `alignment`, `distribution`, `gap`, `children`                        |
+| `Image`      | Affichage d’une image                         | `src`, `alt`, `size`                                                  |
+| `Markdown`   | Texte formaté en Markdown                     | `content`                                                             |
+| `PieChart`   | Diagramme circulaire avec segments nommés      | `data`, `title`                                                       |
+| `Row`        | Conteneur horizontal                         | `alignment`, `distribution`, `gap`, `wrap`, `children`                |
+| `Tooltip`    | Info supplémentaire au survol                 | `trigger`, `children`                                                 |
+
+<SectionTab as="h2" variant="secondary" sectionId="nesting-components">Imbrication de composants</SectionTab>
+
+Les composants qui acceptent `children` peuvent en contenir d’autres, ce qui permet de créer des mises en page complexes :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai.conversational_ui_components import (
+    Card,
+    Chart,
+    Column,
+    Row,
+)
+
+layout = Row(
+    children=[
+        Card(
+            title="Revenue",
+            children=[
+                Chart(
+                    variant="line",
+                    xAxis="month",
+                    yAxis=["actual", "target"],
+                    data=[
+                        {"month": "Jan", "actual": 100, "target": 120},
+                        {"month": "Feb", "actual": 140, "target": 130},
+                        {"month": "Mar", "actual": 160, "target": 140},
+                    ],
+                ),
+            ],
+        ),
+        Card(
+            title="Distribution",
+            children=[
+                Chart(
+                    variant="bar",
+                    xAxis="category",
+                    yAxis="count",
+                    data=[
+                        {"category": "A", "count": 42},
+                        {"category": "B", "count": 28},
+                        {"category": "C", "count": 15},
+                    ],
+                ),
+            ],
+        ),
+    ],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_rich-ui-component_nesting-with-charts.png"
+    alt="Des composants d’interface riches imbriqués sont affichés dans Vibe Work, montrant deux cartes contenant chacune un graphique."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">Composants imbriqués avec graphiques dans Vibe Work.</legend>
+</figure>
+
+<SectionTab as="h1" sectionId="tool-ui-states">États de l’interface outil</SectionTab>
+
+Les états d’interface outil offrent une représentation visuelle optionnelle de l’exécution des outils dans l’interface de chat Vibe Work. Attachés à `ChatAssistantWorkingTask`, ils permettent un retour d’interface dédié selon le type d’opération, ce qui autorise les workflows à afficher statut et résultats des appels d’outils de façon structurée et lisible.
+
+<SectionTab as="h2" variant="secondary" sectionId="tool-ui-state-types">Types d’états d’interface outil</SectionTab>
+
+Il existe trois types d’états d’interface outil :
+
+<SectionTab as="h3" variant="secondary" sectionId="file-tool-ui-state">État d’interface fichier</SectionTab>
+
+Représente les opérations sur fichiers : création, remplacement, suppression :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.conversational import (
+    FileToolUIState,
+    CreateFileOperation,
+    ReplaceFileOperation,
+    DeleteFileOperation,
+)
+
+# Créer un fichier
+create_state = FileToolUIState(
+    toolCallId="tc-1",
+    operations=[
+        CreateFileOperation(
+            uri="file:///workspace/new.py",
+            content="print('Hello World')"
+        )
+    ],
+)
+
+# Remplacer le contenu d’un fichier
+replace_state = FileToolUIState(
+    toolCallId="tc-2",
+    operations=[
+        ReplaceFileOperation(
+            uri="file:///workspace/main.py",
+            fileContentBefore="old content",
+            blocks=[SearchReplaceBlock(search="old", replace="new")],
+        )
+    ],
+)
+
+# Supprimer un fichier
+delete_state = FileToolUIState(
+    toolCallId="tc-3",
+    operations=[
+        DeleteFileOperation(uri="file:///workspace/old.py")
+    ],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_file-tool-ui-state.png"
+    alt="Un état d’interface fichier affiché dans Vibe Work, montrant le retour d’opérations sur fichier."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">État d’interface fichier dans Vibe Work.</legend>
+</figure>
+
+<SectionTab as="h3" variant="secondary" sectionId="generic-tool-ui-state">État d’interface générique</SectionTab>
+
+Représente l’exécution générique d’un outil avec plusieurs états de statut :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.conversational import (
+    GenericToolUIState,
+    ToolResultRunning,
+    ToolResultSuccess,
+    ToolResultFailed,
+)
+
+# Outil en cours d’exécution
+running_state = GenericToolUIState(
+    toolCallId="tc-1",
+    name="bash",
+    arguments={"command": "ls -la"},
+    result=ToolResultRunning(),
+)
+
+# Outil terminé avec succès
+success_state = GenericToolUIState(
+    toolCallId="tc-2",
+    name="grep",
+    arguments={"pattern": "TODO"},
+    result=ToolResultSuccess(value={"matches": ["line1", "line2"]}),
+)
+
+# Échec de l’outil
+failed_state = GenericToolUIState(
+    toolCallId="tc-3",
+    name="bash",
+    arguments={"command": "false"},
+    result=ToolResultFailed(error="exit code 1"),
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_generic-tool-ui-state.png"
+    alt="Un état d’interface générique affiché dans Vibe Work, montrant le statut d’exécution d’un outil."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">État d’interface générique dans Vibe Work.</legend>
+</figure>
+
+<SectionTab as="h3" variant="secondary" sectionId="command-tool-ui-state">État d’interface commande</SectionTab>
+
+Représente l’exécution de commandes avec états : en cours, réussi, échec :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.conversational import (
+    CommandToolUIState,
+    CommandResultRunning,
+    CommandResultSuccess,
+    CommandResultFailed,
+)
+
+# Commande en cours d’exécution
+running_state = CommandToolUIState(
+    toolCallId="tc-1",
+    command="npm install",
+    result=CommandResultRunning(),
+)
+
+# Commande terminée avec succès
+success_state = CommandToolUIState(
+    toolCallId="tc-2",
+    command="pytest",
+    result=CommandResultSuccess(output="All tests passed"),
+)
+
+# Échec de la commande
+failed_state = CommandToolUIState(
+    toolCallId="tc-3",
+    command="invalid-command",
+    result=CommandResultFailed(error="Command not found"),
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<figure>
+  <Image
+    url="/img/conversational_workflows/conversational-workflow_command-tool-ui-state.png"
+    alt="Un état d’interface commande affiché dans Vibe Work, montrant le statut d’exécution de la commande."
+    centered
+  />
+  <legend className="text-sm text-gray-500 text-center italic">État d’interface commande dans Vibe Work.</legend>
+</figure>
+
+<SectionTab as="h2" variant="secondary" sectionId="using-tool-ui-states-in-working-tasks">Utiliser les états d’interface outil dans les tâches en cours</SectionTab>
+
+Les états d’interface outil peuvent être attachés à `ChatAssistantWorkingTask` afin d’afficher un retour visuel pendant l’exécution de l’outil :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.conversational import ChatAssistantWorkingTask
+
+# Afficher une tâche en cours avec opérations sur fichier
+task = ChatAssistantWorkingTask(
+    title="Création de fichier",
+    content="Génération de new.py",
+    toolUIState=FileToolUIState(
+        toolCallId="tc-1",
+        operations=[CreateFileOperation(uri="file:///workspace/new.py", content="print('hi')")],
+    ),
+)
+
+# Afficher une tâche en cours avec exécution de commande
+command_task = ChatAssistantWorkingTask(
+    title="Exécution des tests",
+    content="Exécution de pytest",
+    toolUIState=CommandToolUIState(
+        toolCallId="tc-2",
+        command="pytest",
+        result=CommandResultRunning(),
+    ),
+)
+```
+
+  </TabItem>
+</Tabs>

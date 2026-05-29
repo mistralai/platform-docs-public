@@ -1,4 +1,4 @@
-import { ApiSidebarItem, ApiSidebarMetadataItem } from '@/app/(api)/schema/api-sidebar';
+import { ApiSidebarItem, ApiSidebarMetadataItem } from '@/app/[locale]/(api)/schema/api-sidebar';
 
 export const flattenSidebar = (
     sidebar: ApiSidebarMetadataItem[]

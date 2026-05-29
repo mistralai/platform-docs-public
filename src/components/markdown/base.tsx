@@ -1,0 +1,230 @@
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { CodeBlock } from '@/components/common/code-block';
+import { markdownTableComponents } from '@/components/common/markdown-table';
+import { HeadingTitle } from '../layout/heading';
+import type { MDXComponents } from 'mdx/types';
+import { Link } from '@/i18n/navigation.client';
+import { AudioPlayer } from '../common/audio/lazy';
+import { Image } from './image';
+import { OrderedList, UnorderedList, ListItem } from './ordered-list';
+
+type HeadingProps = React.DetailedHTMLProps<
+  React.HTMLAttributes<HTMLHeadingElement>,
+  HTMLHeadingElement
+> & {
+  color?: 'destructive' | 'default' | 'muted' | 'primary' | null | undefined;
+};
+
+type ParagraphProps = React.DetailedHTMLProps<
+  React.HTMLAttributes<HTMLParagraphElement>,
+  HTMLParagraphElement
+>;
+
+type StrongProps = React.DetailedHTMLProps<
+  React.HTMLAttributes<HTMLElement>,
+  HTMLElement
+>;
+
+type LiProps = React.DetailedHTMLProps<
+  React.LiHTMLAttributes<HTMLLIElement>,
+  HTMLLIElement
+>;
+
+export type AnchorProps = React.DetailedHTMLProps<
+  React.AnchorHTMLAttributes<HTMLAnchorElement>,
+  HTMLAnchorElement
+>;
+
+export const baseComponents = {
+  h1: ({ children, className, ref: _r, ...props }: HeadingProps) => {
+    return (
+      <HeadingTitle as="h1" className={className} {...props}>
+        {children}
+      </HeadingTitle>
+    );
+  },
+  h2: ({ children, className, ref: _r, ...props }: HeadingProps) => {
+    return (
+      <HeadingTitle as="h2" className={className} {...props}>
+        {children}
+      </HeadingTitle>
+    );
+  },
+  h3: ({ children, className, ref: _r, ...props }: HeadingProps) => {
+    return (
+      <HeadingTitle as="h3" className={className} {...props}>
+        {children}
+      </HeadingTitle>
+    );
+  },
+  h4: ({ children, className, ref: _r, ...props }: HeadingProps) => {
+    return (
+      <HeadingTitle as="h4" className={className} {...props}>
+        {children}
+      </HeadingTitle>
+    );
+  },
+  h5: ({ children, className, ref: _r, ...props }: HeadingProps) => {
+    return (
+      <HeadingTitle as="h5" className={className} {...props}>
+        {children}
+      </HeadingTitle>
+    );
+  },
+  h6: ({ children, className, ref: _r, ...props }: HeadingProps) => {
+    return (
+      <HeadingTitle as="h6" className={className} {...props}>
+        {children}
+      </HeadingTitle>
+    );
+  },
+  p: ({ children, className, ref: _r, ...props }: ParagraphProps) => {
+    return (
+      <p {...props} className={cn('text-secondary-foreground/93', className)}>
+        {children}
+      </p>
+    );
+  },
+  strong: ({ children, className, ref: _r, ...props }: StrongProps) => {
+    return (
+      <strong
+        {...props}
+        className={cn('font-semibold text-foreground', className)}
+      >
+        {children}
+      </strong>
+    );
+  },
+  code: ({ children, className, ...props }: any) => {
+    const dataAttrs = props as Record<string, any>;
+    const isInline =
+      !dataAttrs?.['data-language'] && !className?.includes('language-');
+
+    if (isInline) {
+      return (
+        <code
+          className={cn(
+            'relative mx-1 bg-background !text-[0.765em] ring-1 ring-offset-1 ring-offset-background ring-border font-mono after:hidden before:hidden inline-flex items-center justify-center gap-2 rounded text-xs font-semibold text-foreground px-1',
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    }
+
+    return (
+      <CodeBlock
+        className={className}
+        language={dataAttrs?.['data-language'] as string}
+        filename={dataAttrs?.['data-filename'] as string}
+        highlight={dataAttrs?.['data-highlight'] as string}
+        showLineNumbers={dataAttrs?.['data-line-numbers'] === 'true'}
+      >
+        {String(children).replace(/\n$/, '')}
+      </CodeBlock>
+    );
+  },
+  pre: ({ children, className, ...props }: any) => {
+    const dataAttrs = props as Record<string, any>;
+
+    if (typeof children === 'object' && children && 'props' in children) {
+      const codeElement = children as any;
+      const codeProps = codeElement.props || {};
+      const language = codeProps.className?.replace('language-', '') || 'text';
+      const codeContent = codeProps?.children || '';
+
+      return (
+        <CodeBlock
+          className={className}
+          language={language}
+          filename={dataAttrs?.['data-filename'] as string}
+          highlight={dataAttrs?.['data-highlight'] as string}
+          showLineNumbers={dataAttrs?.['data-line-numbers'] === 'true'}
+        >
+          {String(codeContent).replace(/\n$/, '')}
+        </CodeBlock>
+      );
+    }
+
+    return (
+      <pre
+        className={cn(
+          'mb-4 mt-6 overflow-x-auto rounded-lg border bg-muted p-4',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </pre>
+    );
+  },
+  li: ({ children, className, ref: _r, ...props }: LiProps) => {
+    return (
+      <ListItem className={className} {...props}>
+        {children}
+      </ListItem>
+    );
+  },
+  a: ({ children, className, href, ref: _r, ...props }: AnchorProps) => {
+    if (!href) {
+      return (
+        <span
+          className={cn('text-primary-soft hover:text-primary', className)}
+          {...props}
+        >
+          {children}
+        </span>
+      );
+    }
+    const isExternal = href.startsWith('http');
+    return (
+      <Link
+        className={cn('text-primary-soft hover:text-primary', className)}
+        href={href}
+        target={isExternal ? '_blank' : undefined}
+        rel={isExternal ? 'noopener noreferrer' : undefined}
+      >
+        {children}
+      </Link>
+    );
+  },
+  ul: ({
+    children,
+    className,
+    ref: _r,
+    ...props
+  }: React.DetailedHTMLProps<
+    React.HTMLAttributes<HTMLUListElement>,
+    HTMLUListElement
+  >) => {
+    return (
+      <UnorderedList className={className} {...props}>
+        {children}
+      </UnorderedList>
+    );
+  },
+  ol: ({
+    children,
+    className,
+    ref: _r,
+    ...props
+  }: React.DetailedHTMLProps<
+    React.OlHTMLAttributes<HTMLOListElement>,
+    HTMLOListElement
+  >) => {
+    return (
+      <OrderedList className={className} {...props}>
+        {children}
+      </OrderedList>
+    );
+  },
+  Audio: AudioPlayer,
+  Image: Image,
+  ...markdownTableComponents,
+};
+
+export const baseMarkdownComponents: MDXComponents =
+  baseComponents as unknown as MDXComponents;

@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Medium 3.1',
-  description: `Our frontier-class multimodal model released August 2025. Improving tone and performance.`,
-  shortDescription: `Our frontier-class multimodal model released August 2025.`,
+  describe: (l) => ({
+    description: l.text(`Our frontier-class multimodal model released August 2025. Improving tone and performance.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our frontier-class multimodal model released August 2025.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'mistral-medium-3-1-25-08',
-  releaseDate: 'August 12, 2025',
+  releaseDate: '2025-08-12',
   version: '25.08',
   frontier: true,
   class: 'Generalist',
@@ -17,8 +19,8 @@ export default {
   paperlink: null,
   contextLength: '128k',
   ratings: { 
-    speed: { stars: 2.0, label: 'Slow' },
-    performance: { stars: 4.0, label: 'Very Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 2.0,
+    performance: 4.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -36,7 +38,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'batching', 'agents-conversations', 'chat-completions', 'connectors'],
 
   },
-  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'August 31, 2026', replacement: 'Mistral Medium 3.5'},
+  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-08-31', replacement: 'Mistral Medium 3.5'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;

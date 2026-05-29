@@ -1,0 +1,68 @@
+---
+id: sfcortex
+title: Snowflake Cortex
+sidebar_position: 3.24
+---
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Snowflake Cortex
+
+Les modèles open source et commerciaux de Mistral AI peuvent être exploités depuis la plateforme Snowflake Cortex sous forme d'endpoints entièrement gérés. Les modèles Mistral sur Snowflake Cortex sont des services serverless, vous n'avez donc aucune infrastructure à gérer.
+
+À ce jour, les modèles suivants sont disponibles :
+- Mistral Large
+- Mistral 7B
+
+Pour plus de détails, consultez la page [modèles](/models/overview).
+
+<SectionTab as="h1" sectionId="getting-started">Premiers pas</SectionTab>
+
+Les sections suivantes décrivent les étapes pour interroger la dernière version de Mistral Large sur la plateforme Snowflake Cortex.
+
+<SectionTab as="h2" variant="secondary" sectionId="getting-access-to-the-model">Accès au modèle</SectionTab>
+
+Les éléments suivants sont requis :
+- Le compte Snowflake associé doit se trouver dans une région compatible (voir la [liste des régions](https://docs.snowflake.com/en/user-guide/snowflake-cortex/llm-functions#availability) dans la documentation Snowflake).
+- Le principal appelant le modèle doit disposer du rôle de base de données `CORTEX_USER`.
+
+<SectionTab as="h2" variant="secondary" sectionId="querying-the-model">Interroger le modèle (Chat Completion)</SectionTab>
+
+Le modèle peut être appelé soit directement en SQL soit en Python via Snowpark ML. Il est exposé via la [_fonction LLM_ `COMPLETE`](https://docs.snowflake.com/en/sql-reference/functions/complete-snowflake-cortex).
+
+<Tabs>
+    <TabItem value="sql" label="SQL">
+        ```sql
+        SELECT SNOWFLAKE.CORTEX.COMPLETE('mistral-large2', 'Who is the best French painter? Answer in one short sentence.');
+        ```
+    </TabItem>
+    <TabItem value="python" label="Python">
+        Exécutez ce code soit depuis un notebook Snowflake hébergé soit depuis votre machine locale.
+
+        Pour une exécution locale, vous devez :
+        - Créer un environnement virtuel avec le package suivant :
+            - `snowflake-ml-python` (testé avec la version `1.6.1`)
+        - Vous assurer de disposer d'un [fichier de configuration](https://docs.snowflake.com/en/user-guide/snowsql-config) avec les identifiants appropriés sur votre système. L'exemple ci-dessous suppose que vous disposez d'une connexion nommée `mistral` configurée de manière appropriée.
+
+        ```python
+        from snowflake.snowpark import Session
+        from snowflake.ml.utils import connection_params
+        from snowflake.cortex import Complete
+
+        # Start session (local execution only)
+        params = connection_params.SnowflakeLoginOptions(connection_name="mistral")
+        session = Session.builder.configs(params).create()
+
+        # Query the model
+        prompt = "Who is the best French painter? Answer in one short sentence."
+        completion = Complete(model="mistral-large2", prompt=prompt)
+        print(completion)
+        ```
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="going-further">Aller plus loin</SectionTab>
+
+Pour plus d'informations et d'exemples, vous pouvez consulter la documentation Snowflake pour :
+- [Fonctions LLM](https://docs.snowflake.com/en/user-guide/snowflake-cortex/llm-functions)
+- L'API de la fonction `COMPLETE` en [SQL](https://docs.snowflake.com/en/sql-reference/functions/complete-snowflake-cortex) et [Python](https://docs.snowflake.com/en/developer-guide/snowpark-ml/reference/latest/api/model/snowflake.cortex.Complete).

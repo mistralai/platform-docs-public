@@ -5,8 +5,10 @@ import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { KeyboardKey } from '@/components/ui/keyboard-key';
+import { useLingo } from '@lingo.dev/react';
 
 export function ThemeToggle() {
+  const l = useLingo();
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = React.useCallback(() => {
@@ -45,7 +47,7 @@ export function ThemeToggle() {
       <div className="size-8 z-10 flex items-center justify-center transition-opacity duration-300 opacity-50 dark:opacity-100 pointer-events-auto">
         <Moon className="size-4" />
       </div>
-      <span className="sr-only">Toggle theme</span>
+      <span className="sr-only">{l.text('Toggle theme', { context: 'Accessible label for switching light and dark mode' })}</span>
     </Button>
   );
 }

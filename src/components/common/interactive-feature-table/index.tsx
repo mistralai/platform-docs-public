@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useLingo } from '@lingo.dev/react';
+import { getPlatformFeaturesData, type PlatformFeature, type PlatformInterfaceType } from './feature-data';
 
 const iconMap: Record<string, React.FC<any>> = {
     'message-square': ChatIcon,
@@ -29,41 +31,43 @@ const iconMap: Record<string, React.FC<any>> = {
     'file-text': PageIcon
 };
 
-export type FeatureItem = {
-    id: string;
-    name: string;
-    shortDescription: string;
-    description: string;
-    tags: string[];
-    icon: string;
-    interfaceType?: string;
-};
-
 export interface InteractiveFeatureTableProps {
-    data: FeatureItem[];
+    data?: readonly PlatformFeature[];
+    interfaceType?: PlatformInterfaceType;
     searchPlaceholder?: string;
     emptyStateMessage?: string;
 }
 
 export function InteractiveFeatureTable({
     data,
-    searchPlaceholder = "Search features...",
-    emptyStateMessage = "No features found matching"
+    interfaceType,
+    searchPlaceholder,
+    emptyStateMessage,
 }: InteractiveFeatureTableProps) {
+    const l = useLingo();
+    const resolvedSearchPlaceholder = searchPlaceholder ?? l.text('Search features...', { context: 'Placeholder in the feature-table search box' });
+    const resolvedEmptyStateMessage = emptyStateMessage ?? l.text('No features found matching', { context: 'Prefix before the search query in the feature-table empty state, e.g. \'No features found matching "foo"\'' });
     const [searchQuery, setSearchQuery] = useState('');
 
+    const features = useMemo(() => {
+        const source = data ?? getPlatformFeaturesData(l);
+        return interfaceType
+            ? source.filter(feature => feature.interfaceType === interfaceType)
+            : source;
+    }, [data, interfaceType, l]);
+
     const filteredFeatures = useMemo(() => {
-        if (!searchQuery) return data;
+        if (!searchQuery) return features;
         const lowerQuery = searchQuery.toLowerCase();
 
-        return data.filter(feature => {
+        return features.filter(feature => {
             const matchesName = feature.name.toLowerCase().includes(lowerQuery);
             const matchesShortDesc = feature.shortDescription.toLowerCase().includes(lowerQuery);
             const matchesDesc = feature.description.toLowerCase().includes(lowerQuery);
             const matchesTag = feature.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
             return matchesName || matchesShortDesc || matchesDesc || matchesTag;
         });
-    }, [searchQuery, data]);
+    }, [searchQuery, features]);
 
     return (
         <div className="flex flex-col gap-8 my-8 w-full">
@@ -71,7 +75,7 @@ export function InteractiveFeatureTable({
             <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                    placeholder={searchPlaceholder}
+                    placeholder={resolvedSearchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 h-11 w-full sm:max-w-[400px] bg-background shadow-xs transition-shadow hover:shadow-sm text-base"
@@ -81,7 +85,7 @@ export function InteractiveFeatureTable({
             {/* Dynamic Card Grid matching Mistral Aesthetic */}
             {filteredFeatures.length === 0 ? (
                 <div className="py-12 text-center flex flex-col items-center justify-center border border-dashed rounded-lg bg-muted/20">
-                    <p className="text-muted-foreground mb-4">{emptyStateMessage} "<span className="font-semibold text-foreground">{searchQuery}</span>"</p>
+                    <p className="text-muted-foreground mb-4">{resolvedEmptyStateMessage} "<span className="font-semibold text-foreground">{searchQuery}</span>"</p>
                     <Button
                         variant="outline"
                         size="sm"
@@ -89,7 +93,7 @@ export function InteractiveFeatureTable({
                         className="gap-2"
                     >
                         <CancelIcon className="h-4 w-4" />
-                        Clear search
+                        {l.text('Clear search', { context: 'Button that clears the current search query in the feature-table empty state' })}
                     </Button>
                 </div>
             ) : (

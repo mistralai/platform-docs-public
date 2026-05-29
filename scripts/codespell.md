@@ -6,8 +6,8 @@ We use [codespell](https://github.com/codespell-project/codespell) to catch comm
 
 | Command | Scope | What it does |
 |---|---|---|
-| `pnpm spellcheck` | `src/app/(docs)/` | Check documentation files for typos. |
-| `pnpm spellcheck:fix` | `src/app/(docs)/` | Auto-fix typos in documentation files (writes in place). |
+| `pnpm spellcheck` | `src/content/en/` | Check English documentation files for typos. |
+| `pnpm spellcheck:fix` | `src/content/en/` | Auto-fix typos in English documentation files (writes in place). |
 | `pnpm spellcheck:all` | `src/` | Check all source files (docs + components + scripts). |
 
 ## Configuration

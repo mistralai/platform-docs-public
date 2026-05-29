@@ -1,4 +1,4 @@
-import Link, { LinkProps } from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import * as React from 'react';
 import { useState } from 'react';
 
@@ -6,11 +6,10 @@ export const LinkPrefetch = ({
   children,
   prefetch: _ = 'onHover',
   ...props
-}: Omit<LinkProps, 'prefetch'> &
-  React.ComponentProps<'a'> & {
-    children: React.ReactNode;
-    prefetch?: boolean | 'onHover';
-  }) => {
+}: Omit<React.ComponentProps<typeof Link>, 'prefetch'> & {
+  children: React.ReactNode;
+  prefetch?: boolean | 'onHover';
+}) => {
   const [active, setActive] = useState(false);
 
   return (

@@ -1,0 +1,597 @@
+---
+id: batch-processing
+title: Batch
+sidebar_position: 15
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+import EndExampleTab from './end_example_tab/_page.mdx';
+
+import ChatCompletionTab from './chat_completion_tab/_page.mdx';
+import EmbeddingsTab from './embeddings_tab/_page.mdx';
+import OCRTab from './ocr_tab/_page.mdx';
+import OCRAnnotationsTab from './ocr_annotations_tab/_page.mdx';
+import StructuredOutputsTab from './structured_outputs_tab/_page.mdx';
+import TranscriptionsTab from './transcriptions_tab/_page.mdx';
+
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+
+# Batch
+
+Le batch permet d'exécuter des inférences asynchrones sur de gros volumes d'entrées en parallèle, réduisant les coûts de calcul tout en traitant de larges volumes de travail avec une réduction de 50 %.
+
+<SectionTab as="h1" sectionId="prepare-batch-file">Préparer un lot</SectionTab>
+
+### Préparer et envoyer votre lot
+
+Un lot est composé d'une liste de requêtes API. La structure d'une requête individuelle comprend :
+
+- Un `custom_id` unique pour identifier chaque requête et référencer les résultats après l'exécution
+- Un objet `body` contenant la requête brute telle que vous l'auriez formulée lors de l'appel à l'endpoint d'origine sans batch
+
+Voici un exemple de structuration d'une requête par lots :
+
+```jsonl
+{"custom_id": "0", "body": {"model": "mistral-small-latest", "max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French cheese?"}]}}
+{"custom_id": "1", "body": {"model": "mistral-small-latest", "max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French wine?"}]}}
+```
+
+:::tip
+Chaque ligne doit être un objet JSON valide. N'ajoutez pas de sauts de ligne à l'intérieur d'un objet JSON. Le champ `model` à l'intérieur de `body` est optionnel si vous spécifiez le modèle lors de la création du job.
+:::
+
+Un objet `body` de lot peut être **n'importe quel corps de requête valide pour l'endpoint** que vous utilisez. Ci-dessous, des exemples de lots pour différents endpoints, dont le `body` correspond au corps de requête de l'endpoint.
+
+<ExplorerTabs id="batch-examples" mode="close">
+  <ExplorerTab value="chat-completion" label="Chat Completion">
+    <ChatCompletionTab />
+  </ExplorerTab>
+  <ExplorerTab value="structured-outputs" label="Structured Outputs">
+    <StructuredOutputsTab />
+  </ExplorerTab>
+  <ExplorerTab value="embeddings" label="Embeddings">
+    <EmbeddingsTab />
+  </ExplorerTab>
+  <ExplorerTab value="document-ai-ocr" label="OCR">
+    <OCRTab />
+  </ExplorerTab>
+  <ExplorerTab value="document-ai-annotations" label="Annotations">
+    <OCRAnnotationsTab />
+  </ExplorerTab>
+  <ExplorerTab value="transcriptions" label="Transcriptions">
+    <TranscriptionsTab />
+  </ExplorerTab>
+</ExplorerTabs>
+
+Pour de gros lots allant jusqu'à 1 million de requêtes, vous créeriez un fichier .jsonl avec les données ci-dessus. Une fois enregistré, vous pouvez envoyer votre fichier d'entrée de lot pour vous assurer qu'il est correctement référencé lors du lancement des batches.
+
+:::tip
+Pour les lots de moins de 10 000 requêtes, nous supportons le [batch en ligne](#inline-batching).
+:::
+
+Il existe 2 méthodes principales pour envoyer un fichier de lot :
+
+**A.** Via Studio :
+  - Envoyez vos fichiers dans <AppLink href="https://console.mistral.ai/build/files" app="studio">Fichiers</AppLink>.
+    - Envoyez le fichier au format décrit précédemment.
+    - Définissez `purpose` sur Batch Processing.
+  - Lancez et gérez vos lots dans <AppLink href="https://console.mistral.ai/build/batches" app="studio">Lots</AppLink>.
+    - Créez et lancez un job en fournissant les `files`, `endpoint` et `model`.
+Vous n'aurez pas besoin d'utiliser l'API pour envoyer vos fichiers ou créer des jobs batch.
+
+**B.** Via l'API, expliquée ci-dessous :
+
+Pour envoyer votre fichier de lot, vous devez utiliser l'endpoint `files`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+batch_data = client.files.upload(
+    file={
+        "file_name": "test.jsonl",
+        "content": open("test.jsonl", "rb")
+    },
+    purpose = "batch"
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+batch_data = client.files.upload(
+    file={
+        "file_name": "test.jsonl",
+        "content": open("test.jsonl", "rb")
+    },
+    purpose = "batch"
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import fs from 'fs';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const batchFile = fs.readFileSync('batch_input_file.jsonl');
+const batchData = await client.files.upload({
+    file: {
+        fileName: "batch_input_file.jsonl",
+        content: batchFile,
+    },
+    purpose: "batch"
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```curl
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="batch" \
+  -F file="@batch_input_file.jsonl"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="batch-creation">Création de lot</SectionTab>
+
+### Créer un nouveau batch
+
+Créez un nouveau batch, il sera mis en file d'attente pour être traité.
+
+- Données des requêtes : les données pour les requêtes à traiter par lots. Deux options sont disponibles :
+  - `input_files` : une liste des ID de fichiers d'entrée par lots, voir comment utiliser le [batch sur fichier](#file-batching).
+  - `requests` : une liste des requêtes à traiter par lots, voir comment utiliser le [batch en ligne](#inline-batching).
+- `model` : vous ne pouvez utiliser qu'un seul modèle (par exemple, `codestral-latest`) par lot. Vous pouvez cependant exécuter plusieurs lots sur les mêmes fichiers avec différents modèles si vous souhaitez comparer les résultats.
+- `endpoint` : nous prenons actuellement en charge `/v1/embeddings`, `/v1/chat/completions`, `/v1/fim/completions`, `/v1/moderations`, `/v1/chat/moderations`, `/v1/ocr`, `/v1/classifications`, `/v1/conversations`, `/v1/audio/transcriptions`.
+- `metadata` : métadonnées personnalisées optionnelles pour le lot.
+
+<SectionTab as="h2" variant="secondary" sectionId="file-batching">Batch sur fichier</SectionTab>
+
+L'approche standard de batch repose sur des fichiers contenant toutes les requêtes à traiter. Nous prenons en charge jusqu'à 1 million de requêtes dans un seul lot, permettant une gestion efficace de gros volumes de requêtes à moindre coût. Cela convient parfaitement aux tâches nécessitant un débit élevé mais peu sensibles à la latence ou à la priorité.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+```python
+created_job = client.batch.jobs.create(
+    input_files=[batch_data.id],
+    model="mistral-small-latest",
+    endpoint="/v1/chat/completions",
+    metadata={"job_type": "testing"}
+)
+```
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const createdJob = await client.batch.jobs.create({
+    inputFiles: [batchData.id],
+    model: "mistral-small-latest",
+    endpoint: "/v1/chat/completions",
+    metadata: {jobType: "testing"}
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/batch/jobs" \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header "Content-Type: application/json" \
+--header "Accept: application/json" \
+--data '{
+    "model": "mistral-small-latest",
+    "input_files": [
+        "<uuid>"
+    ],
+    "endpoint": "/v1/chat/completions",
+    "metadata": {
+        "job_type": "testing"
+    }
+}'
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="inline-batching">Batch en ligne</SectionTab>
+
+Pour les lots de moins de 10 000 requêtes, nous prenons en charge le batch en ligne. Au lieu de créer et télécharger un fichier `.jsonl` contenant toutes les données de requête, vous pouvez inclure le corps de la requête directement dans la requête de création du traitement. Cette approche est pratique pour les tâches de plus petite échelle ou moins volumineuses.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+inline_batch_data = [
+    {
+        "custom_id": "0",
+        "body": {
+            "max_tokens": 128,
+            "messages": [{"role": "user", "content": "What is the best French cheese?"}]
+        }
+    },
+    {
+        "custom_id": "1",
+        "body": {
+            "max_tokens": 512,
+            "temperature": 0.2,
+            "messages": [{"role": "user", "content": "What is the best French wine?"}]
+        }
+    },
+    {
+        "custom_id": "2",
+        "body": {
+            "max_tokens": 256,
+            "temperature": 0.8,
+            "messages": [{"role": "user", "content": "What is the best French pastry?"}]
+        }
+    },
+]
+
+created_job = client.batch.jobs.create(
+    requests=inline_batch_data,
+    model="mistral-small-latest",
+    endpoint="/v1/chat/completions",
+    metadata={"job_type": "testing"}
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+inline_batch_data = [
+    {
+        "custom_id": "0",
+        "body": {
+            "max_tokens": 128,
+            "messages": [{"role": "user", "content": "What is the best French cheese?"}]
+        }
+    },
+    {
+        "custom_id": "1",
+        "body": {
+            "max_tokens": 512,
+            "temperature": 0.2,
+            "messages": [{"role": "user", "content": "What is the best French wine?"}]
+        }
+    },
+    {
+        "custom_id": "2",
+        "body": {
+            "max_tokens": 256,
+            "temperature": 0.8,
+            "messages": [{"role": "user", "content": "What is the best French pastry?"}]
+        }
+    },
+]
+
+created_job = client.batch.jobs.create(
+    requests=inline_batch_data,
+    model="mistral-small-latest",
+    endpoint="/v1/chat/completions",
+    metadata={"job_type": "testing"}
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const inlineBatchData = [
+    {
+        "custom_id": "0", 
+        "body": {
+            "max_tokens": 128, 
+            "messages": [{"role": "user", "content": "What is the best French cheese?"}]
+        }
+    },
+    {
+        "custom_id": "1", 
+        "body": {
+            "max_tokens": 512, 
+            "temperature": 0.2, 
+            "messages": [{"role": "user", "content": "What is the best French wine?"}]
+        }
+    },
+    {
+        "custom_id": "2", 
+        "body": {
+            "max_tokens": 256, 
+            "temperature": 0.8, 
+            "messages": [{"role": "user", "content": "What is the best French pastry?"}]
+        }
+    },
+]
+
+const createdJob = await client.batch.jobs.create({
+    requests: inlineBatchData,
+    model: "mistral-small-latest",
+    endpoint: "/v1/chat/completions",
+    metadata: {jobType: "testing"}
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/batch/jobs" \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header "Content-Type: application/json" \
+--header "Accept: application/json" \
+--data '{
+    "model": "mistral-small-latest",
+    "requests": [
+      {"custom_id": "0", "body": {"max_tokens": 128, "messages": [{"role": "user", "content": "What is the best French cheese?"}]}},
+      {"custom_id": "1", "body": {"max_tokens": 512, "temperature": 0.2, "messages": [{"role": "user", "content": "What is the best French wine?"}]}},
+      {"custom_id": "2", "body": {"max_tokens": 256, "temperature": 0.8, "messages": [{"role": "user", "content": "What is the best French pastry?"}]}}
+    ],
+    "endpoint": "/v1/chat/completions",
+    "metadata": {
+        "job_type": "testing"
+    }
+}'
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="get-retrieve">Récupérer</SectionTab>
+
+### Récupérer votre batch
+
+Une fois le lot envoyé, vous voudrez récupérer de nombreuses informations telles que :
+- Le statut du batch
+- Les résultats du batch
+- La liste des batches
+
+<SectionTab as="h2" variant="secondary" sectionId="get-a-batch-job-details">Obtenir les détails d'un batch</SectionTab>
+
+Vous pouvez récupérer les détails d'un batch grâce à son ID.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+retrieved_job = client.batch.jobs.get(job_id=created_job.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const retrievedJob = await client.batch.jobs.get({ jobId: createdJob.id});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/batch/jobs/<jobid> \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+
+<SectionTab as="h2" variant="secondary" sectionId="get-batch-job-results">Obtenir les résultats du batch</SectionTab>
+
+Une fois le batch terminé, téléchargez les résultats.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+output_file_stream = client.files.download(file_id=retrieved_job.output_file)
+
+# Write and save the file
+with open('batch_results.jsonl', 'wb') as f:
+    f.write(output_file_stream.read())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import fs from 'fs';
+
+const outputFileStream = await client.files.download({ fileId: retrievedJob.outputFile });
+
+// Write the stream to a file
+const writeStream = fs.createWriteStream('batch_results.jsonl');
+outputFileStream.pipeTo(new WritableStream({
+    write(chunk) {
+      writeStream.write(chunk);
+    },
+    close() {
+      writeStream.end();
+    }
+}));
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl 'https://api.mistral.ai/v1/files/<uuid>/content' \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="list-batch-jobs">Lister les batches</SectionTab>
+
+Vous pouvez consulter la liste de vos batches et les filtrer selon divers critères, notamment :
+
+- Statut : `QUEUED`, `RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT_EXCEEDED`, `CANCELLATION_REQUESTED` et `CANCELLED`
+- Metadata : clé et valeur de métadonnées personnalisées pour le lot
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+list_job = client.batch.jobs.list(
+    status="RUNNING",
+    metadata={"job_type": "testing"}
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const listJob = await client.batch.jobs.list({
+    status: "RUNNING",
+    metadata: {
+        jobType: "testing"
+    }
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl 'https://api.mistral.ai/v1/batch/jobs?status=RUNNING&job_type=testing'\
+--header 'x-api-key: $MISTRAL_API_KEY'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="request-the-cancellation">Demander l'annulation</SectionTab>
+
+### Annuler n'importe quel Job
+
+Si vous souhaitez annuler un job batch, vous pouvez le faire en envoyant une requête d'annulation.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+canceled_job = client.batch.jobs.cancel(job_id=created_job.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const canceledJob = await mistral.batch.jobs.cancel({
+  jobId: createdJob.id,
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/batch/jobs/<jobid>/cancel \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="an-end-to-end-example">Un exemple de bout en bout</SectionTab>
+
+Voici un exemple de bout en bout montrant comment utiliser l'API batch du début à la fin.
+
+<ExplorerTabs id="end-to-end-example" mode="close">
+  <ExplorerTab value="example" label="Exemple de bout en bout">
+    <EndExampleTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="L'API batch est-elle disponible pour tous les modèles ?">
+Oui, l'API batch est disponible pour tous les modèles.
+  </FaqItem>
+  <FaqItem question="L'API batch affecte-t-elle la tarification ?">
+
+Nous offrons une réduction de 50 % sur l'API batch. En savoir plus sur notre [tarification](https://mistral.ai/pricing#api-pricing).
+  </FaqItem>
+  <FaqItem question="L'API batch affecte-t-elle les limites de débit ?">
+Non
+  </FaqItem>
+  <FaqItem question="Quel est le nombre maximum de requêtes dans un batch ?">
+Actuellement, il existe une limite maximale de 1 million de requêtes en attente par espace de travail. Cela signifie que vous ne pouvez pas soumettre un job avec plus de 1 million de requêtes. De plus, vous ne pouvez pas soumettre deux jobs avec 600 000 requêtes chacun en même temps. Vous devrez attendre que le premier job ait traité au moins 200 000 requêtes, réduisant son nombre de requêtes en attente à 400 000. À ce moment-là, le nouveau job avec 600 000 requêtes rentrera dans la limite.
+  </FaqItem>
+  <FaqItem question="Quel est le nombre maximum de jobs batch que l'on peut créer ?">
+Actuellement, il n'y a pas de limite maximale.
+  </FaqItem>
+  <FaqItem question="Combien de temps l'API batch met-elle pour traiter les requêtes ?">
+Les vitesses de traitement peuvent être ajustées en fonction de la demande actuelle et du volume de votre requête. Les résultats de votre batch ne seront accessibles qu'une fois le traitement complet du batch terminé.
+
+Les utilisateurs peuvent définir `timeout_hours` lors de la création d'un job, ce qui spécifie le nombre d'heures après lequel le job doit expirer. La valeur par défaut est de 24 heures et doit être inférieure à 7 jours. Un batch expirera si le traitement ne se termine pas dans le délai spécifié.
+  </FaqItem>
+  <FaqItem question="Puis-je voir les résultats batch depuis mon espace de travail ?">
+Oui, les batches sont spécifiques à un espace de travail. Vous pouvez voir tous les batches et leurs résultats qui ont été créés dans l'espace de travail associé à votre clé API.
+  </FaqItem>
+  <FaqItem question="Les résultats batch expirent-ils un jour ?">
+Non, les résultats n'expirent pas pour le moment.
+  </FaqItem>
+  <FaqItem question="Les batches peuvent-ils dépasser la limite de dépenses ?">
+Oui, en raison du débit élevé et du traitement concurrent, les batches peuvent légèrement dépasser la limite de dépenses configurée de votre espace de travail.
+  </FaqItem>
+</Faq>

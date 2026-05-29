@@ -13,11 +13,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ChevronUpIcon, ChevronsUpDownIcon } from '@/components/icons/pixel';
-import Link from 'next/link';
-import { getModelUrl, Model } from '@/schema';
+import { Link } from '@/i18n/navigation.client';
+import { getModelUrl, Model, models, ModelSlug } from '@/schema';
+import { useLingo } from '@lingo.dev/react';
+import type { Lingo } from '@lingo.dev/react';
 
 interface ModelTableProps {
-  data: Model[];
+  slugs: ModelSlug[];
   className?: string;
   showAll?: boolean;
   onToggleShowAll?: () => void;
@@ -27,10 +29,11 @@ interface ModelTableProps {
 
 interface ModelRowProps {
   data: Model;
+  l: Lingo;
   isDeprecated?: boolean;
 }
 
-function ModelRowResponsive({ data, isDeprecated }: ModelRowProps) {
+function ModelRowResponsive({ data, l, isDeprecated }: ModelRowProps) {
   const isRetired =
     data.metadata?.retirementDate &&
     new Date(data.metadata.retirementDate) < new Date();
@@ -38,6 +41,7 @@ function ModelRowResponsive({ data, isDeprecated }: ModelRowProps) {
     data.metadata?.deprecationDate &&
     new Date(data.metadata.deprecationDate) < new Date();
   const apiName = data.identifiers.apiNames[0];
+  const dateOptions: Intl.DateTimeFormatOptions = { dateStyle: undefined, year: 'numeric', month: 'numeric', day: 'numeric' };
 
   const rowClassName = cn(
     'transition-opacity duration-200',
@@ -84,10 +88,10 @@ function ModelRowResponsive({ data, isDeprecated }: ModelRowProps) {
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-foreground/70">
-            {data.metadata?.deprecationDate}
+            {data.metadata?.deprecationDate && l.date(new Date(data.metadata.deprecationDate), dateOptions)}
           </span>
           <span className="text-foreground/70">
-            {data.metadata?.retirementDate}
+            {data.metadata?.retirementDate && l.date(new Date(data.metadata.retirementDate), dateOptions)}
           </span>
         </div>
       </TableCell>
@@ -126,13 +130,16 @@ function ModelRowResponsive({ data, isDeprecated }: ModelRowProps) {
  * @param defaultVisible - Number of rows to show initially (default: 6)
  */
 export function ModelTable({
-  data,
+  slugs,
   className,
   showAll = false,
   onToggleShowAll,
   forceDeprecated = false,
   defaultVisible = 6,
 }: ModelTableProps) {
+  const l = useLingo();
+  const slugSet = new Set<string>(slugs);
+  const data = models.filter(m => slugSet.has(m.slug));
   return (
     <div className={cn('w-full space-y-4', className)}>
       <div className="relative">
@@ -142,17 +149,17 @@ export function ModelTable({
             <TableHeader>
               <TableRow className="border-none">
                 <TableHead className="min-w-[180px] sm:w-[190px] font-bold text-foreground text-xs 2xl:text-sm border-none">
-                  Model
+                  {l.text('Model', { context: 'Table heading for the AI model name' })}
                 </TableHead>
                 <TableHead className="min-w-[60px] sm:w-[80px] font-bold text-foreground text-xs 2xl:text-sm border-none">
-                  Version
+                  {l.text('Version', { context: 'Table heading for the AI model version' })}
                 </TableHead>
                 <TableHead className="min-w-[140px] sm:w-[190px] font-bold text-foreground text-xs 2xl:text-sm border-none text-center">
-                  API
+                  {l.text('API', { context: 'Table heading for the AI model API identifier' })}
                 </TableHead>
                 <TableHead className="min-w-[180px] sm:w-[220px] hidden sm:table-cell font-bold text-foreground text-xs 2xl:text-sm border-none">
                   <div className="flex items-center justify-between gap-2">
-                    Deprecation
+                    {l.text('Deprecation', { context: 'Table heading for the AI model deprecation date' })}
                     <svg
                       className="w-8 h-4 text-foreground"
                       viewBox="0 0 32 6"
@@ -164,11 +171,11 @@ export function ModelTable({
                         fill="currentColor"
                       />
                     </svg>
-                    Retirement
+                    {l.text('Retirement', { context: 'Table heading for the AI model retirement date' })}
                   </div>
                 </TableHead>
                 <TableHead className="hidden lg:table-cell min-w-[140px] sm:min-w-[180px] font-bold text-foreground text-xs 2xl:text-sm text-end border-none">
-                  Alternative
+                  {l.text('Alternative', { context: 'Table heading for the replacement AI model' })}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -184,7 +191,7 @@ export function ModelTable({
             id="scroll-hint"
           >
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-t-sm">
-              <span>Scroll for more</span>
+              <span>{l.text('Scroll for more', { context: 'Hover hint at the bottom of the model table indicating more rows are scrollable' })}</span>
               <ChevronUpIcon className="w-3 h-3 rotate-180" />
             </div>
           </div>
@@ -233,6 +240,7 @@ export function ModelTable({
                     <ModelRowResponsive
                       key={`${item.name}-${index}`}
                       data={item}
+                      l={l}
                       isDeprecated={forceDeprecated || isDeprecated}
                     />
                   );

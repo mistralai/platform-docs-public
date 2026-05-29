@@ -1,3 +1,5 @@
+'use client';
+
 // components/mdx/Admonition.tsx
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
@@ -10,6 +12,7 @@ import {
 } from 'lucide-react';
 import InfoHint from '../icons/info-hint';
 import { Prose } from './prose';
+import { useLingo } from '@lingo.dev/react';
 
 type AdmonitionProps = {
   type?: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success' | 'virgin';
@@ -52,7 +55,19 @@ export function Admonition({
   hideType = false,
   children,
 }: AdmonitionProps) {
+  const l = useLingo();
   const base = cn(admonitionVariants({ type }));
+
+  const typeLabel: Record<NonNullable<AdmonitionProps['type']>, string> = {
+    info: l.text('Information', { context: 'Admonition callout label for info-type notes' }),
+    note: l.text('Note', { context: 'Admonition callout label for generic notes' }),
+    tip: l.text('Tip', { context: 'Admonition callout label for tips' }),
+    caution: l.text('Caution', { context: 'Admonition callout label for caution warnings' }),
+    warning: l.text('Warning', { context: 'Admonition callout label for warnings' }),
+    danger: l.text('Danger', { context: 'Admonition callout label for danger warnings' }),
+    success: l.text('Success', { context: 'Admonition callout label for success messages' }),
+    virgin: '',
+  };
 
   const isCollapsible = String(collapsible) === 'true' || collapsible === true;
   const isOpen = String(open) === 'true' || open === true;
@@ -74,7 +89,7 @@ export function Admonition({
         <div className="flex items-center gap-2">
           <AdminitionIcon type={type} />
           <span className="text-sm font-bold uppercase text-foreground/70">
-            {!hideType && <AdminitionTypeText type={type} />}
+            {!hideType && typeLabel[type]}
           </span>
         </div>
         {title && <div className="font-semibold mb-1">{title}</div>}
@@ -83,19 +98,6 @@ export function Admonition({
     </div>
   );
 }
-
-const AdminitionTypeText = ({
-  type,
-}: {
-  type: 'info' | 'note' | 'tip' | 'caution' | 'warning' | 'danger' | 'success' | 'virgin';
-}) => {
-  switch (type) {
-    case 'info':
-      return 'Information';
-    default:
-      return type;
-  }
-};
 
 const AdminitionIcon = ({
   type,

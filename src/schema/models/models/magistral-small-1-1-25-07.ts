@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Magistral Small 1.1',
-  description: `Our small reasoning model released July 2025.`,
-  shortDescription: `Our small reasoning model released July 2025.`,
+  describe: (l) => ({
+    description: l.text(`Our small reasoning model released July 2025.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our small reasoning model released July 2025.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'magistral-small-1-1-25-07',
-  releaseDate: 'July 24, 2025',
+  releaseDate: '2025-07-24',
   version: '25.07',
   frontier: false,
   class: 'Generalist',
@@ -33,8 +35,8 @@ export default {
   paperlink: null,
   contextLength: '40k',
   ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -52,7 +54,7 @@ export default {
     features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: 'October 31, 2025', retirementDate: 'November 30, 2025', replacement: 'Magistral Small 1.2'},
+  metadata: {deprecationDate: '2025-10-31', retirementDate: '2025-11-30', replacement: 'Magistral Small 1.2'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

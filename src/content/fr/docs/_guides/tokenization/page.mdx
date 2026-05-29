@@ -1,0 +1,359 @@
+---
+id: tokenization
+title: Tokenisation
+sidebar_position: 1.4
+---
+
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/mistral-common/blob/main/examples/tokenizer.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+La tokenisation est une étape fondamentale dans les LLM. C'est le processus de découpage du texte en unités plus petites, appelées tokens. Nous avons récemment publié en open source notre tokenizer chez Mistral AI. Ce guide vous présentera les principes fondamentaux de la tokenisation, des détails sur nos tokenizers open source, et comment utiliser nos tokenizers en Python.
+
+## Qu'est-ce que la tokenisation ?
+
+La tokenisation est la première étape et la dernière étape du traitement et de la modélisation du texte. Les textes doivent être représentés sous forme de nombres dans nos modèles pour que notre modèle puisse les comprendre. La tokenisation découpe le texte en tokens, et chaque token se voit attribuer une représentation numérique, ou index, qui peut être utilisé pour alimenter un modèle. Dans un workflow LLM typique :
+
+- Nous encodons d'abord le texte d'entrée en tokens à l'aide d'un tokenizer. Chaque token unique se voit attribuer un numéro d'index spécifique dans le vocabulaire du tokenizer.
+- Une fois le texte tokenisé, ces tokens sont passés à travers le modèle, qui comprend généralement une couche d'embedding et des blocs transformer. La couche d'embedding convertit les tokens en vecteurs denses qui capturent les significations sémantiques. Consultez notre [guide des embeddings](/studio-api/knowledge-rag/embeddings) pour plus de détails. Les blocs transformer traitent ensuite ces vecteurs d'embedding pour comprendre le contexte et générer des résultats.
+- La dernière étape est le décodage, qui détokenise les tokens de sortie pour les reconvertir en texte lisible par l'humain. Cela se fait en mappant les tokens à leurs mots correspondants à l'aide du vocabulaire du tokenizer.
+
+<img src="/img/guides/tokenization1.png" alt="drawing" width="600"/>
+
+La plupart des gens ne tokenisent que du texte.
+Notre première version contient la tokenisation.
+Nos tokenizers vont au-delà de l'habituel texte \<-\> tokens,
+en ajoutant l'analyse des outils et des conversations structurées.
+Nous publions également le code de validation et de normalisation utilisé dans notre API.
+Plus précisément, nous utilisons des control tokens, qui sont des tokens spéciaux pour indiquer différents types d'éléments.
+Ces tokens ne sont pas traités comme des chaînes de caractères et sont ajoutés directement au code.
+Notez que nous itérons encore sur le tokenizer. Les choses peuvent changer et c'est l'état actuel.
+
+Nous avons publié trois versions de nos tokenizers qui alimentent différents ensembles de modèles.
+
+- v1 : `mistral-embed`, `open-mixtral-8x7b`
+- v2 : `mistral-small-2402` (déprécié), `mistral-large-2402`
+- v3 : `open-mixtral-8x22b`, `mistral-large-latest`, `mistral-small-latest`, `open-mistral-7b`
+- v3 (tekken) : `open-mistral-nemo`, `ministral-8b-latest`
+
+Ce guide se concentrera sur notre dernier tokenizer v3 (tekken) et le tokenizer v3.
+
+## Tokenizer v3 (tekken)
+
+Il existe plusieurs méthodes de tokenisation utilisées en traitement automatique du langage naturel (NLP) pour convertir le texte brut en tokens, telles que la tokenisation au niveau des mots, la tokenisation au niveau des caractères et la tokenisation au niveau des sous-mots, notamment le Byte-Pair Encoding (BPE).
+Notre tokenizer le plus récent, tekken, utilise le Byte-Pair Encoding (BPE) avec [Tiktoken](https://github.com/openai/tiktoken).
+
+Tekken a été entraîné sur plus de 100 langues et compresse le texte en langage naturel et
+le code source plus efficacement que le tokenizer SentencePiece utilisé dans les modèles Mistral précédents.
+En particulier, il est ~30 % plus efficace pour compresser le code source en chinois, italien,
+français, allemand, espagnol et russe. Il est également 2x et 3x plus efficace pour compresser
+le coréen et l'arabe, respectivement. Comparé au tokenizer Llama 3,
+Tekken s'est révélé plus efficace pour compresser le texte pour environ 85 % de toutes les langues.
+
+<img src="/img/guides/tokenization3.png" alt="drawing" width="600"/>
+
+### Notre vocabulaire de tokenisation
+
+Notre vocabulaire de tokenisation est publié dans le dossier https://github.com/mistralai/mistral-common/tree/main/tests/data. Examinons le vocabulaire de notre tokenizer v3 tekken.
+
+#### Taille du vocabulaire
+
+Notre vocabulaire se compose de 130k vocab + 1k control tokens.
+
+#### Control tokens
+
+Notre vocabulaire commence par 14 control tokens, qui sont des tokens spéciaux que nous utilisons dans le processus d'encodage pour représenter des instructions ou des indicateurs spécifiques :
+
+```
+<unk>
+<s>
+</s>
+[INST]
+[/INST]
+[AVAILABLE_TOOLS]
+[/AVAILABLE_TOOLS]
+[TOOL_RESULTS]
+[/TOOL_RESULTS]
+[TOOL_CALLS]
+<pad>
+[PREFIX]
+[MIDDLE]
+[SUFFIX]
+```
+
+Le tokenizer n'encode pas les control tokens, ce qui permet d'éviter une situation connue sous le nom de prompt injection. Par exemple, le control token "[INST]" est utilisé pour désigner le message utilisateur :
+
+- Sans les control tokens, le tokenizer traite "[INST]" comme une chaîne régulière et encode la séquence entière "[INST] I love Paris [/INST]". Cela pourrait potentiellement permettre aux utilisateurs d'inclure des balises "[INST]" et "[/INST]" dans leur message, causant une confusion pour le modèle qui pourrait interpréter une partie du message utilisateur comme un message de l'assistant.
+- Avec les control tokens, le tokenizer concatène plutôt les control tokens avec le message encodé : [INST] + encode("I love Paris") + [/INST]. Cela garantit que seul le message de l'utilisateur est encodé, et les messages encodés ont la garantie d'avoir les bonnes balises [INST] et [/INST].
+
+Vous avez peut-être remarqué que nous avons 1000 emplacements pour les control tokens. Les 1000-14=986 emplacements restants pour les control tokens sont en réalité vides pour que nous puissions ajouter davantage de control tokens à l'avenir et également garantir que notre taille de vocabulaire est de 131k (2\^17). Les ordinateurs aiment les puissances de 2 !
+
+#### Octets, caractères et caractères fusionnés
+
+Voici deux exemples du vocabulaire. token_str est null lorsque la séquence d'octets ne se décode pas en un caractère unicode complet, par exemple des octets bruts.
+
+```
+{
+    "rank": 0,
+    "token_bytes": "AA==",
+    "token_str": "\u0000"
+},
+...
+{
+    "rank": 7613,
+    "token_bytes": "IO2D",
+    "token_str": null
+},
+```
+
+### Exécuter notre tokenizer en Python
+
+Pour commencer, installons d'abord notre tokenizer et tiktoken via `pip install mistral-common tiktoken`.
+
+Une fois le tokenizer installé, dans un environnement Python, nous pouvons importer les modules nécessaires depuis `mistral_common`.
+
+```py
+from mistral_common.protocol.instruct.messages import (
+    UserMessage,
+)
+from mistral_common.protocol.instruct.request import ChatCompletionRequest
+from mistral_common.protocol.instruct.tool_calls import (
+    Function,
+    Tool,
+)
+from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+```
+
+Nous pouvons ensuite charger notre tokenizer.
+
+```py
+tokenizer = MistralTokenizer.v3(is_tekken=True)
+model_name = "nemostral"
+tokenizer = MistralTokenizer.from_model(model_name)
+```
+
+Tokenisons une série de conversations avec différents types de messages.
+
+```py
+# Tokenize a list of messages
+tokenized = tokenizer.encode_chat_completion(
+    ChatCompletionRequest(
+        tools=[
+            Tool(
+                function=Function(
+                    name="get_current_weather",
+                    description="Get the current weather",
+                    parameters={
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city and state, e.g. San Francisco, CA",
+                            },
+                            "format": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                                "description": "The temperature unit to use. Infer this from the users location.",
+                            },
+                        },
+                        "required": ["location", "format"],
+                    },
+                )
+            )
+        ],
+        messages=[
+            UserMessage(content="What's the weather like today in Paris"),
+        ],
+        model=model_name,
+    )
+)
+tokens, text = tokenized.tokens, tokenized.text
+
+```
+
+Voici la sortie de "text", qui est une représentation de débogage que vous pouvez inspecter.
+
+```
+<s>[AVAILABLE_TOOLS][{"type": "function", "function": {"name": "get_current_weather", "description": "Get the current weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", "description": "The city and state, e.g. San Francisco, CA"}, "format": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "The temperature unit to use. Infer this from the users location."}}, "required": ["location", "format"]}}}][/AVAILABLE_TOOLS][INST]What's the weather like today in Paris[/INST]
+```
+
+Pour compter le nombre de tokens, exécutez `len(tokens)` et nous obtenons 128 tokens.
+
+## Tokenizer v3
+
+Notre tokenizer v3 utilise le Byte-Pair Encoding (BPE) avec SentencePiece, une bibliothèque de tokenisation open source pour construire notre vocabulaire de tokenisation.
+
+Dans le BPE, le processus de tokenisation commence par traiter chaque octet d'un texte comme un token séparé.
+Ensuite, il ajoute itérativement de nouveaux tokens au vocabulaire pour la paire de tokens la plus fréquente apparaissant actuellement dans le corpus. Par exemple, si la paire de tokens la plus fréquente est "th" + "e", alors un nouveau token "the" sera créé et les occurrences de "th"+"e" seront remplacées par le nouveau token "the". Ce processus continue jusqu'à ce qu'aucun remplacement supplémentaire ne puisse être effectué.
+
+### Notre vocabulaire de tokenisation
+
+Notre vocabulaire de tokenisation est publié dans le dossier https://github.com/mistralai/mistral-common/tree/main/tests/data. Examinons le vocabulaire de notre tokenizer v3.
+
+#### Taille du vocabulaire
+
+Notre vocabulaire se compose de 32k vocab + 768 control tokens. Le 32k vocab comprend 256 octets et 31 744 caractères et caractères fusionnés.
+
+#### Control tokens
+
+Notre vocabulaire commence par 10 control tokens, qui sont des tokens spéciaux que nous utilisons dans le processus d'encodage pour représenter des instructions ou des indicateurs spécifiques :
+
+```
+<unk>
+<s>
+</s>
+[INST]
+[/INST]
+[TOOL_CALLS]
+[AVAILABLE_TOOLS]
+[/AVAILABLE_TOOLS]
+[TOOL_RESULTS]
+[/TOOL_RESULTS]
+```
+
+#### Octets
+
+Après les emplacements de jetons de contrôle, nous avons 256 octets dans le vocabulaire. Un octet est une unité d'information numérique composée de 8 bits. Chaque bit peut représenter l'une des deux valeurs, soit 0 soit 1. Un octet peut donc représenter 256 valeurs différentes.
+
+```
+<0x00>
+<0x01>
+...
+```
+
+Tout caractère, quelle que soit la langue ou le symbole, peut être représenté par une séquence d'un ou plusieurs octets. Lorsqu'un mot n'est pas présent dans le vocabulaire, il peut toujours être représenté par les octets correspondant à ses caractères individuels. Cela est important pour gérer les mots et caractères inconnus.
+
+#### Caractères et caractères fusionnés
+
+Enfin, nous avons les caractères et caractères fusionnés dans le vocabulaire. L'ordre des jetons est déterminé par la fréquence de ces jetons dans les données utilisées pour entraîner le modèle, les plus fréquents apparaissant au début du vocabulaire. Par exemple, deux espaces "▁", quatre espaces "▁▁▁▁", "\_t", "in" et "er" se sont avérés être les jetons les plus courants sur lesquels nous nous sommes entraînés. En descendant dans la liste du vocabulaire, les jetons deviennent moins fréquents. Vers la fin du fichier de vocabulaire, vous pourriez trouver des caractères moins courants comme les caractères chinois et coréens. Ces caractères sont moins fréquents parce qu'ils ont été rencontrés moins souvent dans les données d'entraînement, et non parce qu'ils sont moins utilisés en général.
+
+```
+▁▁
+▁▁▁▁
+▁t
+in
+er
+...
+벨
+ゼ
+梦
+```
+
+### Exécuter notre tokenizer en Python
+
+Pour commencer, installons d'abord notre tokenizer via `pip install mistral-common`.
+
+Une fois le tokenizer installé, dans un environnement Python, nous pouvons importer les modules nécessaires depuis `mistral_common`.
+
+```python
+from mistral_common.protocol.instruct.messages import (
+    AssistantMessage,
+    UserMessage,
+    ToolMessage
+)
+from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+from mistral_common.protocol.instruct.tool_calls import Function, Tool, ToolCall, FunctionCall
+from mistral_common.protocol.instruct.request import ChatCompletionRequest
+```
+
+Nous chargeons notre tokenizer avec `MistralTokenizer` et spécifions la version du tokenizer que nous souhaitons charger.
+
+```
+tokenizer_v3 = MistralTokenizer.v3()
+```
+
+Tokenisons une série de conversations avec différents types de messages
+
+```python
+tokenized = tokenizer_v3.encode_chat_completion(
+    ChatCompletionRequest(
+        tools=[
+            Tool(
+                function=Function(
+                    name="get_current_weather",
+                    description="Get the current weather",
+                    parameters={
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city and state, e.g. San Francisco, CA",
+                            },
+                            "format": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                                "description": "The temperature unit to use. Infer this from the users location.",
+                            },
+                        },
+                        "required": ["location", "format"],
+                    },
+                )
+            )
+        ],
+        messages=[
+            UserMessage(content="What's the weather like today in Paris"),
+            AssistantMessage(
+                content=None,
+                tool_calls=[
+                    ToolCall(
+                        id="VvvODy9mT",
+                        function=FunctionCall(
+                            name="get_current_weather",
+                            arguments='{"location": "Paris, France", "format": "celsius"}',
+                        ),
+                    )
+                ],
+            ),
+            ToolMessage(
+                tool_call_id="VvvODy9mT", name="get_current_weather", content="22"
+            ),
+            AssistantMessage(
+                content="The current temperature in Paris, France is 22 degrees Celsius.",
+            ),
+            UserMessage(content="What's the weather like today in San Francisco"),
+            AssistantMessage(
+                content=None,
+                tool_calls=[
+                    ToolCall(
+                        id="fAnpW3TEV",
+                        function=FunctionCall(
+                            name="get_current_weather",
+                            arguments='{"location": "San Francisco", "format": "celsius"}',
+                        ),
+                    )
+                ],
+            ),
+            ToolMessage(
+                tool_call_id="fAnpW3TEV", name="get_current_weather", content="20"
+            ),
+        ],
+        model="test",
+    )
+)
+
+tokens, text = tokenized.tokens, tokenized.text
+```
+
+Voici la sortie de "text", qui est une représentation de débogage pour votre inspection.
+
+```
+'<s>[INST] What\'s the weather like today in Paris[/INST][TOOL_CALLS] [{"name": "get_current_weather", "arguments": {"location": "Paris, France", "format": "celsius"}, "id": "VvvODy9mT"}]</s>[TOOL_RESULTS] {"call_id": "VvvODy9mT", "content": 22}[/TOOL_RESULTS] The current temperature in Paris, France is 22 degrees Celsius.</s>[AVAILABLE_TOOLS] [{"type": "function", "function": {"name": "get_current_weather", "description": "Get the current weather", "parameters": {"type": "object", "properties": {"location": {"type": "string", "description": "The city and state, e.g. San Francisco, CA"}, "format": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "The temperature unit to use. Infer this from the users location."}}, "required": ["location", "format"]}}}][/AVAILABLE_TOOLS][INST] What\'s the weather like today in San Francisco[/INST][TOOL_CALLS] [{"name": "get_current_weather", "arguments": {"location": "San Francisco", "format": "celsius"}, "id": "fAnpW3TEV"}]</s>[TOOL_RESULTS] {"call_id": "fAnpW3TEV", "content": 20}[/TOOL_RESULTS]'
+```
+
+Pour compter le nombre de jetons, exécutez `len(tokens)` et nous obtenons 302 jetons.
+
+## Cas d'usage
+
+### Tâches NLP
+
+Comme nous l'avons mentionné précédemment, la tokenisation est une première étape cruciale dans les tâches de traitement du langage naturel (NLP). Une fois notre texte tokenisé, nous pouvons utiliser ces jetons pour créer des embeddings de texte, qui sont des représentations vectorielles denses du texte. Ces embeddings peuvent ensuite être utilisés pour diverses tâches NLP, telles que la classification de texte, l'analyse de sentiment et la traduction automatique.
+
+L'API d'embedding de Mistral simplifie ce processus en combinant les étapes de tokenisation et d'embedding en une seule. Avec cette API, nous pouvons facilement créer des embeddings de texte pour un texte donné, sans avoir à tokeniser séparément le texte et créer des embeddings à partir des jetons.
+
+Si vous souhaitez en savoir plus sur l'utilisation de l'API d'embedding de Mistral, consultez notre [guide d'embedding](/studio-api/knowledge-rag/embeddings), qui fournit des instructions détaillées et des exemples.
+
+### Comptage de jetons
+
+Les endpoints API LLM de Mistral AI facturent en fonction du nombre de jetons dans le texte d'entrée.
+
+Pour vous aider à estimer vos coûts, notre API de tokenisation facilite le comptage du nombre de jetons dans votre texte. Exécutez simplement `len(tokens)` comme indiqué dans l'exemple ci-dessus pour obtenir le nombre total de jetons dans le texte, que vous pouvez ensuite utiliser pour estimer votre coût en fonction de nos informations tarifaires.

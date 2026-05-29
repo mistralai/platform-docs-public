@@ -1,0 +1,233 @@
+---
+title: Extracteurs de documents
+description: Extraire le contenu d’objets File vers des objets Document pour traitement.
+sidebar_position: 3
+sidebar_label: Extracteurs de documents
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les extracteurs de documents extraient le contenu d’un objet `File` vers un objet `Document` pour permettre des traitements ultérieurs. Différents types de fichiers nécessitent des logiques d’extraction spécifiques : les PDF peuvent être extraits via l’OCR, tandis que les fichiers Excel exigent une extraction de type tabulaire.
+
+Tous les extracteurs intégrés définissent l’ID du document à `file.id`.
+
+<SectionTab as="h1" sectionId="mistral-ocr-extractor">Extracteur Mistral OCR</SectionTab>
+
+Extrait les fichiers PDF avec Mistral OCR — inclut aussi les annotations sur les images.
+
+**Installation** : Bibliothèque core (aucun module supplémentaire requis)
+
+**Exemple** :
+
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.extractors import MistralOCRExtractor
+
+mistral_client = Mistral(
+    api_key="your-api-key",
+    server_url="https://custom-api-url",  # Facultatif
+)
+extractor = MistralOCRExtractor(client=mistral_client)
+document = await extractor.extract(
+    file,
+    include_image_base64=True,      # Inclure les données d’image
+    include_image_annotation=True,  # Ajouter les annotations d’image
+)
+```
+
+**Fonctionnalités :**
+
+- OCR pour documents scannés
+- Sortie au format markdown
+- Suivi des références d’images
+
+<SectionTab as="h1" sectionId="plain-text-extractor">Extracteur texte brut</SectionTab>
+
+Extracteur pour les documents de type texte brut (txt, md, code, csv, etc).
+
+**Installation** : Bibliothèque core (aucun module supplémentaire requis)
+
+**Exemple :**
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import PlainTextExtractor
+
+extractor = PlainTextExtractor(
+    page_size=2000,    # Caractères par page (par défaut)
+    encoding="utf-8",  # Encodage par défaut
+)
+document = await extractor.extract(file)
+```
+
+<SectionTab as="h1" sectionId="html-extractor">Extracteur HTML</SectionTab>
+
+Convertit les fichiers HTML en un `Document` avec contenu markdown.
+
+**Installation** : Bibliothèque core (aucun module supplémentaire requis)
+
+**Exemple :**
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import HTMLExtractor
+from mistralai.search.toolkit.ingestion.extractors.html import HTMLToMarkdownOptions
+
+extractor = HTMLExtractor(options=HTMLToMarkdownOptions(
+    ignore_tags=["script", "style"],
+))
+document = await extractor.extract(file)
+```
+
+**Fonctionnalités :**
+
+- Convertit le HTML en markdown épuré
+- Préserve la structure (titres, listes, tableaux)
+
+<SectionTab as="h1" sectionId="spreadsheet-extractor">Extracteur de feuilles de calcul</SectionTab>
+
+Extracteur pour les fichiers de feuilles de calcul (XLSX/XLS/ODS), produisant un CSV par feuille.
+
+**Installation** : Bibliothèque core (aucun module supplémentaire requis)
+
+**Exemple :**
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import SpreadsheetExtractor
+
+extractor = SpreadsheetExtractor(
+    include_sheet_name=True,  # Inclure le nom de la feuille dans la sortie
+    row_limit=None,           # Limite de lignes par feuille (optionnel)
+    col_limit=None,           # Limite de colonnes par feuille (optionnel)
+)
+document = await extractor.extract(file)
+```
+
+<SectionTab as="h1" sectionId="email-extractor">Extracteur d’e-mails</SectionTab>
+
+Extrait les fichiers e-mail (`.eml` et `.msg`) dans un document unique en markdown, avec sujet, expéditeur, destinataires, date et corps du message. Les corps HTML sont convertis en markdown si disponibles.
+
+**Installation** : `pip install "mistralai-search-toolkit[email]"` (installe `eml-parser` et `extract-msg`)
+
+**Exemple :**
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import EmailExtractor
+
+extractor = EmailExtractor()
+document = await extractor.extract(file)
+```
+
+**Fonctionnalités :**
+
+- Parse les formats EML (RFC 822) et MSG Outlook
+- Produit du markdown structuré (sujet, de, à, cc, date, corps)
+- Privilégie le corps en texte brut ; à défaut, conversion du HTML en markdown
+
+**Pièces jointes :** Utilisez `extract_email_attachments` (ou `extract_eml_attachments` / `extract_msg_attachments`) pour traiter les pièces jointes à partir du même fichier e-mail. Ces fonctions renvoient une liste d’objets `EmailAttachment` (nom, type de contenu, données, extension), que vous pouvez ensuite confier à d’autres extracteurs :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import (
+    EmailExtractor,
+    EmailAttachment,
+    extract_email_attachments,
+)
+
+document = await EmailExtractor().extract(file)
+attachments = extract_email_attachments(file.raw, extension="eml")
+for att in attachments:
+    # Construisez un File à partir de att.data et passez-le dans le bon extracteur
+    ...
+```
+
+<SectionTab as="h1" sectionId="numbers-extractor">Extracteur Numbers</SectionTab>
+
+Extracteur pour les fichiers Apple Numbers (`.numbers`), produisant un CSV par table/feuille.
+
+**Installation** : Bibliothèque core (utilise `numbers-parser`)
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import NumbersExtractor, NumbersOptions
+
+extractor = NumbersExtractor(
+    row_limit=1000,           # Limite de lignes par table
+    col_limit=50,             # Limite de colonnes par table
+    include_sheet_name=True,  # Préfixer chaque bloc avec le nom de la feuille/table
+)
+document = await extractor.extract(file)
+```
+
+Utilisez `iter_csv_pages(blob, options=...)` pour parcourir les chaînes CSV sans générer de `Document` complet.
+
+<SectionTab as="h1" sectionId="legacy-office-extractor">Extracteur Office legacy</SectionTab>
+
+Extrait les formats Office anciens (`.doc`, `.ppt`, `.hwp`, `.hwpx`) en les convertissant vers PDF avec PyMuPDF Pro, puis via Mistral OCR. Ne gère pas `.xls` : utilisez plutôt `SpreadsheetExtractor`.
+
+**Installation** : Bibliothèque core (utilise `pymupdfpro`). Une licence PyMuPDF Pro peut être nécessaire.
+
+**Exemple :**
+
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.extractors import LegacyOfficeExtractor, MistralOCRExtractor
+
+ocr_extractor = MistralOCRExtractor(
+    client=Mistral(api_key="your-api-key")
+)
+extractor = LegacyOfficeExtractor(
+    ocr_extractor,
+    pymupdf_license_key="your-license-key",  # Optionnel
+)
+document = await extractor.extract(
+    file,
+    include_image_base64=True,
+    include_image_annotation=True,
+)
+```
+
+**Fonctionnalités :**
+
+- Convertit les documents legacy en PDF en mémoire, puis délègue à `MistralOCRExtractor`
+- Prend en charge les mêmes options OCR que Mistral OCR (par ex. `http_headers`, `image_limit`)
+
+<SectionTab as="h1" sectionId="comparison">Comparaison</SectionTab>
+
+| Extracteur | Types de fichiers |
+| --- | --- |
+| **MistralOCRExtractor** | PDF, DOCX, PPTX, ODT |
+| **PlainTextExtractor** | TXT, MD, CSV, JS, PY (et autres fichiers texte/code) |
+| **HTMLExtractor** | HTML, HTM |
+| **SpreadsheetExtractor** | XLS, XLSX, XLSM, XLSB, ODS, ODF |
+| **EmailExtractor** | EML, MSG |
+| **NumbersExtractor** | NUMBERS |
+| **LegacyOfficeExtractor** | DOC, PPT, HWP, HWPX |
+
+<SectionTab as="h1" sectionId="creating-custom-extractors">Créer ses propres extracteurs</SectionTab>
+
+Implémentez le protocole `DocumentExtractor` :
+
+```python
+import base64
+from mistralai.search.toolkit.ingestion.extractors import DocumentExtractor
+from mistralai.search.toolkit.document import Document, Page
+from mistralai.search.toolkit.ingestion import File
+
+class Base64FileExtractor(DocumentExtractor):
+    """Extract content from base64-encoded text files."""
+
+    async def extract(self, file: File, **kwargs) -> Document:
+        decoded_content = base64.b64decode(file.raw).decode("utf-8")
+
+        return Document(
+            id=file.id,
+            extractor_type="text",
+            content=decoded_content,
+            pages=[Page(page_number=1, markdown=decoded_content, ref_to_images={})],
+            metadata={"encoding": "base64"},
+            filename=file.name,
+            filepath=file.path,
+        )
+
+extractor = Base64FileExtractor()
+document = await extractor.extract(b64_file)
+```

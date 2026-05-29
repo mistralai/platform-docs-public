@@ -1,0 +1,109 @@
+---
+title: Using offline models
+sidebar_position: 11
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Using offline models
+
+The Vibe Code CLI supports **any model served behind an OpenAI-compatible API**. You can deploy Devstral on your own infrastructure and point the CLI at it. Useful when you need local inference, restricted internet access, or full control over where your code is sent.
+
+<SectionTab as="h2" sectionId="recommended-model">Recommended models</SectionTab>
+
+We recommend either of these open models for local usage:
+
+- **[Devstral Small 2](https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512)**: dense 24B, tuned for agentic and code tasks. Lighter hardware footprint.
+- **[Mistral Small 4](https://docs.mistral.ai/models/model-cards/mistral-small-4-0-26-03)**: 119B mixture-of-experts with 6.5B active parameters. Hybrid reasoning and coding model with a 256k context.
+
+<SectionTab as="h2" sectionId="hardware">Hardware</SectionTab>
+
+For decent performance on long contexts, we recommend deploying at **FP8 precision** with a context length of around **128k**:
+
+- **H100** or **A100** GPU for FP8 / 128k.
+- **RTX 4090** or any **24 GB VRAM** GPU for 4-bit precision with a 32k context length.
+- **CPU offload** also works on any machine with enough RAM, but it is significantly slower.
+
+Adjust precision and context length based on the model and the hardware you have.
+
+:::note
+The figures above are sized for Devstral Small 2 (24B dense). Mistral Small 4 (119B mixture-of-experts) needs significantly more VRAM to hold the weights: plan on at least one H100 80GB at FP8, more for long contexts.
+:::
+
+<SectionTab as="h2" sectionId="vllm">Deploy with vLLM</SectionTab>
+
+We recommend [vLLM](https://github.com/vllm-project/vllm) to serve Devstral.
+
+Start Devstral Small 2 on port 8080:
+
+```bash
+vllm serve mistralai/Devstral-Small-2-24B-Instruct-2512 \
+  --tool-call-parser mistral \
+  --enable-auto-tool-choice \
+  --port 8080
+```
+
+The CLI uses port 8080 as the default local server port.
+
+Useful flags:
+
+- `--tensor-parallel-size` to use multiple GPUs.
+- `--dtype` to use a lower precision.
+- `--max-model-len` to reduce the context length.
+
+<SectionTab as="h2" sectionId="other-options">Other deployment options</SectionTab>
+
+Devstral runs on any inference framework that exposes an OpenAI-compatible API. Some popular choices:
+
+- **[vLLM](https://github.com/vllm-project/vllm)** *(recommended)*
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**
+- **[LM Studio](https://lmstudio.ai/)**
+- **[Ollama](https://ollama.com)**
+
+<SectionTab as="h2" sectionId="point-cli">Point the CLI at your local server</SectionTab>
+
+Once your server is running, switch to the local model from inside the CLI:
+
+```text
+/config
+```
+
+Select the `local` model.
+
+For repeated use, create a dedicated provider and model preset in `config.toml`. See [API keys and profiles](/vibe/code/cli/api-keys-profiles) and [Configuration](/vibe/code/cli/configuration) for the preset syntax.
+
+A minimal example for a local OpenAI-compatible server on port 8080:
+
+```toml
+[[providers]]
+name = "local"
+api_base = "http://localhost:8080/v1"
+api_style = "openai"
+backend = "generic"
+
+[[models]]
+name = "mistralai/Devstral-Small-2-24B-Instruct-2512"
+provider = "local"
+alias = "devstral-local"
+
+active_model = "devstral-local"
+```
+
+{/* TODO (devs): confirm whether `api_key_env_var` is required for local providers, and whether any sentinel value (for example `none`) is supported. */}
+
+<SectionTab as="h2" sectionId="stay-in-control">Stay in control</SectionTab>
+
+- **Validate output quality** on representative tasks before relying on the local model for edits.
+- Keep your local server **on a private network** when possible.
+- **Confirm what data leaves the machine** when you mix local and remote tools (MCP, connectors).
+
+<SectionTab as="h2" sectionId="run-offline">Run fully offline</SectionTab>
+
+If you chose offline models for privacy reasons, you may also want to **disable telemetry and any background network calls**. Set the following in `~/.vibe/config.toml`:
+
+```toml
+enable_telemetry = false
+enable_auto_update = false
+```
+
+With these settings and a local provider configured above, the CLI does not contact `mistral.ai` or any other external service. Skills, MCP servers, and connectors that reach external systems must be disabled separately. Review `enabled_tools`, `disabled_tools`, `mcp_servers`, and your connectors list.

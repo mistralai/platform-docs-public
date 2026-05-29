@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import { ChevronDown, SettingsIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { headerDropdownData } from '@/schema/content/header';
+import { headerDropdownLabel } from '@/schema/content/i18n';
 import { HeaderItem } from '@/components/ui/header-logo-menu';
 import { match } from 'ts-pattern';
 import MistralLogoSolid from '@/components/icons/assets/mistral-logo-solid';
@@ -19,6 +20,7 @@ import Image from 'next/image';
 import { PRODUCT_LOGOS } from '@/schema/content/getting-started';
 import { BrandContextMenu } from './brand';
 import { useIsTablet } from '@/hooks/use-mobile';
+import { useLingo } from '@lingo.dev/react';
 
 export const BrandProductDropdown = ({
   children,
@@ -26,11 +28,13 @@ export const BrandProductDropdown = ({
   children?: React.ReactNode;
 }) => {
   const isTablet = useIsTablet();
+  const l = useLingo();
   const dropdownItems: HeaderItem[] = headerDropdownData.map(item => ({
     ...item,
+    label: headerDropdownLabel(item.id, l),
     icon: match(item.id)
-      .with('le-chat', () => (
-        <Image src={PRODUCT_LOGOS['le-chat']} alt="Le Chat" width={20} height={20} className="rounded" />
+      .with('vibe', () => (
+        <Image src={PRODUCT_LOGOS['vibe']} alt="Vibe" width={20} height={20} className="rounded" />
       ))
       .with('ai-studio', () => (
         <Image src={PRODUCT_LOGOS['studio']} alt="Studio" width={20} height={20} className="rounded" />

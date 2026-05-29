@@ -1,0 +1,161 @@
+---
+title: Découpeurs de texte
+description: Divisez des documents en objets DocumentChunk récupérables pour l'indexation.
+sidebar_position: 4
+sidebar_label: Découpeurs de texte
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les découpeurs de texte divisent les documents en objets `DocumentChunk` que l'on peut rechercher. Le choix du découpeur a un impact significatif sur la qualité du rappel.
+
+:::info
+Tous les découpeurs préservent automatiquement les métadonnées importantes dans chaque fragment :
+
+- `page_number` : numéro de page source
+- `filename` : nom de fichier d'origine
+- `filepath` : chemin du fichier d'origine
+- `start_offset` : position du caractère dans le document
+- `end_offset` : position de fin du caractère dans le document
+- `images` : liste des images référencées dans le fragment (s'il y en a)
+
+:::
+
+<SectionTab as="h1" sectionId="character-text-splitter">Character Text Splitter</SectionTab>
+
+Découpage simple basé sur le caractère. À utiliser pour des prototypes rapides ou lorsque la structure du document importe peu.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
+
+splitter = CharacterTextSplitter(
+    chunk_size=500,     # Nombre de caractères par fragment
+)
+chunks = splitter.split_document(document)
+```
+
+<SectionTab as="h1" sectionId="token-text-splitter">Token Text Splitter</SectionTab>
+
+Découpage tenant compte des jetons, à l'aide d'un tokenizer, pour gérer la fenêtre de contexte LLM et contrôler précisément le nombre de jetons.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import TokenTextSplitter
+
+splitter = TokenTextSplitter(
+    chunk_size=1000,         # Nombre de jetons par fragment
+    chunk_overlap=200,       # Chevauchement de jetons
+)
+
+chunks = splitter.split_document(document)
+```
+
+### MarkdownTextSplitter
+
+Découpe récursive, avec prise en compte des titres Markdown, pour des documents structurés ou de la documentation nécessitant la préservation de la hiérarchie des titres et des limites sémantiques.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import MarkdownTextSplitter, MarkdownTextSplitterConfig
+
+config = MarkdownTextSplitterConfig(
+    headers_to_split_on=[
+        ("#", "h1"),
+        ("##", "h2"),
+        ("###", "h3"),
+    ],
+    strip_headers=False,    # Garder les titres dans les fragments
+    chunk_size=1000,
+    chunk_overlap=200,
+)
+
+splitter = MarkdownTextSplitter(config=config)
+chunks = splitter.split_document(document)
+```
+
+**Fonctionnalités** :
+- Découpe sur les titres markdown
+- Préserve la hiérarchie des titres dans les métadonnées
+- Utilise la découpe récursive en cas de sections de grande taille
+- Maintient la structure du document
+
+### SeparatorTextSplitter
+
+Découpage récursif avec séparateurs personnalisés, adapté aux structures de documents complexes et permettant un contrôle précis sur les points de découpe et l'organisation hiérarchique du texte.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import SeparatorTextSplitter, SeparatorTextSplitterConfig
+
+config = SeparatorTextSplitterConfig(
+    chunk_size=1000,          # Taille cible (caractères)
+    chunk_max_size=1500,      # Taille maximum (caractères)
+    chunk_overlap=200,        # Chevauchement (caractères)
+    chunk_separators=[        # Testés dans l'ordre
+        "\n\n",    # Paragraphes en premier
+        "\n",      # Puis lignes
+        ". ",      # Puis phrases
+        " ",       # Puis mots
+        "",        # Enfin caractères
+    ],
+)
+
+splitter = SeparatorTextSplitter(config=config)
+chunks = splitter.split_document(document)
+```
+
+**Fonctionnalités** :
+- Teste les séparateurs dans l'ordre
+- Respecte la taille maximale même si la découpe échoue
+- Fusionne les petits fragments autant que possible
+- Retourne les offsets de début et de fin
+
+<SectionTab as="h1" sectionId="creating-custom-splitters">Créer des découpeurs personnalisés</SectionTab>
+
+Implémentez le protocole `TextSplitter` :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import TextSplitter
+from mistralai.search.toolkit.document import DocumentChunk
+
+class ParagraphSplitter(TextSplitter):
+    """Découpe le texte par paragraphe."""
+
+    def __init__(self, max_paragraphs_per_chunk: int = 3):
+        self.max_paragraphs_per_chunk = max_paragraphs_per_chunk
+
+    def split_text(self, text: str, **kwargs) -> list[DocumentChunk]:
+        paragraphs = text.split("\n\n")
+        chunks = []
+        offset = 0
+
+        for i in range(0, len(paragraphs), self.max_paragraphs_per_chunk):
+            chunk_paragraphs = paragraphs[i:i + self.max_paragraphs_per_chunk]
+            content = "\n\n".join(chunk_paragraphs)
+
+            chunks.append(DocumentChunk(
+                content=content,
+                start_offset=offset,
+                end_offset=offset + len(content),
+            ))
+            offset += len(content) + 2
+
+        return chunks
+
+splitter = ParagraphSplitter(max_paragraphs_per_chunk=3)
+chunks = splitter.split_text("First paragraph.\n\nSecond paragraph.\n\nThird paragraph.")
+```
+
+<SectionTab as="h1" sectionId="comparison">Comparaison</SectionTab>
+
+| Découpeur | Idéal pour |
+|----------|------------|
+| **CharacterTextSplitter** | Texte simple, prototypage rapide |
+| **TokenTextSplitter** | Découpage par jetons, gestion du contexte LLM |
+| **MarkdownTextSplitter** | Documents markdown, contenu structuré avec titres |
+| **SeparatorTextSplitter** | Logique de découpe personnalisée, texte hiérarchique |

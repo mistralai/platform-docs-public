@@ -1,0 +1,52 @@
+---
+title: "Recherche"
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Recherche
+
+La recherche identifie les fragments pertinents pour une requête utilisateur donnée. Le Search Toolkit prend en charge les stratégies de recherche vectorielle (sémantique), par mot-clé (BM25), et hybride. Elles peuvent être combinées pour de meilleurs résultats.
+
+Un **préprocesseur de requête** (optionnel) transforme la requête brute avant la recherche — il peut la réécrire pour plus de clarté ou la décliner en plusieurs variantes.
+
+Un ou plusieurs **Retrievers** exécutent la recherche sur l'index. Ils peuvent fonctionner en parallèle et leurs résultats sont fusionnés.
+
+Un **Reranker** optionnel réévalue les résultats fusionnés avec une méthode de scoring plus précise — LLM, cross-encoder ou fusion de rangs entre plusieurs ensembles de résultats.
+
+<SectionTab as="h1" sectionId="query-engine">Moteur de requête</SectionTab>
+
+`QueryEngine` orchestre le pipeline de recherche. Il accepte un ou plusieurs retrievers, un prétraitement de requête optionnel et des rerankers optionnels :
+
+```python
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
+from mistralai.search.toolkit.retrieval.rerankers import LLMReRanker
+from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
+
+query_engine = QueryEngine(
+    retriever=vector_retriever,       # Accepte aussi une liste de retrievers
+    query_rewriter=query_rewriter,    # Optionnel
+    rerankers=[llm_reranker],         # Optionnel, prend en charge ReRanker et GroupedRanker
+)
+
+result = await query_engine.search(
+    query="What is RAG?",
+    top_k=10,
+    include_metadata=True,
+    include_content=True,
+)
+
+print(f"Original query: {result.original_query}")
+print(f"Results: {len(result.results)}")
+```
+
+<SectionTab as="h1" sectionId="components">Composants</SectionTab>
+
+Chaque composant du pipeline de recherche est documenté en détail avec exemples et bonnes pratiques :
+
+- **[Retrievers](retrieval/retrievers)** — VectorRetriever, KeywordRetriever et patterns hybrides
+- **[Rerankers](retrieval/rerankers)** — LLMReRanker, CrossEncoderReRanker, fusion RRF et rerankers personnalisés
+- **[Prétraitement des requêtes](retrieval/preprocessing)** — Réécriture et expansion des requêtes pour améliorer la qualité de la recherche
+- **[Cache sémantique](retrieval/semantic-cache)** — Mise en cache des résultats par similarité de requête pour réduire la latence

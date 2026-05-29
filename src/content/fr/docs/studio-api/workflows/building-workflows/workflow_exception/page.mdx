@@ -1,0 +1,166 @@
+---
+id: workflows-exception
+title: Exception Workflows
+sidebar_position: 11
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# WorkflowsException
+
+Workflows fournit une classe d’exception structurée, `WorkflowsException`, pour gérer les erreurs de manière cohérente dans l’ensemble des workflows et activités.
+
+<SectionTab as="h1" sectionId="when-to-use">Quand l’utiliser</SectionTab>
+
+Levez une `WorkflowsException` pour **des erreurs attendues ou structurées** que les appelants (autres workflows, activités ou consommateurs de l’API) doivent pouvoir détecter et traiter : saisie invalide, violation de règles métier, modes d’échec connus d’un service externe. Les champs structurés `code` et `status` HTTP rendent ces erreurs reconnaissables dans tout le système et visibles dans les réponses API.
+
+Pour les **erreurs inattendues** (un `KeyError`, un `httpx.ConnectError`, un panic dans une librairie tierce), laissez l’exception se propager. La plateforme enregistrera l’erreur dans l’historique d’exécution de l’activité ou du workflow, appliquera votre stratégie de reprise, et finira par marquer l’exécution comme échouée si toutes les tentatives sont dépassées. Envelopper toutes les exceptions dans une `WorkflowsException` ajoute du bruit sans apport d’information.
+
+<SectionTab as="h1" sectionId="overview">Présentation</SectionTab>
+
+`WorkflowsException` fournit :
+
+- Des codes d’erreur structurés grâce à l’énumération `ErrorCode`
+- La correspondance avec le code de statut HTTP
+- La sérialisation en réponses JSON
+- Des méthodes factory pour les scénarios d’erreurs courants
+
+<SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import http
+import mistralai.workflows as workflows
+from mistralai.workflows.exceptions import WorkflowsException, ErrorCode
+from pydantic import BaseModel
+
+
+@workflows.activity()
+async def validate_input(value: str) -> str:
+    if not value:
+        raise WorkflowsException(
+            code=ErrorCode.INVALID_ARGUMENTS_ERROR,
+            message="Input value cannot be empty",
+            status=http.HTTPStatus.BAD_REQUEST,
+        )
+    return f"valid:{value}"
+
+
+class Input(BaseModel):
+    value: str
+
+
+@workflows.workflow.define(name="exception_workflow")
+class ExceptionWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: Input) -> str:
+        return await validate_input(params.value)
+
+
+async def main():
+    result = await workflows.execute_workflow(
+        ExceptionWorkflow,
+        params=Input(value="hello"),
+    )
+    print(result)
+
+    try:
+        await workflows.execute_workflow(
+            ExceptionWorkflow,
+            params=Input(value=""),
+        )
+    except WorkflowsException as e:
+        print(f"code:    {e.code}")
+        print(f"message: {e.message}")
+        print(f"status:  {e.status}")
+```
+
+  </TabItem>
+  <TabItem value="output" label="Sortie">
+
+```
+valid:hello
+code:    invalid_arguments_error
+message: Input value cannot be empty
+status:  400
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="constructor-parameters">Paramètres du constructeur</SectionTab>
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|-------------------|-------------|
+| `message` | `str` | requis | Message d’erreur lisible par un humain |
+| `status` | `HTTPStatus` | `INTERNAL_SERVER_ERROR` | Code de statut HTTP |
+| `code` | `ErrorCode` | `EXECUTION_ERROR` | Code d’erreur structuré |
+| `type` | `str` | `"invalid_request_error"` | Libellé d’erreur de premier niveau reflété dans la réponse API (correspond au champ `type` utilisé par les autres API Mistral). Dans la plupart des cas, vous pouvez laisser la valeur par défaut. |
+
+<SectionTab as="h1" sectionId="error-codes">Codes d’erreur</SectionTab>
+
+L’énumération `ErrorCode` définit des codes d’erreur structurés regroupés par catégorie :
+
+<SectionTab as="h2" variant="secondary" sectionId="general-errors-40">Erreurs générales (40xx)</SectionTab>
+
+| Code | Description |
+|------|-------------|
+| `execution_error` | Erreur générale d’exécution |
+| `platform_error` | Erreur liée à la plateforme |
+| `platform_service_error` | Erreur de service plateforme |
+| `platform_connection_error` | Échec de la connexion à la plateforme |
+| `platform_client_creation_error` | Échec de création du client plateforme |
+| `search_attributes_creation_error` | Échec de création d’attributs de recherche |
+
+
+<SectionTab as="h2" variant="secondary" sectionId="activity-errors-41">Erreurs d’activité (41xx)</SectionTab>
+
+| Code | Description |
+|------|-------------|
+| `activity_definition_error` | Activité définie de manière incorrecte |
+| `activity_not_found_error` | Activité non trouvée |
+| `invalid_arguments_error` | Arguments invalides |
+| `activity_not_module_level` | L’activité doit être définie au niveau du module |
+| `tool_argument_error` | Argument d’outil non valide |
+| `rate_limit_error` | Limite de requêtes dépassée |
+
+<SectionTab as="h2" variant="secondary" sectionId="workflow-errors-42">Erreurs de workflow (42xx)</SectionTab>
+
+| Code | Description |
+|------|-------------|
+| `workflow_definition_error` | Workflow défini de façon incorrecte |
+| `workflow_description_error` | Erreur de description du workflow |
+| `workflow_already_started` | Workflow déjà en cours d’exécution |
+| `workflow_not_found` | Workflow non trouvé |
+| `invalid_params_error` | Paramètres invalides |
+| `workflow_timeout_error` | Timeout du workflow |
+| `workflow_signal_definition_error` | Signal mal défini |
+| `workflow_update_definition_error` | Mise à jour mal définie |
+| `workflow_query_error` | Échec lors de l’interrogation du workflow |
+
+<SectionTab as="h2" variant="secondary" sectionId="worker-errors-43">Erreurs worker (43xx)</SectionTab>
+
+| Code | Description |
+|------|-------------|
+| `worker_registration_error` | Échec de l’enregistrement du worker |
+| `worker_runtime_config_error` | Erreur de configuration du runtime worker |
+
+<SectionTab as="h2" variant="secondary" sectionId="durable-agent-errors-44">Erreurs agent durable (44xx)</SectionTab>
+
+| Code | Description |
+|------|-------------|
+| `agent_execution_error` | Erreur d’exécution de l’agent |
+
+<SectionTab as="h2" variant="secondary" sectionId="infrastructure-errors-45">Erreurs d’infrastructure (45xx)</SectionTab>
+
+| Code | Description |
+|------|-------------|
+| `workspace_already_used` | Espace de travail déjà utilisé |
+| `in_memory_cache_error` | Erreur de cache en mémoire |
+| `rejected_query_error` | Requête rejetée |
+| `unserializable_payload_error` | Impossible de sérialiser la charge utile |
+| `blob_storage_config_error` | Erreur de configuration du stockage d’objets |

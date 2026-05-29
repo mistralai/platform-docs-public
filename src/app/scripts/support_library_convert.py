@@ -237,8 +237,8 @@ REPO_ROOT = SCRIPT_DIR.parent.parent.parent
 MAX_FILES = 100
 
 SOURCES: dict[str, SourceConfig] = {
-    "api": SourceConfig(name="api", path=REPO_ROOT / "src/app/(api)"),
-    "docs": SourceConfig(name="docs", path=REPO_ROOT / "src/app/(docs)"),
+    "api": SourceConfig(name="api", path=REPO_ROOT / "src/content/en/api"),
+    "docs": SourceConfig(name="docs", path=REPO_ROOT / "src/content/en/docs"),
 }
 
 OUTPUT_DIR = REPO_ROOT / "output"

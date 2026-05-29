@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 
 import { cn } from '@/lib/utils';
 import { CookbookSaved } from '@/schema/cookbook';

@@ -20,12 +20,13 @@ import {
 import { SidebarItem } from '@/schema';
 import HomeIcon from '@/components/icons/home';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation.client';
 import { Bullet } from '@/components/ui/bullet';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useCopyButton } from '@/components/ui/copy-button';
 import { CheckIcon, CopyIcon } from '@/components/icons/pixel';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useLingo } from '@lingo.dev/react';
 
 export interface BreadcrumbItem {
   label: string;
@@ -453,6 +454,7 @@ export const TopCategoryCta = ({
 };
 
 const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
+  const l = useLingo();
   const handleCopyMarkdown = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -484,7 +486,7 @@ const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
           size="xs"
           className="font-medium"
           onClick={handleCopy}
-          aria-label="Copy markdown"
+          aria-label={l.text('Copy markdown', { context: 'Accessible label for copying the current page as Markdown' })}
         >
           {copyState === 'copied' ? (
             <CheckIcon className="size-3 text-primary-soft" />
@@ -494,7 +496,9 @@ const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
         </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom">
-        {copyState === 'copied' ? 'Copied!' : 'Copy markdown'}
+        {copyState === 'copied'
+          ? l.text('Copied!', { context: 'Confirmation that the Markdown copy succeeded' })
+          : l.text('Copy markdown', { context: 'Command to copy the current page as Markdown' })}
       </TooltipContent>
     </Tooltip>
   );

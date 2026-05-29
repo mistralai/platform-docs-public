@@ -1,0 +1,116 @@
+---
+title: SSO
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Authentification unique (SSO)
+
+:::warning[Enterprise uniquement]
+Le SSO est disponible exclusivement sur les offres **Enterprise**. Contactez l'équipe [commerciale](https://mistral.ai/contact/) pour mettre à niveau.
+:::
+
+Le SSO permet aux utilisateurs de votre Organisation de s'authentifier avec leurs **identifiants de fournisseur d'identité (IdP) d'entreprise** existants via SAML 2.0. Nous prenons en charge tout IdP conforme, notamment Okta, Microsoft Entra ID (anciennement Azure AD) et Google Workspace.
+
+
+<SectionTab as="h1" sectionId="benefits">Avantages</SectionTab>
+
+- **Authentification centralisée** : les utilisateurs se connectent avec leurs identifiants d'entreprise habituels, réduisant ainsi la fatigue liée aux mots de passe.
+- **Création automatique de comptes** : les comptes utilisateurs sont provisionnés lors de la première connexion via votre IdP.
+- **Gestion simplifiée** : gérez les accès de manière centralisée depuis votre IdP plutôt que d'inviter les utilisateurs un par un.
+
+<SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
+
+Avant de configurer le SSO, vous devez disposer de :
+
+- Un abonnement **Enterprise**.
+- La **vérification de domaine** effectuée dans le panneau d'administration. Cela prouve que vous contrôlez le domaine et est requis à la fois pour le SSO et l'authentification par domaine de messagerie. Voir [vérification de domaine](#domain-verification) ci-dessous.
+
+<SectionTab as="h1" sectionId="domain-verification">Vérification de domaine</SectionTab>
+
+La vérification de domaine est une configuration unique qui prouve que vous possédez votre domaine de messagerie.
+
+1. Ouvrez les paramètres <AppLink href="https://admin.mistral.ai" app="admin">Accès</AppLink>.
+2. Cliquez sur **Ajouter un domaine** dans la section Propriété du domaine.
+3. Saisissez votre domaine (par exemple, `votreentreprise.com`) et cliquez sur **Ajouter un domaine**.
+4. Cliquez sur **Instructions** et copiez l'enregistrement TXT DNS fourni.
+5. Dans votre bureau d'enregistrement de domaine ou fournisseur DNS, ajoutez un nouvel enregistrement TXT :
+   - **Type** : `TXT`
+   - **Hôte/Nom** : `@` ou votre domaine (selon votre fournisseur)
+   - **Valeur** : collez le code de vérification (par exemple, `mistral-domain-verification=xxxxxx`)
+6. Enregistrez l'enregistrement et attendez la propagation DNS (généralement de 10 minutes à 24 heures).
+
+Vous pouvez vérifier l'état de propagation avec :
+
+```bash
+nslookup -type=TXT votreentreprise.com
+```
+
+Le panneau d'administration met à jour l'état sur **Vérifié** une fois la propagation terminée.
+
+:::caution
+Conservez l'enregistrement TXT DNS actif. Le supprimer interrompt à la fois l'authentification par domaine de messagerie et le SSO.
+:::
+
+<SectionTab as="h1" sectionId="setup">Configurer le SSO</SectionTab>
+
+1. Ouvrez les paramètres <AppLink href="https://admin.mistral.ai" app="admin">Accès</AppLink>.
+2. Dans la section Authentification, trouvez **Single Sign-On (SAML SSO)** et cliquez sur **Activer le SSO**.
+3. Une fenêtre de configuration apparaît. Gardez-la ouverte pendant que vous configurez votre IdP.
+4. Dans la console d'administration de votre IdP, créez une nouvelle **application SAML 2.0** pour Mistral AI.
+5. Copiez l'**URL ACS** et l'**ID d'entité** de la fenêtre Mistral dans la configuration de votre IdP.
+6. Mappez les attributs utilisateur dans votre IdP (sensible à la casse) :
+   - Prénom de l'utilisateur : `firstName`
+   - Nom de famille de l'utilisateur : `lastName`
+7. Définissez le **format Name ID** sur `EmailAddress`.
+8. Obtenez le **XML de métadonnées SAML** depuis votre IdP.
+9. Collez le XML complet dans la zone de texte de la fenêtre de configuration Mistral.
+10. Cliquez sur **Activer le SSO**.
+
+Les utilisateurs dont les adresses e-mail correspondent à votre domaine vérifié sont désormais redirigés vers votre IdP pour l'authentification.
+
+<SectionTab as="h1" sectionId="signing-in">Se connecter avec le SSO</SectionTab>
+
+Du point de vue de l'utilisateur :
+
+1. Accédez à la page de connexion Mistral AI.
+2. Saisissez votre adresse e-mail professionnelle.
+3. Le champ de mot de passe disparaît et le bouton se transforme en **Se connecter avec le SSO**.
+4. Cliquez sur **Se connecter avec le SSO**, puis sélectionnez votre organisation.
+5. Authentifiez-vous avec vos identifiants d'entreprise sur la page de connexion de votre IdP.
+6. Vous êtes redirigé vers Mistral AI, connecté.
+
+<SectionTab as="h1" sectionId="supported-idps">Fournisseurs d'identité pris en charge</SectionTab>
+
+Nous utilisons la norme SAML 2.0, donc tout IdP conforme devrait fonctionner. Les fournisseurs les plus couramment utilisés sont :
+
+- **Microsoft Entra ID** (anciennement Azure Active Directory)
+- **Google Workspace** / Google Identity Platform
+- **Okta**
+
+Consultez la documentation de votre IdP pour les instructions spécifiques de configuration d'application SAML.
+
+<SectionTab as="h1" sectionId="disabling">Désactiver le SSO</SectionTab>
+
+Vous pouvez désactiver le SSO à tout moment depuis la page des paramètres **Accès** dans le panneau d'administration.
+
+:::warning
+La désactivation du SSO signifie que les utilisateurs ne peuvent plus se connecter via votre IdP. Ils devront définir un mot de passe (via le processus de réinitialisation) ou être réinvités. Le provisionnement automatique des utilisateurs s'arrête également. Envisagez d'activer l'[authentification par domaine de messagerie](/admin/security-access/email-domain-auth) comme alternative avant de désactiver le SSO.
+:::
+
+<SectionTab as="h1" sectionId="limitations">Limitations</SectionTab>
+
+- OIDC n'est pas pris en charge. Nous utilisons uniquement SAML 2.0 pour le SSO entreprise. (OIDC/OAuth 2.0 est utilisé séparément pour la connexion sociale individuelle avec Google, Apple ou Microsoft.)
+- Le SSO est disponible uniquement sur les offres Enterprise.
+
+<SectionTab as="h1" sectionId="troubleshooting">Dépannage</SectionTab>
+
+Si le SSO échoue après la configuration :
+
+- Vérifiez que l'**URL ACS** et l'**ID d'entité** correspondent exactement entre Mistral et votre IdP.
+- Confirmez que les mappages d'attributs sont sensibles à la casse (`firstName`, `lastName`).
+- Vérifiez que le **format Name ID** est défini sur `EmailAddress`.
+- Assurez-vous que le XML de métadonnées est complet et correctement collé.
+- Contactez le [support](https://help.mistral.ai) si les problèmes persistent.

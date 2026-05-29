@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Leanstral',
-  description: `Our first open-source code agent designed for Lean 4, built for formal proof engineering in realistic repositories. 119B parameters with 6.5B active.`,
-  shortDescription: `Open-source code agent for Lean 4 formal proof engineering.`,
+  describe: (l) => ({
+    description: l.text(`Our first open-source code agent designed for Lean 4, built for formal proof engineering in realistic repositories. 119B parameters with 6.5B active.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Open-source code agent for Lean 4 formal proof engineering.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'leanstral-26-03',
-  releaseDate: 'March 16, 2026',
+  releaseDate: '2026-03-16',
   version: '26.03',
   frontier: true,
   class: 'Specialist',
@@ -33,10 +35,10 @@ export default {
   paperlink: null,
   contextLength: '256k',
   ratings: {
-    speed: { stars: 4.0, label: 'Fast' },
-    performance: { stars: 3.5, label: 'Very Smart' },
-    input: { stars: 4.0, label: 'Fast' },
-    output: { stars: 3.5, label: 'Fast' },
+    speed: 4.0,
+    performance: 3.5,
+    input: 4.0,
+    output: 3.5,
   },
   pricing: {
     type: 'custom',
@@ -55,7 +57,7 @@ export default {
     features: ['chat-completions', 'function-calling', 'agents-conversations', 'structured-outputs'],
 
   },
-  metadata: {deprecationDate: 'May 22, 2026', retirementDate: 'June 30, 2026'},
+  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-06-30'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;

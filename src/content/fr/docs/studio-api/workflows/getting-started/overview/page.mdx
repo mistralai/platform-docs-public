@@ -1,0 +1,91 @@
+---
+id: overview
+title: Présentation
+sidebar_label: Présentation
+sidebar_position: 1
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Qu’est-ce que Mistral Workflows ?
+
+:::info
+Workflows est en **aperçu public**. Nous ne prévoyons pas de changements majeurs aux APIs et fonctionnalités, mais cela reste possible. Nous vous en informerons à l’avance le cas échéant.
+:::
+
+Mistral Workflows est une plateforme conçue pour créer des **workflows IA de niveau production** : des processus multi-étapes qui combinent appels à des LLM, utilisation d’outils, APIs externes et interventions humaines. Ces workflows résistent aux pannes, redémarrages et défaillances d’une étape isolée.
+
+Vous écrivez vos workflows en code. La plateforme gère l’exécution : persistance, relances, planification, streaming, observabilité et intégration avec l’écosystème Mistral.
+
+<SectionTab as="h2" sectionId="what-it-solves">Ce que résolvent les workflows</SectionTab>
+
+Les applications basées sur les LLM ont souvent besoin de bien plus que simplement répondre à une requête. Elles orchestrent plusieurs appels de modèles, attendent des validations humaines, accèdent à des APIs externes et fonctionnent pendant plusieurs minutes, heures voire jours. Si vous faites cela directement sur votre infrastructure, il vous faudra développer vos propres relances, machines à états et logiques de reprise — et probablement tout voir casser au premier redémarrage de processus.
+
+Avec les workflows, ces tâches sont prises en charge :
+
+- **Les pannes ne font pas perdre le travail.** Chaque étape est enregistrée dans un historique d’événements. Si un processus s’arrête, un autre reprend à la dernière étape complète.
+- **Relances natives.** Configurez les backoffs par activité ; la plateforme fait le reste.
+- **Orchestration longue durée.** Mettez un workflow en pause suite à une intervention humaine ou un événement externe ; reprenez lorsque l’entrée arrive. Les workflows durent de quelques secondes à plusieurs mois.
+- **Observabilité native.** Les événements sont diffusés en temps réel, l’historique est interrogeable et les traces OpenTelemetry fonctionnent sans configuration supplémentaire.
+- **Primitives IA intégrées.** Lancez une boucle d’agent, streamez les tokens LLM vers vos clients et appelez l’API Mistral sans avoir à écrire d’intégration spécifique.
+
+L’exécution résiliente repose sur [Temporal](https://temporal.io/), un moteur open source d’orchestration de workflows tolérant aux pannes.
+
+<SectionTab as="h2" sectionId="when-to-use">Quand utiliser les workflows</SectionTab>
+
+Utilisez les workflows lorsque vous devez :
+
+- Orchestrer des pipelines LLM multi-étapes qui survivent aux pannes et redémarrages.
+- Gérer des processus avec intervention humaine pouvant durer des heures ou des jours.
+- Planifier ou réexécuter des tâches IA (de type cron ou ponctuelles).
+- Coordonner plusieurs agents avec passage de main et état partagé.
+- Remplacer ce que vous construisez actuellement avec une file d’attente, une machine à états et beaucoup de code de reprise.
+
+Si vous appelez un simple point de terminaison LLM sans orchestration, les appels SDK suffisent.
+
+<SectionTab as="h2" sectionId="composing">Composer avec l’écosystème Mistral</SectionTab>
+
+Les workflows sont la couche d’exécution durable pour vos applications IA sur Mistral. Lorsque vous combinez d’autres composants — **Agents**, **Juges**, **Jeux de données**, etc. — dans un workflow, ils héritent de ses garanties : durabilité, relances, observabilité et primitives d’interaction humaine.
+
+Vous pouvez invoquer un workflow depuis :
+
+- **L’API Mistral** : `POST /v1/workflows/{name}/execute` depuis n’importe quel client, dans n’importe quel langage.
+- **Studio** : lancez les exécutions depuis l’interface, avec des formulaires générés à partir de la signature de votre workflow, et suivez-les sur une frise d’exécution en temps réel.
+- **Vibe Work** : les workflows apparaissent comme assistants à invoquer durant une conversation.
+
+<SectionTab as="h2" sectionId="what-runs-where">Où s’exécute quoi ?</SectionTab>
+
+Workflows fonctionne en **mode hybride** : nous hébergeons l’orchestrateur, et votre code (workflows et activités) s’exécute dans votre propre environnement.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/workflows_hybrid_mode.svg'}
+  alt="Schéma d’architecture du mode hybride"
+  centered
+  className="border-none!"
+/>
+</div>
+
+**Votre environnement** contient le code que vous écrivez (généralement dans votre dépôt) et les workers qui l’exécutent. Les workers tournent sur votre ordinateur pour le développement local, ou sur votre infrastructure (Kubernetes, machines virtuelles...) en production.
+
+**L’environnement Studio** héberge l’orchestrateur (état, historique, dispatch des tâches) derrière une API REST publique et l’UI Studio. Les workers se connectent en sortant ; l’orchestrateur n’établit jamais de connexion entrante vers votre réseau.
+
+Pour les clients entreprise, l’environnement Studio peut aussi fonctionner sur votre cloud privé ou en local.
+
+:::info
+**Mode hybride** : vos données restent là où vous le souhaitez. Les entrées et sorties de workflow transitent par la plateforme, mais vous gardez le contrôle :
+
+- **Chiffrement au niveau SDK** : le SDK chiffre les données avant de quitter votre worker ; la plateforme ne stocke que le texte chiffré.
+- **Dépôt direct des données volumineuses** : la plateforme externalise les entrées/sorties dépassant 2 Mo vers *votre* stockage objet (S3, GCS ou Azure) et ne conserve que les références.
+
+Pour plus de détails, voir [Dépôt direct des données volumineuses](/studio-api/workflows/building-workflows/payload_offloading) et [Chiffrement](/studio-api/workflows/building-workflows/encryption).
+:::
+
+<SectionTab as="h2" sectionId="next-steps">Étapes suivantes</SectionTab>
+
+| Si vous voulez | Commencez ici |
+|------|------|
+| Installer le SDK | [Installation](/studio-api/workflows/getting-started/installation) |
+| Découvrir un workflow opérationnel en 5 minutes | [Votre premier workflow](/studio-api/workflows/getting-started/your_first_workflow) |
+| Comprendre l’architecture des composants | [Concepts clés](/studio-api/workflows/getting-started/core_concepts) |
+| Construire un agent LLM dans un workflow | [Agents résilients](/studio-api/workflows/building-workflows/durable_agents) |
+| Planifier un workflow récurrent | [Planification](/studio-api/workflows/building-workflows/scheduling) |

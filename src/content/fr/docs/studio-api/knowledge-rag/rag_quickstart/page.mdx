@@ -1,0 +1,279 @@
+---
+id: rag_quickstart
+title: RAG – Guide de démarrage
+slug: rag
+sidebar_position: 7
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { CollabButton } from '@/components/common/collab-button';
+
+# Guide de démarrage RAG
+
+La génération augmentée par récupération (RAG) est un framework d'IA qui combine les capacités des LLM et des systèmes de récupération d'informations. Elle permet de répondre à des questions ou de générer du contenu en exploitant des connaissances externes. Le RAG comporte deux étapes principales :
+
+1. **Récupération** : récupérer les informations pertinentes depuis une base de connaissances ou une source externe, par exemple en utilisant des embeddings de texte stockés dans une base vectorielle.
+2. **Génération** : insérer les informations pertinentes dans le prompt pour que le LLM génère l'information.
+
+Dans ce guide, nous allons parcourir un exemple très basique de RAG. Vous trouverez des guides plus approfondis dans nos [cookbooks](#rag-examples).
+
+<SectionTab as="h1" sectionId="rag-from-scratch">RAG from scratch</SectionTab>
+
+### Un guide simple pour construire un RAG from scratch
+
+<CollabButton colabUrl="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/basic_RAG.ipynb" />
+
+Cette section vise à vous guider dans le processus de construction d'un RAG basique from scratch. Nous avons deux objectifs : premièrement, offrir aux utilisateurs une compréhension complète du fonctionnement interne du RAG et démystifier les mécanismes sous-jacents ; deuxièmement, vous fournir les fondations essentielles pour construire un RAG avec un minimum de dépendances requises.
+
+<SectionTab as="h2" variant="secondary" sectionId="import-needed-packages">Importer les packages nécessaires</SectionTab>
+
+La première étape consiste à installer les packages `mistralai` et `faiss-cpu` et importer les packages nécessaires :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+import requests
+import numpy as np
+import faiss
+import os
+from getpass import getpass
+
+api_key= getpass("Type your API Key")
+client = Mistral(api_key=api_key)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+import requests
+import numpy as np
+import faiss
+import os
+from getpass import getpass
+
+api_key= getpass("Type your API Key")
+client = Mistral(api_key=api_key)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="get-data">Obtenir les données</SectionTab>
+
+Dans cet exemple très simple, nous récupérons des données à partir d'un essai écrit par Paul Graham :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+response = requests.get('https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt')
+text = response.text
+```
+
+  </TabItem>
+</Tabs>
+
+Nous pouvons également enregistrer l'essai dans un fichier local :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+f = open('essay.txt', 'w')
+f.write(text)
+f.close()
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="split-document">Diviser le document en chunks</SectionTab>
+
+Dans un système RAG, il est essentiel de diviser le document en chunks plus petits afin d'identifier et de récupérer plus efficacement les informations les plus pertinentes lors du processus de récupération ultérieur. Dans cet exemple, nous divisons simplement notre texte par caractère, regroupons 2048 caractères dans chaque chunk, et nous obtenons 37 chunks.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+chunk_size = 2048
+chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+len(chunks)
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```text
+37
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+- **Taille des chunks** : selon votre cas d'usage spécifique, il peut être nécessaire de personnaliser ou d'expérimenter différentes tailles de chunks et chevauchements pour obtenir des performances optimales en RAG. Par exemple, des chunks plus petits peuvent être plus avantageux dans les processus de récupération, car les chunks de texte plus volumineux contiennent souvent du texte de remplissage qui peut obscurcir la représentation sémantique. L'utilisation de chunks de texte plus petits dans le processus de récupération peut permettre au système RAG d'identifier et d'extraire les informations pertinentes de manière plus efficace et précise. Toutefois, il convient de considérer les compromis liés à l'utilisation de chunks plus petits, tels que l'augmentation du temps de traitement et des ressources de calcul.
+- **Comment diviser** : bien que la méthode la plus simple consiste à diviser le texte par caractère, il existe d'autres options en fonction du cas d'usage et de la structure du document. Par exemple, pour éviter de dépasser les limites de tokens dans les appels d'API, il peut être nécessaire de diviser le texte par tokens. Pour maintenir la cohésion des chunks, il peut être utile de diviser le texte par phrases, paragraphes ou en-têtes HTML. Si vous travaillez avec du code, il est souvent recommandé de diviser par chunks de code significatifs, par exemple en utilisant un parseur Abstract Syntax Tree (AST).
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="create-embeddings">Créer les embeddings pour chaque chunk de texte</SectionTab>
+
+Pour chaque chunk de texte, nous devons ensuite créer des embeddings de texte, qui sont des représentations numériques du texte dans l'espace vectoriel. Les mots ayant des significations similaires sont censés être à proximité ou avoir une distance plus courte dans l'espace vectoriel.
+Pour créer un embedding, utilisez le endpoint d'API d'embeddings de Mistral AI et le modèle d'embedding `mistral-embed`. Nous créons une fonction `get_text_embedding` pour obtenir l'embedding d'un seul chunk de texte, puis nous utilisons une compréhension de liste pour obtenir les embeddings de texte pour tous les chunks de texte.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+def get_text_embedding(input):
+    embeddings_batch_response = client.embeddings.create(
+          model="mistral-embed",
+          inputs=input
+      )
+    return embeddings_batch_response.data[0].embedding
+text_embeddings = np.array([get_text_embedding(chunk) for chunk in chunks])
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="load-vector-database">Charger dans une base de données vectorielle</SectionTab>
+
+Une fois que nous obtenons les embeddings de texte, une pratique courante consiste à les stocker dans une base de données vectorielle pour un traitement et une récupération efficaces. Il existe plusieurs bases de données vectorielles parmi lesquelles choisir. Dans notre exemple simple, nous utilisons une base de données vectorielle open-source Faiss, qui permet une recherche de similarité efficace.
+
+Avec Faiss, nous instancions une instance de la classe Index, qui définit la structure d'indexation de la base de données vectorielle. Nous ajoutons ensuite les embeddings de texte à cette structure d'indexation.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import faiss
+
+d = text_embeddings.shape[1]
+index = faiss.IndexFlatL2(d)
+index.add(text_embeddings)
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+- **Base de données vectorielle** : lors de la sélection d'une base de données vectorielle, plusieurs facteurs doivent être pris en compte, notamment la vitesse, l'évolutivité, la gestion cloud, le filtrage avancé, et open-source vs. closed-source.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="create-question-embeddings">Créer les embeddings pour une question</SectionTab>
+
+Lorsque les utilisateurs posent une question, nous devons également créer des embeddings pour cette question en utilisant les mêmes modèles d'embedding qu'auparavant.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+question = "What were the two main things the author worked on before college?"
+question_embeddings = np.array([get_text_embedding(question)])
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+- **Hypothetical Document Embeddings (HyDE)** : dans certains cas, la question de l'utilisateur peut ne pas être la requête la plus pertinente à utiliser pour identifier le contexte pertinent. Il peut être plus efficace de générer une réponse hypothétique ou un document hypothétique basé sur la requête de l'utilisateur et d'utiliser les embeddings du texte généré pour récupérer des chunks de texte similaires.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="retrieve-similar-chunks-from-the-vector-database">Récupérer les chunks similaires de la base de données vectorielle</SectionTab>
+
+Nous pouvons effectuer une recherche sur la base de données vectorielle avec `index.search`, qui prend deux arguments : le premier est le vecteur des embeddings de la question, et le second est le nombre de vecteurs similaires à récupérer. Cette fonction renvoie les distances et les indices des vecteurs les plus similaires au vecteur de la question dans la base de données vectorielle. Ensuite, sur la base des indices renvoyés, nous pouvons récupérer les chunks de texte pertinents réels qui correspondent à ces indices.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+D, I = index.search(question_embeddings, k=2) # distance, index
+retrieved_chunk = [chunks[i] for i in I.tolist()[0]]
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+- **Méthodes de récupération** : il existe de nombreuses stratégies de récupération différentes. Dans notre exemple, nous montrons une simple recherche de similarité avec les embeddings. Parfois, lorsque des métadonnées sont disponibles pour les données, il est préférable de filtrer les données en fonction des métadonnées avant d'effectuer une recherche de similarité. Il existe également d'autres méthodes de récupération statistiques comme TF-IDF et BM25 qui utilisent la fréquence et la distribution des termes dans le document pour identifier les chunks de texte pertinents.
+- **Document récupéré** : récupérons-nous toujours le chunk de texte individuel tel quel ? Pas toujours.
+  - Parfois, nous souhaitons inclure plus de contexte autour du chunk de texte réellement récupéré. Nous appelons le chunk de texte réellement récupéré « child chunk » et notre objectif est de récupérer un « parent chunk » plus large auquel le « child chunk » appartient.
+  - Nous pouvons également vouloir attribuer des poids à nos documents récupérés. Par exemple, une approche pondérée par le temps nous aiderait à récupérer le document le plus récent.
+  - Un problème courant dans le processus de récupération est le problème du « lost in the middle » où l'information au milieu d'un long contexte se perd. Nos modèles ont essayé d'atténuer ce problème. Par exemple, dans la tâche passkey, nos modèles ont démontré la capacité de trouver une « aiguille dans une botte de foin » en récupérant une passkey insérée aléatoirement dans un prompt long, jusqu'à 32k de longueur de contexte. Cependant, il vaut la peine d'expérimenter avec la réorganisation du document pour déterminer si placer les chunks les plus pertinents au début et à la fin conduit à de meilleurs résultats.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="combine-context-and-question">Combiner le contexte et la question dans un prompt et générer une réponse</SectionTab>
+
+Enfin, nous pouvons fournir les chunks de texte récupérés comme informations de contexte dans le prompt. Voici un template de prompt où nous pouvons inclure à la fois le texte récupéré et la question de l'utilisateur dans le prompt.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+prompt = f"""
+Context information is below.
+---------------------
+{retrieved_chunk}
+---------------------
+Given the context information and not prior knowledge, answer the query.
+Query: {question}
+Answer:
+"""
+```
+
+  </TabItem>
+</Tabs>
+
+Ensuite, nous pouvons utiliser l'API de chat completion de Mistral pour interagir avec un modèle Mistral (par exemple, mistral-medium-latest) et générer des réponses basées sur la question de l'utilisateur et le contexte de la question.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+def run_mistral(user_message, model="mistral-large-latest"):
+    messages = [
+        {
+            "role": "user", "content": user_message
+        }
+    ]
+    chat_response = client.chat.complete(
+        model=model,
+        messages=messages
+    )
+    return (chat_response.choices[0].message.content)
+
+run_mistral(prompt)
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```text
+'The two main things the author worked on before college were writing and programming. They wrote short stories and tried writing programs on an IBM 1401 in 9th grade.'
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+- **Techniques de prompting** : la plupart des techniques de prompting peuvent également être utilisées dans le développement d'un système RAG. Par exemple, nous pouvons utiliser le few-shot learning pour guider les réponses du modèle en fournissant quelques exemples. De plus, nous pouvons explicitement demander au modèle de formater les réponses d'une certaine manière.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="rag-examples">Exemples de RAG</SectionTab>
+
+Retrouvez de nombreux cookbooks RAG explorant divers sujets et solutions dans notre [cookbook](https://github.com/mistralai/cookbook) communautaire.
+
+Parmi eux, vous pouvez découvrir comment effectuer…
+
+- **RAG avec LangChain** : consultez notre cookbook [Adaptive RAG avec LangChain](/resources/cookbooks/third_party-langchain-adaptive_rag_mistral) pour découvrir comment utiliser LangGraph de LangChain avec l'API Mistral. Ces cookbooks couvrent diverses implémentations, notamment l'adaptive RAG, le corrective RAG et le self-RAG, montrant comment intégrer les capacités de LangChain pour une génération augmentée par récupération améliorée.
+- **RAG avec LlamaIndex** : consultez notre cookbook [Utiliser Mistral AI avec LlamaIndex](/resources/cookbooks/third_party-llamaindex-llamaindex_agentic_rag) pour apprendre comment utiliser LlamaIndex avec l'API Mistral pour effectuer des requêtes complexes sur plusieurs documents en utilisant un agent ReAct, un agent autonome alimenté par LLM capable d'utiliser des outils.
+- **RAG avec Haystack** : consultez notre cookbook [Utiliser Mistral AI avec Haystack](/resources/cookbooks/third_party-haystack-haystack_chat_with_docs) pour explorer comment utiliser Haystack avec l'API Mistral pour des fonctionnalités de chat avec des documents.

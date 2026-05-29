@@ -1,0 +1,117 @@
+---
+id: local-activities
+title: Activités locales
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Activités locales
+
+Les activités locales s'exécutent directement dans le processus worker du workflow, en passant outre les files d'attente de tâches du [déploiement](/studio-api/workflows/getting-started/core_concepts/deployments). Elles sont utiles pour des opérations rapides (moins d'une seconde) lorsque la surcharge de planification est significative.
+
+<SectionTab as="h1" sectionId="when-to-use">Quand les utiliser</SectionTab>
+
+**Utile pour :**
+
+- Calculs rapides, validations, transformations de données
+- Scénarios à haut volume où la latence est critique
+- Opérations durant moins d'une seconde
+
+**À éviter pour :**
+
+- Opérations longues (plusieurs secondes ou plus)
+- Appels à des API externes ou tâches gourmandes en I/O
+- Opérations nécessitant une isolation de relecture/retry ou du Scale indépendant
+
+<SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows import run_activities_locally
+
+@workflows.activity()
+async def validate_email(email: str) -> bool:
+    return "@" in email
+
+@workflows.workflow.define(name="user-workflow")
+class UserWorkflow:
+    @workflows.workflow.entrypoint
+    async def execute(self, email: str) -> bool:
+        with run_activities_locally():
+            result = await validate_email(email)
+        return result
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="mixed-execution">Exécution mixte</SectionTab>
+
+Combinez activités locales et distantes :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.workflow.define(name="mixed-workflow")
+class MixedWorkflow:
+    @workflows.workflow.entrypoint
+    async def execute(self, email: str) -> dict:
+        # Recherche rapide exécutée en local
+        with run_activities_locally():
+            domain = await quick_lookup(email)
+
+        # Opération lente exécutée comme activité classique
+        verified = await external_api_call(email)
+
+        return {"domain": domain, "verified": verified}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="performance-impact">Impact sur la performance</SectionTab>
+
+Les activités locales contournent les files d'attente et le passage par worker, elles sont donc en général bien plus rapides que les activités classiques. La latence réelle dépend de l'infrastructure et de la charge du workflow.
+
+| Mode d'exécution      | Profil de latence             | Idéal pour                        |
+| --------------------- | ----------------------------- | --------------------------------- |
+| Activité locale       | Sous-millisecondes à ms       | Calculs rapides, recherches       |
+| Activité classique    | Quelques dizaines à centaines de ms | Appels API, logique complexe      |
+
+<SectionTab as="h1" sectionId="limitations">Limites</SectionTab>
+
+:::warning
+**Risque de crash du worker** : les activités locales s'exécutent dans le processus du worker du workflow. Si une activité locale génère une erreur inattendue, elle peut faire planter le worker, ce qui affecte tous les workflows et activités associés. Contrairement aux activités classiques, il n'y a aucune isolation au niveau processus. Réservez les activités locales à du code que vous considérez comme sûr, sans exception non-gérée.
+:::
+
+**Contourne la planification standard :**
+
+- Pas d'isolation au niveau déploiement : les activités locales partagent les ressources avec les workflows.
+- Blocage du process worker : une activité locale lente bloque l'ensemble du worker du workflow.
+- Pas de Scale indépendant : les activités locales ne peuvent pas être scalées séparément du worker.
+
+**Paramètres d'activité (support partiel) :**
+
+Timeouts, politiques de retry et injection de dépendances fonctionnent de la même façon pour les activités locales. Les paramètres suivants **ne s'appliquent pas** car les activités locales s'exécutent déjà dans le processus worker du workflow : `sticky_to_worker`, `rate_limit`, `heartbeat_timeout`.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(
+    start_to_close_timeout=timedelta(seconds=5),
+    retry_policy_max_attempts=3
+)
+async def timed_local_activity(data: str) -> str:
+    # Les timeouts et politiques de retry s'appliquent même en local.
+    # Le rate limiting n'est PAS supporté en activité locale.
+    return data.upper()
+```
+
+  </TabItem>
+</Tabs>

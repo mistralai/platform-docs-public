@@ -1,7 +1,7 @@
 import path from 'path';
 import { readdir, mkdir, readFile, writeFile } from 'fs/promises';
 
-const DOCS_ROOT = path.join(process.cwd(), 'src', 'app', '(docs)');
+const DOCS_ROOT = path.join(process.cwd(), 'src', 'content', 'en', 'docs');
 const OUT_ROOT = path.join(process.cwd(), 'public');
 
 interface MdxImport {

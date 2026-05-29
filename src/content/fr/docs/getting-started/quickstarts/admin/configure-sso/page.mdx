@@ -1,0 +1,151 @@
+---
+title: Configurer l’authentification SSO et la vérification de domaine
+sidebar_label: Configurer SSO
+sidebar_position: 2
+description: « Vérifiez votre domaine et configurez l’authentification SAML SSO pour que les membres de l'équipe se connectent avec votre fournisseur d’identité d’entreprise. ~20 minutes. »
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+import { AppLink } from '@/components/common/app-link';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+
+# Configurer le SSO et la vérification de domaine
+
+Vérifiez le domaine de votre entreprise et connectez votre fournisseur d'identité à votre organisation Mistral.
+
+- Ajoutez un enregistrement DNS pour prouver que vous êtes propriétaire du domaine
+- Activez l'authentification par domaine e-mail pour l'onboarding automatique de l'équipe
+- Configurez le SSO SAML avec votre IdP (Okta, Azure AD ou équivalent)
+
+Une fois terminé, les membres de l'équipe se connectent avec leurs identifiants professionnels, sans mot de passe distinct.
+
+**Temps estimé :** environ 20 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Pré-requis</SectionTab>
+
+- Un **plan Enterprise** (le SSO SAML nécessite Enterprise ; la vérification de domaine fonctionne à partir du plan Team)
+- Rôle Admin dans votre organisation Mistral
+- Accès aux enregistrements DNS de votre entreprise (pour la vérification de domaine)
+- Accès à la console d'administration de votre fournisseur d'identité (Okta, Azure AD, Ping Identity ou équivalent)
+
+<SectionTab as="h2" sectionId="step-1">Étape 1 : Vérifier votre domaine</SectionTab>
+
+La vérification du domaine prouve que vous possédez le domaine e-mail de votre entreprise. Cela active l'authentification par domaine e-mail et le SSO.
+
+1. Accédez à **Administration › Paramètres** dans le <AppLink href="https://admin.mistral.ai" app="admin">panneau Admin</AppLink>.
+2. Sous **Vérification de domaine**, cliquez sur **Ajouter un domaine**.
+3. Saisissez votre domaine : par exemple, `acme.com`.
+4. Nous générons un enregistrement DNS TXT. Copiez la valeur de l'enregistrement.
+5. Ajoutez cet enregistrement TXT à la configuration DNS de votre domaine :
+
+```
+Type :  TXT
+Nom :  _mistral-verification
+Valeur : mistral-verify=abc123xyz...
+```
+
+6. Cliquez sur **Vérifier**. La propagation DNS peut prendre jusqu'à 48 heures, mais termine généralement sous 15 minutes.
+
+Vous pouvez confirmer que l'enregistrement TXT est actif avant de cliquer sur Vérifier en lançant : `dig TXT _mistral-verification.acme.com`
+
+<SectionTab as="h2" sectionId="step-2">Étape 2 : Activer l'authentification par domaine e-mail (optionnel)</SectionTab>
+
+Une fois le domaine vérifié, vous pouvez permettre à toute personne disposant d'une adresse e-mail du domaine de rejoindre automatiquement votre organisation, sans invitation individuelle.
+
+1. Accédez à **Administration › Paramètres** dans le <AppLink href="https://admin.mistral.ai" app="admin">panneau Admin</AppLink>.
+2. Sous **Authentification par domaine e-mail**, activez l'interrupteur.
+3. Sélectionnez le rôle par défaut pour les utilisateurs ajoutés automatiquement : **Membre** (recommandé).
+
+Lorsque cette option est activée, tout utilisateur qui s'inscrit avec une adresse `@acme.com` rejoint automatiquement votre organisation avec le rôle Membre.
+
+Activez ceci uniquement si vous souhaitez que tous les collaborateurs disposant d'un e-mail de votre domaine aient un accès automatique. Si vous préférez gérer l'accès manuellement, passez cette étape et envoyez une invitation à chaque utilisateur.
+
+<SectionTab as="h2" sectionId="step-3">Étape 3 : Configurer le SAML SSO</SectionTab>
+
+Le SSO SAML permet aux membres de l'équipe de se connecter via votre fournisseur d'identité professionnel, au lieu d'un mot de passe distinct.
+
+1. Accédez à **Administration › Paramètres** dans le <AppLink href="https://admin.mistral.ai" app="admin">panneau Admin</AppLink>.
+2. Sous **SSO SAML**, cliquez sur **Configurer**.
+3. Nous vous fournissons deux informations à saisir dans votre IdP :
+
+<Table className="mt-4 mb-6">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Champ</TableHead>
+      <TableHead>Valeur</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>**ACS URL** (Assertion Consumer Service)</TableCell>
+      <TableCell>Fournie par Mistral : à copier depuis la page des paramètres</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>**Entity ID** (Audience URI)</TableCell>
+      <TableCell>Fournie par Mistral : à copier depuis la page des paramètres</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+4. Dans votre IdP (Okta, Azure AD, etc.), créez une nouvelle application SAML et collez l’ACS URL ainsi que l’Entity ID.
+5. Configurez la correspondance des attributs dans l’IdP :
+
+<Table className="mt-4 mb-6">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Attribut IdP</TableHead>
+      <TableHead>Attribut Mistral</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>E-mail</TableCell>
+      <TableCell>Name ID (format e-mail)</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Prénom</TableCell>
+      <TableCell>`firstName`</TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>Nom</TableCell>
+      <TableCell>`lastName`</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+
+6. Copiez l'**URL des métadonnées IdP** (ou téléchargez le fichier XML de métadonnées) depuis votre IdP.
+7. Retournez sur la page des paramètres, collez l’URL des métadonnées, puis cliquez sur **Enregistrer**.
+
+<SectionTab as="h2" sectionId="step-4">Étape 4 : Tester la connexion SSO</SectionTab>
+
+1. Ouvrez une fenêtre de navigation privée/incognito.
+2. Ouvrez <AppLink href="https://chat.mistral.ai">Vibe</AppLink> ou <AppLink href="https://console.mistral.ai">Studio</AppLink>.
+3. Cliquez sur **Se connecter avec SSO** et saisissez votre e-mail professionnel.
+4. La page de connexion de votre IdP s'affiche.
+5. Après authentification, vous accédez au tableau de bord Mistral avec votre organisation sélectionnée.
+
+Si la connexion échoue, vérifiez que l’ACS URL et l’Entity ID sont identiques côté Mistral et dans votre IdP. Contrôlez également que le Name ID est bien au format **e-mail**.
+
+<SectionTab as="h2" sectionId="verify">Vérifier</SectionTab>
+
+Le SSO est correctement configuré si :
+
+- Le domaine affiche **Vérifié** dans les paramètres de l'organisation
+- Les membres de l'équipe peuvent se connecter via l’IdP sans mot de passe Mistral distinct
+- Les nouveaux utilisateurs se connectant via le SSO sont automatiquement ajoutés à votre organisation
+- Les prénoms et noms s’affichent correctement depuis la correspondance d'attributs
+
+<SectionTab as="h2" sectionId="whats-next">Et après</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/getting-started/quickstarts/admin/manage-workspaces" title="Gérer les espaces de travail et les clés API" />
+  <LinkCard href="/#quickstarts" title="Tous les guides Admin" />
+</UsefullLinkContainer>

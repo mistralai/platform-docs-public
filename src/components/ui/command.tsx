@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Command as CommandPrimitive } from 'cmdk';
 import { SearchIcon } from 'lucide-react';
+import { useLingo } from '@lingo.dev/react';
 
 import { cn } from '@/lib/utils';
 import {
@@ -31,8 +32,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = 'Command Palette',
-  description = 'Search for a command to run...',
+  title,
+  description,
   children,
   className,
   showCloseButton = true,
@@ -43,6 +44,9 @@ function CommandDialog({
   className?: string;
   showCloseButton?: boolean;
 }) {
+  const l = useLingo();
+  const resolvedTitle = title ?? l.text('Command Palette', { context: 'Screen-reader-only title of the Cmd-K command palette dialog' });
+  const resolvedDescription = description ?? l.text('Search for a command to run...', { context: 'Screen-reader-only description of the Cmd-K command palette dialog' });
   return (
     <Dialog {...props}>
       <DialogContent
@@ -50,8 +54,8 @@ function CommandDialog({
         showCloseButton={showCloseButton}
       >
         <DialogHeader className="sr-only bg-input">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{resolvedTitle}</DialogTitle>
+          <DialogDescription>{resolvedDescription}</DialogDescription>
         </DialogHeader>
         <Command
           shouldFilter={false}

@@ -1,0 +1,254 @@
+---
+id: completion
+title: Chat completion
+sidebar_position: 1
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import NonStreamingTab from './non_streaming_tab/_page.mdx';
+import StreamingTab from './streaming_tab/_page.mdx';
+import PrefixTab from './prefix_tab/_page.mdx';
+import SafePromptTab from './safe_prompt_tab/_page.mdx';
+import StopTab from './stop_tab/_page.mdx';
+
+# Chat completion
+
+Les grands modèles de langage (LLM) sont des systèmes d'IA qui génèrent du texte et participent à des interactions conversationnelles. Ils suivent des instructions et répondent naturellement aux prompts : des entrées comme des questions, des instructions ou des exemples de tâches. Le modèle traite le prompt et produit une sortie textuelle pertinente en guise de réponse.
+
+<Image
+  url={['/img/chat_completions.png', '/img/chat_completions_dark.png']}
+  alt="chat_completions_graph"
+  width="500px"
+  centered
+/>
+
+Les cas d'usage autour de la génération de texte comme les chat completions sont infinis et peuvent s'appliquer à une large gamme d'applications.
+Par exemple :
+- Chatbots
+- Classification
+- Extraction de données
+- Résumé de texte
+- Génération de code
+- Réponse à des questions
+
+Et bien plus encore !
+
+<SectionTab as="h1" sectionId="chat-completion">Chat completion</SectionTab>
+
+L'[API Chat Completion](https://docs.mistral.ai/api/#tag/chat) accepte une liste de messages de chat en entrée et génère une réponse. Cette réponse prend la forme d'un nouveau message de chat avec le rôle « assistant » en sortie, le « content » de chaque réponse peut être soit une `string`, soit une `list` de morceaux avec différents types de morceaux pour différentes fonctionnalités. Consultez notre [spécification API](https://docs.mistral.ai/api) pour plus de détails.
+
+<ExplorerTabs id="chat-completion">
+  <ExplorerTab value="non-streaming" label="Non-Streaming">
+    <NonStreamingTab />
+  </ExplorerTab>
+  <ExplorerTab value="streaming" label="Streaming">
+    <StreamingTab />
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="chat-messages">Messages de chat</SectionTab>
+
+Les `messages` de chat sont une collection de prompts ou de messages, chaque message ayant un rôle spécifique qui lui est attribué, tel que « system », « user », « assistant » ou « tool ».
+
+- Un `system message` est un message **optionnel** qui définit le comportement et le contexte d'un assistant IA dans une conversation, comme modifier sa personnalité ou fournir des instructions spécifiques. Un message système peut inclure des instructions de tâche, des traits de personnalité, des informations contextuelles, des contraintes de créativité et d'autres directives pertinentes pour aider l'IA à mieux comprendre et répondre à l'entrée de l'utilisateur. Consultez la section sur les capacités de prompting pour des explications sur les capacités de prompting en général.
+- Un `user message` est un message envoyé du point de vue de l'humain dans une conversation avec un assistant IA. Il fournit généralement une demande, une question ou un commentaire auquel l'assistant IA doit répondre. Les prompts utilisateur permettent à l'humain d'initier et de guider la conversation, et ils peuvent être utilisés pour demander des informations, solliciter de l'aide, fournir des retours ou s'engager dans d'autres types d'interaction avec l'IA.
+- Un `assistant message` est un message envoyé par l'assistant IA à l'utilisateur. Il vise généralement à répondre à un message utilisateur précédent en suivant ses instructions, mais vous pouvez également le trouver au début d'une conversation, par exemple pour saluer l'utilisateur.
+- Un `tool message` n'apparaît que dans le contexte de **l'appel de fonction**, il est utilisé à l'étape finale de formulation de la réponse lorsque le modèle doit formater la sortie de l'appel d'outil pour l'utilisateur. Pour en savoir plus sur l'appel de fonction, consultez le [guide](/studio-api/agents/agent-tools/function-calling).
+
+:::tip[Quand utiliser un prompt `user` versus un message `system` puis un message `user` ?]
+
+- Vous pouvez soit combiner votre message `system` et votre message `user` en un seul message `user`, soit les séparer en deux messages distincts.
+- Nous vous recommandons d'expérimenter les deux approches pour déterminer laquelle fonctionne le mieux pour votre cas d'usage spécifique.
+
+:::
+
+<SectionTab as="h1" sectionId="multi-turn">Multi-tour</SectionTab>
+
+Les chat completions peuvent être utilisées pour des conversations multi-tour. Cela signifie que vous pouvez envoyer plusieurs messages dans les deux sens entre l'utilisateur et l'assistant. C'est utile pour des applications comme les chatbots, où l'utilisateur peut avoir une conversation avec l'assistant.
+
+Il est intéressant de noter que vous pouvez avoir différents événements entrelacés entre ces interactions, comme des appels d'outils pour l'appel de fonction, ou même des transferts lors de la gestion d'agents.
+
+:::tip
+si vous êtes intéressé par une façon simplifiée de gérer les conversations multi-tour, vous pouvez consulter nos [API Agents et Conversations](/studio-api/agents/introduction). La gestion des conversations multi-tour peut être complexe, et nos API sont conçues pour simplifier ce processus tout en vous fournissant des outils et connecteurs intégrés.
+:::
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python" default>
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France?",
+        },
+        {
+            "role": "assistant",
+            "content": "The Capital of France is **Paris**.",
+        },
+        {
+            "role": "user",
+            "content": "Translate that to French.",
+        },
+    ],
+)
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-medium-latest"
+
+client = Mistral(api_key=api_key)
+
+chat_response = client.chat.complete(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France?",
+        },
+        {
+            "role": "assistant",
+            "content": "The Capital of France is **Paris**.",
+        },
+        {
+            "role": "user",
+            "content": "Translate that to French.",
+        },
+    ],
+)
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+    <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const apiKey = process.env['MISTRAL_API_KEY'];
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function main() {
+  const result = await client.chat.complete({
+    model: 'mistral-medium-latest',
+    messages: [
+      { role: 'user', content: 'What is the capital of France?' },
+      { role: 'assistant', content: 'The Capital of France is **Paris**.' },
+      { role: 'user', content: 'Translate that to French.' },
+    ],
+  });
+}
+
+main();
+```
+
+    </TabItem>
+    <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+    --header 'Content-Type: application/json' \
+    --header 'Accept: application/json' \
+    --header "Authorization: Bearer $MISTRAL_API_KEY" \
+    --data '{
+    "model": "mistral-medium-latest",
+    "messages": [
+    {
+        "role": "user",
+        "content": "What is the capital of France?"
+    },
+    {
+        "role": "assistant",
+        "content": "The Capital of France is **Paris**."
+    },
+    {
+        "role": "user",
+        "content": "Translate that to French."
+    }
+    ]
+}'
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "id": "b43f553c4988428aa0c615be4c8f9381",
+  "created": 1756907722,
+  "model": "mistral-medium-latest",
+  "usage": {
+    "prompt_tokens": 26,
+    "total_tokens": 36,
+    "completion_tokens": 10
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "La capitale de la France est **Paris**."
+      }
+    }
+  ]
+}
+```
+
+    </TabItem>
+
+</Tabs>
+
+<SectionTab as="h1" sectionId="other-useful-features">Autres fonctionnalités utiles</SectionTab>
+
+Notre service de chat completion dispose également d'autres fonctionnalités qui peuvent être utilisées pour personnaliser vos requêtes.
+
+- Le flag `prefix` permet de préfixer du contenu à la réponse de l'assistant. Lorsqu'il est utilisé dans un message, il permet l'ajout d'un message d'assistant à la fin de la liste, qui sera préfixé à la réponse de l'assistant.
+- Le flag `safe_prompt` est utilisé pour forcer la modération de la chat completion contre les contenus sensibles (voir [Guardrailing](/studio-api/safety-moderation)).
+- Une séquence `stop` permet de forcer le modèle à arrêter la génération après un ou plusieurs tokens ou chaînes choisis. La sortie ne contiendra pas la séquence d'arrêt.
+
+Vous trouverez ci-dessous de courts exemples sur la façon de les utiliser.
+
+<ExplorerTabs id="other-useful-features" mode="close">
+  <ExplorerTab value="prefix" label="Prefix">
+    <PrefixTab />
+  </ExplorerTab>
+  <ExplorerTab value="safe_prompt" label="Safe Prompt">
+    <SafePromptTab />
+  </ExplorerTab>
+  <ExplorerTab value="stop" label="Stop">
+    <StopTab />
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="more">Pour aller plus loin</SectionTab>
+
+Ceci était une introduction simple à notre service de chat completion, cependant nous avons beaucoup plus à offrir et nous vous recommandons d'y jeter un œil ; des capacités de [Vision](/studio-api/conversations/vision), à l'[appel de fonction](/studio-api/agents/agent-tools/function-calling), les [sorties prédites](/studio-api/conversations/advanced/predicted-outputs), les [sorties structurées](/studio-api/conversations/structured-output) et bien plus encore.

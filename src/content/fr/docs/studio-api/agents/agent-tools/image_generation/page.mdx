@@ -1,0 +1,389 @@
+---
+id: image_generation
+title: Génération d'images
+slug: image_generation
+sidebar_position: 4
+---
+
+# Génération d'images
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+La génération d'images est un [outil](/studio-api/agents/agent-tools#built-in-tools) intégré qui permet aux agents de générer des images de toutes sortes et sous toutes les formes.
+
+<Image
+  url={['/img/image_generation_connector.png', '/img/image_generation_connector_dark.png']}
+  alt="image_generation_graph"
+  width="400px"
+  centered
+/>
+
+Activer cet outil permet aux modèles de créer des images à tout moment.
+
+Pour utiliser l'outil de génération d'images, vous pouvez créer un agent avec l'outil de génération d'images activé et utiliser l'API conversations pour générer des images. Notez que vous devez télécharger l'image à partir de l'ID de fichier fourni dans la réponse.
+
+<SectionTab as="h1" sectionId="create-an-image-generation-agent">Créer un agent de génération d'images</SectionTab>
+
+Vous pouvez créer un agent avec accès à la génération d'images en le fournissant comme l'un des outils. Notez que vous pouvez toujours ajouter d'autres outils à l'agent. Le modèle est libre de créer des images à la demande.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+image_agent = client.beta.agents.create(
+    model="mistral-medium-latest",
+    name="Image Generation Agent",
+    description="Agent used to generate images.",
+    instructions="Use the image generation tool when you have to create images.",
+    tools=[{"type": "image_generation"}],
+    completion_args={
+        "temperature": 0.3,
+        "top_p": 0.95,
+    }
+)
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+let imageAgent = await client.beta.agents.create({
+    model:"mistral-medium-latest",
+    name:"Image Generation Agent",
+    description:"Agent used to generate images.",
+    instructions:"Use the image generation tool when you have to create images.",
+    tools:[{
+        type: "image_generation"
+    }],
+    completionArgs:{
+        temperature: 0.3,
+        topP: 0.95,
+    }
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/agents" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "model": "mistral-medium-latest",
+     "name": "Image Generation Agent",
+     "description": "Agent used to generate images.",
+     "instructions": "Use the image generation tool when you have to create images.",
+     "tools": [
+       {
+         "type": "image_generation"
+       }
+     ],
+     "completion_args": {
+       "temperature": 0.3,
+       "top_p": 0.95
+     }
+  }'
+
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "model": "mistral-medium-latest",
+  "name": "Image Generation Agent",
+  "description": "Agent used to generate images.",
+  "id": "ag_068359b1d997713480003c77113b8119",
+  "version": 0,
+  "created_at": "2025-05-27T10:59:41.602844Z",
+  "updated_at": "2025-05-27T10:59:41.602846Z",
+  "instructions": "Use the image generation tool when you have to create images.",
+  "tools": [
+    {
+      "type": "image_generation"
+    }
+  ],
+  "completion_args": {
+    "stop": null,
+    "presence_penalty": null,
+    "frequency_penalty": null,
+    "temperature": 0.3,
+    "top_p": 0.95,
+    "max_tokens": null,
+    "random_seed": null,
+    "prediction": null,
+    "response_format": null,
+    "tool_choice": "auto"
+  },
+  "handoffs": null,
+  "object": "agent"
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Comme pour les autres agents, lors de la création, vous recevrez un ID d'agent correspondant à l'agent créé. Vous pouvez utiliser cet ID pour démarrer une conversation.
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+Maintenant que notre agent de génération d'images est prêt, nous pouvons créer des images à la demande à tout moment.
+
+<SectionTab as="h2" variant="secondary" sectionId="conversation-with-image-generation">Conversations avec génération d'images</SectionTab>
+
+Pour démarrer une conversation avec notre agent de génération d'images, nous pouvons utiliser le code suivant :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+response = client.beta.conversations.start(
+    agent_id=image_agent.id,
+    inputs="Generate an orange cat in an office."
+)
+```
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+let conversation = await client.beta.conversations.start({
+      agentId: imageAgent.id,
+      inputs:"Generate an orange cat in an office.",
+      //store:false
+});
+```
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/conversations" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+     "inputs": "Generate an orange cat in an office.",
+     "stream": false,
+     "agent_id": "<agent_id>"
+  }'
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "conversation_id": "conv_068359b1dc6f74658000000a358b2357",
+  "outputs": [
+    {
+      "name": "image_generation",
+      "object": "entry",
+      "type": "tool.execution",
+      "created_at": "2025-05-27T10:59:53.092347Z",
+      "completed_at": "2025-05-27T10:59:56.436333Z",
+      "id": "tool_exec_068359b2917a7117800018b42bf8dc39"
+    },
+    {
+      "content": [
+        {
+          "text": "Here is your image: an orange cat in an office.\n\n",
+          "type": "text"
+        },
+        {
+          "tool": "image_generation",
+          "file_id": "933c5b5a-1c47-4cdd-84f6-f32526bd161b",
+          "type": "tool_file",
+          "file_name": "image_generated_0",
+          "file_type": "png"
+        }
+      ],
+      "object": "entry",
+      "type": "message.output",
+      "created_at": "2025-05-27T10:59:57.718377Z",
+      "completed_at": "2025-05-27T10:59:58.818205Z",
+      "id": "msg_068359b2db7e74eb8000d11444e03eb8",
+      "agent_id": "ag_068359b1d997713480003c77113b8119",
+      "model": "mistral-medium-latest",
+      "role": "assistant"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 129,
+    "total_tokens": 292,
+    "completion_tokens": 94,
+    "connector_tokens": 69,
+    "connectors": {
+      "image_generation": 1
+    }
+  },
+  "object": "conversation.response"
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="explanation-of-the-outputs">Explication des sorties</SectionTab>
+
+Ci-dessous, nous allons expliquer les différentes sorties de la réponse de l'exemple de code précédent :
+
+- **`tool.execution`** : cette entrée correspond à l'exécution de l'outil de génération d'images. Elle inclut des métadonnées sur l'exécution, telles que :
+  - `name` : le nom de l'outil, qui dans ce cas est `image_generation`.
+  - `object` : le type d'objet, qui est `entry`.
+  - `type` : le type d'entrée, qui est `tool.execution`.
+  - `created_at` et `completed_at` : horodatages indiquant quand l'exécution de l'outil a commencé et s'est terminée.
+  - `id` : un identifiant unique pour l'exécution de l'outil.
+
+- **`message.output`** : cette entrée correspond à la réponse générée par notre agent. Elle inclut des métadonnées sur le message, telles que :
+  - `content` : le contenu réel du message, qui dans ce cas est une liste de fragments. Ces fragments peuvent être de différents types, et le modèle peut entrelacer différents fragments, en utilisant des fragments `text` et d'autres pour compléter le message. Dans ce cas, nous avons obtenu deux fragments correspondant à un fragment `text` et un `tool_file`, qui représente le fichier généré, spécifiquement l'image générée. La section `content` inclut :
+    - `tool` : le nom de l'outil utilisé pour générer le fichier, qui dans ce cas est `image_generation`.
+    - `file_id` : un identifiant unique pour le fichier généré.
+    - `type` : le type de fragment, qui dans ce cas est `tool_file`.
+    - `file_name` : le nom du fichier généré.
+    - `file_type` : le type du fichier généré, qui dans ce cas est `png`.
+  - `object` : le type d'objet, qui est `entry`.
+  - `type` : le type d'entrée, qui est `message.output`.
+  - `created_at` et `completed_at` : horodatages indiquant quand le message a été créé et complété.
+  - `id` : un identifiant unique pour le message.
+  - `agent_id` : un identifiant unique pour l'agent qui a généré le message.
+  - `model` : le modèle utilisé pour générer le message, qui dans ce cas est `mistral-medium-latest`.
+  - `role` : le rôle du message, qui est `assistant`.
+
+<SectionTab as="h2" variant="secondary" sectionId="download-images">Télécharger les images</SectionTab>
+
+Pour accéder à cette image, vous pouvez la télécharger via notre endpoint files.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```py
+# Download using the ToolFileChunk ID
+file_bytes = client.files.download(file_id=file_chunk.file_id).read()
+
+# Save the file locally
+with open(f"image_generated.png", "wb") as file:
+    file.write(file_bytes)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// Add the following imports:
+import *  as fs from 'fs';
+import type { ToolFileChunk, MessageOutputEntry, ConversationResponse } from "@mistralai/mistralai/models/components/index.js";
+
+// Function used to save your image:
+async function saveStreamToFile(stream: ReadableStream<Uint8Array>, filePath: string): Promise<void> {
+    const reader = stream.getReader();
+    const writableStream = fs.createWriteStream(filePath);
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        writableStream.write(Buffer.from(value));
+    }
+
+    writableStream.end();
+}
+
+// Conversation content retrieval, and call the `saveStreamToFile` function.
+const entry = conversation.outputs[conversation.outputs.length - 1];
+const messageOutputEntry = entry as MessageOutputEntry;
+
+const chunk = messageOutputEntry.content[1];
+if (typeof(chunk) != "string" && 'fileId' in chunk) {
+    const fileChunk = chunk as ToolFileChunk;
+    const fileStream = await client.files.download({ fileId: fileChunk.fileId });
+    await saveStreamToFile(fileStream, `image_generated.png`);
+}
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl --location "https://api.mistral.ai/v1/files/<file_id>/content" \
+     --header 'Accept: application/octet-stream' \
+     --header 'Accept-Encoding: gzip, deflate, zstd' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY"
+```
+  </TabItem>
+</Tabs>
+
+<div style={{ textAlign: 'center' }}>
+  <img
+    src="/img/agent_generated.png"
+    alt="generated_image"
+    width="600"
+    style={{ borderRadius: '15px' }}
+    className='mx-auto' 
+  />
+</div>
+
+Un exemple de code complet pour télécharger toutes les images générées à partir d'une réponse pourrait ressembler à ceci :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```py
+from mistralai.models import ToolFileChunk
+
+for i, chunk in enumerate(response.outputs[-1].content):
+    # Check if chunk corresponds to a ToolFileChunk
+    if isinstance(chunk, ToolFileChunk):
+
+      # Download using the ToolFileChunk ID
+      file_bytes = client.files.download(file_id=chunk.file_id).read()
+
+      # Save the file locally
+      with open(f"image_generated_{i}.png", "wb") as file:
+          file.write(file_bytes)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```py
+from mistralai.client.models import ToolFileChunk
+
+for i, chunk in enumerate(response.outputs[-1].content):
+    # Check if chunk corresponds to a ToolFileChunk
+    if isinstance(chunk, ToolFileChunk):
+
+      # Download using the ToolFileChunk ID
+      file_bytes = client.files.download(file_id=chunk.file_id).read()
+
+      # Save the file locally
+      with open(f"image_generated_{i}.png", "wb") as file:
+          file.write(file_bytes)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+async function processFileChunks(conversation: ConversationResponse) {
+    const entry = conversation.outputs[conversation.outputs.length - 1];
+    const messageOutputEntry = entry as MessageOutputEntry;
+    for (let i = 0; i < messageOutputEntry.content.length; i++) {
+        const chunk = messageOutputEntry.content[i];
+        if (typeof(chunk) != "string" && 'fileId' in chunk) {
+            const fileChunk = chunk as ToolFileChunk;
+            const fileStream = await client.files.download({ fileId: fileChunk.fileId });
+            await saveStreamToFile(fileStream, `image_generated_${i}.png`);
+        }
+    }
+}
+```
+
+  </TabItem>
+</Tabs>

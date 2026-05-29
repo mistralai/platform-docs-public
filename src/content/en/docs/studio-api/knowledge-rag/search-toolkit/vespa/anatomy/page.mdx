@@ -1,0 +1,129 @@
+---
+title: Anatomy of a Vespa application
+sidebar_position: 2
+sidebar_label: Anatomy of an application
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+This page explains the concepts that make up a Vespa application: the application package, schemas, fields, ranking profiles, and query profiles. To learn how to create and configure these, see [Manage Schema](migrations).
+
+<SectionTab as="h2" sectionId="application-package">Application Package</SectionTab>
+
+A Vespa application package is a set of configuration files that tell the cluster how to store and rank documents:
+
+```
+<app-package>/
+├── schemas/
+│   └── <document_type>.sd        # Schema definitions
+└── search/
+    └── query-profiles/
+        ├── <profile_name>.xml    # Query profiles
+        └── types/root.xml        # Query profile types
+```
+
+You never write these files by hand. They are built in memory from your [migrations](migrations) and uploaded to the Vespa cluster. You can inspect them with `mistral-vespa generate` (see [CLI reference](cli)).
+
+<SectionTab as="h2" sectionId="migrations-building-the-application-package">Migrations: Building the Application Package</SectionTab>
+
+Migrations are Python files that serve as the **source of truth** for your application package. Instead of manually writing schema definitions and configuration files, you define schemas, fields, and ranking through Python migrations.
+
+**How it works:**
+
+1. Create migration files in `vespa_app/migrations/` that describe your schemas and configuration
+2. Run `mistral-vespa migrate` to execute all migrations in order
+3. The migration system builds the complete application package in memory
+4. The package is deployed to your Vespa cluster
+
+**Properties of migrations:**
+
+- **Append-only** — add new files for changes, never edit existing ones
+- **Ordered** — sorted by timestamp prefix, executed sequentially on every deploy
+- **Version controlled** — the only thing you commit to your repository
+- **Idempotent** — safe to re-run without side effects
+
+This approach lets you version and evolve your schema like any other source code, with full history and the ability to review changes.
+
+<SectionTab as="h2" sectionId="schemas">Schemas</SectionTab>
+
+A schema defines a document type. It declares the fields a document contains, how those fields are indexed, and how results are ranked. Each schema produces a `.sd` file and a query profile in the application package.
+
+An application can contain multiple schemas, each representing a different document type (e.g., `articles`, `comments`). Names must be unique.
+
+### Search Mode
+
+Each schema operates in one of two modes:
+
+| Mode | Description |
+|---|---|
+| `SearchMode.INDEX` | Traditional indexed search — BM25, ANN/HNSW, two-phase ranking |
+| `SearchMode.STREAMING` | Streaming search — exact nearest neighbor, attribute filtering, single-phase ranking |
+
+<SectionTab as="h2" sectionId="fields">Fields</SectionTab>
+
+Fields define what data a document holds and how that data is used for indexing and ranking. The plugin provides five field types:
+
+| Field Type | Purpose | Vespa Indexing | Generated Ranking Functions |
+|---|---|---|---|
+| `EmbeddingField` | Vector embeddings for semantic search | attribute + HNSW index | Distance, cosine similarity |
+| `TextField` | Text for keyword/BM25 search | index + summary | BM25, field match |
+| `StringField` | Stored metadata, not searchable | attribute + summary | None |
+| `TimestampField` | Time-based ranking (type: `long`) | attribute + summary | Freshness, recency boost |
+| `CountField` | Numeric ranking (type: `int`) | attribute + summary | Normalization, boost |
+
+Fields can be single-valued or multi-dimensional (arrays). For example, per-chunk embeddings and text chunks are multi-dimensional fields.
+
+### Default Fieldset
+
+The plugin generates a default fieldset containing all `TextField` fields. This fieldset defines which fields are searched when using `userQuery()` in YQL. Other field types are excluded.
+
+<SectionTab as="h2" sectionId="ranking-profiles">Ranking Profiles</SectionTab>
+
+The plugin generates four ranking profiles per schema:
+
+| Profile | Purpose |
+|---|---|
+| `root` | Base profile containing all auto-generated and custom functions |
+| `match-only` | Used to evaluate the retrieval phase, no ranking applied |
+| `weighted-rank1` | Phase 1: linear combination of phase-1 functions with query-time weights |
+| `weighted-rank2` | Phase 1 + 2: adds phase-2 functions on top of `weighted-rank1` |
+
+### Phased Ranking
+
+Vespa ranks documents in phases to balance speed and quality:
+
+1. **First phase** — applied to all matching documents. Must be fast. Uses functions like BM25, embedding distance, freshness.
+2. **Second phase** — re-ranks the top k documents from phase 1. Can use more expensive functions like field match, logarithmic scoring, or ML models.
+3. **Global phase** (optional) — runs on the merged result set in the container node.
+
+The plugin maps each auto-generated function to the appropriate phase based on field type.
+
+### Weighted Profiles
+
+The `weighted-rank1` and `weighted-rank2` profiles let you **tune ranking at query time** by adjusting function weights without modifying the schema.
+
+```
+Phase 1: bm25_title_weight * bm25_title +
+         content_embedding_distance_weight * content_embedding_distance +
+         freshness_created_at_weight * freshness_created_at
+
+Phase 2: firstPhase +
+         match_title_weight * match_title +
+         log_freshness_created_at_weight * log_freshness_created_at
+```
+
+All weights start at `0`. Set one or more to a non-zero value to activate ranking.
+
+<SectionTab as="h2" sectionId="query-profiles">Query Profiles</SectionTab>
+
+The plugin generates one query profile per schema (named via `default_query_profile_name`, defaults to the schema name). It includes:
+
+- A YQL query for hybrid search (if embeddings are present) or keyword search
+- The `weighted-rank2` ranking profile as default
+- Query type fields for function weights
+
+For more, see [Query Profiles](query-profiles) and the [Vespa documentation on query profiles](https://docs.vespa.ai/en/querying/query-profiles.html).
+
+<SectionTab as="h2" sectionId="see-also">See Also</SectionTab>
+
+- **[Manage Schema](migrations)** — How to create schemas, fields, and ranking via migrations
+- **[Manage Ranking](query-profiles)** — Configure ranking at query time

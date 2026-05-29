@@ -7,7 +7,7 @@ import {
 import { SidebarItem, TocItem } from '@/schema';
 import { parseFrontmatter } from './parse-metadata';
 import { extractHeadingsFromContent } from './extract-headings';
-import { getModelsBreadcrumb } from '@/app/(docs)/models/model-cards/[slug]/_get-breacrumb';
+import { getModelsBreadcrumb } from '@/app/[locale]/(docs)/models/model-cards/[slug]/_get-breacrumb';
 
 /**
  * NOTE: Assumptions (tweak to taste):
@@ -44,56 +44,53 @@ const SIDEBAR_TTL_MS =
 const sidebarCache = new Map<string, { value: SidebarItem[]; expires: number }>();
 
 export async function getSidebar(
-  rootDir: string,
+  rootDir: string | string[],
   basePath = ''
 ): Promise<SidebarItem[]> {
+  // Normalize to an ordered array of roots. Earlier roots win in conflicts.
+  const rootDirs = Array.isArray(rootDir) ? rootDir : [rootDir];
+  const cacheKey = rootDirs.join('\0');
+
   // Only cache root-level invocations (the recursive ones pass basePath).
   if (basePath === '') {
-    const hit = sidebarCache.get(rootDir);
+    const hit = sidebarCache.get(cacheKey);
     if (hit && Date.now() < hit.expires) {
       return hit.value;
     }
   }
-  const childDirs = readEligibleDirs(rootDir);
+
+  // Union of eligible children across all roots. Route groups are transparently
+  // flattened so that a child name appearing under `(developers)/foo` and
+  // directly under the content root at `foo` merges into a single entry.
+  const childDirs = collectUnionChildren(rootDirs);
 
   const items: SidebarItem[] = [];
 
-  for (const dirent of childDirs) {
-    const subPath = path.join(rootDir, dirent.name);
-
-    // Route groups: transparent pass-through (like Next.js App Router)
-    if (isRouteGroup(dirent.name)) {
-      const groupChildren = await getSidebar(subPath, basePath);
-      items.push(...groupChildren);
-      continue;
-    }
-
+  for (const { name, subPaths } of childDirs) {
     const slug = basePath
-      ? basePath.split('/').concat(dirent.name)
-      : [dirent.name];
+      ? basePath.split('/').concat(name)
+      : [name];
 
-    const pageFile = resolvePageFile(subPath);
+    const pageResolved = resolvePageFileMulti(subPaths);
+    const pageFile = pageResolved?.basename ?? null;
     const hasPage = Boolean(pageFile);
     const pageIsMdx =
       (pageFile?.endsWith('.mdx') || pageFile?.endsWith('.md')) ?? false;
 
-    const metaFile = resolveMetaFile(subPath);
-    const hasMetaMd = Boolean(metaFile);
-    const metaMdPath = hasMetaMd ? path.join(subPath, metaFile as string) : '';
+    const metaResolved = resolveMetaFileMulti(subPaths);
+    const hasMetaMd = Boolean(metaResolved);
+    const metaMdPath = metaResolved?.fullPath ?? '';
 
-    const categoryJson = loadCategoryMetadata(subPath); // may be null
+    const categoryJson = loadCategoryMetadataMulti(subPaths); // may be null
 
-    const children = await getSidebar(
-      subPath,
-      path.join(basePath, dirent.name)
-    );
+    const children = await getSidebar(subPaths, path.join(basePath, name));
 
     const hasChildren = children.length > 0;
 
     // PAGE / META data
     const pageData =
-      hasPage && pageIsMdx
-        ? loadFileMetadataAndToc(path.join(subPath, pageFile!))
+      hasPage && pageIsMdx && pageResolved
+        ? loadFileMetadataAndToc(pageResolved.fullPath)
         : { metadata: null, toc: [] };
     const metaMdData = hasMetaMd
       ? loadFileMetadataAndToc(metaMdPath)
@@ -103,7 +100,7 @@ export async function getSidebar(
     // 1) If there are children -> this is a category. It is clickable when there is a page.* or a _meta.md.
     if (hasChildren) {
       const categoryMeta = deriveCategoryMetadata({
-        dirName: dirent.name,
+        dirName: name,
         pageMeta: pageData.metadata,
         metaMd: metaMdData.metadata,
         categoryJson,
@@ -123,7 +120,7 @@ export async function getSidebar(
         else overridedSlug = categoryMeta.link.split('/');
       }
 
-      const shouldHide = shouldHideCategory(dirent.name);
+      const shouldHide = shouldHideCategory(name);
       const categoryItem: SidebarItem = {
         slug,
         overridedSlug,
@@ -143,6 +140,9 @@ export async function getSidebar(
 
     // 2) Leaf: if we have a page -> file item with toc (metadata merged with _meta.md if present)
     if (hasPage) {
+      if (shouldHideCategory(name)) {
+        continue;
+      }
       const mergedMeta = mergeFileMetadata(
         pageData.metadata,
         metaMdData.metadata
@@ -161,8 +161,9 @@ export async function getSidebar(
       }
 
       // 2.1) if is a dynamic route, for example /[slug]/page.tsx, we need to push many items
-      if (isDynamicRoute(dirent.name)) {
-        const breadcrumb = await getDynamicBreadcrumbForDir(subPath, slug);
+      if (isDynamicRoute(name)) {
+        const dynamicDir = subPaths.find(p => existsDir(p)) ?? subPaths[0]!;
+        const breadcrumb = await getDynamicBreadcrumbForDir(dynamicDir, slug);
 
         if (breadcrumb && breadcrumb.length > 0) {
           items.push(...breadcrumb);
@@ -212,7 +213,7 @@ export async function getSidebar(
         overridedSlug,
         type: 'file',
         metadata: {
-          title: categoryJson.label ?? humanizeSlug(dirent.name),
+          title: categoryJson.label ?? humanizeSlug(name),
           sidebar_label: categoryJson.label,
           sidebar_position: categoryJson.position,
         } as DocsMetadata,
@@ -236,7 +237,7 @@ export async function getSidebar(
   // This function is called recursively, so to avoid O(n^2) repeated work, only add pagination at the root.
   if (!basePath) {
     addPaginationToSidebar(items);
-    sidebarCache.set(rootDir, {
+    sidebarCache.set(cacheKey, {
       value: items,
       expires: Date.now() + SIDEBAR_TTL_MS,
     });
@@ -253,8 +254,8 @@ function readEligibleDirs(dir: string): fs.Dirent[] {
   let entries: fs.Dirent[] = [];
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch (e) {
-    console.warn(`getSidebar: failed to read directory ${dir}:`, e);
+  } catch {
+    // Missing roots are OK — we may be scanning a dir that only exists under one root.
     return [];
   }
 
@@ -267,18 +268,57 @@ function readEligibleDirs(dir: string): fs.Dirent[] {
   );
 }
 
-function resolvePageFile(dirPath: string): string | null {
-  for (const base of PAGE_BASENAMES) {
-    const full = path.join(dirPath, base);
-    if (fs.existsSync(full)) return base;
+function existsDir(p: string): boolean {
+  try {
+    return fs.statSync(p).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+// Union of eligible children across multiple roots, with route groups flattened.
+// Each returned entry is a logical child: a directory name plus the list of
+// absolute paths where it physically lives (one per root/route-group path).
+function collectUnionChildren(
+  dirs: string[]
+): { name: string; subPaths: string[] }[] {
+  const map = new Map<string, string[]>();
+
+  const visit = (dir: string): void => {
+    for (const entry of readEligibleDirs(dir)) {
+      if (isRouteGroup(entry.name)) {
+        visit(path.join(dir, entry.name));
+        continue;
+      }
+      const list = map.get(entry.name) ?? [];
+      list.push(path.join(dir, entry.name));
+      map.set(entry.name, list);
+    }
+  };
+
+  for (const dir of dirs) visit(dir);
+
+  return Array.from(map, ([name, subPaths]) => ({ name, subPaths }));
+}
+
+type ResolvedFile = { basename: string; fullPath: string };
+
+function resolvePageFileMulti(dirPaths: string[]): ResolvedFile | null {
+  for (const dir of dirPaths) {
+    for (const base of PAGE_BASENAMES) {
+      const full = path.join(dir, base);
+      if (fs.existsSync(full)) return { basename: base, fullPath: full };
+    }
   }
   return null;
 }
 
-function resolveMetaFile(dirPath: string): string | null {
-  for (const base of META_BASENAMES) {
-    const full = path.join(dirPath, base);
-    if (fs.existsSync(full)) return base;
+function resolveMetaFileMulti(dirPaths: string[]): ResolvedFile | null {
+  for (const dir of dirPaths) {
+    for (const base of META_BASENAMES) {
+      const full = path.join(dir, base);
+      if (fs.existsSync(full)) return { basename: base, fullPath: full };
+    }
   }
   return null;
 }
@@ -300,6 +340,16 @@ function loadCategoryMetadata(dirPath: string): DocsCategoryMetadata | null {
         error
       );
     }
+  }
+  return null;
+}
+
+function loadCategoryMetadataMulti(
+  dirPaths: string[]
+): DocsCategoryMetadata | null {
+  for (const dir of dirPaths) {
+    const meta = loadCategoryMetadata(dir);
+    if (meta) return meta;
   }
   return null;
 }
@@ -516,7 +566,7 @@ function isDynamicRoute(path: string): boolean {
 }
 
 function shouldHideCategory(dirName: string): boolean {
-  const HIDDEN_DIRS = new Set(['model-cards']);
+  const HIDDEN_DIRS = new Set(['model-cards', 'clients']);
   return HIDDEN_DIRS.has(dirName);
 }
 
@@ -551,7 +601,7 @@ type BreadcrumbProvider = (
 ) => Promise<SidebarItem[]> | SidebarItem[];
 
 // IMPORTANT, ENSURE THIS MATCH WITH THE CORRECT ROUTE
-const MODELS_SLUG_DIR = path.join('src', 'app', '(docs)', 'models', 'model-cards');
+const MODELS_SLUG_DIR = path.join('src', 'app', '[locale]', '(docs)', 'models', 'model-cards');
 const registry: Array<{ matchDirname: string; provider: BreadcrumbProvider }> =
   [
     {

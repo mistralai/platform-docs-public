@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation.client';
 import { findItemBySlug } from '@/lib/content/breadcrumb-stuff';
 import { SideBarTreeNode } from '../sidebar';
 import {

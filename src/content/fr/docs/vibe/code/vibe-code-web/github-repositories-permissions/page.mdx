@@ -1,0 +1,107 @@
+---
+title: Dépôts GitHub
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Dépôts GitHub et autorisations
+
+Vibe Code Web fonctionne sur des dépôts GitHub depuis une sandbox cloud gérée. Pour cela, il s’appuie sur **l’application GitHub Mistral**, qui clone les dépôts, pousse des branches et ouvre des pull requests en votre nom.
+
+Cette page explique le mécanisme d’authentification, les actions possibles pour l’agent, ses limites et comment révoquer l’accès.
+
+<SectionTab as="h2" sectionId="authentication-model">Modèle d’authentification</SectionTab>
+
+L’application GitHub Mistral s’authentifie auprès de GitHub de deux façons distinctes :
+
+| Token | Usage | Portée effective |
+|---|---|---|
+| **Token d’accès utilisateur** | Travaux de lecture et d’écriture sur les dépôts pour votre compte (clone, branche, commit, push, ouverture de pull request). | Restreint à la fois par vos droits GitHub sur le dépôt **et** par les autorisations accordées à l’application. C’est la condition la plus restrictive qui prévaut. |
+| **Token d’accès à l’installation** | Actions au niveau App ou bot, lorsque ces actions sont exécutées. | Limité aux autorisations attribuées lors de l’installation de l’application, et aux dépôts couverts par l’installation. |
+
+<SectionTab as="h3" variant="secondary" sectionId="attribution">Attribution</SectionTab>
+
+Les modifications de code (commits, branches, pull requests) sont réalisées via **votre token d’accès utilisateur**. L’attribution exacte affichée dans GitHub dépend de vos configurations GitHub et Git :
+
+| Champ | Source |
+|---|---|
+| **Auteur du commit** | Votre utilisateur GitHub, basé sur le token d’accès utilisateur et la configuration Git locale au moment du commit par l’agent. |
+| **Committer du commit** | Peut différer de l’auteur selon la configuration Git (par exemple modifications depuis l’interface web GitHub ou lors des merges). |
+| **Auteur de la pull request** | Votre utilisateur GitHub. |
+
+<SectionTab as="h2" sectionId="connect-github">Connecter GitHub</SectionTab>
+
+Lorsque vous créez un projet dans Vibe Code Web pour la première fois, vous êtes invité à **installer l’application GitHub Mistral** et à l’autoriser sur votre compte ou votre organisation.
+
+Exemple d’installation typique :
+
+1. Lancez la procédure de connexion GitHub depuis Vibe Code Web.
+2. Choisissez le compte GitHub ou l’organisation où se trouve le dépôt cible.
+3. Sélectionnez **tous les dépôts** ou **uniquement ceux** auxquels l’application doit accéder.
+4. Validez l’installation.
+5. Autorisez l’application sur votre compte utilisateur afin qu’elle puisse agir en votre nom.
+
+Répétez cette opération pour chaque organisation qui doit être accessible depuis Vibe Code Web.
+
+:::info
+Un projet Vibe Code Web peut regrouper plusieurs dépôts, à condition qu’ils appartiennent tous au **même propriétaire GitHub** (compte utilisateur ou organisation). Pour intervenir sur différents propriétaires, créez des projets séparés.
+
+L’approbation de l’installation par les propriétaires de l’organisation peut être nécessaire avant que les membres puissent utiliser Vibe Code Web sur les dépôts de l’organisation.
+:::
+
+<SectionTab as="h2" sectionId="repository-access">Accès aux dépôts</SectionTab>
+
+Attribuez **l’accès le plus limité** possible tout en respectant votre workflow.
+
+| Choix d’accès | À utiliser quand |
+|---|---|
+| **Dépôts sélectionnés** | Vous souhaitez limiter Vibe Code Web à certains dépôts. |
+| **Tous les dépôts** | Vous faites confiance à l’intégration sur l’ensemble du compte ou de l’organisation et souhaitez que les nouveaux dépôts soient disponibles automatiquement. |
+
+L’accès aux dépôts peut être modifié ultérieurement dans les paramètres GitHub.
+
+<SectionTab as="h2" sectionId="what-vibe-code-web-can-do">Ce que Vibe Code Web peut faire</SectionTab>
+
+Dans une session Vibe Code Web, l’agent **peut** :
+
+- Cloner un dépôt autorisé dans la sandbox cloud.
+- Lire les fichiers du dépôt.
+- Créer des branches et modifier le code.
+- Exécuter des commandes shell, des tests et des étapes de build dans la sandbox.
+- Committer et pousser des modifications vers le dépôt.
+- Ouvrir des pull requests pour revue.
+
+Vibe Code Web **ne peut pas** :
+
+- Accéder à votre machine locale ou à votre système de fichiers local.
+- Lire ou modifier des dépôts pour lesquels vous n’avez pas donné d’autorisation.
+- Contourner les protections de branche, revues obligatoires, `CODEOWNERS` ou statuts obligatoires.
+- Conserver des fichiers en dehors du dépôt après la suppression de la sandbox.
+
+:::tip
+Utilisez les **protections de branche GitHub, `CODEOWNERS`, revues obligatoires et statuts requis** pour protéger vos branches sensibles. Vibe Code Web se conforme aux mêmes règles qu’un autre contributeur.
+:::
+
+<SectionTab as="h2" sectionId="manage-access">Gérer et révoquer les accès</SectionTab>
+
+Vous pouvez consulter ou retirer l’accès à tout moment depuis GitHub :
+
+- **Accès aux dépôts** : ouvrez [github.com/settings/installations](https://github.com/settings/installations) et mettez à jour l’application GitHub Mistral.
+- **Autorisation du compte** : ouvrez [github.com/settings/applications](https://github.com/settings/applications) et retirez Mistral si vous ne souhaitez plus connecter le compte.
+- **Accès à l’organisation** : les propriétaires d’organisation gèrent l’application dans les paramètres GitHub de l’organisation.
+
+Révoquer l’accès empêche les **nouvelles sessions Vibe Code Web** d’atteindre les dépôts concernés. Les branches, commits et pull requests déjà envoyés restent présents sur GitHub.
+
+<SectionTab as="h2" sectionId="common-issues">Problèmes d’accès courants</SectionTab>
+
+| Problème | Vérification |
+|---|---|
+| **Dépôt manquant** | Vérifiez que l’application GitHub Mistral est bien installée sur le compte ou l’organisation, et que le dépôt est sélectionné lors de l’installation. |
+| **Dépôt d’organisation inaccessible** | Contrôlez si le propriétaire de l’organisation a validé l’installation de l’application. L’approbation peut être en attente. |
+| **Le dépôt appartient à un autre propriétaire GitHub** | Un projet doit regrouper des dépôts d’un seul propriétaire GitHub. Créez un projet séparé pour tout autre propriétaire. |
+| **Application installée mais dépôt non sélectionné** | L’application est installée mais le dépôt n’a pas été ajouté pendant l’installation. Modifiez la configuration de l’application sur GitHub pour l’ajouter. |
+| **Échec du push ou de la pull request** | Vérifiez la protection des branches, les revues obligatoires, les statuts requis et vos droits d’écriture sur le dépôt. |
+| **Application autorisée mais push impossible** | Vous avez peut-être autorisé l’application sans avoir le droit d’écriture sur le dépôt. Demandez au propriétaire du dépôt ou de l’organisation de vous accorder ce droit. |
+| **Auteur incorrect pour les commits** | Vérifiez l’adresse e-mail renseignée dans les paramètres GitHub et la configuration Git locale. |

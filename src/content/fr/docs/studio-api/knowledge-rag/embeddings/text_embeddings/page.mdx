@@ -1,0 +1,209 @@
+---
+id: text_embeddings
+title: Embeddings de texte
+slug: text_embeddings
+sidebar_position: 1
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { CollabButton } from '@/components/common/collab-button';
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+
+import SimilarityTab from './similarity_tab/_page.mdx';
+import ParaphraseDetectionTab from './paraphrase_detection_tab/_page.mdx';
+import BatchingTab from './batching_tab/_page.mdx';
+import ClassificationTab from './classification_tab/_page.mdx';
+import ClusteringTab from './clustering_tab/_page.mdx';
+import RetrievalTab from './retrieval_tab/_page.mdx';
+
+# Text Embeddings
+
+Les embeddings sont au cœur de nombreux cas d'usage en entreprise, tels que les **systèmes de récupération**, le **clustering**, **l'analyse de code**, la **classification** et diverses applications de recherche. L'intégration de contenu vous permet d'effectuer des recherches sémantiques et diverses tâches de NLP pour vos applications.
+
+<SectionTab as="h1" sectionId="mistral-embed">API Mistral Embed</SectionTab>
+
+<CollabButton colabUrl="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/embeddings/embeddings.ipynb" />
+
+### Comment générer des embeddings
+
+Pour générer des embeddings de texte avec l'API d'embeddings de Mistral AI, vous pouvez effectuer une requête vers le endpoint de l'API en spécifiant le modèle d'embedding `mistral-embed`, et en fournissant une liste de textes en entrée. L'API renvoie alors les embeddings correspondants sous forme de vecteurs numériques, qui peuvent être utilisés pour des analyses ou traitements ultérieurs dans des applications NLP.
+
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-embed"
+
+client = Mistral(api_key=api_key)
+
+embeddings_batch_response = client.embeddings.create(
+    model=model,
+    inputs=["Embed this sentence.", "As well as this one."],
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-embed"
+
+client = Mistral(api_key=api_key)
+
+embeddings_batch_response = client.embeddings.create(
+    model=model,
+    inputs=["Embed this sentence.", "As well as this one."],
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function getEmbeddings() {
+
+    const embeddingsBatchResponse = await client.embeddings.create({
+        model: "mistral-embed",
+        inputs: ["Embed this sentence.", "As well as this one."],
+    });
+
+    console.log('Embeddings:', embeddingsBatchResponse.data);
+
+}
+
+// Call the async function
+getEmbeddings().catch(console.error);
+
+````
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+curl -X POST "https://api.mistral.ai/v1/embeddings" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer ${API_KEY}" \
+     -d '{"model": "mistral-embed", "input": ["Embed this sentence.", "As well as this one."]}' \
+     -o embedding.json
+
+````
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "48d491390f5e4bedb796f69b36ae7f36",
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "embedding": [
+        -0.016632080078125,
+        0.0701904296875,
+        0.03143310546875,
+        0.01309967041015625,
+        ...
+        0.01270294189453125,
+        -0.02801513671875,
+        0.004329681396484375,
+        -0.036895751953125
+      ],
+      "index": 0
+    },
+    {
+      "object": "embedding",
+      "embedding": [
+        -0.0230560302734375,
+        0.039337158203125,
+        0.0521240234375,
+        -0.0184783935546875,
+        ...
+        0.0169830322265625,
+        -0.0017080307006835938,
+        0.00049591064453125,
+        -0.010345458984375
+      ],
+      "index": 1
+    }
+  ],
+  "model": "mistral-embed",
+  "usage": {
+    "prompt_audio_seconds": null,
+    "prompt_tokens": 15,
+    "total_tokens": 15,
+    "completion_tokens": 0,
+    "request_count": null,
+    "prompt_token_details": null
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+La sortie est un objet embedding contenant les embeddings et les informations d'utilisation des tokens.
+
+Examinons la longueur du premier embedding :
+
+<Tabs groupId="code">
+<TabItem value="python" label="python" default>
+
+```python
+len(embeddings_batch_response.data[0].embedding)
+````
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+```typescript
+console.log('Embedding Length:', embeddingsBatchResponse.data?.[0]?.embedding?.length)
+```
+  </TabItem>
+    <TabItem value="curl" label="curl">
+```bash
+echo "Embedding Length: $(jq '.data[0].embedding | length' embedding.json)"
+```
+  </TabItem>
+</Tabs>
+
+Le résultat est 1024, ce qui signifie que la dimension de notre embedding est 1024. Le modèle `mistral-embed` génère des vecteurs d'embedding de dimension 1024 pour chaque chaîne de texte, quelle que soit la longueur du texte. Il convient de noter que si des embeddings de dimension supérieure peuvent mieux capturer l'information textuelle et améliorer les performances des tâches NLP, ils peuvent nécessiter davantage de ressources de calcul pour l'hébergement et l'inférence, et peuvent entraîner une latence accrue ainsi qu'une utilisation mémoire plus importante pour le stockage et le traitement de ces embeddings. Ce compromis entre performances et ressources de calcul doit être pris en compte lors de la conception de systèmes NLP qui s'appuient sur des embeddings de texte.
+
+<SectionTab as="h1" sectionId="services">Exemples d'utilisation</SectionTab>
+
+Vous trouverez ci-dessous quelques exemples d'utilisation de l'API Mistral Embeddings et différents cas d'usage.
+
+<ExplorerTabs id="services" mode="close">
+  <ExplorerTab value="similarity" label="Similarité">
+    <SimilarityTab/>
+  </ExplorerTab>
+  <ExplorerTab value="paraphrase-detection" label="Détection de paraphrases">
+    <ParaphraseDetectionTab/>
+  </ExplorerTab>
+  <ExplorerTab value="batching" label="Batch">
+    <BatchingTab/>
+  </ExplorerTab>
+  <ExplorerTab value="classification" label="Classification">
+    <ClassificationTab/>
+  </ExplorerTab>
+  <ExplorerTab value="clustering" label="Clustering">
+    <ClusteringTab/>
+  </ExplorerTab>
+  <ExplorerTab value="retrieval" label="Récupération">
+    <RetrievalTab/>
+  </ExplorerTab>
+</ExplorerTabs>

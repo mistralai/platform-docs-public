@@ -1,0 +1,221 @@
+---
+id: error-codes
+title: Codes d'erreur de l'API
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Codes d'erreur de l'API
+
+Lorsqu'une requête vers l'API Workflows échoue, la réponse inclut un code d'erreur structuré au format `WF_XXXX` :
+
+```json
+{
+  "detail": "Workflow execution not found",
+  "code": "WF_1100"
+}
+```
+
+Pour les erreurs **4xx**, `detail` contient un message spécifique décrivant le problème. Pour les erreurs **5xx**, `detail` est toujours `"An error occurred"` — la cause réelle est enregistrée côté serveur.
+
+<SectionTab as="h1" sectionId="quick-lookup">Référence rapide</SectionTab>
+
+| Code | Nom | Statut HTTP | Catégorie |
+|------|------|-------------|----------|
+| [WF_1000](#wf_1000) | Unknown Error | 500 | General |
+| [WF_1001](#wf_1001) | Invalid Request | 422 | General |
+| [WF_1100](#wf_1100) | Workflow Not Found | 404 | Workflow |
+| [WF_1101](#wf_1101) | Workflow Already Started | 409 | Workflow |
+| [WF_1102](#wf_1102) | Workflow Not Running | 409 | Workflow |
+| [WF_1103](#wf_1103) | Platform Request Failed | 500 / 504 | Workflow |
+| [WF_1104](#wf_1104) | Workflow Registration Failed | 500 | Workflow |
+| [WF_1105](#wf_1105) | Execution Not Found | 500 | Workflow |
+| [WF_1200](#wf_1200) | Schedule Failed | 422 / 500 / 503 | Schedule |
+| [WF_1201](#wf_1201) | Schedule Not Found | 404 | Schedule |
+| [WF_1300](#wf_1300) | Platform Client Creation Failed | 500 | Infrastructure |
+| [WF_1301](#wf_1301) | Platform Initialization Failed | 500 | Infrastructure |
+| [WF_1302](#wf_1302) | Payload Encoding Required | 500 | Infrastructure |
+| [WF_1400](#wf_1400) | Streaming Error | 500 | Streaming |
+| [WF_1500](#wf_1500) | Trace Error | 500 | Tracing |
+| [WF_1600](#wf_1600) | Event Store Error | 500 | Event Store |
+
+---
+
+<SectionTab as="h1" sectionId="general-errors-10001099">Erreurs générales (1000–1099)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1000">WF_1000</SectionTab>
+
+**Unknown Error** · `500 Internal Server Error`
+
+Erreur générique pour les cas ne correspondant à aucun code spécifique. Si vous rencontrez cette erreur, consultez les logs serveur ou contactez l'équipe plateforme.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1001">WF_1001</SectionTab>
+
+**Invalid Request** · `422 Unprocessable Entity`
+
+La requête est bien formée mais contient des données invalides. Actuellement retourné lors de la fourniture d'un ID d'événement invalide pendant une réinitialisation de workflow — la réponse inclut un champ `valid_reset_events` listant les alternatives valides.
+
+```json
+{
+  "detail": "Invalid event ID for reset",
+  "code": "WF_1001",
+  "valid_reset_events": [3, 7, 12]
+}
+```
+
+---
+
+<SectionTab as="h1" sectionId="workflow-errors-11001199">Erreurs de workflow (1100–1199)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1100">WF_1100</SectionTab>
+
+**Workflow Not Found** · `404 Not Found`
+
+L'exécution du workflow n'existe pas. Cela signifie généralement que l'ID d'exécution est incorrect ou que le workflow a été purgé.
+
+**Résolution :** Vérifiez l'ID d'exécution. Consultez le [tableau de bord Workflows](https://console.mistral.ai/build/workflows) pour obtenir l'ID correct.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1101">WF_1101</SectionTab>
+
+**Workflow Already Started** · `409 Conflict`
+
+Une exécution de workflow avec le même ID est déjà en cours. Les ID de workflow doivent être uniques au sein d'un espace de travail.
+
+**Résolution :** Utilisez un ID d'exécution différent, ou attendez la fin de l'exécution existante. Si vous devez la redémarrer, terminez d'abord l'exécution en cours.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1102">WF_1102</SectionTab>
+
+**Workflow Not Running** · `409 Conflict`
+
+Vous avez tenté une action (signal, query, update ou terminate) sur un workflow qui n'est plus en cours d'exécution. La réponse inclut le statut actuel du workflow.
+
+```json
+{
+  "detail": "Workflow not running",
+  "code": "WF_1102",
+  "status": "COMPLETED"
+}
+```
+
+**Résolution :** Vérifiez le statut actuel du workflow. S'il est terminé ou en échec, démarrez une nouvelle exécution.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1103">WF_1103</SectionTab>
+
+**Platform Request Failed** · `500 Internal Server Error` ou `504 Gateway Timeout`
+
+L'appel RPC de la plateforme sous-jacente a échoué. Cela couvre les problèmes de connexion, les timeouts et les erreurs inattendues. Un code `504` indique spécifiquement un dépassement de délai (l'opération a pris trop de temps).
+
+**Résolution :** Réessayez la requête. Si le problème persiste, contactez l'équipe plateforme.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1104">WF_1104</SectionTab>
+
+**Workflow Registration Failed** · `500 Internal Server Error`
+
+L'enregistrement du worker a échoué — le système n'a pas pu enregistrer les définitions de workflow. Cela indique généralement une incompatibilité entre les spécifications de workflow et les identifiants de version lors du démarrage du worker.
+
+**Résolution :** Consultez les logs du worker pour détecter les erreurs d'enregistrement. Vérifiez que les définitions de workflow sont valides et que le worker peut accéder à l'API.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1105">WF_1105</SectionTab>
+
+**Execution Not Found** · `500 Internal Server Error`
+
+Une exécution censée exister est introuvable. Contrairement à `WF_1100` (qui est un 404 pour les recherches utilisateur), cela indique une incohérence interne — l'exécution aurait dû exister à ce stade du flux.
+
+**Résolution :** Il s'agit d'une erreur interne. Si elle persiste, signalez-la à l'équipe plateforme.
+
+---
+
+<SectionTab as="h1" sectionId="schedule-errors-12001299">Erreurs de planification (1200–1299)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1200">WF_1200</SectionTab>
+
+**Schedule Failed** · `422` / `500` / `503`
+
+La création ou la gestion de la planification a échoué. Le statut HTTP varie selon la cause :
+
+| Statut | Cause |
+|--------|-------|
+| **422** | Spécification de planification invalide (expression cron incorrecte, arguments invalides) ou tentative de planifier un workflow avec des payloads déchargés |
+| **503** | Attributs de recherche pas encore disponibles — erreur transitoire pendant la configuration de l'espace de travail |
+| **500** | Autres échecs internes lors de la création ou suppression de planification |
+
+**Résolution :** Pour `422`, vérifiez votre expression cron et la taille du payload d'entrée. Pour `503`, réessayez après quelques secondes. Pour `500`, consultez les logs serveur.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1201">WF_1201</SectionTab>
+
+**Schedule Not Found** · `404 Not Found`
+
+L'ID de planification n'existe pas. Il a peut-être déjà été supprimé ou n'a jamais été créé.
+
+**Résolution :** Listez les planifications existantes pour trouver l'ID correct.
+
+---
+
+<SectionTab as="h1" sectionId="infrastructure-errors-13001399">Erreurs d'infrastructure (1300–1399)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1300">WF_1300</SectionTab>
+
+**Platform Client Creation Failed** · `500 Internal Server Error`
+
+Le système n'a pas pu construire un client plateforme, généralement en raison de problèmes de configuration (adresse incorrecte, identifiants invalides).
+
+**Résolution :** Vérifiez la configuration de connexion (hôte, port, paramètres TLS).
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1301">WF_1301</SectionTab>
+
+**Platform Initialization Failed** · `500 Internal Server Error`
+
+L'enregistrement des attributs de recherche a échoué lors de l'initialisation de la plateforme. Cela se produit au démarrage du système.
+
+**Résolution :** Contactez l'équipe plateforme si cela persiste.
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1302">WF_1302</SectionTab>
+
+**Payload Encoding Required** · `500 Internal Server Error`
+
+L'encodage du payload est obligatoire mais les données d'entrée n'étaient pas encodées. Cela se produit dans les déploiements où l'encodage du payload est activé (typiquement les déploiements hybrides où les données doivent rester chiffrées).
+
+**Résolution :** Assurez-vous que votre client utilise le codec de payload. Consultez la documentation sur l'encodage des payloads pour plus de détails.
+
+---
+
+<SectionTab as="h1" sectionId="streaming-errors-14001499">Erreurs de streaming (1400–1499)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1400">WF_1400</SectionTab>
+
+**Streaming Error** · `500 Internal Server Error`
+
+Une opération de streaming a échoué — connexion, publication ou lecture depuis un stream.
+
+**Résolution :** Vérifiez la connectivité streaming. Consultez [Streaming](/studio-api/workflows/building-workflows/streaming) pour les détails de configuration.
+
+---
+
+<SectionTab as="h1" sectionId="tracing-errors-15001599">Erreurs de tracing (1500–1599)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1500">WF_1500</SectionTab>
+
+**Trace Error** · `500 Internal Server Error`
+
+Échec de la récupération ou de l'analyse des traces depuis le backend Tempo. Cela peut signifier des spans manquants, des données de trace mal formées ou des problèmes de connectivité avec le fournisseur de traces.
+
+**Résolution :** Vérifiez l'état de Tempo/backend de tracing. Si des traces sont manquantes, le workflow n'a peut-être pas encore émis de spans — attendez et réessayez.
+
+---
+
+<SectionTab as="h1" sectionId="event-store-errors-16001699">Erreurs d'Event Store (1600–1699)</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="wf-1600">WF_1600</SectionTab>
+
+**Event Store Error** · `500 Internal Server Error`
+
+Erreur de cohérence de base de données dans l'event store, typiquement lorsqu'un événement attendu est introuvable après un conflit.
+
+**Résolution :** Il s'agit d'une erreur interne. Réessayez l'opération. Si elle persiste, signalez-la à l'équipe plateforme.
+
+---
+
+<SectionTab as="h1" sectionId="sdk-error-codes">Codes d'erreur du SDK</SectionTab>
+
+Le SDK Python (`mistralai-workflows`) possède son propre ensemble de codes d'erreur pour les erreurs côté worker (définitions de workflow invalides, problèmes de configuration d'activité, etc.). Ces codes sont différents des codes d'erreur d'API ci-dessus et sont documentés dans le guide [Workflow Exception](/studio-api/workflows/building-workflows/workflow_exception).

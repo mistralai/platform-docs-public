@@ -32,7 +32,7 @@ echo -e "${DIM}Running Vale (JSON output)...${NC}"
 # Each value is an array of {Check, Severity, Line, Span, Message, ...}.
 # Pipe through stdin to avoid quoting issues with large JSON payloads.
 # Vale exits non-zero when findings exist — ignore that exit code.
-(vale --output JSON "src/app/(docs)/" 2>/dev/null || true) \
+(vale --output JSON src/content/en/ 2>/dev/null || true) \
   | python3 -c "
 import csv, json, sys
 

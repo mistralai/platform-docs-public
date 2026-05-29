@@ -1,0 +1,216 @@
+---
+id: predicted-outputs
+title: Sorties prédites
+sidebar_position: 15
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Sorties prédites
+
+Les sorties prédites **optimisent le temps de réponse** en s'appuyant sur du contenu connu ou prévisible.
+Cette approche minimise la latence tout en maintenant une haute qualité de sortie. Dans des tâches telles que l'édition de textes volumineux, la modification de code ou la génération de réponses basées sur des modèles, des portions significatives de la sortie sont souvent prédéterminées. En prédéfinissant ces parties attendues avec les sorties prédites, **les modèles peuvent allouer davantage de ressources de calcul aux éléments imprévisibles, améliorant ainsi l'efficacité globale.**
+
+<SectionTab as="h1" sectionId="usage-example">Exemple d'utilisation</SectionTab>
+
+### Modification de code
+
+**Les sorties prédites sont idéales lorsque vous devez régénérer des documents texte ou des fichiers de code avec des modifications mineures.** Le paramètre principal introduit est `prediction`, qui permet à l’utilisateur de définir les sorties attendues. Par exemple, si vous souhaitez que votre modèle mette à jour le modèle utilisé dans une requête de chat, vous pouvez fournir l’extrait de code que vous souhaitez modifier à la fois en tant que prompt utilisateur et en tant que sortie prédite.
+
+:::tip
+Avant d’aller plus loin, nous vous recommandons de consulter la documentation [Chat Completions](/studio-api/conversations/chat-completion) pour en savoir plus sur l’API chat completions et son utilisation.
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-large-2411"
+
+client = Mistral(api_key=api_key)
+
+code = """
+response = client.chat.complete(
+model="open-mistral-7b",
+messages=[
+{"role": "user", "content": "Summarize this document."}
+]
+)
+"""
+
+prompt = "Change the model name from open-mistral-7b to open-mistral-nemo. Respond only with code, no explanation, no formatting."
+
+chat_response = client.chat.complete(
+  model= model,
+  messages = [
+    {
+      "role": "user",
+      "content": prompt,
+    },
+    {
+      "role": "user",
+      "content": code
+    },
+  ],
+  prediction = {
+    "type": "content",
+    "content": code
+  }
+)
+````
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+model = "mistral-large-2411"
+
+client = Mistral(api_key=api_key)
+
+code = """
+response = client.chat.complete(
+model="open-mistral-7b",
+messages=[
+{"role": "user", "content": "Summarize this document."}
+]
+)
+"""
+
+prompt = "Change the model name from open-mistral-7b to open-mistral-nemo. Respond only with code, no explanation, no formatting."
+
+chat_response = client.chat.complete(
+  model= model,
+  messages = [
+    {
+      "role": "user",
+      "content": prompt,
+    },
+    {
+      "role": "user",
+      "content": code
+    },
+  ],
+  prediction = {
+    "type": "content",
+    "content": code
+  }
+)
+````
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const code = `
+response = client.chat.complete(
+    model="open-mistral-7b",
+    messages=[
+        {"role": "user", "content": "Summarize this document."}
+    ]
+)
+`.trim();
+
+const prompt = `Change the model name from open-mistral-7b to open-mistral-nemo. Respond only with code, no explanation, no formatting.`;
+
+const chatResponse = await client.chat.complete({
+    model: "mistral-large-2411",
+    messages: [
+        {
+            role: 'user',
+            content: prompt
+        },
+        {
+            role: "user",
+            content: code
+        },
+    ],
+    prediction: {
+        type: "content",
+        content: code
+    },
+});
+````
+
+  </TabItem>
+
+  <TabItem value="curl" label="curl">
+```bash
+curl --location "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "mistral-large-2411",
+    "messages": [
+        {"role": "user", "content": "Change the model name from open-mistral-7b to open-mistral-nemo. Respond only with code, no explanation, no formatting."},
+        {"role": "user", "content": "$CODE"}
+    ],
+    "prediction": {
+        "type": "content",
+        "content": "$CODE"
+    }
+  }'
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+```json
+{
+  "id": "987f971cf1d24d0cbf88a50e2c850546",
+  "created": 1756812876,
+  "model": "mistral-large-2411",
+  "usage": {
+    "prompt_tokens": 153,
+    "total_tokens": 270,
+    "completion_tokens": 117
+  },
+  "object": "chat.completion",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "tool_calls": null,
+        "content": "```python\nresponse = client.chat.complete(\nmodel=\"open-mistral-nemo\",\nmessages=[\n{\"role\": \"user\", \"content\": \"Summarize this document.\"}\n]\n)\n```"
+      }
+    }
+  ]
+}
+```
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Quels modèles prennent en charge les sorties prédites ?">
+    À ce jour, `codestral-latest` et `mistral-large-2411` prennent en charge les sorties prédites.
+  </FaqItem>
+  <FaqItem question="Quel impact les sorties prédites ont-elles sur la tarification ?">
+    Actuellement, l’utilisation des sorties prédites n’a pas d’incidence sur la tarification.
+  </FaqItem>
+  <FaqItem question="Quels paramètres ne sont pas pris en charge avec les sorties prédites ?">
+    Le paramètre `n` (nombre de complétions à retourner par requête) n’est pas pris en charge avec les sorties prédites.
+  </FaqItem>
+  <FaqItem question="La position de certaines phrases ou de certains mots dans la prédiction a-t-elle un impact ?">
+    Non, l’emplacement des phrases ou des mots prédits n’affecte pas leur efficacité. Les prédictions peuvent apparaître n’importe où dans la réponse générée tout en permettant de réduire la latence d’affichage de la réponse par l’API.
+  </FaqItem>
+</Faq>

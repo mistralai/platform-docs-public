@@ -1,0 +1,533 @@
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+## Exemple complet avec l'API Mistral
+
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/fine_tune/mistral_finetune_api.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+Vous pouvez affiner tous les modèles Mistral via l'API Mistral. Suivez les étapes ci-dessous en utilisant l'API d'affinage de Mistral.
+
+### Préparer le jeu de données
+
+Dans cet exemple, nous utilisons le [jeu de données ultrachat_200k](https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k). Nous chargeons une partie des données dans des Pandas Dataframes, divisons les données en ensembles d'entraînement et de validation, puis sauvegardons les données au format `jsonl` requis pour l'affinage.
+
+```py
+import pandas as pd
+df = pd.read_parquet('https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k/resolve/main/data/test_gen-00000-of-00001-3d4cd8309148a71f.parquet')
+
+df_train=df.sample(frac=0.995,random_state=200)
+df_eval=df.drop(df_train.index)
+
+df_train.to_json("ultrachat_chunk_train.jsonl", orient="records", lines=True)
+df_eval.to_json("ultrachat_chunk_eval.jsonl", orient="records", lines=True)
+```
+
+### Reformater le jeu de données
+
+Si vous téléchargez ce fichier `ultrachat_chunk_train.jsonl` sur l'API Mistral, vous pourriez rencontrer un message d'erreur « Invalid file format » en raison de problèmes de formatage des données. Pour reformater les données au bon format, vous pouvez télécharger le script reformat_data.py et l'utiliser pour valider et reformater les données d'entraînement et d'évaluation :
+
+```bash
+# télécharger le script de validation et de reformatage
+wget https://raw.githubusercontent.com/mistralai/mistral-finetune/main/utils/reformat_data.py
+
+# valider et reformater les données d'entraînement
+python reformat_data.py ultrachat_chunk_train.jsonl
+
+# valider et reformater les données d'évaluation
+python reformat_data.py ultrachat_chunk_eval.jsonl
+```
+
+:::important[ ]
+Ce script `reformat_data.py` est conçu pour les données UltraChat et peut ne pas être universel pour d'autres jeux de données. Modifiez ce script et reformatez vos données en conséquence.
+:::
+
+Après l'exécution du script, quelques cas ont été retirés des données d'entraînement.
+
+```
+Skip 3674th sample
+Skip 9176th sample
+Skip 10559th sample
+Skip 13293th sample
+Skip 13973th sample
+Skip 15219th sample
+```
+
+Examinons l'un de ces cas. Il y a deux problèmes avec ce cas d'usage :
+
+- l'un des messages de l'assistant est une chaîne vide ;
+- le dernier message n'est pas un message de l'assistant.
+
+<img src="/img/guides/ft1.png" alt="drawing" width="700"/>
+
+### Télécharger le jeu de données
+
+Nous pouvons ensuite télécharger les données d'entraînement et d'évaluation sur le client Mistral, les rendant disponibles pour les jobs d'affinage.
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ultrachat_chunk_train = client.files.upload(file={
+    "file_name": "ultrachat_chunk_train.jsonl",
+    "content": open("ultrachat_chunk_train.jsonl", "rb"),
+})
+ultrachat_chunk_eval = client.files.upload(file={
+    "file_name": "ultrachat_chunk_eval.jsonl",
+    "content": open("ultrachat_chunk_eval.jsonl", "rb"),
+})
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ultrachat_chunk_train = client.files.upload(file={
+    "file_name": "ultrachat_chunk_train.jsonl",
+    "content": open("ultrachat_chunk_train.jsonl", "rb"),
+})
+ultrachat_chunk_eval = client.files.upload(file={
+    "file_name": "ultrachat_chunk_eval.jsonl",
+    "content": open("ultrachat_chunk_eval.jsonl", "rb"),
+})
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import MistralClient from '@mistralai/mistralai';
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new MistralClient(apiKey);
+
+const file = fs.readFileSync('ultrachat_chunk_train.jsonl');
+const ultrachat_chunk_train = await client.files.create({ file });
+
+const file = fs.readFileSync('ultrachat_chunk_eval.jsonl');
+const ultrachat_chunk_eval = await client.files.create({ file });
+```
+
+  </TabItem>
+  
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="fine-tune" \
+  -F file="@ultrachat_chunk_train.jsonl"
+
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="fine-tune" \
+  -F file="@ultrachat_chunk_eval.jsonl"
+```
+
+  </TabItem>
+
+</Tabs>
+
+Exemple de sortie :
+
+Notez que vous aurez besoin des ID de fichiers pour les étapes suivantes.
+
+```
+{
+    "id": "66f96d02-8b51-4c76-a5ac-a78e28b2584f",
+    "object": "file",
+    "bytes": 140893645,
+    "created_at": 1717164199,
+    "filename": "ultrachat_chunk_train.jsonl",
+    "purpose": "fine-tune"
+}
+
+{
+    "id": "84482011-dfe9-4245-9103-d28b6aef30d4",
+    "object": "file",
+    "bytes": 7247934,
+    "created_at": 1717164200,
+    "filename": "ultrachat_chunk_eval.jsonl",
+    "purpose": "fine-tune"
+}
+```
+
+### Créer un job d'affinage
+
+Ensuite, nous pouvons créer un job d'affinage :
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+# créer une tâche d'affinage
+created_jobs = client.fine_tuning.jobs.create(
+    model="open-mistral-7b",
+    training_files=[{"file_id": ultrachat_chunk_train.id, "weight": 1}],
+    validation_files=[ultrachat_chunk_eval.id],
+    hyperparameters={
+        "training_steps": 10,
+        "learning_rate":0.0001
+    },
+    auto_start=False
+)
+
+# démarrer une tâche d'affinage
+client.fine_tuning.jobs.start(job_id = created_jobs.id)
+
+created_jobs
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const createdJob = await client.jobs.create({
+  model: 'open-mistral-7b',
+  trainingFiles: [ultrachat_chunk_train.id],
+  validationFiles: [ultrachat_chunk_eval.id],
+  hyperparameters: {
+    trainingSteps: 10,
+    learningRate: 0.0001,
+  },
+});
+```
+
+  </TabItem>
+  
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/fine_tuning/jobs \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "model": "open-mistral-7b",
+  "training_files": [
+    "<uuid>"
+  ],
+  "validation_files": [
+    "<uuid>"
+  ],
+  "hyperparameters": {
+    "training_steps": 10,
+    "learning_rate": 0.0001
+  }
+}'
+```
+
+  </TabItem>
+
+</Tabs>
+
+Exemple de sortie :
+
+```
+{
+    "id": "25d7efe6-6303-474f-9739-21fb0fccd469",
+    "hyperparameters": {
+        "training_steps": 10,
+        "learning_rate": 0.0001
+    },
+    "fine_tuned_model": null,
+    "model": "open-mistral-7b",
+    "status": "QUEUED",
+    "job_type": "FT",
+    "created_at": 1717170356,
+    "modified_at": 1717170357,
+    "training_files": [
+        "66f96d02-8b51-4c76-a5ac-a78e28b2584f"
+    ],
+    "validation_files": [
+        "84482011-dfe9-4245-9103-d28b6aef30d4"
+    ],
+    "object": "job",
+    "integrations": []
+}
+```
+
+### Analyser et évaluer le modèle affiné
+
+Lorsque nous récupérons un modèle, nous obtenons les métriques suivantes tous les 10 % de la progression avec un minimum de 10 étapes entre chaque mesure :
+
+- Perte d'entraînement : l'erreur du modèle sur les données d'entraînement, indiquant dans quelle mesure le modèle apprend à partir de l'ensemble d'entraînement.
+- Perte de validation : l'erreur du modèle sur les données de validation, fournissant un aperçu de la capacité du modèle à généraliser sur des données non vues.
+- Précision des tokens de validation : le pourcentage de tokens dans l'ensemble de validation qui sont correctement prédits par le modèle.
+
+La perte de validation et la précision des tokens de validation servent tous deux d'indicateurs essentiels de la performance globale du modèle, aidant à évaluer sa capacité à généraliser et à effectuer des prédictions précises sur de nouvelles données.
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+# Retrieve a jobs
+retrieved_jobs = client.fine_tuning.jobs.get(job_id = created_jobs.id)
+print(retrieved_jobs)
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// Retrieve a job
+const retrievedJob = await client.jobs.retrieve({ jobId: createdJob.id });
+```
+
+  </TabItem>
+  
+  <TabItem value="curl" label="curl">
+
+```bash
+# Retrieve a job
+curl https://api.mistral.ai/v1/fine_tuning/jobs/<jobid> \
+--header "Authorization: Bearer $MISTRAL_API_KEY" \
+--header 'Content-Type: application/json'
+```
+
+  </TabItem>
+</Tabs>
+
+<details>
+<summary><b>Exemple de sortie lors de l'exécution de 100 étapes :</b></summary>
+
+```
+{
+    "id": "2813b7e6-c511-43ac-a16a-1a54a5b884b2",
+    "hyperparameters": {
+        "training_steps": 100,
+        "learning_rate": 0.0001
+    },
+    "fine_tuned_model": "ft:open-mistral-7b:57d37e6c:20240531:2813b7e6",
+    "model": "open-mistral-7b",
+    "status": "SUCCESS",
+    "job_type": "FT",
+    "created_at": 1717172592,
+    "modified_at": 1717173491,
+    "training_files": [
+        "66f96d02-8b51-4c76-a5ac-a78e28b2584f"
+    ],
+    "validation_files": [
+        "84482011-dfe9-4245-9103-d28b6aef30d4"
+    ],
+    "object": "job",
+    "integrations": [],
+    "events": [
+        {
+            "name": "status-updated",
+            "data": {
+                "status": "SUCCESS"
+            },
+            "created_at": 1717173491
+        },
+        {
+            "name": "status-updated",
+            "data": {
+                "status": "RUNNING"
+            },
+            "created_at": 1717172594
+        },
+        {
+            "name": "status-updated",
+            "data": {
+                "status": "QUEUED"
+            },
+            "created_at": 1717172592
+        }
+    ],
+    "checkpoints": [
+        {
+            "metrics": {
+                "train_loss": 0.816135,
+                "valid_loss": 0.819697,
+                "valid_mean_token_accuracy": 1.765035
+            },
+            "step_number": 100,
+            "created_at": 1717173470
+        },
+        {
+            "metrics": {
+                "train_loss": 0.84643,
+                "valid_loss": 0.819768,
+                "valid_mean_token_accuracy": 1.765122
+            },
+            "step_number": 90,
+            "created_at": 1717173388
+        },
+        {
+            "metrics": {
+                "train_loss": 0.816602,
+                "valid_loss": 0.820234,
+                "valid_mean_token_accuracy": 1.765692
+            },
+            "step_number": 80,
+            "created_at": 1717173303
+        },
+        {
+            "metrics": {
+                "train_loss": 0.775537,
+                "valid_loss": 0.821105,
+                "valid_mean_token_accuracy": 1.766759
+            },
+            "step_number": 70,
+            "created_at": 1717173217
+        },
+        {
+            "metrics": {
+                "train_loss": 0.840297,
+                "valid_loss": 0.822249,
+                "valid_mean_token_accuracy": 1.76816
+            },
+            "step_number": 60,
+            "created_at": 1717173131
+        },
+        {
+            "metrics": {
+                "train_loss": 0.823884,
+                "valid_loss": 0.824598,
+                "valid_mean_token_accuracy": 1.771041
+            },
+            "step_number": 50,
+            "created_at": 1717173045
+        },
+        {
+            "metrics": {
+                "train_loss": 0.786473,
+                "valid_loss": 0.827982,
+                "valid_mean_token_accuracy": 1.775201
+            },
+            "step_number": 40,
+            "created_at": 1717172960
+        },
+        {
+            "metrics": {
+                "train_loss": 0.8704,
+                "valid_loss": 0.835169,
+                "valid_mean_token_accuracy": 1.784066
+            },
+            "step_number": 30,
+            "created_at": 1717172874
+        },
+        {
+            "metrics": {
+                "train_loss": 0.880803,
+                "valid_loss": 0.852521,
+                "valid_mean_token_accuracy": 1.805653
+            },
+            "step_number": 20,
+            "created_at": 1717172788
+        },
+        {
+            "metrics": {
+                "train_loss": 0.803578,
+                "valid_loss": 0.914257,
+                "valid_mean_token_accuracy": 1.884598
+            },
+            "step_number": 10,
+            "created_at": 1717172702
+        }
+    ]
+}
+```
+
+</details>
+
+### Utiliser un modèle affiné
+
+Lorsqu'un travail d'affinage est terminé, vous pouvez voir le nom du modèle affiné via `retrieved_jobs.fine_tuned_model`. Vous pouvez ensuite utiliser notre endpoint `chat` pour discuter avec le modèle affiné :
+
+<Tabs>
+  <TabItem value="python" label="python" default>
+
+```python
+chat_response = client.chat.complete(
+    model = retrieved_jobs.fine_tuned_model,
+    messages = [{"role":'user', "content":'What is the best French cheese?'}]
+)
+```
+
+  </TabItem>
+
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const chatResponse = await client.chat({
+  model: retrievedJob.fine_tuned_model,
+  messages: [{ role: 'user', content: 'What is the best French cheese?' }],
+});
+```
+
+  </TabItem>
+  
+  <TabItem value="curl" label="curl">
+
+```bash
+curl "https://api.mistral.ai/v1/chat/completions" \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: application/json' \
+     --header "Authorization: Bearer $MISTRAL_API_KEY" \
+     --data '{
+    "model": "ft:open-mistral-7b:daf5e488:20240430:c1bed559",
+    "messages": [{"role": "user", "content": "Who is the most renowned French painter?"}]
+  }'
+
+```
+
+  </TabItem>
+
+</Tabs>
+
+### Intégration avec Weights and Biases
+
+Nous proposons également une intégration avec Weights & Biases (W&B) pour surveiller et suivre diverses métriques et statistiques associées à nos travaux d'affinage. Pour activer l'intégration avec W&B, vous devez créer un compte W&B et ajouter vos informations W&B dans la section « integrations » de la requête de création de travail :
+
+```python
+client.fine_tuning.jobs.create(
+    model="open-mistral-7b",
+    training_files=[{"file_id": ultrachat_chunk_train.id, "weight": 1}],
+    validation_files=[ultrachat_chunk_eval.id],
+    hyperparameters={"training_steps": 10, "learning_rate": 0.0001},
+    integrations=[
+        {
+            "project": "<value>",
+            "api_key": "<value>",
+        }
+    ]
+)
+```
+
+Voici les captures d'écran du tableau de bord W&B affichant les informations de notre travail d'affinage.
+
+<img src="/img/guides/ft2.png" alt="drawing" width="100%"/>
+
+## Exemple complet avec `mistral-finetune` open source
+
+Nous avons également publié en open source la base de code d'affinage mistral-finetune, vous permettant d'affiner les modèles à poids ouverts de Mistral (Mistral 7B, Mixtral 8x7B, Mixtral 8x22B).
+
+Pour voir un exemple complet expliquant comment installer mistral-finetune, préparer et valider votre ensemble de données, définir votre configuration d'entraînement, affiner avec Mistral-LoRA et exécuter l'inférence, consultez le fichier README fourni dans le dépôt mistral-finetune : https://github.com/mistralai/mistral-finetune/tree/main ou suivez cet exemple :
+
+<a target="_blank" href="https://colab.research.google.com/github/mistralai/mistral-finetune/blob/main/tutorials/mistral_finetune_7b.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>

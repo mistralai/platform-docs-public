@@ -1,10 +1,12 @@
 import { StaticModel } from '../schema';
 export default {
   name: 'Codestral',
-  description: `Our cutting-edge language model for coding. Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation.`,
-  shortDescription: `Our cutting-edge language model for coding.`,
+  describe: (l) => ({
+    description: l.text(`Our cutting-edge language model for coding. Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our cutting-edge language model for coding.`, { context: 'Short description of an AI model' }),
+  }),
   slug: 'codestral-25-01',
-  releaseDate: 'January 13, 2025',
+  releaseDate: '2025-01-13',
   version: '25.01',
   frontier: false,
   class: 'Specialist',
@@ -16,9 +18,9 @@ export default {
   bloglink: 'https://mistral.ai/news/codestral-2501',
   paperlink: null,
   contextLength: '128k',
-  ratings: { 
-    speed: { stars: 3.0, label: 'Moderate' },
-    performance: { stars: 3.0, label: 'Smart' }, input: { stars: 4.0, label: 'Fast' }, output: { stars: 2.0, label: 'Moderate' } },
+  ratings: {
+    speed: 3.0,
+    performance: 3.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,
@@ -36,7 +38,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'predicted-outputs', 'document-qna', 'prefix', 'chat-completions', 'batching', 'fim'],
 
   },
-  metadata: {deprecationDate: 'November 6, 2025', retirementDate: 'November 30, 2025', replacement: 'Codestral'},
+  metadata: {deprecationDate: '2025-11-06', retirementDate: '2025-11-30', replacement: 'Codestral'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

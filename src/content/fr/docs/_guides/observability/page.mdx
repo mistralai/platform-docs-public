@@ -1,0 +1,267 @@
+---
+id: guides_observability
+title: Observabilité
+slug: observability
+sidebar_position: 1.8
+---
+
+## Pourquoi l'observabilité ?
+
+L'observabilité est essentielle pour les systèmes de modèles de langage de grande taille (LLM) en phase de prototypage, de test et de production pour plusieurs raisons :
+
+- **Visibilité** : l'observabilité fournit des informations détaillées sur les états internes des applications LLM, permettant aux développeurs de comprendre le comportement du système. Cette visibilité est cruciale pour identifier et diagnostiquer les problèmes et déboguer.
+- **Exigence de production** : la mise en œuvre de l'observabilité dans les environnements de production répond à des exigences critiques incluant la surveillance, la scalabilité, la sécurité et la conformité.
+- **Reproductibilité** : l'observabilité permet aux développeurs d'observer et de reproduire le comportement du système LLM.
+- **Amélioration continue** : les informations tirées des données d'observabilité peuvent être utilisées pour piloter des initiatives d'amélioration continue.
+
+## Quels composants observons-nous ?
+
+La réponse courte est : tout et n'importe quoi !
+
+Une application LLM (Large Language Model) peut inclure un ou plusieurs appels LLM. Comprendre à la fois les détails au niveau de chaque appel d'API individuel et la séquence de ces appels au niveau de l'application est crucial :
+
+1. **Niveau d'appel LLM individuel** : au niveau de l'appel d'API LLM individuel, un LLM reçoit un prompt d'entrée et génère une sortie. Par conséquent, nous pouvons surveiller et observer trois composants clés : le prompt d'entrée, le modèle et la sortie.
+
+2. **Niveau application** : au niveau de l'application, il est important d'observer le pattern, la logistique et la séquence des appels LLM. Cette séquence détermine le flux d'informations et l'ordre dans lequel les LLM sont appelés et quelles tâches sont exécutées.
+
+## Niveau individuel : quels composants pouvons-nous observer ?
+
+Pour une observabilité efficace, nous devons surveiller et enregistrer des informations détaillées pour chaque version de chaque composant impliqué dans l'interaction avec le LLM. Voici une répartition de ce qu'il faut observer et quelques modules attendus dans un outil d'observabilité :
+
+### Prompt d'entrée
+
+- **Template de prompt**
+  - Le format ou la structure standardisée utilisée pour générer le prompt d'entrée, y compris tous les placeholders ou variables au sein du template.
+  - Les outils d'observabilité fournissent souvent un registre de templates de prompt que la communauté ou une organisation peut utiliser et partager.
+- **Exemples**
+  - L'apprentissage few-shot en contexte est souvent efficace en prompt engineering. Des exemples spécifiques ou des entrées d'échantillon peuvent être utilisés pour guider la réponse du modèle.
+- **Contexte récupéré**
+  - Dans un système RAG (Retrieval-Augmented Generation), un contexte pertinent est récupéré à partir de sources externes ou de bases de données pour fournir des informations au LLM, rendant les résultats plus fiables.
+- **Mémoire**
+  - Données historiques ou interactions précédentes stockées en mémoire.
+  - Comment cette mémoire est utilisée pour influencer le prompt actuel, comme résumer la mémoire passée, récupérer la mémoire pertinente ou utiliser la mémoire la plus récente.
+- **Outils**
+  - Tous les outils ou utilitaires utilisés pour prétraiter ou enrichir le prompt d'entrée.
+  - Les outils deviennent de plus en plus importants dans les applications LLM, servant de pont vers les applications du monde réel.
+  - Configurations spécifiques ou paramètres appliqués par ces outils et leur impact.
+
+### Modèle
+
+- **Spécifications du modèle**
+  - La version spécifique ou l'identifiant du modèle utilisé.
+  - Paramètres de configuration, hyperparamètres et toute personnalisation appliquée au modèle.
+
+### Sortie
+
+- **Formatage**
+  - La structure et le format de la sortie générée par le modèle.
+
+## Niveau application : quels schémas de workflow peut-on observer ?
+
+Un système LLM se compose souvent de bien plus qu'un seul LLM. Au niveau de l'application, certains schémas de workflow imposent des besoins spécifiques en matière d'observabilité à chaque étape. Voici quelques exemples de workflows :
+
+- **RAG**
+  - Un système RAG inclut l'étape de recherche documentaire en plus de la génération via un LLM. Il faut donc une observabilité supplémentaire pour suivre et contrôler les documents/datasets externes ainsi que la phase de recherche.
+- **LLM comme composant d'un système**
+  - Un système LLM peut inclure plusieurs LLM chaînés, de l'[engineering de flux](https://x.com/karpathy/status/1748043513156272416) avec diverses itérations, ou des systèmes multi-agents complexes (par exemple pour simuler un monde virtuel). Il est nécessaire d'observer les entrées et sorties de chaque étape pour comprendre le comportement global du système, identifier les goulets d'étranglement et garantir fiabilité et performance.
+
+## Quelles métriques observons-nous ?
+
+À chaque étape du workflow du système LLM, nous pouvons observer ce qui suit et définir des objectifs de niveau de service (SLO) globaux, des alertes et une surveillance :
+
+### Token et coût
+
+- Suivre le nombre de tokens traités et les coûts associés.
+
+### Traces et latence
+
+- Tracer le workflow du système pour observer et surveiller la séquence des opérations.
+- Mesurer et surveiller la latence pour identifier les goulots d'étranglement de performance et assurer des réponses rapides.
+
+### Anomalies et erreurs
+
+- Identifier rapidement les problèmes au sein du système.
+- Créer des datasets pour les tests
+- Comprendre les patterns et cas d'usage à partir des cas de pouces vers le bas par exemple
+- Surveiller les taux d'erreur et les retours négatifs au fil du temps.
+
+### Qualité
+
+Un outil d'observabilité doit permettre de suivre les indicateurs clés de performance via l'évaluation, le feedback et l'annotation :
+
+- **Évaluation**
+  - Métriques et critères servant à évaluer la qualité et la pertinence des résultats.
+  - Les outils d'observabilité proposent généralement des ensembles d'outils d'évaluation pour créer des datasets d'évaluation, annoter, évaluer et comparer les résultats des modèles.
+- **Feedback**
+  - Retours utilisateurs sur les résultats : notations, commentaires, propositions.
+  - Intégration de systèmes automatiques de collecte et d'analyse de feedback.
+- **Annotation**
+  - Annotations manuelles ou automatiques ajoutées aux résultats pour une analyse complémentaire et potentiellement incluses dans le dataset d'évaluation.
+
+## Intégrations
+
+Mistral s'intègre avec plusieurs outils d'observabilité pour vous aider à surveiller et assurer des applications LLM plus fiables et performantes.
+
+### Intégration avec LangSmith
+
+LangSmith fournit une observabilité tout au long du cycle de vie du développement d'applications LLM.
+
+<img src="/img/guides/obs_langchain0.png" alt="drawing" width="700"/>
+
+**Avantages :**
+
+- LangSmith est compatible à la fois avec l'écosystème LangChain et les systèmes externes.
+- Option de déploiement bientôt disponible.
+- Il offre une large gamme de domaines observables, servant de plateforme tout-en-un.
+
+**Exemple d'intégration Mistral :**
+
+- Tous les [notebooks langchain](https://github.com/mistralai/cookbook/tree/main/third_party/langchain) du cookbook Mistral incluent l'intégration LangSmith.
+
+Voici un exemple de suivi des traces, entrées, sorties, documents, tokens et statut lorsque nous exécutons l'[exemple de RAG correctif](https://github.com/mistralai/cookbook/blob/main/third_party/langchain/corrective_rag_mistral.ipynb) du cookbook Mistral.
+
+<img src="/img/guides/obs_langchain.png" alt="drawing" width="700"/>
+
+### Intégration avec 🪢 Langfuse
+
+[Langfuse](https://langfuse.com) ([GitHub](https://github.com/langfuse/langfuse)) est une plateforme open-source pour l'ingénierie LLM. Elle fournit des capacités de traçage et de surveillance pour les applications d'IA, aidant les développeurs à déboguer, analyser et optimiser leurs produits. Langfuse s'intègre avec divers outils et frameworks via des intégrations natives, OpenTelemetry et des SDK.
+
+<img src="/img/guides/obs_langfuse.png" alt="drawing" width="700"/>
+
+**Avantages :**
+
+- Plateforme LLMOps open-source la plus utilisée ([article de blog](https://langfuse.com/blog/2024-11-most-used-oss-llmops))
+- Agnostique du modèle et du framework
+- Conçue pour la production
+- Adoption progressive possible, commencer avec une fonctionnalité et étendre à la plateforme complète au fil du temps
+- API-first, toutes les fonctionnalités sont disponibles via API pour des intégrations personnalisées
+- En option, Langfuse peut être facilement auto-hébergée
+
+**Exemple d'intégration Mistral :**
+
+- [Guide étape par étape](https://langfuse.com/docs/integrations/mistral-sdk) sur le traçage des modèles Mistral avec Langfuse.
+- [Cookbook](https://langfuse.com/guides/cookbook/integration_llama_index_posthog_mistral) sur la construction d'une application RAG avec Mistral et LlamaIndex et le traçage des étapes avec Langfuse.
+
+<img src="/img/guides/obs_langfuse2.png" alt="drawing" width="700"/>
+
+_[Exemple de trace publique dans Langfuse](https://cloud.langfuse.com/project/cloramnkj0002jz088vzn1ja4/traces/a3360c6f-24ad-455c-aae7-eb9d5c6f5dac?observation=767f8ac1-0c7d-412f-8fd8-2642acb267c6&display=preview)_
+
+### Intégration avec Arize Phoenix
+
+Phoenix est une bibliothèque d'observabilité open-source conçue pour l'expérimentation, l'évaluation et le dépannage. Elle est conçue pour prendre en charge les agents, les pipelines RAG et d'autres applications LLM.
+
+**Avantages :**
+
+- Open-source ([Github](https://github.com/Arize-ai/phoenix)), et construite sur OpenTelemetry
+- Peut être [auto-hébergée](https://docs.arize.com/phoenix/setup/environments#container), accessible via le [cloud](https://docs.arize.com/phoenix/hosted-phoenix), ou exécutée directement dans un [notebook](https://docs.arize.com/phoenix/setup/environments#notebooks)
+- Fournit une [intégration Mistral](https://docs.arize.com/phoenix/tracing/integrations-tracing/mistralai) pour tracer automatiquement les appels Client.chat et Agent.chat
+- Plateforme analytique puissante, avec un agent copilot pour vous aider à déboguer votre application
+
+**Exemple d'intégration Mistral :**
+Voici un [exemple de notebook](https://github.com/mistralai/cookbook/blob/main/third_party/Phoenix/arize_phoenix_tracing.ipynb) qui montre comment tracer Mistral chat.complete et les appels d'outils dans Phoenix.
+
+<img src="/img/guides/obs_phoenix1.png" alt="drawing" width="700"/>
+
+### Intégration avec Weights and Biases
+
+Weights & Biases est une plateforme développeur orientée IA tout-en-un, adaptée aux workflows ML et LLM. Utilisez W\&B Weave pour évaluer, suivre et itérer sur les applications GenAI, ainsi que W\&B Models afin de consigner, entrainer et gérer vos modèles d'IA.
+
+<img src="/img/guides/obs_wandb.png" alt="dessin" width="700"/>
+
+**Avantages :**
+
+- Plateforme pour le développement d'applications LLM et workflows ML
+- Intégration avec la [Mistral API](https://weave-docs.wandb.ai/guides/integrations/mistral/)
+  - Démarrez avec une seule ligne : `weave.init('my-project')`
+  - Suivi automatique des entrées, sorties, contexte, erreurs, métriques d'évaluation et traces
+
+
+**Exemple d'intégration Mistral :**
+
+Pour bien commencer, consultez le [cookbook](https://github.com/mistralai/cookbook/tree/main/third_party/wandb).
+
+<iframe width="100%" height="315" src="https://www.youtube.com/embed/VBbq7NPWzlo?si=h8NyuQVH78N8AAwV" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+### Intégration avec PromptLayer
+
+PromptLayer est une plateforme de gestion des prompts, de collaboration, de surveillance et d'évaluation. Adaptée aux hackers comme aux équipes de production.
+
+**Avantages :**
+
+- CMS sans code pour la gestion et le versioning des prompts
+- Support natif de Mistral
+- Les prompts sont agnostiques au modèle par défaut
+- Suivi et observabilité simples des prompts
+
+**Intégration Mistral :**
+
+<iframe width="100%" height="315" src="https://www.youtube.com/embed/2EWdBnuqHdQ?si=sCCyKYjkOrcyOgBD" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+### Intégration avec AgentOps
+
+AgentOps est une plateforme open-source d'observabilité et de DevTool pour les agents AI. Elle aide les développeurs à construire, évaluer et surveiller les agents AI.
+
+**Avantages :**
+
+- Open-source
+- Conçue pour observer les agents
+- Permet le voyage dans le temps
+- S'intègre avec CrewAI, AutoGen et LangChain
+
+**Exemple d'intégration Mistral :**
+
+[https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb](https://github.com/mistralai/cookbook/blob/main/third_party/CAMEL_AI/camel_roleplaying_scraper.ipynb)
+
+<img src="/img/guides/obs_agentops.png" alt="drawing" width="700"/>
+
+### Intégration avec phospho
+
+[phospho](https://phospho.ai/) est une plateforme d'analyse de texte qui facilite l'obtention de réponses, la prise de décisions et la réduction du churn en exploitant les données des messages utilisateurs.
+
+<img src="/img/guides/obs_phospho.png" alt="drawing" width="700"/>
+
+**Avantages :**
+
+- Plateforme open-source ([github](https://github.com/phospho-app))
+- Clustering et analyses sans code
+- Tableaux de bord personnalisables
+- Nombreuses intégrations avec d'autres frameworks d'observabilité, langages, API…
+
+**Exemple d'intégration Mistral :**
+
+- Consultez les [notebooks phospho](https://github.com/mistralai/cookbook/tree/main/third_party/phospho) dans le cookbook Mistral.
+
+<img src="/img/guides/obs_phospho2.png" alt="drawing" width="700"/>
+
+### Intégration avec MLflow
+
+MLflow est une plateforme MLOps unifiée, de bout en bout et open-source pour les applications ML traditionnelles et GenAI, offrant des capacités de traçage complètes pour surveiller et analyser l'exécution des applications GenAI.
+
+**Avantages :**
+
+- Open-source ([Github](https://github.com/mlflow/mlflow))
+- Ajoutez l'intégration Mistral en une ligne : `mlflow.mistral.autolog()` et obtenez un traçage complet des appels de chat et d'embedding.
+- Peut être [exécuté localement ou auto-hébergé](https://mlflow.org/docs/latest/getting-started/intro-quickstart/index.html), ou utilisé via l'un des [services MLflow managés](https://mlflow.org/docs/latest/introduction/index.html#running-mlflow-anywhere) disponibles
+- Fournit des capacités complètes d'évaluation, de versioning et de déploiement de modèles, en plus du traçage et du suivi des expériences.
+
+**Exemple d'intégration Mistral :**
+Voici un [notebook d'exemple](https://github.com/mistralai/cookbook/blob/main/third_party/MLflow/mistral-mlflow-tracing.ipynb).
+
+<img src="/img/guides/obs_mlflow.png" alt="drawing" width="700"/>
+
+### Intégration avec Maxim
+
+Maxim AI fournit une observabilité complète pour vos applications AI basées sur Mistral. Avec l'intégration en une ligne de Maxim, vous pouvez facilement tracer et analyser les appels LLM, les métriques, et plus encore.
+
+**Avantages :**
+
+* Analyses de performances : suivez la latence, les tokens consommés et les coûts
+* Visualisation avancée : comprenez les trajectoires des agents grâce à des tableaux de bord intuitifs
+
+**Exemple d'intégration Mistral :**
+
+* Découvrez comment intégrer l'observabilité Maxim avec le SDK Mistral en une seule ligne de code - [Notebook Colab](https://github.com/mistralai/cookbook/blob/main/third_party/Maxim/cookbook_maxim_mistral_integration.ipynb)
+
+Documentation Maxim pour utiliser Mistral comme fournisseur LLM et Maxim comme logger - [Lien vers la documentation](https://www.getmaxim.ai/docs/sdk/python/integrations/mistral/mistral)
+
+![Gif](https://raw.githubusercontent.com/akmadan/platform-docs-public/docs/observability-maxim-provider/static/img/guides/maxim_traces.gif)

@@ -1,70 +1,23 @@
 ---
 title: Prétraitement de la requête
 description: Améliorez les requêtes des utilisateurs avant la recherche grâce à la réécriture et l’extension avec les LLM.
-sidebar_position: 3
-sidebar_label: Prétraitement de la requête
+sidebar_position: 4
+sidebar_label: Query preprocessing
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-Le prétraitement des requêtes améliore les requêtes utilisateurs avant la recherche, ce qui peut augmenter la qualité des résultats. À noter :
+# Query preprocessing
 
-- Le succès de ces techniques dépend fortement du domaine et des données utilisées.
-- Le prétraitement des requêtes augmente la latence générale de la chaîne de recherche.
+Query preprocessing improves user queries before retrieval. Techniques like rewriting and expansion can significantly improve retrieval quality, though they increase latency and cost.
 
 <SectionTab as="h1" sectionId="llm-query-rewriter">Réécriture de requête LLM</SectionTab>
 
 Utilise un LLM pour reformuler les requêtes utilisateurs de façon plus claire et précise.
 
-```python
-from mistralai.client import Mistral
-from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter, QueryRewriterPromptConfig
-from mistralai.search.toolkit.llm import MistralChat, LLMConfig
+**Installation**: Core library (no extra required)
 
-llm = MistralChat(
-    client=Mistral(api_key="..."),
-    config=LLMConfig(model="mistral-small-latest"),
-)
-rewriter = LLMQueryRewriter(
-    llm_provider=llm,
-    prompt_config=QueryRewriterPromptConfig(),
-)
-
-result = await rewriter.rewrite("rag mistral")
-# Output: "Qu’est-ce que la génération augmentée par récupération (RAG) avec Mistral AI ?"
-```
-
-<SectionTab as="h1" sectionId="llm-query-extension">Extension de requête LLM</SectionTab>
-
-Découpe la requête utilisateur en sous-requêtes explorant différents aspects de la question initiale. Chaque sous-requête est utilisée pour la recherche, l’idée étant que la réunion de tous les résultats améliore le rappel. Particulièrement utile pour les questions complexes ou à facettes multiples.
-
-```python
-from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryExtension
-
-extender = LLMQueryExtension(llm_provider=llm)
-
-result = await extender.extend("How does RAG work?")
-# Output: {
-#   "original_query": "How does RAG work?",
-#   "extended_queries": [
-#     "Qu’est-ce que RAG ?",
-#     "Comment fonctionne la recherche dans RAG ?",
-#     "Comment fonctionne la génération dans RAG ?"
-#   ]
-# }
-```
-
-# Prétraitement des requêtes
-
-Le prétraitement des requêtes améliore les requêtes utilisateurs avant la phase de recherche. Des techniques comme la réécriture et l’expansion peuvent nettement optimiser la qualité de la recherche, au prix d’une augmentation de la latence et du coût.
-
-<SectionTab as="h1" sectionId="llm-query-rewriter">Réécriture de requête par LLM</SectionTab>
-
-Utilise un LLM pour reformuler les requêtes afin de les rapprocher du contenu indexé. Convertit le langage informel en requête structurée, développe les abréviations et clarifie l’intention de recherche.
-
-**Installation** : Bibliothèque principale (aucune extension requise)
-
-**Exemple** :
+**Example**:
 
 ```python
 from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
@@ -78,27 +31,27 @@ llm = MistralChat(
 
 rewriter = LLMQueryRewriter(llm_provider=llm)
 
-# Original : "rag mistral"
+# Original: "rag mistral"
 rewritten = await rewriter.rewrite("rag mistral")
-# Résultat : "What is Retrieval-Augmented Generation with Mistral AI?"
+# Result: "What is Retrieval-Augmented Generation with Mistral AI?"
 
-# Utilisation dans QueryEngine
+# Use in QueryEngine
 query_engine = QueryEngine(
     retriever=vector_retriever,
     query_rewriter=rewriter,
 )
 
 result = await query_engine.search(query="rag mistral")
-# La requête est réécrite avant la recherche
+# Query is rewritten before retrieval
 ```
 
-**Options de configuration** :
+**Configuration options**:
 
-| Option | Type | Par défaut | But |
-|--------|------|------------|-----|
-| `llm_provider` | LLMProvider | Obligatoire | LLM utilisé pour la réécriture (MistralChat, etc.) |
+| Option | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `llm_provider` | LLMProvider | Required | LLM to use for rewriting (MistralChat, etc.) |
 
-**Prompt de réécriture personnalisé** :
+Le prétraitement des requêtes améliore les requêtes utilisateurs avant la phase de recherche. Des techniques comme la réécriture et l’expansion peuvent nettement optimiser la qualité de la recherche, au prix d’une augmentation de la latence et du coût.
 
 ```python
 from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
@@ -109,33 +62,33 @@ llm = MistralChat(
     config=LLMConfig(model="mistral-small-latest"),
 )
 
-# Avec prompt personnalisé
+# With custom prompt
 rewriter = LLMQueryRewriter(
     llm_provider=llm,
-    prompt="Reformule cette requête pour un moteur de recherche de documentation technique : ",
+    prompt="Reformulate this query for a technical documentation search engine: ",
 )
 
 rewritten = await rewriter.rewrite("how to set up django")
 ```
 
-**Quand l’utiliser :**
-- Requêtes courtes ou informelles à développer
-- Requêtes comportant des acronymes ou abréviations propres à un domaine
-- Améliorer le rappel sur une formulation vague d’utilisateur
-- Conversion de questions en combinaisons de mots-clés
-
-**À prendre en compte côté coût :**
-- 1 appel LLM par requête
-- Ajoute 100 à 500 ms de latence
-- À activer de façon stratégique, pas systématiquement
-
-<SectionTab as="h1" sectionId="llm-query-extension">Extension de requête par LLM</SectionTab>
-
-Découpe une requête en plusieurs sous-requêtes explorant différents aspects. Chaque sous-requête lance une recherche indépendante ; les résultats sont fusionnés pour couvrir un spectre plus large.
-
-**Installation :** Bibliothèque principale (aucune extension requise)
+Utilise un LLM pour reformuler les requêtes afin de les rapprocher du contenu indexé. Convertit le langage informel en requête structurée, développe les abréviations et clarifie l’intention de recherche.
+- Short or informal queries that need expansion
+- Queries with acronyms or domain-specific abbreviations
+- Improving recall for vague user input
+- Converting questions into keyword combinations
 
 **Exemple** :
+- 1 LLM call per query
+- Adds 100-500ms latency
+- Use strategically, not for every query
+
+<SectionTab as="h1" sectionId="llm-query-extension">LLM Query Extension</SectionTab>
+
+Breaks a query into multiple sub-queries exploring different facets. Each sub-query runs an independent retrieval pass; results are combined for broader recall.
+
+**Prompt de réécriture personnalisé** :
+
+**Example**:
 
 ```python
 from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryExtension
@@ -149,54 +102,54 @@ llm = MistralChat(
 
 extender = LLMQueryExtension(
     llm_provider=llm,
-    num_queries=3,  # Génère 3 sous-requêtes
+    num_queries=3,  # Generate 3 sub-queries
 )
 
-# Original : "How does RAG work?"
+# Original: "How does RAG work?"
 extended = await extender.extend("How does RAG work?")
-# Résultats :
+# Results in:
 # - "What is RAG?"
 # - "How does retrieval work in RAG?"
 # - "How does generation work in RAG?"
 
-# Utilisation dans QueryEngine
+# Use in QueryEngine
 query_engine = QueryEngine(
     retriever=vector_retriever,
     query_rewriter=extender,
 )
 
 result = await query_engine.search(query="How does RAG work?")
-# Les 3 sous-requêtes sont traitées et les résultats fusionnés
+# All 3 sub-queries are retrieved and results combined
 ```
 
-**Options de configuration :**
+**Configuration options**:
 
-| Option | Type | Par défaut | But |
-|--------|------|------------|-----|
-| `llm_provider` | LLMProvider | Obligatoire | LLM utilisé pour l’extension (MistralChat, etc.) |
-| `num_queries` | int | 3 | Nombre de sous-requêtes à générer |
+| Option | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `llm_provider` | LLMProvider | Required | LLM to use for extension (MistralChat, etc.) |
+| `num_queries` | int | 3 | Number of sub-queries to generate |
 
-**Coût et performance :**
+**Cost and performance**:
 
 ```python
-# num_queries=3 signifie :
-# - 1 appel LLM pour générer les sous-requêtes
-# - 3 recherches, donc 3x plus lent
-# - 3 appels d’embedding (un par sous-requête)
-# - Résultats fusionnés/dédoublonnés
+# num_queries=3 means:
+# - 1 LLM call to generate sub-queries
+# - 3 retrieval passes (3x slower)
+# - 3x embedding calls (for each sub-query)
+# - Results combined/deduplicated
 
-# À ajuster selon la tolérance :
-extender = LLMQueryExtension(llm_provider=llm, num_queries=2)  # Plus rapide, rappel réduit
-extender = LLMQueryExtension(llm_provider=llm, num_queries=5)  # Plus lent, meilleur rappel
+# Choose based on tolerance:
+extender = LLMQueryExtension(llm_provider=llm, num_queries=2)  # Faster, lower recall
+extender = LLMQueryExtension(llm_provider=llm, num_queries=5)  # Slower, higher recall
 ```
 
-**Quand l’utiliser :**
-- Requêtes complexes avec plusieurs dimensions
-- Améliorer le rappel sur des aspects variés
-- Questions multi-facettes nécessitant une couverture large
-- Quand la latence supplémentaire est acceptable
+Découpe une requête en plusieurs sous-requêtes explorant différents aspects. Chaque sous-requête lance une recherche indépendante ; les résultats sont fusionnés pour couvrir un spectre plus large.
+- Complex queries with multiple aspects
+- Improving recall across different facets
+- Multi-faceted questions that need broad coverage
+- When latency tolerance allows for multiple retrievals
 
-**Bonne pratique : combiner avec un reranking**
+**Exemple** :
 
 ```python
 query_engine = QueryEngine(
@@ -205,31 +158,31 @@ query_engine = QueryEngine(
     rerankers=[LLMReRanker(llm_provider=llm, top_k=10)],
 )
 
-# Processus :
-# 1. 1 requête → 3 sous-requêtes (appel LLM)
-# 2. 3 recherches (embedding + recherche vectorielle pour chaque)
-# 3. ~30 résultats rassemblés
-# 4. Reranking par LLM pour conserver le top 10 (1 appel LLM supplémentaire)
-# Total : 2 appels LLM + 3 recherches vectorielles + fusion/dédoublonnage + reranking
+# Flow:
+# 1. 1 query → 3 sub-queries (LLM call)
+# 2. 3 retrieval passes (3x embedding + vector search)
+# 3. ~30 results combined
+# 4. LLM reranking narrows to top 10 (1 more LLM call)
+# Total: 2 LLM calls + 3 vector searches + deduplication + reranking
 result = await query_engine.search(query="...", top_k=10)
 ```
 
-<SectionTab as="h1" sectionId="custom-preprocessors">Préprocesseurs de requête personnalisés</SectionTab>
+<SectionTab as="h1" sectionId="custom-preprocessors">Custom query preprocessors</SectionTab>
 
-Implémentez le protocole `QueryPreprocessor` :
+Implement the `QueryPreprocessor` protocol:
 
 ```python
 from mistralai.search.toolkit.retrieval.pre_processors import QueryPreprocessor
 
 class DomainSpecificRewriter(QueryPreprocessor):
-    """Réécrit les requêtes pour un domaine spécifique."""
+    """Rewrite queries for a specific domain."""
 
     async def preprocess(self, query: str) -> str:
-        """Prétraitement de la requête."""
-        # 1. Normalisation
+        """Preprocess the query."""
+        # 1. Normalize
         normalized = query.lower().strip()
 
-        # 2. Expansion des abréviations propres au domaine
+        # 2. Expand domain-specific abbreviations
         expansions = {
             "ml": "machine learning",
             "nlp": "natural language processing",
@@ -238,7 +191,7 @@ class DomainSpecificRewriter(QueryPreprocessor):
         for abbr, expansion in expansions.items():
             normalized = normalized.replace(f" {abbr} ", f" {expansion} ")
 
-        # 3. Ajout de contexte si besoin
+        # 3. Add domain context if needed
         if "algorithm" in normalized:
             normalized += " implementation approach"
 
@@ -252,29 +205,29 @@ query_engine = QueryEngine(
 )
 ```
 
-<SectionTab as="h1" sectionId="when-to-use">Quand utiliser le prétraitement des requêtes</SectionTab>
+<SectionTab as="h1" sectionId="when-to-use">When to use query preprocessing</SectionTab>
 
-**Utilisez le prétraitement si :**
-- Les requêtes sont courtes ou vagues (ex : « rag » au lieu de questions complètes)
-- Votre index utilise une terminologie très spécialisée
-- Vous cherchez à améliorer le rappel pour des questions à plusieurs facettes
-- Votre tolérance à la latence permet d’ajouter des appels LLM
+**Quand l’utiliser :**
+- Requêtes complexes avec plusieurs dimensions
+- Améliorer le rappel sur des aspects variés
+- Questions multi-facettes nécessitant une couverture large
+- Quand la latence supplémentaire est acceptable
 
-**Sautez le prétraitement si :**
-- Les requêtes utilisateurs sont déjà bien structurées
-- La latence doit rester minimale (chat temps réel)
-- Les coûts sont critiques (chaque appel LLM s’ajoute)
-- La recherche vectorielle seule suffit
+**Bonne pratique : combiner avec un reranking**
+- User queries are already well-formed
+- Latency is critical (real-time chat)
+- Cost is a concern (each LLM call adds up)
+- Vector retrieval alone gives good results
 
-**Approche hybride** :
+**Hybrid approach**:
 
 ```python
-# Prétraitement optionnel selon la longueur de la requête
+# Optional preprocessing based on query length
 class OptionalRewriter(QueryPreprocessor):
     async def preprocess(self, query: str) -> str:
-        # Réécrit uniquement les requêtes courtes
+        # Only rewrite short queries
         if len(query.split()) < 3:
-            # Développe la requête courte
+            # Expand short query
             return await llm.rewrite(query)
         return query
 
@@ -284,9 +237,9 @@ query_engine = QueryEngine(
 )
 ```
 
-<SectionTab as="h1" sectionId="see-also">À voir aussi</SectionTab>
+<SectionTab as="h1" sectionId="see-also">See also</SectionTab>
 
-- [Présentation de la recherche](../) — Architecture de la pipeline de recherche
-- [Moteurs de recherche](../retrievers) — Recherche vectorielle et par mot-clé
-- [Reclasseurs](../rerankers) — Affiner les résultats après la recherche
-- [Cache sémantique](../semantic-cache) — Mise en cache des requêtes prétraitées
+- [Vue d’ensemble de la récupération](../retrieval) — Architecture du pipeline de récupération
+- [Récupérateurs](retrievers) — Recherche vectorielle et par mots-clés
+- [Reclasseurs](rerankers) — Affiner les résultats après récupération
+- [Cache sémantique](semantic-cache) — Mettre en cache les requêtes prétraitées

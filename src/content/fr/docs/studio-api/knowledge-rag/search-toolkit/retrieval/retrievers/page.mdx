@@ -7,99 +7,31 @@ sidebar_label: Retrievers
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-Les retrievers récupèrent des segments à partir des backends de stockage. Le Search Toolkit prend en charge les retrievers vectoriels, par mot-clé et hybrides.
-
-:::info[Nom de la collection]
-Search Toolkit utilise `collection_name` pour identifier quelle collection ou index interroger. Celui-ci doit correspondre au nom utilisé lors de [l’ingestion](../../ingestion) au moment de l’indexation de vos documents.
-:::
-
-<SectionTab as="h1" sectionId="vector-retriever">Retriever vectoriel</SectionTab>
-
-`VectorRetriever` effectue une recherche sémantique sur la requête fournie. Il nécessite un [vector store](../../search-index) ainsi qu’un [embedder](../../ingestion/embedders).
-
-```python
-from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
-
-retriever = VectorRetriever(
-    client=vector_store,
-    embedder=embedder,
-)
-
-results = await retriever.retrieve(
-    query="What is semantic search?",
-    top_k=10,
-    filter={"category": "documentation"},
-)
-```
-
-<SectionTab as="h1" sectionId="keyword-retriever">Retriever par mot-clé</SectionTab>
-
-`KeywordRetriever` effectue une recherche lexicale sur la requête fournie. Il nécessite un [keyword store](../../search-index).
-
-```python
-from mistralai.search.toolkit.retrieval.retrievers import KeywordRetriever
-
-retriever = KeywordRetriever(client=keyword_store)
-
-results = await retriever.retrieve(query="exact keyword match")
-```
-
-<SectionTab as="h1" sectionId="hybrid-search">Recherche hybride</SectionTab>
-
-La recherche hybride combine les résultats des recherches vectorielles et par mot-clé à l’aide de la méthode Reciprocal Rank Fusion (RRF). Passez plusieurs retrievers dans un `QueryEngine` avec un `RRFRanker` :
-
-```python
-from mistralai.search.toolkit.retrieval import QueryEngine
-from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever, KeywordRetriever
-from mistralai.search.toolkit.retrieval.rerankers import RRFRanker
-
-query_engine = QueryEngine(
-    retriever=[
-        VectorRetriever(client=vector_store, embedder=embedder),
-        KeywordRetriever(client=keyword_store),
-    ],
-    rerankers=[RRFRanker(rrf_k=60)],
-)
-
-result = await query_engine.search(query="hybrid search example", top_k=10)
-```
-
-:::info[Reciprocal Rank Fusion (RRF)]
-La RRF fusionne les classements de plusieurs sources en utilisant uniquement les positions de rang, sans tenir compte des scores. La formule est :
-```
-RRF = Σ (1 / (k + rank_i))
-```
-
-Où :
-- `k` = constante RRF (valeur par défaut : 60)
-- `rank_i` = Rang provenant du retriever i
-:::
-
 # Retrievers
 
-Les retrievers effectuent la recherche dans votre index. Le Search Toolkit propose des retrievers vectoriels (sémantiques) pour la recherche sémantique dans vos documents.
+Retrievers execute the search against your index. Search Toolkit provides vector (semantic) retrievers for semantic search over your documents.
 
-<SectionTab as="h2" sectionId="available-retrievers">Retrievers disponibles</SectionTab>
+<SectionTab as="h2" sectionId="available-retrievers">Retriever vectoriel</SectionTab>
 
-| Retriever | Objectif |
-|-----------|----------|
-| **[Vector Retriever](#vector-retriever)** | Recherche sémantique à l'aide d'embeddings |
-| **[Custom Retrievers](#custom-retrievers)** | Logique de recherche personnalisée |
+| Retriever | Purpose |
+|-----------|---------|
+| **[Vector Retriever](#vector-retriever)** | Semantic search using embeddings |
+| **[Custom Retrievers](#custom-retrievers)** | Custom search logic |
 
 <SectionTab as="h1" sectionId="vector-retriever">Vector Retriever</SectionTab>
 
-Réalise une recherche sémantique à l'aide d'embeddings. Permet de retrouver des fragments dont le sens est similaire à la requête, même s'ils utilisent des mots différents.
+Performs semantic search using embeddings. Finds chunks with similar meaning to the query, even if they use different words.
 
-**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
+`KeywordRetriever` effectue une recherche lexicale sur la requête fournie. Il nécessite un [keyword store](../../search-index).
 
-**Exemple** :
+**Example**:
 
 ```python
 from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
 
 retriever = VectorRetriever(
-    client=vector_store,  # Client de store vectoriel (Vespa ou implémentation personnalisée)
-    embedder=embedder,    # MistralEmbedder ou un Embedder personnalisé
+    client=vector_store,  # Vector store client (Vespa or custom implementation)
+    embedder=embedder,    # MistralEmbedder or custom Embedder
 )
 
 results = await retriever.retrieve(
@@ -108,44 +40,44 @@ results = await retriever.retrieve(
 )
 ```
 
-**Options de configuration** :
+La recherche hybride combine les résultats des recherches vectorielles et par mot-clé à l’aide de la méthode Reciprocal Rank Fusion (RRF). Passez plusieurs retrievers dans un `QueryEngine` avec un `RRFRanker` :
 
-| Option | Type | Défaut  | Objectif |
-|--------|------|---------|----------|
-| `client` | VectorStoreClient | Obligatoire | Store vectoriel utilisé pour la recherche |
-| `embedder` | Embedder | Obligatoire | Embedder pour la vectorisation des requêtes |
+| Option | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `client` | VectorStoreClient | Required | Vector store to search |
+| `embedder` | Embedder | Required | Embedder for query vectorization |
 
-**Filtrage** :
+**Filtering**:
 
-Filtrez sur les métadonnées pour restreindre les résultats :
+Filter by metadata to narrow results:
 
 ```python
 results = await retriever.retrieve(
     query="machine learning",
     top_k=10,
-    filter={"category": "tutorials", "year": 2024},  # Selon prise en charge du store
+    filter={"category": "tutorials", "year": 2024},  # Depends on store support
 )
 ```
 
 :::info
-La prise en charge du filtrage dépend de votre backend de store vectoriel. Vespa gère nativement le filtrage sur les métadonnées.
+Filtering support depends on your vector store backend. Vespa supports metadata filtering natively.
 :::
 
-**Quand l'utiliser :**
-- Recherche sémantique générale dans vos documents
-- Identifier du contenu conceptuellement similaire
-- Gérer naturellement les synonymes et les reformulations
+**When to use**:
+- General semantic search across your documents
+- Finding conceptually similar content
+- Handling synonyms and paraphrasing naturally
 
 <SectionTab as="h1" sectionId="custom-retrievers">Custom retrievers</SectionTab>
 
-Implémentez le protocole `Retriever` pour une logique de recherche personnalisée :
+**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
 
 ```python
 from mistralai.search.toolkit.retrieval.retrievers import Retriever
 from mistralai.search.toolkit.indices import SearchResult
 
 class CustomRetriever(Retriever):
-    """Retriever sur-mesure, logique spécifique au domaine."""
+    """Custom retriever with domain-specific logic."""
 
     async def retrieve(
         self,
@@ -153,36 +85,36 @@ class CustomRetriever(Retriever):
         top_k: int = 10,
         filter: dict | None = None,
     ) -> list[SearchResult]:
-        """Récupère les fragments pertinents pour la requête."""
-        # 1. Prétraitement de la requête
+        """Retrieve relevant chunks for the query."""
+        # 1. Preprocess query
         processed_query = self._preprocess(query)
 
-        # 2. Recherche avec une logique personnalisée
+        # 2. Search with custom logic
         results = await self._search(processed_query, top_k, filter)
 
-        # 3. Post-traitement ou enrichissement des résultats
+        # 3. Post-process or augment results
         enhanced_results = self._enhance(results)
 
         return enhanced_results
 
     def _preprocess(self, query: str) -> str:
-        # Prétraitement spécifique (stemming, lemmatisation, etc.)
+        # Custom preprocessing (stemming, lemmatization, etc.)
         return query.lower().strip()
 
     async def _search(self, query: str, top_k: int, filter: dict) -> list[SearchResult]:
-        # Implémentation personnalisée de la recherche
+        # Custom search implementation
         ...
 
     def _enhance(self, results: list[SearchResult]) -> list[SearchResult]:
-        # Enrichir les résultats avec du contexte additionnel
+        # Augment results with additional context
         ...
 
-# Utilisation dans QueryEngine
+# Use in QueryEngine
 query_engine = QueryEngine(retriever=CustomRetriever())
 ```
 
-<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
+<SectionTab as="h1" sectionId="see-also">See also</SectionTab>
 
-- [Présentation de la retrieval](../) — Architecture du pipeline de retrieval
-- [Rerankers](../rerankers) — Réordonnez les résultats pour un meilleur classement
-- [Prétraitement des requêtes](../preprocessing) — Améliorez les requêtes avant la recherche
+- [Vue d’ensemble de la recherche](../retrieval) — Architecture du pipeline de recherche
+- [Rerankers](rerankers) — Réévaluer les résultats pour un meilleur classement
+- [Prétraitement des requêtes](preprocessing) — Améliorer les requêtes avant la recherche

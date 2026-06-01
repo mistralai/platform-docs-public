@@ -9,11 +9,11 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Formulaires et confirmations
 
-Les workflows conversationnels peuvent demander à l’utilisateur des saisies structurées : champs à saisir avec validation, options à choix unique ou multiple, téléchargements de fichiers, confirmations accepter/refuser. Utilisez `FormInput` pour les formulaires complets et `ConfirmationInput` / `AcceptDeclineConfirmation` pour des demandes à validation rapide.
+Les workflows conversationnels peuvent demander à l'utilisateur une entrée structurée : champs typés avec validation, choix unique ou multiple, téléchargement de fichiers, confirmations accepter/refuser. Utilisez `FormInput` pour les formulaires complets et `ConfirmationInput` / `AcceptDeclineConfirmation` pour les invites en un clic.
 
-<SectionTab as="h1" sectionId="structured-form-inputs">Champs de formulaire structurés</SectionTab>
+<SectionTab as="h1" sectionId="structured-form-inputs">Entrées de formulaire structurées</SectionTab>
 
-Pour les workflows nécessitant des saisies structurées avec des champs typés, de la validation et un rendu d’UI personnalisé, utilisez `FormInput` au lieu de `ChatInput` :
+Pour les workflows nécessitant une entrée structurée avec champs typés, validation et rendu d'UI personnalisé, utilisez `FormInput` plutôt que `ChatInput` :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -34,50 +34,50 @@ from mistralai.workflows.conversational import (
 
 
 class ExpenseForm(FormInput):
-    """Formulaire structuré pour la saisie d’une dépense."""
+    """Structured form for expense submission."""
 
-    description: str = TextField(description="Description de la dépense")
+    description: str = TextField(description="Expense description")
     amount: float = NumberField(
-        description="Montant en USD",
+        description="Amount in USD",
         minimum=0,
         maximum=10000,
     )
     category: str = SingleChoice(
         options=[
-            ("travel", "Voyage"),
-            ("equipment", "Équipement"),
-            ("software", "Logiciel"),
+            ("travel", "Travel"),
+            ("equipment", "Equipment"),
+            ("software", "Software"),
         ],
-        description="Catégorie de dépense",
+        description="Expense category",
     )
-    expense_date: date = DateField(description="Date de la dépense")
-    due_date: datetime = DateTimeField(description="Date limite de remboursement")
+    expense_date: date = DateField(description="Date of expense")
+    due_date: datetime = DateTimeField(description="Reimbursement due date")
     receipt_id: str = TextField(
-        description="ID du reçu",
+        description="Receipt ID",
         pattern=r"^RCP-\d{6}$",
     )
 
 
 @workflows.workflow.define(
     name="expense-submission-workflow",
-    workflow_display_name="Saisie de dépense",
-    workflow_description="Saisir une dépense via un formulaire structuré",
+    workflow_display_name="Expense Submission",
+    workflow_description="Submit an expense with structured form",
 )
 class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
     @workflows.workflow.entrypoint
     async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
         expense = await self.wait_for_input(
             ExpenseForm,
-            label="Soumettre une dépense",
+            label="Submit Expense",
         )
 
-        result = f"""Dépense enregistrée :
-- Description : {expense.description}
-- Montant : ${expense.amount:.2f}
-- Catégorie : {expense.category}
-- Date : {expense.expense_date.isoformat()}
-- Date limite : {expense.due_date.isoformat()}
-- Reçu : {expense.receipt_id}"""
+        result = f"""Expense submitted:
+- Description: {expense.description}
+- Amount: ${expense.amount:.2f}
+- Category: {expense.category}
+- Date: {expense.expense_date.isoformat()}
+- Due date: {expense.due_date.isoformat()}
+- Receipt: {expense.receipt_id}"""
 
         return workflows_mistralai.ChatAssistantWorkflowOutput(
             content=[workflows_mistralai.TextOutput(text=result)]
@@ -90,25 +90,25 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_structured-form-input_expense-form.png"
-    alt="Un formulaire structuré affiché dans Vibe Work."
+    alt="Un champ de formulaire structuré affiché dans Vibe Work."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Un formulaire structuré affiché dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Un champ de formulaire structuré affiché dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="field-types">Types de champs</SectionTab>
 
-| Type de champ   | Description        | Propriétés                                                                                          |
-| --------------- | ----------------- | --------------------------------------------------------------------------------------------------- |
-| `TextField`     | Champ texte        | `description` ; `pattern` (regex facultatif) ; `prefilled_value`                                    |
+| Type de champ      | Description      | Propriétés                                                                                        |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------------- |
+| `TextField`     | Champ texte       | `description`, `pattern` (regex optionnelle), `prefilled_value`                                      |
 | `NumberField`   | Champ numérique    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum`, `prefilled_value`   |
-| `DateTimeField` | Sélecteur date/heure | `description`, `prefilled_value` (chaîne datetime ISO 8601)                                        |
-| `DateField`     | Sélecteur date     | `description`, `prefilled_value` (chaîne date ISO 8601)                                            |
-| `SingleChoice`  | Liste déroulante/choix unique | `options` (liste de tuples ou de chaînes), `description`, `prefilled_value`                |
-| `MultiChoice`   | Sélection multiple | `options` (liste de tuples ou chaînes), `description`, `prefilled_value`                           |
-| `FileField`     | Téléchargement de fichier | `description`, `multiple` (`False` par défaut), `include_metadata` (`False` par défaut)        |
+| `DateTimeField` | Sélecteur de date/heure | `description`, `prefilled_value` (chaîne de date/heure au format ISO 8601)                                       |
+| `DateField`     | Sélecteur de date      | `description`, `prefilled_value` (chaîne de date au format ISO 8601)                                           |
+| `SingleChoice`  | Liste déroulante/unique choix  | `options` (liste de tuples ou chaînes), `description`, `prefilled_value`                            |
+| `MultiChoice`   | Choix multiples     | `options` (liste de tuples ou chaînes), `description`, `prefilled_value`                            |
+| `FileField`     | Téléchargement de fichier | `description`, `multiple` (par défaut `False`), `include_metadata` (par défaut `False`)                  |
 
-Tous les types de champs (sauf `FileField`) acceptent en option un paramètre `prefilled_value`. C’est uniquement un indice d’UI : la valeur est préremplie mais le champ n’est *pas* rendu optionnel. L’utilisateur doit toujours valider la valeur. Si elle est invalide (hors limites, non conforme au pattern, option inconnue), elle est ignorée sans message.
+Tous les types de champs (sauf `FileField`) prennent en charge un paramètre optionnel `prefilled_value`. Il s'agit **uniquement d'une indication UI** : il préremplit le champ de formulaire mais ne le rend pas optionnel. La valeur doit toujours être explicitement soumise par l'utilisateur. Les valeurs préremplies non valides (hors limites, motif non correspondant, option inconnue) sont ignorées silencieusement.
 
 <SectionTab as="h2" variant="secondary" sectionId="textfield">TextField</SectionTab>
 
@@ -116,10 +116,10 @@ Tous les types de champs (sauf `FileField`) acceptent en option un paramètre `p
   <TabItem value="python" label="Python">
 
 ```python
-name: str = TextField(description="Votre nom", prefilled_value="John Doe")
+name: str = TextField(description="Your name", prefilled_value="John Doe")
 email: str = TextField(
-    description="Adresse e-mail",
-    pattern=r"^[\w.-]+@[\w.-]+\.\w+$",  # Validation regex facultative
+    description="Email address",
+    pattern=r"^[\w.-]+@[\w.-]+\.\w+$",  # Optional regex validation
 )
 ```
 
@@ -142,15 +142,15 @@ email: str = TextField(
 
 ```python
 amount: float = NumberField(
-    description="Montant",
-    minimum=0,           # Minimum inclus
-    maximum=10000,       # Maximum inclus
-    prefilled_value=100,   # Valeur préremplie
+    description="Amount",
+    minimum=0,           # Inclusive minimum
+    maximum=10000,       # Inclusive maximum
+    prefilled_value=100,   # Pre-filled value
 )
 price: float = NumberField(
-    description="Prix",
-    exclusive_minimum=0,   # Doit être strictement supérieur à 0
-    exclusive_maximum=100, # Doit être strictement inférieur à 100
+    description="Price",
+    exclusive_minimum=0,   # Must be greater than 0
+    exclusive_maximum=100, # Must be less than 100
 )
 ```
 
@@ -175,8 +175,8 @@ price: float = NumberField(
 from datetime import datetime
 
 scheduled_at: datetime = DateTimeField(
-    description="Date et heure de la planification",
-    prefilled_value="2025-01-15T10:00:00Z",  # Chaîne datetime ISO 8601
+    description="Schedule date and time",
+    prefilled_value="2025-01-15T10:00:00Z",  # ISO 8601 datetime string
 )
 ```
 
@@ -186,10 +186,10 @@ scheduled_at: datetime = DateTimeField(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_datetime-field.png"
-    alt="Un champ de sélection date-heure affiché dans Vibe Work."
+    alt="Un champ de sélection de date/heure affiché dans Vibe Work."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Champ date-heure dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Champ date/heure dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="datefield">DateField</SectionTab>
@@ -201,8 +201,8 @@ scheduled_at: datetime = DateTimeField(
 from datetime import date
 
 scheduled_at: date = DateField(
-    description="Date de la planification",
-    prefilled_value="2025-01-15",  # Chaîne date ISO 8601
+    description="Schedule date",
+    prefilled_value="2025-01-15",  # ISO 8601 date string
 )
 ```
 
@@ -212,7 +212,7 @@ scheduled_at: date = DateField(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_date-field.png"
-    alt="Un champ de sélection date affiché dans Vibe Work."
+    alt="Un champ de sélection de date affiché dans Vibe Work."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Champ date dans Vibe Work.</legend>
@@ -224,21 +224,21 @@ scheduled_at: date = DateField(
   <TabItem value="python" label="Python">
 
 ```python
-# Avec libellés (valeur, libellé affiché)
+# With labels (value, display_label)
 priority: str = SingleChoice(
     options=[
-        ("low", "Faible priorité"),
-        ("medium", "Priorité moyenne"),
-        ("high", "Priorité haute"),
+        ("low", "Low Priority"),
+        ("medium", "Medium Priority"),
+        ("high", "High Priority"),
     ],
-    description="Sélectionnez la priorité",
-    prefilled_value="medium",  # Option présélectionnée
+    description="Select priority",
+    prefilled_value="medium",  # Pre-selected option
 )
 
-# Options simples (valeur = libellé)
+# Simple string options (value = label)
 status: str = SingleChoice(
     options=["pending", "approved", "rejected"],
-    description="Statut",
+    description="Status",
 )
 ```
 
@@ -248,12 +248,12 @@ status: str = SingleChoice(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_single-choice-field_priority.png"
-    alt="Une liste déroulante affichée dans Vibe Work, montrant les options de priorité."
+    alt="Une liste déroulante à choix unique affichée dans Vibe Work, avec des options de priorité."
     centered
   />
   <Image
     url="/img/conversational_workflows/conversational-workflow_single-choice-field_status.png"
-    alt="Une liste déroulante affichée dans Vibe Work, montrant les options de statut."
+    alt="Une liste déroulante à choix unique affichée dans Vibe Work, avec des options de statut."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Champ à choix unique dans Vibe Work.</legend>
@@ -265,21 +265,21 @@ status: str = SingleChoice(
   <TabItem value="python" label="Python">
 
 ```python
-# Avec libellés (valeur, libellé affiché)
+# With labels (value, display_label)
 tags: list[str] = MultiChoice(
     options=[
         ("frontend", "Frontend"),
         ("backend", "Backend"),
         ("infra", "Infrastructure"),
     ],
-    description="Sélectionnez les tags applicables",
-    prefilled_value=["frontend"],  # Options présélectionnées
+    description="Select applicable tags",
+    prefilled_value=["frontend"],  # Pre-selected options
 )
 
-# Options simples (valeur = libellé)
+# Simple string options (value = label)
 colors: list[str] = MultiChoice(
     options=["red", "green", "blue"],
-    description="Choisissez les couleurs",
+    description="Pick colors",
 )
 ```
 
@@ -289,15 +289,15 @@ colors: list[str] = MultiChoice(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_multi-choice-field_tags.png"
-    alt="Un champ à choix multiple affiché dans Vibe Work, montrant les options de tags."
+    alt="Un champ à choix multiples affiché dans Vibe Work, avec des options de tags."
     centered
   />
   <Image
     url="/img/conversational_workflows/conversational-workflow_multi-choice-field_colors.png"
-    alt="Un champ à choix multiple affiché dans Vibe Work, montrant les options de couleurs."
+    alt="Un champ à choix multiples affiché dans Vibe Work, avec des options de couleurs."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Champ à choix multiple dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Champ à choix multiples dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="filefield">FileField</SectionTab>
@@ -308,18 +308,18 @@ colors: list[str] = MultiChoice(
 ```python
 from mistralai.workflows.conversational import FileField, FileWithMetadataValue
 
-# Téléchargement d’un seul fichier (URL simple)
-document: str = FileField(description="Téléchargez un document")
+# Single file upload (plain URL)
+document: str = FileField(description="Upload a document")
 
-# Téléchargement de plusieurs fichiers (URLs simples)
-attachments: list[str] = FileField(description="Téléchargez des fichiers", multiple=True)
+# Multiple file uploads (plain URLs)
+attachments: list[str] = FileField(description="Upload files", multiple=True)
 
-# Téléchargement d’un fichier avec métadonnées
-document: FileWithMetadataValue = FileField(description="Téléchargez un document", include_metadata=True)
+# Single file upload with metadata
+document: FileWithMetadataValue = FileField(description="Upload a document", include_metadata=True)
 
-# Téléchargement de plusieurs fichiers avec métadonnées
+# Multiple file uploads with metadata
 attachments: list[FileWithMetadataValue] = FileField(
-    description="Téléchargez des fichiers", multiple=True, include_metadata=True
+    description="Upload files", multiple=True, include_metadata=True
 )
 ```
 
@@ -329,34 +329,34 @@ attachments: list[FileWithMetadataValue] = FileField(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_file-field_document.png"
-    alt="Un champ de téléchargement de fichier affiché dans Vibe Work."
+    alt="Un champ de téléchargement de fichier unique affiché dans Vibe Work."
     centered
   />
   <Image
     url="/img/conversational_workflows/conversational-workflow_file-field_attachements.png"
-    alt="Un champ de téléchargement multiple affiché dans Vibe Work, montrant les fichiers joints."
+    alt="Un champ de téléchargement de fichiers multiples affiché dans Vibe Work, avec les fichiers joints."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Champ de téléchargement de fichier dans Vibe Work.</legend>
 </figure>
 
-Par défaut, le workflow reçoit des URLs (chaînes) des fichiers téléchargés par l’utilisateur. Avec `include_metadata=True`, il reçoit alors des objets `FileWithMetadataValue` :
+Par défaut, le workflow reçoit des URL (chaînes) pointant vers les fichiers téléchargés par l'utilisateur. Avec `include_metadata=True`, il reçoit des objets `FileWithMetadataValue` à la place :
 
-| Champ          | Type        | Obligatoire | Description                                  |
-| -------------- | ---------- | ----------- | --------------------------------------------- |
-| `filename`     | `str`      | Oui         | Nom original du fichier                       |
-| `url`          | `str`      | Oui         | URL signée pour télécharger le fichier        |
-| `content_type` | `str`      | Oui         | Type MIME du fichier                         |
+| Champ          | Type             | Obligatoire | Description                     |
+| -------------- | ---------------- | -------- | ------------------------------- |
+| `filename`     | `str`            | Oui      | Nom de fichier original               |
+| `url`          | `str`            | Oui      | URL signée pour télécharger le fichier |
+| `content_type` | `str`            | Oui      | Type MIME du fichier           |
 
-Ces URLs peuvent expirer : si votre workflow a besoin d’un accès prolongé, il doit stocker les fichiers ailleurs.
+Ces URL peuvent expirer : si votre workflow a besoin d’un accès à long terme aux fichiers, il est responsable de leur stockage ailleurs.
 
-<SectionTab as="h1" sectionId="confirmation-inputs">Champs de confirmation</SectionTab>
+<SectionTab as="h1" sectionId="confirmation-inputs">Entrées de confirmation</SectionTab>
 
-Pour les workflows voulant une confirmation rapide sous forme de choix unique, utilisez `ConfirmationInput` ou `AcceptDeclineConfirmation`. Ces utilitaires créent un mini-formulaire où la sélection valide instantanément la réponse.
+Pour les workflows nécessitant une confirmation simple par choix unique avec validation directe, utilisez `ConfirmationInput` ou `AcceptDeclineConfirmation`. Ces aides créent un formulaire à un seul champ où la sélection d’une option soumet immédiatement le formulaire.
 
 <SectionTab as="h2" variant="secondary" sectionId="confirmationinput">ConfirmationInput</SectionTab>
 
-`ConfirmationInput` affiche une liste d’options sous forme de boutons. Le choix d’une option soumet immédiatement le formulaire :
+`ConfirmationInput` propose une liste d’options devant être affichées sous forme de boutons. La sélection d’une option doit soumettre immédiatement le formulaire :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -368,29 +368,29 @@ import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="type-selection-workflow",
-    workflow_display_name="Sélection du type",
-    workflow_description="Choisissez votre type préféré",
+    workflow_display_name="Type Selection",
+    workflow_description="Select your favorite type",
 )
 class TypeSelectionWorkflow(workflows.InteractiveWorkflow):
     @workflows.workflow.entrypoint
     async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
-        await workflows_mistralai.send_assistant_message("Découvrons votre type préféré !")
+        await workflows_mistralai.send_assistant_message("Let's find out your type preference!")
 
         selection = await self.wait_for_input(
             workflows_mistralai.ConfirmationInput(
                 options=[
-                    ("fire", "Feu"),
-                    ("water", "Eau"),
-                    ("grass", "Plante"),
-                    ("electric", "Électrik"),
+                    ("fire", "Fire"),
+                    ("water", "Water"),
+                    ("grass", "Grass"),
+                    ("electric", "Electric"),
                 ],
-                description="Quel est votre type préféré ?",
+                description="What is your favorite type?",
             )
         )
 
-        selected_type = selection.choice  # Renvoie la valeur, ex : "fire"
+        selected_type = selection.choice  # Returns the value, e.g., "fire"
         return workflows_mistralai.ChatAssistantWorkflowOutput(
-            content=[workflows_mistralai.TextOutput(text=f"Type sélectionné : {selected_type} !")]
+            content=[workflows_mistralai.TextOutput(text=f"You selected {selected_type}!")]
         )
 ```
 
@@ -400,22 +400,22 @@ class TypeSelectionWorkflow(workflows.InteractiveWorkflow):
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_confirmation.png"
-    alt="Un champ de confirmation affiché dans Vibe Work, avec des boutons pour chaque option."
+    alt="Une entrée de confirmation affichée dans Vibe Work, avec des boutons pour chaque option."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Champ de confirmation dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Entrée de confirmation dans Vibe Work.</legend>
 </figure>
 
-| Propriété   | Type                                     | Description                                                 |
-| ----------- | ---------------------------------------- | ----------------------------------------------------------- |
-| `options`   | `list[tuple[str, str]]` ou `list[str]`   | Liste d’options sous forme de tuples `(valeur, libellé)` ou chaînes simples |
-| `description` | `str`                                   | Description affichée au-dessus des options                  |
+| Propriété      | Type                                   | Description                                                  |
+| ------------- | -------------------------------------- | ------------------------------------------------------------ |
+| `options`     | `list[tuple[str, str]]` ou `list[str]` | Liste d’options sous forme de tuples `(valeur, libellé)` ou de chaînes simples |
+| `description` | `str`                                  | Description affichée au-dessus des options                          |
 
-L’objet retourné possède une propriété `choice` contenant la valeur de l’option sélectionnée.
+L’objet retourné contient une propriété `choice` avec la valeur de l’option sélectionnée.
 
 <SectionTab as="h2" variant="secondary" sectionId="acceptdeclineconfirmation">AcceptDeclineConfirmation</SectionTab>
 
-`AcceptDeclineConfirmation` est une confirmation spécialisée à deux options : accepter ou refuser. Les clients peuvent l’afficher comme standard, avec raccourcis clavier pour répondre rapidement :
+`AcceptDeclineConfirmation` est une confirmation spécialisée avec deux options : accepter et refuser. Les clients peuvent l’afficher comme une interface de validation standard avec des raccourcis clavier pour des réponses rapides :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -427,27 +427,27 @@ import mistralai.workflows.plugins.mistralai as workflows_mistralai
 
 @workflows.workflow.define(
     name="approval-workflow",
-    workflow_display_name="Validation",
-    workflow_description="Confirmer une action",
+    workflow_display_name="Approval",
+    workflow_description="Confirm an action",
 )
 class ApprovalWorkflow(workflows.InteractiveWorkflow):
     @workflows.workflow.entrypoint
     async def run(self) -> workflows_mistralai.ChatAssistantWorkflowOutput:
         confirmation = await self.wait_for_input(
             workflows_mistralai.AcceptDeclineConfirmation(
-                description="Voulez-vous poursuivre cette action ?",
-                accept_label="Oui, poursuivre",
-                decline_label="Annuler",
+                description="Do you want to proceed with this action?",
+                accept_label="Yes, proceed",
+                decline_label="Cancel",
             )
         )
 
         if workflows_mistralai.is_accepted(confirmation):
             return workflows_mistralai.ChatAssistantWorkflowOutput(
-                content=[workflows_mistralai.TextOutput(text="Action confirmée !")]
+                content=[workflows_mistralai.TextOutput(text="Action confirmed!")]
             )
         else:
             return workflows_mistralai.ChatAssistantWorkflowOutput(
-                content=[workflows_mistralai.TextOutput(text="Action annulée.")]
+                content=[workflows_mistralai.TextOutput(text="Action cancelled.")]
             )
 ```
 
@@ -457,29 +457,29 @@ class ApprovalWorkflow(workflows.InteractiveWorkflow):
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_accept-decline-confirmation.png"
-    alt="Une demande d’acceptation/refus affichée dans Vibe Work, avec deux boutons."
+    alt="Une confirmation accepter/refuser affichée dans Vibe Work, avec deux boutons pour accepter et refuser."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Confirmation accepter/refuser dans Vibe Work.</legend>
 </figure>
 
-| Propriété       | Type  | Description                                   |
-| --------------- | ----- | --------------------------------------------- |
-| `description`   | `str` | Description affichée au-dessus des boutons    |
-| `accept_label`  | `str` | Libellé du bouton d’acceptation               |
-| `decline_label` | `str` | Libellé du bouton de refus                    |
+| Propriété        | Type  | Description                         |
+| --------------- | ----- | ----------------------------------- |
+| `description`   | `str` | Description affichée au-dessus des boutons |
+| `accept_label`  | `str` | Libellé du bouton Accepter         |
+| `decline_label` | `str` | Libellé du bouton Refuser        |
 
-Utilisez la fonction utilitaire `is_accepted()` pour vérifier l’acceptation de l’utilisateur :
+Utilisez la fonction auxiliaire `is_accepted()` pour vérifier si l’utilisateur a accepté ou refusé :
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
 if workflows_mistralai.is_accepted(confirmation):
-    # Accepté par l’utilisateur
+    # User accepted
     pass
 else:
-    # Refusé par l’utilisateur
+    # User declined
     pass
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: "Ingestion"
+title: Ingestion
 sidebar_position: 2
 ---
 
@@ -7,46 +7,48 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Ingestion
 
-L’ingestion transforme des documents bruts en segments consultables, indexés dans un store vectoriel ou par mots-clés. Ce pipeline est modulaire — vous pouvez remplacer chaque composant selon vos besoins.
+L'ingestion transforme des documents bruts en fragments indexés dans une base vectorielle. Le pipeline est modulaire — vous pouvez remplacer n'importe quel composant selon vos besoins.
 
-Un **FileLoader** lit les octets bruts à partir d’une source (système de fichiers local, stockage cloud ou toute source personnalisée) et renvoie un objet `File`.
+Un **FileLoader** lit les octets bruts depuis une source (système de fichiers local, stockage cloud, ou toute source personnalisée) et renvoie un objet `File`.
 
-Un **DocumentExtractor** convertit ce `File` en un `Document` structuré — il analyse des PDF via l’OCR, convertit du HTML en Markdown ou lit du texte brut selon le type de fichier.
+Un **DocumentExtractor** convertit ce `File` en un `Document` structuré — en analysant les PDF via OCR, en convertissant le HTML en Markdown, ou en lisant du texte brut selon le type de fichier.
 
-Un **TextSplitter** divise le `Document` en objets `DocumentChunk` plus petits. La stratégie et la taille des segments impactent directement la qualité de la recherche.
+Un **TextSplitter** divise le `Document` en objets `DocumentChunk` plus petits. La stratégie et la taille des fragments affectent directement la qualité de la recherche.
 
-Un **ChunkEnricher** optionnel ajoute des métadonnées à chaque segment avant indexation — par exemple, un résumé généré par un LLM ou des tags d’entités.
+Un **ChunkEnricher** optionnel ajoute des métadonnées à chaque fragment avant l'indexation — par exemple, un résumé généré par LLM ou des balises d'entités.
 
-Un **Embedder** convertit chaque segment en vecteur, et le **store** conserve à la fois le vecteur et le texte brut pour la recherche.
+Un **Embedder** convertit chaque fragment en vecteur, et le **store** persiste à la fois le vecteur et le texte brut pour la recherche.
 
 <SectionTab as="h1" sectionId="pipeline">Pipeline</SectionTab>
 
-`Pipeline` est le point d’entrée principal. Il prend en charge le chargement de fichiers, l’extraction, la segmentation, l’embedding et l’indexation. Il gère le traitement en lot avec gestion de la concurrence, suivi de progression et checkpoints.
+`Pipeline` est le point d'entrée principal. Il gère le chargement de fichiers, l'extraction, la fragmentation, l'embedding et l'indexation. Il prend en charge le traitement par batch avec concurrence, suivi de progression et points de contrôle.
 
 ```python
 from mistralai.search.toolkit.ingestion.pipelines import Pipeline
 from mistralai.client import Mistral
-from mistralai.search.toolkit.embedders import MistralEmbedder
+from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
 from mistralai.search.toolkit.ingestion.extractors import PlainTextExtractor
 from mistralai.search.toolkit.ingestion.loaders import FilesystemFileLoader
 from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
-from mistralai.search.toolkit.plugins.vespa import VespaClient, VespaConfig
+from mistralai.search.toolkit.ingestion.enrichers import SummaryEnricher
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from vespa_app import app
 
-vector_store = VespaClient(
-    config=VespaConfig(
-        collection_name="my_collection",
-        query_endpoint="http://localhost:8080",
-        feed_endpoint="http://localhost:8080",
-        embedding_model="mistral-embed",
-    ),
-    query_profile=None,
+mistral_client = Mistral(api_key="...")
+
+collection_name = "my_collection"
+config = VespaClientConfig(
+    endpoint="http://localhost:8080",
 )
+
+vector_store = app.get_search_index(config, collection_name=collection_name)
 
 pipeline = Pipeline(
     loader=FilesystemFileLoader(),
     extractor=PlainTextExtractor(),
     text_splitter=CharacterTextSplitter(chunk_size=512),
-    embedder=MistralEmbedder(client=Mistral(api_key="...")),
+    chunk_enrichers=[SummaryEnricher(client=mistral_client)],
+    embedder=MistralEmbedder(client=mistral_client, model_name=MODEL_1024_EMBEDDING),
     vector_store=vector_store,
 )
 
@@ -57,20 +59,22 @@ num_chunks = await pipeline.run(
 ```
 
 :::info
-`collection_name` sert d’espace de nom pour vos segments indexés. Utilisez le même nom lors de la récupération de documents plus tard.
+`collection_name` agit comme un espace de noms pour vos fragments indexés. Utilisez le même nom lors de la récupération de documents ultérieurement.
 :::
 
-### Checkpointing
+### Points de contrôle
 
-Pour de grandes collections de documents, activez la fonctionnalité de checkpoint pour reprendre facilement après un échec :
+Pour les grandes collections de documents, activez les points de contrôle pour récupérer après une défaillance :
 
 ```python
 from mistralai.search.toolkit.ingestion.progress import create_tqdm_progress_callback
+from mistralai.search.toolkit.ingestion.enrichers import SummaryEnricher
 
 pipeline = Pipeline(
     loader=FilesystemFileLoader(),
     extractor=extractor,
     text_splitter=splitter,
+    chunk_enrichers=[SummaryEnricher(client=mistral_client)],
     embedder=embedder,
     vector_store=vector_store,
     checkpoint_dir="./checkpoints",
@@ -84,11 +88,31 @@ num_chunks = await pipeline.run(
 )
 ```
 
-Lors d’un redémarrage, les documents disposant déjà d’un fichier de checkpoint sont ignorés.
+Au redémarrage, les documents avec des fichiers de point de contrôle existants sont ignorés.
 
 ### RoutedPipeline
 
-Routez automatiquement différents types de fichiers vers les pipelines appropriés :
+`RoutedPipeline` achemine automatiquement les fichiers vers des pipelines spécifiques au protocole en fonction de l'extension de fichier et du type MIME. Utilisez-le lors de l'ingestion de collections de documents de formats mixtes — il sélectionne intelligemment le bon extracteur et le pipeline de traitement pour chaque type de fichier.
+
+#### Protocoles
+
+`RoutedPipeline` inclut 9 protocoles intégrés. Chaque protocole associe un ensemble de types de fichiers au pipeline d'extraction approprié :
+
+| Protocole | Types de fichiers |
+|----------|-----------|
+| `ocr` | PDF, DOCX, PPTX, ODT, EPUB |
+| `plain_text` | TXT, MD, CSV, JS, PY, JSON, YAML, ... |
+| `html` | HTML, HTM |
+| `xlsx` | XLSX, XLS, ODS |
+| `numbers` | NUMBERS |
+| `legacy_office` | DOC, PPT, HWP, HWPX |
+| `email` | EML, MSG |
+| `image` | PNG, JPEG, GIF, WebP |
+| `audio` | MP3, WAV, M4A, FLAC, OGG |
+
+#### Exemple
+
+Utilisation de base avec les protocoles par défaut :
 
 ```python
 from mistralai.search.toolkit.ingestion.pipelines import RoutedPipeline
@@ -103,203 +127,17 @@ router = RoutedPipeline({
 document = await router.run_file(file=file)
 ```
 
-<SectionTab as="h1" sectionId="extractors">Extracteurs de documents</SectionTab>
+#### Paramètres
 
-Les extracteurs transforment des fichiers bruts en objets `Document` structurés. Choisissez l’extracteur adapté à votre type de fichier :
+| Paramètre | Description |
+|-----------|-------------|
+| `pipelines` | Dictionnaire associant les noms de protocoles aux instances `Pipeline` |
+| `mime_registry` | Registre MIME personnalisé optionnel pour la détection du type de fichier |
+| `protocol_overrides` | Dictionnaire optionnel pour remplacer le protocole par défaut pour des extensions de fichiers spécifiques |
 
-| Extracteur | Types de fichiers |
-|-----------|-------------------|
-| `MistralOCRExtractor` | PDF, DOCX, PPTX, ODT |
-| `PlainTextExtractor` | TXT, MD, CSV, fichiers de code |
-| `HTMLExtractor` | HTML, HTM |
-| `SpreadsheetExtractor` | XLS, XLSX, XLSM, ODS |
-| `EmailExtractor` | EML, MSG (nécessite l'extra `[email]`) |
-| `NumbersExtractor` | Apple Numbers |
-| `LegacyOfficeExtractor` | DOC, PPT, HWP |
+#### Exemple de remplacement
 
-```python
-# Extraction PDF avec OCR
-from mistralai.search.toolkit.ingestion.extractors import MistralOCRExtractor
-
-extractor = MistralOCRExtractor(client=mistral_client)
-document = await extractor.extract(
-    file,
-    include_image_base64=True,
-    include_image_annotation=True,
-)
-```
-
-```python
-# Extraction de texte brut
-from mistralai.search.toolkit.ingestion.extractors import PlainTextExtractor
-
-extractor = PlainTextExtractor(page_size=2000, encoding="utf-8")
-document = await extractor.extract(file)
-```
-
-```python
-# Conversion HTML en markdown
-from mistralai.search.toolkit.ingestion.extractors import HTMLExtractor
-
-extractor = HTMLExtractor()
-document = await extractor.extract(file)
-```
-
-Vous pouvez créer des extracteurs personnalisés en suivant le protocole `DocumentExtractor`.
-
-<SectionTab as="h1" sectionId="splitters">Diviseurs de texte</SectionTab>
-
-Les splitters divisent les documents en segments consultables. Le choix du splitter influence fortement la qualité de la recherche.
-
-| Splitter | Idéal pour |
-|----------|-----------|
-| `CharacterTextSplitter` | Texte simple, prototypage rapide |
-| `TokenTextSplitter` | Segmentation par tokens, gestion du contexte LLM |
-| `MarkdownTextSplitter` | Documents Markdown, contenus structurés avec en-têtes |
-| `SeparatorTextSplitter` | Logique de découpe personnalisée, texte hiérarchique |
-
-```python
-# Segmentation par caractères
-from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
-
-splitter = CharacterTextSplitter(chunk_size=500)
-chunks = splitter.split_document(document)
-```
-
-```python
-# Segmentation adaptée Markdown (préserve la hiérarchie des titres)
-from mistralai.search.toolkit.ingestion.text_splitters import (
-    MarkdownTextSplitter,
-    MarkdownTextSplitterConfig,
-)
-
-splitter = MarkdownTextSplitter(MarkdownTextSplitterConfig(
-    headers_to_split_on=[("#", "h1"), ("##", "h2"), ("###", "h3")],
-    strip_headers=False,
-    chunk_size=1000,
-    chunk_overlap=200,
-))
-chunks = splitter.split_document(document)
-```
-
-```python
-# Séparation personnalisée par séparateurs
-from mistralai.search.toolkit.ingestion.text_splitters import (
-    SeparatorTextSplitter,
-    SeparatorTextSplitterConfig,
-)
-
-splitter = SeparatorTextSplitter(SeparatorTextSplitterConfig(
-    chunk_size=1000,
-    chunk_overlap=200,
-    chunk_separators=["\n\n", "\n", ". ", " ", ""],
-))
-chunks = splitter.split_document(document)
-```
-
-:::info
-Tous les splitters conservent automatiquement les métadonnées dans chaque segment : `page_number`, `filename`, `filepath`, `start_offset`, `end_offset` et `images`.
-:::
-
-<SectionTab as="h1" sectionId="enrichers">Enrichisseurs de segments</SectionTab>
-
-Les enrichisseurs ajoutent des métadonnées personnalisées aux segments lors de l’ingestion. Ces métadonnées peuvent être exploitées lors des requêtes.
-
-### SummaryEnricher
-
-Génère un résumé LLM pour chaque document et peut le propager aux segments :
-
-```python
-from mistralai.search.toolkit.llm import LLMConfig, MistralChat
-from mistralai.search.toolkit.ingestion.enrichment import (
-    SummarizeRequestConfig,
-    SummaryConfig,
-    SummaryEnricher,
-    SummaryRequestOptions,
-)
-
-llm_provider = MistralChat(
-    client=mistral_client,
-    config=LLMConfig(model="mistral-small-latest", max_tokens=256),
-)
-
-summary_enricher = SummaryEnricher(
-    llm_provider=llm_provider,
-    summary_config=SummaryConfig(
-        request_options=SummaryRequestOptions(
-            include_summary_chunk=True,
-            propagate_summary_to_chunks=True,
-            fail_on_generation_error=False,
-        ),
-    ),
-)
-
-pipeline = Pipeline(
-    loader=loader,
-    extractor=extractor,
-    text_splitter=splitter,
-    embedder=embedder,
-    vector_store=vector_store,
-    chunk_enrichers=[summary_enricher],
-)
-```
-
-:::caution
-L’enrichissement par résumé déclenche un appel LLM par document. Cela augmente la latence et le coût, il est donc conseillé de n’activer cette fonction que pour des collections de documents réduites ou à fort enjeu.
-:::
-
-### Enrichisseurs personnalisés
-
-Implémentez l’interface `ChunkEnricher` pour ajouter vos propres métadonnées :
-
-```python
-from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
-from mistralai.search.toolkit.document import DocumentChunk, Document
-
-
-class EntityTagger(ChunkEnricher):
-    async def enrich_chunks(
-        self, chunks: list[DocumentChunk], document: Document, concurrency: int = 10
-    ) -> tuple[list[DocumentChunk], Document]:
-        enriched = []
-        for chunk in chunks:
-            entities = await self._extract_entities(chunk.content)
-            updated_metadata = chunk.metadata.model_copy(
-                update={"entities": entities}
-            )
-            enriched.append(chunk.model_copy(update={"metadata": updated_metadata}))
-        return enriched, document
-```
-
-<SectionTab as="h1" sectionId="storage">Backends de stockage</SectionTab>
-
-Les backends de stockage conservent les segments traités et rendent la recherche possible. Le toolkit propose actuellement le plugin Vespa, mais vous pouvez développer vos propres backends.
-
-### Vespa
-
-Vespa prend en charge aussi bien la recherche vectorielle que par mots-clés, avec des profils de requête configurables pour la recherche hybride.
-
-```bash
-pip install "mistralai-search-toolkit[vespa]"
-```
-
-```python
-from mistralai.search.toolkit.plugins.vespa import VespaClient, VespaConfig
-
-vector_store = VespaClient(
-    config=VespaConfig(
-        collection_name="my_collection",
-        query_endpoint="http://localhost:8080",
-        feed_endpoint="http://localhost:8080",
-        embedding_model="mistral-embed",
-    ),
-    query_profile=None,
-)
-```
-
-#### Exemple d'override
-
-Imposez l'utilisation d'un protocole différent pour certaines extensions de fichiers :
+Forcer des extensions de fichiers spécifiques à utiliser un protocole différent :
 
 ```python
 router = RoutedPipeline(
@@ -319,11 +157,11 @@ document = await router.run_file(file=file)
 
 <SectionTab as="h1" sectionId="components">Composants</SectionTab>
 
-Chaque composant d'ingestion est documenté en détail, avec les options de configuration, les bonnes pratiques et de nombreux exemples :
+Chaque composant d'ingestion est documenté en détail avec les options de configuration, les bonnes pratiques et des exemples :
 
-- **[Loaders de fichiers](ingestion/loaders)** — Chargez des fichiers depuis le système de fichiers, un stockage cloud ou des sources personnalisées
-- **[Extracteurs de documents](ingestion/extractors)** — Extrait le contenu de PDF, HTML, tableurs et autres (7 formats pris en charge)
-- **[Diviseurs de texte](ingestion/splitters)** — Découpent les documents en fragments de taille et de recouvrement optimaux
-- **[Enrichisseurs de fragment](ingestion/enrichers)** — Ajoutent des métadonnées personnalisées pour le filtrage et le classement
-- **[Embedders](ingestion/embedders)** — Convertissent le texte en vecteurs pour la recherche sémantique
-- **[Index de recherche](search-index)** — Stocke et permet la recherche parmi les fragments indexés
+- **[Chargeurs de fichiers](ingestion/loaders)** — Charger des fichiers depuis le système de fichiers, le stockage cloud ou des sources personnalisées
+- **[Extracteurs de documents](ingestion/extractors)** — Extraire le contenu de PDF, HTML, feuilles de calcul et plus encore (7 formats pris en charge)
+- **[Diviseurs de texte](ingestion/splitters)** — Diviser les documents en fragments avec une taille et un chevauchement optimaux
+- **[Enrichisseurs de fragments](ingestion/enrichers)** — Ajouter des métadonnées personnalisées pour le filtrage et le classement
+- **[Embedders](ingestion/embedders)** — Convertir le texte en vecteurs pour la recherche sémantique
+- **[Index de recherche](search-index)** — Stocker et rechercher dans les fragments indexés

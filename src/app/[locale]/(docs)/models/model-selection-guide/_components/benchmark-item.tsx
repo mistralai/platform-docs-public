@@ -73,12 +73,21 @@ export const BenchmarkTable = ({
   });
   const [mdxSource, setMdxSource] = useState<any>(null);
   const described = model?.describe(l);
+  const descriptionText = described?.shortDescription || described?.description;
 
   useEffect(() => {
-    if (described) {
-      serialize(described.shortDescription || described.description).then(setMdxSource);
+    if (!descriptionText) {
+      setMdxSource(null);
+      return;
     }
-  }, [described]);
+    let cancelled = false;
+    serialize(descriptionText).then(result => {
+      if (!cancelled) setMdxSource(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [descriptionText]);
 
   if (!model) return <NoModel />;
 
@@ -107,7 +116,7 @@ export const BenchmarkTable = ({
             {mdxSource ? (
               <MDXRemote {...mdxSource} components={baseMarkdownComponents} />
             ) : (
-              <p>{described!.shortDescription || described!.description}</p>
+              <p>{descriptionText}</p>
             )}
           </Prose>
         </div>

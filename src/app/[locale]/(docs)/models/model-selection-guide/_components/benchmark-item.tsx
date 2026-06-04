@@ -243,7 +243,7 @@ export const BenchmarkTable = ({
             asChild
             className="gap-1 text-sm text-foreground/70 hover:text-foreground"
           >
-            <Link href={`/models/${model.slug}`}>
+            <Link href={modelUrl}>
               {l.text('Learn more about this model', { context: 'Link to the full AI model page' })}
               <ArrowRightIcon className="size-3.5" />
             </Link>

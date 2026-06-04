@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Labs',
   legalButton: null,
-  status: 'Deprecated',
+  status: 'Active',
   avatar: { icon: 'leanstral', backgroundColor: 'teal' },
   weights: [
     {
@@ -57,7 +57,7 @@ export default {
     features: ['chat-completions', 'function-calling', 'agents-conversations', 'structured-outputs'],
 
   },
-  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-06-30'},
+  metadata: {},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: false,
 } as const satisfies StaticModel;

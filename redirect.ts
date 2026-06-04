@@ -607,6 +607,16 @@ const rawRedirects: RedirectRule[] = [
     permanent: true,
   },
   {
+    source: "/studio-api/knowledge-rag/embeddings/text_embeddings",
+    destination: "/studio-api/knowledge-rag/embeddings#text-embeddings",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/embeddings/code_embeddings",
+    destination: "/studio-api/knowledge-rag/embeddings#code-embeddings",
+    permanent: true,
+  },
+  {
     source: "/studio-api/knowledge-rag/embeddings/rag_quickstart",
     destination: "/studio-api/knowledge-rag/rag_quickstart",
     permanent: true,

@@ -1,29 +1,58 @@
 ---
-title: Découpeurs de texte
-description: Divisez des documents en objets DocumentChunk récupérables pour l'indexation.
+title: Diviseurs de texte
+description: Divisez les documents en objets DocumentChunk récupérables pour l’indexation.
 sidebar_position: 4
 sidebar_label: Découpeurs de texte
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-Les découpeurs de texte divisent les documents en objets `DocumentChunk` que l'on peut rechercher. Le choix du découpeur a un impact significatif sur la qualité du rappel.
+Les diviseurs de texte (text splitters) découpe les documents en objets `DocumentChunk` récupérables. Le choix du diviseur a un impact significatif sur la qualité de récupération.
+
+<SectionTab as="h2" sectionId="available-text-splitters">Diviseurs de texte disponibles</SectionTab>
+
+| Diviseur | Idéal pour |
+|----------|----------|
+| **[Diviseur de texte par caractères](#character-text-splitter)** | Texte simple, prototypage rapide |
+| **[Diviseur de texte par tokens](#token-text-splitter)** | Découpage conscient des tokens, gestion du Contexte pour les LLM |
+| **[Diviseur de texte Markdown](#markdowntextsplitter)** | Documents Markdown, contenu structuré avec en-têtes |
+| **[Diviseur de texte par séparateurs](#separatortextsplitter)** | Logique de division personnalisée, texte hiérarchique |
+| **[Diviseurs personnalisés](#creating-custom-splitters)** | Toute stratégie de division |
 
 :::info
-Tous les découpeurs préservent automatiquement les métadonnées importantes dans chaque fragment :
+Tous les diviseurs conservent automatiquement les métadonnées importantes dans chaque fragment :
 
-- `page_number` : numéro de page source
-- `filename` : nom de fichier d'origine
-- `filepath` : chemin du fichier d'origine
-- `start_offset` : position du caractère dans le document
-- `end_offset` : position de fin du caractère dans le document
-- `images` : liste des images référencées dans le fragment (s'il y en a)
+- `page_number` : numéro de page source
+- `filename` : nom de fichier original
+- `filepath` : chemin du fichier original
+- `start_offset` : position du caractère dans le document
+- `end_offset` : position du caractère dans le document
+- `images` : liste des références d’images dans le fragment (le cas échéant)
 
 :::
 
-<SectionTab as="h1" sectionId="character-text-splitter">Character Text Splitter</SectionTab>
+<SectionTab as="h1" sectionId="chunk-size-guidance">Conseils pour la taille des fragments</SectionTab>
 
-Découpage simple basé sur le caractère. À utiliser pour des prototypes rapides ou lorsque la structure du document importe peu.
+La taille des fragments a un impact significatif sur la qualité de récupération et l’utilisation du Contexte des LLM. Choisissez en fonction de votre cas d’usage :
+
+| Contexte du LLM | Taille du fragment | Recouvrement | Cas d’usage |
+|-------------|-----------|---------|----------|
+| 4 ko tokens | 300-500 caractères | 50-100 caractères | Contexte limité, récupération rapide |
+| 8 ko tokens | 500-1 000 caractères | 100-200 caractères | Qualité de récupération équilibrée |
+| 32 ko+ tokens | 1 000-2 000 caractères | 200-500 caractères | Contexte riche, récupération complexe |
+| Code/technique | 500-1 000 caractères | 100-200 caractères | Conserver les unités logiques |
+| Juridique/financier | 1 000-2 000 caractères | 200-500 caractères | Contexte complet pour l’interprétation |
+
+**Règle pratique** : ~400-600 caractères ≈ 100-150 tokens. Ajustez en fonction de la complexité du domaine et des besoins de précision de récupération.
+
+**Avantages du recouvrement entre fragments** :
+- Évite que les limites sémantiques séparent des concepts liés
+- Améliore le Contexte lorsque les fragments sont utilisés individuellement
+- Augmente la taille de l’index et la latence des requêtes de manière proportionnelle
+
+<SectionTab as="h1" sectionId="character-text-splitter">Diviseur de texte par caractères</SectionTab>
+
+`CharacterTextSplitter` divise le texte par nombre de caractères. Idéal pour les textes simples et le prototypage rapide.
 
 **Exemple** :
 
@@ -31,14 +60,20 @@ Découpage simple basé sur le caractère. À utiliser pour des prototypes rapid
 from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
 
 splitter = CharacterTextSplitter(
-    chunk_size=500,     # Nombre de caractères par fragment
+    chunk_size=500,     # Characters per chunk
 )
 chunks = splitter.split_document(document)
 ```
 
-<SectionTab as="h1" sectionId="token-text-splitter">Token Text Splitter</SectionTab>
+**Paramètres** :
 
-Découpage tenant compte des jetons, à l'aide d'un tokenizer, pour gérer la fenêtre de contexte LLM et contrôler précisément le nombre de jetons.
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `chunk_size` | `int` | `1000` | Nombre maximal de caractères par fragment |
+
+<SectionTab as="h1" sectionId="token-text-splitter">Diviseur de texte par tokens</SectionTab>
+
+Division sensible aux tokens utilisant un tokenizer pour gérer les fenêtres de Contexte des LLM et un contrôle précis des tokens.
 
 **Exemple** :
 
@@ -46,16 +81,37 @@ Découpage tenant compte des jetons, à l'aide d'un tokenizer, pour gérer la fe
 from mistralai.search.toolkit.ingestion.text_splitters import TokenTextSplitter
 
 splitter = TokenTextSplitter(
-    chunk_size=1000,         # Nombre de jetons par fragment
-    chunk_overlap=200,       # Chevauchement de jetons
+    chunk_size=1000,         # Tokens per chunk
+    chunk_overlap=200,       # Token overlap
 )
 
 chunks = splitter.split_document(document)
 ```
 
-### MarkdownTextSplitter
+**Options de configuration** :
 
-Découpe récursive, avec prise en compte des titres Markdown, pour des documents structurés ou de la documentation nécessitant la préservation de la hiérarchie des titres et des limites sémantiques.
+| Option | Type | Valeur par défaut | Objectif |
+|--------|------|---------|---------|
+| `chunk_size` | int | 1000 | Tokens par fragment (utilise le tokenizer Mistral) |
+| `chunk_overlap` | int | 0 | Tokens de recouvrement entre les fragments |
+| `tokenizer_model` | str | "mistral" | Tokenizer à utiliser pour le comptage |
+
+**Quand l’utiliser** :
+- Budget token précis pour les fenêtres de Contexte des LLM
+- Fragments cohérents sur différentes densités de texte
+- Lors du travail avec des limites de tokens spécifiques
+
+### Diviseur de texte Markdown
+
+`MarkdownTextSplitter` divise les documents Markdown aux limites des en-têtes. Il hérite de `SeparatorTextSplitter` et ajoute une division sensible aux en-têtes avec des niveaux d’en-tête configurables.
+
+**Prérequis** :
+
+Installez l’extra `text-splitter-langchain` :
+
+```bash
+uv add "mistralai-search-toolkit[text-splitter-langchain]"
+```
 
 **Exemple** :
 
@@ -68,24 +124,29 @@ config = MarkdownTextSplitterConfig(
         ("##", "h2"),
         ("###", "h3"),
     ],
-    strip_headers=False,    # Garder les titres dans les fragments
-    chunk_size=1000,
-    chunk_overlap=200,
+    strip_headers=False,    # Keep headers in chunks
+    chunk_size=1000,        # Inherited from SeparatorTextSplitterConfig
+    chunk_overlap=200,      # Inherited from SeparatorTextSplitterConfig
 )
 
 splitter = MarkdownTextSplitter(config=config)
 chunks = splitter.split_document(document)
 ```
 
-**Fonctionnalités** :
-- Découpe sur les titres markdown
-- Préserve la hiérarchie des titres dans les métadonnées
-- Utilise la découpe récursive en cas de sections de grande taille
-- Maintient la structure du document
+**Paramètres** (`MarkdownTextSplitterConfig`) :
 
-### SeparatorTextSplitter
+`MarkdownTextSplitterConfig` étend `SeparatorTextSplitterConfig`, ajoutant :
 
-Découpage récursif avec séparateurs personnalisés, adapté aux structures de documents complexes et permettant un contrôle précis sur les points de découpe et l'organisation hiérarchique du texte.
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `headers_to_split_on` | `list[tuple[str, str]]` | `[("#", "Header 1"), ("##", "Header 2"), ("###", "Header 3")]` | En-têtes Markdown sur lesquels diviser — chaque tuple est `(préfixe_en-tête, étiquette)` |
+| `strip_headers` | `bool` | `False` | Supprimer les lignes d’en-tête du contenu du fragment |
+
+Tous les paramètres de `SeparatorTextSplitterConfig` sont également disponibles (`chunk_size`, `chunk_max_size`, `chunk_overlap`, `chunk_separators`, `keep_separator`, `strip_whitespace`).
+
+### Diviseur de texte par séparateurs
+
+Division récursive avec des séparateurs personnalisés pour gérer des structures de document personnalisées, avec un contrôle précis sur les points de division et l’organisation hiérarchique du texte.
 
 **Exemple** :
 
@@ -93,15 +154,15 @@ Découpage récursif avec séparateurs personnalisés, adapté aux structures de
 from mistralai.search.toolkit.ingestion.text_splitters import SeparatorTextSplitter, SeparatorTextSplitterConfig
 
 config = SeparatorTextSplitterConfig(
-    chunk_size=1000,          # Taille cible (caractères)
-    chunk_max_size=1500,      # Taille maximum (caractères)
-    chunk_overlap=200,        # Chevauchement (caractères)
-    chunk_separators=[        # Testés dans l'ordre
-        "\n\n",    # Paragraphes en premier
-        "\n",      # Puis lignes
-        ". ",      # Puis phrases
-        " ",       # Puis mots
-        "",        # Enfin caractères
+    chunk_size=1000,          # Target size (characters)
+    chunk_max_size=1500,      # Maximum size (characters)
+    chunk_overlap=200,        # Overlap (characters)
+    chunk_separators=[        # Tried in order
+        "\n\n",    # Paragraphs first
+        "\n",      # Then lines
+        ". ",      # Then sentences
+        " ",       # Then words
+        "",        # Finally characters
     ],
 )
 
@@ -110,12 +171,12 @@ chunks = splitter.split_document(document)
 ```
 
 **Fonctionnalités** :
-- Teste les séparateurs dans l'ordre
-- Respecte la taille maximale même si la découpe échoue
-- Fusionne les petits fragments autant que possible
-- Retourne les offsets de début et de fin
+- Essaie les séparateurs dans l’ordre
+- Respecte la taille maximale même si la division échoue
+- Fusionne les petits fragments lorsque c’est possible
+- Retourne les décalages de début/fin
 
-<SectionTab as="h1" sectionId="creating-custom-splitters">Créer des découpeurs personnalisés</SectionTab>
+<SectionTab as="h1" sectionId="creating-custom-splitters">Créer des diviseurs personnalisés</SectionTab>
 
 Implémentez le protocole `TextSplitter` :
 
@@ -124,7 +185,7 @@ from mistralai.search.toolkit.ingestion.text_splitters import TextSplitter
 from mistralai.search.toolkit.document import DocumentChunk
 
 class ParagraphSplitter(TextSplitter):
-    """Découpe le texte par paragraphe."""
+    """Split text into chunks by paragraphs."""
 
     def __init__(self, max_paragraphs_per_chunk: int = 3):
         self.max_paragraphs_per_chunk = max_paragraphs_per_chunk
@@ -150,12 +211,3 @@ class ParagraphSplitter(TextSplitter):
 splitter = ParagraphSplitter(max_paragraphs_per_chunk=3)
 chunks = splitter.split_text("First paragraph.\n\nSecond paragraph.\n\nThird paragraph.")
 ```
-
-<SectionTab as="h1" sectionId="comparison">Comparaison</SectionTab>
-
-| Découpeur | Idéal pour |
-|----------|------------|
-| **CharacterTextSplitter** | Texte simple, prototypage rapide |
-| **TokenTextSplitter** | Découpage par jetons, gestion du contexte LLM |
-| **MarkdownTextSplitter** | Documents markdown, contenu structuré avec titres |
-| **SeparatorTextSplitter** | Logique de découpe personnalisée, texte hiérarchique |

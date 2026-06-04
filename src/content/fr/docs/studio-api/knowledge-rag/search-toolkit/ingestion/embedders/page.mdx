@@ -9,55 +9,98 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Embedders
 
-Les embedders convertissent le texte en embeddings vectoriels pour la recherche sémantique. Les embeddings capturent le sens sémantique du texte, permettant de retrouver des concepts similaires même exprimés différemment.
+Les embedders convertissent du texte en embeddings vectoriels pour la recherche sémantique. Les embeddings capturent le sens sémantique du texte, permettant de trouver des concepts similaires même si les formulations diffèrent.
 
-<SectionTab as="h1" sectionId="embedder-api">API des Embedders</SectionTab>
+<SectionTab as="h1" sectionId="embedder-api">API Embedder</SectionTab>
 
-Tous les embedders implémentent la classe abstraite `Embedder`, qui fournit trois méthodes :
+Tous les embedders implémentent la classe de base abstraite `Embedder`, qui propose trois méthodes :
 
 | Méthode | Signature | Description |
-|---------|-----------|-------------|
-| `embed` | `(texts: list[str]) -> EmbeddingResult` | Méthode principale — génère les embeddings pour un lot de chaînes. |
-| `embed_chunks` | `(chunks: list[DocumentChunk]) -> list[DocumentChunk]` | Embedde des fragments et retourne des copies avec les embeddings renseignés. |
-| `embed_query` | `(text: str) -> list[float]` | Embedde une seule chaîne et retourne le vecteur correspondant. |
+|--------|-----------|-------------|
+| `embed` | `(texts: list[str]) -> EmbeddingResult` | Méthode de base : génère un batch d’embeddings à partir de chaînes de caractères. |
+| `embed_chunks` | `(chunks: list[DocumentChunk]) -> list[DocumentChunk]` | Génère des embeddings pour des fragments et renvoie des copies avec les embeddings intégrés. |
+| `embed_query` | `(text: str) -> list[float]` | Génère un embedding pour une seule chaîne de caractères et renvoie le vecteur. |
 
-Seule `embed` est abstraite. `embed_chunks` et `embed_query` sont des méthodes concrètes s'appuyant dessus.
+Seule la méthode `embed` est abstraite. `embed_chunks` et `embed_query` sont des méthodes concrètes construites par-dessus celle-ci.
 
 ### `EmbeddingResult`
 
-Retourné par `embed` :
+Type retourné par `embed` :
 
 ```python
 from pydantic import BaseModel
 
 class EmbeddingResult(BaseModel):
-    embeddings: list[list[float]]  # Un embedding par entrée
-    total_tokens: int              # Nombre total de tokens consommés
+    embeddings: list[list[float]]  # One embedding per input
+    total_tokens: int              # Total tokens consumed
 ```
 
-<SectionTab as="h1" sectionId="mistral-embedder">Embedder Mistral</SectionTab>
+<SectionTab as="h1" sectionId="mistral-embedder">Mistral Embedder</SectionTab>
 
-Utilisez l'API d'embeddings de Mistral.
+Utilisez l’API d’embedding de Mistral pour vectoriser du texte.
 
-**Installation** : Core library (aucune dépendance supplémentaire requise)
+**Installation** : Bibliothèque principale (pas de dépendance supplémentaire requise)
 
-**Exemple** :
+**Exemple** :
 
 ```python
 from mistralai.client import Mistral
-from mistralai.search.toolkit.embedders import MistralEmbedder
+from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
 
 client = Mistral(api_key="your-api-key")
 embedder = MistralEmbedder(
     client=client,
-    model_name="mistral-embed",  # Optionnel
+    model_name=MODEL_1024_EMBEDDING,
 )
 embedded_chunks = await embedder.embed_chunks(chunks)
 ```
 
+**Configuration** :
+
+| Option | Type | Valeur par défaut | Utilisation |
+|--------|------|---------|---------|
+| `model_name` | str | `MODEL_128_EMBEDDING` | modèle d’embedding à utiliser (voir les constantes de modèle ci-dessous) |
+| `client` | Mistral | Obligatoire | Client API Mistral (doit être configuré) |
+
+**Constantes des modèles d’embedding** :
+
+Utilisez ces constantes prédFINies lors de la configuration de `MistralEmbedder`. Assurez-vous que le paramètre `embedding_dimensions` dans votre schéma Vespa correspond aux dimensions de sortie du modèle.
+
+| Constante | Nom du modèle | Dimensions | Idéal pour |
+|----------|-----------|-----------|----------|
+| `MODEL_1024_EMBEDDING` | `"mistral-embed"` | 1024 | Par défaut pour les pipelines Search Toolkit (correspond au schéma Vespa `embedding_dimensions=1024`) |
+| `MODEL_256_EMBEDDING` | `"mistral-embed-dim256-2510"` | 256 | Environnements à faible latence et contrainte mémoire |
+| `MODEL_128_EMBEDDING` | `"mistral-embed-dim128-2510"` | 128 | Dimensions minimales (valeur par défaut) |
+
+**Importation et utilisation** :
+
+```python
+from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING, MODEL_256_EMBEDDING, MODEL_128_EMBEDDING
+
+# Use MODEL_1024_EMBEDDING for Search Toolkit pipelines
+embedder = MistralEmbedder(client=client, model_name=MODEL_1024_EMBEDDING)
+
+# Or use a different model for specific use cases
+embedder_compact = MistralEmbedder(client=client, model_name=MODEL_256_EMBEDDING)
+```
+
+**Traitement par lots** (automatique) :
+
+```python
+# Embed_chunks handles batching internally
+chunks_with_embeddings = await embedder.embed_chunks(chunks)
+
+# For custom batching
+embeddings = await embedder.embed([
+    "text 1",
+    "text 2",
+    "text 3",
+])
+```
+
 <SectionTab as="h1" sectionId="custom-embedders">Embedders personnalisés</SectionTab>
 
-Implémentez la classe de base `Embedder` avec une unique méthode `embed` :
+Implémentez la classe de base `Embedder` avec une seule méthode `embed` :
 
 ```python
 from mistralai.search.toolkit.embedders import Embedder, EmbeddingResult

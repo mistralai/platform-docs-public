@@ -48,7 +48,7 @@ const CTA_BY_PATH: Record<string, { href: string; key: CtaKey }> = {
 }
 
 const CTA_BY_PREFIX: Array<{ prefix: string; href: string; key: CtaKey }> = [
-  { prefix: "/vibe/code", href: "https://console.mistral.ai/codestral/cli", key: 'vibeCode' },
+  { prefix: "/vibe/code", href: "https://chat.mistral.ai/code", key: 'vibeCode' },
   { prefix: "/vibe", href: "https://chat.mistral.ai", key: 'vibe' },
   { prefix: "/admin", href: "https://admin.mistral.ai/", key: 'admin' },
 ]

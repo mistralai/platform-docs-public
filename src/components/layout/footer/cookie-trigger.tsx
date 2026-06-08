@@ -15,7 +15,7 @@ export default function CookieTrigger({ title }: { title: string }) {
   };
   return (
     <button
-      className="text-sm text-foreground/70 hover:text-foreground transition-colors duration-200 text-left"
+      className="text-sm text-foreground/70 hover:text-foreground transition-colors duration-200 text-left p-0"
       onClick={callCookies}
     >
       {title}

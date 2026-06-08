@@ -2,8 +2,8 @@ import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral Mini Transcribe 2',
   describe: (l) => ({
-    description: l.text(`An efficient audio input model, fine-tuned and optimized for transcription purposes only.`, { context: 'Full description of an AI model' }),
-    shortDescription: l.text(`An efficient audio input model, fine-tuned and optimized for transcription purposes.`, { context: 'Short description of an AI model' }),
+    description: l.text(`An efficient audio input model, pre-trained and optimized for transcription purposes only.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`An efficient audio input model, pre-trained and optimized for transcription purposes.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'voxtral-mini-transcribe-26-02',
   releaseDate: '2026-02-04',
@@ -20,7 +20,7 @@ export default {
   contextLength: '--',
   ratings: { 
     speed: 4.0,
-    performance: 3.0, input: 4.0, output: 2.0 },
+    performance: 4.0, input: 4.0, output: 2.0 },
   pricing: {
     type: 'custom',
     free: false,

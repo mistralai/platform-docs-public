@@ -6688,6 +6688,702 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors:
+    post:
+      operationId: connector_create_v1
+      summary: Create a new connector.
+      description: Create a new MCP connector. You can customize its visibility, url and auth type.
+      tags:
+        - beta.connectors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorMCPCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connector'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      operationId: connector_list_v1
+      summary: List all connectors.
+      description: List all your custom connectors with keyset pagination and filters.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: query_filters
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ConnectorsQueryFilters'
+            default:
+              fetch_user_data: false
+              fetch_customer_data: false
+              fetch_connection_secrets: false
+              fetch_execution_data: false
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: Cursor
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            title: Page Size
+            maximum: 1000
+            minimum: 1
+            default: 100
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConnectors'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/auth_url:
+    get:
+      operationId: connector_get_auth_url_v1
+      summary: Get the auth URL for a connector.
+      description: Get the OAuth2 authorization URL for a connector to initiate user authentication.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: app_return_url
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: App Return Url
+        - name: credentials_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                pattern: ^[a-zA-Z0-9_-]{1,64}$
+              - type: 'null'
+            title: Credentials Name
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUrlResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/tools/{tool_name}/call:
+    post:
+      operationId: connector_call_tool_v1
+      summary: Call Connector Tool
+      description: Call a tool on an MCP connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: tool_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Tool Name
+        - name: credentials_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                pattern: ^[a-zA-Z0-9_-]{1,64}$
+              - type: 'null'
+            title: Credentials Name
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MCPToolCallRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPToolCallResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/tools:
+    get:
+      operationId: connector_list_tools_v1
+      summary: List tools for a connector.
+      description: List all tools available for an MCP connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            title: Page
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            title: Page Size
+            default: 100
+        - name: refresh
+          in: query
+          required: false
+          schema:
+            type: boolean
+            title: Refresh
+            default: false
+        - name: pretty
+          in: query
+          description: Return a simplified payload with only name, description, annotations, and a compact inputSchema.
+          required: false
+          schema:
+            type: boolean
+            title: Pretty
+            description: Return a simplified payload with only name, description, annotations, and a compact inputSchema.
+            default: false
+        - name: credentials_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                pattern: ^[a-zA-Z0-9_-]{1,64}$
+              - type: 'null'
+            title: Credentials Name
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/integrations__schemas__api__tool__Tool'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/MCPTool'
+                  - type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                title: Response Connector List Tools V1
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/authentication_methods:
+    get:
+      operationId: connector_get_authentication_methods_v1
+      summary: Get authentication methods for a connector.
+      description: Get the authentication schema for a connector. Returns the list of supported authentication methods and their required headers.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicAuthenticationMethod'
+                title: Response Connector Get Authentication Methods V1
+  /v1/connectors/{connector_id_or_name}/organization/credentials:
+    get:
+      operationId: connector_list_organization_credentials_v1
+      summary: List organization credentials for a connector.
+      description: List all credentials configured at the organization level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: auth_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/OutboundAuthenticationType'
+              - type: 'null'
+            title: Auth Type
+        - name: fetch_default
+          in: query
+          required: false
+          schema:
+            type: boolean
+            title: Fetch Default
+            default: false
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      operationId: connector_create_or_update_organization_credentials_v1
+      summary: Create or update organization credentials for a connector.
+      description: Create or update credentials at the organization level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsCreateOrUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/workspace/credentials:
+    get:
+      operationId: connector_list_workspace_credentials_v1
+      summary: List workspace credentials for a connector.
+      description: List all credentials configured at the workspace level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: auth_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/OutboundAuthenticationType'
+              - type: 'null'
+            title: Auth Type
+        - name: fetch_default
+          in: query
+          required: false
+          schema:
+            type: boolean
+            title: Fetch Default
+            default: false
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      operationId: connector_create_or_update_workspace_credentials_v1
+      summary: Create or update workspace credentials for a connector.
+      description: Create or update credentials at the workspace level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsCreateOrUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/user/credentials:
+    get:
+      operationId: connector_list_user_credentials_v1
+      summary: List user credentials for a connector.
+      description: List all credentials configured at the user level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: auth_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/OutboundAuthenticationType'
+              - type: 'null'
+            title: Auth Type
+        - name: fetch_default
+          in: query
+          required: false
+          schema:
+            type: boolean
+            title: Fetch Default
+            default: false
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialsResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      operationId: connector_create_or_update_user_credentials_v1
+      summary: Create or update user credentials for a connector.
+      description: Create or update credentials at the user level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsCreateOrUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/organization/credentials/{credentials_name}:
+    delete:
+      operationId: connector_delete_organization_credentials_v1
+      summary: Delete organization credentials for a connector.
+      description: Delete credentials at the organization level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: credentials_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Credentials Name
+            pattern: ^[a-zA-Z0-9_-]{1,64}$
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/workspace/credentials/{credentials_name}:
+    delete:
+      operationId: connector_delete_workspace_credentials_v1
+      summary: Delete workspace credentials for a connector.
+      description: Delete credentials at the workspace level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: credentials_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Credentials Name
+            pattern: ^[a-zA-Z0-9_-]{1,64}$
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}/user/credentials/{credentials_name}:
+    delete:
+      operationId: connector_delete_user_credentials_v1
+      summary: Delete user credentials for a connector.
+      description: Delete credentials at the user level for a given connector.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: credentials_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Credentials Name
+            pattern: ^[a-zA-Z0-9_-]{1,64}$
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id_or_name}#idOrName:
+    get:
+      operationId: connector_get_v1
+      summary: Get a connector.
+      description: Get a connector by its ID or name.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: fetch_customer_data
+          in: query
+          description: Fetch the customer data associated with the connector (e.g. customer secrets / config).
+          required: false
+          schema:
+            type: boolean
+            title: Fetch Customer Data
+            description: Fetch the customer data associated with the connector (e.g. customer secrets / config).
+            default: false
+        - name: fetch_connection_secrets
+          in: query
+          description: Fetch the general connection secrets associated with the connector.
+          required: false
+          schema:
+            type: boolean
+            title: Fetch Connection Secrets
+            description: Fetch the general connection secrets associated with the connector.
+            default: false
+        - name: connector_id_or_name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id Or Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connector'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/connectors/{connector_id}#id:
+    patch:
+      operationId: connector_update_v1
+      summary: Update a connector.
+      description: Update a connector by its ID.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: connector_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorMCPUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connector'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      operationId: connector_delete_v1
+      summary: Delete a connector.
+      description: Delete a connector by its ID.
+      tags:
+        - beta.connectors
+      parameters:
+        - name: connector_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Connector Id
+            format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
     BaseModelCard:
@@ -19640,6 +20336,415 @@ components:
       - customer_id
       - workspace_id
       - active
+    AuthUrlResponse:
+      type: object
+      properties:
+        auth_url:
+          type: string
+          title: Auth Url
+        ttl:
+          type: integer
+          title: Ttl
+      title: AuthUrlResponse
+      required:
+      - auth_url
+      - ttl
+    AuthenticationConfiguration:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+        authentication_type:
+          $ref: '#/components/schemas/OutboundAuthenticationType'
+        is_default:
+          type: boolean
+          title: Is Default
+          default: false
+      title: AuthenticationConfiguration
+      required:
+      - name
+      - authentication_type
+    ConnectionCredentials:
+      type: object
+      properties:
+        oauth:
+          anyOf:
+          - $ref: '#/components/schemas/OAuth2Token'
+          - type: 'null'
+        headers:
+          anyOf:
+          - type: object
+            additionalProperties:
+              type: string
+          - type: 'null'
+          title: Headers
+        bearer_token:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bearer Token
+      title: ConnectionCredentials
+    ConnectorAuthenticationHeader:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+        is_required:
+          type: boolean
+          title: Is Required
+          default: true
+        is_secret:
+          type: boolean
+          title: Is Secret
+          default: true
+      title: ConnectorAuthenticationHeader
+      required:
+      - name
+    CredentialsCreateOrUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+          description: Name of the credentials. Use this name to access or modify your
+            credentials.
+        is_default:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Default
+          description: 'Controls whether this credential is the default for its auth method.
+            On creation: if no credential exists yet for this auth method, the credential
+            is automatically set as default when is_default is true or omitted; setting
+            is_default to false is rejected because a default must exist. If other credentials
+            already exist, setting is_default to true promotes this credential (demoting
+            the previous default); false or omitted creates it as non-default. On update:
+            true promotes this credential, false is rejected if it is currently the default
+            (promote another credential first), omitted leaves the default status unchanged.'
+        credentials:
+          anyOf:
+          - $ref: '#/components/schemas/ConnectionCredentials'
+          - type: 'null'
+          description: The credential data (headers, bearer_token).
+      title: CredentialsCreateOrUpdate
+      required:
+      - name
+      description: Request to create or update non-OAuth2 credentials for a connector.
+    CredentialsResponse:
+      type: object
+      properties:
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthenticationConfiguration'
+          title: Credentials
+        connector_preset_credentials_for_auth:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutboundAuthenticationType'
+          title: Connector Preset Credentials For Auth
+          default: []
+      title: CredentialsResponse
+      required:
+      - credentials
+    MCPSupportedLanguage:
+      type: string
+      title: MCPSupportedLanguage
+      enum:
+      - en
+      - fr
+      - de
+      - es
+      - pl
+      - it
+      - ar
+      - pt-BR
+      - nl
+    MCPTool:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        inputSchema:
+          type: object
+          title: Inputschema
+          additionalProperties: true
+        outputSchema:
+          anyOf:
+          - type: object
+            additionalProperties: true
+          - type: 'null'
+          title: Outputschema
+        icons:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/MCPServerIcon'
+          - type: 'null'
+          title: Icons
+        annotations:
+          anyOf:
+          - $ref: '#/components/schemas/ToolAnnotations'
+          - type: 'null'
+        _meta:
+          anyOf:
+          - $ref: '#/components/schemas/MCPToolMeta'
+          - type: 'null'
+        execution:
+          anyOf:
+          - $ref: '#/components/schemas/ToolExecution'
+          - type: 'null'
+      title: MCPTool
+      required:
+      - name
+      - inputSchema
+      additionalProperties: true
+    MCPToolMeta:
+      type: object
+      properties:
+        ui:
+          anyOf:
+          - $ref: '#/components/schemas/MCPUIToolMeta'
+          - type: 'null'
+        ai.mistral/turbine:
+          anyOf:
+          - $ref: '#/components/schemas/TurbineToolMeta'
+          - type: 'null'
+      title: MCPToolMeta
+      additionalProperties: true
+      description: 'Typed _meta for MCP tools.
+    
+    
+        Only the ''ui'' field is typed. Other fields are allowed via extra="allow".'
+    MCPUIToolMeta:
+      type: object
+      properties:
+        resourceUri:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resourceuri
+        visibility:
+          anyOf:
+          - type: array
+            items:
+              type: string
+              enum:
+              - model
+              - app
+          - type: 'null'
+          title: Visibility
+      title: MCPUIToolMeta
+      additionalProperties: true
+      description: UI metadata for tools that reference UI resources.
+    OAuth2Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          title: Token Type
+          default: Bearer
+          const: Bearer
+        expires_in:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Expires In
+        scope:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scope
+        refresh_token:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Refresh Token
+        expires_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Expires At
+      title: OAuth2Token
+      required:
+      - access_token
+    OutboundAuthenticationType:
+      type: string
+      title: OutboundAuthenticationType
+      enum:
+      - oauth2
+      - bearer
+      - none
+    PublicAuthenticationMethod:
+      type: object
+      properties:
+        method_type:
+          $ref: '#/components/schemas/OutboundAuthenticationType'
+        headers:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/ConnectorAuthenticationHeader'
+          - type: 'null'
+          title: Headers
+      title: PublicAuthenticationMethod
+      required:
+      - method_type
+      description: Public view of an authentication method, without secrets.
+    ToolAnnotations:
+      type: object
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        readOnlyHint:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Readonlyhint
+        destructiveHint:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Destructivehint
+        idempotentHint:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Idempotenthint
+        openWorldHint:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Openworldhint
+      title: ToolAnnotations
+      additionalProperties: true
+      description: 'Additional properties describing a Tool to clients.
+    
+    
+        NOTE: all properties in ToolAnnotations are **hints**.
+    
+        They are not guaranteed to provide a faithful description of
+    
+        tool behavior (including descriptive properties like `title`).
+    
+    
+        Clients should never make tool use decisions based on ToolAnnotations
+    
+        received from untrusted servers.'
+    ToolExecution:
+      type: object
+      properties:
+        taskSupport:
+          anyOf:
+          - type: string
+            enum:
+            - forbidden
+            - optional
+            - required
+          - type: 'null'
+          title: Tasksupport
+      title: ToolExecution
+      additionalProperties: true
+      description: Execution-related properties for a tool.
+    ToolType:
+      type: string
+      title: ToolType
+      enum:
+      - rag
+      - image
+      - code
+      - event
+    TurbineToolLocale:
+      type: object
+      properties:
+        name:
+          anyOf:
+          - type: object
+            propertyNames:
+              $ref: '#/components/schemas/MCPSupportedLanguage'
+            additionalProperties:
+              type: string
+          - type: 'null'
+          title: Name
+        description:
+          anyOf:
+          - type: object
+            propertyNames:
+              $ref: '#/components/schemas/MCPSupportedLanguage'
+            additionalProperties:
+              type: string
+          - type: 'null'
+          title: Description
+        usage_sentence:
+          anyOf:
+          - type: object
+            propertyNames:
+              $ref: '#/components/schemas/MCPSupportedLanguage'
+            additionalProperties:
+              type: string
+          - type: 'null'
+          title: Usage Sentence
+        working_description:
+          anyOf:
+          - type: object
+            propertyNames:
+              $ref: '#/components/schemas/MCPSupportedLanguage'
+            additionalProperties:
+              type: string
+          - type: 'null'
+          title: Working Description
+        done_description:
+          anyOf:
+          - type: object
+            propertyNames:
+              $ref: '#/components/schemas/MCPSupportedLanguage'
+            additionalProperties:
+              type: string
+          - type: 'null'
+          title: Done Description
+      title: TurbineToolLocale
+    TurbineToolMeta:
+      type: object
+      properties:
+        locale:
+          anyOf:
+          - $ref: '#/components/schemas/TurbineToolLocale'
+          - type: 'null'
+        tool_type:
+          anyOf:
+          - $ref: '#/components/schemas/ToolType'
+          - type: 'null'
+        timeout:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Timeout
+        private_execution:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Private Execution
+      title: TurbineToolMeta
   securitySchemes:
     ApiKey:
       type: http
@@ -19744,6 +20849,9 @@ tags:
 - name: beta.workflows.workers
   x-displayName: Workers
   description: Worker connection info.
+- name: beta.connectors
+  x-displayName: (beta) Connectors
+  description: (beta) Connectors
 security:
 - ApiKey: []
 servers:

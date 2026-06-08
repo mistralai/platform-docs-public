@@ -27,13 +27,13 @@ from mistralai.client import Mistral
 
 client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
-# Démarrer un workflow
+# Start a workflow
 execution = client.workflows.execute_workflow(
     workflow_identifier="my-workflow",
     input=params,
 )
 
-# Écouter en streaming tous les événements pour cette exécution
+# Stream all events for this execution
 async for event in client.workflows.events.get_stream_events(
     workflow_exec_id=execution.execution_id,
 ):
@@ -60,13 +60,13 @@ async for event in client.workflows.events.get_stream_events(
     event_type = event.data.event_type
 
     if event_type == "WORKFLOW_EXECUTION_COMPLETED":
-        print("Terminé !")
+        print("Done!")
         break
     elif event_type in ("WORKFLOW_EXECUTION_FAILED", "WORKFLOW_EXECUTION_CANCELED"):
-        print(f"Fin : {event_type}")
+        print(f"Ended: {event_type}")
         break
     else:
-        record_event(event)
+        print(f"Event: {event_type}")
 ```
 
   </TabItem>
@@ -87,12 +87,12 @@ while True:
             workflow_exec_id=execution_id,
             start_seq=last_seq,
         ):
-            last_seq = event.broker_sequence + 1  # avancer après cet événement
+            last_seq = event.broker_sequence + 1  # advance past this event
             process(event)
-        break  # Terminé normalement
+        break  # Completed normally
     except ConnectionError:
         await asyncio.sleep(1)
-        # La boucle reprendra à partir de last_seq
+        # Loop will resume from last_seq
 ```
 
   </TabItem>
@@ -111,7 +111,7 @@ GET /v1/workflows/executions/{execution_id}/stream
 Abonnez-vous à l’exécution d’un workflow par son ID. Permet la reprise depuis une position SSE précédente.
 
 | Paramètre        | Description                                               |
-| ---------------- | -------------------------------------------------------- |
+| ---------------- | --------------------------------------------------------- |
 | `event_source`   | Filtrage facultatif par source de l’événement (ex : `workflow`, `activity`). Voir [Types d’événements](#event-types) pour les valeurs possibles. |
 | `last_event_id`  | Reprendre après un numéro de séquence spécifique (équivaut à `start_seq`). Peut aussi être fourni en header HTTP `Last-Event-ID` — mécanisme standard de reprise SSE. |
 
@@ -128,30 +128,30 @@ GET /v1/workflows/events/stream
 
 Abonnez-vous en filtrant sur plusieurs exécutions — utile pour des tableaux de bord, des outils d’observabilité ou pour consommer simultanément un workflow parent et tous ses descendants dans un même flux.
 
-| Paramètre                  | Description                                | Exemple                                   |
-| -------------------------- | ------------------------------------------ | ----------------------------------------- |
-| `scope`                    | `workflow`, `activity` ou `*`              | `?scope=activity`                         |
-| `stream`                   | Filtrer selon le nom du flux               | `?stream=token`                           |
-| `workflow_name`            | Filtrer sur le nom du workflow             | `?workflow_name=my-workflow`              |
-| `workflow_exec_id`         | Filtrer par ID d’exécution                 | `?workflow_exec_id=exec789`               |
-| `root_workflow_exec_id`    | Filtrer par ID d’exécution racine          | `?root_workflow_exec_id=root123`          |
-| `parent_workflow_exec_id`  | Filtrer par ID d’exécution parent          | `?parent_workflow_exec_id=parent456`      |
-| `activity_name`            | Filtrer sur le nom de l’activité           | `?activity_name=chat_activity`            |
-| `activity_id`              | Filtrer sur l’ID d’exécution d’activité    | `?activity_id=activity123`                |
-| `start_seq`                | Reprendre à partir d’une séquence précise  | `?start_seq=42`                           |
-| `metadata_filters`         | Filtrer par métadonnées (objet JSON)       | `?metadata_filters={"key":"v"}`           |
-| `workflow_event_types`     | Filtrer par type d’événement workflow      | `?workflow_event_types=WORKFLOW_EXECUTION_COMPLETED` |
+| Paramètre                 | Description                                  | Exemple                                    |
+| ------------------------- | -------------------------------------------- | ------------------------------------------ |
+| `scope`                   | `workflow`, `activity` ou `*`               | `?scope=activity`                          |
+| `stream`                  | Filtrer selon le nom du flux                        | `?stream=token`                            |
+| `workflow_name`           | Filtrer sur le nom du workflow                      | `?workflow_name=my-workflow`               |
+| `workflow_exec_id`        | Filtrer par ID d’exécution                       | `?workflow_exec_id=exec789`                |
+| `root_workflow_exec_id`   | Filtrer par ID d’exécution racine              | `?root_workflow_exec_id=root123`           |
+| `parent_workflow_exec_id` | Filtrer par ID d’exécution parent            | `?parent_workflow_exec_id=parent456`       |
+| `activity_name`           | Filtrer sur le nom de l’activité                      | `?activity_name=chat_activity`             |
+| `activity_id`             | Filtrer sur l’ID d’exécution d’activité              | `?activity_id=activity123`                 |
+| `start_seq`               | Reprendre à partir d’une séquence précise                         | `?start_seq=42`                            |
+| `metadata_filters`        | Filtrer par métadonnées (objet JSON)             | `?metadata_filters={"key":"v"}`            |
+| `workflow_event_types`    | Filtrer par type d’événement workflow               | `?workflow_event_types=WORKFLOW_EXECUTION_COMPLETED` |
 
 ```bash
-# Événements de type token-stream pour une exécution spécifique
+# Token-stream events for a specific execution
 curl -N -H "Authorization: Bearer $MISTRAL_API_KEY" \
   "https://api.mistral.ai/v1/workflows/events/stream?workflow_exec_id=${EXEC_ID}&stream=token"
 
-# Uniquement les événements d’activité pour une exécution
+# Only activity events for an execution
 curl -N -H "Authorization: Bearer $MISTRAL_API_KEY" \
   "https://api.mistral.ai/v1/workflows/events/stream?workflow_exec_id=${EXEC_ID}&scope=activity"
 
-# Uniquement les événements au niveau du workflow pour une exécution
+# Only workflow-level events for an execution
 curl -N -H "Authorization: Bearer $MISTRAL_API_KEY" \
   "https://api.mistral.ai/v1/workflows/events/stream?workflow_exec_id=${EXEC_ID}&scope=workflow"
 ```
@@ -178,7 +178,7 @@ Quand un workflow génère des sous-workflows, chaque événement contient l’o
 class ParentWorkflow:
     @workflows.workflow.entrypoint
     async def run(self, params):
-        # Les événements du workflow enfant auront parent_workflow_exec_id défini sur cette exécution
+        # Child workflow events will have parent_workflow_exec_id set to this execution
         result = await workflows.workflow.execute_workflow(
             ChildWorkflow,
             params,
@@ -195,12 +195,12 @@ Pour recevoir les événements d’un workflow parent et de tous ses descendants
   <TabItem value="python" label="Python">
 
 ```python
-# Consommer les événements du parent et de tous les enfants
+# Get events from parent AND all children
 async for event in client.workflows.events.get_stream_events(
     root_workflow_exec_id=parent_execution_id,
 ):
     if event.workflow_context.parent_workflow_exec_id:
-        print(f"[enfant] {event.data}")
+        print(f"[child] {event.data}")
     else:
         print(f"[parent] {event.data}")
 ```
@@ -216,25 +216,25 @@ Pour la liste complète des types d’événements workflow et activité, consul
 
 Voici les types d’événements que vous rencontrerez le plus souvent :
 
-| Type d’événement                      | Description                           |
-| ------------------------------------- | ------------------------------------- |
-| `WORKFLOW_EXECUTION_STARTED`          | Le workflow a démarré                 |
-| `WORKFLOW_EXECUTION_COMPLETED`        | Workflow terminé avec succès          |
-| `WORKFLOW_EXECUTION_FAILED`           | Workflow en échec                     |
-| `WORKFLOW_EXECUTION_CANCELED`         | Workflow annulé                       |
-| `WORKFLOW_EXECUTION_CONTINUED_AS_NEW` | Workflow repris sous un nouvel ID     |
-| `WORKFLOW_TASK_TIMED_OUT`             | Tâche du workflow expirée             |
-| `WORKFLOW_TASK_FAILED`                | Tâche du workflow en échec            |
-| `CUSTOM_TASK_STARTED`                 | Tâche personnalisée démarrée          |
-| `CUSTOM_TASK_IN_PROGRESS`             | Mise à jour de l’avancement           |
+| Type d’événement                            | Description                    |
+| ------------------------------------- | ------------------------------ |
+| `WORKFLOW_EXECUTION_STARTED`          | Le workflow a démarré               |
+| `WORKFLOW_EXECUTION_COMPLETED`        | Workflow terminé avec succès |
+| `WORKFLOW_EXECUTION_FAILED`           | Workflow en échec                |
+| `WORKFLOW_EXECUTION_CANCELED`         | Workflow annulé          |
+| `WORKFLOW_EXECUTION_CONTINUED_AS_NEW` | Workflow repris sous un nouvel ID      |
+| `WORKFLOW_TASK_TIMED_OUT`             | Tâche du workflow expirée        |
+| `WORKFLOW_TASK_FAILED`                | Tâche du workflow en échec           |
+| `CUSTOM_TASK_STARTED`                 | Tâche personnalisée démarrée            |
+| `CUSTOM_TASK_IN_PROGRESS`             | Mise à jour de l’avancement    |
 | `CUSTOM_TASK_COMPLETED`               | Tâche personnalisée terminée          |
-| `CUSTOM_TASK_FAILED`                  | Tâche personnalisée en échec          |
-| `CUSTOM_TASK_TIMED_OUT`               | Tâche personnalisée expirée           |
+| `CUSTOM_TASK_FAILED`                  | Tâche personnalisée en échec             |
+| `CUSTOM_TASK_TIMED_OUT`               | Tâche personnalisée expirée          |
 | `CUSTOM_TASK_CANCELED`                | Tâche personnalisée annulée           |
-| `ACTIVITY_TASK_STARTED`               | Activité démarrée                     |
-| `ACTIVITY_TASK_COMPLETED`             | Activité terminée                     |
-| `ACTIVITY_TASK_RETRYING`              | Nouvelle tentative d’activité         |
-| `ACTIVITY_TASK_FAILED`                | Activité en échec                     |
+| `ACTIVITY_TASK_STARTED`               | Activité démarrée               |
+| `ACTIVITY_TASK_COMPLETED`             | Activité terminée              |
+| `ACTIVITY_TASK_RETRYING`              | Nouvelle tentative d’activité           |
+| `ACTIVITY_TASK_FAILED`                | Activité en échec                |
 
 <SectionTab as="h2" variant="secondary" sectionId="example-event">Exemple d’événement</SectionTab>
 
@@ -283,7 +283,7 @@ async def resilient_consume(client, exec_id):
                 workflow_exec_id=exec_id,
                 start_seq=last_seq,
             ):
-                last_seq = event.broker_sequence + 1  # avancer après cet événement
+                last_seq = event.broker_sequence + 1  # advance past this event
                 yield event
 
                 if is_terminal_status(event):
@@ -303,13 +303,13 @@ Filtrez dès l’abonnement, pas dans votre code :
   <TabItem value="python" label="Python">
 
 ```python
-# Correct : filtrer à la source
+# Good: Filter at source
 async for event in client.workflows.events.get_stream_events(
     workflow_exec_id=exec_id, stream="token"
 ):
     process(event)
 
-# Incorrect : filtrer dans le code (gaspille de la bande passante)
+# Bad: Filter in code (wastes bandwidth)
 async for event in client.workflows.events.get_stream_events(
     workflow_exec_id=exec_id
 ):
@@ -332,7 +332,7 @@ async for event in client.workflows.events.get_stream_events(
     workflow_exec_id=exec_id, scope="activity"
 ):
     if event.data is not None:
-        # Uniquement les événements d’activité, aucun événement de niveau workflow
+        # Only activity events, no workflow-level events
         process(event.data)
 ```
 

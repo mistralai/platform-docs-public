@@ -586,11 +586,7 @@ const rawRedirects: RedirectRule[] = [
     destination: "/studio-api/conversations/structured-output",
     permanent: true,
   },
-  {
-    source: "/capabilities/audio",
-    destination: "/studio-api/audio/speech_to_text",
-    permanent: true,
-  },
+
   {
     source: "/capabilities/audio_transcription",
     destination: "/studio-api/audio/speech_to_text",

@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation.client';
 import { Bullet } from '@/components/ui/bullet';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useCopyButton } from '@/components/ui/copy-button';
 import { CheckIcon, CopyIcon } from '@/components/icons/pixel';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useLingo } from '@lingo.dev/react';
@@ -455,7 +454,9 @@ export const TopCategoryCta = ({
 
 const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
   const l = useLingo();
-  const handleCopyMarkdown = async (e: React.MouseEvent) => {
+  const [copyState, setCopyState] = React.useState<'idle' | 'copied'>('idle');
+
+  const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -466,18 +467,15 @@ const CopyMarkdownButton = ({ lastItem }: { lastItem: SidebarItem }) => {
 
     try {
       const response = await fetch(filePath);
-      if (response.ok) {
-        const content = await response.text();
-        await navigator.clipboard.writeText(content);
-      }
+      if (!response.ok) return;
+      const content = await response.text();
+      await navigator.clipboard.writeText(content);
+      setCopyState('copied');
+      setTimeout(() => setCopyState('idle'), 2000);
     } catch (error) {
       console.error('Failed to copy markdown:', error);
     }
   };
-  const { copyState, handleCopy } = useCopyButton({
-    handleCopy: handleCopyMarkdown,
-    value: '',
-  });
   return (
     <Tooltip>
       <TooltipTrigger asChild>

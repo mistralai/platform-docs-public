@@ -1,0 +1,1357 @@
+---
+id: basic_ocr
+title: OCR Processor
+slug: basic_ocr
+sidebar_position: 3.1
+---
+
+# Document AI - OCR Processor 
+
+Mistral Document AI API comes with a Document OCR (Optical Character Recognition) processor, powered by our latest OCR model `mistral-ocr-latest`, which enables you to extract text and structured content from PDF documents. 
+
+<Image
+  url={['/img/basic_ocr_graph.png', '/img/basic_ocr_graph_dark.png']}
+  alt="Basic OCR Graph"
+  width="600px"
+  centered
+/>
+
+<SectionTab as="h1" sectionId="before-you-start">Before You Start</SectionTab>
+
+### Key Features
+
+- **Extracts text** in content while maintaining document structure and hierarchy.
+- Preserves formatting like headers, paragraphs, lists and tables.
+  - **Table formatting** can be toggled between `null`, `markdown` and `html` via the `table_format` parameter.
+    - `null`: Tables are returned inline as markdown within the extracted page.
+    - `markdown`: Tables are returned as markdown tables separately.
+    - `html`: Tables are returned as html tables separately.
+- Option to **extract headers and footers** via the `extract_header` and the `extract_footer` parameter, when used, the headers and footers content will be provided in the `header` and `footer` fields. By default, headers and footers are considered as part of the main content output.
+- Returns results in markdown format for easy parsing and rendering.
+- Handles complex layouts including multi-column text and mixed content and returns hyperlinks when available.
+- Provides **confidence scores** for extracted content at word or page granularity via the `confidence_scores_granularity` parameter.
+- Processes documents at scale with high accuracy
+- Supports multiple document formats including:
+    - `image_url`: png, jpeg/jpg, avif and more...
+    - `document_url`: pdf, pptx, docx and more...
+    - For a non-exaustive more comprehensive list, visit our [FAQ](#faq).
+
+Learn more about our API [here](https://docs.mistral.ai/api/endpoint/ocr).
+
+:::info
+Table formatting as well as header and footer extraction is only available for OCR 2512 or newer.
+:::
+
+The OCR processor returns the extracted **text content**, **images bboxes** and metadata about the document structure, making it easy to work with the recognized content programmatically.
+
+<SectionTab as="h1" sectionId="ocr-images-and-pdfs">OCR with Images and PDFs</SectionTab>
+
+### OCR your Documents
+
+We provide different methods to OCR your documents. You can either OCR a **PDF** or an **Image**.
+
+<SectionTab as="h2" variant="secondary" sectionId="ocr-pdfs">PDFs</SectionTab>
+
+Among the PDF methods, you can use a **public available URL**, a **base64 encoded PDF** or by **uploading a PDF in our Cloud**.
+
+<ExplorerTabs id="pdfs">
+    <ExplorerTab value="pdf-url" label="OCR with a PDF Url">
+        Be sure the URL is **public** and accessible by our API.
+
+<Tabs groupId="code">
+    <TabItem value="python" label="python">
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    table_format="html", # default is None
+    # extract_header=True, # default is False
+    # extract_footer=True, # default is False
+    include_image_base64=True
+)
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    table_format="html", # default is None
+    # extract_header=True, # default is False
+    # extract_footer=True, # default is False
+    include_image_base64=True
+)
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "document_url",
+        documentUrl: "https://arxiv.org/pdf/2201.04234"
+    },
+    tableFormat: "html", // default is null
+    // extractHeader: False, // default is False
+    // extractFooter: False, // default is False
+    includeImageBase64: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    "table_format": "html",
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Leveraging Unlabeled Data to Predict Out-of-Distribution Performance\n\nSaurabh Garg\nCarnegie Mellon University\nsgarg2@andrew.cmu.edu\n&Sivaraman Balakrishnan\nCarnegie Mellon University\nsbalakri@andrew.cmu.edu\n&Zachary C. Lipton\nCarnegie Mellon University\nzlipton@andrew.cmu.edu\n&Behnam Neyshabur\nGoogle Research, Blueshift team\nneyshabur@google.com\n&Hanie Sedghi\nGoogle Research, Brain team\nhsedghi@google.com\n\n###### Abstract\n\nReal-world machine learning deployments are characterized by mismatches between the source (training) and target (test) distributions that may cause performance drops. In this work, we investigate methods for predicting the target domain accuracy using only labeled source data and unlabeled target data. We propose Average Thresholded Confidence (ATC), a practical method that learns a threshold on the model’s confidence, predicting accuracy as the fraction of unlabeled examples for which model confidence exceeds that threshold. ATC outperforms previous methods across several model architectures, types of distribution shifts (e.g., due to synthetic corruptions, dataset reproduction, or novel subpopulations), and datasets (Wilds, ImageNet, Breeds, CIFAR, and MNIST). In our experiments, ATC estimates target performance $2$–$4\\times$ more accurately than prior methods. We also explore the theoretical foundations of the problem, proving that, in general, identifying the accuracy is just as hard as identifying the optimal predictor and thus, the efficacy of any method rests upon (perhaps unstated) assumptions on the nature of the shift. Finally, analyzing our method on some toy distributions, we provide insights concerning when it works.\n\n## 1 Introduction\n\nMachine learning models deployed in the real world typically encounter examples from previously unseen distributions. While the IID assumption enables us to evaluate models using held-out data from the source distribution (from which training data is sampled), this estimate is no longer valid in presence of a distribution shift. Moreover, under such shifts, model accuracy tends to degrade *(Szegedy et al., 2014; Recht et al., 2019; Koh et al., 2021)*. Commonly, the only data available to the practitioner are a labeled training set (source) and unlabeled deployment-time data which makes the problem more difficult. In this setting, detecting shifts in the distribution of covariates is known to be possible (but difficult) in theory *(Ramdas et al., 2015)*, and in practice *(Rabanser et al., 2018)*. However, producing an optimal predictor using only labeled source and unlabeled target data is well-known to be impossible absent further assumptions *(Ben-David et al., 2010; Lipton et al., 2018)*.\n\nTwo vital questions that remain are: (i) the precise conditions under which we can estimate a classifier’s target-domain accuracy; and (ii) which methods are most practically useful. To begin, the straightforward way to assess the performance of a model under distribution shift would be to collect labeled (target domain) examples and then to evaluate the model on that data. However, collecting fresh labeled data from the target distribution is prohibitively expensive and time-consuming, especially if the target distribution is non-stationary. Hence, instead of using labeled data, we aim to use unlabeled data from the target distribution, that is comparatively abundant, to predict model performance. Note that in this work, our focus is not to improve performance on the target but, rather, to estimate the accuracy on the target for a given classifier.",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [
+        "mailto:sgarg2%40andrew.cmu.edu",
+        "mailto:sbalakri%40andrew.cmu.edu",
+        "mailto:zlipton%40andrew.cmu.edu",
+        "mailto:neyshabur%40google.com",
+        "mailto:hsedghi%40google.com",
+        "https://github.com/saurabhgarg1996/ATC_code"
+      ],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n![img-0.jpeg](img-0.jpeg)\nFigure 1: Illustration of our proposed method ATC. Left: using source domain validation data, we identify a threshold on a score (e.g. negative entropy) computed on model confidence such that fraction of examples above the threshold matches the validation set accuracy. ATC estimates accuracy on unlabeled target data as the fraction of examples with the score above the threshold. Interestingly, this threshold yields accurate estimates on a wide set of target distributions resulting from natural and synthetic shifts. Right: Efficacy of ATC over previously proposed approaches on our testbed with a post-hoc calibrated model. To obtain errors on the same scale, we rescale all errors with Average Confidence (AC) error. Lower estimation error is better. See Table 1 for exact numbers and comparison on various types of distribution shift. See Sec. 5 for details on our testbed.\n\n![img-1.jpeg](img-1.jpeg)\n\nRecently, numerous methods have been proposed for this purpose (Deng &amp; Zheng, 2021; Chen et al., 2021b; Jiang et al., 2021; Deng et al., 2021; Guillory et al., 2021). These methods either require calibration on the target domain to yield consistent estimates (Jiang et al., 2021; Guillory et al., 2021) or additional labeled data from several target domains to learn a linear regression function on a distributional distance that then predicts model performance (Deng et al., 2021; Deng &amp; Zheng, 2021; Guillory et al., 2021). However, methods that require calibration on the target domain typically yield poor estimates since deep models trained and calibrated on source data are not, in general, calibrated on a (previously unseen) target domain (Ovadia et al., 2019). Besides, methods that leverage labeled data from target domains rely on the fact that unseen target domains exhibit strong linear correlation with seen target domains on the underlying distance measure and, hence, can be rendered ineffective when such target domains with labeled data are unavailable (in Sec. 5.1 we demonstrate such a failure on a real-world distribution shift problem). Therefore, throughout the paper, we assume access to labeled source data and only unlabeled data from target domain(s).\n\nIn this work, we first show that absent assumptions on the source classifier or the nature of the shift, no method of estimating accuracy will work generally (even in non-contrived settings). To estimate accuracy on target domain perfectly, we highlight that even given perfect knowledge of the labeled source distribution (i.e.,  $p_{s}(x,y)$ ) and unlabeled target distribution (i.e.,  $p_{t}(x)$ ), we need restrictions on the nature of the shift such that we can uniquely identify the target conditional  $p_{t}(y|x)$ . Thus, in general, identifying the accuracy of the classifier is as hard as identifying the optimal predictor.\n\nSecond, motivated by the superiority of methods that use maximum softmax probability (or logit) of a model for Out-Of-Distribution (OOD) detection (Hendrycks &amp; Gimpel, 2016; Hendrycks et al., 2019), we propose a simple method that leverages softmax probability to predict model performance. Our method, Average Thresholded Confidence (ATC), learns a threshold on a score (e.g., maximum confidence or negative entropy) of model confidence on validation source data and predicts target domain accuracy as the fraction of unlabeled target points that receive a score above that threshold. ATC selects a threshold on validation source data such that the fraction of source examples that receive the score above the threshold match the accuracy of those examples. Our primary contribution in ATC is the proposal of obtaining the threshold and observing its efficacy on (practical) accuracy estimation. Importantly, our work takes a step forward in positively answering the question raised in Deng &amp; Zheng (2021); Deng et al. (2021) about a practical strategy to select a threshold that enables accuracy prediction with thresholded model confidence.",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 222,
+          "bottom_right_x": 943,
+          "bottom_right_y": 635,
+          "image_base64": "data:image/jpeg;base64,...",
+          "image_annotation": null
+        }
+      ],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 27,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n[tbl-3.html](tbl-3.html)\n\nTable 3: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. For language datasets, we use DistilBERT-base-uncased, for vision dataset we report results with DenseNet model with the exception of MNIST where we use FCN. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e.,  $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "tables": [
+        {
+          "id": "tbl-3.html",
+          "content": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Shift</td><td colspan=\"2\">IM</td><td colspan=\"2\">AC</td><td colspan=\"2\">DOC</td><td>GDE</td><td colspan=\"2\">ATC-MC (Ours)</td><td colspan=\"2\">ATC-NE (Ours)</td></tr><tr><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td></tr><tr><td rowspan=\"4\">CIFAR10</td><td rowspan=\"2\">Natural</td><td>6.60</td><td>5.74</td><td>9.88</td><td>6.89</td><td>7.25</td><td>6.07</td><td>4.77</td><td>3.21</td><td>3.02</td><td>2.99</td><td>2.85</td></tr><tr><td>(0.35)</td><td>(0.30)</td><td>(0.16)</td><td>(0.13)</td><td>(0.15)</td><td>(0.16)</td><td>(0.13)</td><td>(0.49)</td><td>(0.40)</td><td>(0.37)</td><td>(0.29)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>12.33</td><td>10.20</td><td>16.50</td><td>11.91</td><td>13.87</td><td>11.08</td><td>6.55</td><td>4.65</td><td>4.25</td><td>4.21</td><td>3.87</td></tr><tr><td>(0.51)</td><td>(0.48)</td><td>(0.26)</td><td>(0.17)</td><td>(0.18)</td><td>(0.17)</td><td>(0.35)</td><td>(0.55)</td><td>(0.55)</td><td>(0.55)</td><td>(0.75)</td></tr><tr><td rowspan=\"2\">CIFAR100</td><td rowspan=\"2\">Synthetic</td><td>13.69</td><td>11.51</td><td>23.61</td><td>13.10</td><td>14.60</td><td>10.14</td><td>9.85</td><td>5.50</td><td>4.75</td><td>4.72</td><td>4.94</td></tr><tr><td>(0.55)</td><td>(0.41)</td><td>(1.16)</td><td>(0.80)</td><td>(0.77)</td><td>(0.64)</td><td>(0.57)</td><td>(0.70)</td><td>(0.73)</td><td>(0.74)</td><td>(0.74)</td></tr><tr><td rowspan=\"4\">ImageNet200</td><td rowspan=\"2\">Natural</td><td>12.37</td><td>8.19</td><td>22.07</td><td>8.61</td><td>15.17</td><td>7.81</td><td>5.13</td><td>4.37</td><td>2.04</td><td>3.79</td><td>1.45</td></tr><tr><td>(0.25)</td><td>(0.33)</td><td>(0.08)</td><td>(0.25)</td><td>(0.11)</td><td>(0.29)</td><td>(0.08)</td><td>(0.39)</td><td>(0.24)</td><td>(0.30)</td><td>(0.27)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>19.86</td><td>12.94</td><td>32.44</td><td>13.35</td><td>25.02</td><td>12.38</td><td>5.41</td><td>5.93</td><td>3.09</td><td>5.00</td><td>2.68</td></tr><tr><td>(1.38)</td><td>(1.81)</td><td>(1.00)</td><td>(1.30)</td><td>(1.10)</td><td>(1.38)</td><td>(0.89)</td><td>(1.38)</td><td>(0.87)</td><td>(1.28)</td><td>(0.45)</td></tr><tr><td rowspan=\"4\">ImageNet</td><td rowspan=\"2\">Natural</td><td>7.77</td><td>6.50</td><td>18.13</td><td>6.02</td><td>8.13</td><td>5.76</td><td>6.23</td><td>3.88</td><td>2.17</td><td>2.06</td><td>0.80</td></tr><tr><td>(0.27)</td><td>(0.33)</td><td>(0.23)</td><td>(0.34)</td><td>(0.27)</td><td>(0.37)</td><td>(0.41)</td><td>(0.53)</td><td>(0.62)</td><td>(0.54)</td><td>(0.44)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>13.39</td><td>10.12</td><td>24.62</td><td>8.51</td><td>13.55</td><td>7.90</td><td>6.32</td><td>3.34</td><td>2.53</td><td>2.61</td><td>4.89</td></tr><tr><td>(0.53)</td><td>(0.63)</td><td>(0.64)</td><td>(0.71)</td><td>(0.61)</td><td>(0.72)</td><td>(0.33)</td><td>(0.53)</td><td>(0.36)</td><td>(0.33)</td><td>(0.83)</td></tr><tr><td rowspan=\"2\">FMoW-WILDS</td><td rowspan=\"2\">Natural</td><td>5.53</td><td>4.31</td><td>33.53</td><td>12.84</td><td>5.94</td><td>4.45</td><td>5.74</td><td>3.06</td><td>2.70</td><td>3.02</td><td>2.72</td></tr><tr><td>(0.33)</td><td>(0.63)</td><td>(0.13)</td><td>(12.06)</td><td>(0.36)</td><td>(0.77)</td><td>(0.55)</td><td>(0.36)</td><td>(0.54)</td><td>(0.35)</td><td>(0.44)</td></tr><tr><td rowspan=\"2\">RxRx1-WILDS</td><td rowspan=\"2\">Natural</td><td>5.80</td><td>5.72</td><td>7.90</td><td>4.84</td><td>5.98</td><td>5.98</td><td>6.03</td><td>4.66</td><td>4.56</td><td>4.41</td><td>4.47</td></tr><tr><td>(0.17)</td><td>(0.15)</td><td>(0.24)</td><td>(0.09)</td><td>(0.15)</td><td>(0.13)</td><td>(0.08)</td><td>(0.38)</td><td>(0.38)</td><td>(0.31)</td><td>(0.26)</td></tr><tr><td rowspan=\"2\">Amazon-WILDS</td><td rowspan=\"2\">Natural</td><td>2.40</td><td>2.29</td><td>8.01</td><td>2.38</td><td>2.40</td><td>2.28</td><td>17.87</td><td>1.65</td><td>1.62</td><td>1.60</td><td>1.59</td></tr><tr><td>(0.08)</td><td>(0.09)</td><td>(0.53)</td><td>(0.17)</td><td>(0.09)</td><td>(0.09)</td><td>(0.18)</td><td>(0.06)</td><td>(0.05)</td><td>(0.14)</td><td>(0.15)</td></tr><tr><td rowspan=\"2\">CivilCom.-WILDS</td><td rowspan=\"2\">Natural</td><td>12.64</td><td>10.80</td><td>16.76</td><td>11.03</td><td>13.31</td><td>10.99</td><td>16.65</td><td></td><td>7.14</td><td></td><td></td></tr><tr><td>(0.52)</td><td>(0.48)</td><td>(0.53)</td><td>(0.49)</td><td>(0.52)</td><td>(0.49)</td><td>(0.25)</td><td></td><td>(0.41)</td><td></td><td></td></tr><tr><td rowspan=\"2\">MNIST</td><td rowspan=\"2\">Natural</td><td>18.48</td><td>15.99</td><td>21.17</td><td>14.81</td><td>20.19</td><td>14.56</td><td>24.42</td><td>5.02</td><td>2.40</td><td>3.14</td><td>3.50</td></tr><tr><td>(0.45)</td><td>(1.53)</td><td>(0.24)</td><td>(3.89)</td><td>(0.23)</td><td>(3.47)</td><td>(0.41)</td><td>(0.44)</td><td>(1.83)</td><td>(0.49)</td><td>(0.17)</td></tr><tr><td rowspan=\"4\">ENTITY-13</td><td rowspan=\"2\">Same</td><td>16.23</td><td>11.14</td><td>24.97</td><td>10.88</td><td>19.08</td><td>10.47</td><td>10.71</td><td>5.39</td><td>3.88</td><td>4.58</td><td>4.19</td></tr><tr><td>(0.77)</td><td>(0.65)</td><td>(0.70)</td><td>(0.77)</td><td>(0.65)</td><td>(0.72)</td><td>(0.74)</td><td>(0.92)</td><td>(0.61)</td><td>(0.85)</td><td>(0.16)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.53</td><td>22.02</td><td>38.33</td><td>21.64</td><td>32.43</td><td>21.22</td><td>20.61</td><td>13.58</td><td>10.28</td><td>12.25</td><td>6.63</td></tr><tr><td>(0.82)</td><td>(0.68)</td><td>(0.75)</td><td>(0.86)</td><td>(0.69)</td><td>(0.80)</td><td>(0.60)</td><td>(1.15)</td><td>(1.34)</td><td>(1.21)</td><td>(0.93)</td></tr><tr><td rowspan=\"4\">ENTITY-30</td><td rowspan=\"2\">Same</td><td>18.59</td><td>14.46</td><td>28.82</td><td>14.30</td><td>21.63</td><td>13.46</td><td>12.92</td><td>9.12</td><td>7.75</td><td>8.15</td><td>7.64</td></tr><tr><td>(0.51)</td><td>(0.52)</td><td>(0.43)</td><td>(0.71)</td><td>(0.37)</td><td>(0.59)</td><td>(0.14)</td><td>(0.62)</td><td>(0.72)</td><td>(0.68)</td><td>(0.88)</td></tr><tr><td rowspan=\"2\">Novel</td><td>32.34</td><td>26.85</td><td>44.02</td><td>26.27</td><td>36.82</td><td>25.42</td><td>23.16</td><td>17.75</td><td>14.30</td><td>15.60</td><td>10.57</td></tr><tr><td>(0.60)</td><td>(0.58)</td><td>(0.56)</td><td>(0.79)</td><td>(0.47)</td><td>(0.68)</td><td>(0.12)</td><td>(0.76)</td><td>(0.85)</td><td>(0.86)</td><td>(0.86)</td></tr><tr><td rowspan=\"4\">NONLIVING-26</td><td rowspan=\"2\">Same</td><td>18.66</td><td>17.17</td><td>26.39</td><td>16.14</td><td>19.86</td><td>15.58</td><td>16.63</td><td>10.87</td><td>10.24</td><td>10.07</td><td>10.26</td></tr><tr><td>(0.76)</td><td>(0.74)</td><td>(0.82)</td><td>(0.81)</td><td>(0.67)</td><td>(0.76)</td><td>(0.45)</td><td>(0.98)</td><td>(0.83)</td><td>(0.92)</td><td>(1.18)</td></tr><tr><td rowspan=\"2\">Novel</td><td>33.43</td><td>31.53</td><td>41.66</td><td>29.87</td><td>35.13</td><td>29.31</td><td>29.56</td><td>21.70</td><td>20.12</td><td>19.08</td><td>18.26</td></tr><tr><td>(0.67)</td><td>(0.65)</td><td>(0.67)</td><td>(0.71)</td><td>(0.54)</td><td>(0.64)</td><td>(0.21)</td><td>(0.86)</td><td>(0.75)</td><td>(0.82)</td><td>(1.12)</td></tr><tr><td rowspan=\"4\">LIVING-17</td><td rowspan=\"2\">Same</td><td>12.63</td><td>11.05</td><td>18.32</td><td>10.46</td><td>14.43</td><td>10.14</td><td>9.87</td><td>4.57</td><td>3.95</td><td>3.81</td><td>4.21</td></tr><tr><td>(1.25)</td><td>(1.20)</td><td>(1.01)</td><td>(1.12)</td><td>(1.11)</td><td>(1.16)</td><td>(0.61)</td><td>(0.71)</td><td>(0.48)</td><td>(0.22)</td><td>(0.53)</td></tr><tr><td rowspan=\"2\">Novel</td><td>29.03</td><td>26.96</td><td>35.67</td><td>26.11</td><td>31.73</td><td>25.73</td><td>23.53</td><td>16.15</td><td>14.49</td><td>12.97</td><td>11.39</td></tr><tr><td>(1.44)</td><td>(1.38)</td><td>(1.09)</td><td>(1.27)</td><td>(1.19)</td><td>(1.35)</td><td>(0.52)</td><td>(1.36)</td><td>(1.46)</td><td>(1.52)</td><td>(1.72)</td></tr></table>",
+          "format": "html"
+        }
+      ],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 28,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n[tbl-4.html](tbl-4.html)\n\nTable 4: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift for ResNet model. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e.,  $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "tables": [
+        {
+          "id": "tbl-4.html",
+          "content": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Shift</td><td colspan=\"2\">IM</td><td colspan=\"2\">AC</td><td colspan=\"2\">DOC</td><td>GDE</td><td colspan=\"2\">ATC-MC (Ours)</td><td colspan=\"2\">ATC-NE (Ours)</td></tr><tr><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td></tr><tr><td rowspan=\"4\">CIFAR10</td><td rowspan=\"2\">Natural</td><td>7.14</td><td>6.20</td><td>10.25</td><td>7.06</td><td>7.68</td><td>6.35</td><td>5.74</td><td>4.02</td><td>3.85</td><td>3.76</td><td>3.38</td></tr><tr><td>(0.14)</td><td>(0.11)</td><td>(0.31)</td><td>(0.33)</td><td>(0.28)</td><td>(0.27)</td><td>(0.25)</td><td>(0.38)</td><td>(0.30)</td><td>(0.33)</td><td>(0.32)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>12.62</td><td>10.75</td><td>16.50</td><td>11.91</td><td>13.93</td><td>11.20</td><td>7.97</td><td>5.66</td><td>5.03</td><td>4.87</td><td>3.63</td></tr><tr><td>(0.76)</td><td>(0.71)</td><td>(0.28)</td><td>(0.24)</td><td>(0.29)</td><td>(0.28)</td><td>(0.13)</td><td>(0.64)</td><td>(0.71)</td><td>(0.71)</td><td>(0.62)</td></tr><tr><td rowspan=\"2\">CIFAR100</td><td rowspan=\"2\">Synthetic</td><td>12.77</td><td>12.34</td><td>16.89</td><td>12.73</td><td>11.18</td><td>9.63</td><td>12.00</td><td>5.61</td><td>5.55</td><td>5.65</td><td>5.76</td></tr><tr><td>(0.43)</td><td>(0.68)</td><td>(0.20)</td><td>(2.59)</td><td>(0.35)</td><td>(1.25)</td><td>(0.48)</td><td>(0.51)</td><td>(0.55)</td><td>(0.35)</td><td>(0.27)</td></tr><tr><td rowspan=\"4\">ImageNet200</td><td rowspan=\"2\">Natural</td><td>12.63</td><td>7.99</td><td>23.08</td><td>7.22</td><td>15.40</td><td>6.33</td><td>5.00</td><td>4.60</td><td>1.80</td><td>4.06</td><td>1.38</td></tr><tr><td>(0.59)</td><td>(0.47)</td><td>(0.31)</td><td>(0.22)</td><td>(0.42)</td><td>(0.24)</td><td>(0.36)</td><td>(0.63)</td><td>(0.17)</td><td>(0.69)</td><td>(0.29)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>20.17</td><td>11.74</td><td>33.69</td><td>9.51</td><td>25.49</td><td>8.61</td><td>4.19</td><td>5.37</td><td>2.78</td><td>4.53</td><td>3.58</td></tr><tr><td>(0.74)</td><td>(0.80)</td><td>(0.73)</td><td>(0.51)</td><td>(0.66)</td><td>(0.50)</td><td>(0.14)</td><td>(0.88)</td><td>(0.23)</td><td>(0.79)</td><td>(0.33)</td></tr><tr><td rowspan=\"4\">ImageNet</td><td rowspan=\"2\">Natural</td><td>8.09</td><td>6.42</td><td>21.66</td><td>5.91</td><td>8.53</td><td>5.21</td><td>5.90</td><td>3.93</td><td>1.89</td><td>2.45</td><td>0.73</td></tr><tr><td>(0.25)</td><td>(0.28)</td><td>(0.38)</td><td>(0.22)</td><td>(0.26)</td><td>(0.25)</td><td>(0.44)</td><td>(0.26)</td><td>(0.21)</td><td>(0.16)</td><td>(0.10)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>13.93</td><td>9.90</td><td>28.05</td><td>7.56</td><td>13.82</td><td>6.19</td><td>6.70</td><td>3.33</td><td>2.55</td><td>2.12</td><td>5.06</td></tr><tr><td>(0.14)</td><td>(0.23)</td><td>(0.39)</td><td>(0.13)</td><td>(0.31)</td><td>(0.07)</td><td>(0.52)</td><td>(0.25)</td><td>(0.25)</td><td>(0.31)</td><td>(0.27)</td></tr><tr><td rowspan=\"2\">FMoW-WILDS</td><td rowspan=\"2\">Natural</td><td>5.15</td><td>3.55</td><td>34.64</td><td>5.03</td><td>5.58</td><td>3.46</td><td>5.08</td><td>2.59</td><td>2.33</td><td>2.52</td><td>2.22</td></tr><tr><td>(0.19)</td><td>(0.41)</td><td>(0.22)</td><td>(0.29)</td><td>(0.17)</td><td>(0.37)</td><td>(0.46)</td><td>(0.32)</td><td>(0.28)</td><td>(0.25)</td><td>(0.30)</td></tr><tr><td rowspan=\"2\">RxRx1-WILDS</td><td rowspan=\"2\">Natural</td><td>6.17</td><td>6.11</td><td>21.05</td><td>5.21</td><td>6.54</td><td>6.27</td><td>6.82</td><td>5.30</td><td>5.20</td><td>5.19</td><td>5.63</td></tr><tr><td>(0.20)</td><td>(0.24)</td><td>(0.31)</td><td>(0.18)</td><td>(0.21)</td><td>(0.20)</td><td>(0.31)</td><td>(0.30)</td><td>(0.44)</td><td>(0.43)</td><td>(0.55)</td></tr><tr><td rowspan=\"4\">ENTITY-13</td><td rowspan=\"2\">Same</td><td>18.32</td><td>14.38</td><td>27.79</td><td>13.56</td><td>20.50</td><td>13.22</td><td>16.09</td><td>9.35</td><td>7.50</td><td>7.80</td><td>6.94</td></tr><tr><td>(0.29)</td><td>(0.53)</td><td>(1.18)</td><td>(0.58)</td><td>(0.47)</td><td>(0.58)</td><td>(0.84)</td><td>(0.79)</td><td>(0.65)</td><td>(0.62)</td><td>(0.71)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.82</td><td>24.03</td><td>38.97</td><td>22.96</td><td>31.66</td><td>22.61</td><td>25.26</td><td>17.11</td><td>13.96</td><td>14.75</td><td>9.94</td></tr><tr><td>(0.30)</td><td>(0.55)</td><td>(1.32)</td><td>(0.59)</td><td>(0.54)</td><td>(0.58)</td><td>(1.08)</td><td>(0.84)</td><td>(0.93)</td><td>(0.64)</td><td>(0.78)</td></tr><tr><td rowspan=\"4\">ENTITY-30</td><td rowspan=\"2\">Same</td><td>16.91</td><td>14.61</td><td>26.84</td><td>14.37</td><td>18.60</td><td>13.11</td><td>13.74</td><td>8.54</td><td>7.94</td><td>7.77</td><td>8.04</td></tr><tr><td>(1.33)</td><td>(1.11)</td><td>(2.15)</td><td>(1.34)</td><td>(1.69)</td><td>(1.30)</td><td>(1.07)</td><td>(1.47)</td><td>(1.38)</td><td>(1.44)</td><td>(1.51)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.66</td><td>25.83</td><td>39.21</td><td>25.03</td><td>30.95</td><td>23.73</td><td>23.15</td><td>15.57</td><td>13.24</td><td>12.44</td><td>11.05</td></tr><tr><td>(1.16)</td><td>(0.88)</td><td>(2.03)</td><td>(1.11)</td><td>(1.64)</td><td>(1.11)</td><td>(0.51)</td><td>(1.44)</td><td>(1.15)</td><td>(1.26)</td><td>(1.13)</td></tr><tr><td rowspan=\"4\">NONLIVING-26</td><td rowspan=\"2\">Same</td><td>17.43</td><td>15.95</td><td>27.70</td><td>15.40</td><td>18.06</td><td>14.58</td><td>16.99</td><td>10.79</td><td>10.13</td><td>10.05</td><td>10.29</td></tr><tr><td>(0.90)</td><td>(0.86)</td><td>(0.90)</td><td>(0.69)</td><td>(1.00)</td><td>(0.78)</td><td>(1.25)</td><td>(0.62)</td><td>(0.32)</td><td>(0.46)</td><td>(0.79)</td></tr><tr><td rowspan=\"2\">Novel</td><td>29.51</td><td>27.75</td><td>40.02</td><td>26.77</td><td>30.36</td><td>25.93</td><td>27.70</td><td>19.64</td><td>17.75</td><td>16.90</td><td>15.69</td></tr><tr><td>(0.86)</td><td>(0.82)</td><td>(0.76)</td><td>(0.82)</td><td>(0.95)</td><td>(0.80)</td><td>(1.42)</td><td>(0.68)</td><td>(0.53)</td><td>(0.60)</td><td>(0.83)</td></tr><tr><td rowspan=\"4\">LIVING-17</td><td rowspan=\"2\">Same</td><td>14.28</td><td>12.21</td><td>23.46</td><td>11.16</td><td>15.22</td><td>10.78</td><td>10.49</td><td>4.92</td><td>4.23</td><td>4.19</td><td>4.73</td></tr><tr><td>(0.96)</td><td>(0.93)</td><td>(1.16)</td><td>(0.90)</td><td>(0.96)</td><td>(0.99)</td><td>(0.97)</td><td>(0.57)</td><td>(0.42)</td><td>(0.35)</td><td>(0.24)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.91</td><td>26.35</td><td>38.62</td><td>24.91</td><td>30.32</td><td>24.52</td><td>22.49</td><td>15.42</td><td>13.02</td><td>12.29</td><td>10.34</td></tr><tr><td>(0.66)</td><td>(0.73)</td><td>(1.01)</td><td>(0.61)</td><td>(0.59)</td><td>(0.74)</td><td>(0.85)</td><td>(0.59)</td><td>(0.53)</td><td>(0.73)</td><td>(0.62)</td></tr></table>",
+          "format": "html"
+        }
+      ],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    }
+  ],
+  "model": "mistral-ocr-2512",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 29,
+    "doc_size_bytes": 3002783
+  }
+}
+```
+    </TabItem>
+</Tabs>
+    </ExplorerTab>
+    <ExplorerTab value="base64-encoded-pdf" label="OCR with a Base64 Encoded PDF">
+        A method to upload local pdf files, is by **encoding them in base64 and passing them as a data url**.
+<Tabs groupId="code">
+    <TabItem value="python" label="python">
+        <Tabs groupId="sdk-version">
+            <TabItem value="v1" label="V1" default>
+
+```python
+import base64
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+def encode_pdf(pdf_path):
+    with open(pdf_path, "rb") as pdf_file:
+        return base64.b64encode(pdf_file.read()).decode('utf-8')
+
+pdf_path = "path_to_your_pdf.pdf"
+base64_pdf = encode_pdf(pdf_path)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": f"data:application/pdf;base64,{base64_pdf}"
+    },
+    table_format="html", # default is None
+    # extract_header=True, # default is False
+    # extract_footer=True, # default is False
+    include_image_base64=True
+)
+```
+
+            </TabItem>
+            <TabItem value="v2" label="V2">
+
+```python
+import base64
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+def encode_pdf(pdf_path):
+    with open(pdf_path, "rb") as pdf_file:
+        return base64.b64encode(pdf_file.read()).decode('utf-8')
+
+pdf_path = "path_to_your_pdf.pdf"
+base64_pdf = encode_pdf(pdf_path)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": f"data:application/pdf;base64,{base64_pdf}"
+    },
+    table_format="html", # default is None
+    # extract_header=True, # default is False
+    # extract_footer=True, # default is False
+    include_image_base64=True
+)
+```
+
+            </TabItem>
+        </Tabs>
+    </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```ts
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function encodePdf(pdfPath) {
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    const base64Pdf = pdfBuffer.toString('base64');
+    return base64Pdf;
+}
+
+const pdfPath = "path_to_your_pdf.pdf";
+const base64Pdf = await encodePdf(pdfPath);
+
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "document_url",
+        documentUrl: "data:application/pdf;base64," + base64Pdf
+    },
+    tableFormat: "html", // default is null
+    // extractHeader: False, // default is False
+    // extractFooter: False, // default is False
+    includeImageBase64: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "data:application/pdf;base64,<base64_pdf>"
+    },
+    "table_format": "html",
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+  </TabItem>
+  <TabItem value="output" label="output">
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Leveraging Unlabeled Data to Predict Out-of-Distribution Performance\n\nSaurabh Garg\nCarnegie Mellon University\nsgarg2@andrew.cmu.edu\n&Sivaraman Balakrishnan\nCarnegie Mellon University\nsbalakri@andrew.cmu.edu\n&Zachary C. Lipton\nCarnegie Mellon University\nzlipton@andrew.cmu.edu\n&Behnam Neyshabur\nGoogle Research, Blueshift team\nneyshabur@google.com\n&Hanie Sedghi\nGoogle Research, Brain team\nhsedghi@google.com\n\n###### Abstract\n\nReal-world machine learning deployments are characterized by mismatches between the source (training) and target (test) distributions that may cause performance drops. In this work, we investigate methods for predicting the target domain accuracy using only labeled source data and unlabeled target data. We propose Average Thresholded Confidence (ATC), a practical method that learns a threshold on the model’s confidence, predicting accuracy as the fraction of unlabeled examples for which model confidence exceeds that threshold. ATC outperforms previous methods across several model architectures, types of distribution shifts (e.g., due to synthetic corruptions, dataset reproduction, or novel subpopulations), and datasets (Wilds, ImageNet, Breeds, CIFAR, and MNIST). In our experiments, ATC estimates target performance $2$–$4\\times$ more accurately than prior methods. We also explore the theoretical foundations of the problem, proving that, in general, identifying the accuracy is just as hard as identifying the optimal predictor and thus, the efficacy of any method rests upon (perhaps unstated) assumptions on the nature of the shift. Finally, analyzing our method on some toy distributions, we provide insights concerning when it works.\n\n## 1 Introduction\n\nMachine learning models deployed in the real world typically encounter examples from previously unseen distributions. While the IID assumption enables us to evaluate models using held-out data from the source distribution (from which training data is sampled), this estimate is no longer valid in presence of a distribution shift. Moreover, under such shifts, model accuracy tends to degrade *(Szegedy et al., 2014; Recht et al., 2019; Koh et al., 2021)*. Commonly, the only data available to the practitioner are a labeled training set (source) and unlabeled deployment-time data which makes the problem more difficult. In this setting, detecting shifts in the distribution of covariates is known to be possible (but difficult) in theory *(Ramdas et al., 2015)*, and in practice *(Rabanser et al., 2018)*. However, producing an optimal predictor using only labeled source and unlabeled target data is well-known to be impossible absent further assumptions *(Ben-David et al., 2010; Lipton et al., 2018)*.\n\nTwo vital questions that remain are: (i) the precise conditions under which we can estimate a classifier’s target-domain accuracy; and (ii) which methods are most practically useful. To begin, the straightforward way to assess the performance of a model under distribution shift would be to collect labeled (target domain) examples and then to evaluate the model on that data. However, collecting fresh labeled data from the target distribution is prohibitively expensive and time-consuming, especially if the target distribution is non-stationary. Hence, instead of using labeled data, we aim to use unlabeled data from the target distribution, that is comparatively abundant, to predict model performance. Note that in this work, our focus is not to improve performance on the target but, rather, to estimate the accuracy on the target for a given classifier.",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [
+        "mailto:sgarg2%40andrew.cmu.edu",
+        "mailto:sbalakri%40andrew.cmu.edu",
+        "mailto:zlipton%40andrew.cmu.edu",
+        "mailto:neyshabur%40google.com",
+        "mailto:hsedghi%40google.com",
+        "https://github.com/saurabhgarg1996/ATC_code"
+      ],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n![img-0.jpeg](img-0.jpeg)\nFigure 1: Illustration of our proposed method ATC. Left: using source domain validation data, we identify a threshold on a score (e.g. negative entropy) computed on model confidence such that fraction of examples above the threshold matches the validation set accuracy. ATC estimates accuracy on unlabeled target data as the fraction of examples with the score above the threshold. Interestingly, this threshold yields accurate estimates on a wide set of target distributions resulting from natural and synthetic shifts. Right: Efficacy of ATC over previously proposed approaches on our testbed with a post-hoc calibrated model. To obtain errors on the same scale, we rescale all errors with Average Confidence (AC) error. Lower estimation error is better. See Table 1 for exact numbers and comparison on various types of distribution shift. See Sec. 5 for details on our testbed.\n\n![img-1.jpeg](img-1.jpeg)\n\nRecently, numerous methods have been proposed for this purpose (Deng &amp; Zheng, 2021; Chen et al., 2021b; Jiang et al., 2021; Deng et al., 2021; Guillory et al., 2021). These methods either require calibration on the target domain to yield consistent estimates (Jiang et al., 2021; Guillory et al., 2021) or additional labeled data from several target domains to learn a linear regression function on a distributional distance that then predicts model performance (Deng et al., 2021; Deng &amp; Zheng, 2021; Guillory et al., 2021). However, methods that require calibration on the target domain typically yield poor estimates since deep models trained and calibrated on source data are not, in general, calibrated on a (previously unseen) target domain (Ovadia et al., 2019). Besides, methods that leverage labeled data from target domains rely on the fact that unseen target domains exhibit strong linear correlation with seen target domains on the underlying distance measure and, hence, can be rendered ineffective when such target domains with labeled data are unavailable (in Sec. 5.1 we demonstrate such a failure on a real-world distribution shift problem). Therefore, throughout the paper, we assume access to labeled source data and only unlabeled data from target domain(s).\n\nIn this work, we first show that absent assumptions on the source classifier or the nature of the shift, no method of estimating accuracy will work generally (even in non-contrived settings). To estimate accuracy on target domain perfectly, we highlight that even given perfect knowledge of the labeled source distribution (i.e.,  $p_{s}(x,y)$ ) and unlabeled target distribution (i.e.,  $p_{t}(x)$ ), we need restrictions on the nature of the shift such that we can uniquely identify the target conditional  $p_{t}(y|x)$ . Thus, in general, identifying the accuracy of the classifier is as hard as identifying the optimal predictor.\n\nSecond, motivated by the superiority of methods that use maximum softmax probability (or logit) of a model for Out-Of-Distribution (OOD) detection (Hendrycks &amp; Gimpel, 2016; Hendrycks et al., 2019), we propose a simple method that leverages softmax probability to predict model performance. Our method, Average Thresholded Confidence (ATC), learns a threshold on a score (e.g., maximum confidence or negative entropy) of model confidence on validation source data and predicts target domain accuracy as the fraction of unlabeled target points that receive a score above that threshold. ATC selects a threshold on validation source data such that the fraction of source examples that receive the score above the threshold match the accuracy of those examples. Our primary contribution in ATC is the proposal of obtaining the threshold and observing its efficacy on (practical) accuracy estimation. Importantly, our work takes a step forward in positively answering the question raised in Deng &amp; Zheng (2021); Deng et al. (2021) about a practical strategy to select a threshold that enables accuracy prediction with thresholded model confidence.",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 222,
+          "bottom_right_x": 943,
+          "bottom_right_y": 635,
+          "image_base64": "data:image/jpeg;base64,...",
+          "image_annotation": null
+        }
+      ],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 27,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n[tbl-3.html](tbl-3.html)\n\nTable 3: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. For language datasets, we use DistilBERT-base-uncased, for vision dataset we report results with DenseNet model with the exception of MNIST where we use FCN. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e.,  $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "tables": [
+        {
+          "id": "tbl-3.html",
+          "content": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Shift</td><td colspan=\"2\">IM</td><td colspan=\"2\">AC</td><td colspan=\"2\">DOC</td><td>GDE</td><td colspan=\"2\">ATC-MC (Ours)</td><td colspan=\"2\">ATC-NE (Ours)</td></tr><tr><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td></tr><tr><td rowspan=\"4\">CIFAR10</td><td rowspan=\"2\">Natural</td><td>6.60</td><td>5.74</td><td>9.88</td><td>6.89</td><td>7.25</td><td>6.07</td><td>4.77</td><td>3.21</td><td>3.02</td><td>2.99</td><td>2.85</td></tr><tr><td>(0.35)</td><td>(0.30)</td><td>(0.16)</td><td>(0.13)</td><td>(0.15)</td><td>(0.16)</td><td>(0.13)</td><td>(0.49)</td><td>(0.40)</td><td>(0.37)</td><td>(0.29)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>12.33</td><td>10.20</td><td>16.50</td><td>11.91</td><td>13.87</td><td>11.08</td><td>6.55</td><td>4.65</td><td>4.25</td><td>4.21</td><td>3.87</td></tr><tr><td>(0.51)</td><td>(0.48)</td><td>(0.26)</td><td>(0.17)</td><td>(0.18)</td><td>(0.17)</td><td>(0.35)</td><td>(0.55)</td><td>(0.55)</td><td>(0.55)</td><td>(0.75)</td></tr><tr><td rowspan=\"2\">CIFAR100</td><td rowspan=\"2\">Synthetic</td><td>13.69</td><td>11.51</td><td>23.61</td><td>13.10</td><td>14.60</td><td>10.14</td><td>9.85</td><td>5.50</td><td>4.75</td><td>4.72</td><td>4.94</td></tr><tr><td>(0.55)</td><td>(0.41)</td><td>(1.16)</td><td>(0.80)</td><td>(0.77)</td><td>(0.64)</td><td>(0.57)</td><td>(0.70)</td><td>(0.73)</td><td>(0.74)</td><td>(0.74)</td></tr><tr><td rowspan=\"4\">ImageNet200</td><td rowspan=\"2\">Natural</td><td>12.37</td><td>8.19</td><td>22.07</td><td>8.61</td><td>15.17</td><td>7.81</td><td>5.13</td><td>4.37</td><td>2.04</td><td>3.79</td><td>1.45</td></tr><tr><td>(0.25)</td><td>(0.33)</td><td>(0.08)</td><td>(0.25)</td><td>(0.11)</td><td>(0.29)</td><td>(0.08)</td><td>(0.39)</td><td>(0.24)</td><td>(0.30)</td><td>(0.27)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>19.86</td><td>12.94</td><td>32.44</td><td>13.35</td><td>25.02</td><td>12.38</td><td>5.41</td><td>5.93</td><td>3.09</td><td>5.00</td><td>2.68</td></tr><tr><td>(1.38)</td><td>(1.81)</td><td>(1.00)</td><td>(1.30)</td><td>(1.10)</td><td>(1.38)</td><td>(0.89)</td><td>(1.38)</td><td>(0.87)</td><td>(1.28)</td><td>(0.45)</td></tr><tr><td rowspan=\"4\">ImageNet</td><td rowspan=\"2\">Natural</td><td>7.77</td><td>6.50</td><td>18.13</td><td>6.02</td><td>8.13</td><td>5.76</td><td>6.23</td><td>3.88</td><td>2.17</td><td>2.06</td><td>0.80</td></tr><tr><td>(0.27)</td><td>(0.33)</td><td>(0.23)</td><td>(0.34)</td><td>(0.27)</td><td>(0.37)</td><td>(0.41)</td><td>(0.53)</td><td>(0.62)</td><td>(0.54)</td><td>(0.44)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>13.39</td><td>10.12</td><td>24.62</td><td>8.51</td><td>13.55</td><td>7.90</td><td>6.32</td><td>3.34</td><td>2.53</td><td>2.61</td><td>4.89</td></tr><tr><td>(0.53)</td><td>(0.63)</td><td>(0.64)</td><td>(0.71)</td><td>(0.61)</td><td>(0.72)</td><td>(0.33)</td><td>(0.53)</td><td>(0.36)</td><td>(0.33)</td><td>(0.83)</td></tr><tr><td rowspan=\"2\">FMoW-WILDS</td><td rowspan=\"2\">Natural</td><td>5.53</td><td>4.31</td><td>33.53</td><td>12.84</td><td>5.94</td><td>4.45</td><td>5.74</td><td>3.06</td><td>2.70</td><td>3.02</td><td>2.72</td></tr><tr><td>(0.33)</td><td>(0.63)</td><td>(0.13)</td><td>(12.06)</td><td>(0.36)</td><td>(0.77)</td><td>(0.55)</td><td>(0.36)</td><td>(0.54)</td><td>(0.35)</td><td>(0.44)</td></tr><tr><td rowspan=\"2\">RxRx1-WILDS</td><td rowspan=\"2\">Natural</td><td>5.80</td><td>5.72</td><td>7.90</td><td>4.84</td><td>5.98</td><td>5.98</td><td>6.03</td><td>4.66</td><td>4.56</td><td>4.41</td><td>4.47</td></tr><tr><td>(0.17)</td><td>(0.15)</td><td>(0.24)</td><td>(0.09)</td><td>(0.15)</td><td>(0.13)</td><td>(0.08)</td><td>(0.38)</td><td>(0.38)</td><td>(0.31)</td><td>(0.26)</td></tr><tr><td rowspan=\"2\">Amazon-WILDS</td><td rowspan=\"2\">Natural</td><td>2.40</td><td>2.29</td><td>8.01</td><td>2.38</td><td>2.40</td><td>2.28</td><td>17.87</td><td>1.65</td><td>1.62</td><td>1.60</td><td>1.59</td></tr><tr><td>(0.08)</td><td>(0.09)</td><td>(0.53)</td><td>(0.17)</td><td>(0.09)</td><td>(0.09)</td><td>(0.18)</td><td>(0.06)</td><td>(0.05)</td><td>(0.14)</td><td>(0.15)</td></tr><tr><td rowspan=\"2\">CivilCom.-WILDS</td><td rowspan=\"2\">Natural</td><td>12.64</td><td>10.80</td><td>16.76</td><td>11.03</td><td>13.31</td><td>10.99</td><td>16.65</td><td></td><td>7.14</td><td></td><td></td></tr><tr><td>(0.52)</td><td>(0.48)</td><td>(0.53)</td><td>(0.49)</td><td>(0.52)</td><td>(0.49)</td><td>(0.25)</td><td></td><td>(0.41)</td><td></td><td></td></tr><tr><td rowspan=\"2\">MNIST</td><td rowspan=\"2\">Natural</td><td>18.48</td><td>15.99</td><td>21.17</td><td>14.81</td><td>20.19</td><td>14.56</td><td>24.42</td><td>5.02</td><td>2.40</td><td>3.14</td><td>3.50</td></tr><tr><td>(0.45)</td><td>(1.53)</td><td>(0.24)</td><td>(3.89)</td><td>(0.23)</td><td>(3.47)</td><td>(0.41)</td><td>(0.44)</td><td>(1.83)</td><td>(0.49)</td><td>(0.17)</td></tr><tr><td rowspan=\"4\">ENTITY-13</td><td rowspan=\"2\">Same</td><td>16.23</td><td>11.14</td><td>24.97</td><td>10.88</td><td>19.08</td><td>10.47</td><td>10.71</td><td>5.39</td><td>3.88</td><td>4.58</td><td>4.19</td></tr><tr><td>(0.77)</td><td>(0.65)</td><td>(0.70)</td><td>(0.77)</td><td>(0.65)</td><td>(0.72)</td><td>(0.74)</td><td>(0.92)</td><td>(0.61)</td><td>(0.85)</td><td>(0.16)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.53</td><td>22.02</td><td>38.33</td><td>21.64</td><td>32.43</td><td>21.22</td><td>20.61</td><td>13.58</td><td>10.28</td><td>12.25</td><td>6.63</td></tr><tr><td>(0.82)</td><td>(0.68)</td><td>(0.75)</td><td>(0.86)</td><td>(0.69)</td><td>(0.80)</td><td>(0.60)</td><td>(1.15)</td><td>(1.34)</td><td>(1.21)</td><td>(0.93)</td></tr><tr><td rowspan=\"4\">ENTITY-30</td><td rowspan=\"2\">Same</td><td>18.59</td><td>14.46</td><td>28.82</td><td>14.30</td><td>21.63</td><td>13.46</td><td>12.92</td><td>9.12</td><td>7.75</td><td>8.15</td><td>7.64</td></tr><tr><td>(0.51)</td><td>(0.52)</td><td>(0.43)</td><td>(0.71)</td><td>(0.37)</td><td>(0.59)</td><td>(0.14)</td><td>(0.62)</td><td>(0.72)</td><td>(0.68)</td><td>(0.88)</td></tr><tr><td rowspan=\"2\">Novel</td><td>32.34</td><td>26.85</td><td>44.02</td><td>26.27</td><td>36.82</td><td>25.42</td><td>23.16</td><td>17.75</td><td>14.30</td><td>15.60</td><td>10.57</td></tr><tr><td>(0.60)</td><td>(0.58)</td><td>(0.56)</td><td>(0.79)</td><td>(0.47)</td><td>(0.68)</td><td>(0.12)</td><td>(0.76)</td><td>(0.85)</td><td>(0.86)</td><td>(0.86)</td></tr><tr><td rowspan=\"4\">NONLIVING-26</td><td rowspan=\"2\">Same</td><td>18.66</td><td>17.17</td><td>26.39</td><td>16.14</td><td>19.86</td><td>15.58</td><td>16.63</td><td>10.87</td><td>10.24</td><td>10.07</td><td>10.26</td></tr><tr><td>(0.76)</td><td>(0.74)</td><td>(0.82)</td><td>(0.81)</td><td>(0.67)</td><td>(0.76)</td><td>(0.45)</td><td>(0.98)</td><td>(0.83)</td><td>(0.92)</td><td>(1.18)</td></tr><tr><td rowspan=\"2\">Novel</td><td>33.43</td><td>31.53</td><td>41.66</td><td>29.87</td><td>35.13</td><td>29.31</td><td>29.56</td><td>21.70</td><td>20.12</td><td>19.08</td><td>18.26</td></tr><tr><td>(0.67)</td><td>(0.65)</td><td>(0.67)</td><td>(0.71)</td><td>(0.54)</td><td>(0.64)</td><td>(0.21)</td><td>(0.86)</td><td>(0.75)</td><td>(0.82)</td><td>(1.12)</td></tr><tr><td rowspan=\"4\">LIVING-17</td><td rowspan=\"2\">Same</td><td>12.63</td><td>11.05</td><td>18.32</td><td>10.46</td><td>14.43</td><td>10.14</td><td>9.87</td><td>4.57</td><td>3.95</td><td>3.81</td><td>4.21</td></tr><tr><td>(1.25)</td><td>(1.20)</td><td>(1.01)</td><td>(1.12)</td><td>(1.11)</td><td>(1.16)</td><td>(0.61)</td><td>(0.71)</td><td>(0.48)</td><td>(0.22)</td><td>(0.53)</td></tr><tr><td rowspan=\"2\">Novel</td><td>29.03</td><td>26.96</td><td>35.67</td><td>26.11</td><td>31.73</td><td>25.73</td><td>23.53</td><td>16.15</td><td>14.49</td><td>12.97</td><td>11.39</td></tr><tr><td>(1.44)</td><td>(1.38)</td><td>(1.09)</td><td>(1.27)</td><td>(1.19)</td><td>(1.35)</td><td>(0.52)</td><td>(1.36)</td><td>(1.46)</td><td>(1.52)</td><td>(1.72)</td></tr></table>",
+          "format": "html"
+        }
+      ],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 28,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n[tbl-4.html](tbl-4.html)\n\nTable 4: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift for ResNet model. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e.,  $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "tables": [
+        {
+          "id": "tbl-4.html",
+          "content": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Shift</td><td colspan=\"2\">IM</td><td colspan=\"2\">AC</td><td colspan=\"2\">DOC</td><td>GDE</td><td colspan=\"2\">ATC-MC (Ours)</td><td colspan=\"2\">ATC-NE (Ours)</td></tr><tr><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td></tr><tr><td rowspan=\"4\">CIFAR10</td><td rowspan=\"2\">Natural</td><td>7.14</td><td>6.20</td><td>10.25</td><td>7.06</td><td>7.68</td><td>6.35</td><td>5.74</td><td>4.02</td><td>3.85</td><td>3.76</td><td>3.38</td></tr><tr><td>(0.14)</td><td>(0.11)</td><td>(0.31)</td><td>(0.33)</td><td>(0.28)</td><td>(0.27)</td><td>(0.25)</td><td>(0.38)</td><td>(0.30)</td><td>(0.33)</td><td>(0.32)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>12.62</td><td>10.75</td><td>16.50</td><td>11.91</td><td>13.93</td><td>11.20</td><td>7.97</td><td>5.66</td><td>5.03</td><td>4.87</td><td>3.63</td></tr><tr><td>(0.76)</td><td>(0.71)</td><td>(0.28)</td><td>(0.24)</td><td>(0.29)</td><td>(0.28)</td><td>(0.13)</td><td>(0.64)</td><td>(0.71)</td><td>(0.71)</td><td>(0.62)</td></tr><tr><td rowspan=\"2\">CIFAR100</td><td rowspan=\"2\">Synthetic</td><td>12.77</td><td>12.34</td><td>16.89</td><td>12.73</td><td>11.18</td><td>9.63</td><td>12.00</td><td>5.61</td><td>5.55</td><td>5.65</td><td>5.76</td></tr><tr><td>(0.43)</td><td>(0.68)</td><td>(0.20)</td><td>(2.59)</td><td>(0.35)</td><td>(1.25)</td><td>(0.48)</td><td>(0.51)</td><td>(0.55)</td><td>(0.35)</td><td>(0.27)</td></tr><tr><td rowspan=\"4\">ImageNet200</td><td rowspan=\"2\">Natural</td><td>12.63</td><td>7.99</td><td>23.08</td><td>7.22</td><td>15.40</td><td>6.33</td><td>5.00</td><td>4.60</td><td>1.80</td><td>4.06</td><td>1.38</td></tr><tr><td>(0.59)</td><td>(0.47)</td><td>(0.31)</td><td>(0.22)</td><td>(0.42)</td><td>(0.24)</td><td>(0.36)</td><td>(0.63)</td><td>(0.17)</td><td>(0.69)</td><td>(0.29)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>20.17</td><td>11.74</td><td>33.69</td><td>9.51</td><td>25.49</td><td>8.61</td><td>4.19</td><td>5.37</td><td>2.78</td><td>4.53</td><td>3.58</td></tr><tr><td>(0.74)</td><td>(0.80)</td><td>(0.73)</td><td>(0.51)</td><td>(0.66)</td><td>(0.50)</td><td>(0.14)</td><td>(0.88)</td><td>(0.23)</td><td>(0.79)</td><td>(0.33)</td></tr><tr><td rowspan=\"4\">ImageNet</td><td rowspan=\"2\">Natural</td><td>8.09</td><td>6.42</td><td>21.66</td><td>5.91</td><td>8.53</td><td>5.21</td><td>5.90</td><td>3.93</td><td>1.89</td><td>2.45</td><td>0.73</td></tr><tr><td>(0.25)</td><td>(0.28)</td><td>(0.38)</td><td>(0.22)</td><td>(0.26)</td><td>(0.25)</td><td>(0.44)</td><td>(0.26)</td><td>(0.21)</td><td>(0.16)</td><td>(0.10)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>13.93</td><td>9.90</td><td>28.05</td><td>7.56</td><td>13.82</td><td>6.19</td><td>6.70</td><td>3.33</td><td>2.55</td><td>2.12</td><td>5.06</td></tr><tr><td>(0.14)</td><td>(0.23)</td><td>(0.39)</td><td>(0.13)</td><td>(0.31)</td><td>(0.07)</td><td>(0.52)</td><td>(0.25)</td><td>(0.25)</td><td>(0.31)</td><td>(0.27)</td></tr><tr><td rowspan=\"2\">FMoW-WILDS</td><td rowspan=\"2\">Natural</td><td>5.15</td><td>3.55</td><td>34.64</td><td>5.03</td><td>5.58</td><td>3.46</td><td>5.08</td><td>2.59</td><td>2.33</td><td>2.52</td><td>2.22</td></tr><tr><td>(0.19)</td><td>(0.41)</td><td>(0.22)</td><td>(0.29)</td><td>(0.17)</td><td>(0.37)</td><td>(0.46)</td><td>(0.32)</td><td>(0.28)</td><td>(0.25)</td><td>(0.30)</td></tr><tr><td rowspan=\"2\">RxRx1-WILDS</td><td rowspan=\"2\">Natural</td><td>6.17</td><td>6.11</td><td>21.05</td><td>5.21</td><td>6.54</td><td>6.27</td><td>6.82</td><td>5.30</td><td>5.20</td><td>5.19</td><td>5.63</td></tr><tr><td>(0.20)</td><td>(0.24)</td><td>(0.31)</td><td>(0.18)</td><td>(0.21)</td><td>(0.20)</td><td>(0.31)</td><td>(0.30)</td><td>(0.44)</td><td>(0.43)</td><td>(0.55)</td></tr><tr><td rowspan=\"4\">ENTITY-13</td><td rowspan=\"2\">Same</td><td>18.32</td><td>14.38</td><td>27.79</td><td>13.56</td><td>20.50</td><td>13.22</td><td>16.09</td><td>9.35</td><td>7.50</td><td>7.80</td><td>6.94</td></tr><tr><td>(0.29)</td><td>(0.53)</td><td>(1.18)</td><td>(0.58)</td><td>(0.47)</td><td>(0.58)</td><td>(0.84)</td><td>(0.79)</td><td>(0.65)</td><td>(0.62)</td><td>(0.71)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.82</td><td>24.03</td><td>38.97</td><td>22.96</td><td>31.66</td><td>22.61</td><td>25.26</td><td>17.11</td><td>13.96</td><td>14.75</td><td>9.94</td></tr><tr><td>(0.30)</td><td>(0.55)</td><td>(1.32)</td><td>(0.59)</td><td>(0.54)</td><td>(0.58)</td><td>(1.08)</td><td>(0.84)</td><td>(0.93)</td><td>(0.64)</td><td>(0.78)</td></tr><tr><td rowspan=\"4\">ENTITY-30</td><td rowspan=\"2\">Same</td><td>16.91</td><td>14.61</td><td>26.84</td><td>14.37</td><td>18.60</td><td>13.11</td><td>13.74</td><td>8.54</td><td>7.94</td><td>7.77</td><td>8.04</td></tr><tr><td>(1.33)</td><td>(1.11)</td><td>(2.15)</td><td>(1.34)</td><td>(1.69)</td><td>(1.30)</td><td>(1.07)</td><td>(1.47)</td><td>(1.38)</td><td>(1.44)</td><td>(1.51)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.66</td><td>25.83</td><td>39.21</td><td>25.03</td><td>30.95</td><td>23.73</td><td>23.15</td><td>15.57</td><td>13.24</td><td>12.44</td><td>11.05</td></tr><tr><td>(1.16)</td><td>(0.88)</td><td>(2.03)</td><td>(1.11)</td><td>(1.64)</td><td>(1.11)</td><td>(0.51)</td><td>(1.44)</td><td>(1.15)</td><td>(1.26)</td><td>(1.13)</td></tr><tr><td rowspan=\"4\">NONLIVING-26</td><td rowspan=\"2\">Same</td><td>17.43</td><td>15.95</td><td>27.70</td><td>15.40</td><td>18.06</td><td>14.58</td><td>16.99</td><td>10.79</td><td>10.13</td><td>10.05</td><td>10.29</td></tr><tr><td>(0.90)</td><td>(0.86)</td><td>(0.90)</td><td>(0.69)</td><td>(1.00)</td><td>(0.78)</td><td>(1.25)</td><td>(0.62)</td><td>(0.32)</td><td>(0.46)</td><td>(0.79)</td></tr><tr><td rowspan=\"2\">Novel</td><td>29.51</td><td>27.75</td><td>40.02</td><td>26.77</td><td>30.36</td><td>25.93</td><td>27.70</td><td>19.64</td><td>17.75</td><td>16.90</td><td>15.69</td></tr><tr><td>(0.86)</td><td>(0.82)</td><td>(0.76)</td><td>(0.82)</td><td>(0.95)</td><td>(0.80)</td><td>(1.42)</td><td>(0.68)</td><td>(0.53)</td><td>(0.60)</td><td>(0.83)</td></tr><tr><td rowspan=\"4\">LIVING-17</td><td rowspan=\"2\">Same</td><td>14.28</td><td>12.21</td><td>23.46</td><td>11.16</td><td>15.22</td><td>10.78</td><td>10.49</td><td>4.92</td><td>4.23</td><td>4.19</td><td>4.73</td></tr><tr><td>(0.96)</td><td>(0.93)</td><td>(1.16)</td><td>(0.90)</td><td>(0.96)</td><td>(0.99)</td><td>(0.97)</td><td>(0.57)</td><td>(0.42)</td><td>(0.35)</td><td>(0.24)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.91</td><td>26.35</td><td>38.62</td><td>24.91</td><td>30.32</td><td>24.52</td><td>22.49</td><td>15.42</td><td>13.02</td><td>12.29</td><td>10.34</td></tr><tr><td>(0.66)</td><td>(0.73)</td><td>(1.01)</td><td>(0.61)</td><td>(0.59)</td><td>(0.74)</td><td>(0.85)</td><td>(0.59)</td><td>(0.53)</td><td>(0.73)</td><td>(0.62)</td></tr></table>",
+          "format": "html"
+        }
+      ],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    }
+  ],
+  "model": "mistral-ocr-2512",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 29,
+    "doc_size_bytes": 3002783
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+    </ExplorerTab>
+    <ExplorerTab value="with-uploaded-pdf" label="OCR with an Uploaded PDF">
+        You can also upload a PDF file in our Cloud and get the OCR results from the uploaded PDF by retrieving a signed url.
+
+<SectionTab as="h3" variant="secondary" sectionId="upload-a-file">Upload a File</SectionTab>
+
+First, you will have to upload your PDF file to our cloud, this file will be stored and only accessible via an API key.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+from mistralai import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+uploaded_pdf = client.files.upload(
+    file={
+        "file_name": "2201.04234v3.pdf",
+        "content": open("2201.04234v3.pdf", "rb"),
+    },
+    purpose="ocr"
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+from mistralai.client import Mistral
+import os
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+uploaded_pdf = client.files.upload(
+    file={
+        "file_name": "2201.04234v3.pdf",
+        "content": open("2201.04234v3.pdf", "rb"),
+    },
+    purpose="ocr"
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const uploadedFile = fs.readFileSync('2201.04234v3.pdf');
+const uploadedPdf = await client.files.upload({
+    file: {
+        fileName: "2201.04234v3.pdf",
+        content: uploadedFile,
+    },
+    purpose: "ocr"
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose="ocr" \
+  -F file="@2201.04234v3.pdf"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "22e2e88f-167d-4f3d-982a-add977a54ec3",
+  "object": "file",
+  "bytes": 3002783,
+  "created_at": 1756464781,
+  "filename": "2201.04234v3.pdf",
+  "purpose": "ocr",
+  "sample_type": "ocr_input",
+  "num_lines": 0,
+  "mimetype": "application/pdf",
+  "source": "upload",
+  "signature": "..."
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="retrieve-file">Retrieve File</SectionTab>
+
+Once the file uploaded, you can retrieve it at any point.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+retrieved_file = client.files.retrieve(file_id=uploaded_pdf.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const retrievedFile = await client.files.retrieve({
+    fileId: uploadedPdf.id
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X GET "https://api.mistral.ai/v1/files/$id" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+
+  <TabItem value="output" label="output">
+
+```json
+{
+  "id": "22e2e88f-167d-4f3d-982a-add977a54ec3",
+  "object": "file",
+  "bytes": 3002783,
+  "created_at": 1756464781,
+  "filename": "2201.04234v3.pdf",
+  "purpose": "ocr",
+  "sample_type": "ocr_input",
+  "num_lines": 0,
+  "mimetype": "application/pdf",
+  "source": "upload",
+  "signature": "...",
+  "deleted": false
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="get-signed-url">Get Signed Url</SectionTab>
+
+For OCR tasks, you can get a signed url to access the file. An optional `expiry` parameter allow you to automatically expire the signed url after n hours.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const signedUrl = await client.files.getSignedUrl({
+    fileId: uploadedPdf.id,
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X GET "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
+     -H "Accept: application/json" \
+     -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+
+  <TabItem value="output" label="output">
+
+```json
+{
+  "url": "https://mistralaifilesapiprodswe.blob.core.windows.net/fine-tune/.../.../22e2e88f167d4f3d982aadd977a54ec3.pdf?se=2025-08-30T10%3A53%3A22Z&sp=r&sv=2025-01-05&sr=b&sig=..."
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="get-ocr-results">Get OCR Results</SectionTab>
+
+You can now query the OCR endpoint with the signed url.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": signed_url.url,
+    },
+    table_format="html", # default is None
+    # extract_header=True, # default is False
+    # extract_footer=True, # default is False
+    include_image_base64=True
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "document_url",
+        documentUrl: signedUrl.url,
+    },
+    tableFormat: "html", // default is null
+    // extractHeader: False, // default is False
+    // extractFooter: False, // default is False
+    includeImageBase64: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "<signed_url>"
+    },
+    "table_format": "html",
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+
+    </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Leveraging Unlabeled Data to Predict Out-of-Distribution Performance\n\nSaurabh Garg\nCarnegie Mellon University\nsgarg2@andrew.cmu.edu\n&Sivaraman Balakrishnan\nCarnegie Mellon University\nsbalakri@andrew.cmu.edu\n&Zachary C. Lipton\nCarnegie Mellon University\nzlipton@andrew.cmu.edu\n&Behnam Neyshabur\nGoogle Research, Blueshift team\nneyshabur@google.com\n&Hanie Sedghi\nGoogle Research, Brain team\nhsedghi@google.com\n\n###### Abstract\n\nReal-world machine learning deployments are characterized by mismatches between the source (training) and target (test) distributions that may cause performance drops. In this work, we investigate methods for predicting the target domain accuracy using only labeled source data and unlabeled target data. We propose Average Thresholded Confidence (ATC), a practical method that learns a threshold on the model’s confidence, predicting accuracy as the fraction of unlabeled examples for which model confidence exceeds that threshold. ATC outperforms previous methods across several model architectures, types of distribution shifts (e.g., due to synthetic corruptions, dataset reproduction, or novel subpopulations), and datasets (Wilds, ImageNet, Breeds, CIFAR, and MNIST). In our experiments, ATC estimates target performance $2$–$4\\times$ more accurately than prior methods. We also explore the theoretical foundations of the problem, proving that, in general, identifying the accuracy is just as hard as identifying the optimal predictor and thus, the efficacy of any method rests upon (perhaps unstated) assumptions on the nature of the shift. Finally, analyzing our method on some toy distributions, we provide insights concerning when it works.\n\n## 1 Introduction\n\nMachine learning models deployed in the real world typically encounter examples from previously unseen distributions. While the IID assumption enables us to evaluate models using held-out data from the source distribution (from which training data is sampled), this estimate is no longer valid in presence of a distribution shift. Moreover, under such shifts, model accuracy tends to degrade *(Szegedy et al., 2014; Recht et al., 2019; Koh et al., 2021)*. Commonly, the only data available to the practitioner are a labeled training set (source) and unlabeled deployment-time data which makes the problem more difficult. In this setting, detecting shifts in the distribution of covariates is known to be possible (but difficult) in theory *(Ramdas et al., 2015)*, and in practice *(Rabanser et al., 2018)*. However, producing an optimal predictor using only labeled source and unlabeled target data is well-known to be impossible absent further assumptions *(Ben-David et al., 2010; Lipton et al., 2018)*.\n\nTwo vital questions that remain are: (i) the precise conditions under which we can estimate a classifier’s target-domain accuracy; and (ii) which methods are most practically useful. To begin, the straightforward way to assess the performance of a model under distribution shift would be to collect labeled (target domain) examples and then to evaluate the model on that data. However, collecting fresh labeled data from the target distribution is prohibitively expensive and time-consuming, especially if the target distribution is non-stationary. Hence, instead of using labeled data, we aim to use unlabeled data from the target distribution, that is comparatively abundant, to predict model performance. Note that in this work, our focus is not to improve performance on the target but, rather, to estimate the accuracy on the target for a given classifier.",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [
+        "mailto:sgarg2%40andrew.cmu.edu",
+        "mailto:sbalakri%40andrew.cmu.edu",
+        "mailto:zlipton%40andrew.cmu.edu",
+        "mailto:neyshabur%40google.com",
+        "mailto:hsedghi%40google.com",
+        "https://github.com/saurabhgarg1996/ATC_code"
+      ],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n![img-0.jpeg](img-0.jpeg)\nFigure 1: Illustration of our proposed method ATC. Left: using source domain validation data, we identify a threshold on a score (e.g. negative entropy) computed on model confidence such that fraction of examples above the threshold matches the validation set accuracy. ATC estimates accuracy on unlabeled target data as the fraction of examples with the score above the threshold. Interestingly, this threshold yields accurate estimates on a wide set of target distributions resulting from natural and synthetic shifts. Right: Efficacy of ATC over previously proposed approaches on our testbed with a post-hoc calibrated model. To obtain errors on the same scale, we rescale all errors with Average Confidence (AC) error. Lower estimation error is better. See Table 1 for exact numbers and comparison on various types of distribution shift. See Sec. 5 for details on our testbed.\n\n![img-1.jpeg](img-1.jpeg)\n\nRecently, numerous methods have been proposed for this purpose (Deng &amp; Zheng, 2021; Chen et al., 2021b; Jiang et al., 2021; Deng et al., 2021; Guillory et al., 2021). These methods either require calibration on the target domain to yield consistent estimates (Jiang et al., 2021; Guillory et al., 2021) or additional labeled data from several target domains to learn a linear regression function on a distributional distance that then predicts model performance (Deng et al., 2021; Deng &amp; Zheng, 2021; Guillory et al., 2021). However, methods that require calibration on the target domain typically yield poor estimates since deep models trained and calibrated on source data are not, in general, calibrated on a (previously unseen) target domain (Ovadia et al., 2019). Besides, methods that leverage labeled data from target domains rely on the fact that unseen target domains exhibit strong linear correlation with seen target domains on the underlying distance measure and, hence, can be rendered ineffective when such target domains with labeled data are unavailable (in Sec. 5.1 we demonstrate such a failure on a real-world distribution shift problem). Therefore, throughout the paper, we assume access to labeled source data and only unlabeled data from target domain(s).\n\nIn this work, we first show that absent assumptions on the source classifier or the nature of the shift, no method of estimating accuracy will work generally (even in non-contrived settings). To estimate accuracy on target domain perfectly, we highlight that even given perfect knowledge of the labeled source distribution (i.e.,  $p_{s}(x,y)$ ) and unlabeled target distribution (i.e.,  $p_{t}(x)$ ), we need restrictions on the nature of the shift such that we can uniquely identify the target conditional  $p_{t}(y|x)$ . Thus, in general, identifying the accuracy of the classifier is as hard as identifying the optimal predictor.\n\nSecond, motivated by the superiority of methods that use maximum softmax probability (or logit) of a model for Out-Of-Distribution (OOD) detection (Hendrycks &amp; Gimpel, 2016; Hendrycks et al., 2019), we propose a simple method that leverages softmax probability to predict model performance. Our method, Average Thresholded Confidence (ATC), learns a threshold on a score (e.g., maximum confidence or negative entropy) of model confidence on validation source data and predicts target domain accuracy as the fraction of unlabeled target points that receive a score above that threshold. ATC selects a threshold on validation source data such that the fraction of source examples that receive the score above the threshold match the accuracy of those examples. Our primary contribution in ATC is the proposal of obtaining the threshold and observing its efficacy on (practical) accuracy estimation. Importantly, our work takes a step forward in positively answering the question raised in Deng &amp; Zheng (2021); Deng et al. (2021) about a practical strategy to select a threshold that enables accuracy prediction with thresholded model confidence.",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 222,
+          "bottom_right_x": 943,
+          "bottom_right_y": 635,
+          "image_base64": "data:image/jpeg;base64,...",
+          "image_annotation": null
+        }
+      ],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 27,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n[tbl-3.html](tbl-3.html)\n\nTable 3: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. For language datasets, we use DistilBERT-base-uncased, for vision dataset we report results with DenseNet model with the exception of MNIST where we use FCN. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e.,  $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "tables": [
+        {
+          "id": "tbl-3.html",
+          "content": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Shift</td><td colspan=\"2\">IM</td><td colspan=\"2\">AC</td><td colspan=\"2\">DOC</td><td>GDE</td><td colspan=\"2\">ATC-MC (Ours)</td><td colspan=\"2\">ATC-NE (Ours)</td></tr><tr><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td></tr><tr><td rowspan=\"4\">CIFAR10</td><td rowspan=\"2\">Natural</td><td>6.60</td><td>5.74</td><td>9.88</td><td>6.89</td><td>7.25</td><td>6.07</td><td>4.77</td><td>3.21</td><td>3.02</td><td>2.99</td><td>2.85</td></tr><tr><td>(0.35)</td><td>(0.30)</td><td>(0.16)</td><td>(0.13)</td><td>(0.15)</td><td>(0.16)</td><td>(0.13)</td><td>(0.49)</td><td>(0.40)</td><td>(0.37)</td><td>(0.29)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>12.33</td><td>10.20</td><td>16.50</td><td>11.91</td><td>13.87</td><td>11.08</td><td>6.55</td><td>4.65</td><td>4.25</td><td>4.21</td><td>3.87</td></tr><tr><td>(0.51)</td><td>(0.48)</td><td>(0.26)</td><td>(0.17)</td><td>(0.18)</td><td>(0.17)</td><td>(0.35)</td><td>(0.55)</td><td>(0.55)</td><td>(0.55)</td><td>(0.75)</td></tr><tr><td rowspan=\"2\">CIFAR100</td><td rowspan=\"2\">Synthetic</td><td>13.69</td><td>11.51</td><td>23.61</td><td>13.10</td><td>14.60</td><td>10.14</td><td>9.85</td><td>5.50</td><td>4.75</td><td>4.72</td><td>4.94</td></tr><tr><td>(0.55)</td><td>(0.41)</td><td>(1.16)</td><td>(0.80)</td><td>(0.77)</td><td>(0.64)</td><td>(0.57)</td><td>(0.70)</td><td>(0.73)</td><td>(0.74)</td><td>(0.74)</td></tr><tr><td rowspan=\"4\">ImageNet200</td><td rowspan=\"2\">Natural</td><td>12.37</td><td>8.19</td><td>22.07</td><td>8.61</td><td>15.17</td><td>7.81</td><td>5.13</td><td>4.37</td><td>2.04</td><td>3.79</td><td>1.45</td></tr><tr><td>(0.25)</td><td>(0.33)</td><td>(0.08)</td><td>(0.25)</td><td>(0.11)</td><td>(0.29)</td><td>(0.08)</td><td>(0.39)</td><td>(0.24)</td><td>(0.30)</td><td>(0.27)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>19.86</td><td>12.94</td><td>32.44</td><td>13.35</td><td>25.02</td><td>12.38</td><td>5.41</td><td>5.93</td><td>3.09</td><td>5.00</td><td>2.68</td></tr><tr><td>(1.38)</td><td>(1.81)</td><td>(1.00)</td><td>(1.30)</td><td>(1.10)</td><td>(1.38)</td><td>(0.89)</td><td>(1.38)</td><td>(0.87)</td><td>(1.28)</td><td>(0.45)</td></tr><tr><td rowspan=\"4\">ImageNet</td><td rowspan=\"2\">Natural</td><td>7.77</td><td>6.50</td><td>18.13</td><td>6.02</td><td>8.13</td><td>5.76</td><td>6.23</td><td>3.88</td><td>2.17</td><td>2.06</td><td>0.80</td></tr><tr><td>(0.27)</td><td>(0.33)</td><td>(0.23)</td><td>(0.34)</td><td>(0.27)</td><td>(0.37)</td><td>(0.41)</td><td>(0.53)</td><td>(0.62)</td><td>(0.54)</td><td>(0.44)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>13.39</td><td>10.12</td><td>24.62</td><td>8.51</td><td>13.55</td><td>7.90</td><td>6.32</td><td>3.34</td><td>2.53</td><td>2.61</td><td>4.89</td></tr><tr><td>(0.53)</td><td>(0.63)</td><td>(0.64)</td><td>(0.71)</td><td>(0.61)</td><td>(0.72)</td><td>(0.33)</td><td>(0.53)</td><td>(0.36)</td><td>(0.33)</td><td>(0.83)</td></tr><tr><td rowspan=\"2\">FMoW-WILDS</td><td rowspan=\"2\">Natural</td><td>5.53</td><td>4.31</td><td>33.53</td><td>12.84</td><td>5.94</td><td>4.45</td><td>5.74</td><td>3.06</td><td>2.70</td><td>3.02</td><td>2.72</td></tr><tr><td>(0.33)</td><td>(0.63)</td><td>(0.13)</td><td>(12.06)</td><td>(0.36)</td><td>(0.77)</td><td>(0.55)</td><td>(0.36)</td><td>(0.54)</td><td>(0.35)</td><td>(0.44)</td></tr><tr><td rowspan=\"2\">RxRx1-WILDS</td><td rowspan=\"2\">Natural</td><td>5.80</td><td>5.72</td><td>7.90</td><td>4.84</td><td>5.98</td><td>5.98</td><td>6.03</td><td>4.66</td><td>4.56</td><td>4.41</td><td>4.47</td></tr><tr><td>(0.17)</td><td>(0.15)</td><td>(0.24)</td><td>(0.09)</td><td>(0.15)</td><td>(0.13)</td><td>(0.08)</td><td>(0.38)</td><td>(0.38)</td><td>(0.31)</td><td>(0.26)</td></tr><tr><td rowspan=\"2\">Amazon-WILDS</td><td rowspan=\"2\">Natural</td><td>2.40</td><td>2.29</td><td>8.01</td><td>2.38</td><td>2.40</td><td>2.28</td><td>17.87</td><td>1.65</td><td>1.62</td><td>1.60</td><td>1.59</td></tr><tr><td>(0.08)</td><td>(0.09)</td><td>(0.53)</td><td>(0.17)</td><td>(0.09)</td><td>(0.09)</td><td>(0.18)</td><td>(0.06)</td><td>(0.05)</td><td>(0.14)</td><td>(0.15)</td></tr><tr><td rowspan=\"2\">CivilCom.-WILDS</td><td rowspan=\"2\">Natural</td><td>12.64</td><td>10.80</td><td>16.76</td><td>11.03</td><td>13.31</td><td>10.99</td><td>16.65</td><td></td><td>7.14</td><td></td><td></td></tr><tr><td>(0.52)</td><td>(0.48)</td><td>(0.53)</td><td>(0.49)</td><td>(0.52)</td><td>(0.49)</td><td>(0.25)</td><td></td><td>(0.41)</td><td></td><td></td></tr><tr><td rowspan=\"2\">MNIST</td><td rowspan=\"2\">Natural</td><td>18.48</td><td>15.99</td><td>21.17</td><td>14.81</td><td>20.19</td><td>14.56</td><td>24.42</td><td>5.02</td><td>2.40</td><td>3.14</td><td>3.50</td></tr><tr><td>(0.45)</td><td>(1.53)</td><td>(0.24)</td><td>(3.89)</td><td>(0.23)</td><td>(3.47)</td><td>(0.41)</td><td>(0.44)</td><td>(1.83)</td><td>(0.49)</td><td>(0.17)</td></tr><tr><td rowspan=\"4\">ENTITY-13</td><td rowspan=\"2\">Same</td><td>16.23</td><td>11.14</td><td>24.97</td><td>10.88</td><td>19.08</td><td>10.47</td><td>10.71</td><td>5.39</td><td>3.88</td><td>4.58</td><td>4.19</td></tr><tr><td>(0.77)</td><td>(0.65)</td><td>(0.70)</td><td>(0.77)</td><td>(0.65)</td><td>(0.72)</td><td>(0.74)</td><td>(0.92)</td><td>(0.61)</td><td>(0.85)</td><td>(0.16)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.53</td><td>22.02</td><td>38.33</td><td>21.64</td><td>32.43</td><td>21.22</td><td>20.61</td><td>13.58</td><td>10.28</td><td>12.25</td><td>6.63</td></tr><tr><td>(0.82)</td><td>(0.68)</td><td>(0.75)</td><td>(0.86)</td><td>(0.69)</td><td>(0.80)</td><td>(0.60)</td><td>(1.15)</td><td>(1.34)</td><td>(1.21)</td><td>(0.93)</td></tr><tr><td rowspan=\"4\">ENTITY-30</td><td rowspan=\"2\">Same</td><td>18.59</td><td>14.46</td><td>28.82</td><td>14.30</td><td>21.63</td><td>13.46</td><td>12.92</td><td>9.12</td><td>7.75</td><td>8.15</td><td>7.64</td></tr><tr><td>(0.51)</td><td>(0.52)</td><td>(0.43)</td><td>(0.71)</td><td>(0.37)</td><td>(0.59)</td><td>(0.14)</td><td>(0.62)</td><td>(0.72)</td><td>(0.68)</td><td>(0.88)</td></tr><tr><td rowspan=\"2\">Novel</td><td>32.34</td><td>26.85</td><td>44.02</td><td>26.27</td><td>36.82</td><td>25.42</td><td>23.16</td><td>17.75</td><td>14.30</td><td>15.60</td><td>10.57</td></tr><tr><td>(0.60)</td><td>(0.58)</td><td>(0.56)</td><td>(0.79)</td><td>(0.47)</td><td>(0.68)</td><td>(0.12)</td><td>(0.76)</td><td>(0.85)</td><td>(0.86)</td><td>(0.86)</td></tr><tr><td rowspan=\"4\">NONLIVING-26</td><td rowspan=\"2\">Same</td><td>18.66</td><td>17.17</td><td>26.39</td><td>16.14</td><td>19.86</td><td>15.58</td><td>16.63</td><td>10.87</td><td>10.24</td><td>10.07</td><td>10.26</td></tr><tr><td>(0.76)</td><td>(0.74)</td><td>(0.82)</td><td>(0.81)</td><td>(0.67)</td><td>(0.76)</td><td>(0.45)</td><td>(0.98)</td><td>(0.83)</td><td>(0.92)</td><td>(1.18)</td></tr><tr><td rowspan=\"2\">Novel</td><td>33.43</td><td>31.53</td><td>41.66</td><td>29.87</td><td>35.13</td><td>29.31</td><td>29.56</td><td>21.70</td><td>20.12</td><td>19.08</td><td>18.26</td></tr><tr><td>(0.67)</td><td>(0.65)</td><td>(0.67)</td><td>(0.71)</td><td>(0.54)</td><td>(0.64)</td><td>(0.21)</td><td>(0.86)</td><td>(0.75)</td><td>(0.82)</td><td>(1.12)</td></tr><tr><td rowspan=\"4\">LIVING-17</td><td rowspan=\"2\">Same</td><td>12.63</td><td>11.05</td><td>18.32</td><td>10.46</td><td>14.43</td><td>10.14</td><td>9.87</td><td>4.57</td><td>3.95</td><td>3.81</td><td>4.21</td></tr><tr><td>(1.25)</td><td>(1.20)</td><td>(1.01)</td><td>(1.12)</td><td>(1.11)</td><td>(1.16)</td><td>(0.61)</td><td>(0.71)</td><td>(0.48)</td><td>(0.22)</td><td>(0.53)</td></tr><tr><td rowspan=\"2\">Novel</td><td>29.03</td><td>26.96</td><td>35.67</td><td>26.11</td><td>31.73</td><td>25.73</td><td>23.53</td><td>16.15</td><td>14.49</td><td>12.97</td><td>11.39</td></tr><tr><td>(1.44)</td><td>(1.38)</td><td>(1.09)</td><td>(1.27)</td><td>(1.19)</td><td>(1.35)</td><td>(0.52)</td><td>(1.36)</td><td>(1.46)</td><td>(1.52)</td><td>(1.72)</td></tr></table>",
+          "format": "html"
+        }
+      ],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    },
+    {
+      "index": 28,
+      "markdown": "Published as a conference paper at ICLR 2022\n\n[tbl-4.html](tbl-4.html)\n\nTable 4: Mean Absolute estimation Error (MAE) results for different datasets in our setup grouped by the nature of shift for ResNet model. 'Same' refers to same subpopulation shifts and 'Novel' refers novel subpopulation shifts. We include details about the target sets considered in each shift in Table 2. Post T denotes use of TS calibration on source. Across all datasets, we observe that ATC achieves superior performance (lower MAE is better). For GDE post T and pre T estimates match since TS doesn't alter the argmax prediction. Results reported by aggregating MAE numbers over 4 different seeds. Values in parenthesis (i.e.,  $(\\cdot)$ ) denote standard deviation values.",
+      "images": [],
+      "tables": [
+        {
+          "id": "tbl-4.html",
+          "content": "<table><tr><td rowspan=\"2\">Dataset</td><td rowspan=\"2\">Shift</td><td colspan=\"2\">IM</td><td colspan=\"2\">AC</td><td colspan=\"2\">DOC</td><td>GDE</td><td colspan=\"2\">ATC-MC (Ours)</td><td colspan=\"2\">ATC-NE (Ours)</td></tr><tr><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Post T</td><td>Pre T</td><td>Post T</td><td>Pre T</td><td>Post T</td></tr><tr><td rowspan=\"4\">CIFAR10</td><td rowspan=\"2\">Natural</td><td>7.14</td><td>6.20</td><td>10.25</td><td>7.06</td><td>7.68</td><td>6.35</td><td>5.74</td><td>4.02</td><td>3.85</td><td>3.76</td><td>3.38</td></tr><tr><td>(0.14)</td><td>(0.11)</td><td>(0.31)</td><td>(0.33)</td><td>(0.28)</td><td>(0.27)</td><td>(0.25)</td><td>(0.38)</td><td>(0.30)</td><td>(0.33)</td><td>(0.32)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>12.62</td><td>10.75</td><td>16.50</td><td>11.91</td><td>13.93</td><td>11.20</td><td>7.97</td><td>5.66</td><td>5.03</td><td>4.87</td><td>3.63</td></tr><tr><td>(0.76)</td><td>(0.71)</td><td>(0.28)</td><td>(0.24)</td><td>(0.29)</td><td>(0.28)</td><td>(0.13)</td><td>(0.64)</td><td>(0.71)</td><td>(0.71)</td><td>(0.62)</td></tr><tr><td rowspan=\"2\">CIFAR100</td><td rowspan=\"2\">Synthetic</td><td>12.77</td><td>12.34</td><td>16.89</td><td>12.73</td><td>11.18</td><td>9.63</td><td>12.00</td><td>5.61</td><td>5.55</td><td>5.65</td><td>5.76</td></tr><tr><td>(0.43)</td><td>(0.68)</td><td>(0.20)</td><td>(2.59)</td><td>(0.35)</td><td>(1.25)</td><td>(0.48)</td><td>(0.51)</td><td>(0.55)</td><td>(0.35)</td><td>(0.27)</td></tr><tr><td rowspan=\"4\">ImageNet200</td><td rowspan=\"2\">Natural</td><td>12.63</td><td>7.99</td><td>23.08</td><td>7.22</td><td>15.40</td><td>6.33</td><td>5.00</td><td>4.60</td><td>1.80</td><td>4.06</td><td>1.38</td></tr><tr><td>(0.59)</td><td>(0.47)</td><td>(0.31)</td><td>(0.22)</td><td>(0.42)</td><td>(0.24)</td><td>(0.36)</td><td>(0.63)</td><td>(0.17)</td><td>(0.69)</td><td>(0.29)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>20.17</td><td>11.74</td><td>33.69</td><td>9.51</td><td>25.49</td><td>8.61</td><td>4.19</td><td>5.37</td><td>2.78</td><td>4.53</td><td>3.58</td></tr><tr><td>(0.74)</td><td>(0.80)</td><td>(0.73)</td><td>(0.51)</td><td>(0.66)</td><td>(0.50)</td><td>(0.14)</td><td>(0.88)</td><td>(0.23)</td><td>(0.79)</td><td>(0.33)</td></tr><tr><td rowspan=\"4\">ImageNet</td><td rowspan=\"2\">Natural</td><td>8.09</td><td>6.42</td><td>21.66</td><td>5.91</td><td>8.53</td><td>5.21</td><td>5.90</td><td>3.93</td><td>1.89</td><td>2.45</td><td>0.73</td></tr><tr><td>(0.25)</td><td>(0.28)</td><td>(0.38)</td><td>(0.22)</td><td>(0.26)</td><td>(0.25)</td><td>(0.44)</td><td>(0.26)</td><td>(0.21)</td><td>(0.16)</td><td>(0.10)</td></tr><tr><td rowspan=\"2\">Synthetic</td><td>13.93</td><td>9.90</td><td>28.05</td><td>7.56</td><td>13.82</td><td>6.19</td><td>6.70</td><td>3.33</td><td>2.55</td><td>2.12</td><td>5.06</td></tr><tr><td>(0.14)</td><td>(0.23)</td><td>(0.39)</td><td>(0.13)</td><td>(0.31)</td><td>(0.07)</td><td>(0.52)</td><td>(0.25)</td><td>(0.25)</td><td>(0.31)</td><td>(0.27)</td></tr><tr><td rowspan=\"2\">FMoW-WILDS</td><td rowspan=\"2\">Natural</td><td>5.15</td><td>3.55</td><td>34.64</td><td>5.03</td><td>5.58</td><td>3.46</td><td>5.08</td><td>2.59</td><td>2.33</td><td>2.52</td><td>2.22</td></tr><tr><td>(0.19)</td><td>(0.41)</td><td>(0.22)</td><td>(0.29)</td><td>(0.17)</td><td>(0.37)</td><td>(0.46)</td><td>(0.32)</td><td>(0.28)</td><td>(0.25)</td><td>(0.30)</td></tr><tr><td rowspan=\"2\">RxRx1-WILDS</td><td rowspan=\"2\">Natural</td><td>6.17</td><td>6.11</td><td>21.05</td><td>5.21</td><td>6.54</td><td>6.27</td><td>6.82</td><td>5.30</td><td>5.20</td><td>5.19</td><td>5.63</td></tr><tr><td>(0.20)</td><td>(0.24)</td><td>(0.31)</td><td>(0.18)</td><td>(0.21)</td><td>(0.20)</td><td>(0.31)</td><td>(0.30)</td><td>(0.44)</td><td>(0.43)</td><td>(0.55)</td></tr><tr><td rowspan=\"4\">ENTITY-13</td><td rowspan=\"2\">Same</td><td>18.32</td><td>14.38</td><td>27.79</td><td>13.56</td><td>20.50</td><td>13.22</td><td>16.09</td><td>9.35</td><td>7.50</td><td>7.80</td><td>6.94</td></tr><tr><td>(0.29)</td><td>(0.53)</td><td>(1.18)</td><td>(0.58)</td><td>(0.47)</td><td>(0.58)</td><td>(0.84)</td><td>(0.79)</td><td>(0.65)</td><td>(0.62)</td><td>(0.71)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.82</td><td>24.03</td><td>38.97</td><td>22.96</td><td>31.66</td><td>22.61</td><td>25.26</td><td>17.11</td><td>13.96</td><td>14.75</td><td>9.94</td></tr><tr><td>(0.30)</td><td>(0.55)</td><td>(1.32)</td><td>(0.59)</td><td>(0.54)</td><td>(0.58)</td><td>(1.08)</td><td>(0.84)</td><td>(0.93)</td><td>(0.64)</td><td>(0.78)</td></tr><tr><td rowspan=\"4\">ENTITY-30</td><td rowspan=\"2\">Same</td><td>16.91</td><td>14.61</td><td>26.84</td><td>14.37</td><td>18.60</td><td>13.11</td><td>13.74</td><td>8.54</td><td>7.94</td><td>7.77</td><td>8.04</td></tr><tr><td>(1.33)</td><td>(1.11)</td><td>(2.15)</td><td>(1.34)</td><td>(1.69)</td><td>(1.30)</td><td>(1.07)</td><td>(1.47)</td><td>(1.38)</td><td>(1.44)</td><td>(1.51)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.66</td><td>25.83</td><td>39.21</td><td>25.03</td><td>30.95</td><td>23.73</td><td>23.15</td><td>15.57</td><td>13.24</td><td>12.44</td><td>11.05</td></tr><tr><td>(1.16)</td><td>(0.88)</td><td>(2.03)</td><td>(1.11)</td><td>(1.64)</td><td>(1.11)</td><td>(0.51)</td><td>(1.44)</td><td>(1.15)</td><td>(1.26)</td><td>(1.13)</td></tr><tr><td rowspan=\"4\">NONLIVING-26</td><td rowspan=\"2\">Same</td><td>17.43</td><td>15.95</td><td>27.70</td><td>15.40</td><td>18.06</td><td>14.58</td><td>16.99</td><td>10.79</td><td>10.13</td><td>10.05</td><td>10.29</td></tr><tr><td>(0.90)</td><td>(0.86)</td><td>(0.90)</td><td>(0.69)</td><td>(1.00)</td><td>(0.78)</td><td>(1.25)</td><td>(0.62)</td><td>(0.32)</td><td>(0.46)</td><td>(0.79)</td></tr><tr><td rowspan=\"2\">Novel</td><td>29.51</td><td>27.75</td><td>40.02</td><td>26.77</td><td>30.36</td><td>25.93</td><td>27.70</td><td>19.64</td><td>17.75</td><td>16.90</td><td>15.69</td></tr><tr><td>(0.86)</td><td>(0.82)</td><td>(0.76)</td><td>(0.82)</td><td>(0.95)</td><td>(0.80)</td><td>(1.42)</td><td>(0.68)</td><td>(0.53)</td><td>(0.60)</td><td>(0.83)</td></tr><tr><td rowspan=\"4\">LIVING-17</td><td rowspan=\"2\">Same</td><td>14.28</td><td>12.21</td><td>23.46</td><td>11.16</td><td>15.22</td><td>10.78</td><td>10.49</td><td>4.92</td><td>4.23</td><td>4.19</td><td>4.73</td></tr><tr><td>(0.96)</td><td>(0.93)</td><td>(1.16)</td><td>(0.90)</td><td>(0.96)</td><td>(0.99)</td><td>(0.97)</td><td>(0.57)</td><td>(0.42)</td><td>(0.35)</td><td>(0.24)</td></tr><tr><td rowspan=\"2\">Novel</td><td>28.91</td><td>26.35</td><td>38.62</td><td>24.91</td><td>30.32</td><td>24.52</td><td>22.49</td><td>15.42</td><td>13.02</td><td>12.29</td><td>10.34</td></tr><tr><td>(0.66)</td><td>(0.73)</td><td>(1.01)</td><td>(0.61)</td><td>(0.59)</td><td>(0.74)</td><td>(0.85)</td><td>(0.59)</td><td>(0.53)</td><td>(0.73)</td><td>(0.62)</td></tr></table>",
+          "format": "html"
+        }
+      ],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      }
+    }
+  ],
+  "model": "mistral-ocr-2512",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 29,
+    "doc_size_bytes": 3002783
+  }
+}
+```
+
+    </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="delete-file">Delete File</SectionTab>
+
+Once all OCR done, you can optionally delete the pdf file from our cloud unless you wish to reuse it later.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+client.files.delete(file_id=file.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await client.files.delete(fileId=file.id);
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X DELETE https://api.mistral.ai/v1/files/${file_id} \
+-H "Authorization: Bearer ${MISTRAL_API_KEY}"
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+"id": "22e2e88f-167d-4f3d-982a-add977a54ec3",
+"object": "file",
+"deleted": true
+}
+```
+
+  </TabItem>
+</Tabs>
+    </ExplorerTab>
+</ExplorerTabs>
+
+The output will be a JSON object containing the extracted text content, images bboxes, metadata and other information about the document structure.
+
+```py
+{
+  "pages": [ # The content of each page
+    {
+      "index": int, # The index of the corresponding page
+      "markdown": str, # The main output and raw markdown content
+      "images": list, # Image information when images are extracted
+      "tables": list, # Table information when using `table_format=html` or `table_format=markdown`
+      "hyperlinks": list, # Hyperlinks detected
+      "header": str|null, # Header content when using `extract_header=True`
+      "footer": str|null, # Footer content when using `extract_footer=True`
+      "dimensions": dict, # The dimensions of the page
+      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+    }
+  ],
+  "model": str, # The model used for the OCR
+  "document_annotation": dict|null, # Document annotation information when used, visit the Annotations documentation for more information
+  "usage_info": dict # Usage information
+}
+```
+
+:::note
+When extracting images and tables they will be replaced with placeholders, such as:
+- `![img-0.jpeg](img-0.jpeg)`
+- `[tbl-3.html](tbl-3.html)`
+
+You can map them to the actual images and tables by using the `images` and `tables` fields.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="ocr-images">Images</SectionTab>
+
+To perform OCR on an image, you can either pass a URL to the image or directly use a Base64 encoded image.
+
+<ExplorerTabs id="images">
+    <ExplorerTab value="with-image-url" label="OCR with an Image URL">
+        You can perform OCR with any public available image as long as a direct url is available.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "image_url",
+        "image_url": "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png"
+    },
+    # table_format=None,
+    include_image_base64=True
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "image_url",
+        "image_url": "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png"
+    },
+    # table_format=None,
+    include_image_base64=True
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({apiKey: apiKey});
+
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "image_url",
+        imageUrl: "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png",
+    },
+    // tableFormat: null,
+    includeImageBase64: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "image_url",
+        "image_url": "https://raw.githubusercontent.com/mistralai/cookbook/refs/heads/main/mistral/ocr/receipt.png"
+    },
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "PLACE FACE UP ON DASH\nCITY OF PALO ALTO\nNOT VALID FOR\nONSTREET PARKING\n\nExpiration Date/Time\n11:59 PM\nAUG 19, 2024\n\nPurchase Date/Time: 01:34pm Aug 19, 2024\nTotal Due: $15.00\nTotal Paid: $15.00\nTicket #: 00005883\nS/N #: 520117260957\nSetting: Permit Machines\nMach Name: Civic Center\n\n#****-1224, Visa\nDISPLAY FACE UP ON DASH\n\nPERMIT EXPIRES\nAT MIDNIGHT",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 3210,
+        "width": 1806
+      }
+    }
+  ],
+  "model": "mistral-ocr-2505-completion",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 1,
+    "doc_size_bytes": 3110191
+  }
+}
+```
+    </TabItem>
+</Tabs>
+    </ExplorerTab>
+    <ExplorerTab value="with-image-base64" label="OCR with a Base64 encoded Image">
+        You can perform OCR with any public available image as long as a direct url is available.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+    <Tabs groupId="sdk-version">
+        <TabItem value="v1" label="V1" default>
+
+```python
+import base64
+import os
+from mistralai import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+image_path = "path_to_your_image.jpg"
+base64_image = encode_image(image_path)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "image_url",
+        "image_url": f"data:image/jpeg;base64,{base64_image}"
+    },
+    # table_format=None,
+    include_image_base64=True
+)
+```
+
+        </TabItem>
+        <TabItem value="v2" label="V2">
+
+```python
+import base64
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+image_path = "path_to_your_image.jpg"
+base64_image = encode_image(image_path)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "image_url",
+        "image_url": f"data:image/jpeg;base64,{base64_image}"
+    },
+    # table_format=None,
+    include_image_base64=True
+)
+```
+
+        </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```ts
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+async function encodeImage(imagePath) {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const base64Image = imageBuffer.toString('base64');
+    return base64Image;
+}
+
+const imagePath = "path_to_your_image.jpg";
+const base64Image = await encodeImage(imagePath);
+
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "image_url",
+        imageUrl: "data:image/jpeg;base64," + base64Image
+    },
+    // tableFormat: null,
+    includeImageBase64: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "image_url",
+        "image_url": "data:image/jpeg;base64,<base64_image>"
+    },
+    "include_image_base64": true
+  }' -o ocr_output.json
+```
+
+  </TabItem>
+    <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "PLACE FACE UP ON DASH\nCITY OF PALO ALTO\nNOT VALID FOR\nONSTREET PARKING\n\nExpiration Date/Time\n11:59 PM\nAUG 19, 2024\n\nPurchase Date/Time: 01:34pm Aug 19, 2024\nTotal Due: $15.00\nTotal Paid: $15.00\nTicket #: 00005883\nS/N #: 520117260957\nSetting: Permit Machines\nMach Name: Civic Center\n\n#****-1224, Visa\nDISPLAY FACE UP ON DASH\n\nPERMIT EXPIRES\nAT MIDNIGHT",
+      "images": [],
+      "dimensions": {
+        "dpi": 200,
+        "height": 3210,
+        "width": 1806
+      }
+    }
+  ],
+  "model": "mistral-ocr-2505-completion",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 1,
+    "doc_size_bytes": 3110191
+  }
+}
+```
+    </TabItem>
+</Tabs>
+    </ExplorerTab>
+</ExplorerTabs>
+
+The output will be a JSON object containing the extracted text content, images bboxes, metadata and other information about the document structure.
+
+```py
+{
+  "pages": [ # The content of each page
+    {
+      "index": int, # The index of the corresponding page
+      "markdown": str, # The main output and raw markdown content
+      "images": list, # Image information when images are extracted
+      "tables": list, # Table information when using `table_format=html` or `table_format=markdown`
+      "hyperlinks": list, # Hyperlinks detected
+      "header": str|null, # Header content when using `extract_header=True`
+      "footer": str|null, # Footer content when using `extract_footer=True`
+      "dimensions": dict, # The dimensions of the page
+      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+    }
+  ],
+  "model": str, # The model used for the OCR
+  "document_annotation": dict|null, # Document annotation information when used, visit the Annotations documentation for more information
+  "usage_info": dict # Usage information
+}
+```
+
+:::note
+When extracting images and tables they will be replaced with placeholders, such as:
+- `![img-0.jpeg](img-0.jpeg)`
+- `[tbl-3.html](tbl-3.html)`
+
+You can map them to the actual images and tables by using the `images` and `tables` fields.
+:::
+
+<SectionTab as="h1" sectionId="confidence-scores">Confidence Scores</SectionTab>
+
+### Extract Confidence Scores
+
+The OCR processor can return confidence scores for extracted content to help you assess recognition quality. Use the `confidence_scores_granularity` parameter to control the level of detail:
+
+| Value | Description |
+| --- | --- |
+| `"page"` | Returns a `confidence_scores` object on each page with aggregate statistics (`average_page_confidence_score`, `minimum_page_confidence_score`). |
+| `"word"` | Returns everything from `"page"`, plus a `word_confidence_scores` array with per-word confidence values on each page and each table entry. |
+
+<ExplorerTabs id="confidence-scores">
+  <ExplorerTab value="confidence-scores-example" label="Confidence Scores">
+    <Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    confidence_scores_granularity="word"  # or "page" for aggregate only
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "document_url",
+        documentUrl: "https://arxiv.org/pdf/2201.04234"
+    },
+    confidenceScoresGranularity: "word"  // or "page" for aggregate only
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    "confidence_scores_granularity": "word"
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Mistral OCR\n\nExtracting text with confidence.",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      },
+      "confidence_scores": {
+        "average_page_confidence_score": 0.9946,
+        "minimum_page_confidence_score": 0.9823,
+        "word_confidence_scores": [
+          { "text": "#", "confidence": 0.9999, "start_index": 0 },
+          { "text": " Mistral", "confidence": 0.9998, "start_index": 1 },
+          { "text": " OCR", "confidence": 0.9991, "start_index": 9 },
+          { "text": "\n\n", "confidence": 0.9996, "start_index": 13 },
+          { "text": "Extracting", "confidence": 0.9987, "start_index": 15 },
+          { "text": " text", "confidence": 0.9823, "start_index": 25 },
+          { "text": " with", "confidence": 0.9945, "start_index": 30 },
+          { "text": " confidence.", "confidence": 0.9976, "start_index": 35 }
+        ]
+      }
+    }
+  ],
+  "model": "mistral-ocr-2512",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 1,
+    "doc_size_bytes": 102400
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="ocr-at-scale">OCR at Scale</SectionTab>
+
+When performing OCR at scale, we recommend using our [Batch Inference service](/studio-api/batch-processing), this allows you to process large amounts of documents in parallel while being more cost-effective than using the OCR API directly. We also support [Annotations](annotations) for structured outputs and other features.
+
+<SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
+
+For more information and guides on how to make use of OCR, we have the following cookbooks:
+- [Tool Use](/resources/cookbooks/mistral-ocr-tool_usage)
+- [Batch OCR](/resources/cookbooks/mistral-ocr-batch_ocr)
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Are there any limits regarding the OCR API?">
+    Yes, there are certain limitations for the OCR API. Uploaded document files must not exceed 50 MB in size and should be no longer than 1,000 pages.
+  </FaqItem>
+  <FaqItem question="What document types are supported?">
+Our Document AI OCR Processor supports a vast range of document and image types. Below you can find a non-exhaustive list of the supported formats:
+| Documents                          | Images               |
+|------------------------------------|----------------------|
+| **PDF** (.pdf)                     | **JPEG** (.jpg, .jpeg)|
+| **Word Documents** (.docx, .doc)   | **PNG** (.png)       |
+| **PowerPoint** (.pptx, .ppt)       | **AVIF** (.avif)     |
+| **Excel** (.xlsx, .csv)                | **TIFF** (.tiff)     |
+| **Text Files** (.txt)              | **GIF** (.gif)       |
+| **EPUB** (.epub)                   | **HEIC/HEIF** (.heic, .heif)|
+| **XML/DocBook** (.xml)             | **BMP** (.bmp)       |
+| **RTF** (.rtf)                     | **WebP** (.webp)     |
+| **OpenDocument Text** (.odt)       |                      |
+| **BibTeX/BibLaTeX** (.bib)         |                      |
+| **FictionBook** (.fb2)             |                      |
+| **Jupyter Notebooks** (.ipynb)     |                      |
+| **JATS XML** (.xml)                |                      |
+| **LaTeX** (.tex)                   |                      |
+| **OPML** (.opml)                   |                      |
+| **Troff** (.1, .man)               |                      |
+  </FaqItem>
+</Faq>

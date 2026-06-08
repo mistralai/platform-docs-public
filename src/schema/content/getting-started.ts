@@ -4,7 +4,6 @@
  *
  * Vibe is the canonical brand post-rebrand. The 'le-chat' and 'mistral-vibe'
  * keys are kept for back-compat with older imports and asset paths only.
- * TODO(brand): replace 'vibe' logo with a dedicated Vibe asset when available.
  */
 export const PRODUCT_LOGOS = {
   'vibe': '/assets/logos/vibe.svg',

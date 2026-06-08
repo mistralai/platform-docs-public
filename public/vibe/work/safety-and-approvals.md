@@ -1,0 +1,155 @@
+---
+title: Safety and approvals
+sidebar_position: 1
+---
+
+# Safety and approvals
+
+Work is built for **delegation with supervision**. You see what the agent intends to do, follow its progress in real time, and approve sensitive steps before they happen. Nothing important happens in a connected tool **without you signing off** on it.
+
+This page covers every control surface Work gives you, starting with the approval flow you'll encounter most often, then the broader supervision features (todos, reasoning, tool transparency), and finally the admin/org perimeter.
+
+<SectionTab as="h2" sectionId="approvals">Approving sensitive actions</SectionTab>
+
+Before Work performs an action that touches an external system, it **stops and asks for your approval**. This applies to anything that creates, modifies, sends, posts, or deletes. For example:
+
+- Sending an email through Gmail or Outlook.
+- Posting a message or canvas in Slack.
+- Creating, updating, or deleting an issue in Linear or GitHub.
+- Creating a calendar event or accepting an invitation.
+- Modifying a Notion page or SharePoint file.
+
+When Work asks, you get three options:
+
+| Option | Behavior |
+|---|---|
+| **Continue** | Approve this specific action only. Work will ask again next time. |
+| **Always allow** | Pre-authorize this function for the session so Work won't ask again. |
+| **Decline** | Cancel the action. Work either skips the step or asks how to proceed. |
+
+:::caution
+**Read what Work is about to do** before clicking `Continue`. Verify recipients, subject, content, and destination (especially for emails, messages, and anything that modifies shared data).
+
+You can still try to interrupt a running action with the **stop** button (the black square), but there's no guarantee. If the action already reached the external system, consider it as done.
+:::
+
+<SectionTab as="h2" sectionId="connector-functions">Per-function Connector permissions</SectionTab>
+
+Each [Connector](/vibe/work/connectors) exposes many individual **functions** (a Connector for Linear, for example, exposes dozens of them). You can control which ones Work can run without asking, and which always require approval.
+
+<SectionTab as="h3" variant="secondary" sectionId="accessing-functions">Accessing the functions tab</SectionTab>
+
+1. Open the `Connectors` page from the sidebar.
+2. Select `My Connectors`.
+3. Click the Connector card to open its details.
+4. Open the `Functions` tab. You'll see every function grouped by type, with a description and an `Always allow` toggle on each.
+
+Click `Refresh tools` to reload the function list (useful after a Connector update).
+
+<SectionTab as="h3" variant="secondary" sectionId="interactive-vs-readonly">Interactive vs. Read-only tools</SectionTab>
+
+Functions are split into two groups:
+
+- **Interactive tools**: tools that create, update, delete, send, or post data. These actions carry higher risk, so keeping them on manual approval is recommended until you trust the Connector in your workflow.
+- **Read-only tools**: tools that retrieve information (get, list, search). Lower risk and usually safe to pre-authorize.
+
+For example, the Linear Connector exposes:
+
+| Group | Examples |
+|---|---|
+| **Interactive** | `Save Issue`, `Save Comment`, `Delete Customer`, `Save Project`, `Create Attachment`, `Save Status Update`... |
+| **Read-only** | `Get Issue`, `List Comments`, `List Projects`, `Get Diff`, `List Users`, `Search Documentation`... |
+
+<SectionTab as="h3" variant="secondary" sectionId="how-toggle-helps">How the Always allow toggle helps</SectionTab>
+
+Toggling `Always allow` on a function tells Work it can call that function without stopping for approval. Use this to reduce friction on actions you trust:
+
+- **Pre-authorize read-only functions you use often** (`List Issues`, `Get Issue`, `List Projects`...) so Work doesn't pause for every lookup.
+- **Keep interactive functions on manual approval** until you're confident, especially deletes (`Delete Attachment`, `Delete Comment`) and broad writes (`Save Issue` with no filter scope).
+- **Revisit periodically**: if a function turns out to be safer (or riskier) than expected, flip the toggle.
+
+:::note
+Per-function permissions are **per-user**. Your `Always allow` choices don't affect your teammates.
+:::
+
+<SectionTab as="h2" sectionId="clarifying-questions">Clarifying questions before Work commits</SectionTab>
+
+For non-trivial tasks, Work often asks **follow-up questions** before doing anything. This is how Work catches missing context early (e.g., the wrong audience, the wrong scope, the wrong source) instead of going off on a tangent.
+
+Typical clarifications:
+
+- *"Which Project should I look at — Q3 launch or Q4 planning?"*
+- *"Should the brief be one page or a full report?"*
+- *"Which Connector should I use to find the contract — Notion or Google Drive?"*
+
+Select one of the provided answers in the chat and Work continues. You can also redirect Work at any time by rewriting the prompt.
+
+:::tip
+Treat clarifying questions as a feature, not friction. Two seconds of clarification beats a 30-second task that solves the wrong problem.
+:::
+
+<SectionTab as="h2" sectionId="todos-panel">Todos panel</SectionTab>
+
+For longer or multi-step tasks, Work displays its **todos** in the **right-hand panel** as it works, a live checklist of steps it has just done or is about to do. There is no upfront plan to approve: Work starts immediately and you watch the steps appear and tick off in real time.
+
+You stay in control by:
+
+- **Following the todos** as they appear, so you always know what Work is doing and what's coming next.
+- **Stopping early** with the **stop** button (the black square) if Work goes the wrong direction. You can then redirect with a follow-up message.
+- **Asking Work to course-correct** in chat (skip a step, do something differently next). Work picks up the change on the following steps.
+
+:::note
+Not every task gets a todos panel. Quick one-shot tasks (a summary, a translation, a single lookup) respond directly.
+:::
+
+<SectionTab as="h2" sectionId="reasoning">See Work's reasoning in real time</SectionTab>
+
+While Work executes, it surfaces its **chain of thought** (the reasoning behind each step). You see what Work is reading, comparing, deciding, and ruling out.
+
+This serves three purposes:
+
+1. **Trust**: you understand *why* Work did what it did, not just *what* it did.
+2. **Early correction**: if the reasoning veers off-course, you can interrupt before the output is wrong.
+3. **Learning**: seeing how Work approaches a problem is often useful in itself, especially for tasks you'll want to repeat or save as a [Skill](/vibe/work/skills).
+
+:::tip
+For pure reasoning tasks inside a chat (no tools, no actions), [Think mode](/vibe/chat-legacy/think-mode) in Chat is the dedicated surface. Work shows its reasoning as part of a broader execution, not as the main output.
+:::
+
+<SectionTab as="h2" sectionId="tool-transparency">Tool-call transparency</SectionTab>
+
+Every tool Work calls (such as a web search, a file read, a Connector function or an image generation) is shown in the chat with:
+
+- **Which tool** was called (for example, `Linear: Get Issue`, `Web Search`, `Gmail: List Messages`).
+- **What inputs** Work passed.
+- **What outputs** came back.
+- **Status**: pending, succeeded, or failed.
+
+You can expand any tool call to inspect the details. Use this to verify:
+
+- Work picked the right Connector (Notion vs Confluence, Gmail vs Outlook).
+- Work queried the right Project, repository, or workspace.
+- The data Work used to draft an output actually matches what you asked for.
+
+<SectionTab as="h2" sectionId="org-controls">Organization and workspace controls</SectionTab>
+
+Beyond what you control as a user, your organization sets the outer perimeter:
+
+- **Workspace admins** can disable specific [Connectors](/vibe/work/connectors) for the whole workspace, or force-enable specific [Skills](/vibe/work/skills) so they're always active.
+- **Organization admins** can turn entire features on or off per workspace (Skills, specific Connectors, MCP Connectors).
+- **Knowledge Connectors** (Google Drive, SharePoint) require admin setup before any user can connect them.
+
+If a tool you expect isn't available, ask your workspace admin: it may be disabled at the organization or workspace level.
+
+<SectionTab as="h2" sectionId="control-checklist">Control checklist before sharing output</SectionTab>
+
+Before you use, send, or share an output Work produced, run through:
+
+- Did Work follow the todos it showed?
+- Are the tool calls and Connectors it used the ones I expected?
+- Are the facts, names, dates, numbers, and citations accurate against the source?
+- For anything that goes to a customer, teammate, or external party, did I read it end-to-end?
+
+:::tip
+When in doubt, ask Work to revise. A second pass with sharper instructions is almost always cheaper than fixing a mistake downstream.
+:::

@@ -1,0 +1,31 @@
+---
+title: Migration from Mistral Code Enterprise
+sidebar_position: 7
+---
+
+# Migration from Mistral Code Enterprise
+
+This page covers what to expect when moving from the **Mistral Code extension** to **Mistral Vibe for VS Code**. The two extensions can coexist if you need to keep using Mistral Code while trying Vibe.
+
+For most teams, migration is **install Vibe, authenticate, optionally uninstall Mistral Code**. There is no automatic settings or session transfer between the two: Mistral Code required several specialized models, while Vibe only needs one.
+
+<SectionTab as="h2" sectionId="key-differences">Key differences</SectionTab>
+
+- **One model, not many.** Vibe ships a single agent backed by a single model, removing the model selection that Mistral Code required.
+- **Shared session between CLI and extension.** Your configuration, agents, skills, and active session are shared between the Vibe CLI and the Vibe VS Code extension.
+- **New configuration model.** Vibe configuration lives in `~/.vibe/` (and per-project `.vibe/`), not in the previous Mistral Code config paths.
+- **Separate plans.** Mistral Code Enterprise and Vibe Code are billed on **different plans**. If you're a Mistral Code Enterprise customer, contact your account team to discuss adding Vibe.
+
+<SectionTab as="h2" sectionId="migration-steps">Migration steps</SectionTab>
+
+1. **Back up any custom Mistral Code settings** you want to preserve (model preferences, custom prompts, etc.).
+2. **Uninstall or disable the Mistral Code extension** from the VS Code Extensions view.
+3. **Install Mistral Vibe** following [Install and authenticate](/vibe/code/vs-code-extension/install-authenticate).
+4. **Authenticate** with your existing Mistral API key, or follow the setup flow.
+5. **Re-create any custom configuration** (agents, skills, MCP servers) in `~/.vibe/config.toml`. See [Configuration](/vibe/code/cli/configuration).
+
+<SectionTab as="h2" sectionId="not-carried-over">What does not carry over</SectionTab>
+
+- **Per-model preferences** from Mistral Code (Vibe uses a single agent).
+- **Mistral Code extension settings**.
+- **Saved chat history** from Mistral Code.

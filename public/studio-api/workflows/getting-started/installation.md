@@ -1,0 +1,59 @@
+---
+id: installation
+title: Installation
+sidebar_label: Installation
+sidebar_position: 3
+---
+
+# Installation
+
+This guide will walk you through setting up Workflows and verifying your installation.
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+Before installing the Workflows SDK, ensure you have:
+
+1. [Python](https://www.python.org/downloads/) 3.12 or later installed on your machine.
+2. [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager installed (`uvx` ships with `uv`).
+
+<SectionTab as="h1" sectionId="install-workflows">Install Workflows</SectionTab>
+
+Install the Workflows package from PyPI using uv:
+
+```bash
+uv add mistralai-workflows
+```
+
+This will create a virtual environment (if one doesn't exist) and install Workflows along with its core dependencies.
+
+<SectionTab as="h2" variant="secondary" sectionId="installing-with-optional-dependencies">Installing with Optional Dependencies</SectionTab>
+
+The Mistral plugin provides native integration with Mistral's AI models and services, including [durable agents](/studio-api/workflows/building-workflows/durable_agents), [tool calling](/studio-api/workflows/building-workflows/durable_agents#built-in-tools), and [multi-agent handoffs](/studio-api/workflows/building-workflows/durable_agents#multi-agent-handoffs):
+
+```bash
+uv add "mistralai-workflows[mistralai]"
+```
+
+For [payload offloading](/studio-api/workflows/building-workflows/payload_offloading) and direct cloud storage access from activities, install the extra for your provider:
+
+```bash
+# AWS S3 support
+uv add "mistralai-workflows[s3]"
+
+# Azure Blob Storage support
+uv add "mistralai-workflows[azure]"
+
+# Google Cloud Storage support
+uv add "mistralai-workflows[gcs]"
+
+# All storage providers
+uv add "mistralai-workflows[storage]"
+```
+
+<SectionTab as="h1" sectionId="verify-installation">Verify Installation</SectionTab>
+
+To verify your installation was successful, run the following command:
+
+```bash
+uv run python -c "import mistralai.workflows; print('Workflows is installed successfully!')"
+```

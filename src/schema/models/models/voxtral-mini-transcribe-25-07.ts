@@ -2,8 +2,8 @@ import { StaticModel } from '../schema';
 export default {
   name: 'Voxtral Mini Transcribe',
   describe: (l) => ({
-    description: l.text(`An efficient audio input model, fine-tuned and optimized for transcription purposes only.`, { context: 'Full description of an AI model' }),
-    shortDescription: l.text(`An efficient audio input model, fine-tuned and optimized for transcription purposes.`, { context: 'Short description of an AI model' }),
+    description: l.text(`An efficient audio input model, pre-trained and optimized for transcription purposes only.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`An efficient audio input model, pre-trained and optimized for transcription purposes.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'voxtral-mini-transcribe-25-07',
   releaseDate: '2025-07-15',
@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/voxtral-small',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [],
   bloglink: 'https://mistral.ai/news/voxtral',
@@ -40,5 +40,5 @@ export default {
   },
   metadata: {},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

@@ -1,0 +1,69 @@
+---
+title: Activate Studio and generate an API key
+sidebar_label: Activate Studio and generate an API key
+sidebar_position: 1
+description: Generate your first API key in Studio in ~5 minutes.
+---
+
+# Activate Studio and generate an API key
+
+Set up your <AppLink href="https://console.mistral.ai" app="studio">Studio</AppLink> account and create an API key you can use to call Mistral models.
+
+- **Free mode**: API access is enabled by default with no credit card required. Usage and rate limits apply.
+- **Secure key management**: set expiration dates and rotate keys regularly
+
+By the end you will have a working API key ready to use in your first request.
+
+**Time to complete:** ~5 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
+
+- A <AppLink href="https://console.mistral.ai">Mistral account</AppLink>.
+
+<SectionTab as="h2" sectionId="step-1">Step 1: Generate an API key</SectionTab>
+
+1. Open the <AppLink href="https://console.mistral.ai" app="studio">Studio console</AppLink>.
+2. Navigate to **API Keys** in the left sidebar.
+3. Click **Create new key**.
+
+![Click Create new key](/assets/quickstarts/studio/new-key-button.png)
+
+4. Add a **Name** to identify the key (for example, "First test key").
+5. Set an **Expiration** date. Regular rotation improves security.
+
+![Configure the API key with optional name and expiration date](/assets/quickstarts/studio/new-key-modal.png)
+
+6. Click **Create new key**.
+7. Copy the key immediately and store it in a secure location (password manager or secrets vault).
+
+:::warning
+The full key appears only once. You cannot retrieve it after closing the confirmation dialog.
+:::
+
+<SectionTab as="h2" sectionId="verify">Verify</SectionTab>
+
+You have completed the setup:
+
+1. You are in Free mode with limited usage and rate limits.
+2. You have an API key stored securely.
+
+Test the key with a quick `curl` request:
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-small-latest",
+    "messages": [{"role": "user", "content": "Hello, Mistral!"}]
+  }'
+```
+
+A successful response confirms your key is working.
+
+<SectionTab as="h2" sectionId="whats-next">What's next</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/getting-started/quickstarts/studio/test-model-playground" title="Test a model in the API playground" />
+  <LinkCard href="/studio-api/overview" title="Studio overview" />
+</UsefullLinkContainer>

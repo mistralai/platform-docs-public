@@ -94,14 +94,14 @@ export const headerDropdownData: HeaderDropdownItem[] = [
   {
     id: 'vibe',
     href: `${MISTRAL_CHAT_URL}`,
-    bg: 'bg-primary',
+    bg: 'bg-[#fa500f]',
     isExternal: true,
     section: 'default',
   },
   {
     id: 'ai-studio',
     href: `${MISTRAL_STUDIO_URL}`,
-    bg: 'bg-[#6060F8]',
+    bg: 'bg-[#0082e6]',
     isExternal: true,
     section: 'default',
   },

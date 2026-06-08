@@ -1,0 +1,33 @@
+---
+title: Manage and deploy Vespa applications
+description: Define, deploy, and operate Vespa applications - schema management, migrations, ranking configuration, and production deployment.
+sidebar_position: 1
+sidebar_label: Vespa Application Management
+---
+
+<SectionTab as="h1" sectionId="manage-and-deploy-vespa-applications">Manage and Deploy Vespa Applications</SectionTab>
+
+Build and operate Vespa applications with the Search Toolkit plugin. Define schemas via Python migrations, configure ranking and query profiles, deploy with the `mistral-vespa` CLI, and manage production clusters.
+
+<SectionTab as="h2" sectionId="getting-started">Getting Started</SectionTab>
+
+Follow these guides to build and deploy a Vespa application:
+
+| Guide | Purpose |
+|---|---|
+| **[Anatomy of an Application](vespa/anatomy)** | Understand application packages, schemas, fields, ranking profiles, query profiles, and migrations |
+| **[Manage Schema](vespa/migrations)** | Create and evolve schemas using Python migrations |
+| **[Manage Ranking](vespa/query-profiles)** | Configure ranking at query time without schema changes |
+| **[Local Development](vespa/local-development)** | Full local development loop: create, deploy, feed, query, iterate |
+| **[Deploy and Operate](vespa/operations)** | Production configuration, health checks, monitoring |
+| **[CLI Reference](vespa/cli)** | mistral-vespa command reference |
+
+<SectionTab as="h2" sectionId="using-vespa-as-a-search-backend">Using Vespa as a Search Backend</SectionTab>
+
+To use Vespa as a search backend in your Search Toolkit pipelines, see **[Search Index](search-index)**.
+
+<SectionTab as="h2" sectionId="installation">Installation</SectionTab>
+
+```bash
+uv add "mistralai-search-toolkit[vespa]"
+```

@@ -1,0 +1,124 @@
+---
+id: queries
+title: Queries
+sidebar_position: 2
+---
+
+# Queries
+
+Queries allow external systems to read the current state of a running workflow synchronously.
+
+<SectionTab as="h1" sectionId="key-characteristics">Key characteristics</SectionTab>
+
+Queries use synchronous communication and are read-only — they should not modify workflow state. They can be called at any time during execution but must return quickly, making them unsuitable for long-running operations.
+
+<SectionTab as="h1" sectionId="basic-example">Exposing queries</SectionTab>
+
+The workflow below tracks its own progress as it runs. The `get_status` query handler reads that state and returns it immediately to the caller — without interrupting or modifying the running workflow.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.workflow.define(name="processing_workflow")
+class ProcessingWorkflow:
+    def __init__(self):
+        self.progress = 0.0
+        self.completed = False
+
+    @workflows.workflow.query(name="get_status")
+    def get_status(self) -> dict:
+        return {
+            "progress": self.progress,
+            "completed": self.completed
+        }
+
+    @workflows.workflow.entrypoint
+    async def run(self) -> None:
+        # Simulate work
+        for i in range(1, 11):
+            self.progress = i * 10
+            await asyncio.sleep(1)
+        self.completed = True
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="input-validation">Input validation</SectionTab>
+
+Query handlers can accept parameters just like any other handler, and the SDK validates the payload before invoking the handler. Queries validate incoming payloads against their declared parameters. Incoming data is checked against the expected types, and any extra fields not declared in the handler signature are rejected. Validation failures return HTTP 422 (Unprocessable Entity) with a descriptive error message.
+
+For complex input structures, use Pydantic models. This lets you pass structured parameters to a query handler while keeping full type safety:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import pydantic
+
+class StatusRequest(pydantic.BaseModel):
+    include_details: bool = False
+
+@workflows.workflow.query(name="get_status")
+def get_status(self, req: StatusRequest) -> dict:
+    result = {"progress": self.progress}
+    if req.include_details:
+        result["steps"] = self.completed_steps
+    return result
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="sending-a-query">Sending a query</SectionTab>
+
+Once your workflow is running, you can query its state at any time from the outside using the SDK or the API.
+
+<Tabs>
+  <TabItem value="python" label="python">
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+result = client.workflows.executions.query_workflow_execution(
+    execution_id="my-execution-id",
+    name="get_status",
+)
+print(result.model_dump_json(indent=2))
+```
+
+  </TabItem>
+  <TabItem value="api" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/executions/{execution_id}/queries \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "get_status"}'
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```json
+{
+  "query_name": "get_status",
+  "result": {"progress": 60.0, "completed": false}
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="comparison">Comparison</SectionTab>
+
+| Feature | Communication Type | Modifies State | Returns Value | Can Execute Activities |
+| ------- | ------------------ | -------------- | ------------- | ---------------------- |
+| Signal  | Asynchronous       | Yes            | No            | No                     |
+| Query   | Synchronous        | No             | Yes           | No                     |
+| Update  | Synchronous        | Yes            | Yes           | Yes                    |

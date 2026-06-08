@@ -91,10 +91,10 @@ declare module "@lingo.dev/react" {
     "Ambassadors": { context: "Footer link to the Mistral ambassador community" | "Footer link to the Mistral ambassador program" | "Heading for the Mistral ambassador program" };
     "Ambassadors will receive early invites and access to our events and will have a dedicated channel on Discord and Slack to engage with Mistral team members and fellow Ambassadors.": { context: "Description of a Mistral ambassador program benefit" };
     "An AI assistant configured with specific instructions, tools, and an optional knowledge base. Agents behave consistently across conversations and can be shared across a team. In Vibe, the equivalent feature in Work is called a Skill. Agents are still available in Chat (Vibe's legacy mode), and can be built programmatically via the Agents API in Studio.": { context: "Definition of the Agent glossary term" };
-    "An efficient audio input model, fine-tuned and optimized for live transcription purposes only.": { context: "Full description of an AI model" };
-    "An efficient audio input model, fine-tuned and optimized for live transcription purposes.": { context: "Short description of an AI model" };
-    "An efficient audio input model, fine-tuned and optimized for transcription purposes only.": { context: "Full description of an AI model" };
-    "An efficient audio input model, fine-tuned and optimized for transcription purposes.": { context: "Short description of an AI model" };
+    "An efficient audio input model, pre-trained and optimized for live transcription purposes only.": { context: "Full description of an AI model" };
+    "An efficient audio input model, pre-trained and optimized for live transcription purposes.": { context: "Short description of an AI model" };
+    "An efficient audio input model, pre-trained and optimized for transcription purposes only.": { context: "Full description of an AI model" };
+    "An efficient audio input model, pre-trained and optimized for transcription purposes.": { context: "Short description of an AI model" };
     "An enterprise grade small model for efficiency.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "An enterprise grade text model, that excels at SWE use cases.": { context: "Short description of an AI model" };
     "An enterprise grade text model, that excels at using tools to explore codebases, editing multiple files and power software engineering agents.": { context: "Full description of an AI model" };

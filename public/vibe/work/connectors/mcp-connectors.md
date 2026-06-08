@@ -1,0 +1,128 @@
+---
+title: MCP Connectors
+sidebar_position: 2
+---
+
+# MCP Connectors
+
+Beyond our [featured Connectors](/vibe/work/connectors), you can connect Work to third-party and custom services built on the **Model Context Protocol (MCP)**.
+
+:::info
+MCP is an open standard that lets language models call tools and read data from external services through a common interface. Any service that exposes an MCP server — whether built by a third party or by your own team — can be plugged into Work. See the [MCP introduction](https://modelcontextprotocol.io/docs/getting-started/intro) for the full background.
+:::
+
+There are two ways to add an MCP Connector: pick one from the **pre-configured directory**, or point Work at **your own MCP-compatible server**. Both require an administrator.
+
+:::warning
+MCP Connectors aren't Mistral products. We don't control third-party servers and can't guarantee their behavior or data handling. Connect only to servers you trust.
+:::
+
+<SectionTab as="h2" sectionId="directory">Browsing the directory</SectionTab>
+
+The MCP Connectors directory is a curated collection of pre-configured third-party Connectors your administrator can add to your organization.
+
+1. Open the `Connectors` page.
+2. Click `+ Add Connector`.
+3. Browse the directory or search for a specific Connector.
+4. Click a Connector to view its details and add it to your organization.
+5. Complete the authentication flow if required.
+
+Some Connectors in the directory require additional configuration (a custom URL or API key). You'll be prompted during setup.
+
+:::note
+This is an administrator-only feature. On Free, Pro, and Student plans, the account owner is the administrator by default.
+:::
+
+<SectionTab as="h2" sectionId="custom-connectors">Configuring a custom Connector</SectionTab>
+
+Custom Connectors let you connect Work to any MCP-compatible server. This is useful for internal tools, private APIs, or services that aren't in the directory.
+
+1. Open the `Connectors` page.
+2. Click `+ Add Connector` and switch to the `Custom MCP Connector` tab.
+3. Fill in the required fields:
+   - **Connector name**: a unique identifier (no spaces or special characters).
+   - **Server URL**: the full URL of your MCP-compatible server.
+   - **Description** (optional): a short explanation of what this Connector does.
+4. Click `Connect`. The platform detects the server's authentication method automatically.
+5. Complete the authentication flow if prompted.
+
+<SectionTab as="h3" variant="secondary" sectionId="supported-auth">Supported authentication methods</SectionTab>
+
+Our platform auto-detects the authentication method when you provide the server URL:
+
+- **No authentication**: for publicly accessible or trusted internal servers.
+- **HTTP Bearer Token / Basic Auth**: for servers that require credentials in the `Authorization` header.
+- **OAuth 2.1** (with dynamic client registration): for servers using standard OAuth 2.1 delegated access. You'll be guided through the consent flow.
+
+<SectionTab as="h2" sectionId="per-function-permissions">Per-function permissions</SectionTab>
+
+After setup, every user can control whether Work asks for permission each time it calls a Connector function, or whether it should be pre-authorized.
+
+1. Go to `Connectors` and select the `My Connectors` tab.
+2. Click the Connector card to open its details.
+3. Open the `Functions` tab.
+4. Toggle `Always allow` for each function you want to pre-authorize.
+
+MCP Connectors expose two types of functions:
+
+- **Read functions**: retrieve information (list events, search files, get data). Lower risk.
+- **Write functions**: perform actions (send emails, create events, modify records). Higher risk.
+
+:::tip
+Pre-authorize read functions you use frequently to reduce approval prompts. Keep write functions on manual approval until you're confident in the Connector's behavior.
+:::
+
+<SectionTab as="h2" sectionId="security">Security best practices</SectionTab>
+
+Since MCP Connectors connect Work to servers we haven't reviewed, you're responsible for vetting them. Keep these practices in mind:
+
+- **Vet every server you connect.** Check the publisher, review documentation, and verify the server's purpose before adding it.
+- **Watch for unexpected changes.** Server developers can update tools at any time, which may change behavior. Monitor Connector outputs periodically.
+- **Guard against prompt injection.** A malicious server could attempt to inject hidden instructions. Work has built-in protections, but review tool inputs and outputs for anything unexpected.
+- **Grant only the permissions you need.** Use the per-function `Always allow` toggle deliberately. Start with manual approval and only pre-authorize functions you trust.
+
+If you discover a malicious MCP server, report it to our support team.
+
+<SectionTab as="h2" sectionId="limitations">Current limitations</SectionTab>
+
+Custom MCP Connectors don't yet support all MCP capabilities:
+
+- [Dynamic tool discovery](https://modelcontextprotocol.io/specification/2025-06-18/server/tools)
+- [Resources](https://modelcontextprotocol.io/specification/2025-06-18/server/resources)
+- [Automatic prompt templates](https://modelcontextprotocol.io/specification/2025-06-18/server/prompts#prompts)
+
+We plan to add support for these in future updates.
+
+<SectionTab as="h2" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+If you see *"MCP connection requires additional information or is invalid"*, check the following:
+
+- **Endpoint URL**: make sure you're using the correct path (some servers use `/mcp` or `/sse`). Streamable HTTP is the current standard.
+- **Server reachability**: the server must be accessible over HTTPS with a valid TLS certificate.
+- **Authentication**: verify your credentials. OAuth servers should return a `401` with a `WWW-Authenticate` header; API key servers should return `200` on a valid request.
+- **MCP handshake**: the server must respond correctly to the `initialize` JSON-RPC call.
+
+:::tip
+Use the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) to test your server's compatibility before configuring it in Work.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="curl-checks">Quick checks with curl</SectionTab>
+
+**Test reachability:**
+```bash
+curl -I https://your-server.example.com/mcp
+```
+
+**Test API key authentication:**
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" https://your-server.example.com/mcp
+```
+
+**Test MCP initialize handshake:**
+```bash
+curl -X POST https://your-server.example.com/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{}}}'
+```
+
+A successful response includes `"result"` with the server's capabilities. An error response or timeout indicates a configuration issue on the server side.

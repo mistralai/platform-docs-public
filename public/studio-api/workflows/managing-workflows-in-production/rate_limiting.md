@@ -1,0 +1,113 @@
+---
+id: rate-limiting
+title: Rate Limiting
+sidebar_position: 1
+---
+
+# Rate Limiting in Workflows
+
+Rate limiting is a crucial aspect of workflow management that helps control resource consumption and prevent any single workflow or activity from monopolizing shared resources.
+
+<SectionTab as="h1" sectionId="how-rate-limiting-works">How Rate Limiting Works</SectionTab>
+
+Rate limits are always shared across all workers and workflows in the same task workspace (or `TEMPORAL_TASK_QUEUE` if configured). The `key` parameter controls how activities share these limits:
+
+<SectionTab as="h2" variant="secondary" sectionId="case-1-rate-limit-per-activity-no-key-provided">Case 1: Rate Limit Per Activity (No Key Provided)</SectionTab>
+
+When **no key is provided**, the rate limit applies to the activity itself and is shared across all workers and workflows that use it.
+
+**Use this when:** You want to protect a shared resource (like an API client) that should have a global rate limit regardless of which workflow is using it.
+
+<SectionTab as="h2" variant="secondary" sectionId="case-2-rate-limit-across-activities-key-provided">Case 2: Rate Limit Across Activities (Key Provided)</SectionTab>
+
+When **a key is provided**, multiple different activities that use the same key share a single rate limit pool across all workers and workflows.
+
+**Use this when:** You need to coordinate rate limits across multiple different activities (e.g., limiting total API calls across read, write, and delete operations using the same external service).
+
+<SectionTab as="h2" variant="secondary" sectionId="example-shared-rate-limited-api-client-no-key">Example: Shared Rate-Limited API Client (No Key)</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from mistralai.client import Mistral
+from mistralai.workflows import Depends
+from pydantic import BaseModel
+
+def get_mistral_client() -> Mistral:
+    """Creates a shared chat completion client with rate limiting"""
+    client = Mistral(
+        api_key="your_api_key",
+    )
+    return client
+
+class CompletionParams(BaseModel):
+    model: str
+    messages: list
+
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=100))
+async def generate_chat_response(
+    params: CompletionParams,
+    client: Mistral = Depends(get_mistral_client)
+) -> dict:
+    """Generates a chat response using a shared client"""
+    # This activity can be called from multiple workflows
+    # but will share the same rate limit across all of them
+    return await client.chat.complete_async(model=params.model, messages=params.messages)
+```
+
+  </TabItem>
+</Tabs>
+
+**Behavior**: All workflows calling `generate_chat_response` share the same 100 executions/sec limit. If Workflow A makes 60 calls and Workflow B makes 50 calls in the same second, they compete for the same pool.
+
+**With a key**: Add `key="mistral_api"` to share this limit across multiple activities (e.g., `generate_chat_response`, `generate_embeddings`, `moderate_content`).
+
+<SectionTab as="h1" sectionId="rate-limit-keys-and-poller-limits">Rate limit keys and poller limits</SectionTab>
+
+Each distinct rate limit key causes the SDK to spin up a separate internal Temporal worker. Combined with the main worker and the sticky-activity worker, a single worker process runs:
+
+- 1 main worker (workflows + default activities)
+- 1 sticky-activity worker
+- 1 additional worker **per distinct rate limit key**
+
+Each internal worker opens 5 workflow pollers and 5 activity pollers. With many distinct keys the total poller count grows quickly:
+
+| Distinct rate limit keys | Internal workers | Total pollers |
+|--------------------------|-----------------|---------------|
+| 0 | 2 | 20 |
+| 5 | 7 | 70 |
+| 12 | 14 | 140 |
+
+If the total exceeds your namespace's concurrent-poller quota you will see:
+
+```
+ResourceExhausted: namespace concurrent poller limit exceeded
+```
+
+Minimise the number of distinct keys. Activities that share the same external resource and the same budget can all use the same key:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# ❌ Avoid — each unique key creates an extra internal worker
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="ocr"))
+async def run_ocr(params: OcrParams) -> OcrResult: ...
+
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="classify"))
+async def classify_document(params: ClassifyParams) -> ClassifyResult: ...
+
+# ✅ Prefer — share one key across activities that hit the same resource
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="document_pipeline"))
+async def run_ocr(params: OcrParams) -> OcrResult: ...
+
+@workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="document_pipeline"))
+async def classify_document(params: ClassifyParams) -> ClassifyResult: ...
+```
+
+  </TabItem>
+</Tabs>
+
+The second approach uses a single internal worker for both activities instead of two, halving the poller count for that pair.

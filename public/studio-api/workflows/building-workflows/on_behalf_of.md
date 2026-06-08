@@ -1,0 +1,110 @@
+---
+id: on-behalf-of
+title: On-behalf-of workflows
+sidebar_position: 12
+---
+
+# On-behalf-of workflows
+
+:::warning
+On-behalf-of workflows require a [hardened deployment](/studio-api/workflows/managing-workflows-in-production/hardened_deployments). They cannot be registered in a non-hardened deployment.
+:::
+
+Some workflows need to act **as the user who triggered them** — for example, accessing the user's connectors, querying resources scoped to their workspace, or calling the Mistral API with their identity. On-behalf-of (OBO) mode makes this possible.
+
+When a workflow is marked as OBO, the platform captures the triggering user's identity at execution time and makes it available to the worker. The worker can then obtain short-lived credentials that represent that user, without ever seeing their API key or session token.
+
+<SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
+
+At execution time, the platform attaches the triggering user's identity to the execution context. When an activity requests user credentials, the SDK:
+
+1. Retrieves the execution token from the current workflow context.
+2. Exchanges it with the platform for a short-lived JWT representing the triggering user.
+3. Injects the JWT into the `Authorization` header of every outgoing request.
+4. Caches and refreshes the JWT automatically.
+
+From the activity's perspective, the client behaves like a normal Mistral client — the identity swap is transparent.
+
+<SectionTab as="h1" sectionId="enabling-obo-mode">Enabling OBO mode</SectionTab>
+
+Set `on_behalf_of=True` on the workflow definition:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.workflow.define(name="user_report", on_behalf_of=True)
+class UserReportWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, report_type: str) -> dict:
+        ...
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="using-user-credentials-in-activities">Using user credentials in activities</SectionTab>
+
+Inside an activity, create a Mistral client with `use_executor_credentials=True`:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import timedelta
+
+import mistralai.workflows as workflows
+from mistralai.workflows.client import get_mistral_client
+
+@workflows.workflow.define(name="user_search", on_behalf_of=True)
+class UserSearchWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, query: str) -> str:
+        return await search_with_user_identity(query)
+
+@workflows.activity(start_to_close_timeout=timedelta(seconds=30))
+async def search_with_user_identity(query: str) -> str:
+    client = get_mistral_client(use_executor_credentials=True)
+    response = await client.chat.complete_async(
+        model="mistral-medium-latest",
+        messages=[{"role": "user", "content": query}],
+    )
+    return response.choices[0].message.content
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="mixing-worker-and-user-credentials">Mixing worker and user credentials</SectionTab>
+
+You can call the Mistral API **as the worker** within an OBO workflow — for example, to ensure requests are rate-limited against the worker's workspace rather than the user's. Create a second client with `use_executor_credentials=False` (the default):
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity(start_to_close_timeout=timedelta(seconds=30))
+async def my_activity(query: str) -> str:
+    # Calls the API as the triggering user
+    user_client = get_mistral_client(use_executor_credentials=True)
+
+    # Calls the API as the worker (uses the worker's own API key)
+    worker_client = get_mistral_client(use_executor_credentials=False)
+    ...
+```
+
+  </TabItem>
+</Tabs>
+
+This lets you choose the right identity on a per-call basis within the same activity.
+
+<SectionTab as="h1" sectionId="constraints">Constraints</SectionTab>
+
+:::warning
+`on_behalf_of=True` **cannot** be combined with `schedules`. Scheduled executions have no triggering user, so the identity context would be undefined. This is enforced at both decorator time and registration time.
+:::
+
+- The caller must have a full user identity. Executions triggered by API keys without `user_id` / `organization_id` headers are rejected.
+- The identity JWT is short-lived and scoped to the execution. If the execution ends, the JWT can no longer be refreshed.

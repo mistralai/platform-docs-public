@@ -1,0 +1,43 @@
+---
+title: Vibe Code
+sidebar_label: Overview
+sidebar_position: 0
+---
+
+# Vibe Code
+
+Vibe Code is Vibe's **coding mode**. With read/write access to your filesystem, a shell, and a configurable set of tools, it can read files, run commands, write code, and open pull requests on your behalf, under your supervision.
+
+Run Vibe Code against a local checkout via the [CLI](/vibe/code/cli/install-setup) or the [VS Code extension](/vibe/code/vs-code-extension/install-authenticate), or against a GitHub repository in a remote sandbox via [Vibe Code Web](/vibe/code/vibe-code-web/get-started).
+
+:::info
+You stay in the loop. Vibe Code surfaces its plan, requests approval before sensitive actions (shell commands, file writes, pull requests), and can be interrupted at any step. Behavior is configurable per agent and per environment, see [Safety, approvals, and permissions](/vibe/code/safety-approvals-permissions).
+:::
+
+<SectionTab as="h2" sectionId="why-use-vibe-code">Why use Vibe Code</SectionTab>
+
+Common use cases:
+
+- **Write code**: describe what you want to build, and Vibe Code applies changes that follow your project structure and conventions.
+- **Explore and understand codebases**: ask Vibe Code to inspect files, explain architecture, and trace how systems fit together.
+- **Review code**: find bugs, logic errors, missing edge cases, and risky changes before they ship.
+- **Debug**: drop in an error, a failing test, or a stack trace, and let Vibe Code inspect the relevant context and propose a targeted fix.
+- **Automate development tasks**: delegate repetitive work such as refactors, tests, migrations, setup tasks, and pull request preparation.
+
+:::tip
+**Working outside the codebase?** Vibe Code is built primarily for source code work (files, repositories, commands, diffs, pull requests). For tasks that live across apps, documents, chats, meetings, or business tools, [Vibe Work](/vibe/work/get-started) is usually a better fit.
+:::
+
+<SectionTab as="h2" sectionId="set-up-vibe-code">Set up Vibe Code</SectionTab>
+
+Pick the interface that fits your workflow:
+
+<UsefullLinkContainer>
+  <LinkCard href="/vibe/code/cli/install-setup" title="Install the CLI" description="Run Vibe Code from your terminal." />
+  <LinkCard href="/vibe/code/vs-code-extension/install-authenticate" title="Install the VS Code extension" description="Use Vibe Code directly in VS Code." />
+  <LinkCard href="/vibe/code/vibe-code-web/get-started" title="Start a web session" description="Run a cloud session on a GitHub repository." />
+</UsefullLinkContainer>
+
+:::tip
+Not sure where to start? Compare the [CLI, VS Code extension, and Vibe Code Web](/vibe/code/choose-cli-vscode-web-sessions).
+:::

@@ -1,0 +1,114 @@
+---
+title: Install the Vibe CLI and send your first prompt
+sidebar_label: Install the Vibe CLI
+sidebar_position: 1
+description: "Install the Vibe CLI, configure your API key, and send your first prompt from the terminal. ~5 minutes."
+---
+
+# Install the Vibe CLI and send your first prompt
+
+Install the <AppLink href="/vibe/code/overview">Vibe CLI</AppLink>, register your API key, and send your first prompt directly from the terminal.
+
+- **One-line install**: get the CLI running in seconds on macOS or Linux.
+- **Setup wizard**: register your API key on first launch.
+- **Send a prompt**: have Vibe read your project and respond in the terminal.
+
+By the end you'll have the Vibe CLI installed, configured, and responding to prompts in your terminal.
+
+**Time to complete:** ~5 minutes
+
+<SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
+
+- macOS, Linux, or Windows.
+- Python 3.12 or later (for manual install).
+- *(Optional)* a Mistral account if you want to use Mistral-hosted models. The CLI also works fully [offline with local models](/vibe/code/cli/offline-models) or against any OpenAI-compatible API key you provide. See [API keys and profiles](/vibe/code/cli/api-keys-profiles) for the full provider matrix.
+
+:::tip
+On a different surface? See the [VS Code extension](/vibe/code/vs-code-extension/install-authenticate) or [Vibe Code Web](/vibe/code/vibe-code-web/get-started) guides.
+:::
+
+<SectionTab as="h2" sectionId="step-1">Step 1: Install the CLI</SectionTab>
+
+**One-liner (macOS/Linux)**
+
+Run this in your terminal:
+
+```bash
+curl -LsSf https://mistral.ai/vibe/install.sh | bash
+```
+
+The installer checks `uv` (Astral's Python tool installer), installs or upgrades `mistral-vibe`, and makes the `vibe` and `vibe-acp` commands available, provided your `PATH` is configured.
+
+**Manual install (macOS/Linux/Windows)**
+
+If you prefer manual setup, or you're on Windows:
+
+1. Confirm Python 3.12+ is installed: `python3 --version`.
+2. Install with your preferred package manager:
+
+```bash
+# With uv (recommended)
+uv tool install mistral-vibe
+
+# With pip
+pip install mistral-vibe
+```
+
+For Windows, install `uv` first via PowerShell, then run `uv tool install mistral-vibe`. See [Install and setup](/vibe/code/cli/install-setup) for the full per-platform instructions.
+
+<SectionTab as="h2" sectionId="step-2">Step 2: Launch and configure</SectionTab>
+
+1. Open a terminal in any project directory.
+2. Run:
+
+```bash
+vibe
+```
+
+![Vibe CLI running in a terminal](/assets/quickstarts/vibe/home.png)
+
+On first launch, the CLI runs a **setup wizard** to register your API key. By default it opens a browser to sign you in with your Mistral account; credentials are stored locally so you don't need to enter them again.
+
+For non-Mistral providers or automation, paste an API key instead. Where to generate one depends on your plan:
+
+- **Mistral plan** (Free, Pro, or higher): <AppLink href="https://chat.mistral.ai/code/extensions" app="studio">Code › Vibe CLI</AppLink>.
+- **Pay-as-you-go API access** (Free mode or Scale plan): <AppLink href="https://console.mistral.ai/home?profile_dialog=api-keys" app="studio">API keys</AppLink>.
+
+![Sign in on first launch](/assets/quickstarts/vibe/api-key.png)
+
+:::tip
+You can re-run the wizard anytime with `vibe --setup`.
+:::
+
+:::note
+If you run `vibe` for the first time in a non-empty project containing a `.vibe/` directory, the CLI asks whether you trust the folder before loading any local configuration. See [Trusted folders](/vibe/code/safety-approvals-permissions#trusted-folders).
+:::
+
+<SectionTab as="h2" sectionId="step-3">Step 3: Send your first prompt</SectionTab>
+
+Type a request directly in the prompt. For example:
+
+> List the files in this directory and explain what each one does.
+
+The CLI reads your project context and responds with relevant information. It can also generate code, edit files, and run shell commands when you approve.
+
+![Sending a query to the Vibe CLI](/assets/quickstarts/vibe/query.png)
+
+To run a shell command directly from the CLI, prefix it with `!`. For example: `!ls` or `!git status`.
+
+<SectionTab as="h2" sectionId="verify">Verify</SectionTab>
+
+You've completed the setup if:
+
+1. `vibe --version` returns a version number.
+2. You're signed in (or your API key is registered).
+3. The CLI responds to prompts with context-aware answers.
+
+<SectionTab as="h2" sectionId="whats-next">What's next</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/getting-started/quickstarts/vibe-code/scaffold-a-project" title="Scaffold a project with Vibe Code" />
+  <LinkCard href="/vibe/code/cli/api-keys-profiles" title="API keys and profiles" description="Switch providers, manage keys per profile." />
+  <LinkCard href="/vibe/code/choose-cli-vscode-web-sessions" title="Choose CLI, VS Code, or web sessions" />
+  <LinkCard href="/vibe/code/cli/install-setup" title="CLI install and setup reference" />
+</UsefullLinkContainer>

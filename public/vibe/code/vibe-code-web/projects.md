@@ -1,0 +1,72 @@
+---
+title: Projects
+sidebar_position: 2
+---
+
+# Projects
+
+A **project** is the workspace Vibe Code Web organizes everything around: one or more GitHub repositories, the sessions you run against them, and the history of past runs. This page covers how to create, manage, and delete projects.
+
+<SectionTab as="h2" sectionId="create-a-project">Create a project</SectionTab>
+
+Projects live in the Vibe Code Web left sidebar. To create one:
+
+1. Click the **+** button at the top of the **Projects** list.
+2. Select the repositories the project should work on. All repositories must belong to the **same GitHub owner** (user account or organization). You can add one or more.
+3. Click **Continue**.
+4. Enter a project name.
+5. Click **Create Project**.
+
+The project is added to your sidebar and ready to run sessions.
+
+:::note
+To work on repositories from another GitHub owner, create a separate project. See [GitHub repositories and permissions](/vibe/code/vibe-code-web/github-repositories-permissions) for the single-owner constraint.
+:::
+
+<SectionTab as="h2" sectionId="start-a-session">Start a session in a project</SectionTab>
+
+Open a project from the sidebar to see its sessions and start a new one. To start a session:
+
+- Type a prompt in the input at the bottom of the project view and send it. A session is created automatically.
+- Or click **+ New session** and enter your prompt there.
+
+All sessions started in the project are listed under it in the sidebar, like a chat history. The sidebar shows all sessions; selecting a project shows the sessions for that project. You can reopen a past session at any time to inspect commands, file changes, branch, and pull request.
+
+<SectionTab as="h2" sectionId="manage-sessions">Manage sessions</SectionTab>
+
+From a project view, you can:
+
+- **Reopen a past session** to inspect its activity stream, file changes, branch, and pull request. Past sessions are read-only: once the sandbox is deprovisioned, the session cannot be resumed or woken up. To continue, start a new session.
+- **Delete a session** to remove it from Vibe Code Web's session history. Active sessions cannot be deleted: wait for the session to end first.
+
+:::warning
+**Deletion is permanent and cannot be undone.** Deleting a session removes Vibe Code Web session history only. GitHub branches, commits, and pull requests the session produced stay in your repository.
+:::
+
+<SectionTab as="h2" sectionId="edit-project-details">Edit project details</SectionTab>
+
+Click **View project details** to open the project settings. From there, you can:
+
+- **Rename** the project.
+- **Detach** a linked repository.
+- **Add another repository** from the same GitHub owner.
+
+:::info
+Changes apply to **new sessions only**. Sessions already running keep their original repository scope.
+:::
+
+<SectionTab as="h2" sectionId="delete-a-project">Delete a project</SectionTab>
+
+To delete a project, open **View project details** and scroll to the **Danger zone**. Type the **full project name** to confirm, then click delete. A project with active sessions cannot be deleted: wait for sessions to end first.
+
+:::warning
+**Deletion is permanent and cannot be undone.** The Vibe Code Web project and all its session history are removed. GitHub branches, commits, pull requests, and the repositories themselves stay untouched in GitHub.
+:::
+
+<SectionTab as="h2" sectionId="next">Next steps</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/vibe/code/vibe-code-web/sessions" title="Sessions" description="Lifecycle, agent loop, branch and PR output." />
+  <LinkCard href="/vibe/code/vibe-code-web/github-repositories-permissions" title="GitHub repositories and permissions" description="App tokens, attribution, and the single-owner constraint." />
+  <LinkCard href="/vibe/code/vibe-code-web/limits-and-lifecycle" title="Limits and lifecycle" description="Session lifecycle, end states, and persistence." />
+</UsefullLinkContainer>

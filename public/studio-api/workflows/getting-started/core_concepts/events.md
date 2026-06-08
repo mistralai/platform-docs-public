@@ -1,0 +1,41 @@
+---
+id: core-concepts-events
+title: Events
+sidebar_position: 4
+---
+
+# Events
+
+Every significant action in a workflow's lifetime produces an **event**: the workflow started, an activity was scheduled, an activity completed, a signal was received, the workflow finished. These events are recorded in order, forming an append-only log called the **execution history**.
+
+<SectionTab as="h1" sectionId="why-events-matter">Why events matter</SectionTab>
+
+The execution history is what makes durable execution possible. It is the source of truth for a workflow's state. When a worker needs to resume a workflow (after a crash, a restart, or a task reassignment), it replays the execution history from the beginning.
+
+During replay, workflow code runs again from the top, but completed activities are not re-executed: their results are read back from the history. The workflow arrives back at exactly the point where it was interrupted, with no recovery code on your part.
+
+Reliable replay depends on workflow code being deterministic. See [Workflows > Determinism](/studio-api/workflows/getting-started/core_concepts/workflows#determinism) for the constraint and how the SDK enforces it.
+
+<SectionTab as="h1" sectionId="event-types">Event types</SectionTab>
+
+| Type | Emitted when |
+|------|-------------|
+| `WORKFLOW_EXECUTION_STARTED` | A workflow execution begins |
+| `WORKFLOW_EXECUTION_COMPLETED` | A workflow finishes successfully |
+| `WORKFLOW_EXECUTION_FAILED` | A workflow ends with an unhandled error |
+| `WORKFLOW_EXECUTION_CANCELED` | A workflow is canceled |
+| `WORKFLOW_EXECUTION_CONTINUED_AS_NEW` | A workflow resets its history |
+| `WORKFLOW_TASK_TIMED_OUT` | A workflow task exceeds its time limit |
+| `WORKFLOW_TASK_FAILED` | A workflow task encounters an error |
+| `ACTIVITY_TASK_STARTED` | An activity begins |
+| `ACTIVITY_TASK_COMPLETED` | An activity finishes successfully |
+| `ACTIVITY_TASK_RETRYING` | An activity is being retried |
+| `ACTIVITY_TASK_FAILED` | An activity fails |
+
+<SectionTab as="h1" sectionId="history-limits">History limits</SectionTab>
+
+Each execution history is bounded: **51,200 events** or **50MB**, whichever comes first. For workflows that run for a very long time or process very large volumes of work, the platform provides a mechanism called [**continue-as-new**](/studio-api/workflows/building-workflows/continue_as_new), which allows a workflow to carry its essential state forward into a fresh history without interrupting its execution.
+
+:::note
+The events described here are **execution history events**: the internal record of workflow progress used for durability and replay. The platform also supports **streaming events** that can be consumed in real time by external systems. These are a separate concept covered in [Streaming](/studio-api/workflows/building-workflows/streaming).
+:::

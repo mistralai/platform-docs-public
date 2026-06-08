@@ -1,0 +1,10 @@
+---
+title: Glossary
+sidebar_label: Glossary
+---
+
+# Glossary
+
+This glossary defines the key terms used throughout our documentation: models, API concepts, deployment options, and platform features. Each entry includes a short definition and links to the relevant documentation page. Use the search bar or letter filters to find a specific term.
+
+<InteractiveGlossary />

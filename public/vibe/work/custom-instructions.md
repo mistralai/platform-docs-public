@@ -1,0 +1,66 @@
+---
+title: Set custom instructions
+sidebar_position: 10
+---
+
+# Set custom instructions
+
+Custom instructions let you define **persistent preferences** that shape how Work responds across every task.
+
+:::note
+Think of them as a brief profile you give the assistant: your role, your domain, your preferred output style. Instead of repeating *"I work in compliance"* or *"use metric units"* at the start of each task, you set it once and Work applies it automatically.
+:::
+
+For teams, custom instructions help standardize how your organization interacts with Work, so everyone gets responses tailored to shared conventions, terminology, and formatting requirements.
+
+<SectionTab as="h2" sectionId="setup">Setting up custom instructions</SectionTab>
+
+1. In the left sidebar, click `Context` then `Instructions`.
+2. The Custom instructions pop-up opens.
+3. Choose a **Tone** and enter your instructions: describe your role, output format, or any context you want Work to assume.
+4. Save your changes.
+
+Your instructions take effect in all new tasks from that point on. Existing tasks aren't affected.
+
+:::info
+Custom instructions are included in the context Work uses to plan and execute every task, alongside your prompt, attached files, Connectors, Libraries, and Skills.
+:::
+
+<SectionTab as="h2" sectionId="interaction-with-other-features">Interactions with other features</SectionTab>
+
+Custom instructions apply alongside other context sources, but their priority depends on the feature.
+
+- **[Skills](/vibe/work/skills)**: when a Skill is active for a task, its instructions take precedence over your custom instructions. This lets you apply task-specific procedures without conflicting with your general preferences.
+- **[Projects](/vibe/work/projects)**: Projects can provide context tied to a specific work area. Both apply together for tasks inside a Project.
+- **Tools**: custom instructions shape how Work communicates with you, but they don't change how tools execute. For example, a Connector still queries the same data regardless of your formatting preferences.
+
+<SectionTab as="h2" sectionId="examples">Examples</SectionTab>
+
+A good custom instruction is short, specific, and tells Work something it can't infer from your prompts alone.
+
+**Role and domain expertise**
+- *"I'm a compliance officer at a European bank. Reference EU regulations (MiFID II, GDPR) when relevant."*
+- *"I'm a software engineer working with Python and TypeScript. Tailor code examples accordingly."*
+- *"When I ask about data, assume I'm working with PostgreSQL."*
+
+**Output formatting**
+- *"Structure all technical responses with Problem, Analysis, Solution, and Next Steps sections."*
+- *"Always format financial figures with two decimal places and include the currency symbol."*
+- *"Keep responses concise. Use bullet points instead of paragraphs."*
+
+**Language and tone**
+- *"Always respond in French unless I ask otherwise."*
+- *"Respond in British English. Use formal tone for client-facing content, casual for internal notes."*
+
+**Constraints**
+- *"Don't include disclaimers or caveats unless I'm asking about medical, legal, or financial advice."*
+- *"When generating code, always include error handling and type annotations."*
+
+<SectionTab as="h2" sectionId="what-to-avoid">What to avoid</SectionTab>
+
+Custom instructions work best when they're focused.
+
+- **Don't use them as a project brief.** They're meant for persistent preferences, not task descriptions. For task-specific context, use the prompt itself or [Projects](/vibe/work/projects).
+- **Don't contradict your prompts.** If your custom instruction says "always respond in French" but you ask questions in English and expect English answers, you'll get inconsistent results.
+- **Keep them concise.** A few well-written sentences work better than multiple paragraphs. The more focused your instructions, the more reliably Work follows them.
+- **Don't include secrets or credentials.** Custom instructions are persistent and apply across all your tasks.

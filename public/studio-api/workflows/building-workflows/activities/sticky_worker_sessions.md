@@ -1,0 +1,98 @@
+---
+id: sticky-worker-sessions
+title: Sticky worker sessions
+sidebar_position: 2
+---
+
+# Sticky worker sessions
+
+Sticky worker sessions route multiple activities to the same worker instance, letting you reuse resources and maintain state across activity calls.
+
+<SectionTab as="h1" sectionId="when-to-use">When to use</SectionTab>
+
+Reach for sticky sessions when several activities in a row need to hit the same expensive resource — a loaded ML model, an open database connection, a warmed cache. By pinning all the calls to the same worker, you load the resource once and reuse it across the whole sequence instead of paying the initialization cost on every activity. The same applies to stateful processing: if step *N+1* depends on in-memory state built up by step *N*, sticky sessions keep that state addressable without serializing it through the orchestrator.
+
+The trade-off is availability. A sticky session is bound to one specific worker; if that worker crashes or scales down, the session ends and remaining activities have to start over on a different worker (potentially with a cold cache). Long sessions also tie up worker capacity, so avoid them for workflows that run for hours or for any case where the per-call initialization cost is small enough to absorb on every activity.
+
+<SectionTab as="h1" sectionId="basic-usage">Basic usage</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows import run_sticky_worker_session
+
+# Worker-level state
+_loaded_model = None
+
+@workflows.activity(sticky_to_worker=True)
+async def load_model() -> None:
+    global _loaded_model
+    if _loaded_model is None:
+        _loaded_model = load_expensive_model()
+
+@workflows.activity(sticky_to_worker=True)
+async def predict(data: dict) -> dict:
+    return _loaded_model.predict(data)
+
+@workflows.workflow.define(name="ml-inference")
+class MLInferenceWorkflow:
+    @workflows.workflow.entrypoint
+    async def execute(self, batch: list[dict]) -> list[dict]:
+        # All activities run on same worker
+        async with run_sticky_worker_session():
+            await load_model()  # Load once
+            results = [await predict(item) for item in batch]
+        return results
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="session-reuse">Session reuse</SectionTab>
+
+Capture a session explicitly to reuse across multiple scopes:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.workflow.define(name="multi-batch")
+class MultiBatchWorkflow:
+    @workflows.workflow.entrypoint
+    async def execute(self, batches: list[list[dict]]) -> list[list[dict]]:
+        # Capture worker once
+        session = await get_sticky_worker_session()
+
+        all_results = []
+        for batch in batches:
+            async with run_sticky_worker_session(session):
+                results = [await process_item(item) for item in batch]
+                all_results.append(results)
+        return all_results
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="limitations">Limitations</SectionTab>
+
+:::warning
+**In-memory state only**: worker-level state lives in process memory. It is lost on worker restart or redeployment, and is not shared across workers. Use a database or external store for any state that must persist or be visible elsewhere.
+:::
+
+**Session breaks on worker failure:**
+
+- If the worker crashes or scales down, the session ends.
+- Subsequent activities route to a different worker.
+- Design activities to handle cold starts gracefully.
+
+**Worker resource contention:**
+
+- Long-running sessions tie up specific worker capacity.
+- Can create hot spots if many workflows target the same worker.
+- Monitor worker utilization to avoid resource starvation.
+
+The `sticky_to_worker` parameter does not apply to [local activities](/studio-api/workflows/building-workflows/activities/local_activities), which already run in the workflow worker process.
+
+For a comparison across activity flavors (regular, sticky, or local), see [Choosing an activity flavor](/studio-api/workflows/building-workflows/activities#choosing-an-activity-flavor) on the Activities parent page.

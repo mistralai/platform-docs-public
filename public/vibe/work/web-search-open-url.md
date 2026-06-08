@@ -1,0 +1,98 @@
+---
+title: Search the web
+sidebar_position: 5
+---
+
+# Search the web
+
+Work can browse the internet in real time and read specific web pages as part of a task. **Web search** answers questions with up-to-date, sourced information. **Open URL** lets Work read and analyze a page you already have the link to.
+
+:::info
+**Knowledge cutoff**: every language model is trained on data collected up to a fixed date. After that date, the model has no built-in knowledge of new events, releases, or facts. Web search and Open URL let Work go past that cutoff and answer with **verifiable, up-to-date sources**.
+:::
+
+:::note
+For multi-source, in-depth research with structured cited reports and PDF export, use [Deep Research](/vibe/chat-legacy/deep-research) in Chat. Deep Research isn't available in Work.
+:::
+
+<SectionTab as="h2" sectionId="web-search">Web search</SectionTab>
+
+Web search lets Work fetch current information from across the web and use it to answer your prompt.
+
+<SectionTab as="h3" variant="secondary" sectionId="web-search-activation">Activation</SectionTab>
+
+1. Click the `+` icon or type `/` in the chat window.
+2. Select `Tools` then enable `Web search`.
+
+When you ask a question that needs current information, Work **searches the web** and weaves the findings into its response. Ask your question naturally.
+
+<SectionTab as="h3" variant="secondary" sectionId="reading-results">Reading the results</SectionTab>
+
+When Work uses web search to answer your question, you'll notice:
+
+- A **globe icon** next to the response, confirming that web data was used.
+- **Inline links** pointing back to the original sources.
+- A `Sources` button at the bottom of the response that opens a panel listing every reference in one place.
+
+Every **web-sourced response comes with its references** so you can check the underlying material yourself.
+
+<SectionTab as="h3" variant="secondary" sectionId="news-search">News search</SectionTab>
+
+For news queries, Work draws from professional news partners [Agence France-Presse](https://www.afp.com/en) (AFP) and [Associated Press](https://apnews.com/) (AP), so results come from **verified, editorially vetted sources** you can cite with confidence.
+
+When news results are included, you'll see a **news icon** alongside the globe icon. Sources link directly to the original agency reporting, giving you reliable material for briefings or internal updates.
+
+:::tip
+For quick competitive or market intelligence, try prompts like *"Latest regulatory updates in [your industry]"* or *"Recent funding rounds in [sector]."*
+:::
+
+<SectionTab as="h2" sectionId="open-url">Open URL</SectionTab>
+
+Open URL lets you **bring web content directly into a Work chat**. Instead of copying and pasting text from a webpage, paste the URL and let Work fetch, read, and use the page content as context.
+
+<SectionTab as="h3" variant="secondary" sectionId="open-url-how-to-use">How to use</SectionTab>
+
+1. Ensure **Web Search** is enabled:
+    + Click the `+` icon or type `/` in the chat window.
+    + Select `Tools`.
+    + Enable `Web Search`. Without this, Work cannot browse the web.
+2. Paste a URL into the message box, along with your question or instruction.
+3. Send the message. Work fetches the page and uses its content to answer.
+
+You'll see a link icon and an `Opened Page` mention in the response, confirming that Work read the page content.
+
+:::tip
+Open URL also works with links to online files (PDFs, documents). Work fetches the file and answers your question with context.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="multiple-urls">Working with multiple URLs</SectionTab>
+
+You can paste **several URLs in a single chat**. Work keeps the content from each page in context, so you can ask follow-up questions that reference or compare them.
+
+For example, paste two competitor product pages and ask: *"Compare the feature sets described on these two pages."* Work uses both pages as context to generate a side-by-side comparison.
+
+<SectionTab as="h3" variant="secondary" sectionId="open-url-use-cases">Common use cases</SectionTab>
+
+- **Competitor analysis**: paste a competitor's product page and ask Work to extract features, pricing, or positioning.
+- **Documentation review**: share a docs page and ask for a summary, or check it against your own specifications.
+- **Article summarization**: drop in a long article and get the key takeaways.
+- **Meeting prep**: paste an agenda or briefing document hosted online and ask Work to highlight the most important items.
+
+<SectionTab as="h2" sectionId="choosing-the-right-tool">Choosing the right tool</SectionTab>
+
+Pick the option that fits your situation:
+
+| You want to... | Use |
+|----------------|-----|
+| Get a quick, up-to-date answer with sources | **Web search** |
+| Analyze a specific page you already have the link to | **Open URL** |
+| Get a structured, cited report pulling from many sources | **[Deep Research](/vibe/chat-legacy/deep-research)** (Chat legacy only) |
+| Search trusted internal documents | **[Libraries](/vibe/work/libraries)** |
+| Pull live data from a connected tool (Gmail, Drive, Notion...) | **[Connectors](/vibe/work/connectors)** |
+
+<SectionTab as="h2" sectionId="limitations">Limitations</SectionTab>
+
+- Open URL fetches only the single page at the URL you provide. It doesn't crawl the entire site or follow links.
+- Pages behind a login or paywall can't be accessed. Download the content and [upload it as a file](/vibe/work/files-and-canvas) instead.
+- Some highly interactive websites may not load fully, which can result in incomplete content.
+- Web search can return outdated or incomplete content depending on what the source page exposes.

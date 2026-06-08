@@ -1,0 +1,590 @@
+---
+id: concurrency
+title: Concurrency Patterns
+sidebar_position: 1
+---
+
+# Concurrency patterns: scale your workflows
+
+_Process thousands of items efficiently with Mistral Workflows' parallel execution patterns_
+
+<SectionTab as="h1" sectionId="overview">Overview</SectionTab>
+
+:::tip
+**Small batches**: For fewer than ~10,000 activities, `asyncio.gather` works well and keeps your code simple. Use the concurrency framework below when you need automatic continue-as-new, progress tracking, or are processing larger datasets that could exceed the 51,200-event history limit.
+:::
+
+For small batches, `asyncio.gather` is the simplest approach:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+@workflows.activity()
+async def process_item(item: str) -> dict:
+    return {"item": item, "result": f"processed:{item}"}
+
+class Input(BaseModel):
+    items: list[str]
+
+@workflows.workflow.define(name="concurrency_workflow")
+class ConcurrencyWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, params: Input) -> list[dict]:
+        results = await asyncio.gather(*[process_item(item) for item in params.items])
+        return list(results)
+
+async def main():
+    result = await workflows.execute_workflow(
+        ConcurrencyWorkflow,
+        params=Input(items=["alpha", "beta", "gamma", "delta"]),
+    )
+    for r in result:
+        print(r)
+```
+
+  </TabItem>
+  <TabItem value="output" label="Output">
+
+```
+{'item': 'alpha', 'result': 'processed:alpha'}
+{'item': 'beta', 'result': 'processed:beta'}
+{'item': 'gamma', 'result': 'processed:gamma'}
+{'item': 'delta', 'result': 'processed:delta'}
+```
+
+  </TabItem>
+</Tabs>
+
+Mistral Workflows provides a concurrency framework that enables you to execute activities in parallel across three distinct patterns:
+
+- **List Executor**: Process a known collection of items
+- **Chain Executor**: Process items sequentially from a stream/queue (token-based pagination)
+- **Offset Pagination Executor**: Process items by fetching pages/chunks by index
+
+All patterns provide automatic fault tolerance, progress tracking, and scalability for large datasets.
+
+<SectionTab as="h2" variant="secondary" sectionId="key-benefits">Key Benefits</SectionTab>
+
+- **Massive Parallelism**: Execute thousands of activities concurrently
+- **Automatic Continue-As-New**: Handle large datasets without hitting execution history limits (51,200 events)
+- **Type Safety**: Comprehensive type validation for all inputs and outputs
+- **Fault Tolerance**: Built-in error handling and retry mechanisms
+- **Progress Tracking**: Monitor execution progress through built-in observability features
+
+<SectionTab as="h1" sectionId="list-executor-pattern">List Executor Pattern</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="use-case-list">Use Case</SectionTab>
+
+Process a known collection of items where you have all items upfront.
+
+<SectionTab as="h2" variant="secondary" sectionId="when-to-use-list">When to Use</SectionTab>
+
+- Database query results
+- File contents or uploaded documents
+- API responses that return all items at once
+- Batch processing of users, files, or records
+
+<SectionTab as="h2" variant="secondary" sectionId="code-pattern-list">Code Pattern</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def process_item(item_id: int, value: str) -> dict:
+    # Process individual item
+    return {"processed_value": f"processed_{value}"}
+
+# ... (inside a workflow)
+# Execute in parallel
+items = [{"item_id": i, "value": f"item_{i}"} for i in range(1000)]
+results = await workflows.execute_activities_in_parallel(
+    activity=process_item,
+    items=items,
+    max_concurrent_scheduled_tasks=100  # Optional: limit concurrency
+)
+# ...
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="configuration-options-list">Configuration Options</SectionTab>
+
+| Parameter                        | Description                                                                                                                                                | Default |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `max_concurrent_scheduled_tasks` | Maximum number of concurrent activity executions that can be scheduled simultaneously. This limits how many activities are waiting to be executed at once. | 100     |
+| `extra_params`                   | Additional parameters to pass to the activity                                                                                                              | None    |
+
+**Note**: The List Executor doesn't use `max_concurrent_executions_per_worker` parameter. This parameter is only relevant for the Offset Pagination Executor.
+
+<SectionTab as="h1" sectionId="chain-executor-pattern">Chain Executor Pattern</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="use-case-chain">Use Case</SectionTab>
+
+Process items sequentially from a stream/queue using token-based pagination.
+
+<SectionTab as="h2" variant="secondary" sectionId="when-to-use-chain">When to Use</SectionTab>
+
+- AWS S3 ListObjects (uses ContinuationToken)
+- DynamoDB Scan/Query (uses LastEvaluatedKey)
+- Azure Blob Storage (uses marker)
+- Any API that uses continuation tokens instead of page numbers
+
+<SectionTab as="h2" variant="secondary" sectionId="code-pattern-chain">Code Pattern</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def process_item(item_id: int, value: str) -> dict:
+    # Process individual item
+    return {"processed_value": f"processed_{value}"}
+
+@workflows.activity()
+async def get_next_item(prev_item: dict | None) -> dict | None:
+    # Get next item from previous item
+    if prev_item is None:
+        # First item
+        return {"item_id": 0, "value": "item_0"}
+
+    next_id = prev_item["item_id"] + 1
+    if next_id >= 1000:  # Stop condition
+        return None
+
+    return {"item_id": next_id, "value": f"item_{next_id}"}
+
+# ... (inside a workflow)
+# Execute chain
+results = await workflows.execute_activities_in_parallel(
+    activity=process_item,
+    get_item_from_prev_item_activity=get_next_item
+)
+# ...
+```
+
+  </TabItem>
+</Tabs>
+
+**Note**: The Chain Executor doesn't use `max_concurrent_scheduled_tasks` or `max_concurrent_executions_per_worker` parameters.
+
+<SectionTab as="h2" variant="secondary" sectionId="how-it-works">How It Works</SectionTab>
+
+The Chain Executor separates **item discovery** (sequential) from **item processing** (parallel):
+
+1. **Item fetching is chained**: The executor calls `get_item_from_prev_item_activity` sequentially—first with `None` to get the first item, then with each result to get the next item, until the function returns `None`
+2. **Processing is parallelized**: As soon as an item is fetched, it's immediately dispatched for processing via the `activity` function. Items don't wait for each other to finish processing
+
+This means fetching item N+1 depends on item N's result, but _processing_ item N+1 runs concurrently with processing items 1 through N.
+
+<SectionTab as="h1" sectionId="offset-pagination-executor-pattern">Offset Pagination Executor Pattern</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="use-case-offset">Use Case</SectionTab>
+
+Process items by fetching pages/chunks using index-based pagination.
+
+<SectionTab as="h2" variant="secondary" sectionId="when-to-use-offset">When to Use</SectionTab>
+
+- Traditional REST APIs with page numbers
+- SQL database chunking with OFFSET/LIMIT
+- File processing by byte offset
+- Any index-based data fetching
+
+<SectionTab as="h2" variant="secondary" sectionId="code-pattern-offset">Code Pattern</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+@workflows.activity()
+async def process_item(item_id: int, value: str) -> dict:
+    # Process individual item
+    return {"processed_value": f"processed_{value}"}
+
+@workflows.activity()
+async def get_item_by_index(params: workflows.GetItemFromIndexParams) -> dict:
+    # Get item by index
+    return {
+        "item_id": params.idx,
+        "value": f"item_{params.idx}",
+        "extra_data": params.extra_params
+    }
+
+# Execute with offset pagination
+results = await workflows.execute_activities_in_parallel(
+    activity=process_item,
+    get_item_from_index_activity=get_item_by_index,
+    n_items=1000,  # Total number of items
+    max_concurrent_executions_per_worker=50,  # Optional: controls how many items are processed together
+    max_concurrent_scheduled_tasks=100,  # Optional: limit concurrent activity executions
+    extra_params={"batch_id": "daily_processing"}  # Optional: extra parameters
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="configuration-options-offset">Configuration Options</SectionTab>
+
+| Parameter                              | Description                                                                                                                                                | Default  |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `n_items`                              | Total number of items to process                                                                                                                           | Required |
+| `max_concurrent_scheduled_tasks`       | Maximum number of concurrent activity executions that can be scheduled simultaneously. This limits how many activities are waiting to be executed at once. | 100      |
+| `max_concurrent_executions_per_worker` | Controls how many items are processed together in a single activity execution. Only used by Offset Pagination Executor.                                    | 100      |
+| `extra_params`                         | Additional parameters to pass to the activity                                                                                                              | None     |
+
+**Note**: Items processed together are wrapped in a single activity. If any item fails, the entire group is retried together.
+
+<SectionTab as="h1" sectionId="offset-pagination-executor-best-practices">Offset Pagination Executor Best Practices</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="understanding-parameter-interactions">Understanding Parameter Interactions</SectionTab>
+
+The Offset Pagination Executor uses two key parameters:
+
+1. **`max_concurrent_executions_per_worker`**: Controls how many items are processed together in a single activity execution.
+2. **`max_concurrent_scheduled_tasks`**: Controls how many of these activity executions can run concurrently.
+
+**Example**: If you have 1000 items with `max_concurrent_executions_per_worker=10` and `max_concurrent_scheduled_tasks=5`, the system will:
+
+- Process items in groups of 10
+- Execute up to 5 groups concurrently
+- Process all items efficiently while maintaining manageable group sizes
+
+<SectionTab as="h2" variant="secondary" sectionId="retry-behavior-considerations">Retry Behavior Considerations</SectionTab>
+
+**Important**: All items processed together are wrapped in a single activity. This means:
+
+- **Pros**: Efficient processing, reduced overhead
+- **Cons**: If any single item in a group fails, the entire group is retried
+
+**Best Practices**:
+
+- Choose `max_concurrent_executions_per_worker` values that balance efficiency with retry granularity
+- Smaller values: More fine-grained retries, but higher overhead
+- Larger values: More efficient, but larger retry scope
+- Consider item failure rates when choosing values
+
+<SectionTab as="h2" variant="secondary" sectionId="performance-optimization-strategies">Performance Optimization Strategies</SectionTab>
+
+1. **For I/O-bound tasks** (API calls, database queries):
+
+   - Use larger groups (50-100 items)
+   - Higher `max_concurrent_scheduled_tasks` (100-200)
+   - Example: `max_concurrent_executions_per_worker=50, max_concurrent_scheduled_tasks=150`
+
+2. **For CPU-bound tasks**:
+
+   - Use smaller groups (5-20 items)
+   - Lower `max_concurrent_scheduled_tasks` (20-50)
+   - Example: `max_concurrent_executions_per_worker=10, max_concurrent_scheduled_tasks=30`
+
+3. **For mixed workloads**:
+   - Medium groups (20-50 items)
+   - Balanced concurrency (50-100)
+   - Example: `max_concurrent_executions_per_worker=25, max_concurrent_scheduled_tasks=75`
+
+<SectionTab as="h2" variant="secondary" sectionId="memory-and-resource-considerations">Memory and Resource Considerations</SectionTab>
+
+- **Group size impacts memory usage**: Larger groups consume more memory per activity
+- **Concurrency impacts resource contention**: Higher concurrency may lead to resource exhaustion
+- **Size limits**: Remember the 2MB input/output limit per activity
+
+<SectionTab as="h1" sectionId="advanced-features">Advanced Features</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="error-handling">Error Handling</SectionTab>
+
+The concurrency framework automatically handles:
+
+- Activity failures with retry mechanisms
+- Type validation errors
+- Workflow continuation for large datasets
+- Progress tracking and state management
+
+<SectionTab as="h2" variant="secondary" sectionId="performance-optimization">Performance Optimization</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="concurrency-limits">Concurrency Limits</SectionTab>
+
+Adjust concurrency based on your workload:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# For I/O-bound tasks (API calls, database queries)
+results = await workflows.execute_activities_in_parallel(
+    activity=api_call_activity,
+    items=items,
+    max_concurrent_scheduled_tasks=200  # Higher concurrency for I/O-bound
+)
+
+# For CPU-bound tasks
+results = await workflows.execute_activities_in_parallel(
+    activity=cpu_intensive_activity,
+    items=items,
+    max_concurrent_scheduled_tasks=50  # Lower concurrency for CPU-bound
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="batch-processing">Batch Processing</SectionTab>
+
+For very large datasets, the framework automatically handles continue-as-new:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# Process 100,000 items with List Executor - automatically continues as new workflow
+results = await workflows.execute_activities_in_parallel(
+    activity=process_item,
+    items=large_item_list,  # 100,000 items
+    max_concurrent_scheduled_tasks=100
+)
+
+# Process 100,000 items with Offset Pagination Executor
+results = await workflows.execute_activities_in_parallel(
+    activity=process_item,
+    get_item_from_index_activity=get_item_by_index,
+    n_items=100000,
+    max_concurrent_executions_per_worker=100,  # Process 100 items together per activity
+    max_concurrent_scheduled_tasks=50  # Execute 50 activities concurrently
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="real-world-examples">Real-World Examples</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="document-processing-pipeline">Document Processing Pipeline</SectionTab>
+
+Extract text from a set of documents in parallel using an OCR service. Each document is processed as a separate activity, so failures are isolated — a single failed extraction doesn't block the rest.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity()
+async def extract_text(document_id: str, content: str, metadata: dict) -> dict:
+    # Use OCR or text extraction
+    extracted_text = await ocr_service.extract(content)
+    return {
+        "document_id": document_id,
+        "extracted_text": extracted_text,
+        "analysis_results": {}
+    }
+
+# Process all documents in parallel
+documents = await fetch_documents_from_storage()
+results = await workflows.execute_activities_in_parallel(
+    activity=extract_text,
+    items=documents
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="batch-data-transformation">Batch Data Transformation</SectionTab>
+
+Enrich user records by fetching data from multiple external services. The `max_concurrent_scheduled_tasks` parameter caps how many activities run at once, preventing you from overwhelming downstream services.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity()
+async def enrich_user_data(user_id: str, name: str, email: str) -> dict:
+    # Fetch additional data from external services
+    profile_score = await analytics_service.calculate_score(user_id)
+    recommendations = await recommendation_service.get_recommendations(user_id)
+
+    return {
+        "user_id": user_id,
+        "name": name,
+        "email": email,
+        "profile_score": profile_score,
+        "recommendations": recommendations
+    }
+
+# Enrich all users in parallel
+users = await database.get_all_users()
+enriched_users = await workflows.execute_activities_in_parallel(
+    activity=enrich_user_data,
+    items=users,
+    max_concurrent_scheduled_tasks=50
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="multi-service-orchestration">Multi-Service Orchestration</SectionTab>
+
+Process pending orders by coordinating payment, inventory, and shipping services. Each order is handled as its own activity, and within each activity the service calls run in parallel.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+@workflows.activity()
+async def process_order(order_id: str, customer_id: str, items: list[str]) -> dict:
+    # Call multiple services in parallel
+    payment_result = await payment_service.process(order_id)
+    inventory_result = await inventory_service.reserve(items)
+    shipping_result = await shipping_service.schedule(order_id)
+
+    return {
+        "order_id": order_id,
+        "status": "processed",
+        "fulfillment_details": {
+            "payment": payment_result,
+            "inventory": inventory_result,
+            "shipping": shipping_result
+        }
+    }
+
+# Process all orders in parallel
+orders = await fetch_pending_orders()
+results = await workflows.execute_activities_in_parallel(
+    activity=process_order,
+    items=orders
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="performance-considerations">Performance Considerations</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="memory-usage">Memory Usage</SectionTab>
+
+- Large datasets are processed efficiently to avoid memory issues
+- The continue-as-new mechanism ensures workflow state remains manageable
+- Each activity execution is isolated with its own memory footprint
+
+<SectionTab as="h2" variant="secondary" sectionId="network-io-optimization">Network I/O Optimization</SectionTab>
+
+- Activities can be executed on workers close to data sources
+- Use `sticky_to_worker=True` for activities that benefit from locality
+- Configure appropriate concurrency limits based on network bandwidth
+
+<SectionTab as="h2" variant="secondary" sectionId="error-recovery">Error Recovery</SectionTab>
+
+- Failed activities are automatically retried according to their retry policy
+- The framework maintains progress state, so only failed items need reprocessing
+
+<SectionTab as="h2" variant="secondary" sectionId="monitoring-and-alerting">Monitoring and Alerting</SectionTab>
+
+- Implement custom event recording with `workflows.record_event()`
+- Set up alerts for long-running or failed executions
+
+<SectionTab as="h1" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="common-issues">Common Issues</SectionTab>
+
+**Issue**: `ValueError: 'activity' must be an activity, please decorate it with @workflows.activity`
+
+**Solution**: Ensure your activity function is decorated with `@workflows.activity()`
+
+**Issue**: `ValueError: Must specify one execution pattern`
+
+**Solution**: Provide exactly one of: `items`, `get_item_from_prev_item_activity`, or `get_item_from_index_activity`
+
+**Issue**: Excessive retries with Offset Pagination Executor
+
+**Solution**: If you're experiencing excessive retries with the Offset Pagination Executor, consider:
+
+- Reducing `max_concurrent_executions_per_worker` to create smaller groups of items
+- Investigating individual item failures that might be causing entire groups to retry
+- Adding better error handling within your activity to prevent failures
+
+**Issue**: Memory issues with large groups
+
+**Solution**: If you encounter memory issues:
+
+- Reduce `max_concurrent_executions_per_worker` to process fewer items together
+- Ensure individual items are not too large (remember the 2MB limit)
+- Monitor memory usage and adjust group sizes accordingly
+
+<SectionTab as="h2" variant="secondary" sectionId="debugging-tips">Debugging Tips</SectionTab>
+
+1. **Check Activity Signatures**: Ensure all activities have proper type annotations
+2. **Validate Concurrency Limits**: Start with lower concurrency and increase gradually
+3. **Use Logging**: Add detailed logging in your activities for debugging
+4. **Offset Pagination Debugging**: For Offset Pagination Executor issues:
+   - Start with small values (e.g., `max_concurrent_executions_per_worker=1`)
+   - Check for individual item failures that might affect entire groups
+
+<SectionTab as="h1" sectionId="api-reference">API Reference</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="execute-activities-in-parallel-function">`execute_activities_in_parallel()` Function</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+async def execute_activities_in_parallel(
+    activity: Callable[[T], Awaitable[U]],
+    *,
+    # List Executor
+    items: List[T] | None = None,
+    max_concurrent_scheduled_tasks: int = DEFAULT_MAX_CONCURRENT_SCHEDULED_TASKS,
+
+    # Chain Executor
+    get_item_from_prev_item_activity: Callable[[T | None], Awaitable[T | None]] | None = None,
+
+    # Offset Pagination Executor
+    get_item_from_index_activity: Callable[[GetItemFromIndexParams], Awaitable[T]] | None = None,
+    n_items: int | None = None,
+    max_concurrent_executions_per_worker: int = DEFAULT_MAX_CONCURRENT_EXECUTIONS_PER_WORKER,
+
+    # Common
+    extra_params: Dict[str, Any] | None = None,
+) -> None | List[U]
+```
+
+  </TabItem>
+</Tabs>
+
+**Parameters**:
+
+- `activity`: The activity function to execute on each item
+- `items`: List of items to process (List Executor)
+- `get_item_from_prev_item_activity`: Function to get next item from previous (Chain Executor)
+- `get_item_from_index_activity`: Function to get item by index (Offset Pagination Executor)
+- `n_items`: Total number of items (Offset Pagination Executor)
+- `max_concurrent_scheduled_tasks`: Maximum number of concurrent activity executions that can be scheduled simultaneously. Applies to List Executor and Offset Pagination Executor only.
+- `max_concurrent_executions_per_worker`: **Only for Offset Pagination Executor** - Controls how many items are processed together in a single activity execution.
+- `extra_params`: Extra parameters to pass to activities
+
+**Parameter Usage by Executor**:
+
+| Executor                   | `max_concurrent_scheduled_tasks` | `max_concurrent_executions_per_worker` |
+| -------------------------- | -------------------------------- | -------------------------------------- |
+| List Executor              | ✅ Yes                           | ❌ No                                  |
+| Chain Executor             | ❌ No                            | ❌ No                                  |
+| Offset Pagination Executor | ✅ Yes                           | ✅ Yes                                 |
+
+**Returns**:
+
+- `None` if activity returns None
+- `List[U]` list of activity results
+
+**Raises**:
+
+- `ValueError`: If activity is not properly decorated or parameters are invalid

@@ -46,7 +46,23 @@ You write conditions on event fields and combine them with `AND`, `OR`, and pare
 | `ends_with`       | Ends with substring              | `model_name endswith "-2508"`                 |
 | `matches`         | Regex match                      | `model_name matches ".+-8b-.+"`              |
 
-{/* TODO add a reference table of available fields with their types (check with @gaspard2) */}
+### Available fields
+
+| Field (UI label) | Filter name | Type | Description |
+|---|---|---|---|
+| Date | `timestamp` | datetime | Time when the request was processed |
+| Model | `model_name` | string | Name of the model that generated the response |
+| Prompt | `last_user_message_preview` | string | Preview of the last user message |
+| Response | `response_messages_preview` | string | Preview of the assistant's response |
+| Tools: Invoked tools | `invoked_tools` | list | Tools called during the request |
+| Computation duration (s) | `total_time_elapsed` | number | Total request duration in seconds |
+| Input Tokens | `input_tokens` | number | Number of input tokens consumed |
+| Output Tokens | `output_tokens` | number | Number of output tokens generated |
+| API Agent ID | `api_agent_id` | string | ID of the agent that handled the request, if any |
+| Event ID | `event_id` | string | Unique identifier for the event |
+| Correlation ID | `correlation_id` | string | Identifier used to trace a request across systems |
+| First system message | `first_system_message` | string | Preview of the first system prompt |
+| Metadata | `metadata` | object | Custom key-value metadata attached to the request |
 
 ### Examples
 

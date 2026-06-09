@@ -63,7 +63,7 @@ async for event in client.workflows.events.get_stream_events(
         print(f"Ended: {event_type}")
         break
     else:
-        record_event(event)
+        print(f"Event: {event_type}")
 ```
 
   </TabItem>

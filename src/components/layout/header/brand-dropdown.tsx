@@ -34,10 +34,10 @@ export const BrandProductDropdown = ({
     label: headerDropdownLabel(item.id, l),
     icon: match(item.id)
       .with('vibe', () => (
-        <Image src={PRODUCT_LOGOS['vibe']} alt="Vibe" width={20} height={20} className="rounded size-4 lg:size-5" />
+        <Image src={PRODUCT_LOGOS['vibe']} alt="Vibe" width={20} height={20} className="rounded size-4 lg:size-5 brightness-0 invert" />
       ))
       .with('ai-studio', () => (
-        <Image src={PRODUCT_LOGOS['studio']} alt="Studio" width={20} height={20} className="rounded size-4 lg:size-5" />
+        <Image src={PRODUCT_LOGOS['studio']} alt="Studio" width={20} height={20} className="rounded size-4 lg:size-5 brightness-0 invert" />
       ))
       .with('admin', () => (
         <SettingsIcon className="size-4 lg:size-5 text-black dark:text-foreground" />

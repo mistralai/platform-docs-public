@@ -31,6 +31,7 @@ Mistral Document AI API comes with a Document OCR (Optical Character Recognition
 - Handles complex layouts including multi-column text and mixed content and returns hyperlinks when available.
 - Provides **confidence scores** for extracted content at word or page granularity via the `confidence_scores_granularity` parameter.
 - Processes documents at scale with high accuracy
+- **Multilingual**: strong performance across 40+ languages. See the full [supported languages](/resources/languages#ocr) list.
 - Supports multiple document formats including:
     - `image_url`: png, jpeg/jpg, avif and more...
     - `document_url`: pdf, pptx, docx and more...

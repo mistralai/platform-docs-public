@@ -96,7 +96,7 @@ Here is a list of available variables:
 
 | Variable                       | What it contains                                    |
 |--------------------------------|-----------------------------------------------------|
-| `{{ conversation_history }}`   | The full conversation history (messages in order).  |
+| `{{ conversation_history }}`   | The conversation history **before** the last turn.  |
 | `{{ user_message }}`           | The user's last message.                            |
 | `{{ assistant_message }}`      | The assistant's last response.                      |
 | `{{ system_prompt }}`          | The system prompt used during the request.          |
@@ -160,6 +160,9 @@ classifier = mistral.beta.observability.judges.create(
 Conversation:
 {{ conversation_history }}
 
+User: {{ user_message }}
+Assistant: {{ assistant_message }}
+
 Evaluate the assistant's final response based on:
 - Accuracy and correctness
 - Helpfulness and relevance
@@ -190,6 +193,9 @@ scorer = mistral.beta.observability.judges.create(
 
 Conversation:
 {{ conversation_history }}
+
+User: {{ user_message }}
+Assistant: {{ assistant_message }}
 
 Score from 1 to 5:
 1 = Completely unhelpful or harmful
@@ -230,6 +236,9 @@ classifier = mistral.beta.observability.judges.create(
 Conversation:
 {{ conversation_history }}
 
+User: {{ user_message }}
+Assistant: {{ assistant_message }}
+
 Evaluate the assistant's final response based on:
 - Accuracy and correctness
 - Helpfulness and relevance
@@ -260,6 +269,9 @@ scorer = mistral.beta.observability.judges.create(
 
 Conversation:
 {{ conversation_history }}
+
+User: {{ user_message }}
+Assistant: {{ assistant_message }}
 
 Score from 1 to 5:
 1 = Completely unhelpful or harmful
@@ -302,6 +314,9 @@ judge = mistral.beta.observability.judges.create(
 
 Conversation:
 {{ conversation_history }}
+
+User: {{ user_message }}
+Assistant: {{ assistant_message }}
 
 Expected output:
 {{ properties.expected_output }}

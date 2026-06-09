@@ -1,5 +1,5 @@
 ---
-title: Introduction
+title: Document Processing
 sidebar_position: 1
 ---
 
@@ -14,7 +14,7 @@ Mistral Document AI offers enterprise-level document processing, combining OCR t
   centered
 />
 
-Use multilingual support, annotations, and adaptable workflows for all document types to extract, comprehend, and analyze information.
+Use multilingual support, annotations, and adaptable workflows for all document types to extract, comprehend, and analyze information. See the full list of [supported languages](/resources/languages#ocr).
 
 <SectionTab as="h1" sectionId="document-ai-services">Document AI services</SectionTab>
 

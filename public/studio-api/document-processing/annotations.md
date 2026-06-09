@@ -1,6 +1,6 @@
 ---
 id: annotations 
-title: Annotations
+title: Document Annotations
 slug: annotations
 sidebar_position: 3.2
 ---

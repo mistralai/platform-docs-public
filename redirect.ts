@@ -91,6 +91,8 @@ const rawRedirects: RedirectRule[] = [
   { source: "/capabilities/completion/prompting_capabilities", destination: "/studio-api/conversations/chat-completion/prompting", permanent: true },
   { source: "/capabilities/completion/sampling", destination: "/models/best-practices/sampling", permanent: true },
   { source: "/capabilities/vision", destination: "/studio-api/conversations/vision", permanent: true },
+  { source: "/capabilities/audio", destination: "/studio-api/audio/overview", permanent: true },
+  { source: "/studio-api/audio", destination: "/studio-api/audio/overview", permanent: true },
   { source: "/capabilities/audio/speech_to_text", destination: "/studio-api/audio/speech_to_text", permanent: true },
   { source: "/capabilities/audio/speech_to_text/offline_transcription", destination: "/studio-api/audio/speech_to_text/offline_transcription", permanent: true },
   { source: "/capabilities/audio/speech_to_text/realtime_transcription", destination: "/studio-api/audio/speech_to_text/realtime_transcription", permanent: true },

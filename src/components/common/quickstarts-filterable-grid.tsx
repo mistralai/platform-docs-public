@@ -120,6 +120,26 @@ export function QuickstartsFilterableGrid({ categories }: { categories?: Exclude
       alt: 'Studio',
       activeBorder: 'hover:border-[#0082E6]/50',
     },
+    {
+      category: 'studio',
+      title: l.text('Create a reusable Prompt', { context: 'Quickstart title about creating a reusable Prompt in Studio' }),
+      description: l.text('Save a prompt template with versions and a clear usage description.', { context: 'Quickstart description about creating a reusable Prompt in Studio' }),
+      time: '5 min',
+      href: '/getting-started/quickstarts/studio/create-reusable-prompt',
+      logo: PRODUCT_LOGOS['studio'],
+      alt: 'Studio',
+      activeBorder: 'hover:border-[#0082E6]/50',
+    },
+    {
+      category: 'studio',
+      title: l.text('Create a Skill in Studio', { context: 'Quickstart title about creating a Skill in Studio' }),
+      description: l.text('Package reusable instructions and files into a Skill for repeated tasks.', { context: 'Quickstart description about creating a Skill in Studio' }),
+      time: '10 min',
+      href: '/getting-started/quickstarts/studio/create-skill',
+      logo: PRODUCT_LOGOS['studio'],
+      alt: 'Studio',
+      activeBorder: 'hover:border-[#0082E6]/50',
+    },
     // Developer (filtered under Studio)
     {
       category: 'developer',

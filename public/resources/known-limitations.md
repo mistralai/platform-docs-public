@@ -11,12 +11,17 @@ This page documents current limitations of the Mistral platform. We actively wor
 
 | Model | Max context length |
 |-------|-------------------|
-| Mistral Small | 32,768 tokens |
-| Mistral Medium | 32,768 tokens |
-| Mistral Large | 131,072 tokens |
-| Codestral | 32,768 tokens |
-| Ministral 3B / 8B | 131,072 tokens |
-| Pixtral Large | 131,072 tokens |
+| Mistral Large 3 | 256k tokens |
+| Mistral Medium 3.5 | 256k tokens |
+| Mistral Medium 3.1 | 128k tokens |
+| Mistral Small 4 | 256k tokens |
+| Codestral | 128k tokens |
+| Devstral 2 | 256k tokens |
+| Magistral Medium 1.2 | 128k tokens |
+| Ministral 3 (3B / 8B / 14B) | 256k tokens |
+| Mistral Nemo 12B | 128k tokens |
+
+For the full and up-to-date list, see the [model cards](/models/model-cards).
 
 - Requests exceeding the model's context window return a `400 Bad Request` error.
 - Token counts include both input and output tokens. Plan your `max_tokens` accordingly.
@@ -26,7 +31,8 @@ This page documents current limitations of the Mistral platform. We actively wor
 Rate limits vary by subscription tier and model. When exceeded, the API returns `429 Too Many Requests`.
 
 - **Requests per second** and **tokens per minute** are enforced independently.
-- Limits apply per API key, not per workspace.
+- Limits apply per organization.
+- You can check your current rate limits in the [limits page](https://admin.mistral.ai/plateforme/limits).
 - [Batch processing](/studio-api/batch-processing) does not count against real-time rate limits.
 
 :::tip

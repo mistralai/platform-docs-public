@@ -27,13 +27,13 @@ export const ActiveElementHashProvider: React.FC<{
   const observerRef = React.useRef<IntersectionObserver | null>(null);
   const visibleSectionsRef = React.useRef<Set<string>>(new Set());
 
+  React.useLayoutEffect(() => {
+    setActiveElementHash(window.location.hash);
+  }, []);
+
   React.useEffect(() => {
     setActiveElementHash('');
   }, [pathname]);
-
-  React.useEffect(() => {
-    setActiveElementHash(window.location.hash);
-  }, []);
 
   React.useEffect(() => {
     const updateActiveHash = () => {

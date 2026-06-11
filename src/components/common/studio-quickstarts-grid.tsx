@@ -29,6 +29,18 @@ export function StudioQuickstartsGrid() {
                 time: '5 min',
                 href: '/getting-started/quickstarts/studio/test-model-playground',
             },
+            {
+                title: l.text('Create a reusable Prompt', { context: 'Quickstart title about creating a reusable Prompt in Studio' }),
+                description: l.text('Save a prompt template with versions and a clear usage description.', { context: 'Quickstart description about creating a reusable Prompt in Studio' }),
+                time: '5 min',
+                href: '/getting-started/quickstarts/studio/create-reusable-prompt',
+            },
+            {
+                title: l.text('Create a Skill in Studio', { context: 'Quickstart title about creating a Skill in Studio' }),
+                description: l.text('Package reusable instructions and files into a Skill for repeated tasks.', { context: 'Quickstart description about creating a Skill in Studio' }),
+                time: '10 min',
+                href: '/getting-started/quickstarts/studio/create-skill',
+            },
         ],
     };
 

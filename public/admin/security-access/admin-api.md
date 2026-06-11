@@ -19,7 +19,3 @@ Use the Admin API to automate:
 <SectionTab as="h1" sectionId="authentication">Authentication</SectionTab>
 
 Admin API requests require an API key that belongs to a user with the **Admin** role in the Organization. Standard API keys with Member or Billing roles don't have access to administrative endpoints.
-
-<SectionTab as="h1" sectionId="reference">API reference</SectionTab>
-
-See the [API reference](/api) for endpoint documentation.

@@ -64,7 +64,7 @@ function TypeRenderer({
       return (
         <>
           {node.children.map((child, index) => (
-            <React.Fragment key={child.hash || index}>
+            <React.Fragment key={child.hash ? `${child.hash}-${index}` : index}>
               {index > 0 && <span className="mx-1">|</span>}
               <TypeRenderer node={child} onClickType={onClickType} />
             </React.Fragment>

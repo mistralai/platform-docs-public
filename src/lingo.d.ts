@@ -225,6 +225,8 @@ declare module "@lingo.dev/react" {
     "Copy section link": { context: "Accessible label for copying a section URL" | "Command to copy a section URL" };
     "Create AI assistants for specific workflows. Define custom system instructions, attach tools (like MCP connectors), link knowledge bases, and share them securely with your team.": { context: "Detailed description of the Custom Agents feature" };
     "Create isolated workspaces, generate keys, and set usage limits.": { context: "Quickstart description about managing workspaces and API keys" };
+    "Create a reusable Prompt": { context: "Quickstart title about creating a reusable Prompt in Studio" };
+    "Create a Skill in Studio": { context: "Quickstart title about creating a Skill in Studio" };
     "Create tutorials, blog posts, or other educational content showcasing Mistral AI capabilities.": { context: "Description of a Mistral ambassador responsibility" };
     "Create your first Skill": { context: "Quickstart title about creating a first Skill in Vibe Work" };
     "Create your organization": { context: "Quickstart title about create your organization quickstart (used as browser tab title and on" | "Quickstart title about creating an organization" };
@@ -515,6 +517,7 @@ declare module "@lingo.dev/react" {
     "Output Cost": { context: "Tooltip label for output token price" };
     "Overview": { context: "Title of a navigation card to the full AI model catalog" };
     "Package a repeatable method into a Skill so Work applies the same procedure every time.": { context: "Quickstart description about creating a first Skill in Vibe Work" };
+    "Package reusable instructions and files into a Skill for repeated tasks.": { context: "Quickstart description about creating a Skill in Studio" };
     "Parameters": { context: "Keyword tag for the Playground feature" };
     "PARAMETERS": { context: "Row label for total model parameters" };
     "Participate in Mistral AI events, webinars, and community gatherings as a representative.": { context: "Description of a Mistral ambassador responsibility" };
@@ -578,6 +581,7 @@ declare module "@lingo.dev/react" {
     "SaaS (Studio)": { context: "Name of the SaaS deployment option for Mistral Studio" };
     "SAML": { context: "Keyword tag for the Single Sign-On (SSO) feature" };
     "SAML-based authentication": { context: "Short description of the Single Sign-On (SSO) feature" };
+    "Save a prompt template with versions and a clear usage description.": { context: "Quickstart description about creating a reusable Prompt in Studio" };
     "Scaffold a durable AI pipeline, run a worker, and trigger your first execution.": { context: "Quickstart description about building a workflow" };
     "Scaffold a project with Vibe Code": { context: "Quickstart title about scaffolding a project with Vibe Code" };
     "Scale plan": { context: "Glossary term for the pay-as-you-go API tier" };

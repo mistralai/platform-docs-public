@@ -114,10 +114,8 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
   hashResponsive?: boolean;
   forceExpandAll?: boolean;
 }) => {
-  const { expandedCategories, isHydrated, toggleCategory } = useSidebarExpandedCategories(
-    sidebar,
-    expandedCategoriesOptions
-  );
+  const { expandedCategories, isHydrated, toggleCategory } =
+    useSidebarExpandedCategories(sidebar, expandedCategoriesOptions);
   const [lastActiveItem, setLastActiveItem] = React.useState<T | null>(null);
 
   const contextValue = useMemo(
@@ -166,20 +164,23 @@ const SidebarFileItem = <T extends SideBarTreeNode>({
 } & React.HTMLAttributes<HTMLDivElement>) => {
   const { setOpenMobile } = useSidebar();
   const { renderItem } = useExpandedCategories();
-  const Content = renderItem ?? (props => {
-    const it = props.item as any;
-    if (it.method) {
-      return (
-        <div className="flex items-center gap-2 min-w-0 w-full">
-           <MethodBadge active={isActive}>{it.method}</MethodBadge>
-           <span className="truncate leading-tight mt-[1px]">{it.label}</span>
-        </div>
-      );
-    }
-    return <span className="truncate">{it.label}</span>;
-  });
+  const Content =
+    renderItem ??
+    (props => {
+      const it = props.item as any;
+      if (it.method) {
+        return (
+          <div className="flex items-center gap-2 min-w-0 w-full">
+            <MethodBadge active={isActive}>{it.method}</MethodBadge>
+            <span className="truncate leading-tight mt-px">{it.label}</span>
+          </div>
+        );
+      }
+      return <span className="truncate">{it.label}</span>;
+    });
   const href = item.href!;
   const itemRef = React.useRef<HTMLAnchorElement>(null);
+  const basePathname = usePathname();
 
   React.useEffect(() => {
     if (isActive && itemRef.current) {
@@ -191,7 +192,8 @@ const SidebarFileItem = <T extends SideBarTreeNode>({
         });
       }, 100);
     }
-  }, [isActive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basePathname]);
 
   return (
     <SidebarMenuItem>
@@ -229,13 +231,15 @@ const SidebarFirstLevelCategoryItem = <T extends SideBarTreeNode>({
         {item.clickable && item.href ? (
           <Link
             className={cn(
-              "flex items-center gap-1.5 transition-colors",
-              isActive ? "text-foreground font-bold" : "hover:text-foreground"
+              'flex items-center gap-1.5 transition-colors',
+              isActive ? 'text-foreground font-bold' : 'hover:text-foreground'
             )}
             href={item.href}
           >
             {item.label}
-            {(item.label === 'API Reference' || item.isExternalLink) && <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />}
+            {(item.label === 'API Reference' || item.isExternalLink) && (
+              <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />
+            )}
           </Link>
         ) : (
           item.label
@@ -295,17 +299,19 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
     ? overridedExpandedCategories[pathname]
     : [getHrefSlugs(pathname)];
 
-  const hasActiveDescendant = !!item.href && currentSlugs.some(currentSlug =>
-    isPathContained(getHrefSlugs(item.href!), currentSlug)
-  );
+  const hasActiveDescendant =
+    !!item.href &&
+    currentSlugs.some(currentSlug =>
+      isPathContained(getHrefSlugs(item.href!), currentSlug)
+    );
 
   const categoryId = item.categoryPath || item.href || item.label;
 
   const [isExpanded, setIsExpanded] = React.useState(
     forceExpandAll ||
-    expandedCategories.has(categoryId) ||
-    isCategoryActive ||
-    hasActiveDescendant
+      expandedCategories.has(categoryId) ||
+      isCategoryActive ||
+      hasActiveDescendant
   );
 
   const lastPathname = React.useRef(pathname);
@@ -354,13 +360,14 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
         });
       }, 100);
     }
-  }, [isCategoryActive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathnameWithoutHash]);
 
   return (
     <Collapsible.Root
       className="group/collapsible"
       open={isExpanded}
-      onOpenChange={(open) => {
+      onOpenChange={open => {
         setIsExpanded(open);
         toggleCategory(categoryId, open, false);
       }}
@@ -447,7 +454,9 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
   const filteredSidebar = React.useMemo(() => {
     if (!pathname || !filterByActiveHeaderTab) return sidebar;
     const activeHrefs = getActiveSidebarItemHrefs(pathname);
-    return sidebar.filter(item => !!item.href && activeHrefs.includes(item.href));
+    return sidebar.filter(
+      item => !!item.href && activeHrefs.includes(item.href)
+    );
   }, [sidebar, pathname, filterByActiveHeaderTab]);
 
   React.useEffect(() => {
@@ -492,11 +501,16 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
               href="/"
               className={cn(
                 'flex items-center gap-1.5 transition-colors',
-                isHomeActive ? 'text-foreground font-bold' : 'hover:text-foreground'
+                isHomeActive
+                  ? 'text-foreground font-bold'
+                  : 'hover:text-foreground'
               )}
             >
               <HomeIcon className="size-3.5" aria-hidden="true" />
-              {l.text('Home', { context: 'Sidebar link at the top of every docs page that returns to the documentation home' })}
+              {l.text('Home', {
+                context:
+                  'Sidebar link at the top of every docs page that returns to the documentation home',
+              })}
             </Link>
           </SidebarGroupLabel>
         </SidebarGroup>
@@ -506,9 +520,14 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
               <SidebarGroup key={index}>
                 <SidebarGroupLabel className="flex justify-between items-center w-full group/label pr-1">
                   {item.clickable && item.href ? (
-                    <Link className="flex items-center gap-1.5" href={item.href}>
+                    <Link
+                      className="flex items-center gap-1.5"
+                      href={item.href}
+                    >
                       {item.label}
-                      {item.isExternalLink && <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />}
+                      {item.isExternalLink && (
+                        <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />
+                      )}
                     </Link>
                   ) : (
                     item.label
@@ -530,7 +549,8 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
             pathname?.startsWith('/community');
 
           if (isNewSection) {
-            const isSectionActive = item.clickable && item.href ? pathname === item.href : false;
+            const isSectionActive =
+              item.clickable && item.href ? pathname === item.href : false;
             return (
               <SidebarGroup key={index}>
                 <SidebarGroupLabel className="cursor-pointer">
@@ -538,8 +558,10 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
                     <Link
                       href={item.href}
                       className={cn(
-                        "transition-colors cursor-pointer",
-                        isSectionActive ? "text-foreground font-bold" : "hover:text-foreground"
+                        'transition-colors cursor-pointer',
+                        isSectionActive
+                          ? 'text-foreground font-bold'
+                          : 'hover:text-foreground'
                       )}
                     >
                       {item.label}

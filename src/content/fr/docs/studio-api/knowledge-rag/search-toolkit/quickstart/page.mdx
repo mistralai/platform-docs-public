@@ -68,7 +68,7 @@ from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, cre
 
 class InitialSchema(VespaMigration):
     def migrate(self) -> None:
-        set_app_name("my_quickstart")
+        set_app_name("myquickstart")
         create_default_schema(
             name="quickstart_collection",
             mode=SearchMode.INDEX,
@@ -79,6 +79,10 @@ class InitialSchema(VespaMigration):
             ],
         )
 ```
+
+:::info
+**Restrictions sur le nom de l’application** : le nom passé à `set_app_name()` doit contenir uniquement des lettres minuscules (`a-z`). Les chiffres, les traits de soulignement, les traits d’union et les autres caractères spéciaux ne sont pas autorisés.
+:::
 
 Pour obtenir plus de détails sur la gestion et le déploiement d’applications Vespa, consultez [Gérer et déployer des applications Vespa](vespa).
 
@@ -116,13 +120,13 @@ from vespa_app import app
 async def main():
     mistral_client = Mistral(api_key="your-api-key")
 
-    # Configuration Vespa
+    # Configure Vespa
     config = VespaClientConfig(
         endpoint="http://localhost:8080",
     )
     vector_store = app.get_search_index(config, collection_name="quickstart_collection")
 
-    # Création du pipeline
+    # Create the pipeline
     pipeline = Pipeline(
         loader=FilesystemFileLoader(),
         extractor=PlainTextExtractor(),
@@ -131,12 +135,12 @@ async def main():
         vector_store=vector_store,
     )
 
-    # Ingestion des documents
+    # Ingest documents
     await pipeline.run(
         documents=[Path("doc1.txt"), Path("doc2.txt")],
         collection_name="quickstart_collection",
     )
-    print("Documents importés.")
+    print("Documents ingested!")
 
 
 asyncio.run(main())
@@ -169,18 +173,18 @@ async def main():
     mistral_client = Mistral(api_key="your-api-key")
     embedder = MistralEmbedder(client=mistral_client, model_name="mistral-embed")
 
-    # Configuration Vespa pour la recherche
+    # Configure Vespa for search
     config = VespaClientConfig(
         endpoint="http://localhost:8080",
     )
     vector_store = app.get_search_index(config, collection_name="quickstart_collection")
 
-    # Création du moteur de requête
+    # Build query engine
     query_engine = QueryEngine(
         retriever=[VectorRetriever(client=vector_store, embedder=embedder)],
     )
 
-    # Recherche
+    # Search
     result = await query_engine.search(
         query="What is RAG?",
         top_k=5,

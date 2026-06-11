@@ -85,7 +85,7 @@ class SummarizeWorkflow:
   </TabItem>
 </Tabs>
 
-For full documentation on `Agent`, `Runner`, sessions, MCP, and multi-agent handoffs, see the [Durable Agents guide](../durable_agents).
+For full documentation on `Agent`, `Runner`, sessions, MCP, and multi-agent handoffs, see the [Durable Agents guide](durable_agents).
 
 <SectionTab as="h2" variant="secondary" sectionId="webhook-plugin">Webhook Plugin</SectionTab>
 

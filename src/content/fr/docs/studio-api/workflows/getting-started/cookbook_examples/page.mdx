@@ -38,7 +38,7 @@ uvx mistralai-workflows-cli setup
 Une fois la configuration terminée, placez-vous dans le dossier du projet généré et lancez les exemples&nbsp;:
 
 ```bash
-cd my-workflow # ou le nom du dossier créé
+cd my-workflow # or the name of the folder you created
 make start-examples
 ```
 
@@ -48,11 +48,12 @@ Cela enregistre les workflows cookbook auprès de votre espace de travail et lai
   Cookbooks disponibles
 </SectionTab>
 
-| Cookbook           | Ce qu'il démontre                                         | Nom du workflow principal dans Studio |
-| ------------------ | -------------------------------------------------------- | ------------------------------------- |
-| Cargo release      | Validation humaine, sous-workflows, sorties structurées   | `cargo-release-compliance`            |
-| Insurance claims   | Activités parallèles, reprises sur erreur, routage déterministe | `insurance-claims-triage`             |
-| Code modernization | Sous-workflows parallèles, validation de syntaxe, validation humaine | `code-modernization`                  |
+| Cookbook           | Ce qu'il démontre                                      | Nom du workflow principal dans Studio |
+| ------------------ | --------------------------------------------------------- | ------------------------------- |
+| Cargo release      | Validation humaine, sous-workflows, sorties structurées         | `cargo-release-compliance`      |
+| Insurance claims   | Activités parallèles, reprises sur erreur, routage déterministe       | `insurance-claims-triage`       |
+| Code modernization | Sous-workflows parallèles, validation de syntaxe, validation humaine | `code-modernization`            |
+| Résumé Linear | Connecteurs, stratégies de nouvelle tentative, validation humaine, sortie structurée du LLM | `linear-summarization` |
 
 <SectionTab as="h1" sectionId="cargo-release">
   Conformité cargo et marchandises dangereuses
@@ -113,7 +114,7 @@ make execute-insurance-claims
 Vous pouvez fournir vos propres données&nbsp;:
 
 ```bash
-make execute-insurance-claims input='{"claim_id":"CLM-001","claimant_name":"Jane","description":"Ma voiture a été accidentée.","photos":["examples/insurance_claims/sample_data/photos/claim_low_scratch_door.jpg"]}'
+make execute-insurance-claims input='{"claim_id":"CLM-001","claimant_name":"Jane","description":"My car was hit.","photos":["examples/insurance_claims/sample_data/photos/claim_low_scratch_door.jpg"]}'
 ```
 
 Ou démarrer le workflow dans [Studio](https://console.mistral.ai/build/workflows?workflowSearch=insurance-claims-triage) avec ces données&nbsp;:
@@ -122,7 +123,7 @@ Ou démarrer le workflow dans [Studio](https://console.mistral.ai/build/workflow
 {
   "claim_id": "CLM-2024-001",
   "claimant_name": "Maria Gonzalez",
-  "description": "Ma voiture a été percutée à une intersection.",
+  "description": "My car was T-boned at an intersection.",
   "photos": [
     "examples/insurance_claims/sample_data/photos/claim_high_totaled_front.jpg",
     "examples/insurance_claims/sample_data/photos/claim_high_totaled_side.jpg"
@@ -164,6 +165,54 @@ Vous pouvez aussi démarrer `code-modernization` dans [Studio](https://console.m
 ### À quoi faire attention
 
 Dans [Studio](https://console.mistral.ai/build/workflows/executions), vérifiez que chaque fichier source apparaît comme sa propre exécution fille. Après la fin des sous-workflows, repérez la pause `wait_for_input`, approuvez ou refusez le jeu de modifications, puis assurez-vous que le workflow ne crée la PR qu'après validation.
+
+<SectionTab as="h1" sectionId="linear-summarization">
+  Résumé Linear
+</SectionTab>
+
+### Ce que fait ce cookbook
+
+Ce livre de recettes génère des résumés Hebdomadaire concis des activités dans les Projets Linear. Il accepte un nom ou un ID d’équipe et un nom ou un ID de Projet, récupère en parallèle les problems récents, exécute la synthèse LLM, et marque une pause pour clarification humaine si l’équipe ou le Projet ne peut pas être identifié.
+
+Utilisez cet exemple pour voir comment les Connecteurs, l’authentification on-behalf-of (OBO), les activités parallèles et la validation humaine fonctionnent ensemble dans un seul workflow.
+
+### Prérequis
+
+Ce livre de recettes utilise le Connecteur Linear avec le mode on-behalf-of (OBO), qui nécessite un déploiement renforcé. Avant de l’exécuter :
+
+1. Créez un **Connecteur Linear** dans [Studio › Contexte › Connecteurs](https://console.mistral.ai/build/connectors). Nommez-le `linear` pour qu’il corresponde au code du workflow.
+2. Suivez le flux d’authentification pour ajouter l’identifiant sous l’onglet **Identifiants** du connecteur.
+3. Initialisez votre déploiement, puis renforcez-le dans **Paramètres › Déploiements renforcés**. Réenregistrez le workflow après renforcement afin que le workflow OBO puisse s’enregistrer avec succès.
+
+Pour plus de détails, consultez [déploiements renforcés](/studio-api/workflows/managing-workflows-in-production/hardened_deployments) et [connecteurs](/studio-api/workflows/building-workflows/connectors).
+
+### Comment l'exécuter
+
+Lancez le workflow par défaut&nbsp;:
+
+```bash
+make execute-linear-summary
+```
+
+Quand aucune entrée n’est fournie, le workflow marque une pause et invite à entrer l’équipe et le Projet dans [Studio](https://console.mistral.ai/build/workflows/linear-weekly-summary). Vous pouvez également fournir une entrée directement :
+
+```bash
+make execute-linear-summary \
+  input='{"team":"Engineering","project":"*"}'
+```
+
+Ou lancez `linear-weekly-summary` dans [Studio](https://console.mistral.ai/build/workflows?workflowSearch=linear-weekly-summary) avec cette entrée :
+
+```json
+{
+  "team": "Engineering",
+  "project": "*"
+}
+```
+
+### À quoi faire attention
+
+Dans [Studio](https://console.mistral.ai/build/workflows/executions), confirmez que les activités de récupération des problems et de génération de résumés s’exécutent en parallèle. Si le nom de l’équipe ou du Projet ne peut pas être résolu, le workflow marque une pause à une étape `wait_for_input` — répondez à l’invite dans Studio et vérifiez que l’exécution reprend avec les valeurs corrigées. Vérifiez la sortie finale pour un résumé structuré en JSON.
 
 <SectionTab as="h1" sectionId="next-steps">
   Prochaines étapes

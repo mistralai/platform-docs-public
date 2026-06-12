@@ -53,6 +53,7 @@ This registers the cookbook workflows with your workspace and keeps the worker r
 | Cargo release      | Human approval, sub-workflows, structured outputs         | `cargo-release-compliance`      |
 | Insurance claims   | Parallel activities, retries, deterministic routing       | `insurance-claims-triage`       |
 | Code modernization | Parallel sub-workflows, syntax validation, human approval | `code-modernization`            |
+| Linear Summarization | Connectors, retry policies, human-in-the-loop, structured LLM output | `linear-summarization` |
 
 <SectionTab as="h1" sectionId="cargo-release">
   Cargo release and dangerous goods compliance
@@ -164,6 +165,54 @@ You can also start `code-modernization` in [Studio](https://console.mistral.ai/b
 ### What to look for
 
 In [Studio](https://console.mistral.ai/build/workflows/executions), confirm that each source file appears as its own child execution. After the child workflows finish, inspect the `wait_for_input` pause, approve or decline the change set, and verify that the workflow only writes the PR proposal after approval.
+
+<SectionTab as="h1" sectionId="linear-summarization">
+  Linear Summarization
+</SectionTab>
+
+### What it does
+
+This cookbook generates concise weekly summaries of activity in Linear projects. It accepts a team name or ID and a project name or ID, fetches recent issues in parallel, runs LLM summarization, and pauses for human clarification if the team or project cannot be resolved.
+
+Use this example when you want to see how connectors, on-behalf-of (OBO) authentication, parallel activities, and human-in-the-loop fallback work together in a single workflow.
+
+### Prerequisites
+
+This cookbook uses the Linear Connector with on-behalf-of (OBO) mode, which requires a hardened deployment. Before running it:
+
+1. Create a **Linear Connector** in [Studio › Context › Connectors](https://console.mistral.ai/build/connectors). Name it `linear` to match the workflow code.
+2. Follow the auth flow to add the credential under the connector's **Credentials** tab.
+3. Bootstrap your deployment, then harden it in **Settings › Hardened Deployments**. Re-register the workflow after hardening so the OBO workflow can register successfully.
+
+For full details, see [hardened deployments](/studio-api/workflows/managing-workflows-in-production/hardened_deployments) and [connectors](/studio-api/workflows/building-workflows/connectors).
+
+### How to run it
+
+Run the default workflow:
+
+```bash
+make execute-linear-summary
+```
+
+When no input is provided, the workflow pauses and prompts for team and project in [Studio](https://console.mistral.ai/build/workflows/linear-weekly-summary). You can also provide input directly:
+
+```bash
+make execute-linear-summary \
+  input='{"team":"Engineering","project":"*"}'
+```
+
+Or start `linear-weekly-summary` in [Studio](https://console.mistral.ai/build/workflows?workflowSearch=linear-weekly-summary) with this input:
+
+```json
+{
+  "team": "Engineering",
+  "project": "*"
+}
+```
+
+### What to look for
+
+In [Studio](https://console.mistral.ai/build/workflows/executions), confirm that the issue-fetching and summary-generation activities run in parallel. If the team or project name cannot be resolved, the workflow pauses at a `wait_for_input` step — answer the prompt in Studio and verify that execution resumes with the corrected values. Check the final output for a structured JSON summary.
 
 <SectionTab as="h1" sectionId="next-steps">
   Next steps

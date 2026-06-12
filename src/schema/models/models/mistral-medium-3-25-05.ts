@@ -12,7 +12,7 @@ export default {
   class: 'Generalist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-medium-3',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'mistral-medium', backgroundColor: 'blue' },
   weights: [],
   bloglink: 'https://mistral.ai/news/mistral-medium-3/',
@@ -38,7 +38,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'agents-conversations', 'connectors', 'batching', 'predicted-outputs'],
 
   },
-  metadata: {},
+  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-08-31', replacement: 'Mistral Medium 3.5'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

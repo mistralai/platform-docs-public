@@ -12,7 +12,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/open-mistral-nemo-2407',
-  status: 'Active',
+  status: 'Deprecated',
   avatar: { icon: 'mistral-nemo', backgroundColor: 'red' },
   weights: [
     {
@@ -82,7 +82,7 @@ export default {
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching'],
 
   },
-  metadata: {},
+  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-07-31', replacement: 'Ministral 3 8B'},
   playground: '',
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

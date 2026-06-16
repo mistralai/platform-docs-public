@@ -17,8 +17,8 @@ export default {
   weights: [
     {
       name: 'Weights',
-      license: 'Apache 2.0',
-      licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
+      license: 'CC BY-NC 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
       url: 'https://huggingface.co/mistralai/Voxtral-4B-TTS-2603',
       parameters: '4',
       minGpuRam: {

@@ -1,7 +1,11 @@
 import { join } from 'node:path';
 import fse from 'fs-extra';
 
-const SOURCE_FILE = 'openapi.yaml';
+// Copy the public-facing OpenAPI spec into /public so docs visitors can
+// download it. We expose the SOURCE spec (openapi-public-doc.yaml), not the
+// internal patched version (.openapi-docs.yaml), so external consumers stay
+// in sync with what the dashboard ships.
+const SOURCE_FILE = 'openapi-public-doc.yaml';
 const DEST_DIR = 'public';
 const DEST_FILE = join(DEST_DIR, 'openapi.yaml');
 

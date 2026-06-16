@@ -115,7 +115,7 @@ export const AVAILABLE_FEATURES = {
     link: '/studio-api/conversations/chat-completion#other-useful-features',
     endpoints: ['chat-completions', 'conversations'],
   },
-  ocr: { name: 'OCR', link: '/studio-api/document-processing', endpoints: ['ocr'] },
+  ocr: { name: 'OCR', link: '/studio-api/document-processing/overview', endpoints: ['ocr'] },
   'annotations-structured-ocr': {
     name: 'Annotations - Structured',
     link: '/studio-api/document-processing/annotations',

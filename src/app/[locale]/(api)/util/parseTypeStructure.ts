@@ -90,8 +90,12 @@ function getTypeCategory(
 }
 
 function generateHash(typeInfo: DisplayTypeInfo): string {
+  // Used as a React key and for internal lookup (findNodeByHash), not exposed
+  // in URLs. Truncating to 8 chars caused collisions when distinct labels
+  // shared a prefix (e.g. WebSearchTool vs WebSearchPremiumTool both produced
+  // "V2ViU2Vh").
   const hashBase = `${typeInfo.label}-${typeInfo.linkedLabel || ''}`;
-  return btoa(hashBase).slice(0, 8);
+  return btoa(hashBase);
 }
 
 function calculateComplexity(

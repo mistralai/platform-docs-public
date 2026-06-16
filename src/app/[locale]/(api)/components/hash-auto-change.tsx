@@ -40,9 +40,7 @@ export const ActiveElementHashProvider: React.FC<{
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
       if (scrollTop < 10) {
-        if (activeElementHash !== '') {
-          setActiveElementHash('');
-        }
+        setActiveElementHash(prev => (prev !== '' ? '' : prev));
         return;
       }
 
@@ -59,9 +57,7 @@ export const ActiveElementHashProvider: React.FC<{
       let topMostElement: Element | undefined = visibleIds[0];
       if (topMostElement && topMostElement.id) {
         const newHash = `#${topMostElement.id}`;
-        if (activeElementHash !== newHash) {
-          setActiveElementHash(newHash);
-        }
+        setActiveElementHash(prev => (prev !== newHash ? newHash : prev));
       }
     };
 
@@ -123,7 +119,12 @@ export const ActiveElementHashProvider: React.FC<{
       }
       visibleSectionsRef.current.clear();
     };
-  }, [params, activeElementHash]);
+    // Intentionally omit `activeElementHash` from deps: it was causing
+    // the observer to be torn down and re-created on every scroll-driven
+    // hash update, which flickered the active section and reset the
+    // visible-sections set during a 100ms blind window.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
 
   const contextValue = React.useMemo(
     () => ({

@@ -33,6 +33,37 @@ import { useActiveElementHash } from '@/app/[locale]/(api)/components/hash-auto-
 import { AnyDocsMetadata } from '@/schema';
 import { getActiveSidebarItemHrefs } from '@/schema/content/header';
 
+/**
+ * Scroll the sidebar's overflow container so that `el` is centered, WITHOUT
+ * scrolling any ancestor (including the document/window).
+ *
+ * The native `Element.scrollIntoView({ block: 'center' })` walks every
+ * scrollable ancestor and centers the target in each of them. When the
+ * sidebar's overflow container is inside a page that also scrolls, this
+ * yanks the document up while the user is scrolling the main content,
+ * which then triggers a new active-item event and loops (the visible
+ * 'scroll-up + flicker' symptom).
+ */
+function scrollIntoSidebarOnly(el: HTMLElement | null) {
+  if (!el) return;
+  const container = el.closest<HTMLElement>('[data-sidebar="sidebar"]');
+  if (!container) return;
+  const elRect = el.getBoundingClientRect();
+  const cRect = container.getBoundingClientRect();
+  // Skip the scroll if the item is already comfortably visible inside the
+  // sidebar viewport, to avoid spurious motion that itself triggers another
+  // active-item change downstream.
+  if (elRect.top >= cRect.top && elRect.bottom <= cRect.bottom) return;
+  // Where the item currently sits inside the container's scroll space.
+  const currentOffsetInContainer =
+    elRect.top - cRect.top + container.scrollTop;
+  const target =
+    currentOffsetInContainer - container.clientHeight / 2 + elRect.height / 2;
+  const max = container.scrollHeight - container.clientHeight;
+  const top = Math.max(0, Math.min(target, max));
+  container.scrollTo({ top, behavior: 'smooth' });
+}
+
 export type SideBarTreeNode = {
   clickable: boolean;
   label: string;
@@ -186,10 +217,7 @@ const SidebarFileItem = <T extends SideBarTreeNode>({
     if (isActive && itemRef.current) {
       // Small timeout to allow the sidebar to render and open collapsibles
       setTimeout(() => {
-        itemRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
+        scrollIntoSidebarOnly(itemRef.current);
       }, 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -354,10 +382,7 @@ const SidebarSubCategory = <T extends SideBarTreeNode>({
   React.useEffect(() => {
     if (isCategoryActive && itemRef.current) {
       setTimeout(() => {
-        itemRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
+        scrollIntoSidebarOnly(itemRef.current);
       }, 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

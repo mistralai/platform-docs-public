@@ -4,7 +4,13 @@ import yaml from 'js-yaml';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 import { getSettings } from '@speakeasy-api/docs-md';
-const OPENAPI_YAML = './openapi.yaml';
+const OPENAPI_YAML = process.env.SPEAKEASY_OPENAPI_YAML || './openapi.yaml';
+// Output is locale-driven so the same config generates EN (default) or a
+// translated locale (see src/scripts/api/build-fr.ts). Defaults = EN, so the
+// EN build is unchanged.
+const PAGE_OUT_DIR = process.env.API_PAGE_OUT_DIR || './src/content/en/api';
+const SIDEBAR_META_PATH =
+  process.env.API_SIDEBAR_META_PATH || './src/content/en/api/sidebar-metadata.json';
 /**
  * @type {import("@speakeasy-api/docs-md").FrameworkConfig}
  */
@@ -61,7 +67,7 @@ description: Welcome to Mistral AI's Api Reference
     });
 
     writeFileSync(
-      './src/content/en/api/sidebar-metadata.json',
+      SIDEBAR_META_PATH,
       JSON.stringify(sortedMetadata, null, '  ')
     );
   },
@@ -71,7 +77,7 @@ description: Welcome to Mistral AI's Api Reference
 export default {
   spec: OPENAPI_YAML,
   output: {
-    pageOutDir: './src/content/en/api',
+    pageOutDir: PAGE_OUT_DIR,
     framework,
     aboutPage: false,
     generateRequestBodyExamples: true,

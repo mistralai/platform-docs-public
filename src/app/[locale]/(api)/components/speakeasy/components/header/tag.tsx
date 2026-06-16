@@ -1,7 +1,7 @@
 'use client';
 
 import { Heading } from '@/components/layout/heading';
-import { useUniqueChild } from '@speakeasy-api/docs-md-react';
+import { useChildren, useUniqueChild } from '@speakeasy-api/docs-md-react';
 import AnimatedStarsBackground from '@/components/layout/footer/animated-stars';
 import Lamp from '@/../public/assets/sprites/lamp.png';
 import LampLight from '@/../public/assets/sprites/lamp_light.gif';
@@ -48,7 +48,11 @@ type TagProps = {
 export function Tag({ children, slot }: TagProps) {
   const l = useLingo();
   const titleChild = useUniqueChild(children, 'title');
-  const descriptionChild = useUniqueChild(children, 'description');
+  // Description is optional: some tags in the OpenAPI spec lack a description
+  // (notably new endpoints not yet listed in the global `tags:` section).
+  // Speakeasy then emits <TagTitle> without <TagDescription>, and the
+  // default useUniqueChild would throw.
+  const descriptionChild = useChildren(children, 'description')[0];
 
   return (
     <>

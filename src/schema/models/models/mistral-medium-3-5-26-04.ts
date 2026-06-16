@@ -50,7 +50,7 @@ export default {
       { type: 'range', price: 7.5, denominator: '/M Tokens' },
     ],
   },
-  identifiers: { apiNames: ['mistral-medium-3-5', 'mistral-medium-3'] },
+  identifiers: { apiNames: ['mistral-medium-3-5', 'mistral-medium-3', 'mistral-medium-latest'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['reasoning', 'text'],

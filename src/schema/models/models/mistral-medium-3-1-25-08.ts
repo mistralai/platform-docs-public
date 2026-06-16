@@ -31,7 +31,7 @@ export default {
       { type: 'range', price: 2.0, denominator: '/M Tokens' }
     ]
   },
-  identifiers: { apiNames: ['mistral-medium-2508', 'mistral-medium-latest'] },
+  identifiers: { apiNames: ['mistral-medium-2508'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],

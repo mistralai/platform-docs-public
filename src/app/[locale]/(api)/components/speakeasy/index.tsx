@@ -29,6 +29,7 @@ export {
   OperationResponseBodySectionContent,
   OperationResponseBodyDescriptionSection,
   OperationResponseBodyExamplesSection,
+  OperationResponsesSectionTitle,
 } from './components/operation';
 export { SectionTitle, Section } from './components/section';
 export { ConnectingCell } from './components/property/components/cells/ConnectingCell';

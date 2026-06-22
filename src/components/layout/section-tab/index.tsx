@@ -64,7 +64,13 @@ export function SectionTab({
     'idle' | 'copied' | 'disappearing'
   >('idle');
   const isMobile = useMediaQuery('(max-width: 1024px)');
-  const Comp = as as React.ElementType;
+  const semanticAs =
+    variant === 'secondary' && (as === 'h1' || as === 'h2')
+      ? 'h3'
+      : as === 'h1'
+        ? 'h2'
+        : as;
+  const Comp = semanticAs as React.ElementType;
   const handleCopy = async () => {
     if (!sectionId) return;
 

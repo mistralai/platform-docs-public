@@ -11,9 +11,10 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 Utilisez les [Connecteurs](/studio-api/knowledge-rag/connectors) dans un workflow pour appeler des services externes (GitHub, Notion, Slack, Outlook, etc.) sans avoir à gérer vous-même les identifiants. Le workflow déclare les connecteurs nécessaires ; la plateforme Mistral résout les identifiants à l'exécution et déclenche les flux OAuth à la demande.
 
-:::warning
-Les connecteurs ne sont utilisables que dans les [workflows on-behalf-of](/studio-api/workflows/building-workflows/on_behalf_of), qui nécessitent un [déploiement renforcé](/studio-api/workflows/managing-workflows-in-production/hardened_deployments). Consultez [Enregistrer un workflow OBO](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow) pour les étapes de configuration.
-:::
+Un workflow résout les informations d'identification du Connecteur à partir de l'identité sous laquelle il s'exécute :
+
+- **[Workflow de type « on-behalf-of » (OBO)](/studio-api/workflows/building-workflows/on_behalf_of)** utilise les **informations d'identification de l'utilisateur déclenchant**. L'OBO nécessite un [déploiement renforcé](/studio-api/workflows/managing-workflows-in-production/hardened_deployments) — voir [Enregistrement d'un workflow OBO](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow).
+- **Les workflows classiques** utilisent les **informations d'identification du worker** (l'identité de la clé API sous laquelle le worker s'exécute).
 
 :::info
 L'intégration des connecteurs dans les workflows s'appuie sur `mistralai-workflows-plugins-mistralai`. Ces API sont en **beta** et peuvent évoluer.
@@ -25,7 +26,7 @@ Sans emplacement de connecteur, chaque workflow qui interagit avec une API exter
 
 - **Aucun secret dans le code du workflow** : les identifiants sont résolus dynamiquement par la plateforme.
 - **OAuth automatique** : si l'appelant n'a pas encore autorisé, le workflow s'interrompt et fournit une URL d'authentification, puis reprend une fois l'autorisation effectuée.
-- **Identité par utilisateur** : les workflows s'exécutent pour le compte de l'appelant, chaque utilisateur utilise donc ses propres identifiants enregistrés.
+- **Informations d'identification liées à l'identité** : les informations d'identification sont résolues à partir de l'identité sous laquelle le workflow s'exécute — l'utilisateur déclenchant (OBO) ou le worker.
 - **Authentification interchangeable** : les connecteurs bearer (PAT) et OAuth2 utilisent le même code workflow.
 
 <SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
@@ -52,7 +53,7 @@ Chaque utilisateur stocke ses propres identifiants par connecteur dans Studio. V
 3. Cliquez sur **+ Ajouter des identifiants**, donnez-lui un nom (alphanumérique et tirets), puis effectuez le collage du token bearer ou suivez le flux OAuth.
 4. Un identifiant est toujours défini comme **par défaut**. Pour modifier le choix lorsqu'aucun nom n'est spécifié, éditez un identifiant puis définissez-le par défaut.
 
-Les identifiants sont stockés par **utilisateur** : chaque appelant utilise ses propres identifiants lors de l'exécution du workflow.
+Les informations d'identification sont stockées par **utilisateur**. À l'exécution, le workflow utilise les informations d'identification de l'identité sous laquelle il s'exécute : l'utilisateur déclenchant dans un workflow OBO, ou le worker dans les autres cas.
 
 <SectionTab as="h3" variant="secondary" sectionId="credentials-sdk">Gérer les identifiants depuis le SDK</SectionTab>
 
@@ -67,7 +68,7 @@ from mistralai import Mistral
 
 client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
-# Connecteur Bearer : enregistrer un identifiant nommé et le définir par défaut
+# Bearer connector: store a named credential and mark it default
 await client.beta.connectors.create_or_update_user_credentials_async(
     connector_id_or_name="github_app",
     name="github-pat-full",
@@ -75,14 +76,14 @@ await client.beta.connectors.create_or_update_user_credentials_async(
     is_default=True,
 )
 
-# Connecteur OAuth2 : obtenir une URL d'authentification, l'utilisateur l'ouvre dans son navigateur
+# OAuth2 connector: request an auth URL, the user completes it in a browser
 result = await client.beta.connectors.get_auth_url_async(
     connector_id_or_name="outlook_calendar",
     credentials_name="personal",
 )
 print(result.auth_url)
 
-# Lister et supprimer
+# List and delete
 await client.beta.connectors.list_user_credentials_async(
     connector_id_or_name="github_app",
 )
@@ -101,7 +102,7 @@ L'API `client.beta.connectors` est en **beta**. Consultez le [cookbook d'authent
 
 <SectionTab as="h2" sectionId="oauth-flow">Fonctionnement du flux OAuth de secours</SectionTab>
 
-Lorsqu'une exécution de workflow démarre, l'intercepteur d'authentification du worker effectue un pré-check sur chaque emplacement de connecteur déclaré avec `@uses_connectors`. Si des identifiants valides existent pour l'appelant, le corps du workflow s'exécute immédiatement. Sinon (cas typique de première utilisation OAuth2), le worker s'interrompt, demande une URL d'authentification à l'API Mistral, la transmet au client comme événement `auth_url`, puis attend pendant que l'utilisateur termine l'autorisation dans son navigateur. Une fois les identifiants stockés, le workflow reprend.
+Quand une exécution de workflow démarre, l'intercepteur d'authentification du worker effectue une vérification préalable sur chaque emplacement de Connecteur déclaré avec `@uses_connectors`. Si des informations d'identification valides existent pour l'identité résolue, le corps du workflow s'exécute immédiatement. Sinon (cas typique d'une première utilisation OAuth2), le worker met en pause, obtient une URL d'authentification à partir de l'API Mistral, la transmet au client sous forme d'événement `auth_url` et attend que l'utilisateur termine l'autorisation dans son navigateur. Une fois les informations d'identification enregistrées, le workflow reprend.
 
 <div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
 <Image
@@ -181,7 +182,7 @@ async def create_github_issue(
 
 <SectionTab as="h3" variant="secondary" sectionId="attach-workflow">Étape 3 : Attacher les emplacements à la classe de workflow</SectionTab>
 
-Utilisez `@uses_connectors` pour enregistrer les emplacements, et `on_behalf_of=True` afin d'exécuter le workflow avec l'identité de l'appelant :
+Utilisez `@uses_connectors` pour enregistrer les emplacements. Ajoutez `on_behalf_of=True` pour résoudre les informations d'identification à partir de l'utilisateur déclenchant ; omettez ce paramètre pour utiliser les informations d'identification du worker :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -219,7 +220,7 @@ class GitHubIssueCreatorWorkflow:
 
 Remarques :
 
-- `on_behalf_of=True` exécute le workflow sous l'identité de l'appelant. Obligatoire pour la résolution d'identifiants par utilisateur.
+- `?on_behalf_of=True?` exécute le workflow sous l'identité de l'utilisateur déclenchant, en résolvant ses informations d'identification. Omettez ce paramètre pour exécuter le workflow sous l'identité et les informations d'identification du worker.
 - Passez plusieurs emplacements dans un appel si le workflow a besoin de plusieurs connecteurs : `@uses_connectors(github_connector, notion_connector)`.
 - Appliquez `@uses_connectors` **après** `@workflow.define`. L’ordre des décorateurs est important.
 
@@ -257,7 +258,7 @@ from mistralai.extra.workflows.connector_slot import ConnectorSlot
 async def on_auth_required(state: ConnectorAuthTaskState) -> None:
     if state.auth_url:
         webbrowser.open(state.auth_url)
-    input("Appuyez sur Entrée après avoir terminé le flux OAuth...")
+    input("Press Enter after completing the OAuth flow...")
 
 
 async def main() -> None:
@@ -268,8 +269,8 @@ async def main() -> None:
             input_data={
                 "owner": "my-org",
                 "repo": "my-repo",
-                "title": "Bug : quelque chose ne fonctionne pas",
-                "body": "Étapes de reproduction...",
+                "title": "Bug: something is broken",
+                "body": "Steps to reproduce...",
             },
             on_auth_required=on_auth_required,
         )
@@ -336,10 +337,10 @@ class GitHubAgentWorkflow:
         agent = Agent(
             name="github-pr-lister",
             model="mistral-medium-latest",
-            instructions=f"Lister les dernières pull requests sur {repo}.",
+            instructions=f"List recent pull requests on {repo}.",
             connectors=[github_connector],
         )
-        result = await Runner.run(agent=agent, inputs=f"Résume les PRs sur {repo}.")
+        result = await Runner.run(agent=agent, inputs=f"Summarize PRs on {repo}.")
         return result.final_output
 ```
 

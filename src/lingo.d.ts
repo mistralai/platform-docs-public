@@ -185,7 +185,6 @@ declare module "@lingo.dev/react" {
     "Code generation tools": { context: "Short title for a featured cookbook topic" };
     "Code Interpreter": { context: "Name of a Mistral platform feature" };
     "Collaboration": { context: "Topic area for a Mistral ambassador" };
-    "Combine Web Search, file upload, and Canvas in a single task.": { context: "Quickstart description about drafting a research report in Vibe Work" };
     "Command Palette": { context: "Screen-reader-only title of the Cmd-K command palette dialog" };
     "Commitment": { context: "Criterion used to evaluate ambassador applications" };
     "Communication Skills": { context: "Requirement for joining the Mistral ambassador program" };
@@ -498,6 +497,8 @@ declare module "@lingo.dev/react" {
     "Our frontier-class reasoning model released July 2025.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "Our latest moderation model with 128k context window and jailbreaking detection.": { context: "Short description of an AI model" };
     "Our latest moderation model with 128k context window and jailbreaking detection. Strong performance on complex multilingual data including long multi-turn conversations.": { context: "Full description of an AI model" };
+    "Our latest OCR service powering our Document AI stack, with native paragraph-level bounding box extraction and structural block labels.": { context: "Full description of an AI model" };
+    "Our latest OCR service with paragraph-level bounding boxes and structural block labels.": { context: "Short description of an AI model" };
     "Our moderation service that enables our users to detect harmful text content": { context: "Full description of an AI model" };
     "Our moderation service that enables our users to detect harmful text content.": { context: "Short description of an AI model" };
     "Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images": { context: "Full description of an AI model" };

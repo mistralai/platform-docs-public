@@ -16,6 +16,7 @@ import OCRWithPDFUrlTab from './ocr_with_pdf_url_tab/_page.mdx';
 import OCRWithPDFBase64Tab from './ocr_with_pdf_base64_tab/_page.mdx';
 import OCRWithPDFUploadedTab from './ocr_with_pdf_uploaded_tab/_page.mdx';
 import OCRWithConfidenceScoresTab from './ocr_with_confidence_scores_tab/_page.mdx';
+import OCRWithBlocksTab from './ocr_with_blocks_tab/_page.mdx';
 
 # Document AI - Processeur OCR 
 
@@ -39,11 +40,11 @@ L'API Mistral Document AI intègre un processeur OCR (reconnaissance optique de 
     - `markdown` : les tableaux sont retournés séparément sous forme de tableaux markdown.
     - `html` : les tableaux sont retournés séparément sous forme de tableaux html.
 - Option pour **extraire les en-têtes et pieds de page** via les paramètres `extract_header` et `extract_footer`. Lorsqu'ils sont utilisés, le contenu des en-têtes et pieds de page sera fourni dans les champs `header` et `footer`. Par défaut, les en-têtes et pieds de page sont considérés comme faisant partie du contenu principal.
+- Option permettant d’extraire les **boîtes englobantes au niveau des paragraphes et les étiquettes de blocs structurels** via le paramètre `include_blocks`. Lorsqu’elle est activée, chaque page contient un tableau `blocks` listant chaque bloc (text, title, list, table, image, equation, caption, code, references, aside_text, header, footer, signature) dans l’ordre de lecture, avec sa boîte englobante et son contenu.
 - Retourne les résultats au format markdown pour une analyse et un rendu faciles.
 - Gère les mises en page complexes incluant le texte en plusieurs colonnes et le contenu mixte, et retourne les hyperliens lorsqu'ils sont disponibles.
 - Fournit des **scores de confiance** pour le contenu extrait au niveau du mot ou de la page via le paramètre `confidence_scores_granularity`.
 - Traite les documents à grande échelle avec une grande précision.
-- **Multilingue** : performances élevées en anglais, allemand, français, russe, espagnol, néerlandais, italien, portugais, chinois, hongrois, coréen, turc, polonais, suédois, japonais, tchèque, danois, roumain, hébreu, tagalog, vietnamien, arabe, hindi, indonésien, marathi, norvégien, arménien, thaï, géorgien, gujarati, tamoul, bengali, persan, grec, finnois, ukrainien, télougou, népalais, pendjabi, kannada, catalan, serbe, et bien d’autres langues. Cette liste n’est pas exhaustive : le modèle peut également offrir de bonnes performances dans d’autres langues.
 - Prend en charge plusieurs formats de documents, notamment :
     - `image_url` : png, jpeg/jpg, avif et plus encore...
     - `document_url` : pdf, pptx, docx et plus encore...
@@ -52,7 +53,8 @@ L'API Mistral Document AI intègre un processeur OCR (reconnaissance optique de 
 Découvrez-en plus sur notre API [ici](https://docs.mistral.ai/api/endpoint/ocr).
 
 :::info
-Le formatage des tableaux ainsi que l'extraction des en-têtes et pieds de page ne sont disponibles qu'avec OCR 2512 ou versions ultérieures.
+La mise en forme des tableaux ainsi que l’extraction des en-têtes et pieds de page ne sont disponibles que pour OCR 2512 ou versions ultérieures.
+L’extraction des blocs via `include_blocks` n’est disponible que pour OCR 4 (`mistral-ocr-4-0`) ou versions ultérieures.
 :::
 
 Le processeur OCR retourne le **contenu textuel** extrait, les **bboxes des images** et les métadonnées concernant la structure du document, facilitant ainsi le travail programmatique avec le contenu reconnu.
@@ -83,22 +85,23 @@ Le résultat sera un objet JSON contenant le contenu textuel extrait, les bboxes
 
 ```py
 {
-  "pages": [ # The content of each page
+  "pages": [ # Le contenu de chaque page
     {
-      "index": int, # The index of the corresponding page
-      "markdown": str, # The main output and raw markdown content
-      "images": list, # Image information when images are extracted
-      "tables": list, # Table information when using `table_format=html` or `table_format=markdown`
-      "hyperlinks": list, # Hyperlinks detected
-      "header": str|null, # Header content when using `extract_header=True`
-      "footer": str|null, # Footer content when using `extract_footer=True`
-      "dimensions": dict, # The dimensions of the page
-      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+      "index": int, # L'index de la page correspondante
+      "markdown": str, # Le résultat principal et le contenu markdown brut
+      "images": list, # Informations sur les images lorsque celles-ci sont extraites
+      "tables": list, # Informations sur les tableaux lors de l'utilisation de `table_format=html` ou `table_format=markdown`
+      "hyperlinks": list, # Hyperliens détectés
+      "header": str|null, # Contenu de l'en-tête lors de l'utilisation de `extract_header=True`
+      "footer": str|null, # Contenu du pied de page lors de l'utilisation de `extract_footer=True`
+      "dimensions": dict, # Les dimensions de la page
+      "confidence_scores": dict|null, # Scores de confiance lorsque `confidence_scores_granularity` est défini (contient `average_page_confidence_score`, `minimum_page_confidence_score` et `word_confidence_scores` pour la granularité au niveau du mot)
+      "blocks": list|null # Boîtes englobantes au niveau des paragraphes avec étiquettes de blocs lors de l'utilisation de `include_blocks=True`
     }
   ],
-  "model": str, # The model used for the OCR
-  "document_annotation": dict|null, # Document annotation information when used, visit the Annotations documentation for more information
-  "usage_info": dict # Usage information
+  "model": str, # Le modèle utilisé pour l'OCR
+  "document_annotation": dict|null, # Informations d'annotation du document lorsqu'utilisées, consultez la documentation Annotations pour plus d'informations
+  "usage_info": dict # Informations d'utilisation
 }
 ```
 
@@ -127,22 +130,23 @@ Le résultat sera un objet JSON contenant le contenu textuel extrait, les bboxes
 
 ```py
 {
-  "pages": [ # The content of each page
+  "pages": [ # Le contenu de chaque page
     {
-      "index": int, # The index of the corresponding page
-      "markdown": str, # The main output and raw markdown content
-      "images": list, # Image information when images are extracted
-      "tables": list, # Table information when using `table_format=html` or `table_format=markdown`
-      "hyperlinks": list, # Hyperlinks detected
-      "header": str|null, # Header content when using `extract_header=True`
-      "footer": str|null, # Footer content when using `extract_footer=True`
-      "dimensions": dict, # The dimensions of the page
-      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+      "index": int, # L'index de la page correspondante
+      "markdown": str, # Le résultat principal et le contenu markdown brut
+      "images": list, # Informations sur les images lorsque celles-ci sont extraites
+      "tables": list, # Informations sur les tableaux lors de l'utilisation de `table_format=html` ou `table_format=markdown`
+      "hyperlinks": list, # Hyperliens détectés
+      "header": str|null, # Contenu de l'en-tête lors de l'utilisation de `extract_header=True`
+      "footer": str|null, # Contenu du pied de page lors de l'utilisation de `extract_footer=True`
+      "dimensions": dict, # Les dimensions de la page
+      "confidence_scores": dict|null, # Scores de confiance lorsque `confidence_scores_granularity` est défini (contient `average_page_confidence_score`, `minimum_page_confidence_score` et `word_confidence_scores` pour la granularité au niveau du mot)
+      "blocks": list|null # Boîtes englobantes au niveau des paragraphes avec étiquettes de blocs lors de l'utilisation de `include_blocks=True`
     }
   ],
-  "model": str, # The model used for the OCR
-  "document_annotation": dict|null, # Document annotation information when used, visit the Annotations documentation for more information
-  "usage_info": dict # Usage information
+  "model": str, # Le modèle utilisé pour l'OCR
+  "document_annotation": dict|null, # Informations d'annotation du document lorsqu'utilisées, consultez la documentation Annotations pour plus d'informations
+  "usage_info": dict # Informations d'utilisation
 }
 ```
 
@@ -152,6 +156,45 @@ Lors de l'extraction d'images et de tableaux, ceux-ci seront remplacés par des 
 - `[tbl-3.html](tbl-3.html)`
 
 Vous pouvez les associer aux images et tableaux réels en utilisant les champs `images` et `tables`.
+:::
+
+<SectionTab as="h1" sectionId="block-extraction">Extraction des blocs</SectionTab>
+
+### Extraire les blocs structurels avec des boîtes englobantes
+
+Définissez `include_blocks=True` pour recevoir un tableau `blocks` sur chaque page. Chaque bloc décrit une zone de contenu spécifique avec son libellé (`type`), les coordonnées de sa boîte englobante et le contenu extrait. Les blocs sont renvoyés **dans l’ordre de lecture**.
+
+Chaque bloc partage les champs suivants : `type`, `top_left_x`, `top_left_y`, `bottom_right_x`, `bottom_right_y`, et `content`.
+
+<details>
+<summary><b>Types de blocs disponibles</b></summary>
+
+| Type de bloc | Description |
+| --- | --- |
+| `text` | Un paragraphe de texte principal. |
+| `title` | Un titre de document ou de section. |
+| `list` | Une liste à puces ou numérotée. |
+| `table` | Une zone de tableau. Lorsqu’un tableau est extrait, inclut un `table_id` référençant l’entrée correspondante dans `tables`. |
+| `image` | Une zone d’image. Inclut un `image_id` référençant l’entrée correspondante dans `images`. |
+| `equation` | Une équation mathématique. |
+| `caption` | Une légende associée à une figure ou un tableau. |
+| `code` | Un bloc de code. |
+| `references` | Une section de bibliographie ou de références. |
+| `aside_text` | Un encadré, une note latérale ou un bloc de texte marginal. |
+| `header` | L’en-tête de page. |
+| `footer` | Le pied de page. |
+| `signature` | Une zone de signature. Le champ `content` contient le nom transcrit lorsqu’il est lisible, sinon une chaîne vide. |
+
+</details>
+
+<ExplorerTabs id="block-extraction">
+  <ExplorerTab value="block-extraction-example" label="Extraction des blocs">
+    <OCRWithBlocksTab/>
+  </ExplorerTab>
+</ExplorerTabs>
+
+:::info
+L’extraction des blocs n’est disponible que pour OCR 4 (`mistral-ocr-4-0`) ou versions ultérieures. Les anciens modèles acceptent le paramètre mais renvoient un tableau vide.
 :::
 
 <SectionTab as="h1" sectionId="confidence-scores">Scores de confiance</SectionTab>

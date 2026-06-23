@@ -32,11 +32,11 @@ export default {
       
     ]
   },
-  identifiers: { apiNames: ['mistral-ocr-2512', 'mistral-ocr-latest'] },
+  identifiers: { apiNames: ['mistral-ocr-2512'] },
   capabilities: {
     input: ['image', 'document'],
     output: ['text', 'image'],
-    features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
+    features: ['ocr', 'annotations-structured-ocr', 'batching'],
 
   },
   metadata: {},

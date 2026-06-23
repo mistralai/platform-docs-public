@@ -11,7 +11,7 @@ export const LATEST_MODEL_NAMES: ModelSlug[] = [
   'mistral-small-4-0-26-03',
   'voxtral-mini-transcribe-realtime-26-02',
   'voxtral-tts-26-03',
-  'ocr-3-25-12',
+  'ocr-4-0',
   'devstral-2-25-12',
 ];
 

@@ -1,7 +1,7 @@
 import { ModelSlug } from '@/schema/models';
 
 export const FEATURED_MODEL_NAMES: ModelSlug[] = [
-  'mistral-large-3-25-12',
+  'ocr-4-0',
   'devstral-2-25-12',
   'mistral-medium-3-5-26-04',
 ];
@@ -25,7 +25,7 @@ export const FEATURED_MODELS_COLOR_OVERRIDES = [
 ];
 
 export const DEFAULT_BENCHMARK_MODELS: ModelSlug[] = [
-  'mistral-large-3-25-12',
+  'ocr-4-0',
   'mistral-medium-3-5-26-04',
   'mistral-small-4-0-26-03',
 ];

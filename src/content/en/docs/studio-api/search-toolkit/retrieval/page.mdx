@@ -1,0 +1,52 @@
+---
+title: "Retrieval"
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Retrieval
+
+Retrieval finds relevant chunks for a given user query. Search Toolkit supports vector (semantic), keyword (BM25), and hybrid search strategies that can be combined for optimal results.
+
+An optional **query preprocessor** transforms the raw query before search — rewriting it for clarity or expanding it into multiple variants.
+
+One or more **Retrievers** execute the search against the index. They can run in parallel and their results are merged.
+
+An optional **Reranker** re-scores the merged results using a more precise scoring strategy — an LLM, a cross-encoder, or rank fusion across multiple result sets.
+
+<SectionTab as="h1" sectionId="query-engine">Query engine</SectionTab>
+
+`QueryEngine` orchestrates the retrieval pipeline. It accepts one or more retrievers, optional query preprocessing, and optional rerankers:
+
+```python
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
+from mistralai.search.toolkit.retrieval.rerankers import LLMReRanker
+from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
+
+query_engine = QueryEngine(
+    retriever=vector_retriever,       # Also accepts a list of retrievers
+    query_rewriter=query_rewriter,    # Optional
+    rerankers=[llm_reranker],         # Optional, supports ReRanker and GroupedRanker
+)
+
+result = await query_engine.search(
+    query="What is RAG?",
+    top_k=10,
+    include_metadata=True,
+    include_content=True,
+)
+
+print(f"Original query: {result.original_query}")
+print(f"Results: {len(result.results)}")
+```
+
+<SectionTab as="h1" sectionId="components">Components</SectionTab>
+
+Each retrieval component is documented in detail with examples and best practices:
+
+- **[Retrievers](/studio-api/search-toolkit/retrieval/retrievers)**: VectorRetriever, KeywordRetriever, and hybrid search patterns
+- **[Rerankers](/studio-api/search-toolkit/retrieval/rerankers)**: LLMReRanker, CrossEncoderReRanker, RRF fusion, and custom rerankers
+- **[Query preprocessing](/studio-api/search-toolkit/retrieval/preprocessing)**: Query rewriting and expansion for better retrieval quality
+- **[Semantic cache](/studio-api/search-toolkit/retrieval/semantic-cache)**: Cache results by query similarity to reduce latency

@@ -1,0 +1,217 @@
+---
+id: connectors_debugger
+title: Déboguer les connecteurs
+sidebar_position: 2
+---
+
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Déboguer les connecteurs
+
+Le débugueur de Connecteurs vous permet de tester un serveur de Connecteur MCP avant de l'utiliser avec Studio. Utilisez-le pour vérifier l'accessibilité du serveur, la configuration de l'authentification, la découverte des outils et les erreurs de validation depuis Studio.
+
+:::info[Version bêta publique]
+Le débugueur de connecteurs est en version bêta publique. La couverture de validation et les détails des erreurs peuvent évoluer au fur et à mesure que nous ajoutons des vérifications de compatibilité MCP.
+:::
+
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
+
+Vous devez avoir accès à Studio et à l'URL du serveur de Connecteur MCP que vous souhaitez tester. Si le serveur nécessite une authentification, préparez l'une des options suivantes :
+
+- Un en-tête HTTP statique, par exemple `Authorization: Bearer <token>`.
+- Des identifiants client OAuth2 pour le serveur du Connecteur.
+
+Les identifiants configurés dans le débugueur ne sont pas stockés. Ils durent uniquement pendant la session en cours.
+
+Si votre Connecteur utilise OAuth2, configurez cette URI de redirection dans votre application OAuth :
+
+```text
+https://console.mistral.ai/build/connectors/debugger/oauth-callback
+```
+
+<SectionTab as="h1" sectionId="open-debugger">Ouvrir le débugueur de Connecteurs</SectionTab>
+
+1. Ouvrez [Studio](https://console.mistral.ai/).
+2. Dans le menu de gauche, cliquez sur `Connecteurs`.
+3. Cliquez sur `Debugger` dans le coin supérieur droit.
+
+Vous pouvez également ouvrir directement le [débugueur de Connecteurs](https://console.mistral.ai/build/connectors/debugger).
+
+<SectionTab as="h1" sectionId="configure-test">Configurer le test du Connecteur</SectionTab>
+
+Saisissez d'abord l'URL du Connecteur. Ajoutez des identifiants uniquement si le serveur de Connecteur les exige.
+
+1. Dans le champ d'URL du Connecteur, saisissez l'URL du serveur MCP.
+2. Si le serveur exige des identifiants, cliquez sur l'icône des paramètres à côté de `Run diagnostic`.
+3. Dans `Credentials`, sélectionnez `Custom header` ou `OAuth 2.0`.
+4. Pour un en-tête personnalisé, définissez `Header name` sur `Authorization` et `Header value` sur `Bearer <token>`.
+5. Pour OAuth, saisissez `Client ID` et `Client Secret`.
+6. Confirmez que `Redirect URI` affiche l'URL de callback du débugueur :
+
+   ```text
+   https://console.mistral.ai/build/connectors/debugger/oauth-callback
+   ```
+
+7. Cliquez sur `Run diagnostic`.
+
+:::caution
+Testez uniquement les serveurs de Connecteurs auxquels vous faites confiance. Le débugueur envoie les en-têtes ou identifiants configurés à l'adresse du serveur que vous fournissez.
+:::
+
+<SectionTab as="h1" sectionId="run-validation">Exécuter un diagnostic</SectionTab>
+
+Le débugueur exécute le diagnostic et génère un rapport sur le côté droit de la fenêtre. Si vous devez relancer le test après avoir modifié l'URL ou les identifiants, cliquez sur `Run again`.
+
+Lorsqu'une étape échoue, le rapport explique quelle étape a échoué et inclut les détails de dépannage. Selon l'échec, le rapport peut inclure :
+
+- `Likely cause`
+- `Suggested fix`
+- `Raw response`
+- `Copy as curl`
+- `Headers`
+- `Body`
+- Un rapport JSON pour l'étape en échec
+
+Par exemple, si le serveur renvoie du HTML au lieu d'une réponse MCP JSON-RPC, le rapport peut afficher `The server responded but does not appear to be an MCP server` comme cause probable et `Verify the URL points to an MCP server, not a regular web page or REST API` comme solution suggérée.
+
+Un rapport d'étape en échec peut ressembler à ceci :
+
+```json
+{
+  "step": "transport_detection",
+  "status": "error",
+  "duration": 259,
+  "data": {
+    "attempt": {
+      "request": {
+        "method": "POST",
+        "url": "https://chaos-mcp.example.com/"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "body": "<!DOCTYPE html><html lang=\"en\">..."
+      }
+    }
+  },
+  "error": {
+    "type": "not_mcp_server"
+  }
+}
+```
+
+<SectionTab as="h1" sectionId="successful-test">Examiner un test réussi</SectionTab>
+
+Quand toutes les vérifications réussissent, le rapport final indique que le serveur MCP est prêt. Le rapport inclut la version du protocole MCP, un lien `Voir la documentation officielle`, des métriques de résumé, des instructions lorsqu'elles sont disponibles et le contenu MCP découvert.
+
+Un rapport réussi peut inclure :
+
+- `Serveur MCP prêt`
+- `Protocole 2025-11-25`
+- `Voir la documentation officielle`
+- `Outils` : le nombre d'outils découverts
+- `Prompts` : le nombre de prompts découverts
+- `Ressources` : le nombre de ressources découvertes
+- `Durée` : la durée de la validation
+- `Vérifications` : le nombre de vérifications réussies, par exemple `3/3`
+- `Instructions` : les instructions du serveur lorsque le serveur MCP les renvoie
+
+La section `Tools` répertorie les outils découverts. Vous pouvez utiliser `Search...` pour les filtrer et sélectionner `Interactive` pour les inspecter. Par exemple, un serveur de test peut renvoyer des outils nommés `echo`, `add` et `current_time`. La sélection de `echo` affiche `Echo back the provided message.` comme description et affiche le schéma d'entrée :
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "description": "Text to echo",
+      "type": "string"
+    }
+  },
+  "required": ["message"]
+}
+```
+
+<SectionTab as="h1" sectionId="typical-errors">Résoudre les erreurs MCP typiques</SectionTab>
+
+Utilisez d'abord le rapport généré. Il affiche l'étape en échec ainsi que les champs `Likely cause` et `Suggested fix` les plus précis disponibles. Les cas ci-dessous expliquent les problèmes fréquents de serveur MCP qui peuvent apparaître dans le rapport.
+
+<Faq>
+  <FaqItem question="La réponse commence par du HTML ou n'est pas un JSON-RPC valide. Que dois-je vérifier ?">
+    L'URL pointe probablement vers une page web, un mur de connexion ou un endpoint REST au lieu de l'endpoint MCP.
+
+Utilisez l'URL de l'endpoint MCP Streamable HTTP, comme un chemin se terminant par `/mcp`. Confirmez que l'endpoint renvoie des réponses JSON-RPC 2.0.
+  </FaqItem>
+
+  <FaqItem question="Le panneau des détails mentionne du JSON mal formé, un corps vide ou un JSON-RPC invalide. Comment puis-je le corriger ?">
+    La réponse du serveur ne peut pas être analysée comme un message JSON-RPC 2.0 valide.
+
+Retournez un corps JSON complet avec `jsonrpc`, `id`, et soit `result`, soit `error`. Supprimez le HTML, les marques d'ordre d'octets, les bannières de débugage et les réponses vides `200`.
+  </FaqItem>
+
+  <FaqItem question="La réponse a le type de contenu incorrect ou une erreur gzip. Que signifie cela ?">
+    Les en-têtes du serveur ne correspondent pas au corps.
+
+Définissez le type de contenu JSON ou de flux d'événements attendu pour votre transport MCP. Ne définissez `Content-Encoding: gzip` que si le corps est encodé en gzip.
+  </FaqItem>
+
+  <FaqItem question="La demande expire, bloque, retourne 500 ou retourne 429. Que dois-je faire ?">
+    Le serveur peut être lent, indisponible, limité en débit ou instable lors des nouvelles tentatives.
+
+Vérifiez les journaux du serveur, les paramètres de délai d'attente, le comportement de réessai et les limites de débit. Renvoie `Retry-After` pour les réponses `429` et rendez l'initialisation rapide.
+  </FaqItem>
+
+  <FaqItem question="L'authentification ne commence pas après un code 401. Que manque-t-il ?">
+    Le serveur ne renvoie peut-être pas un défi d'authentification utilisable.
+
+Incluez un en-tête `WWW-Authenticate` valide et rendez les métadonnées de la ressource protégée disponibles lorsque la découverte est requise.
+  </FaqItem>
+
+  <FaqItem question="La découverte ou l'échange de token échoue. Que dois-je vérifier ?">
+    Les métadonnées, l autorisation ou l'endpoint de token peuvent manquer ou rejeter la demande du débugueur.
+
+Vérifiez les métadonnées de l'émetteur, les paramètres d'enregistrement du client, `ID client`, `Secret client`, les portées, l'endpoint de token et l'URI de redirection.
+  </FaqItem>
+
+  <FaqItem question="Le token est rejeté immédiatement après le consentement. À quoi est-ce dû ?">
+    Le serveur MCP peut ne pas accepter le token émis, ou le token peut manquer de portées requises.
+
+Validez l'émetteur, le public, l'expiration, les portées et la signature du token côté serveur. Assurez-vous que le même serveur d'autorisation protège l'endpoint MCP.
+  </FaqItem>
+
+  <FaqItem question="La validation basée sur le navigateur échoue avec une erreur CORS. Comment puis-je la corriger ?">
+    Le serveur MCP peut ne pas autoriser l'origine de Studio ou les en-têtes MCP requis.
+
+Ajoutez les en-têtes CORS pour l'origine de Studio. Autorisez `Authorization`, `Content-Type`, `Accept`, `Mcp-Session-Id` et `Mcp-Protocol-Version` lorsque cela est pertinent.
+  </FaqItem>
+
+  <FaqItem question="La reprise de session échoue ou le client s'initialise à plusieurs reprises. Que dois-je vérifier ?">
+    Le serveur ne retourne ou ne conserve peut-être pas `Mcp-Session-Id`.
+
+Retournez `Mcp-Session-Id` lorsque cela est requis et conservez l'état de la session disponible pour les demandes ultérieures.
+  </FaqItem>
+
+  <FaqItem question="L'initialisation MCP échoue en raison des capacités, de la version du protocole ou de serverInfo. Que dois-je renvoyer ?">
+    La réponse `initialize` peut ne pas correspondre au schéma MCP ou annoncer des métadonnées de protocole non prises en charge.
+
+Retournez un résultat `initialize` valide avec la version du protocole prise en charge, les capacités et un objet `serverInfo` correctement structuré.
+  </FaqItem>
+
+  <FaqItem question="La découverte d'outils échoue ou les outils découverts semblent incorrects. Que dois-je revoir ?">
+    Les noms, descriptions ou valeurs `inputSchema` des outils peuvent être invalides, en double, trop volumineux ou non sécurisés.
+
+Utilisez des noms d'outils uniques, des descriptions concises, des définitions de schéma JSON valides pour les entrées, et revoyez les métadonnées des outils pour détecter les injections de prompt.
+  </FaqItem>
+
+  <FaqItem question="Les appels d'outils bloquent, renvoient des charges utiles énormes, renvoient isError ou renvoient un contenu mal formé. Que dois-je changer ?">
+    L'implémentation de `tools/call` peut ne pas renvoyer la forme de résultat MCP attendue ou ne pas gérer les erreurs de manière cohérente.
+
+Retournez des résultats limités avec des blocs `content` valides. Utilisez `isError` pour les échecs au niveau de l'outil et les erreurs JSON-RPC pour les échecs au niveau du protocole. Ajoutez des délais d'attente autour des appels en aval lents.
+  </FaqItem>
+</Faq>
+
+<SectionTab as="h1" sectionId="next-steps">Prochaines étapes après un test réussi</SectionTab>
+
+Une fois que le débugueur a validé votre serveur de Connecteur, utilisez le rapport pour confirmer sa compatibilité avec Studio. Le flux de création de Connecteurs n'est pas inclus dans cette version.

@@ -21,7 +21,7 @@ Currently, among the function calling capable models, we have the following non-
 | General Models               | Specialized Models         |Reasoning Models         |
 |------------------------------|----------------------------|----------------------------|
 | [Mistral Large 3](/models/model-cards/mistral-large-3-25-12)<br/>- `mistral-large-latest` | [Devstral 2.0](/models/model-cards/devstral-2-25-12)<br/>- `devstral-latest` |[Magistral Medium 1.2](/models/model-cards/magistral-medium-1-2-25-09)<br/>- `magistral-medium-latest` |
-| [Mistral Medium 3.1](/models/model-cards/mistral-medium-3-1-25-08)<br/>- `mistral-medium-latest` | [Devstral Small 2](/models/model-cards/devstral-small-2-25-12)<br/>- `devstral-small-latest` |[Magistral Small 1.2](/models/model-cards/magistral-small-1-2-25-09)<br/>- `magistral-small-latest`        |
+| [Mistral Medium 3.5](/models/model-cards/mistral-medium-3-5-26-04)<br/>- `mistral-medium-latest` | [Devstral Small 2](/models/model-cards/devstral-small-2-25-12)<br/>- `devstral-small-latest` |[Magistral Small 1.2](/models/model-cards/magistral-small-1-2-25-09)<br/>- `magistral-small-latest`        |
 | [Mistral Small 3.2](/models/model-cards/mistral-small-3-2-25-06)<br/>- `mistral-small-latest` | [Voxtral Small](/models/model-cards/voxtral-small-25-07)<br/>- `voxtral-small-latest`        |     |
 | [Mistral Small Creative](/models/model-cards/mistral-small-creative-25-12)<br/>- `labs-mistral-small-creative`   | [Codestral](/models/model-cards/codestral-25-01)<br/>- `codestral-latest`              |     |
 | [Ministral 3 14B](/models/model-cards/ministral-3-14b-25-12)<br/>- `ministral-14b-latest`   |        |     |

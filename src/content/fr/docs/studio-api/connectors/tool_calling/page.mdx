@@ -1,0 +1,212 @@
+---
+id: connectors_tool_calling
+title: Appel direct d’outils avec les Connecteurs
+sidebar_position: 4
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Appel direct d’outils
+
+La méthode `call_tool` permet d’appeler un outil MCP spécifique sur un Connecteur **sans démarrer de conversation ni faire intervenir le modèle**.
+
+Cela est utile lorsque vous :
+
+- Connaissez déjà l’outil à appeler et les arguments à transmettre
+- Souhaitez récupérer la sortie brute de l’outil pour un traitement ultérieur
+- Construisez des pipelines qui enchaînent des appels d’outils de manière programmatique
+- Voulez tester ou vérifier les outils d’un Connecteur avant de les utiliser dans des conversations
+
+Pour les scénarios où c’est le modèle qui choisit les outils à appeler, utilisez plutôt les [Connecteurs dans les conversations](/studio-api/connectors/conversations).
+
+:::note
+Si un Connecteur nécessite une authentification, vous devez terminer le [flux d’authentification](/studio-api/connectors/management#get-auth-url) avant d’appeler ses outils.
+:::
+
+<SectionTab as="h1" sectionId="call-tool">Appeler un outil directement</SectionTab>
+
+Pour appeler un outil, transmettez le nom (ou l’UUID) du Connecteur, le nom de l’outil et les arguments attendus par celui-ci.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+
+async def main() -> None:
+    result = await client.beta.connectors.call_tool_async(
+        connector_id_or_name="my_deepwiki",
+        tool_name="read_wiki_structure",
+        arguments={"repoName": "sqlite/sqlite"},
+    )
+
+    # result.content is a list of content blocks (TextContent, ImageContent, etc.)
+    for item in result.content:
+        if hasattr(item, "text"):
+            print(item.text)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+async function main(): Promise<void> {
+  const result = await client.beta.connectors.callTool({
+    connectorIdOrName: "my_deepwiki",
+    toolName: "read_wiki_structure",
+    connectorCallToolRequest: {
+      arguments: { repoName: "sqlite/sqlite" },
+    },
+  });
+
+  // result.content is an array of content blocks (text, image, etc.)
+  for (const item of result.content ?? []) {
+    if ("text" in item) {
+      console.log(item.text);
+    }
+  }
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+Le `tool_name` fait partie du chemin de l’URL, et non du corps de la requête. Le corps ne contient que `arguments`.
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/connectors/my_deepwiki/tools/read_wiki_structure/call" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "arguments": {"repoName": "sqlite/sqlite"}
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+Le tableau `content` de la réponse contient des blocs de contenu typés (texte, image, audio ou ressource) renvoyés par le serveur MCP.
+
+:::info
+Les noms des outils doivent correspondre exactement : utilisez [list tools](/studio-api/connectors/management#list-tools) pour vérifier ce qu’un Connecteur expose.
+:::
+
+<SectionTab as="h1" sectionId="chaining">Enchaîner plusieurs appels d’outils</SectionTab>
+
+Vous pouvez appeler plusieurs outils en séquence pour créer un pipeline **sans faire intervenir le modèle à chaque étape**.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your-api-key")
+
+
+async def main() -> None:
+    # First call: get the repository structure
+    structure = await client.beta.connectors.call_tool_async(
+        connector_id_or_name="my_deepwiki",
+        tool_name="read_wiki_structure",
+        arguments={"repoName": "sqlite/sqlite"},
+    )
+    for item in structure.content:
+        if hasattr(item, "text"):
+            print("Structure:", item.text[:300])
+
+    # Second call: ask a question about the repo
+    answer = await client.beta.connectors.call_tool_async(
+        connector_id_or_name="my_deepwiki",
+        tool_name="ask_question",
+        arguments={
+            "repoName": "sqlite/sqlite",
+            "question": "What is the purpose of the VDBE?",
+        },
+    )
+    for item in answer.content:
+        if hasattr(item, "text"):
+            print("Answer:", item.text[:300])
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+
+async function main(): Promise<void> {
+  // First call: get the repository structure
+  const structure = await client.beta.connectors.callTool({
+    connectorIdOrName: "my_deepwiki",
+    toolName: "read_wiki_structure",
+    connectorCallToolRequest: {
+      arguments: { repoName: "sqlite/sqlite" },
+    },
+  });
+  for (const item of structure.content ?? []) {
+    if ("text" in item) {
+      console.log("Structure:", item.text.substring(0, 300));
+    }
+  }
+
+  // Second call: ask a question about the repo
+  const answer = await client.beta.connectors.callTool({
+    connectorIdOrName: "my_deepwiki",
+    toolName: "ask_question",
+    connectorCallToolRequest: {
+      arguments: {
+        repoName: "sqlite/sqlite",
+        question: "What is the purpose of the VDBE?",
+      },
+    },
+  });
+  for (const item of answer.content ?? []) {
+    if ("text" in item) {
+      console.log("Answer:", item.text.substring(0, 300));
+    }
+  }
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+# First call
+curl -X POST "https://api.mistral.ai/v1/connectors/my_deepwiki/tools/read_wiki_structure/call" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"arguments": {"repoName": "sqlite/sqlite"}}'
+
+# Second call
+curl -X POST "https://api.mistral.ai/v1/connectors/my_deepwiki/tools/ask_question/call" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"arguments": {"repoName": "sqlite/sqlite", "question": "What is the purpose of the VDBE?"}}'
+```
+
+  </TabItem>
+</Tabs>

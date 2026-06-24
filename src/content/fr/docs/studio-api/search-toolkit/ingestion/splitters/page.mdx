@@ -1,0 +1,213 @@
+---
+title: Sépareurs de texte
+description: Divisez les documents en objets DocumentChunk récupérables pour l’indexation.
+sidebar_position: 4
+sidebar_label: Sépareurs de texte
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les sépareurs de texte divisent les documents en objets `DocumentChunk` récupérables. Le choix du séparateur a un impact significatif sur la qualité de la récupération.
+
+<SectionTab as="h2" sectionId="available-text-splitters">Sépareurs de texte disponibles</SectionTab>
+
+| Séparateur | Idéal pour |
+|----------|----------|
+| **[Séparateur de texte par caractères](#character-text-splitter)** | Texte simple, prototypage rapide |
+| **[Séparateur de texte par tokens](#token-text-splitter)** | Découpage conscient des tokens, gestion du Contexte LLM |
+| **[Séparateur de texte Markdown](#markdowntextsplitter)** | Documents Markdown, contenu structuré avec des en-têtes |
+| **[Séparateur de texte par séparateurs](#separatortextsplitter)** | Logique de séparation personnalisée, texte hiérarchique |
+| **[Sépareurs personnalisés](#creating-custom-splitters)** | Toute stratégie de séparation |
+
+:::info
+Tous les sépareurs conservent automatiquement les métadonnées importantes dans chaque fragment :
+
+- `numéro_de_page` : numéro de la page source
+- `nom_de_fichier` : nom du fichier original
+- `chemin_de_fichier` : chemin du fichier original
+- `position_début` : position du caractère dans le document
+- `position_fin` : position du caractère dans le document
+- `images` : liste des références d’images dans le fragment (le cas échéant)
+
+:::
+
+<SectionTab as="h1" sectionId="chunk-size-guidance">Recommandations pour la taille des fragments</SectionTab>
+
+La taille des fragments a un impact significatif sur la qualité de la récupération et l’utilisation du Contexte LLM. Choisissez en fonction de votre cas d’usage :
+
+| Contexte LLM | Taille du fragment | Recouvrement | Cas d’usage |
+|-------------|-----------|---------|----------|
+| 4 k tokens | 300 à 500 caractères | 50 à 100 caractères | Contraintes mémoire, récupération rapide |
+| 8 k tokens | 500 à 1 000 caractères | 100 à 200 caractères | Qualité de récupération équilibrée |
+| 32 k+ tokens | 1 000 à 2 000 caractères | 200 à 500 caractères | Contexte riche, récupération complexe |
+| Code/technique | 500 à 1 000 caractères | 100 à 200 caractères | Préserver les unités logiques |
+| Juridique/financier | 1 000 à 2 000 caractères | 200 à 500 caractères | Contexte complet pour l’interprétation |
+
+**Règle empirique** : ~400 à 600 caractères ≈ 100 à 150 tokens. Ajustez en fonction de la complexité du domaine et des besoins en précision de récupération.
+
+**Avantages du recouvrement des fragments** :
+- Évite que les limites sémantiques ne séparent des concepts liés
+- Améliore le Contexte lorsque les fragments sont utilisés individuellement
+- Augmente la taille de l’index et la latence des requêtes de manière proportionnelle
+
+<SectionTab as="h1" sectionId="character-text-splitter">Séparateur de texte par caractères</SectionTab>
+
+`CharacterTextSplitter` divise le texte par nombre de caractères. Idéal pour les textes simples et le prototypage rapide.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
+
+splitter = CharacterTextSplitter(
+    chunk_size=500,     # Characters per chunk
+)
+chunks = splitter.split_document(document)
+```
+
+**Paramètres** :
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `taille_fragment` | `int` | `1000` | Nombre maximal de caractères par fragment |
+
+<SectionTab as="h1" sectionId="token-text-splitter">Séparateur de texte par tokens</SectionTab>
+
+Découpage conscient des tokens à l’aide d’un tokeniseur pour la gestion de la fenêtre de Contexte LLM et le contrôle précis des tokens.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import TokenTextSplitter
+
+splitter = TokenTextSplitter(
+    chunk_size=1000,         # Tokens per chunk
+    chunk_overlap=200,       # Token overlap
+)
+
+chunks = splitter.split_document(document)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Objectif |
+|--------|------|---------|---------|
+| `taille_fragment` | int | 1000 | Tokens par fragment (utilise le tokeniseur Mistral) |
+| `recouvrement_fragment` | int | 0 | Tokens de recouvrement entre les fragments |
+| `modèle_tokeniseur` | str | "mistral" | Tokeniseur à utiliser pour le comptage |
+
+**Quand l’utiliser** :
+- Budget précis en tokens pour les fenêtres de Contexte LLM
+- Fragments cohérents quel que soit le type de texte
+- Pour travailler avec des limites de tokens spécifiques
+
+### Séparateur de texte Markdown
+
+`MarkdownTextSplitter` divise les documents Markdown aux limites des en-têtes. Il hérite de `SeparatorTextSplitter` et ajoute une division consciente des en-têtes avec des niveaux d’en-tête configurables.
+
+**Prérequis** :
+
+Installez l’extra `text-splitter-langchain` :
+
+```bash
+uv add "mistralai-search-toolkit[text-splitter-langchain]"
+```
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import MarkdownTextSplitter, MarkdownTextSplitterConfig
+
+config = MarkdownTextSplitterConfig(
+    headers_to_split_on=[
+        ("#", "h1"),
+        ("##", "h2"),
+        ("###", "h3"),
+    ],
+    strip_headers=False,    # Keep headers in chunks
+    chunk_size=1000,        # Inherited from SeparatorTextSplitterConfig
+    chunk_overlap=200,      # Inherited from SeparatorTextSplitterConfig
+)
+
+splitter = MarkdownTextSplitter(config=config)
+chunks = splitter.split_document(document)
+```
+
+**Paramètres** (`MarkdownTextSplitterConfig`) :
+
+`MarkdownTextSplitterConfig` étend `SeparatorTextSplitterConfig` et ajoute :
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `en-têtes_à_diviser` | `list[tuple[str, str]]` | `[("#", "En-tête 1"), ("##", "En-tête 2"), ("###", "En-tête 3")]` | En-têtes Markdown sur lesquels diviser — chaque tuple est `(préfixe_en-tête, libellé)` |
+| `supprimer_en-têtes` | `bool` | `False` | Supprimer les lignes d’en-tête du contenu des fragments |
+
+Tous les paramètres de `SeparatorTextSplitterConfig` sont également disponibles (`taille_fragment`, `taille_max_fragment`, `recouvrement_fragment`, `séparateurs_fragments`, `conserver_séparateur`, `supprimer_espaces`).
+
+### Séparateur de texte par séparateurs
+
+Division récursive avec des séparateurs personnalisés pour gérer des structures de document personnalisées, avec un contrôle précis sur les points de division et l’organisation hiérarchique du texte.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import SeparatorTextSplitter, SeparatorTextSplitterConfig
+
+config = SeparatorTextSplitterConfig(
+    chunk_size=1000,          # Target size (characters)
+    chunk_max_size=1500,      # Maximum size (characters)
+    chunk_overlap=200,        # Overlap (characters)
+    chunk_separators=[        # Tried in order
+        "\n\n",    # Paragraphs first
+        "\n",      # Then lines
+        ". ",      # Then sentences
+        " ",       # Then words
+        "",        # Finally characters
+    ],
+)
+
+splitter = SeparatorTextSplitter(config=config)
+chunks = splitter.split_document(document)
+```
+
+**Fonctionnalités** :
+- Essaie les séparateurs dans l’ordre
+- Respecte la taille maximale même si la division échoue
+- Fusionne les petits fragments lorsqu’es possible
+- Retourne les positions de début/fin
+
+<SectionTab as="h1" sectionId="creating-custom-splitters">Créer des sépareurs personnalisés</SectionTab>
+
+Implémentez le protocole `TextSplitter` :
+
+```python
+from mistralai.search.toolkit.ingestion.text_splitters import TextSplitter
+from mistralai.search.toolkit.document import DocumentChunk
+
+class ParagraphSplitter(TextSplitter):
+    """Split text into chunks by paragraphs."""
+
+    def __init__(self, max_paragraphs_per_chunk: int = 3):
+        self.max_paragraphs_per_chunk = max_paragraphs_per_chunk
+
+    def split_text(self, text: str, **kwargs) -> list[DocumentChunk]:
+        paragraphs = text.split("\n\n")
+        chunks = []
+        offset = 0
+
+        for i in range(0, len(paragraphs), self.max_paragraphs_per_chunk):
+            chunk_paragraphs = paragraphs[i:i + self.max_paragraphs_per_chunk]
+            content = "\n\n".join(chunk_paragraphs)
+
+            chunks.append(DocumentChunk(
+                content=content,
+                start_offset=offset,
+                end_offset=offset + len(content),
+            ))
+            offset += len(content) + 2
+
+        return chunks
+
+splitter = ParagraphSplitter(max_paragraphs_per_chunk=3)
+chunks = splitter.split_text("First paragraph.\n\nSecond paragraph.\n\nThird paragraph.")
+```

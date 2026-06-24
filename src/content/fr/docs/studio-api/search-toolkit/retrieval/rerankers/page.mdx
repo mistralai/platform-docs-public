@@ -1,0 +1,310 @@
+---
+title: Classeurs
+description: Re-noter et affiner les résultats récupérés pour un meilleur classement.
+sidebar_position: 3
+sidebar_label: Classeurs
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Classeurs
+
+Les classeurs appliquent un système de notation plus sophistiqué pour améliorer la qualité du classement. La récupération initiale est rapide mais approximative ; les classeurs utilisent des modèles ou une logique plus approfondis pour affiner les résultats.
+
+Search Toolkit propose des classeurs dans deux catégories :
+- **`ReRanker`** — agit sur une seule liste de résultats (LLMReRanker, CrossEncoderReRanker)
+- **`GroupedRanker`** — agit sur plusieurs groupes de résultats (RRFRanker pour la fusion)
+
+Plusieurs classeurs peuvent être enchaînés dans la liste `QueryEngine.rerankers` et sont appliqués séquentiellement.
+
+<SectionTab as="h2" sectionId="available-rerankers">Classeurs disponibles</SectionTab>
+
+| Classeur | Type | Objectif |
+|----------|------|---------|
+| **[LLM ReRanker](#llm-reranker)** | ReRanker | Notation de pertinence approfondie à l’aide d’un LLM |
+| **[Cross-Encoder ReRanker](#cross-encoder-reranker)** | ReRanker | Reclassement rapide à l’aide d’un modèle dédié |
+| **[RRF Ranker](#rrf-ranker)** | GroupedRanker | Fusion des résultats de plusieurs récupérateurs |
+| **[Classeurs personnalisés](#custom-rerankers)** | ReRanker / GroupedRanker | Logique de notation et de fusion personnalisée |
+
+<SectionTab as="h1" sectionId="llm-reranker">LLM ReRanker</SectionTab>
+
+Utilise un modèle de langage pour re-noter les résultats avec une compréhension approfondie de la pertinence par rapport à la requête.
+
+**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import LLMReRanker
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.llm import MistralChat, LLMConfig
+from mistralai.client import Mistral
+
+llm = MistralChat(
+    client=Mistral(api_key="your-api-key"),
+    config=LLMConfig(
+        model="mistral-small-latest",
+        temperature=0.1,
+        response_format={"type": "json_object"},
+    ),
+)
+
+reranker = LLMReRanker(
+    llm_provider=llm,
+    top_k=10,  # Return top 10 after reranking
+)
+
+# Use in QueryEngine
+query_engine = QueryEngine(
+    retriever=vector_retriever,
+    rerankers=[reranker],
+)
+
+result = await query_engine.search(query="What is RAG?", top_k=10)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Objectif |
+|--------|------|---------|---------|
+| `llm_provider` | LLMProvider | Obligatoire | Modèle de langage à utiliser pour la notation (MistralChat, etc.) |
+| `top_k` | int | 10 | Nombre de résultats à retourner après bouclage |
+| `batch_size` | int | 10 | Taille du batch pour la notation par le modèle de langage |
+
+**Fonctionnement** :
+1. Le modèle de langage reçoit la requête et les fragments récupérés
+2. Le modèle de langage note la pertinence de chaque fragment
+3. Les fragments sont triés par notation du modèle de langage
+4. Les k meilleurs résultats sont retournés
+
+**Quand l’utiliser** :
+- Jugements de pertinence sémantique au-delà de la similarité vectorielle
+- Connaissances spécifiques au domaine requises pour le classement
+- Après la récupération initiale pour améliorer la qualité
+- Tolérance à un débit réduit (les appels au modèle de langage sont plus lents)
+
+**Optimisation des coûts** :
+
+Le bouclage par modèle de langage est coûteux (1 appel au modèle par fragment). Réduisez les coûts en :
+
+```python
+# 1. Get many results from retriever (fast)
+query_engine = QueryEngine(
+    retriever=vector_retriever,
+    rerankers=[LLMReRanker(llm_provider=llm, top_k=10)],
+)
+
+# 2. Vector retriever returns top 100 to reranker (cheaper than querying LLM for all)
+result = await query_engine.search(query="...", top_k=10)
+```
+
+<SectionTab as="h1" sectionId="cross-encoder-reranker">Cross-Encoder ReRanker</SectionTab>
+
+Utilise un modèle cross-encoder hébergé optimisé pour le reclacement. Plus rapide que le reclagement par modèle de langage mais nécessite un serveur de modèle dédié.
+
+**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import CrossEncoderReRanker
+from mistralai.search.toolkit.retrieval import QueryEngine
+
+reranker = CrossEncoderReRanker(
+    base_url="http://localhost:8080",  # Cross-encoder service endpoint
+    model="cross-encoder/ms-marco-MiniLM-L-6-v2",
+    top_k=10,
+)
+
+query_engine = QueryEngine(
+    retriever=vector_retriever,
+    rerankers=[reranker],
+)
+
+result = await query_engine.search(query="What is RAG?", top_k=10)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Objectif |
+|--------|------|---------|---------|
+| `base_url` | str | Obligatoire | URL du service cross-encoder |
+| `model` | str | Obligatoire | Identifiant du modèle sur le service |
+| `top_k` | int | 10 | Nombre de résultats à retourner |
+| `timeout` | int | 30 | Délai d’expiration de la requête en secondes |
+
+**Modèles populaires** :
+- `cross-encoder/ms-marco-MiniLM-L-6-v2` — Rapide, polyvalent
+- `cross-encoder/ms-marco-TinyBERT-L-2-v2` — Léger, latence faible
+- `cross-encoder/qnli-distilroberta-base` — Correspondance question-réponse
+
+**Quand l’utiliser** :
+- Besoin de reclagement mais souhaitent éviter les coûts du modèle de langage
+- Avoir un service cross-encoder dédié en cours d’exécution
+- Reclagement rapide requis (plus rapide que le modèle de langage)
+- Ensemble de données de pertinence standard (MS MARCO, Questions Naturelles)
+
+<SectionTab as="h1" sectionId="custom-rerankers">Classeurs personnalisés</SectionTab>
+
+Implémentez le protocole `ReRanker` pour un reclagement d’une seule liste :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import ReRanker
+from mistralai.search.toolkit.indices import SearchResult
+
+class MetadataReRanker(ReRanker):
+    """Boost results based on metadata."""
+
+    async def rerank(
+        self, query: str, search_results: list[SearchResult]
+    ) -> list[SearchResult]:
+        """Re-score results by boosting verified content."""
+        for result in search_results:
+            # Boost chunks with verified metadata
+            if result.chunk.metadata.get("verified"):
+                result.score *= 1.5
+
+            # Penalize outdated content
+            if result.chunk.metadata.get("year") and result.chunk.metadata["year"] < 2020:
+                result.score *= 0.8
+
+        # Return sorted by new score
+        return sorted(search_results, key=lambda x: x.score, reverse=True)
+
+
+# Use in QueryEngine
+query_engine = QueryEngine(
+    retriever=vector_retriever,
+    rerankers=[MetadataReRanker()],
+)
+```
+
+Implémentez le protocole `GroupedRanker` pour la fusion de plusieurs groupes :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import GroupedRanker
+from mistralai.search.toolkit.indices import SearchResult
+
+class CustomFusionRanker(GroupedRanker):
+    """Custom fusion of multiple retriever results."""
+
+    async def rerank_groups(
+        self, query: str, result_groups: list[list[SearchResult]]
+    ) -> list[SearchResult]:
+        """Fuse multiple retriever results with custom logic."""
+        # result_groups[0] = vector retriever results
+        # result_groups[1] = keyword retriever results
+        # etc.
+
+        # Custom fusion logic
+        fused = self._custom_fusion(query, result_groups)
+        return fused
+
+    def _custom_fusion(self, query: str, groups: list[list[SearchResult]]) -> list[SearchResult]:
+        # Implement your fusion algorithm
+        ...
+```
+
+<SectionTab as="h1" sectionId="rrf-ranker">RRF Ranker</SectionTab>
+
+Reciprocal Rank Fusion (RRF) combine les résultats de plusieurs récupérateurs en utilisant les positions de classement. Utile pour fusionner différentes stratégies de récupération sur le même index.
+
+**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** — plusieurs récupérateurs vectoriels avec des profils de requête différents :
+
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
+from mistralai.search.toolkit.retrieval.rerankers import RRFRanker
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from vespa_app import app
+
+# Initialize embedder for query vectorization
+embedder = MistralEmbedder(
+    client=Mistral(api_key="your-api-key"),
+    model_name=MODEL_1024_EMBEDDING,
+)
+
+# Create Vespa search backends with different query profiles
+config = VespaClientConfig(
+    endpoint="http://localhost:8080",
+)
+
+# Use different query profiles for dense and hybrid search
+dense_store = app.get_search_index(config, collection_name="my_collection", query_profile="dense")
+hybrid_store = app.get_search_index(config, collection_name="my_collection", query_profile="hybrid")
+
+# Create retrievers with different strategies
+dense_retriever = VectorRetriever(client=dense_store, embedder=embedder)
+hybrid_retriever = VectorRetriever(client=hybrid_store, embedder=embedder)
+
+# Fuse results with RRF
+query_engine = QueryEngine(
+    retriever=[dense_retriever, hybrid_retriever],
+    rerankers=[RRFRanker(rrf_k=60, top_k=10)],
+)
+
+result = await query_engine.search(query="How does RAG work?", top_k=10)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Objectif |
+|--------|------|---------|---------|
+| `rrf_k` | int | 60 | Facteur de lissage (essayez entre 30 et 100) |
+| `top_k` | int | 10 | Nombre de résultats à retourner |
+
+**Réglage de RRF** :
+
+```python
+# Lower rrf_k = more emphasis on exact rank positions
+RRFRanker(rrf_k=30, top_k=10)  # Lower k, more differentiation
+
+# Higher rrf_k = less emphasis on rank positions
+RRFRanker(rrf_k=100, top_k=10)  # Higher k, flattens differences
+```
+
+**Quand l’utiliser** :
+- Combinaison de plusieurs stratégies de récupération sur le même index (vecteurs denses, recherche hybride, etc.)
+- Résultats provenant de plusieurs sources avec des scores non comparables
+- Aucune contrainte de modèle ou de coût supplémentaire
+- Fusion robuste qui ne nécessite pas de normalisation des scores
+
+<SectionTab as="h1" sectionId="chaining-rerankers">Enchaînement des classeurs</SectionTab>
+
+Plusieurs classeurs peuvent être appliqués en séquence pour un affinement progressif :
+
+```python
+from mistralai.search.toolkit.retrieval.rerankers import RRFRanker, LLMReRanker
+
+query_engine = QueryEngine(
+    retriever=[dense_retriever, hybrid_retriever],
+    rerankers=[
+        RRFRanker(rrf_k=60, top_k=50),           # Step 1: Fuse results → top 50
+        MetadataReRanker(),                       # Step 2: Boost verified content
+        LLMReRanker(llm_provider=llm, top_k=10),  # Step 3: Final LLM reranking
+    ],
+)
+
+# Process flow:
+# 1. Multiple retrievers return results
+# 2. RRFRanker fuses them → top 50
+# 3. MetadataReRanker applies scoring boost → still ~50
+# 4. LLMReRanker scores → top 10
+# Total cost: 1 RRF operation + metadata checks + 10 LLM calls (not 100+)
+result = await query_engine.search(query="...", top_k=10)
+```
+
+**Bonnes pratiques** :
+- Commencez par des opérations peu coûteuses (fusion RRF, amplification des métadonnées)
+- Terminez par des opérations coûteuses (reclassement par modèle de langage)
+- Utilisez des classeurs pour réduire progressivement les résultats et les coûts
+
+<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
+
+- [Présentation de la récupération](../retrieval) — Architecture du pipeline de récupération
+- [Récupérateurs](retrievers) — Recherche vectorielle et récupérateurs personnalisés
+- [Prétraitement des requêtes](preprocessing) — Améliorer les requêtes avant récupération

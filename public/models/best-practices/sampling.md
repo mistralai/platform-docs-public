@@ -392,7 +392,7 @@ Dragon
 In this example, the model generates a response considering only the top tokens that cumulatively reach a 50% probability threshold. This ensures that the output keeps some uniform diversity while still taking only the best tokens, in this case only 2 tokens reach the 50% threshold.
   </ExplorerTab>
   <ExplorerTab value="penalties" label="Penalties">
-    Presence and Frequency Penalties are parameters that repetition, it allows you to control the diversity of the generated text.
+    Presence and frequency penalties are parameters that penalize repetition. They let you control the diversity of generated text.
 
 <SectionTab as="h2" variant="secondary" sectionId="presence-penalty">Presence Penalty</SectionTab>
 

@@ -36,6 +36,13 @@ export function AdminOverview({ showCta = false, showHeader = true }: { locale?:
       color: PRODUCT_COLORS['admin'],
     },
     {
+      title: 'Connectors',
+      description: 'Connect organization-level bots and control Connector tool access.',
+      icon: FolderIcon,
+      href: '/admin/security-access/connectors',
+      color: PRODUCT_COLORS['admin'],
+    },
+    {
       title: l.text('User Management', { context: 'Title of a documentation card about User Management' }),
       description: l.text('Invite members, assign roles, and control permissions across your organization.', { context: 'Description of a documentation card about User Management' }),
       icon: FolderIcon,

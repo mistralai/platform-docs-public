@@ -23,18 +23,21 @@ By the end you will have a working API key ready to use in your first request.
 <SectionTab as="h2" sectionId="step-1">Step 1: Generate an API key</SectionTab>
 
 1. Open the <AppLink href="https://console.mistral.ai" app="studio">Studio console</AppLink>.
-2. Navigate to **API Keys** in the left sidebar.
-3. Click **Create new key**.
+2. Navigate to `API Keys` in the left sidebar.
+3. Click `Create new key`.
 
 ![Click Create new key](/assets/quickstarts/studio/new-key-button.png)
 
-4. Add a **Name** to identify the key (for example, "First test key").
-5. Set an **Expiration** date. Regular rotation improves security.
+1. Add a `Name` to identify the key (for example, `First test key`).
+2. Set an `Expiration` date. Regular rotation improves security.
+3. Choose a `Connector access scope`:
+   - `Shared connectors only`: access only Connectors shared with the Workspace, not your private Connectors.
+   - `Private and shared connectors`: access both your private Connectors and the Connectors shared with the Workspace.
 
 ![Configure the API key with optional name and expiration date](/assets/quickstarts/studio/new-key-modal.png)
 
-6. Click **Create new key**.
-7. Copy the key immediately and store it in a secure location (password manager or secrets vault).
+1. Click `Create new key`.
+2. Copy the key immediately and store it in a secure location (password manager or secrets vault).
 
 :::warning
 The full key appears only once. You cannot retrieve it after closing the confirmation dialog.

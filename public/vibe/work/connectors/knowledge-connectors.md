@@ -22,36 +22,44 @@ Knowledge Connectors are available on **Team and Enterprise plans**. An administ
 
 <SectionTab as="h2" sectionId="admin-setup">Administrator setup</SectionTab>
 
+Knowledge Connector administration is moving to the [Admin Console Connectors page](/admin/security-access/connectors). Organization admins will use Admin to configure indexing, connect organization-level apps, and control Connector tool access.
+
+:::info
+The Vibe setup flow is being replaced by Admin Console controls. Use the Admin Console as the source of truth for new Connector administration.
+:::
+
 This is a one-time process. Once indexing is complete, your team can connect and start using the Connector.
 
 <ExplorerTabs>
 <ExplorerTab value="google-drive" label="Google Drive" default>
 
-1. Go to the `Connectors` page and open the `Admin Controls` tab.
-2. Find **Google Drive** and click `Setup`.
-3. Review the indexing information modal and click `Setup`.
+1. Open [Connectors in the Admin Console](/admin/security-access/connectors).
+2. Find `Google Drive` in `All Connectors`.
+3. Open the Connector and click `Connect` or `Setup`.
 4. Follow the setup flow: sign in with your Google admin account and grant the required permissions.
-5. Monitor indexing progress on the `Admin Controls` tab.
+5. Use selective sync to choose the folders to index.
+6. Monitor indexing progress from the Connector details page.
 
 Indexing can take minutes to several hours depending on the volume of data.
 
 :::tip
-Use **selective sync** to index only specific folders instead of the entire drive. This reduces indexing time and keeps the knowledge base focused on relevant content.
+Use selective sync to index only specific folders instead of the entire drive. This reduces indexing time and keeps the knowledge base focused on relevant content.
 :::
 
 </ExplorerTab>
 <ExplorerTab value="sharepoint" label="Microsoft SharePoint">
 
-1. Go to the `Connectors` page and open the `Admin Controls` tab.
-2. Find **Microsoft SharePoint** and click `Setup`.
-3. Review the indexing information modal and click `Setup`.
-4. Follow the setup flow: sign in with a **SharePoint Super Admin account** and grant the required permissions.
-5. Monitor indexing progress on the `Admin Controls` tab.
+1. Open [Connectors in the Admin Console](/admin/security-access/connectors).
+2. Find `Microsoft SharePoint` in `All Connectors`.
+3. Open the Connector and click `Connect` or `Setup`.
+4. Follow the setup flow: sign in with a SharePoint Super Admin account and grant the required permissions.
+5. Use selective sync to choose the sites and libraries to index.
+6. Monitor indexing progress from the Connector details page.
 
 Indexing can take minutes to several hours depending on the volume of data.
 
 :::tip
-Use **selective sync** to index only specific sites and libraries instead of the entire SharePoint instance. This reduces indexing time and keeps the knowledge base focused on relevant content.
+Use selective sync to index only specific sites and libraries instead of the entire SharePoint instance. This reduces indexing time and keeps the knowledge base focused on relevant content.
 :::
 
 </ExplorerTab>

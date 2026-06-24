@@ -1,0 +1,175 @@
+---
+title: Enrichisseurs de fragments
+description: Ajoutez des métadonnées personnalisées aux fragments pendant l'ingestion.
+sidebar_position: 6
+sidebar_label: Enrichisseurs de fragments
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les enrichisseurs de fragments ajoutent des métadonnées personnalisées aux fragments pendant leur ingestion. Utilisez-les pour attacher des informations provenant de sources externes, des classifications, des balises ou toute métadonnée calculée.
+
+<SectionTab as="h2" sectionId="available-chunk-enrichers">Enrichisseurs de fragments disponibles</SectionTab>
+
+| Enrichisseur | Objectif |
+|----------|---------|
+| **[Enrichisseur de résumé](#summary-enricher)** | Générer des résumés de document à l'aide d'un modèle de langage |
+| **[Enrichisseurs personnalisés](#creating-custom-enrichers)** | Ajouter des métadonnées personnalisées depuis n'importe quelle source |
+
+<SectionTab as="h1" sectionId="summary-enricher">Enrichisseur de résumé</SectionTab>
+
+`SummaryEnricher` génère un résumé de document à l'aide d'un modèle de langage et injecte éventuellement ce résumé dans les fragments et/ou les métadonnées du document. Cela peut améliorer la récupération en donnant à chaque fragment un mettant en contexte du document complet.
+
+Par défaut, `SummaryEnricher` est non bloquant : si la génération du résumé échoue, il enregistre l'échec et retourne les fragments originaux sans modification.
+
+**Exigences** :
+
+- Une clé API Mistral
+
+**Utilisation** :
+
+```python
+import os
+
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.enrichment import SummaryEnricher, SummaryConfig, SummarizeRequestConfig
+from mistralai.search.toolkit.llm import MistralChat, LLMConfig
+
+# Create LLM provider
+mistral_client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY", "your-api-key"))
+llm = MistralChat(client=mistral_client, config=LLMConfig(model="mistral-small-latest"))
+
+# Create enricher with default settings
+enricher = SummaryEnricher(llm_provider=llm)
+
+# Or customize the summary behavior
+enricher = SummaryEnricher(
+    llm_provider=llm,
+    summary_config=SummaryConfig(
+        request_config=SummarizeRequestConfig(
+            prompt="Summarize this document in 3 sentences.",
+            max_tokens=256,
+        ),
+    ),
+)
+```
+
+**Paramètres** :
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `llm_provider` | `ChatLLMProvider` | *(obligatoire)* | Fournisseur de modèle pour la génération de résumés |
+| `summary_config` | `SummaryConfig | None` | `None` | Objet de configuration (voir ci-dessous) |
+
+**SummarizeRequestConfig** :
+
+Contrôle la requête au modèle de langage pour la génération du résumé.
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `model` | `str` | `"mistral-small-latest"` | Modèle à utiliser pour la génération de résumés |
+| `prompt` | `str` | `"Résumé du document en moins de 5 lignes."` | Prompt pour la génération de résumés |
+| `max_tokens` | `int` | `256` | Nombre maximum de token dans le résumé |
+| `truncate_at` | `int | None` | `32768` | Tronquer le contenu du document avant envoi au modèle de langage |
+| `temperature` | `float | None` | `0,6` | Température du modèle |
+
+**SummaryRequestOptions** :
+
+Contrôle la manière dont le résumé est injecté dans la sortie du pipeline.
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `include_summary_chunk` | `bool` | `True` | Ajoute un fragment dédié au résumé dans la liste des fragments |
+| `propagate_summary_to_chunks` | `bool` | `False` | Préfixe le résumé au contenu de chaque fragment |
+| `populate_document_metadata` | `bool` | `True` | Stocke le résumé dans les métadonnées du document |
+| `fail_on_generation_error` | `bool` | `False` | Lève une erreur en cas d'échec de la génération du résumé au lieu de simplement enregistrer et continuer |
+
+<SectionTab as="h1" sectionId="creating-custom-enrichers">Création d'enrichisseurs personnalisés</SectionTab>
+
+Implémentez l'interface `ChunkEnricher` pour ajouter des métadonnées personnalisées :
+
+```python
+from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
+from mistralai.search.toolkit.document import DocumentChunk, Document
+
+class EntityTagger(ChunkEnricher):
+    """Add entity tags to chunks."""
+
+    async def enrich_chunks(
+        self, chunks: list[DocumentChunk], document: Document, concurrency: int = 10
+    ) -> tuple[list[DocumentChunk], Document]:
+        enriched = []
+        for chunk in chunks:
+            entities = await self._extract_entities(chunk.content)
+            updated_metadata = chunk.metadata.model_copy(update={"entities": entities})
+            enriched.append(chunk.model_copy(update={"metadata": updated_metadata}))
+
+        return enriched, document
+
+    async def _extract_entities(self, text: str) -> list[str]:
+        entities = []
+        # ... entity extraction logic ...
+        return entities
+
+enricher = EntityTagger()
+enriched_chunks, document = await enricher.enrich_chunks(chunks, document)
+
+for chunk in enriched_chunks:
+    print(f"Entities: {chunk.metadata.get('entities', [])}")
+```
+
+### Modèles d'enrichissement par batch
+
+Pour des performances optimales avec de nombreux fragments, utilisez la simultanéité et regroupez les appels d'API externes en batch :
+
+```python
+import asyncio
+from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
+from mistralai.search.toolkit.document import DocumentChunk, Document
+
+class BatchEnricher(ChunkEnricher):
+    """Batch API calls for efficiency."""
+
+    async def enrich_chunks(
+        self, chunks: list[DocumentChunk], document: Document, concurrency: int = 10
+    ) -> tuple[list[DocumentChunk], Document]:
+        # Use concurrency limit for external API calls
+        semaphore = asyncio.Semaphore(concurrency)
+
+        async def enrich_one(chunk: DocumentChunk) -> DocumentChunk:
+            async with semaphore:
+                metadata = await self._fetch_metadata(chunk.content)
+                return chunk.model_copy(
+                    update={"metadata": chunk.metadata.model_copy(update=metadata)}
+                )
+
+        enriched = await asyncio.gather(
+            *[enrich_one(c) for c in chunks]
+        )
+        return enriched, document
+
+    async def _fetch_metadata(self, text: str) -> dict:
+        # Call external API with batching/retries
+        ...
+```
+
+### Combinaison de plusieurs enrichisseurs
+
+```python
+from mistralai.search.toolkit.ingestion.pipelines import Pipeline
+
+pipeline = Pipeline(
+    loader=loader,
+    extractor=extractor,
+    text_splitter=splitter,
+    embedder=embedder,
+    vector_store=vector_store,
+    chunk_enrichers=[
+        SummaryEnricher(llm_provider=llm),
+        EntityTagger(),
+        CustomMetadataEnricher(),
+    ],
+)
+```
+
+Les enrichisseurs sont appliqués séquentiellement dans l'ordre indiqué. Chaque enrichisseur reçoit en entrée la sortie du précédent.

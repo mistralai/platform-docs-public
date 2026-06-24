@@ -1,0 +1,175 @@
+---
+title: Gérer le classement
+sidebar_position: 4
+sidebar_label: Gérer le classement
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les profils de requête vous permettent de **contrôler le classement au moment de la requête** sans modifier votre schéma. Chaque profil regroupe un profil de classement, les poids des Fonctions et les paramètres de requête dans une configuration nommée que vous pouvez changer entre les requêtes.
+
+Pour comprendre les concepts derrière les profils de requête, consultez [Anatomie d’une application Vespa](anatomy).
+
+<SectionTab as="h2" sectionId="default-query-profile">Profil de requête par défaut</SectionTab>
+
+Lorsque vous créez un schéma avec `create_default_schema()` ou `create_schema()`, le plugin génère automatiquement un profil de requête par défaut. Il inclut :
+
+- Une requête YQL pour la recherche hybride (mots-clés + vecteur) ou la recherche par mots-clés uniquement
+- Le profil de classement `weighted-rank2`
+- Les champs de type de requête pour tous les poids des Fonctions
+
+Le nom du profil par défaut correspond au nom du schéma, sauf si vous le remplacez avec `default_query_profile_name` :
+
+```python
+create_default_schema(
+    name="articles",
+    mode=SearchMode.INDEX,
+    embedding_dimensions=1024,
+    schema_version=1,
+    default_query_profile_name="articles-default",
+)
+```
+
+Avec le profil par défaut, tous les poids de classement commencent à `0`. Définissez-en un ou plusieurs avec une valeur non nulle lors de la requête pour activer le classement.
+
+<SectionTab as="h2" sectionId="creating-custom-query-profiles">Créer des profils de requête personnalisés</SectionTab>
+
+Commencez par générer un nouveau fichier de migration :
+
+```bash
+uv run mistral-vespa generate-migration --app-dir ./vespa_app add_custom_query_profiles
+```
+
+Ensuite, modifiez le fichier généré pour définir vos profils à l’aide de `add_query_profiles` :
+
+```python
+from vespa.package import QueryField
+
+from mistralai.search.toolkit.plugins.vespa.app.schemas.query_profile import QueryProfile
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, add_query_profiles
+
+
+class AddCustomQueryProfiles(VespaMigration):
+    def migrate(self) -> None:
+        add_query_profiles(
+            [
+                QueryProfile(
+                    name="keyword-search",
+                    fields=[
+                        QueryField(name="ranking.features.query(bm25_title_weight)", value=100),
+                        QueryField(name="ranking.features.query(bm25_content_weight)", value=50),
+                        QueryField(name="hits", value=10),
+                        QueryField(name="ranking.profile", value="weighted-rank1"),
+                    ],
+                ),
+                QueryProfile(
+                    name="hybrid-search",
+                    fields=[
+                        QueryField(name="ranking.features.query(bm25_title_weight)", value=100),
+                        QueryField(
+                            name="ranking.features.query(content_embedding_cosine_similarity_score_weight)",
+                            value=80,
+                        ),
+                        QueryField(
+                            name="ranking.features.query(freshness_created_at_weight)",
+                            value=20,
+                        ),
+                        QueryField(name="hits", value=10),
+                        QueryField(name="ranking.profile", value="weighted-rank2"),
+                    ],
+                ),
+            ]
+        )
+```
+
+Chaque `QueryProfile` contient :
+
+| Paramètre | Type | Description |
+|---|---|---|
+| `name` | `str` | Nom du profil, utilisé pour le sélectionner au moment de la requête |
+| `fields` | `list[QueryField]` | Liste des champs de requête avec des valeurs prédéfinies |
+
+Chaque `QueryField` contient :
+
+| Paramètre | Type | Description |
+|---|---|---|
+| `name` | `str` | Nom du paramètre de requête Vespa |
+| `value` | `str` | `int` | `float` | Valeur par défaut pour le paramètre |
+
+<SectionTab as="h2" sectionId="common-query-fields">Champs de requête courants</SectionTab>
+
+| Champ | Description |
+|---|---|
+| `ranking.profile` | Profil de classement à utiliser (`weighted-rank1`, `weighted-rank2`, `match-only`) |
+| `ranking.features.query(<weight_name>)` | Poids pour une Fonction de classement (voir [Référence sur le classement](anatomy)) |
+| `hits` | Nombre de résultats à retourner |
+
+Les noms des poids suivent le modèle `<function_name>_weight`. Par exemple, `bm25_title` a le poids `bm25_title_weight`.
+
+<SectionTab as="h2" sectionId="versioned-query-profiles">Profils de requête versionnés</SectionTab>
+
+Utilisez une chaîne de version séparée par des deux-points pour maintenir plusieurs versions d’un profil :
+
+```python
+add_query_profiles(
+    [
+        QueryProfile(
+            name="search:1.0.0",
+            fields=[
+                QueryField(name="ranking.features.query(bm25_title_weight)", value=50),
+                QueryField(name="hits", value=3),
+                QueryField(name="ranking.profile", value="weighted-rank2"),
+            ],
+        ),
+        QueryProfile(
+            name="search:2.0.0",
+            fields=[
+                QueryField(name="ranking.features.query(bm25_title_weight)", value=100),
+                QueryField(
+                    name="ranking.features.query(freshness_created_at_weight)",
+                    value=20,
+                ),
+                QueryField(name="hits", value=5),
+                QueryField(name="ranking.profile", value="weighted-rank2"),
+            ],
+        ),
+    ]
+)
+```
+
+Sélectionnez la version lorsque vous créez un `QueryProfile` au moment de la requête :
+
+```python
+from mistralai.search.toolkit.plugins.vespa.search import QueryProfile
+
+query_profile = QueryProfile(name="search", version="2.0.0")
+```
+
+<SectionTab as="h2" sectionId="using-query-profiles-at-query-time">Utilisation des profils de requête au moment de la requête</SectionTab>
+
+Passez un `QueryProfile` à `app.get_search_index()` pour sélectionner le profil à utiliser pour la récupération :
+
+```python
+import os
+
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from mistralai.search.toolkit.plugins.vespa.search import QueryProfile
+from vespa_app import app
+
+collection_name = "articles"
+vespa_config = VespaClientConfig(
+    endpoint=os.environ.get("VESPA_ENDPOINT", "http://localhost:18080"),
+)
+vector_store = app.get_search_index(
+    vespa_config,
+    collection_name=collection_name,
+    query_profile=QueryProfile(name="hybrid-search"),
+)
+```
+
+Lorsque `query_profile` est omis, le profil de requête par défaut du schéma est utilisé automatiquement.
+
+<SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Anatomie d’une application Vespa](anatomy)** — Concept des profils de requête
+- **[Gérer le schéma](migrations)** — Système de migration et aides
+- **[Documentation des profils de requête Vespa](https://docs.vespa.ai/en/querying/query-profiles.html)** — Guide officiel de Vespa

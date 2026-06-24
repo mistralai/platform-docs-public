@@ -489,6 +489,10 @@ I have a persistent cough and have been feeling quite fatigued. My fever is thro
 </Tabs>
   </ExplorerTab>
   <ExplorerTab value="retrieval" label="Retrieval">
-    Our embedding model excels in retrieval tasks, as it is trained with retrieval in mind. Embeddings are also incredibly helpful in implementing retrieval-augmented generation (RAG) systems, which use retrieved relevant information from a knowledge base to generate responses. At a high-level, we embed a knowledge base, whether it is a local directory, text files, or internal wikis, into text embeddings and store them in a vector database. Then, based on the user's query, we retrieve the most similar embeddings, which represent the relevant information from the knowledge base. Finally, we feed these relevant embeddings to a large language model to generate a response that is tailored to the user's query and context. If you are interested in learning more about how RAG systems work and how to implement a basic RAG, check out our [guide](rag_quickstart) on this topic.
+    Our embedding model works well for retrieval tasks. Embeddings are useful for retrieval-augmented generation (RAG) systems, which use retrieved information from a knowledge base to generate responses.
+
+At a high level, you embed a knowledge base, such as a local directory, text files, or internal wikis, into text embeddings and store them in a vector database. Then, based on the user's query, you retrieve the most similar embeddings and feed the relevant chunks to a model to generate an answer grounded in the user's query and context.
+
+If you want a managed feature that ingests, vectorizes, and searches documents for you, use [Libraries](/studio-api/libraries). If you want to search connected sources such as Google Drive or SharePoint, use [Connectors](/studio-api/connectors). To learn how RAG works from scratch, see the [RAG quickstart](/studio-api/knowledge-rag/rag_quickstart).
   </ExplorerTab>
 </ExplorerTabs>

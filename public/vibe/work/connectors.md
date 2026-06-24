@@ -34,7 +34,7 @@ Featured Connectors use a direct OAuth flow. Click `Connect` on the card and aut
 </ExplorerTab>
 <ExplorerTab value="knowledge" label="Knowledge">
 
-Knowledge Connectors **index your team's files** so Work can search them instantly, with your existing permissions replicated. An administrator must configure indexing before users can connect.
+Knowledge Connectors are available on **Team and Enterprise plans**. They **index your team's files** so Work can search them instantly, with your existing permissions replicated. An administrator must configure indexing before users can connect.
 
 | Connector | What it does |
 |-----------|-------------|
@@ -65,7 +65,7 @@ To connect a featured Connector:
 A green `Connected` indicator confirms the connection. You can disconnect at any time from the same page.
 
 :::note
-Google Drive and SharePoint (Online) require administrator setup before users can connect, because we index your team's files. See our [Knowledge Connectors](/vibe/work/connectors/knowledge-connectors) guide.
+Google Drive and SharePoint (Online) are available on Team and Enterprise plans. They require administrator setup before users can connect, because we index your team's files. See our [Knowledge Connectors](/vibe/work/connectors/knowledge-connectors) guide.
 :::
 
 <SectionTab as="h2" sectionId="using-connectors">Using Connectors in tasks</SectionTab>

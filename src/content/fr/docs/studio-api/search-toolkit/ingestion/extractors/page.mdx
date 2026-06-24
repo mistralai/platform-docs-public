@@ -1,0 +1,430 @@
+---
+title: Extracteurs de documents
+description: Extraire le contenu des objets File vers des objets Document pour traitement.
+sidebar_position: 3
+sidebar_label: Extracteurs de documents
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Les extracteurs de documents extraient le contenu d'un objet `File` vers un objet `Document` susceptible d'être traité ultérieurement. Les différents types de fichiers nécessitent une logique d'extraction distincte – les PDF peuvent être extraits via l'OCR, tandis que les fichiers Excelrequièrent une extraction tabulaire.
+
+Tous les extracteurs intégrés définissent l'ID du document sur `file.id`.
+
+<SectionTab as="h2" sectionId="available-document-extractors">Extracteurs de documents disponibles</SectionTab>
+
+| Extracteur | Types de fichiers |
+|-----------|-----------|
+| **[Extracteur OCR Mistral](#mistral-ocr-extractor)** | PDF, DOCX, PPTX, ODT |
+| **[Extracteur de transcription audio Mistral](#mistral-audio-transcription-extractor)** | MP3, WAV, M4A, FLAC, OGG |
+| **[Extracteur de texte brut](#plain-text-extractor)** | TXT, MD, CSV, JS, PY (et autres fichiers texte/code) |
+| **[Extracteur HTML](#html-extractor)** | HTML, HTM |
+| **[Extracteur de feuilles de calcul](#spreadsheet-extractor)** | XLS, XLSX, XLSM, XLSB, ODS, ODF |
+| **[Extracteur d’e-mails](#email-extractor)** | EML, MSG |
+| **[Extracteur Numbers](#numbers-extractor)** | NUMBERS |
+| **[Extracteur bureautique hérité](#legacy-office-extractor)** | DOC, PPT, HWP, HWPX |
+| **[Extracteurs personnalisés](#creating-custom-extractors)** | Toute source |
+
+<SectionTab as="h1" sectionId="mistral-ocr-extractor">Extracteur OCR Mistral</SectionTab>
+
+`MistralOCRExtractor` utilise l'API OCR de Mistral pour extraire du texte structuré et des images des fichiers PDF, DOCX, PPTX et ODT. Il s'agit de l'extracteur recommandé pour les documents scannés et riches en images.
+
+**Prérequis** :
+
+- Une clé API Mistral
+
+**Installation** : bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+import os
+
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.extractors import MistralOCRExtractor
+
+mistral_client = Mistral(
+    api_key=os.environ.get("MISTRAL_API_KEY", "your-api-key"),
+    server_url=os.environ.get("MISTRAL_SERVER_URL"),  # Optional
+)
+extractor = MistralOCRExtractor(
+    client=mistral_client,
+    include_image_base64=True,      # Include image data
+    include_image_annotation=True,  # Add image annotations
+)
+document = await extractor.extract(file)
+```
+
+**Paramètres** :
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `client` | `Mistral` | *(obligatoire)* | Instance client Mistral |
+| `model_name` | `str` | `"mistral-ocr-latest"` | Nom du modèle OCR |
+| `timeout_seconds` | `int` | `900` | Délai d'expiration de la requête, en secondes |
+| `strip_page_markdown` | `bool` | `True` | Supprimer les espaces de début/fin dans le markdown de page |
+| `populate_content` | `bool` | `True` | Remplir le champ `content` du document |
+| `include_image_base64` | `bool` | `False` | Inclure les données d'image en base64 dans le document |
+| `include_image_annotation` | `bool` | `False` | Ajouter des annotations d'image au markdown de la page |
+| `max_file_size_bytes` | `int | None` | `None` | Taille maximale du fichier avant division en parties |
+| `pages_split_size` | `int | None` | `None` | Nombre de pages par division lorsque le fichier dépasse `max_file_size_bytes` |
+| `pages_group_size` | `int | None` | `None` | Nombre de pages par requête API |
+| `http_headers` | `Mapping[str, str] | None` | `None` | En-têtes HTTP personnalisés transférés à l'API OCR |
+| `image_limit` | `int | None` | `None` | Nombre maximal d'images à inclure par page |
+| `pages` | `Sequence[int] | None` | `None` | Numéros de page spécifiques à extraire (indexés à 1) |
+| `table_format` | `"markdown" | "html" | None` | `None` | Format de sortie des tableaux |
+
+**Fonctionnalités** :
+
+- OCR pour les documents scannés et les images
+- Sortie en markdown avec préservation de la structure
+- Suivi des références d'image et codage base64 facultatif
+- Extraction de page configurable (pages spécifiques ou plages de pages)
+- Personnalisation du format des tableaux (markdown ou HTML)
+- Prise en charge des fichiers volumineux avec division automatique
+
+<SectionTab as="h1" sectionId="mistral-audio-transcription-extractor">Extracteur de transcription audio Mistral</SectionTab>
+
+`MistralAudioTranscriptionExtractor` utilise l'API de transcription audio de Mistral pour convertir les fichiers audio en texte. Il prend en charge la diarisation des locuteurs et la précision des horodatages.
+
+**Prérequis** :
+
+- Une clé API Mistral
+
+**Installation** : bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+import os
+
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.extractors import MistralAudioTranscriptionExtractor
+
+extractor = MistralAudioTranscriptionExtractor(
+    client=Mistral(api_key=os.environ.get("MISTRAL_API_KEY", "your-api-key")),
+    model_name="voxtral-mini-latest",  # Default model
+    language="en",          # Optional language hint
+    diarize=True,           # Enable speaker diarization
+    timeout_seconds=900,    # Transcription timeout (default)
+)
+document = await extractor.extract(file)
+```
+
+**Paramètres** :
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `client` | `Mistral` | *(obligatoire)* | Instance client Mistral |
+| `model_name` | `str` | `"voxtral-mini-latest"` | Nom du modèle de transcription |
+| `language` | `str | None` | `None` | Indice de langue cible pour la transcription |
+| `diarize` | `bool` | `False` | Activer la diarisation des locuteurs |
+| `timestamp_granularities` | `list[str] | None` | `None` | Précisions des horodatages (ex. `["word", "segment"]`) |
+| `timeout_seconds` | `int` | `900` | Délai d'expiration de la requête, en secondes |
+| `populate_content` | `bool` | `True` | Remplir le champ `content` du document |
+| `http_headers` | `Mapping[str, str] | None` | `None` | En-têtes HTTP personnalisés transférés à l'API de transcription |
+
+**Fonctionnalités** :
+
+- Transcription audio avec prise en charge de la diarisation des locuteurs
+- Précision des horodatages au niveau des mots et des segments
+- Indice de langue pour une précision améliorée
+- Prise en charge des téléchargements de fichiers bruts et des sources URL distantes
+- Délai d'expiration personnalisable pour les fichiers audio longs
+
+<SectionTab as="h1" sectionId="plain-text-extractor">Extracteur de texte brut</SectionTab>
+
+Extracteur pour les documents de type texte brut (txt, md, code, csv, etc.).
+
+**Installation** : bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import PlainTextExtractor
+
+extractor = PlainTextExtractor(
+    page_size=2000,    # Characters per page (default)
+    encoding="utf-8",  # Default encoding
+)
+document = await extractor.extract(file)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Usage |
+|--------|------|---------|---------|
+| `page_size` | int | 2000 | Caractères par page (divise les fichiers volumineux en pages logiques) |
+| `encoding` | str | "utf-8" | Encodage des caractères pour la lecture des fichiers |
+| `skip_encoding_detection` | bool | False | Ignorer la détection automatique de l'encodage (utiliser uniquement l'encodage spécifié) |
+
+**Comportement** :
+- Les fichiers supérieurs à `page_size` sont divisés en plusieurs pages
+- Chaque page devient une page de document avec des métadonnées `page_number`
+- L'intégralité du contenu du fichier est conservée dans `document.content`
+- La détection d'encodage tente d'abord UTF-8, puis utilise d'autres encodages si activé
+
+<SectionTab as="h1" sectionId="html-extractor">Extracteur HTML</SectionTab>
+
+`HTMLExtractor` analyse les fichiers HTML et HTM et les convertit en markdown propre pour le découpage et la récupération en aval. Il supprime par défaut les éléments génériques (navigation, pieds de page, scripts).
+
+**Installation** :
+
+Pour une conversion markdown par défaut :
+
+```bash
+uv add "mistralai-search-toolkit[html-converter-markdownify]"
+```
+
+Ou utilisez uniquement la bibliothèque principale si vous fournissez un convertisseur personnalisé.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import HTMLExtractor
+
+extractor = HTMLExtractor()
+document = await extractor.extract(file)
+```
+
+Le convertisseur par défaut est `MarkdownifyConverter`, basé sur la bibliothèque [markdownify](https://pypi.org/project/markdownify/) (MIT). Il est configuré pour produire un markdown propre avec des titres ATX, des styles de puces cohérents, une détection des langages pour les blocs de code, et la suppression complète des sous-arborescences pour les balises génériques.
+
+**Configurer le convertisseur par défaut** :
+
+`MarkdownifyConverter` accepte plusieurs options pour personnaliser son comportement :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import HTMLExtractor, MarkdownifyConverter
+
+# Use default settings
+converter = MarkdownifyConverter()
+
+# Or customize: only strip <script> and <style>, disable id/class filtering
+converter = MarkdownifyConverter(
+    ignore_tags=["script", "style"],
+    ignore_ids=[],
+    ignore_classes=[],
+)
+
+extractor = HTMLExtractor(converter=converter)
+document = await extractor.extract(file)
+```
+
+**Options du convertisseur Markdownify** :
+
+| Option | Type | Valeur par défaut | Description |
+|--------|------|---------|-------------|
+| `ignore_tags` | `list[str] | None` | `DEFAULT_IGNORE_TAGS` | Balises HTML à supprimer entièrement, y compris tous leurs enfants. Si `None`, la liste par défaut est utilisée. |
+| `ignore_ids` | `list[str] | None` | `DEFAULT_IGNORE_IDS` | Valeurs d'attribut `id` des éléments à supprimer (correspondance littérale). L'arborescence entière est supprimée. Si `None`, la liste par défaut est utilisée. |
+| `ignore_classes` | `list[str] | None` | `DEFAULT_IGNORE_CLASSES` | Expressions régulières appariées à chaque classe CSS d'un élément. Lorsque qu'une classe correspond, l'arborescence entière est supprimée. Si `None`, la liste par défaut est utilisée. |
+| `escape_misc` | `bool` | `True` | Échapper les caractères markdown divers (ex. `\|` dans les cellules de tableau). |
+
+**Balises ignorées par défaut** : `head`, `header`, `script`, `style`, `title`, `footer`, `form`, `button`, `nav`, `iframe`.
+
+**ID ignorés par défaut** : `footer`, `sidebar`, `cookie`, `metadata`.
+
+**Modèles de classes ignorées par défaut** : `footer`, `^ad-`, `^ad_`, `^menu$`, `^newsletter$`, `^metadata$`, `^muted$`, `vot(e|ing)`.
+
+**Convertisseur personnalisé** :
+
+Vous pouvez injecter n'importe quel objet implémentant le protocole `HtmlToMarkdownConverter` :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import HTMLExtractor, HtmlToMarkdownConverter
+
+class MyConverter(HtmlToMarkdownConverter):
+    def convert(self, html: str) -> str:
+        return html  # your conversion logic
+
+extractor = HTMLExtractor(converter=MyConverter())
+document = await extractor.extract(file)
+```
+
+**Paramètres** :
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `encoding` | `str` | `"utf-8"` | Encodage du fichier HTML |
+| `decode_errors` | `str` | `"strict"` | Gestion des erreurs de décodage (`"strict"`, `"ignore"`, `"replace"`) |
+| `converter` | `HtmlToMarkdownConverter | None` | `None` | Instance de convertisseur personnalisée ; si `None`, le convertisseur par défaut `MarkdownifyConverter` est utilisé |
+
+**Fonctionnalités** :
+
+- Convertit le HTML en markdown propre avec suppression personnalisable
+- Préserve la structure (titres, listes, tableaux)
+- Suppression des éléments génériques (navigation, pieds de page, publicités, etc.)
+- Prise en charge des convertisseurs personnalisés pour des implémentations alternatives HTML vers markdown
+
+<SectionTab as="h1" sectionId="spreadsheet-extractor">Extracteur de feuilles de calcul</SectionTab>
+
+Extracteur pour les documents tableur (XLSX/XLS/ODS), produisant un CSV par feuille.
+
+**Installation** :
+
+```bash
+uv add "mistralai-search-toolkit[extractor-spreadsheet]"
+```
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import SpreadsheetExtractor
+
+extractor = SpreadsheetExtractor(
+    include_sheet_name=True,  # Include sheet name in output
+    row_limit=None,           # Optional row limit per sheet
+    col_limit=None,           # Optional column limit per sheet
+)
+document = await extractor.extract(file)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Usage |
+|--------|------|---------|---------|
+| `include_sheet_name` | bool | True | Ajouter le nom de la feuille au début de chaque bloc de CSV |
+| `row_limit` | int | None | None | Nombre maximal de lignes par feuille (None = pas de limite) |
+| `col_limit` | int \| None | None | Nombre maximal de colonnes par feuille (None = aucune limite) |
+| `skip_empty_sheets` | bool | True | Ignorer les feuilles sans données |
+| `preserve_formula_values` | bool | True | Utiliser les résultats des formules, pas le texte des formules |
+
+**Comportement** :
+- Chaque feuille devient un bloc CSV distinct dans le document
+- Les cellules fusionnées sont développées avec les valeurs répétées
+- Les formules sont évaluées (sauf si `preserve_formula_values=False`)
+- Les en-têtes sont déduits de la première ligne
+
+<SectionTab as="h1" sectionId="email-extractor">Extracteur d’e-mails</SectionTab>
+
+Extrait les fichiers e-mail (`.eml` et `.msg`) en un seul document en Markdown avec objet, expéditeur, destinataires, date et corps. Les corps en HTML sont convertis en Markdown lorsqu'ils sont disponibles.
+
+**Installation** :
+
+```bash
+uv add "mistralai-search-toolkit[extractor-email]"
+```
+
+Ajoute les dépendances `eml-parser` et `extract-msg`.
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import EmailExtractor
+
+extractor = EmailExtractor()
+document = await extractor.extract(file)
+```
+
+**Fonctionnalités** :
+
+- Analyse les formats EML (RFC 822) et MSG d’Outlook
+- Génère un Markdown structuré (objet, de, à, CC, date, corps)
+- Privilégie le corps en texte brut ; bascule sur le HTML converti en Markdown si nécessaire
+
+**Pièces jointes** : utilisez `extract_email_attachments` (ou `extract_eml_attachments` / `extract_msg_attachments`) pour traiter les pièces jointes du même fichier e-mail. Ces fonctions retournent une liste de `EmailAttachment` (nom de fichier, type de contenu, données, extension) que vous pouvez transmettre à d’autres extracteurs :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import (
+    EmailExtractor,
+    EmailAttachment,
+    extract_email_attachments,
+)
+
+document = await EmailExtractor().extract(file)
+attachments = extract_email_attachments(file.raw, extension="eml")
+for att in attachments:
+    # Build a File from att.data and run through the right extractor
+    ...
+```
+
+<SectionTab as="h1" sectionId="numbers-extractor">Extracteur Numbers</SectionTab>
+
+Extracteur pour les documents Apple Numbers (`.numbers`), produisant un CSV par tableau/feuille.
+
+**Installation** :
+
+```bash
+uv add "mistralai-search-toolkit[extractor-spreadsheet]"
+```
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import NumbersExtractor, NumbersOptions
+
+extractor = NumbersExtractor(
+    row_limit=1000,           # Cap rows per table
+    col_limit=50,             # Cap columns per table
+    include_sheet_name=True,  # Prefix each block with sheet/table name
+)
+document = await extractor.extract(file)
+```
+
+Utilisez `iter_csv_pages(blob, options=...)` pour itérer sur les chaînes CSV sans construire un `Document` complet.
+
+<SectionTab as="h1" sectionId="legacy-office-extractor">Extracteur pour Office hérité</SectionTab>
+
+Extrait les formats Office hérités (`.doc`, `.ppt`, `.hwp`, `.hwpx`) en les convertissant en PDF avec PyMuPDF Pro, puis en exécutant Mistral OCR. Ne gère pas les fichiers `.xls` — utilisez `SpreadsheetExtractor` pour cela.
+
+**Installation** :
+
+```bash
+uv add "mistralai-search-toolkit[extractor-pymupdf]"
+```
+
+Nécéssite une licence PyMuPDF Pro pour la prise en charge complète des formats.
+
+**Exemple** :
+
+```python
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.extractors import LegacyOfficeExtractor, MistralOCRExtractor
+
+ocr_extractor = MistralOCRExtractor(
+    client=Mistral(api_key="your-api-key")
+)
+extractor = LegacyOfficeExtractor(
+    ocr_extractor,
+    pymupdf_license_key="your-license-key",  # Optional
+)
+document = await extractor.extract(
+    file,
+    include_image_base64=True,
+    include_image_annotation=True,
+)
+```
+
+**Fonctionnalités** :
+
+- Convertit le document hérité en PDF en mémoire, puis délègue à `MistralOCRExtractor`
+- Prend en charge les mêmes options OCR que Mistral OCR (par ex. `http_headers`, `image_limit`)
+
+<SectionTab as="h1" sectionId="creating-custom-extractors">Création d’extracteurs personnalisés</SectionTab>
+
+Implémentez le protocole `DocumentExtractor` :
+
+```python
+import base64
+from mistralai.search.toolkit.ingestion.extractors import DocumentExtractor
+from mistralai.search.toolkit.document import Document, Page
+from mistralai.search.toolkit.ingestion import File
+
+class Base64FileExtractor(DocumentExtractor):
+    """Extract content from base64-encoded text files."""
+
+    async def extract(self, file: File, **kwargs) -> Document:
+        decoded_content = base64.b64decode(file.raw).decode("utf-8")
+
+        return Document(
+            id=file.id,
+            extractor_type="text",
+            content=decoded_content,
+            pages=[Page(page_number=1, markdown=decoded_content, ref_to_images={})],
+            metadata={"encoding": "base64"},
+            filename=file.name,
+            filepath=file.path,
+        )
+
+extractor = Base64FileExtractor()
+document = await extractor.extract(b64_file)
+```

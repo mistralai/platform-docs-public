@@ -6,7 +6,7 @@ sidebar_position: 3
 
 # Connectors in Workflows
 
-Use [Connectors](/studio-api/knowledge-rag/connectors) inside a Workflow to call external services (GitHub, Notion, Slack, Outlook, etc.) without managing credentials yourself. The Workflow declares which Connectors it needs, the Mistral platform resolves credentials at runtime and triggers OAuth flows on demand.
+Use [Connectors](/studio-api/connectors) inside a Workflow to call external services (GitHub, Notion, Slack, Outlook, etc.) without managing credentials yourself. The Workflow declares which Connectors it needs, the Mistral platform resolves credentials at runtime and triggers OAuth flows on demand.
 
 :::warning
 Connectors can only be used in [on-behalf-of workflows](/studio-api/workflows/building-workflows/on_behalf_of), which require a [hardened deployment](/studio-api/workflows/managing-workflows-in-production/hardened_deployments). See [Registering an OBO workflow](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow) for setup steps.
@@ -33,7 +33,7 @@ Connector slots ship with the Mistral plugin:
 uv add "mistralai-workflows[mistralai]"
 ```
 
-You also need at least one [Connector](/studio-api/knowledge-rag/connectors) registered for your workspace. Create one from <a href="https://console.mistral.ai/build/connectors" target="_blank" rel="noopener">Studio &rsaquo; Context &rsaquo; Connectors</a>, or via the [Connectors API](/studio-api/knowledge-rag/connectors/management).
+You also need at least one [Connector](/studio-api/connectors) registered for your workspace. Create one from <a href="https://console.mistral.ai/build/connectors" target="_blank" rel="noopener">Studio &rsaquo; Context &rsaquo; Connectors</a>, or via the [Connectors API](/studio-api/connectors/management).
 
 [Add credentials](#credentials) before running a Workflow:
 

@@ -1,0 +1,140 @@
+---
+title: Déploiement et exploitation
+sidebar_position: 6
+sidebar_label: Déploiement et exploitation
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+Déploiement en production et exploitation des applications Vespa.
+
+<SectionTab as="h2" sectionId="vespaclientconfig">VespaClientConfig</SectionTab>
+
+Configurez le backend de recherche avec les paramètres de connexion, les délais d’attente et les stratégies de nouvelle tentative :
+
+```python
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from vespa_app import app
+
+collection_name = "my_collection"
+config = VespaClientConfig(
+    endpoint="http://localhost:8080",
+    # Advanced options
+    timeout=30,              # Request timeout in seconds
+    max_retries=3,          # Retry failed requests
+    verify_ssl=True,        # Verify TLS certificates
+)
+
+vector_store = app.get_search_index(config, collection_name=collection_name)
+```
+
+**Paramètres de connexion** :
+
+| Paramètre | Objectif | Valeur par défaut |
+|-----------|---------|---------|
+| `endpoint` | URL de l’endpoint de requête Vespa | Obligatoire |
+| `timeout` | Délai d’attente de la requête en secondes | 30 |
+| `max_retries` | Tentatives de nouvelle tentative automatiques en cas d’échec | 3 |
+| `verify_ssl` | Vérifier les certificats TLS | True |
+
+**Configuration TLS/SSL** (production) :
+
+```python
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from vespa_app import app
+
+config = VespaClientConfig(
+    endpoint="https://vespa.example.com:8080",
+    verify_ssl=True,
+    # Custom CA certificate
+    ca_cert_path="/path/to/ca-bundle.pem",
+)
+
+vector_store = app.get_search_index(config, collection_name="my_collection")
+```
+
+<SectionTab as="h2" sectionId="health-checks-and-readiness">Vérifications d’état et disponibilité</SectionTab>
+
+Avant d’ingérer ou d’interroger des données, assurez-vous que Vespa est prêt :
+
+```python
+import asyncio
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from vespa_app import app
+
+async def wait_for_vespa(endpoint: str, max_attempts=30):
+    """Wait for Vespa to be ready for operations."""
+    for attempt in range(max_attempts):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{endpoint}/ApplicationStatus",
+                    timeout=5
+                ) as resp:
+                    if resp.status == 200:
+                        print("Vespa is ready")
+                        return True
+        except Exception as e:
+            print(f"Attempt {attempt + 1}: {e}")
+        await asyncio.sleep(2)
+
+    raise RuntimeError("Vespa failed to become ready")
+
+# Usage
+endpoint = "http://localhost:8080"
+await wait_for_vespa(endpoint)
+config = VespaClientConfig(endpoint=endpoint)
+vector_store = app.get_search_index(config, collection_name="my_collection")
+```
+
+**Endpoints de vérification d’état** :
+
+```bash
+# Application status
+curl http://localhost:8080/ApplicationStatus
+
+# Document count in collection
+curl "http://localhost:8080/search/?yql=select%20*%20from%20my_collection%20limit%201"
+```
+
+<SectionTab as="h2" sectionId="production-deployment">Déploiement en production</SectionTab>
+
+Pour les environnements de production, suivez ces bonnes pratiques :
+
+**Configuration du cluster** :
+- Déployez au moins 3 nœuds Vespa pour la redondance
+- Répartissez les nœuds dans plusieurs zones de disponibilité
+- Utilisez un équilibreur de charge avec vérifications d’état devant les endpoints de requête
+
+**Configuration réseau** :
+- Utilisez des réseaux privés pour la communication inter-nœuds
+- Exposez l’endpoint de requête via un proxy inverse (nginx, Cloudflare, etc.)
+- Mettez en place une limitation de débit et une protection contre les attaques DDoS
+
+**Exemple de configuration** (déploiement distribué) :
+
+```python
+from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
+from vespa_app import app
+
+# Load balancer endpoint (single entry point)
+config = VespaClientConfig(
+    endpoint="https://vespa-lb.example.com",
+    timeout=30,
+    max_retries=3,
+    verify_ssl=True,
+)
+
+vector_store = app.get_search_index(config, collection_name="my_collection")
+```
+
+**Surveillance** :
+- Suivez la latence et le débit d’ingestion
+- Surveillez la latence des requêtes et les taux d’erreurs
+- Configurez des alertes en cas d’échec des vérifications d’état
+- Surveillez l’utilisation du disque et la croissance de la taille de l’index
+
+<SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Développement local](local-development)** — Guide de configuration locale
+- **[Gérer avec les migrations](migrations)** — Créer et faire évoluer des schémas
+- **[Documentation officielle de Vespa](https://docs.vespa.ai)** — Configuration avancée et opérations

@@ -1,0 +1,120 @@
+---
+title: Récupérateurs
+description: Effectuez des recherches dans votre index à l’aide de stratégies vectorielles, par mots-clés ou hybrides.
+sidebar_position: 2
+sidebar_label: Récupérateurs
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Récupérateurs
+
+Les récupérateurs exécutent la recherche dans votre index. Search Toolkit propose des récupérateurs vectoriels (sémantiques) pour effectuer des recherches sémantiques dans vos documents.
+
+<SectionTab as="h2" sectionId="available-retrievers">Récupérateurs disponibles</SectionTab>
+
+| Récupérateur | Usage |
+|-----------|---------|
+| **[Récupérateur vectoriel](#vector-retriever)** | Recherche sémantique à l’aide d’embeddings |
+| **[Récupérateurs personnalisés](#custom-retrievers)** | Logique de recherche personnalisée |
+
+<SectionTab as="h1" sectionId="vector-retriever">Récupérateur vectoriel</SectionTab>
+
+Effectue une recherche sémantique à l’aide d’embeddings. Trouve des fragments de sens similaire à la requête, même s’ils utilisent des mots différents.
+
+**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
+
+retriever = VectorRetriever(
+    client=vector_store,  # Vector store client (Vespa or custom implementation)
+    embedder=embedder,    # MistralEmbedder or custom Embedder
+)
+
+results = await retriever.retrieve(
+    query="What is semantic search?",
+    top_k=10,
+)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Usage |
+|--------|------|---------|---------|
+| `client` | VectorStoreClient | Obligatoire | Stockage vectoriel à rechercher |
+| `embedder` | Embedder | Obligatoire | Embedder pour la vectorisation des requêtes |
+
+**Filtrage** :
+
+Filtrez par métadonnées pour affiner les résultats :
+
+```python
+results = await retriever.retrieve(
+    query="machine learning",
+    top_k=10,
+    filter={"category": "tutorials", "year": 2024},  # Depends on store support
+)
+```
+
+:::info
+La prise en charge du filtrage dépend de votre backend de stockage vectoriel. Vespa prend en charge le filtrage par métadonnées nativement.
+:::
+
+**Quand l’utiliser** :
+- Recherche sémantique générale dans vos documents
+- Trouver du contenu similaire sur le plan conceptuel
+- Gestion naturelle des synonymes et des reformulations
+
+<SectionTab as="h1" sectionId="custom-retrievers">Récupérateurs personnalisés</SectionTab>
+
+Implémentez le protocole `Retriever` pour une logique de recherche personnalisée :
+
+```python
+from mistralai.search.toolkit.retrieval.retrievers import Retriever
+from mistralai.search.toolkit.indices import SearchResult
+
+class CustomRetriever(Retriever):
+    """Custom retriever with domain-specific logic."""
+
+    async def retrieve(
+        self,
+        query: str,
+        top_k: int = 10,
+        filter: dict | None = None,
+    ) -> list[SearchResult]:
+        """Retrieve relevant chunks for the query."""
+        # 1. Preprocess query
+        processed_query = self._preprocess(query)
+
+        # 2. Search with custom logic
+        results = await self._search(processed_query, top_k, filter)
+
+        # 3. Post-process or augment results
+        enhanced_results = self._enhance(results)
+
+        return enhanced_results
+
+    def _preprocess(self, query: str) -> str:
+        # Custom preprocessing (stemming, lemmatization, etc.)
+        return query.lower().strip()
+
+    async def _search(self, query: str, top_k: int, filter: dict) -> list[SearchResult]:
+        # Custom search implementation
+        ...
+
+    def _enhance(self, results: list[SearchResult]) -> list[SearchResult]:
+        # Augment results with additional context
+        ...
+
+# Use in QueryEngine
+query_engine = QueryEngine(retriever=CustomRetriever())
+```
+
+<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
+
+- [Présentation de la récupération](../retrieval) — Architecture du pipeline de récupération
+- [Réorganisateurs](rerankers) — Réévaluez les résultats pour un meilleur classement
+- [Prétraitement des requêtes](preprocessing) — Améliorez les requêtes avant la récupération

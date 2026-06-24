@@ -1,0 +1,52 @@
+---
+title: Recherche
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Recherche
+
+La recherche identifie les fragments pertinents pour une requête utilisateur donnée. Search Toolkit prend en charge les stratégies de recherche vectorielle (sémantique), par mots-clés (BM25) et hybrides, qui peuvent être combinées pour des résultats optimaux.
+
+Un **préprocesseur de requête** optionnel transforme la requête brute avant la recherche : il peut la reformuler pour plus de clarté ou l’étendre en plusieurs variantes.
+
+Un ou plusieurs **Récupérateurs** exécutent la recherche dans l’index. Ils peuvent s’exécuter en parallèle et leurs résultats sont fusionnés par un merge.
+
+Un **Reclasseur** optionnel recalcule les scores des résultats fusionnés à l’aide d’une stratégie de notation plus précise — un LLM, un cross-encoder ou une fusion de classements sur plusieurs ensembles de résultats.
+
+<SectionTab as="h1" sectionId="query-engine">Moteur de requête</SectionTab>
+
+`QueryEngine` orchestre le pipeline de recherche. Il accepte un ou plusieurs récupérateurs, un prétraitement de requête optionnel et des reclasseurs optionnels :
+
+```python
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
+from mistralai.search.toolkit.retrieval.rerankers import LLMReRanker
+from mistralai.search.toolkit.retrieval.pre_processors import LLMQueryRewriter
+
+query_engine = QueryEngine(
+    retriever=vector_retriever,       # Also accepts a list of retrievers
+    query_rewriter=query_rewriter,    # Optional
+    rerankers=[llm_reranker],         # Optional, supports ReRanker and GroupedRanker
+)
+
+result = await query_engine.search(
+    query="What is RAG?",
+    top_k=10,
+    include_metadata=True,
+    include_content=True,
+)
+
+print(f"Original query: {result.original_query}")
+print(f"Results: {len(result.results)}")
+```
+
+<SectionTab as="h1" sectionId="components">Composants</SectionTab>
+
+Chaque composant de recherche est documenté en détail avec des exemples et des bonnes pratiques :
+
+- **[Récupérateurs](/studio-api/search-toolkit/retrieval/retrievers)** : VectorRetriever, KeywordRetriever et modèles de recherche hybrides
+- **[Reclasseurs](/studio-api/search-toolkit/retrieval/rerankers)** : LLMReRanker, CrossEncoderReRanker, fusion RRF et reclasseurs personnalisés
+- **[Prétraitement des requêtes](/studio-api/search-toolkit/retrieval/preprocessing)** : Réécriture et expansion des requêtes pour une meilleure qualité de recherche
+- **[Cache sémantique](/studio-api/search-toolkit/retrieval/semantic-cache)** : Mise en cache des résultats par similarité de requête pour réduire la latence

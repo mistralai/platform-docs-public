@@ -35,9 +35,9 @@ Our Agents and Conversations API allows developers to build such agents, leverag
   - [Websearch](/studio-api/agents/agent-tools/websearch): In-depth explanation of our web search built-in connector tool.
   - [Code Interpreter](/studio-api/agents/agent-tools/code_interpreter): In-depth explanation of our code interpreter for code execution built-in connector tool.
   - [Image Generation](/studio-api/agents/agent-tools/image_generation): In-depth explanation of our image generation built-in connector tool.
-  - [Document Library](/studio-api/knowledge-rag/libraries#connecting-libraries-to-agents): A RAG built-in tool enabling Agents to search through your [Libraries](/studio-api/knowledge-rag/libraries).
+  - [Document Library](/studio-api/libraries#connecting-libraries-to-agents): A RAG built-in tool enabling Agents to search through your [Libraries](/studio-api/libraries).
   - [Function Calling](/studio-api/agents/agent-tools/function-calling): Use function calling to create custom tools.
-  - [Connectors](/studio-api/knowledge-rag/connectors): Register MCP servers as managed Connectors and use them as tools in conversations and Agents.
+  - [Connectors](/studio-api/connectors): Register MCP servers as managed Connectors and use them as tools in conversations and Agents.
 - [Handoffs](/studio-api/agents/handoffs): Relay tasks and use other agents as tools in agentic workflows.
 
 <SectionTab sectionId="cookbooks">

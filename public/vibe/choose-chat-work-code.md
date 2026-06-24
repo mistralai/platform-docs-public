@@ -66,9 +66,9 @@ Each of these features is being reimagined in Work. Stay in Chat if you depend o
 |---|---|
 | [Agents](/vibe/chat-legacy/agents): specialized assistants with their own tools and instructions. | [Skills](/vibe/work/skills), with a different configuration model. |
 | [Think mode](/vibe/chat-legacy/think-mode): extended reasoning for problems that need deeper analysis. | Reasoning level chosen automatically by the model. |
-| [Deep Research](/vibe/chat-legacy/deep-research): multi-source research with structured, cited reports. | Soon available as a [Skill](/vibe/work/skills). |
+| [Deep Research](/vibe/chat-legacy/deep-research): multi-source research with structured, cited reports. | Available as a [Skill](/vibe/work/skills). |
 | [Code Interpreter](/vibe/chat-legacy/code-interpreter): Python in a sandbox for charts and data analysis. | Built-in TypeScript code environment for most data-processing and graphing use cases. |
-| [Memories](/vibe/chat-legacy/memories): long-term facts and preferences the assistant remembers across chats. | New memory system, scoped to projects. |
+| [Memories](/vibe/chat-legacy/memories): long-term facts and preferences the assistant remembers across chats. | Soon new memory system that scales to user knowledge and projects. |
 
 :::note
 If your team or organization built workflows around Le Chat Agents, those continue to work in Chat. Migration paths to Skills, Sub-Agents, or custom agents are planned for a later phase.

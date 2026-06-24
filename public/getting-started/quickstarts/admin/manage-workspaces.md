@@ -60,11 +60,11 @@ Control who has access to each workspace independently.
   <TableBody>
     <TableRow>
       <TableCell>**Admin**</TableCell>
-      <TableCell>Full workspace control: manage members, keys, settings</TableCell>
+      <TableCell>Full workspace control: manage members, keys, settings, view usage</TableCell>
     </TableRow>
     <TableRow>
       <TableCell>**Member**</TableCell>
-      <TableCell>Use API keys, view usage: no management access</TableCell>
+      <TableCell>Use API keys</TableCell>
     </TableRow>
   </TableBody>
 </Table>

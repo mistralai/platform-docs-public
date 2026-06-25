@@ -39,7 +39,7 @@ export default {
     features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
 
   },
-  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'OCR 3'},
+  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'OCR 4'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

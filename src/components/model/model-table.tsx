@@ -100,14 +100,17 @@ function ModelRowResponsive({ data, l, isDeprecated }: ModelRowProps) {
           'text-xs 2xl:text-sm p-2 text-foreground/70 hidden lg:table-cell text-end'
         )}
       >
-        {data.metadata?.replacement ? (
-          <Badge
-            variant="outline"
-            className={badgeClassName}
-          >
-            {data.metadata?.replacement}
-          </Badge>
-        ) : null}
+        {data.metadata?.replacement ? (() => {
+          const replacementModel = models.find(m => m.name === data.metadata?.replacement);
+          const badge = (
+            <Badge variant="outline" className={badgeClassName}>
+              {data.metadata?.replacement}
+            </Badge>
+          );
+          return replacementModel ? (
+            <Link href={getModelUrl(replacementModel)}>{badge}</Link>
+          ) : badge;
+        })() : null}
       </TableCell>
     </TableRow>
   );

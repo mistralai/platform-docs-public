@@ -38,7 +38,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: '2024-11-30', retirementDate: '2025-06-16', replacement: 'Mistral Small 3.2'},
+  metadata: {deprecationDate: '2024-11-30', retirementDate: '2025-06-16', replacement: 'Mistral Small 4'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

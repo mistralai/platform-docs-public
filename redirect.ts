@@ -115,11 +115,11 @@ const rawRedirects: RedirectRule[] = [
   { source: "/capabilities/guardrailing", destination: "/studio-api/conversations/moderation", permanent: true },
   { source: "/capabilities/batch", destination: "/studio-api/batch-processing", permanent: true },
   { source: "/capabilities/predicted_outputs", destination: "/studio-api/conversations/advanced/predicted-outputs", permanent: true },
-  { source: "/capabilities/connectors", destination: "/studio-api/knowledge-rag/connectors", permanent: true },
-  { source: "/capabilities/connectors/management", destination: "/studio-api/knowledge-rag/connectors/management", permanent: true },
-  { source: "/capabilities/connectors/conversations", destination: "/studio-api/knowledge-rag/connectors/conversations", permanent: true },
-  { source: "/capabilities/connectors/tool_calling", destination: "/studio-api/knowledge-rag/connectors/tool_calling", permanent: true },
-  { source: "/capabilities/connectors/confirmation", destination: "/studio-api/knowledge-rag/connectors/confirmation", permanent: true },
+  { source: "/capabilities/connectors", destination: "/studio-api/connectors", permanent: true },
+  { source: "/capabilities/connectors/management", destination: "/studio-api/connectors/management", permanent: true },
+  { source: "/capabilities/connectors/conversations", destination: "/studio-api/connectors/conversations", permanent: true },
+  { source: "/capabilities/connectors/tool_calling", destination: "/studio-api/connectors/tool_calling", permanent: true },
+  { source: "/capabilities/connectors/confirmation", destination: "/studio-api/connectors/confirmation", permanent: true },
   { source: "/capabilities/observability", destination: "/studio-api/observability", permanent: true },
   { source: "/capabilities/observability/quickstart", destination: "/studio-api/observability/quickstart", permanent: true },
   { source: "/capabilities/observability/explorer", destination: "/studio-api/observability/explorer", permanent: true },
@@ -134,7 +134,7 @@ const rawRedirects: RedirectRule[] = [
   { source: "/agents/tools/built-in/code_interpreter", destination: "/studio-api/agents/agent-tools/code_interpreter", permanent: true },
   { source: "/agents/tools/built-in/image_generation", destination: "/studio-api/agents/agent-tools/image_generation", permanent: true },
   { source: "/agents/tools/built-in/document_library", destination: "/studio-api/knowledge-rag/libraries#connecting-libraries-to-agents", permanent: true },
-  { source: "/agents/tools/mcp", destination: "/studio-api/knowledge-rag/connectors", permanent: true },
+  { source: "/agents/tools/mcp", destination: "/studio-api/connectors", permanent: true },
   { source: "/agents/tools/function_calling", destination: "/studio-api/agents/agent-tools/function-calling", permanent: true },
   { source: "/agents/handoffs", destination: "/studio-api/agents/handoffs", permanent: true },
   { source: "/deployment/ai-studio", destination: "/studio-api/overview", permanent: true },
@@ -505,6 +505,16 @@ const rawRedirects: RedirectRule[] = [
     permanent: true,
   },
   {
+    source: "/guides/function-calling",
+    destination: "/studio-api/conversations/function-calling",
+    permanent: true,
+  },
+  {
+    source: "/guides/embeddings",
+    destination: "/studio-api/knowledge-rag/embeddings",
+    permanent: true,
+  },
+  {
     source: "/guides/resources",
     destination: "/getting-started",
     permanent: true,
@@ -620,6 +630,41 @@ const rawRedirects: RedirectRule[] = [
     permanent: true,
   },
   {
+    source: "/studio-api/knowledge-rag/connectors",
+    destination: "/studio-api/connectors",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/connectors/management",
+    destination: "/studio-api/connectors/management",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/connectors/playground",
+    destination: "/studio-api/connectors/debugger",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/connectors/debugger",
+    destination: "/studio-api/connectors/debugger",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/connectors/conversations",
+    destination: "/studio-api/connectors/conversations",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/connectors/tool_calling",
+    destination: "/studio-api/connectors/tool_calling",
+    permanent: true,
+  },
+  {
+    source: "/studio-api/knowledge-rag/connectors/confirmation",
+    destination: "/studio-api/connectors/confirmation",
+    permanent: true,
+  },
+  {
     source: "/capabilities/finetuning/:path*",
     destination: "/resources/deprecated/finetuning",
     permanent: true,
@@ -653,17 +698,17 @@ const rawRedirects: RedirectRule[] = [
   },
   {
     source: "/agents/mcp",
-    destination: "/studio-api/knowledge-rag/connectors",
+    destination: "/studio-api/connectors",
     permanent: true,
   },
   {
     source: "/agents/tools/mcp",
-    destination: "/studio-api/knowledge-rag/connectors",
+    destination: "/studio-api/connectors",
     permanent: true,
   },
   {
     source: "/studio-api/agents/agents-tooling/mcp",
-    destination: "/studio-api/knowledge-rag/connectors",
+    destination: "/studio-api/connectors",
     permanent: true,
   },
   {
@@ -718,6 +763,21 @@ const rawRedirects: RedirectRule[] = [
   {
     source: "/capabilities/OCR/basic_ocr",
     destination: "/studio-api/document-processing/basic_ocr",
+    permanent: true,
+  },
+  {
+    source: "/capabilities/OCR/annotations",
+    destination: "/studio-api/document-processing/annotations",
+    permanent: true,
+  },
+  {
+    source: "/capabilities/OCR/document_qna",
+    destination: "/studio-api/document-processing/document_qna",
+    permanent: true,
+  },
+  {
+    source: "/capabilities/OCR/document_understanding",
+    destination: "/studio-api/document-processing/overview",
     permanent: true,
   },
   // Optimization flatten

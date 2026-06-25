@@ -54,7 +54,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: '', retirementDate: '', replacement: 'Magistral Small 1.2'},
+  metadata: {deprecationDate: '', retirementDate: '', replacement: 'Mistral Small 4'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

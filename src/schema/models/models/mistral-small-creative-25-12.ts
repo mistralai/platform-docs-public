@@ -38,7 +38,7 @@ export default {
     features: ['document-qna', 'chat-completions', 'batching', 'structured-outputs', 'function-calling'],
 
   },
-  metadata: {deprecationDate: '2026-03-31', retirementDate: '2026-04-30', replacement: 'Mistral Nemo 12B'},
+  metadata: {deprecationDate: '2026-03-31', retirementDate: '2026-04-30', replacement: 'Ministral 3 8B'},
   playground: 'https://console.mistral.ai/build/playground',
   legacy: true,
 } as const satisfies StaticModel;

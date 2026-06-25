@@ -54,7 +54,7 @@ export default {
     features: ['function-calling', 'document-qna', 'chat-completions', 'batching'],
 
   },
-  metadata: {deprecationDate: '2025-10-31', retirementDate: '2025-11-30', replacement: 'Magistral Small 1.2'},
+  metadata: {deprecationDate: '2025-10-31', retirementDate: '2025-11-30', replacement: 'Mistral Small 4'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

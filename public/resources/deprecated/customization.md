@@ -96,7 +96,7 @@ For more on how to conduct an LLM Evaluation, check out our [evaluation guide](/
 
 <SectionTab as="h2" variant="secondary" sectionId="step-4-test-your-application-behavior-hypothesis-with-an-mvp-powered-by-mistral-large">Step 4: Test your application behavior hypothesis with an MVP</SectionTab>
 
-Once you understand the intent of your custom LLM and the contours of how you want the model to behave, begin by testing your application hypothesis with Mistral Large and collect the interaction data to better understand how your end users may interact with your LLM. For example, many developers begin their process by creating a Demo or MVP with limited access (a Private Beta).
+Once you understand the intent of your custom LLM and the contours of how you want the model to behave, begin by testing your application hypothesis with Mistral Large and collect the interaction data to better understand how your end users may interact with your LLM. For example, many developers begin their process by creating a demo or MVP with limited access as a Public Preview.
 
 For some applications, a system prompt is the best solution for an aligned model behavior. If you need help deciding between the two, look to our [fine-tuning guide](/resources/deprecated/finetuning). 
 
@@ -534,7 +534,7 @@ The fast fine-tuning capability and _Weights & Biases_ integration made the proc
 
 We will further enhance our results by collaborating closely with our lawyer customers to refine the models' performance. Additionally, we plan to expand use cases to include legal summarization, contract analysis, and legal drafting.
 
-We extend our thanks to Mistral AI for allowing us to test their fine-tuning API as beta testers. The Mistral AI fine-tuning endpoint has proven to be an invaluable tool for our legal AI development - these experiments were just the beginning!
+We extend our thanks to Mistral AI for allowing us to test their fine-tuning API during Public Preview. The Mistral AI fine-tuning endpoint has proven to be an invaluable tool for our legal AI development - these experiments were just the beginning!
 
 <SectionTab variant="secondary" sectionId="jimini-references">References</SectionTab>
 

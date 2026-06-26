@@ -137,7 +137,7 @@ declare module "@lingo.dev/react" {
     "benefits": { context: "Heading for ambassador program benefits" };
     "Best For": { context: "Label for the best-fit use case" };
     "Best practices": { context: "Title of a navigation card to AI model best practices" };
-    "Beta": { context: "Heading for beta API endpoints" };
+    "Public Preview": { context: "Heading for Public Preview API endpoints" };
     "Billing": { context: "Glossary category label" };
     "Billing & Limits": { context: "Name of a Mistral platform feature" };
     "Billing & Usage": { context: "Title of a documentation card about Billing & Usage" };
@@ -502,7 +502,9 @@ declare module "@lingo.dev/react" {
     "Our moderation service that enables our users to detect harmful text content": { context: "Full description of an AI model" };
     "Our moderation service that enables our users to detect harmful text content.": { context: "Short description of an AI model" };
     "Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images": { context: "Full description of an AI model" };
+    "Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images. OCR 4 is available as the newer model. OCR 3 remains available for existing integrations and production workloads.": { context: "Full description of an AI model" };
     "Our OCR service powering our Document AI stack.": { context: "Short description of an AI model" };
+    "Our OCR service powering our Document AI stack. OCR 4 is available as the newer model. OCR 3 remains available for existing integrations and production workloads.": { context: "Short description of an AI model" };
     "Our open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.": { context: "Full description of an AI model" };
     "Our powerful hybrid model unifying instruct, reasoning, and coding capabilities in a single model. 119B parameters with 6.5B active.": { context: "Full description of an AI model" };
     "Our small multimodal reasoning model update of September 2025.": { context: "Full description of an AI model" };

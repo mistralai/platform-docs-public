@@ -6,7 +6,7 @@ sidebar_position: 8
 # Schedule tasks
 
 :::note
-**Preview.** Scheduled tasks are available in preview. The UI, naming, and options may evolve.
+**Public Preview.** Scheduled tasks are available in Public Preview. The UI, naming, and options may evolve.
 :::
 
 Scheduled tasks let you **run a prompt automatically** at a future date or on a recurring schedule. Work picks up the prompt at the scheduled time, executes it like any other task, and notifies you when the result is ready.

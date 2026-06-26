@@ -13,7 +13,7 @@ Connectors can only be used in [on-behalf-of workflows](/studio-api/workflows/bu
 :::
 
 :::info
-The Workflow Connector integration uses `mistralai-workflows-plugins-mistralai`. These are **beta** APIs and may change.
+The Workflow Connector integration uses `mistralai-workflows-plugins-mistralai`. These are **Public Preview** APIs and may change.
 :::
 
 <SectionTab as="h2" sectionId="why">Why use Connector slots</SectionTab>
@@ -93,7 +93,7 @@ await client.beta.connectors.delete_user_credentials_async(
 </Tabs>
 
 :::info
-The `client.beta.connectors` API is in **beta**. See the [multiple authentication cookbook](https://github.com/mistralai/connector-sdk-demo/blob/main/cookbooks/06-multiple-authentication.md) for the full bearer + OAuth2 flow.
+The `client.beta.connectors` API is in **Public Preview**. See the [multiple authentication cookbook](https://github.com/mistralai/connector-sdk-demo/blob/main/cookbooks/06-multiple-authentication.md) for the full bearer + OAuth2 flow.
 :::
 
 <SectionTab as="h2" sectionId="oauth-flow">How the fallback OAuth flow works</SectionTab>

@@ -2,8 +2,8 @@ import { StaticModel } from '../schema';
 export default {
   name: 'OCR 3',
   describe: (l) => ({
-    description: l.text(`Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images`, { context: 'Full description of an AI model' }),
-    shortDescription: l.text(`Our OCR service powering our Document AI stack.`, { context: 'Short description of an AI model' }),
+    description: l.text(`Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images. OCR 4 is available as the newer model. OCR 3 remains available for existing integrations and production workloads.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Our OCR service powering our Document AI stack. OCR 4 is available as the newer model. OCR 3 remains available for existing integrations and production workloads.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'ocr-3-25-12',
   releaseDate: '2025-12-18',
@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-ocr',
-  status: 'Deprecated',
+  status: 'Active',
   avatar: { icon: 'ocr', backgroundColor: 'red' },
   weights: [],
   bloglink: 'https://mistral.ai/news/mistral-ocr-3',
@@ -39,7 +39,7 @@ export default {
     features: ['ocr', 'annotations-structured-ocr', 'batching'],
 
   },
-  metadata: { deprecationDate: '2026-06-30', retirementDate: '2026-09-30', replacement: 'OCR 4' },
+  metadata: { replacement: 'OCR 4' },
   playground: 'https://console.mistral.ai/build/document-ai/ocr-playground',
   legacy: false,
 } as const satisfies StaticModel;

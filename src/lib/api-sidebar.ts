@@ -15,7 +15,7 @@ export const flattenSidebar = (
 
     const betaGroup: ApiSidebarItem = {
         type: 'category',
-        label: 'Beta Features',
+        label: 'Public Preview',
         href: '/api/endpoint/beta/agents',
         children: [],
         clickable: true,

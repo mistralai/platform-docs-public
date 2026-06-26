@@ -8,7 +8,7 @@ sidebar_position: 1
 # What is Mistral Workflows?
 
 :::info
-Workflows is in **public preview**. We don't plan major changes to APIs and features, but they might still happen. We'll notify you in advance when they do.
+Workflows is in **Public Preview**. We don't plan major changes to APIs and features, but they might still happen. We'll notify you in advance when they do.
 :::
 
 Mistral Workflows is a platform for building **production-grade AI workflows**: multi-step processes that combine LLM calls, tool use, external APIs, and human input. They survive crashes, restarts, and failures of any individual step.

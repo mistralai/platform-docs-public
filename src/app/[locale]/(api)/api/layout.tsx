@@ -90,7 +90,7 @@ const flattenSidebar = (
 
   const betaCategory: ApiSidebarItem = {
     type: 'category',
-    label: l.text('Beta', { context: 'Heading for beta API endpoints' }),
+    label: l.text('Public Preview', { context: 'Heading for Public Preview API endpoints' }),
     href: '/api/endpoint/beta/agents',
     children: [],
     clickable: true,

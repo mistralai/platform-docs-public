@@ -830,7 +830,168 @@ const rawRedirects: RedirectRule[] = [
   },
   {
     source: "/deployment/ai-studio/:path*",
-    destination: "/admin/user-management-finops/:path*",
+    destination: "/admin/billing-usage/:path*",
+    permanent: true,
+  },
+  // Admin section restructure (2026): old security-access / user-management-finops / admin-api paths
+  {
+    source: "/admin/security-access/admin-api",
+    destination: "/admin/admin-api/overview",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/overview",
+    destination: "/admin/admin-api/overview",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/authentication",
+    destination: "/admin/admin-api/authentication",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/manage-users",
+    destination: "/admin/admin-api/manage-users",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/manage-workspaces",
+    destination: "/admin/admin-api/manage-workspaces",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/manage-groups-roles",
+    destination: "/admin/admin-api/manage-groups-roles",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/user-provisioning",
+    destination: "/admin/admin-api/user-provisioning",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/usage-metrics",
+    destination: "/admin/admin-api/usage-metrics",
+    permanent: true,
+  },
+  {
+    source: "/admin/automate-administration/api-reference",
+    destination: "/admin/admin-api/api-reference",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/back-office",
+    destination: "/admin/overview",
+    permanent: true,
+  },
+  {
+    source: "/admin/set-up-organization/admin-panel",
+    destination: "/admin/overview",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/email-domain-auth",
+    destination: "/admin/set-up-organization/sign-in-method/email-domain-authentication",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/sso",
+    destination: "/admin/set-up-organization/sign-in-method/saml-sso",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/api-keys",
+    destination: "/admin/identity-access/api-keys",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/connectors",
+    destination: "/admin/identity-access/connectors",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/organization",
+    destination: "/admin/workspaces/your-first-workspace",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/audit-logs",
+    destination: "/admin/monitor-comply/audit-logs/overview",
+    permanent: true,
+  },
+  {
+    source: "/admin/monitor-comply/audit-logs",
+    destination: "/admin/monitor-comply/audit-logs/overview",
+    permanent: true,
+  },
+  {
+    source: "/admin/security-access/privacy",
+    destination: "/admin/monitor-comply/privacy-data-controls",
+    permanent: true,
+  },
+  {
+    source: "/admin/workspaces/usage-limits-by-workspace",
+    destination: "/admin/workspaces/usage-limits",
+    permanent: true,
+  },
+  {
+    source: "/admin/quickstarts/create-organization",
+    destination: "/getting-started/quickstarts/admin/create-organization",
+    permanent: true,
+  },
+  {
+    source: "/admin/quickstarts/configure-sso",
+    destination: "/getting-started/quickstarts/admin/configure-sso",
+    permanent: true,
+  },
+  {
+    source: "/admin/quickstarts/manage-workspaces",
+    destination: "/getting-started/quickstarts/admin/manage-workspaces",
+    permanent: true,
+  },
+  {
+    source: "/admin/quickstarts",
+    destination: "/getting-started/quickstarts/admin",
+    permanent: true,
+  },
+  {
+    source: "/admin/user-management-finops/user-management",
+    destination: "/admin/identity-access/user-management",
+    permanent: true,
+  },
+  {
+    source: "/admin/user-management-finops/user-groups",
+    destination: "/admin/identity-access/groups",
+    permanent: true,
+  },
+  {
+    source: "/admin/user-management-finops/subscriptions",
+    destination: "/admin/billing-usage/subscriptions",
+    permanent: true,
+  },
+  {
+    source: "/admin/user-management-finops/billing",
+    destination: "/admin/billing-usage/billing",
+    permanent: true,
+  },
+  {
+    source: "/admin/user-management-finops/usage-limits",
+    destination: "/admin/billing-usage/usage-limits",
+    permanent: true,
+  },
+  {
+    source: "/admin/user-management-finops/tier",
+    destination: "/admin/billing-usage/usage-limits",
+    permanent: true,
+  },
+  {
+    source: "/admin/billing-usage/usage-dashboard",
+    destination: "/admin/billing-usage/usage-limits",
+    permanent: true,
+  },
+  {
+    source: "/admin/billing-usage/rate-limits-usage-tiers",
+    destination: "/admin/billing-usage/usage-limits",
     permanent: true,
   },
   // Old getting-started structure redirects

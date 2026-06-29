@@ -72,6 +72,7 @@ declare module "@lingo.dev/react" {
     "Actively participate in community discussions and help fellow developers with Mistral AI questions.": { context: "Description of a Mistral ambassador responsibility" };
     "Additional Info": { context: "Section heading for additional AI model metadata" };
     "Admin": { context: "Alt text for the Admin section logo" | "Heading for admin documentation" | "Name of the Mistral admin console" | "Navigation label for the admin console" | "Product name on the discover-our-platform card on the home page" | "Top navigation label for admin docs" };
+    "Admin Panel": { context: "Title of a documentation card about Admin Panel" };
     "Admin documentation": { context: "Title of the Admin documentation link on the quickstart doc-links row" };
     "Advanced AI capabilities": { context: "Short title for a featured cookbook topic" };
     "Agent": { context: "Glossary term for an AI agent" };
@@ -707,7 +708,7 @@ declare module "@lingo.dev/react" {
     "View all models": { context: "Call to view the full AI model catalog" };
     "View all models with specifications, benchmarks, and feature comparison.": { context: "Description of the navigation card to the full AI model catalog" };
     "View on": { context: "Prefix for a link to GitHub" };
-    "View your organization dashboard, manage workspaces, and configure workspace settings.": { context: "Description of a documentation card about Back Office" };
+    "View your organization dashboard, manage workspaces, and configure workspace settings.": { context: "Description of a documentation card about Admin Panel" | "Description of a documentation card about Back Office" };
     "VIP experience": { context: "Benefit of the Mistral ambassador program" };
     "Vision": { context: "Label for an AI model capability: vision-understanding" };
     "Warning": { context: "Admonition callout label for warnings" };
@@ -718,11 +719,24 @@ declare module "@lingo.dev/react" {
     "Willingness to commit to the program for at least 6 months.": { context: "Description of a criterion used to evaluate ambassador applications" };
     "Workspace": { context: "Glossary term for an isolated Mistral organization environment" };
     "Workspace-scoped access tokens": { context: "Short description of the API Keys feature" };
-    "Workspaces": { context: "Name of a Mistral platform feature" };
+    "Workspaces": { context: "Name of a Mistral platform feature" | "Title of the admin overview card for workspaces" };
     "World’s best edge model.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "Written By": { context: "Label before the cookbook author name" };
     "Your cloud account": { context: "Value for the \"Data Location\" field of the VPC deployment option" };
     "Zed": { context: "Keyword tag for the IDE Integration feature" };
     "Zero setup required": { context: "Feature of the SaaS deployment option" };
+    "Admin overview": { context: "Title of the card linking to the admin overview page" };
+    "New to admin? See how organizations, workspaces, members, and access fit together.": { context: "Description of the card linking to the admin overview page" };
+    "Set up your organization": { context: "Title of the admin overview card for organization setup" };
+    "Create your organization, configure settings, verify your domain, and choose a sign-in method.": { context: "Description of the admin overview card for organization setup" };
+    "Identity and access (RBAC)": { context: "Title of the admin overview card for identity and access management" };
+    "Manage users, roles and permissions, groups, and automated provisioning with SCIM.": { context: "Description of the admin overview card for identity and access management" };
+    "Structure and govern work across workspaces in Studio and Vibe, with per-workspace usage and limits.": { context: "Description of the admin overview card for workspaces" };
+    "Billing and usage": { context: "Title of the admin overview card for billing and usage" };
+    "Track usage, manage subscriptions and invoices, and set limits and rate tiers per workspace.": { context: "Description of the admin overview card for billing and usage" };
+    "Automate administration": { context: "Title of the admin overview card for the Admin API" };
+    "Manage users, workspaces, groups, and roles programmatically with the Admin API.": { context: "Description of the admin overview card for the Admin API" };
+    "Monitor and comply": { context: "Title of the admin overview card for monitoring and compliance" };
+    "Review audit logs and configure privacy and data controls.": { context: "Description of the admin overview card for monitoring and compliance" };
   }
 }

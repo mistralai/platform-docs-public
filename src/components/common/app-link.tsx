@@ -7,7 +7,7 @@ type AppName = 'studio' | 'admin' | 'vibe';
 
 const APP_LABEL: Record<AppName, string> = {
   studio: 'Studio',
-  admin: 'Admin Console',
+  admin: 'Admin Panel',
   vibe: 'Vibe',
 };
 
@@ -23,7 +23,7 @@ interface AppLinkProps {
  * Inline navigation pill for links that point to a specific location
  * inside a Mistral product (Vibe, Studio, Admin).
  *
- * Renders as:  [ Admin Console ›  Organization  ›  Billing ↗ ]
+ * Renders as:  [ Admin Panel ›  Organization  ›  Billing ↗ ]
  *
  * Usage:
  *   <AppLink href="https://admin.mistral.ai/organization/billing" app="admin" path={["Organization", "Billing"]} />

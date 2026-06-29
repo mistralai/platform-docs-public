@@ -1,0 +1,117 @@
+---
+title: SAML SSO
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Single sign-on (SSO)
+
+SAML single sign-on (SSO) lets members of your Organization sign in with your corporate identity provider (IdP). Any user with an email address that matches your verified domain is redirected to your configured IdP to authenticate.
+
+:::info
+SSO is available on Enterprise plans.
+:::
+
+<SectionTab as="h1" sectionId="how-it-works">How SAML SSO works</SectionTab>
+
+1. A user enters an email address that matches a verified domain.
+2. Mistral redirects the user to your configured IdP.
+3. The IdP authenticates the user with your corporate credentials and policies.
+4. The user returns to Mistral signed in.
+5. On first sign-in, Mistral provisions the user account in your Organization.
+
+:::note
+Organization SSO uses SAML 2.0. OpenID Connect (OIDC) is not supported for Organization SSO. OIDC and OAuth 2.0 are used separately for individual social login with Google, Apple, or Microsoft.
+:::
+
+<SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
+
+Before you configure SSO, make sure you have:
+
+- an Enterprise plan;
+- at least one [verified domain](/admin/set-up-organization/verify-domain);
+- permission to create a SAML 2.0 application in your IdP;
+- SAML metadata XML from your IdP.
+
+You also need these attribute mappings:
+
+| Attribute | Value |
+| --- | --- |
+| User's first name | `firstName` |
+| User's last name | `lastName` |
+| Name ID format | `EmailAddress` |
+
+<SectionTab as="h1" sectionId="configure-sso">Configure SSO</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="start-in-admin">Start SSO setup in Admin</SectionTab>
+
+1. Open <AppLink href="https://admin.mistral.ai/organization/access" path={["Admin Console", "Administration", "Access"]} /> in the Admin Console.
+2. In **Organization Access**, find **Single Sign-On (SAML SSO)**.
+3. Click **Activate SSO**.
+4. Keep the SSO configuration modal open while you configure your IdP.
+
+<SectionTab as="h2" variant="secondary" sectionId="create-saml-app">Create the SAML app in your IdP</SectionTab>
+
+1. In your IdP admin console, create a **SAML 2.0 application** for Mistral.
+2. Copy the **ACS URL** and **Entity ID** from the Mistral modal into your IdP configuration.
+3. Map the user attributes from the [prerequisites](#prerequisites) section.
+4. Export or copy the **SAML metadata XML** from your IdP.
+
+<SectionTab as="h2" variant="secondary" sectionId="enable-sso">Enable SSO in Admin</SectionTab>
+
+1. Paste the complete metadata XML into the text box in the Mistral SSO configuration modal.
+2. Click **Enable SSO**.
+
+Users with email addresses matching your verified domain are redirected to your IdP for authentication.
+
+<SectionTab as="h1" sectionId="signing-in">What users experience</SectionTab>
+
+1. The user goes to the Mistral login page.
+2. The user enters their work email address.
+3. The password field disappears and the button changes to **Sign in with SSO**.
+4. The user clicks **Sign in with SSO** and selects the Organization.
+5. The user authenticates with their corporate credentials on the IdP login page.
+6. The user returns to Mistral signed in.
+
+<SectionTab as="h1" sectionId="supported-idps">Supported identity providers</SectionTab>
+
+Any compliant SAML IdP can work. The most commonly used providers are:
+
+- **Microsoft Entra ID** (formerly Azure Active Directory)
+- **Google Workspace** / Google Identity Platform
+- **Okta**
+
+Refer to your IdP's documentation for specific SAML application setup instructions.
+
+<SectionTab as="h1" sectionId="automatic-seat-assignment">Automatic seat assignment</SectionTab>
+
+You can automatically assign seats to users when they first sign in through SSO, if they have access to your Organization and seats are available.
+
+Automatic seat assignment can apply to:
+
+- Team seats;
+- Mistral Code Enterprise seats.
+
+Configure automatic seat assignment from <AppLink href="https://admin.mistral.ai/organization/access" path={["Admin Console", "Administration", "Access"]} />.
+
+{/* SCIM is available in private preview from this same Access settings page. Keep SCIM endpoint URL, on-demand sync, sync history, and identity-provider reconciliation details out of this public article until the feature is in scope for this release. */}
+
+<SectionTab as="h1" sectionId="disable-sso">Disable SSO</SectionTab>
+
+You can disable SSO at any time from <AppLink href="https://admin.mistral.ai/organization/access" path={["Admin Console", "Administration", "Access"]} /> in the Admin Console.
+
+:::warning
+Disabling SSO means users can no longer sign in through your IdP. They need to set a password through the reset flow or be re-invited. Automatic user provisioning also stops. Consider enabling [Email domain authentication](/admin/set-up-organization/sign-in-method/email-domain-authentication) before disabling SSO.
+:::
+
+<SectionTab as="h1" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+If SSO fails after configuration:
+
+- Verify that the **ACS URL** and **Entity ID** match exactly between Mistral and your IdP.
+- Confirm that attribute mappings are case-sensitive (`firstName`, `lastName`).
+- Check that **Name ID Format** is set to `EmailAddress`.
+- Make sure the metadata XML is complete and correctly pasted.
+- Contact [support](https://help.mistral.ai) if issues persist.

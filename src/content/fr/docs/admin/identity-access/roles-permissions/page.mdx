@@ -1,0 +1,74 @@
+---
+title: Rôles et permissions
+sidebar_position: 2
+description: Predefined Organization and Workspace roles, what each one grants, and how to assign them.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Roles and permissions
+
+Mistral uses role-based access control (RBAC) to govern what members can do. Roles are predefined and apply at two scopes: the **Organization** and each **Workspace**.
+
+<SectionTab as="h1" sectionId="how-roles-work">How roles work</SectionTab>
+
+- **Two scopes.** Organization roles control account-wide administration; Workspace roles control access within a single Workspace. They are independent. A user can be a **Member** of the Organization and a **Workspace admin** of one Workspace.
+- **Multiple roles.** A user can hold several roles in the same Organization or Workspace. Permissions are **additive**: the user gets the union of everything their roles grant.
+- **Default Workspace role.** New Workspace members get **Workspace contributor** by default, regardless of their Organization role. Even an Organization admin or billing manager starts as a Workspace contributor until you change it.
+- **Where to assign.** Assign roles in the <AppLink href="https://admin.mistral.ai" app="admin">Admin Console</AppLink> (a multi-select per member), or programmatically with the Admin API using `role_names`. See [Manage users](/admin/admin-api/manage-users) and [Manage groups and roles](/admin/admin-api/manage-groups-roles).
+
+{/* Multi-role = additive union: stated per Greg; confirm at review. */}
+
+<SectionTab as="h1" sectionId="organization-roles">Organization roles</SectionTab>
+
+Use the `role_names` field in the Admin API to assign Organization roles by name.
+
+| UI label | API Role name | What it grants |
+| --- | --- | --- |
+| Member | `member` | Product usage. Manages their own profile and preferences. |
+| Billing | `billing_manager` | Subscriptions, invoices, payment methods, and usage reports. Cannot change Organization settings or invite members. |
+| Admin | `organization_admin` | Full control of the Organization: settings, members, security, billing, and audit logs. |
+
+<SectionTab as="h1" sectionId="workspace-roles">Workspace roles</SectionTab>
+
+Use the `role_names` field in the Admin API to assign Workspace roles by name.
+
+| UI label | API Role name | What it grants |
+| --- | --- | --- |
+| User | `user` | Access to Vibe and its features. No Studio access. |
+| Developer | `dev` | Access to Studio and all its primitives (agents, fine-tuning, etc.). No Vibe access. |
+| Mistral Vibe Code User | `mistral_code_user` | Access to Mistral Code (requires a seat). |
+| Workspace Contributor | `workspace_contributor` | All product features (`user`, `dev`, and `mistral_code_user` combined). No management, administration, or observability. |
+| Admin | `workspace_admin` | Everything a Workspace Contributor has, plus Workspace administration. |
+| Observability Viewer | `observability_viewer` | Access to the Observability suite. |
+
+:::note
+`GET /api/admin/roles` returns the authoritative list of roles and their UUIDs. Assign roles by name with `role_names`, or by UUID with `roles`.
+:::
+
+{/* TODO (per Mathieu): ensure_roles.py is authoritative. workspace_admin includes observability (ViewObservabilityTraffic), but this is temporary (granted until multi-role ships) and the Observability team owns the final scope. Revisit. */}
+
+<SectionTab as="h1" sectionId="assign-roles">Assign roles</SectionTab>
+
+**In the Admin Console**
+
+1. Open <AppLink href="https://admin.mistral.ai/organization/members" path={["Admin Console", "Administration", "Members"]} />.
+2. Select a member.
+3. Choose one or more roles from the role selector. Changes apply immediately.
+
+**With the Admin API**
+
+Set Organization roles when creating or updating a user, and Workspace roles when adding members to a Workspace. You can also assign roles to an entire [user group](/admin/identity-access/groups).
+
+```bash
+# Organization role
+curl -X PATCH https://console.mistral.ai/api/admin/users/<USER_UUID> \
+  -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{"role_names": ["member"]}'
+
+# Workspace role
+curl -X PATCH https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID>/users \
+  -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{"members": [{"user_uuid": "<USER_UUID>", "role_names": ["workspace_admin"]}]}'
+```

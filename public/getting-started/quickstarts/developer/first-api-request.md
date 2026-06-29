@@ -176,7 +176,7 @@ The terminal prints a short description of Mistral AI. If it doesn't, check the 
     <TableRow>
       <TableCell>`402 Payment Required`</TableCell>
       <TableCell>No payment method on account</TableCell>
-      <TableCell>Add one at <AppLink href="https://admin.mistral.ai/organization/billing" app="admin">Subscriptions › Billing</AppLink></TableCell>
+      <TableCell>Add one at <AppLink href="https://admin.mistral.ai/organization/billing" app="admin" path={["Subscriptions", "Billing"]} /></TableCell>
     </TableRow>
     <TableRow>
       <TableCell>`429 Too Many Requests`</TableCell>

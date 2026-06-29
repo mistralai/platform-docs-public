@@ -45,7 +45,7 @@ export function HeroCards() {
     {
       id: 'admin',
       title: l.text('Admin', { context: 'Name of the Mistral admin console' }),
-      href: '/admin/security-access/back-office',
+      href: '/admin/set-up-organization/create-organization',
       logo: '/assets/logos/m-white.svg',
       color: 'bg-[#4a4a5e]',
       rotation: 'rotate-[15deg]',

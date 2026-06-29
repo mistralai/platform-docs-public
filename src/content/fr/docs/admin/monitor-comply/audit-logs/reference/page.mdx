@@ -1,0 +1,300 @@
+---
+title: Référence des journaux d’audit
+sidebar_label: Référence
+sidebar_position: 2
+description: Champs de réponse des journaux d’audit, filtres, types d’acteurs, types de cibles et types d’événements.
+---
+
+# Référence des journaux d’audit
+
+Cette référence répertorie les champs, filtres, types d’acteurs, types de cibles et événements pouvant apparaître dans les journaux d’audit.
+
+Les entrées de journal d’audit sont générées à partir du schéma Admin API et des constantes de journal d’audit du tableau de bord. Les champs de métadonnées varient selon l’événement et le type de ressource.
+
+## Champs de réponse
+
+| Champ               | Type                     | Obligatoire | Signification                                    |
+| ------------------- | ------------------------ | -------- | ------------------------------------------ |
+| `created_at`        | `chaîne date-heure`       | Oui      | Date et heure de création de l’entrée de journal d’audit. |
+| `actor_type`        | `ActorType`              | Oui      | Type d’acteur ayant effectué l’action.   |
+| `actor_metadata`    | `objet<string, string>` | Oui      | Détails sur l’acteur ayant effectué l’action.    |
+| `event_type`        | `EventType`              | Oui      | Type d’action enregistrée dans le journal d’audit.  |
+| `event_metadata`    | `objet<string, string>` | Oui      | Détails concernant l’action enregistrée.         |
+| `target_type`       | `TargetType`             | Oui      | Type de ressource affectée par l’action.   |
+| `target_metadata`   | `objet<string, string>` | Oui      | Détails concernant la ressource affectée.       |
+| `log_id`            | `entier`                | Oui      | ID de l’entrée de journal d’audit.                        |
+| `organization_uuid` | `chaîne UUID` ou `null`  | Non       | ID de l’Organization pour l’entrée de journal d’audit.   |
+| `workspace_uuid`    | `chaîne UUID` ou `null`  | Non       | ID de l’workspace pour l’entrée de journal d’audit.      |
+
+## Champs de métadonnées
+
+Les champs `actor_metadata`, `event_metadata` et `target_metadata` sont des objets. Ils contiennent des données supplémentaires sur l’acteur, l’action et la ressource affectée.
+
+Le schéma API brut accepte des valeurs de chaîne. Le tableau de bord peut enrichir les ID connus en objets pour l’affichage.
+
+| Clé                       | Apparaît dans                       | Signification                                                                                                                                                            |
+| ------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `user_uuid`               | Métadonnées de l’acteur                   | ID utilisateur de l’acteur humain. Le tableau de bord peut enrichir cette valeur avec `uuid`, `e-mail` et `name`.                                                                 |
+| `enterprise_account_uuid` | Métadonnées de l’acteur                   | ID du compte entreprise d’une clé API en tant qu’acteur. Le tableau de bord peut enrichir cette valeur avec `uuid` et `name`.                                                            |
+| `organization_uuid`       | Métadonnées de l’acteur, de l’événement ou de la cible | ID de l’Organization lié à l’acteur, à l’action ou à la ressource affectée. Le tableau de bord peut enrichir cette valeur avec `uuid` et `name`.                                    |
+| `workspace_uuid`          | Métadonnées de l’acteur, de l’événement ou de la cible | ID de l’espace de travail lié à l’acteur, à l’action ou à la ressource affectée. Le tableau de bord peut enrichir cette valeur avec `uuid`, `name`, `description`, `icon` et `is_default`. |
+| `uuid`                    | Métadonnées enrichies                | ID de l’utilisateur, de l’Organization, de l’espace de travail ou du compte entreprise enrichi.                                                                                           |
+| `email`                   | Métadonnées d’acteur enrichies          | Adresse e-mail d’un acteur humain enrichi.                                                                                                                         |
+| `name`                    | Métadonnées enrichies                | Nom d’affichage pour un utilisateur, une Organization, un espace de travail ou un compte entreprise enrichi.                                                                                 |
+| `description`             | Métadonnées d’espace de travail enrichies      | Description de l’espace de travail.                                                                                                                                             |
+| `icon`                    | Métadonnées d’espace de travail enrichies      | Valeur de l’icône de l’espace de travail.                                                                                                                                              |
+| `is_default`              | Métadonnées d’espace de travail enrichies      | Indique si l’espace de travail est l’espace de travail par défaut.                                                                                                                    |
+
+## Filtres
+
+Utilisez ces paramètres de requête avec l’[endpoint des journaux d’audit de l’Admin API](/api/endpoint/beta/admin/audit-logs).
+
+| Filtre            | Type                         | Valeur par défaut      | Signification                                                       |
+| ----------------- | ---------------------------- | ------------ | ------------------------------------------------------------- |
+| `actor_type`      | `ActorType[]` ou `null`      | `Aucun`       | Types d’acteurs à inclure dans les résultats du journal d’audit.              |
+| `event_type`      | `EventType[]` ou `null`      | `Aucun`       | Types d’événements à inclure dans les résultats du journal d’audit.              |
+| `target_type`     | `TargetType[]` ou `null`     | `Aucun`       | Types de ressources cibles à inclure dans les résultats du journal d’audit.    |
+| `actor_user_uuid` | `chaîne` ou `null`           | `Aucun`       | Filtre les journaux par UUID de l’utilisateur ayant effectué l’action. |
+| `sort`            | `ascending` ou `descending`  | `descending` | Ordre de tri pour les entrées de journal d’audit.                             |
+| `after`           | `chaîne date-heure` ou `null` | `Aucun`       | Retourne les entrées de journal d’audit après ce moment.                     |
+| `before`          | `chaîne date-heure` ou `null` | `Aucun`       | Retourne les entrées de journal d’audit avant ce moment.                    |
+| `limit`           | `entier`                    | `20`         | Nombre maximal de résultats à retourner.                          |
+
+## Types d’acteurs
+
+| Type d’acteur | Signification                                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| `HUMAN`    | Une personne a effectué l’action dans le tableau de bord, Studio, Le Chat ou une surface de produit authentifiée. |
+| `API_KEY`  | Une clé API a effectué l’action.                                                                      |
+| `OTHER`    | Un processus système, un système externe ou une opération du personnel Mistral a effectué l’action.                   |
+
+## Types de cibles
+
+| Type de cible                | Signification                                               |
+| -------------------------- | ----------------------------------------------------- |
+| `USER`                     | Un compte utilisateur.                                       |
+| `USER_GROUP`               | Un groupe d’utilisateurs utilisé pour la gestion des accès.              |
+| `ORGANIZATION`             | Une Organization.                                      |
+| `WORKSPACE`                | Un espace de travail.                                          |
+| `API_KEY`                  | Une clé API.                                           |
+| `ADMIN_API_KEY`            | Une clé API Admin.                                     |
+| `AGENT`                    | Un agent dans Studio.                                   |
+| `SKILL`                    | Un Skill dans Studio.                                    |
+| `PROMPT`                   | Un prompt dans Studio.                                   |
+| `CUSTOM_VOICE`             | Une voix personnalisée.                                       |
+| `DATASET`                  | Un jeu de données utilisé pour des fichiers, des jobs batch ou du fine-tuning. |
+| `FINE_TUNING_JOB`          | Un job de fine-tuning.                                    |
+| `BATCH_JOB`                | Un job batch.                                          |
+| `DATA_CAPTURE_EXTRACT_JOB` | Un job d’extraction de capture de données.                           |
+| `LE_CHAT_CONVERSATION`     | Une conversation du Chat.                               |
+| `LE_CHAT_MEMORIES`         | Paramètres de mémoire du Chat.                              |
+| `LE_CHAT_FLASH_ANSWERS`    | Paramètres de réponses instantanées du Chat.                        |
+| `LE_CHAT_LOCALISATION`     | Paramètres de partage de localisation du Chat.                |
+| `LE_CHAT_DATA`             | Paramètres d’entraînement des données du Chat.                       |
+| `INVOICE`                  | Une facture de facturation.                                    |
+| `WALLET`                   | Un portefeuille ou solde de crédits de facturation.                   |
+| `MONTHLY_LIMIT`            | Limite de dépenses mensuelles d’une Organization.                  |
+| `WORKSPACE_MONTHLY_LIMIT`  | Limite de dépenses mensuelles d’un espace de travail.                      |
+| `SHARED_BUDGET`            | Un budget partagé.                                      |
+| `AUTO_RECHARGE`            | Paramètres de recharge automatique de facturation.                       |
+| `PAYMENT_METHOD`           | Un mode de paiement de facturation.                             |
+| `SUBSCRIPTION`             | Un abonnement de facturation.                               |
+| `BILLING_INFO`             | Informations sur le profil de facturation.                          |
+| `LIBRARY`                  | Une Bibliothèque.                                            |
+| `LIBRARY_DOCUMENT`         | Un document de Bibliothèque.                                   |
+| `INTEGRATION`              | Une intégration ou une configuration de Connecteur.            |
+| `CONNECTORS_GATEWAY`       | Un appel d’outil de passerelle Connecteurs.                       |
+| `FEATURE_PERMISSION`       | Une substitution d’autorisation de fonctionnalité.                        |
+| `SECRET_STORE_ENTRY`       | Une entrée de stockage de secrets.                                 |
+| `CRAWLER_CONFIG`           | Une configuration de crawler.                              |
+
+## Types d’événements
+
+Chaque `event_type` indique l’action enregistrée dans le journal d’audit. Les événements obsolètes peuvent encore apparaître pour les anciens journaux.
+
+### Événements de gestion des utilisateurs
+
+| Type d’événement                                                      | Signification                                                                      |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `user.create`                                                   | Enregistre la création d’un utilisateur.                                              |
+| `user.delete`                                                   | Enregistre la suppression d’un utilisateur.                                              |
+| `user.log_in`                                                   | Enregistre la connexion d’un utilisateur.                                                |
+| `user.log_out`                                                  | Enregistre la déconnexion d’un utilisateur.                                               |
+| `user.info.update`                                              | Enregistre les modifications des informations utilisateur.                                              |
+| `user.password.update`                                          | Enregistre les modifications du mot de passe utilisateur.                                          |
+| `user.phone_number.verify`                                      | Enregistre la vérification du numéro de téléphone d’un utilisateur.                                 |
+| `user.organization.leave`                                       | Enregistre le départ d’un utilisateur d’une Organization.                                  |
+| `user.organization.role.update`                                 | Enregistre les modifications du rôle Organization de l’utilisateur.                                 |
+| `user.organization.delete`                                      | Enregistre la suppression d’un utilisateur d’une Organization.                         |
+| `user.organization.join`                                        | Enregistre l’adhésion d’un utilisateur à une Organization.                                   |
+| `organization.create`                                           | Enregistre la création d’une Organization.                                     |
+| `organization.update`                                           | Enregistre les modifications d’une Organization.                                           |
+| `organization.invite.send`                                      | Enregistre l’envoi d’une Invitation à une Organization.                             |
+| `organization.invite.accepted`                                  | Enregistre l’acceptation d’une Invitation à une Organization.                         |
+| `organization.invite.rejected`                                  | Enregistre le rejet d’une Invitation à une Organization.                         |
+| `organization.invite.revoked`                                   | Enregistre la révocation d’une Invitation à une Organization.                          |
+| `organization.join_by_email_domain`                             | Enregistre l’adhésion d’un utilisateur à une Organization via un domaine e-mail autorisé.   |
+| `organization.domain_verification.disable`                      | Enregistre la désactivation de la vérification de domaine d’une Organization.                   |
+| `organization.domain_verification.enable`                       | Enregistre l'activation de la vérification de domaine de l'organisation.                    |
+| `organization.email_domain_authentication.enable`               | Enregistre l'activation de l'authentification de domaine e-mail de l'organisation.            |
+| `organization.email_domain_authentication.disable`              | Enregistre la désactivation de l'authentification de domaine e-mail de l'organisation.           |
+| `organization.saml_authentication.enable`                       | Enregistre l'activation de l'authentification SAML de l'organisation.                    |
+| `organization.saml_authentication.disable`                      | Enregistre la désactivation de l'authentification SAML de l'organisation.                   |
+| `organization.saml_authentication.sso_user_provisioning.update` | Enregistre les modifications du provisionnement des utilisateurs SSO pour l'authentification SAML de l'organisation. |
+| `organization.seat_auto_assign.enable`                          | Enregistre l'activation de l'attribution automatique des sièges pour l'organisation.                   |
+| `organization.seat_auto_assign.disable`                         | Enregistre la désactivation de l'attribution automatique des sièges pour l'organisation.                  |
+| `organization.sso_seat_auto_assign.enable`                      | Enregistre l'activation de l'attribution automatique des sièges SSO pour l'organisation.               |
+| `organization.sso_seat_auto_assign.disable`                     | Enregistre la désactivation de l'attribution automatique des sièges SSO pour l'organisation.              |
+| `workspace.create`                                              | Enregistre la création d’un espace de travail.                                         |
+| `workspace.update`                                              | Enregistre les modifications d’un espace de travail.                                              |
+| `workspace.delete`                                              | Enregistre la suppression d’un espace de travail.                                         |
+| `workspace.member.add`                                          | Enregistre l’ajout d’un membre à un espace de travail.                                    |
+| `workspace.member.remove`                                       | Enregistre la suppression d’un membre d’un espace de travail.                                  |
+| `workspace.member.role.update`                                  | Enregistre la modification du rôle d’un membre dans un espace de travail.                                  |
+| `user_group.create`                                             | Enregistre la création d’un groupe d’utilisateurs.                                        |
+| `user_group.update`                                             | Enregistre les modifications d’un groupe d’utilisateurs.                                             |
+| `user_group.delete`                                             | Enregistre la suppression d’un groupe d’utilisateurs.                                        |
+| `user_group.member.add`                                         | Enregistre l’ajout d’un membre à un groupe d’utilisateurs.                                     |
+| `user_group.member.remove`                                      | Enregistre la suppression d’un membre d’un groupe d’utilisateurs.                                   |
+| `user_group.workspace.provision`                                | Enregistre le provisionnement d’un espace de travail pour un groupe d’utilisateurs.                          |
+| `user_group.workspace.deprovision`                              | Enregistre le désapprovisionnement d’un espace de travail pour un groupe d’utilisateurs.                        |
+| `user_group.workspace.update`                                   | Enregistre la mise à jour d’un espace de travail pour un groupe d’utilisateurs.                             |
+
+### Événements de facturation
+
+| Type d’événement                                      | Signification                                                         |
+| ----------------------------------------------- | --------------------------------------------------------------- |
+| `billing.information.updated`                   | Enregistre les modifications des informations de facturation.                       |
+| `billing.payment_method.added`                  | Enregistre l’ajout d’une méthode de paiement pour la facturation.                 |
+| `billing.payment_method.removed`                | Enregistre la suppression d’une méthode de paiement pour la facturation.               |
+| `billing.payment_method.default_changed`        | Enregistre le changement de la méthode de paiement par défaut pour la facturation.                    |
+| `billing.invoice.retried`                       | Enregistre la nouvelle tentative de facturation.                        |
+| `billing.subscription.subscribe`                | Enregistre le début d’un abonnement de facturation.                     |
+| `billing.subscription.unsubscribe`              | Enregistre la planification de la fin d’un abonnement de facturation.              |
+| `billing.subscription.cancel_unsubscribe`       | Enregistre l’annulation de la résiliation planifiée d’un abonnement de facturation. |
+| `billing.subscription.add_seats`                | Enregistre l’ajout de sièges à un abonnement de facturation.         |
+| `billing.subscription.remove_seats`             | Enregistre la suppression de sièges d’un abonnement de facturation.     |
+| `billing.subscription.termination_date.updated` | Enregistre les modifications de la date de fin d’un abonnement de facturation.     |
+| `billing.credits.added`                         | Enregistre l’ajout de crédits de facturation.                         |
+| `billing.gift_code.used`                        | Enregistre l’utilisation d’un code cadeau de facturation.                         |
+| `billing.monthly_limit.updated`                 | Enregistre les modifications de la limite mensuelle de facturation.                     |
+| `billing.workspace_monthly_limit.updated`       | Enregistre les modifications de la limite mensuelle d’un espace de travail pour la facturation.           |
+| `billing.shared_budget_override.updated`        | Enregistre les modifications du dépassement de budget partagé pour la facturation.            |
+| `billing.auto_recharge.updated`                 | Enregistre les modifications du rechargement automatique pour la facturation.                     |
+| `billing.seat.grant`                            | Enregistre l’attribution d’un siège de facturation.                         |
+| `billing.seat.revoke`                           | Enregistre la révocation d’un siège de facturation.                         |
+
+### Événements de Le Chat
+
+| Type d’événement                                     | Signification                                                          |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
+| `le_chat.conversation.created`                 | Enregistre la création d’une conversation du Chat.                  |
+| `le_chat.conversation.deleted`                 | Enregistre la suppression d’une conversation du Chat.                  |
+| `le_chat.conversation_batch.deleted`           | Enregistre la suppression d’un batch de conversations du Chat.              |
+| `le_chat.conversation.public_sharing.enabled`  | Enregistre l’activation du partage public d’une conversation du Chat.     |
+| `le_chat.conversation.public_sharing.disabled` | Enregistre la désactivation du partage public d’une conversation du Chat.    |
+| `le_chat.flash_answers.enabled`                | Enregistre l’activation des réponses rapides du Chat.                   |
+| `le_chat.flash_answers.disabled`               | Enregistre la désactivation des réponses rapides du Chat.                  |
+| `le_chat.localisation_sharing.enabled`         | Enregistre l’activation du partage de localisation du Chat.            |
+| `le_chat.localisation_sharing.disabled`        | Enregistre la désactivation du partage de localisation du Chat.           |
+| `le_chat.memories.enabled`                     | Enregistre l’activation des Souvenirs du Chat.                        |
+| `le_chat.memories.disabled`                    | Enregistre la désactivation des Souvenirs du Chat.                       |
+| `le_chat.data.training_enabled`                | Enregistre l’activation de l’entraînement des données du Chat.                   |
+| `le_chat.data.training_disabled`               | Enregistre la désactivation de l’entraînement des données du Chat.                  |
+| `le_chat.actions.external_link`                | Enregistre l’ouverture d’un lien externe par un utilisateur depuis les actions du Chat. |
+
+### Événements Studio
+
+| Type d’événement                            | Signification                                                |
+| ------------------------------------- | ------------------------------------------------------ |
+| `admin_api_key.created`               | Enregistre la création d’une clé API Admin.              |
+| `admin_api_key.delete`                | Enregistre la suppression d’une clé API Admin.              |
+| `api_key.create`                      | Enregistre la création d’une clé API.                    |
+| `api_key.rotate`                      | Enregistre la rotation d’une clé API.                    |
+| `api_key.delete`                      | Enregistre la suppression d’une clé API.                    |
+| `secret_store.entry.create`           | Enregistre la création d’une entrée dans le magasin de secrets.          |
+| `secret_store.entry.update`           | Enregistre les modifications apportées à une entrée du magasin de secrets.               |
+| `secret_store.entry.delete`           | Enregistre la suppression d’une entrée du magasin de secrets.          |
+| `agent.create`                        | Enregistre la création d’un agent.                      |
+| `agent.delete`                        | Enregistre la suppression d’un agent.                      |
+| `agent.update`                        | Enregistre les modifications apportées à un agent.                         |
+| `skill.create`                        | Enregistre la création d’un Skill.                       |
+| `skill.delete`                        | Enregistre la suppression d’un Skill.                       |
+| `skill.enable`                        | Enregistre l’activation d’un Skill.                         |
+| `skill.disable`                       | Enregistre la désactivation d’un Skill.                        |
+| `skill.update`                        | Enregistre les modifications apportées à un Skill.                          |
+| `skill.share`                         | Enregistre le partage d’un Skill.                        |
+| `skill.unshare`                       | Enregistre l’arrêt du partage d’un Skill.                      |
+| `skill.load`                          | Enregistre le chargement d’un Skill.                        |
+| `skill.force_load`                    | Enregistre le chargement forcé d’un Skill.                  |
+| `skill.version.create`                | Enregistre la création d’une version de Skill.               |
+| `prompt.create`                       | Enregistre la création d’un prompt.                      |
+| `prompt.delete`                       | Enregistre la suppression d’un prompt.                      |
+| `prompt.update`                       | Enregistre les modifications apportées à un prompt.                         |
+| `prompt.version.create`               | Enregistre la création d’une version de prompt.              |
+| `custom_voice.create`                 | Enregistre la création d’une voix personnalisée.                |
+| `custom_voice.update`                 | Enregistre les modifications apportées à une voix personnalisée.                   |
+| `custom_voice.delete`                 | Enregistre la suppression d’une voix personnalisée.                |
+| `feature_permission.override.created` | Enregistre la création d’une substitution d’autorisation de fonctionnalité. |
+| `feature_permission.override.deleted` | Enregistre la suppression d’une substitution d’autorisation de fonctionnalité. |
+| `la_plateforme.training.enabled`      | Enregistre l’activation de l’entraînement sur La Plateforme.        |
+| `la_plateforme.training.disabled`     | Enregistre la désactivation de l’entraînement sur La Plateforme.       |
+
+### Événements des tâches et des fichiers
+
+| Type d’événement                        | Signification                                              |
+| --------------------------------- | ---------------------------------------------------- |
+| `fine_tuning_job.create`          | Enregistre la création d’une tâche de fine-tuning.           |
+| `fine_tuning_job.cancel`          | Enregistre l’annulation d’une tâche de fine-tuning.          |
+| `batch_job.create`                | Enregistre la création d’un travail en batch.                 |
+| `batch_job.cancel`                | Enregistre l’annulation d’un travail en batch.                |
+| `batch_job.delete`                | Enregistre la suppression d’un travail en batch.                 |
+| `data_capture.extract_job.create` | Enregistre la création d’une tâche d’extraction de capture de données.  |
+| `data_capture.extract_job.cancel` | Enregistre l’annulation d’une tâche d’extraction de capture de données. |
+| `dataset.create`                  | Enregistre la création d’un jeu de données.                   |
+| `dataset.delete`                  | Enregistre la suppression d’un jeu de données.                   |
+
+### Événements des Bibliothèques et des intégrations
+
+| Type d’événement                                             | Signification                                                         |
+| ------------------------------------------------------ | --------------------------------------------------------------- |
+| `library.create`                                       | Enregistre la création d’une Bibliothèque.                              |
+| `library.delete`                                       | Enregistre la suppression d’une Bibliothèque.                              |
+| `library.update`                                       | Enregistre les modifications apportées à une Bibliothèque.                                 |
+| `library.share`                                        | Enregistre le partage d’une Bibliothèque.                               |
+| `library.unshare`                                      | Enregistre l’arrêt du partage d’une Bibliothèque.                             |
+| `library.document.create`                              | Enregistre la création d’un document dans une Bibliothèque.                     |
+| `library.document.delete`                              | Enregistre la suppression d’un document dans une Bibliothèque.                     |
+| `library.document.bulk_delete`                         | Enregistre la suppression en masse de documents dans une Bibliothèque.             |
+| `library.document.update`                              | Enregistre les modifications apportées à un document dans une Bibliothèque.                        |
+| `library.document.reprocess`                           | Enregistre le retraitement d’un document dans une Bibliothèque.                 |
+| `integration.connected`                                | Enregistre la connexion d’une intégration.                       |
+| `integration.disconnected`                             | Enregistre la déconnexion d’une intégration.                    |
+| `indexing.workflow.completed`                          | Enregistre la finalisation d’un workflow d’indexation obsolète.              |
+| `indexing.deleted`                                     | Enregistre la suppression d’un index obsolète.                         |
+| `connection.admin.setup_index`                         | Enregistre la configuration d’un index par une connexion admin.               |
+| `connection.admin.deleted`                             | Enregistre la suppression d’un admin de connexion.                     |
+| `integration.activated_for_org`                        | Enregistre l’activation d’une intégration pour une Organisation.   |
+| `integration.deactivated_for_org`                      | Enregistre la désactivation d’une intégration pour une Organisation. |
+| `integration.activated_for_workspace`                  | Enregistre l’activation d’une intégration pour un espace de travail.       |
+| `integration.deactivated_for_workspace`                | Enregistre la désactivation d’une intégration pour un espace de travail.     |
+| `integration.activated_for_user`                       | Enregistre l’activation d’une intégration pour un utilisateur.            |
+| `integration.deactivated_for_user`                     | Enregistre la désactivation d’une intégration pour un utilisateur.          |
+| `integration.created`                                  | Enregistre la création d’une intégration.                         |
+| `integration.updated`                                  | Enregistre les modifications apportées à une intégration.                               |
+| `integration.deleted`                                  | Enregistre la suppression d’une intégration.                         |
+| `integration.tool_called`                              | Enregistre l’appel d’un outil d’intégration.                        |
+| `integration.credentials.created_or_updated`           | Enregistre les modifications apportées aux identifiants d’une intégration.                    |
+| `integration.credentials.deleted`                      | Enregistre la suppression des identifiants d’une intégration.               |
+| `integration.preferences.created_or_updated`           | Enregistre les modifications apportées aux préférences d’une intégration.                    |
+| `integration.preferences.deleted`                      | Enregistre la suppression des préférences d’une intégration.               |
+| `integration.authentication_method.created_or_updated` | Enregistre les modifications apportées à la méthode d’authentification d’une intégration.         |
+| `integration.connection.created`                       | Enregistre la création d’une connexion d’intégration.              |
+| `connectors_gateway.tool_called`                       | Enregistre l’appel d’un outil de la passerelle des Connecteurs.                 |
+| `crawler.config.create`                                | Enregistre la création d’une configuration de crawler.                       |
+| `crawler.config.update`                                | Enregistre les modifications apportées à une configuration de crawler.                   |
+| `crawler.config.delete`                                | Enregistre la suppression d’une configuration de crawler.                       |
+| `crawler.run.create`                                   | Enregistre la création d’une exécution de crawler.                          |
+| `crawler.run.cancel`                                   | Enregistre l’annulation d’une exécution de crawler.                         |
+
+{/* Source: dashboard OpenAPI Admin schema at 68c825be8c66fa9670f56f70ce695406626bdbb3. */}

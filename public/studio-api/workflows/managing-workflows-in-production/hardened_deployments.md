@@ -43,7 +43,7 @@ Admins can:
 A deployment can have multiple credentials to support key rotation or multi-worker setups.
 
 :::tip
-Manage your API keys in the [API keys](/admin/security-access/api-keys) section of the admin panel.
+Manage your API keys in the [API keys](/admin/identity-access/api-keys) section of the admin panel.
 :::
 
 <SectionTab as="h1" sectionId="registering-an-obo-workflow">Registering an OBO workflow</SectionTab>

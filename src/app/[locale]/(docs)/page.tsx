@@ -127,7 +127,7 @@ export default async function DocumentationPage({
               title: l.text('Admin', { context: 'Product name on the discover-our-platform card on the home page' }),
               description: l.text("The control plane for organization setup, billing, SSO, Workspaces, and access policies.", { context: 'Description of Admin on the discover-our-platform card on the home page' }),
               logo: PRODUCT_LOGOS['admin'],
-              href: '/admin/security-access/back-office',
+              href: '/admin/set-up-organization/create-organization',
               hoverText: 'group-hover:text-[#4a4a5e]',
               hoverBg: 'group-hover:bg-[#4a4a5e]',
               hoverBorder: 'hover:border-[#4a4a5e]/50',

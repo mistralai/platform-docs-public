@@ -14,8 +14,30 @@ import { useState } from 'react';
 export function Section({ children, ...props }: SectionProps) {
   const titleChild = useUniqueChild<SectionTitleProps>(children, 'title');
   const contentChildren = useChildren(children, 'content');
-
   const [isOpen, setIsOpen] = useState(true);
+
+  if (contentChildren.length === 0) {
+    return (
+      <div data-type="section" className="group/collapsible relative" {...props}>
+        <div className={cn('flex flex-col')}>
+          <button
+            data-state="closed"
+            className="flex items-center justify-between group/collapsible-trigger py-2 border-b border-border w-full"
+            type="button"
+          >
+            <div className="flex items-center gap-2">
+              <ChevronRightIcon className="size-5 -mt-1 relative" />
+              {titleChild}
+            </div>
+            <p className="text-xs font-mono text-foreground/50 font-semibold">
+              application/json
+            </p>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       data-type="section"

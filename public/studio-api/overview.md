@@ -26,7 +26,7 @@ Studio gives you programmatic access to Mistral models for text generation, agen
 
 <SectionTab as="h1" sectionId="getting-started-api">Getting started with the API</SectionTab>
 
-1. **Create an API key** in the console or through the [API keys](/admin/security-access/api-keys) page in Admin.
+1. **Create an API key** in the console or through the [API keys](/admin/identity-access/api-keys) page in Admin.
 2. **Send your first request**: follow the [send your first API request](/getting-started/quickstarts/developer/first-api-request) quickstart to make a chat completion call in Python or TypeScript.
 
 :::tip

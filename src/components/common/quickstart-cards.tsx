@@ -29,7 +29,7 @@ export function QuickstartDocLinks() {
       title: l.text('Admin documentation', { context: 'Title of the Admin documentation link on the quickstart doc-links row' }),
       description: l.text('Manage organizations, SSO, billing, and access controls.', { context: 'Description of the Admin documentation link on the quickstart doc-links row' }),
       logo: PRODUCT_LOGOS['admin'],
-      href: '/admin/security-access/back-office',
+      href: '/admin/set-up-organization/create-organization',
       color: PRODUCT_COLORS['admin'],
     },
   ];

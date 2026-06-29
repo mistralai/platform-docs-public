@@ -2,58 +2,123 @@
 
 import { Link } from '@/i18n/navigation.client';
 import { AdminQuickstartsGrid } from '@/components/common/admin-quickstarts-grid';
-import {
-  FolderIcon,
-  ArrowRightIcon,
-} from '@/components/icons/pixel';
+import { FolderIcon, ArrowRightIcon } from '@/components/icons/pixel';
 import Image from 'next/image';
-import { PRODUCT_COLORS, SECTION_LOGOS } from '@/schema/content/getting-started';
+import {
+  PRODUCT_COLORS,
+  SECTION_LOGOS,
+} from '@/schema/content/getting-started';
 import { SectionTab } from '@/components/layout/section-tab';
 import { useLingo } from '@lingo.dev/react';
 
-export function AdminOverview({ showCta = false, showHeader = true }: { locale?: string; showCta?: boolean; showHeader?: boolean }) {
+export function AdminOverview({
+  showCta = false,
+  showHeader = true,
+}: {
+  locale?: string;
+  showCta?: boolean;
+  showHeader?: boolean;
+}) {
   const l = useLingo();
   const ADMIN_SECTIONS = [
     {
-      title: l.text('Back Office', { context: 'Title of a documentation card about Back Office' }),
-      description: l.text('View your organization dashboard, manage workspaces, and configure workspace settings.', { context: 'Description of a documentation card about Back Office' }),
+      title: l.text('Admin overview', {
+        context: 'Title of the card linking to the admin overview page',
+      }),
+      description: l.text(
+        'New to admin? See how organizations, workspaces, members, and access fit together.',
+        {
+          context: 'Description of the card linking to the admin overview page',
+        }
+      ),
       icon: FolderIcon,
-      href: '/admin/security-access/back-office',
+      href: '/admin/overview',
       color: PRODUCT_COLORS['admin'],
     },
     {
-      title: l.text('SSO & Authentication', { context: 'Title of a documentation card about SSO & Authentication' }),
-      description: l.text('Set up SAML-based single sign-on and enforce identity provider authentication for your organization.', { context: 'Description of a documentation card about SSO & Authentication' }),
+      title: l.text('Set up your organization', {
+        context: 'Title of the admin overview card for organization setup',
+      }),
+      description: l.text(
+        'Create your organization, configure settings, verify your domain, and choose a sign-in method.',
+        {
+          context:
+            'Description of the admin overview card for organization setup',
+        }
+      ),
       icon: FolderIcon,
-      href: '/admin/security-access/sso',
+      href: '/admin/set-up-organization/create-organization',
       color: PRODUCT_COLORS['admin'],
     },
     {
-      title: l.text('API Keys', { context: 'Title of a documentation card about API Keys' }),
-      description: l.text('Create, rotate, and revoke API keys across workspaces.', { context: 'Description of a documentation card about API Keys' }),
+      title: l.text('Identity and access (RBAC)', {
+        context:
+          'Title of the admin overview card for identity and access management',
+      }),
+      description: l.text(
+        'Manage users, roles and permissions, groups, and automated provisioning with SCIM.',
+        {
+          context:
+            'Description of the admin overview card for identity and access management',
+        }
+      ),
       icon: FolderIcon,
-      href: '/admin/security-access/api-keys',
+      href: '/admin/identity-access/user-management',
       color: PRODUCT_COLORS['admin'],
     },
     {
-      title: 'Connectors',
-      description: 'Connect organization-level bots and control Connector tool access.',
+      title: l.text('Workspaces', {
+        context: 'Title of the admin overview card for workspaces',
+      }),
+      description: l.text(
+        'Structure and govern work across workspaces in Studio and Vibe, with per-workspace usage and limits.',
+        { context: 'Description of the admin overview card for workspaces' }
+      ),
       icon: FolderIcon,
-      href: '/admin/security-access/connectors',
+      href: '/admin/workspaces/your-first-workspace',
       color: PRODUCT_COLORS['admin'],
     },
     {
-      title: l.text('User Management', { context: 'Title of a documentation card about User Management' }),
-      description: l.text('Invite members, assign roles, and control permissions across your organization.', { context: 'Description of a documentation card about User Management' }),
+      title: l.text('Billing and usage', {
+        context: 'Title of the admin overview card for billing and usage',
+      }),
+      description: l.text(
+        'Track usage, manage subscriptions and invoices, and set limits and rate tiers per workspace.',
+        {
+          context:
+            'Description of the admin overview card for billing and usage',
+        }
+      ),
       icon: FolderIcon,
-      href: '/admin/user-management-finops/user-management',
+      href: '/admin/billing-usage/subscriptions',
       color: PRODUCT_COLORS['admin'],
     },
     {
-      title: l.text('Billing & Usage', { context: 'Title of a documentation card about Billing & Usage' }),
-      description: l.text('Track consumption, manage subscriptions, and set usage limits per workspace.', { context: 'Description of a documentation card about Billing & Usage' }),
+      title: l.text('Automate administration', {
+        context: 'Title of the admin overview card for the Admin API',
+      }),
+      description: l.text(
+        'Manage users, workspaces, groups, and roles programmatically with the Admin API.',
+        { context: 'Description of the admin overview card for the Admin API' }
+      ),
       icon: FolderIcon,
-      href: '/admin/user-management-finops/billing',
+      href: '/admin/admin-api/overview',
+      color: PRODUCT_COLORS['admin'],
+    },
+    {
+      title: l.text('Monitor and comply', {
+        context:
+          'Title of the admin overview card for monitoring and compliance',
+      }),
+      description: l.text(
+        'Review audit logs and configure privacy and data controls.',
+        {
+          context:
+            'Description of the admin overview card for monitoring and compliance',
+        }
+      ),
+      icon: FolderIcon,
+      href: '/admin/monitor-comply/audit-logs/overview',
       color: PRODUCT_COLORS['admin'],
     },
   ];
@@ -62,25 +127,51 @@ export function AdminOverview({ showCta = false, showHeader = true }: { locale?:
       {showHeader && (
         <>
           <div className="flex items-center gap-4">
-            <Image src={SECTION_LOGOS['admin']} alt={l.text('Admin', { context: 'Alt text for the Admin section logo' })} width={40} height={40} />
+            <Image
+              src={SECTION_LOGOS['admin']}
+              alt={l.text('Admin', {
+                context: 'Alt text for the Admin section logo',
+              })}
+              width={40}
+              height={40}
+            />
             <div>
-              <h2 className="font-bold text-2xl tracking-tight text-foreground">{l.text('Admin', { context: 'Heading for admin documentation' })}</h2>
+              <h2 className="font-bold text-2xl tracking-tight text-foreground">
+                {l.text('Admin', {
+                  context: 'Heading for admin documentation',
+                })}
+              </h2>
               <p className="text-muted-foreground text-base">
-                {l.text('Organization setup, security, user management, and billing.', { context: 'Subtitle for admin documentation' })}
+                {l.text(
+                  'Organization setup, security, user management, and billing.',
+                  { context: 'Subtitle for admin documentation' }
+                )}
               </p>
             </div>
           </div>
           <p className="text-muted-foreground text-base leading-relaxed max-w-3xl">
-            {l.text('The Admin Panel is where you set up your organization, configure SSO, manage API keys and users, and track billing. Use it to control access, enforce security policies, and monitor usage across workspaces.', { context: 'Introductory description of the admin console' })}
+            {l
+              .text(
+                'The Admin Panel is where you set up your organization, configure SSO, manage API keys and users, and track billing. Use it to control access, enforce security policies, and monitor usage across workspaces.',
+                { context: 'Introductory description of the admin console' }
+              )
+              .replace('admin console', 'admin panel')}
           </p>
         </>
       )}
-      <SectionTab sectionId="admin-explore">{l.text('Explore', { context: 'Heading for admin documentation links' })}</SectionTab>
+      <SectionTab sectionId="admin-explore">
+        {l.text('Explore', {
+          context: 'Heading for admin documentation links',
+        })}
+      </SectionTab>
       <p className="text-muted-foreground text-base">
-        {l.text('SSO, API keys, roles and permissions, usage tracking, and billing across workspaces.', { context: 'Intro text for admin documentation links' })}
+        {l.text(
+          'SSO, API keys, roles and permissions, usage tracking, and billing across workspaces.',
+          { context: 'Intro text for admin documentation links' }
+        )}
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {ADMIN_SECTIONS.map((item) => {
+        {ADMIN_SECTIONS.map(item => {
           const Icon = item.icon;
           return (
             <Link
@@ -114,9 +205,20 @@ export function AdminOverview({ showCta = false, showHeader = true }: { locale?:
         })}
       </div>
 
-      <SectionTab sectionId="admin-quickstarts">{l.text('Quickstarts', { context: 'Heading for admin quickstarts' })}</SectionTab>
+      <SectionTab sectionId="admin-quickstarts">
+        {l.text('Quickstarts', { context: 'Heading for admin quickstarts' })}
+      </SectionTab>
       <p className="text-muted-foreground text-base">
-        {l.text('Hands-on guides to set up your organization, configure SSO, and manage workspaces. Most take 15 minutes or less.', { context: 'Intro text for admin quickstarts on the admin overview page' })}
+        {l
+          .text(
+            'Hands-on guides to set up your organization, configure SSO, and manage workspaces. Most take 15 minutes or less.',
+            {
+              context:
+                'Intro text for admin quickstarts on the admin overview page',
+            }
+          )
+          .replace('organization', 'Organization')
+          .replace('workspaces', 'Workspaces')}
       </p>
       <AdminQuickstartsGrid />
 

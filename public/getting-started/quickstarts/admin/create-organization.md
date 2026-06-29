@@ -42,7 +42,7 @@ Already have an account without an organization? Open <AppLink href="https://adm
 
 Team members can't generate working API keys until billing is active.
 
-Open <AppLink href="https://admin.mistral.ai/organization/billing" app="admin">Subscriptions › Billing</AppLink>, click **Add payment method**, and connect your card or cloud marketplace account. Optionally set a **Monthly spending limit** before saving.
+Open <AppLink href="https://admin.mistral.ai/organization/billing" app="admin" path={["Subscriptions", "Billing"]} />, click **Add payment method**, and connect your card or cloud marketplace account. Optionally set a **Monthly spending limit** before saving.
 
 Billing takes 2–3 minutes to take effect. If team members report inactive API keys right after, ask them to wait and retry.
 

@@ -97,23 +97,23 @@ Pour une configuration complète, la conception de schémas et les opérations, 
 
 <SectionTab as="h1" sectionId="custom-vector-stores">Magasins de vecteurs personnalisés</SectionTab>
 
-Implémentez des backends de stockage personnalisés en implémentant le protocole `VectorStoreClient` :
+Implémentez des backends de stockage personnalisés en sous-classant `VectorStoreIndex` (ou `KeywordStoreIndex` pour la recherche par mots-clés) et en implémentant ses trois méthodes :
 
 ```python
-from mistralai.search.toolkit.indices import VectorStoreClient
+from mistralai.search.toolkit.context import IngestContext, RetrievalContext
+from mistralai.search.toolkit.search import VectorStoreIndex, VectorSearchQuery, SearchResult
 from mistralai.search.toolkit.document import Document
-from mistralai.search.toolkit.indices import VectorSearchQuery, SearchResult
 
-class MyVectorStore(VectorStoreClient):
-    async def create_index(self) -> bool:
+class MyVectorStore(VectorStoreIndex):
+    async def index_document(self, document: Document, context: IngestContext = IngestContext()) -> None:
+        # Store the document and its chunks
         pass
 
-    async def upsert(self, document: Document) -> bool:
+    async def search(self, query: VectorSearchQuery, context: RetrievalContext = RetrievalContext()) -> list[SearchResult]:
+        # Search and return results
         pass
 
-    async def search(self, query: VectorSearchQuery) -> list[SearchResult]:
-        pass
-
-    async def delete_document(self, doc_id: str) -> None:
+    async def delete_document(self, doc_id: str, context: IngestContext = IngestContext()) -> None:
+        # Delete a document by ID
         pass
 ```

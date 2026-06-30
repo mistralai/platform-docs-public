@@ -149,14 +149,15 @@ result = await query_engine.search(query="What is RAG?", top_k=10)
 Implémentez le protocole `ReRanker` pour un reclagement d’une seule liste :
 
 ```python
+from mistralai.search.toolkit.context import RetrievalContext
 from mistralai.search.toolkit.retrieval.rerankers import ReRanker
-from mistralai.search.toolkit.indices import SearchResult
+from mistralai.search.toolkit.search import SearchResult
 
 class MetadataReRanker(ReRanker):
     """Boost results based on metadata."""
 
     async def rerank(
-        self, query: str, search_results: list[SearchResult]
+        self, query: str, search_results: list[SearchResult], context: RetrievalContext = RetrievalContext()
     ) -> list[SearchResult]:
         """Re-score results by boosting verified content."""
         for result in search_results:
@@ -182,25 +183,26 @@ query_engine = QueryEngine(
 Implémentez le protocole `GroupedRanker` pour la fusion de plusieurs groupes :
 
 ```python
+from mistralai.search.toolkit.context import RetrievalContext
 from mistralai.search.toolkit.retrieval.rerankers import GroupedRanker
-from mistralai.search.toolkit.indices import SearchResult
+from mistralai.search.toolkit.search import SearchResultGroup
 
 class CustomFusionRanker(GroupedRanker):
-    """Custom fusion of multiple retriever results."""
+    """Custom fusion of multiple retriever result groups."""
 
-    async def rerank_groups(
-        self, query: str, result_groups: list[list[SearchResult]]
-    ) -> list[SearchResult]:
-        """Fuse multiple retriever results with custom logic."""
-        # result_groups[0] = vector retriever results
-        # result_groups[1] = keyword retriever results
-        # etc.
+    async def rank(
+        self,
+        query: str,
+        result_groups: list[SearchResultGroup],
+        context: RetrievalContext = RetrievalContext(),
+    ) -> list[SearchResultGroup]:
+        """Fuse multiple retriever result groups with custom logic."""
+        # Each SearchResultGroup holds the results from one retriever.
+        return self._custom_fusion(query, result_groups)
 
-        # Custom fusion logic
-        fused = self._custom_fusion(query, result_groups)
-        return fused
-
-    def _custom_fusion(self, query: str, groups: list[list[SearchResult]]) -> list[SearchResult]:
+    def _custom_fusion(
+        self, query: str, groups: list[SearchResultGroup]
+    ) -> list[SearchResultGroup]:
         # Implement your fusion algorithm
         ...
 ```

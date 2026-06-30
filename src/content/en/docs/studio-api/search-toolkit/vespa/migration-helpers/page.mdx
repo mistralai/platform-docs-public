@@ -1,0 +1,284 @@
+---
+title: Migration helpers reference
+sidebar_position: 8
+sidebar_label: Migration helpers
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+Reference for the helpers used inside [migrations](migrations). All helpers are imported from `mistralai.search.toolkit.plugins.vespa.migration` and called from within a migration's `migrate()` method.
+
+```python
+from mistralai.search.toolkit.plugins.vespa.migration import (
+    VespaMigration,
+    set_app_name,
+    create_schema,
+    add_field,
+    add_query_profiles,
+)
+```
+
+<SectionTab as="h2" sectionId="application-configuration">Application configuration</SectionTab>
+
+### `set_app_name`
+
+```python
+def set_app_name(app_name: str) -> None
+```
+
+Set the application name for the migration run. Required in the first migration. Must contain only lowercase letters (`a-z`).
+
+### `set_content_id`
+
+```python
+def set_content_id(content_id: str) -> None
+```
+
+Override the content cluster id used in `services.xml` (defaults to the application name). Use this when the deployed cluster was originally created with a different id. Otherwise, Vespa treats a rename as a remove and recreate operation, destroying all stored documents.
+
+### `allow_schema_removal`
+
+```python
+def allow_schema_removal(until: str) -> None
+```
+
+Mark a migration as intentionally removing one or more schemas. Vespa rejects schema removals by default to protect data; this writes a `validation-overrides.xml` permitting the removal until `until` (an ISO `"YYYY-MM-DD"` date). Pick a date a week or two past your deploy window.
+
+### `set_distribute_across_groups`
+
+```python
+def set_distribute_across_groups(value: bool) -> None
+```
+
+:::warning
+**Deprecated.** A compatibility hook for Kubernetes autodiscovery. Define groups explicitly in the topology file for new deployments.
+:::
+
+<SectionTab as="h2" sectionId="creating-schemas">Creating schemas</SectionTab>
+
+### `create_schema`
+
+```python
+def create_schema(
+    name: str,
+    mode: SearchMode,
+    embedding_dimensions: int,
+    indexing_mode: IndexingMode,
+    fields: list[FieldDefinition] | None = None,
+    custom_functions: list[FunctionWithInputs] | None = None,
+    default_query_profile_name: str | None = None,
+    top_chunks: int | None = None,
+    id_field: str | None = None,
+    content_cluster: str = "content",
+) -> None
+```
+
+Create a schema with an explicit indexing mode. This is the recommended way to define a schema.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `name` | `str` | *(required)* | Document type name (lowercase letters and underscores only) |
+| `mode` | `SearchMode` | *(required)* | `INDEX` or `STREAMING` |
+| `embedding_dimensions` | `int` | *(required)* | Embedding size applied to all embedding fields |
+| `indexing_mode` | `IndexingMode` | *(required)* | Document layout: `DOCUMENT_PER_CHUNK` (recommended) or `SINGLE_DOCUMENT` (legacy, deprecated) |
+| `fields` | `list[FieldDefinition] \| None` | `None` | Fields added on top of the indexing-mode defaults. With `DOCUMENT_PER_CHUNK` the standard chunk fields are injected automatically; `SINGLE_DOCUMENT` requires at least one field |
+| `custom_functions` | `list[FunctionWithInputs] \| None` | `None` | Custom ranking functions (see [Manage Ranking](query-profiles)) |
+| `default_query_profile_name` | `str \| None` | `None` | Name for the auto-generated query profile. Defaults to the schema name |
+| `top_chunks` | `int \| None` | `None` | `SINGLE_DOCUMENT` only. Number of top chunks to select. Rejected with `DOCUMENT_PER_CHUNK`. |
+| `id_field` | `str \| None` | `None` | `SINGLE_DOCUMENT` only. Deprecated. Rejected with `DOCUMENT_PER_CHUNK` (chunk identity is always `id`). |
+| `content_cluster` | `str` | `"content"` | Vespa content cluster that holds this schema's documents |
+
+### `create_default_schema`
+
+:::warning
+**Deprecated**. Removed before 1.0.0. The legacy helper for `SINGLE_DOCUMENT` schemas takes `schema_version` and `additional_fields` instead of `indexing_mode` and `fields`. Use `create_schema(..., indexing_mode=...)` instead.
+:::
+
+<SectionTab as="h2" sectionId="enums">Enums</SectionTab>
+
+Both are imported from `mistralai.search.toolkit.plugins.vespa.app.schemas.app`.
+
+### `SearchMode`
+
+| Value | Description |
+|---|---|
+| `SearchMode.INDEX` | Traditional indexed search: BM25, ANN/HNSW, two-phase ranking |
+| `SearchMode.STREAMING` | Streaming search: exact nearest neighbor, attribute filtering, single-phase ranking |
+
+### `IndexingMode`
+
+| Value | Description |
+|---|---|
+| `IndexingMode.DOCUMENT_PER_CHUNK` | **Recommended.** One Vespa document per chunk, individually addressable by its deterministic id |
+| `IndexingMode.SINGLE_DOCUMENT` | Legacy: one Vespa document per source, chunks packed as arrays. **Deprecated**. Removed before 1.0.0. |
+
+<SectionTab as="h2" sectionId="field-types">Field types</SectionTab>
+
+Fields are declared with `FieldDefinition`, imported from `mistralai.search.toolkit.plugins.vespa.app.schemas.app`, and passed to `create_schema(fields=[...])` or `add_field(...)`. Set `multi_dimensional=True` (where supported) to make a field an array.
+
+| Field type | Purpose | Used in query matching | Generates ranking functions |
+|---|---|---|---|
+| `EmbeddingField` | Vector embeddings for semantic search | Yes (ANN/HNSW) | Distance, cosine similarity |
+| `TextField` | Text for keyword/BM25 search | Yes | BM25, field match |
+| `StringField` | Stored metadata, not matched | No | None |
+| `TimestampField` | Time-based ranking | No | Freshness, recency |
+| `CountField` | Numeric value used for ranking | No | Normalization, boost |
+| `IntField` | Stored integer, not ranked | No | None |
+| `BoolField` | Stored boolean, not ranked | No | None |
+| `LanguageField` | Per-document language tag (RFC 3066) | No (filter) | None |
+
+### `EmbeddingField`
+
+```python
+FieldDefinition.EmbeddingField(name: str, multi_dimensional: bool = False)
+```
+
+Vector embeddings indexed with HNSW. The tensor dimension is derived from the schema's `embedding_dimensions`. Set `multi_dimensional=True` for an array of embeddings (e.g. per-chunk).
+
+### `TextField`
+
+```python
+FieldDefinition.TextField(
+    name: str,
+    multi_dimensional: bool = False,
+    summary: SummaryDefinition = SummaryDefinition(),
+)
+```
+
+Tokenized text matched against the user query (BM25). Included in the default fieldset. `summary` controls how the field is rendered in results.
+
+### `StringField`
+
+```python
+FieldDefinition.StringField(
+    name: str,
+    multi_dimensional: bool = False,
+    fast_search: bool = False,
+    match: MatchDefinition | None = None,
+    summary: SummaryDefinition | None = SummaryDefinition(),
+    attribute: bool = True,
+)
+```
+
+Stored metadata that is **not** matched against the query (use for filters, ids, tags). `fast_search` builds a dedicated attribute index (more memory/CPU, faster lookups); `match` sets an explicit matching scheme; `attribute=False` keeps the value out of in-memory attributes.
+
+### `TimestampField`
+
+```python
+FieldDefinition.TimestampField(name: str, type: Literal["long", "int"] = "long")
+```
+
+Numeric timestamp used for freshness and recency ranking functions.
+
+### `CountField`
+
+```python
+FieldDefinition.CountField(name: str)
+```
+
+Integer count that generates normalization and boost ranking functions. For an integer you do **not** want to rank on, use `IntField`.
+
+### `IntField`
+
+```python
+FieldDefinition.IntField(
+    name: str,
+    multi_dimensional: bool = False,
+    summary: SummaryDefinition = SummaryDefinition(),
+)
+```
+
+Stored integer not used for ranking or matching.
+
+### `BoolField`
+
+```python
+FieldDefinition.BoolField(name: str)
+```
+
+Stored boolean, not used for ranking or matching.
+
+### `LanguageField`
+
+```python
+FieldDefinition.LanguageField(name: str = "language")
+```
+
+Sets the document language (an RFC 3066 tag) and creates an index so documents can be filtered by language.
+
+<SectionTab as="h2" sectionId="evolving-schemas">Evolving schemas</SectionTab>
+
+Add to an existing schema in a later migration. Each raises `ValueError` if the named schema does not exist.
+
+### `add_field`
+
+```python
+def add_field(schema_name: str, field: FieldDefinition) -> None
+```
+
+Add a single field to an existing schema.
+
+### `add_custom_functions`
+
+```python
+def add_custom_functions(schema_name: str, functions: list[FunctionWithInputs]) -> None
+```
+
+Add custom ranking functions to an existing schema.
+
+### `add_query_profiles`
+
+```python
+def add_query_profiles(query_profiles: list[QueryProfile]) -> None
+```
+
+Add or update query profiles on the application. See [Manage Ranking](query-profiles).
+
+### `add_schema_rank_profiles`
+
+```python
+def add_schema_rank_profiles(schema_name: str, rank_profiles: list[Path]) -> None
+```
+
+Attach custom rank-profile files to a schema.
+
+### `add_schema_model_files`
+
+```python
+def add_schema_model_files(schema_name: str, model_files: list[Path]) -> None
+```
+
+Attach ML model files to a schema.
+
+### `add_schema_custom_document_summary`
+
+```python
+def add_schema_custom_document_summary(schema_name: str, custom_document_summary: DocumentSummary) -> None
+```
+
+Attach a custom document summary to a schema.
+
+<SectionTab as="h2" sectionId="vespamigration">`VespaMigration`</SectionTab>
+
+The base class for every migration. Subclass it and implement `migrate()`, calling the helpers above:
+
+```python
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import IndexingMode, SearchMode
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
+
+
+class InitialSchema(VespaMigration):
+    def migrate(self) -> None:
+        set_app_name("myapp")
+        create_schema(
+            name="articles",
+            mode=SearchMode.INDEX,
+            embedding_dimensions=1024,
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
+        )
+```
+
+<SectionTab as="h2" sectionId="see-also">See also</SectionTab>
+
+- **[Manage schema](migrations)**: how to create and evolve schemas with these helpers
+- **[Anatomy of a Vespa application](anatomy)**: concepts: schemas, fields, ranking, query profiles
+- **[Manage ranking](query-profiles)**: query profiles and ranking configuration

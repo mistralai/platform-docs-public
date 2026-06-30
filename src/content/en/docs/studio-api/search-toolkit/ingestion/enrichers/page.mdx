@@ -89,6 +89,7 @@ Controls how the summary is injected into the pipeline output.
 Implement the `ChunkEnricher` interface to add custom metadata:
 
 ```python
+from mistralai.search.toolkit.context import IngestContext
 from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
 from mistralai.search.toolkit.document import DocumentChunk, Document
 
@@ -96,7 +97,11 @@ class EntityTagger(ChunkEnricher):
     """Add entity tags to chunks."""
 
     async def enrich_chunks(
-        self, chunks: list[DocumentChunk], document: Document, concurrency: int = 10
+        self,
+        chunks: list[DocumentChunk],
+        document: Document,
+        concurrency: int = 10,
+        context: IngestContext = IngestContext(),
     ) -> tuple[list[DocumentChunk], Document]:
         enriched = []
         for chunk in chunks:
@@ -124,6 +129,7 @@ For performance with many chunks, use concurrency and batch external API calls:
 
 ```python
 import asyncio
+from mistralai.search.toolkit.context import IngestContext
 from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
 from mistralai.search.toolkit.document import DocumentChunk, Document
 
@@ -131,7 +137,11 @@ class BatchEnricher(ChunkEnricher):
     """Batch API calls for efficiency."""
 
     async def enrich_chunks(
-        self, chunks: list[DocumentChunk], document: Document, concurrency: int = 10
+        self,
+        chunks: list[DocumentChunk],
+        document: Document,
+        concurrency: int = 10,
+        context: IngestContext = IngestContext(),
     ) -> tuple[list[DocumentChunk], Document]:
         # Use concurrency limit for external API calls
         semaphore = asyncio.Semaphore(concurrency)
@@ -163,7 +173,7 @@ pipeline = Pipeline(
     extractor=extractor,
     text_splitter=splitter,
     embedder=embedder,
-    vector_store=vector_store,
+    stores=vector_store,
     chunk_enrichers=[
         SummaryEnricher(llm_provider=llm),
         EntityTagger(),

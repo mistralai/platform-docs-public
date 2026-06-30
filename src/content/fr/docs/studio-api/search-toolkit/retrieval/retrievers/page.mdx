@@ -44,7 +44,7 @@ results = await retriever.retrieve(
 
 | Option | Type | Valeur par défaut | Usage |
 |--------|------|---------|---------|
-| `client` | VectorStoreClient | Obligatoire | Stockage vectoriel à rechercher |
+| `client` | VectorStoreIndex | Obligatoire | Stockage vectoriel à rechercher |
 | `embedder` | Embedder | Obligatoire | Embedder pour la vectorisation des requêtes |
 
 **Filtrage** :
@@ -73,8 +73,9 @@ La prise en charge du filtrage dépend de votre backend de stockage vectoriel. V
 Implémentez le protocole `Retriever` pour une logique de recherche personnalisée :
 
 ```python
+from mistralai.search.toolkit.context import RetrievalContext
 from mistralai.search.toolkit.retrieval.retrievers import Retriever
-from mistralai.search.toolkit.indices import SearchResult
+from mistralai.search.toolkit.search import SearchResult
 
 class CustomRetriever(Retriever):
     """Custom retriever with domain-specific logic."""
@@ -83,14 +84,16 @@ class CustomRetriever(Retriever):
         self,
         query: str,
         top_k: int = 10,
-        filter: dict | None = None,
+        include_metadata: bool = True,
+        include_content: bool = True,
+        context: RetrievalContext = RetrievalContext(),
     ) -> list[SearchResult]:
         """Retrieve relevant chunks for the query."""
         # 1. Preprocess query
         processed_query = self._preprocess(query)
 
         # 2. Search with custom logic
-        results = await self._search(processed_query, top_k, filter)
+        results = await self._search(processed_query, top_k)
 
         # 3. Post-process or augment results
         enhanced_results = self._enhance(results)
@@ -101,7 +104,7 @@ class CustomRetriever(Retriever):
         # Custom preprocessing (stemming, lemmatization, etc.)
         return query.lower().strip()
 
-    async def _search(self, query: str, top_k: int, filter: dict) -> list[SearchResult]:
+    async def _search(self, query: str, top_k: int) -> list[SearchResult]:
         # Custom search implementation
         ...
 

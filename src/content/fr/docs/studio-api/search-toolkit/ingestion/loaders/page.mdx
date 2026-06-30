@@ -64,7 +64,7 @@ Le paramètre `root` empêche les attaques par traversée de chemin. Tout chemin
 
 <SectionTab as="h1" sectionId="aws-s3-file-loader">Chargeur de fichiers AWS S3</SectionTab>
 
-Chargez des fichiers depuis des buckets AWS S3 (ou des services compatibles S3 comme MinIO, Ceph).
+Chargez des fichiers depuis des buckets AWS S3 (ou des services compatibles S3 comme MinIO, Ceph). `S3FileLoader` est une surcouche pratique autour de `FileLoader` avec `S3BlobStorage`.
 
 **Installation** :
 
@@ -75,27 +75,27 @@ uv add "mistralai-search-toolkit-storage-s3"
 **Exemple** :
 
 ```python
-from mistralai.search.toolkit.ingestion.loaders import FileLoader
-from mistralai.search.toolkit.plugins.storage.s3 import S3BlobStorage
+from mistralai.search.toolkit.plugins.storage.s3 import S3FileLoader
 
-loader = FileLoader(
-    lambda: S3BlobStorage(
-        bucket_name="my-bucket",
-        region_name="us-east-1",
-        endpoint_url="http://localhost:9000",  # optional for MinIO / other S3-compatible backends
-    )
+loader = S3FileLoader(
+    bucket_name="my-bucket",
+    region_name="us-east-1",
+    endpoint_url="http://localhost:9000",  # optional, for MinIO / other S3-compatible backends
 )
 
 file = await loader.load_file("reports/example.pdf")
 ```
 
-**Paramètres** (`S3BlobStorage`) :
+**Paramètres** (`S3FileLoader`) :
 
 | Paramètre | Type | Par défaut | Description |
 |-----------|------|---------|-------------|
 | `bucket_name` | `str` | *(requis)* | Nom du bucket S3 |
-| `region_name` | `str` | `"us-east-1"` | Région AWS |
+| `region_name` | `str \| None` | `None` | Région AWS (retombe sur la valeur par défaut du SDK/env) |
 | `endpoint_url` | `str \| None` | `None` | URL d'endpoint personnalisée (pour MinIO, Ceph ou autres services compatibles S3) |
+| `aws_access_key_id` | `str \| None` | `None` | Clé d’accès AWS explicite (retombe sur la chaîne de certification) |
+| `aws_secret_access_key` | `str \| None` | `None` | Clé secrète AWS explicite |
+| `max_file_size` | `int \| None` | `None` | Rejeter les fichiers plus volumineux que ce nombre d’octets |
 
 **Authentification** :
 
@@ -106,7 +106,7 @@ Utilise la chaîne d'identification AWS par défaut :
 
 <SectionTab as="h1" sectionId="azure-blob-storage-loader">Chargeur Azure Blob Storage</SectionTab>
 
-Chargez des fichiers depuis Azure Blob Storage.
+Chargez des fichiers depuis Azure Blob Storage. `AzureBlobFileLoader` est une surcouche pratique autour de `FileLoader` avec `AzureBlobStorage`.
 
 **Installation** :
 
@@ -117,28 +117,26 @@ uv add "mistralai-search-toolkit-storage-azure"
 **Exemple** :
 
 ```python
-from mistralai.search.toolkit.ingestion.loaders import FileLoader
-from mistralai.search.toolkit.plugins.storage.azure import AzureBlobStorage
+from mistralai.search.toolkit.plugins.storage.azure import AzureBlobFileLoader
 
-loader = FileLoader(
-    lambda: AzureBlobStorage(
-        container_name="my-container",
-        account_url="https://myaccount.blob.core.windows.net",
-        use_workload_identity=True,  # or pass azure_connection_string=... for connection-string auth
-    )
+loader = AzureBlobFileLoader(
+    container_name="my-container",
+    account_url="https://myaccount.blob.core.windows.net",
+    use_workload_identity=True,  # or pass azure_connection_string=... for connection-string auth
 )
 
 file = await loader.load_file("reports/example.pdf")
 ```
 
-**Paramètres** (`AzureBlobStorage`) :
+**Paramètres** (`AzureBlobFileLoader`) :
 
 | Paramètre | Type | Par défaut | Description |
 |-----------|------|---------|-------------|
 | `container_name` | `str` | *(requis)* | Nom du conteneur Azure Blob Storage |
-| `account_url` | `str` | *(requis)* | URL du compte de stockage Azure (par exemple, `https://myaccount.blob.core.windows.net`) |
+| `azure_connection_string` | `str | None` | `None` | Chaîne de connexion pour l’authentification (obligatoire sauf si `use_workload_identity` est `True`) |
+| `account_url` | `str | None` | `None` | URL du compte de stockage Azure, par exemple `https://moncompte.blob.core.windows.net` (obligatoire si `use_workload_identity` est `True`) |
 | `use_workload_identity` | `bool` | `False` | Utiliser l'identité de charge de travail pour l'authentification (recommandé pour les machines virtuelles/fonctions Azure) |
-| `azure_connection_string` | `str \| None` | `None` | Chaîne de connexion pour l'authentification (alternative à l'identité de charge de travail) |
+| `max_file_size` | `int | None` | `None` | Rejeter les fichiers plus volumineux que ce nombre d’octets |
 
 **Authentification** :
 
@@ -148,7 +146,7 @@ file = await loader.load_file("reports/example.pdf")
 
 <SectionTab as="h1" sectionId="google-cloud-storage-loader">Chargeur Google Cloud Storage</SectionTab>
 
-Chargez des fichiers depuis Google Cloud Storage (GCS).
+Chargez des fichiers depuis Google Cloud Storage (GCS). `GCSFileLoader` est une surcouche pratique autour de `FileLoader` avec `GCSBlobStorage`.
 
 **Installation** :
 
@@ -159,27 +157,24 @@ uv add "mistralai-search-toolkit-storage-gcs"
 **Exemple** :
 
 ```python
-from mistralai.search.toolkit.ingestion.loaders import FileLoader
-from mistralai.search.toolkit.plugins.storage.gcs import GCSBlobStorage
+from mistralai.search.toolkit.plugins.storage.gcs import GCSFileLoader
 
-loader = FileLoader(
-    lambda: GCSBlobStorage(
-        bucket_name="my-bucket",
-        project="my-gcp-project",
-        service_account_file="/path/to/service-account.json",  # optional; falls back to ADC
-    )
+loader = GCSFileLoader(
+    bucket_name="my-bucket",
+    service_account_file="/path/to/service-account.json",  # optional; falls back to ADC
 )
 
 file = await loader.load_file("reports/example.pdf")
 ```
 
-**Paramètres** (`GCSBlobStorage`) :
+**Paramètres** (`GCSFileLoader`) :
 
 | Paramètre | Type | Par défaut | Description |
 |-----------|------|---------|-------------|
 | `bucket_name` | `str` | *(requis)* | Nom du bucket GCS |
-| `project` | `str` | *(requis)* | Identifiant du projet GCP |
-| `service_account_file` | `str \| None` | `None` | Chemin vers le fichier JSON du compte de service. Si non fourni, utilise les identifiants par défaut de l'application (ADC) |
+| `service_account_file` | `str | None` | `None` | Chemin vers le fichier JSON du compte de service. Si non fourni, utilise les identifiants par défaut de l'application (ADC) |
+| `api_root` | `str \| None` | `None` | endpoint API personnalisé pour un émulateur local (par exemple fake-gcs-server) ; retombe sur `STORAGE_EMULATOR_HOST` |
+| `max_file_size` | `int | None` | `None` | Rejeter les fichiers plus volumineux que ce nombre d’octets |
 
 **Authentification** :
 
@@ -193,6 +188,7 @@ Chargez plusieurs fichiers avec contrôle de la concurrence :
 ```python
 import asyncio
 from mistralai.search.toolkit.ingestion.loaders import FileLoader
+from mistralai.search.toolkit.plugins.storage.s3 import S3FileLoader
 
 async def load_files_batch(
     loader: FileLoader,
@@ -217,13 +213,17 @@ async def load_files_batch(
     return [f for f in results if f is not None]
 
 # Usage
-loader = FileLoader(lambda: S3BlobStorage(bucket_name="my-bucket"))
+loader = S3FileLoader(bucket_name="my-bucket")
 files = await load_files_batch(
     loader,
     ["doc1.pdf", "doc2.pdf", "doc3.pdf"],
     max_concurrent=5,
 )
 ```
+
+:::info
+**Avancé** : chaque chargeur cloud enveloppe un `FileLoader` générique sur un backend `ObjectStorage`. Pour un contrôle total (paramètres de stockage personnalisés, un backend non couvert par une surcouche), construisez-le directement : `FileLoader(lambda: S3BlobStorage(...))`.
+:::
 
 <SectionTab as="h1" sectionId="custom-loaders">Chargeurs personnalisés</SectionTab>
 

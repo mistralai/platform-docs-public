@@ -1,0 +1,105 @@
+---
+title: Document model
+description: How Search Toolkit represents documents and chunks, and the deterministic identity that ties them together.
+sidebar_position: 1.2
+sidebar_label: Document model
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Document model
+
+Search Toolkit represents every ingested source with a single, unified document model. Two classes carry the data through the whole pipeline:
+
+- **`Document`**: the full output of an extractor for one source.
+- **`DocumentChunk`**: a retrievable slice of that document, optionally carrying an embedding.
+
+Both are tied together by a **deterministic identity** derived from a `source_id` and a `locator`. The same identity is mirrored on the retrieval side by `SearchResultChunk`, so a chunk keeps the same id from ingestion all the way through search.
+
+:::info
+Earlier preview releases exposed a separate *page* representation between documents and chunks. This has been removed. Extractors now produce `DocumentChunk` objects directly.
+:::
+
+<SectionTab as="h1" sectionId="document">Document</SectionTab>
+
+A `Document` is what an extractor produces for a single source. Its `id` is computed automatically from `source_id`, so you rarely set it by hand.
+
+```python
+class Document:
+    id: str                       # deterministic, computed from source_id
+    source_id: str                # stable identifier of the source
+    content: str                  # full extracted text
+    chunks: list[DocumentChunk]   # the document's chunks
+    metadata: DocumentMetadata    # extensible, immutable metadata
+```
+
+<SectionTab as="h1" sectionId="documentchunk">DocumentChunk</SectionTab>
+
+A `DocumentChunk` is the unit that gets indexed and retrieved. Its `id` is computed from `source_id` + `locator`, and `parent_ref` points back to the `id` of the `Document` it belongs to.
+
+```python
+class DocumentChunk:
+    id: str                          # deterministic, computed from source_id + locator
+    source_id: str                   # same source_id as the parent document
+    locator: str                     # semantic position within the source
+    start_offset: int                # inclusive character offset
+    end_offset: int                  # exclusive character offset
+    parent_ref: str | None           # id of the parent Document
+    chunk_type: ChunkType            # content, image_annotation, or summary
+    content: str                     # the chunk text
+    metadata: DocumentChunkMetadata  # extensible, immutable metadata
+    embedding: list[float] | None    # populated once embedded
+```
+
+<SectionTab as="h1" sectionId="identity">Identity: source_id, locator, and deterministic ids</SectionTab>
+
+<SectionTab as="h2" sectionId="source-id">source_id</SectionTab>
+
+`source_id` is the stable identifier of the source document, such as a filepath, a URL, or any custom scheme like `arxiv:1706.03762`. It is set on `File.source_id` (defaulting to the file path or name) and stamped by extractors onto the resulting document and every one of its chunks.
+
+Because identity flows from `source_id` rather than from where the bytes happen to live, you can decouple a document's identity from its storage location: re-ingesting the same logical source produces the same ids even if the file has moved.
+
+<SectionTab as="h2" sectionId="locator">locator</SectionTab>
+
+`locator` describes the semantic position of a chunk within its source. The built-in formats are:
+
+- `char:{start}-{end}`: a character range.
+- `page:{n}:char:{start}-{end}`: a character range on a known page, for paginated sources.
+
+When a chunk is not plain content, its type prefixes the locator, for example `summary:char:0-512` or `image_annotation:page:2:char:0-128`.
+
+<SectionTab as="h2" sectionId="deterministic-ids">Deterministic ids</SectionTab>
+
+Ids are UUID5 hashes derived from the identity fields, not random values:
+
+- `Document.id` = hash of `source_id`
+- `DocumentChunk.id` = hash of `source_id` + `locator`
+- `parent_ref` = hash of `source_id` (so a chunk always resolves back to its document)
+
+Because ids are derived, re-ingesting the same content overwrites the same records instead of creating duplicates, which makes indexing **idempotent**.
+
+<SectionTab as="h1" sectionId="chunk-types">Chunk types</SectionTab>
+
+`chunk_type` distinguishes the kinds of chunks a document can contain:
+
+| Type | Description |
+|------|-------------|
+| `content` | A slice of the document's main text. |
+| `image_annotation` | Text describing an image (for example an OCR caption). |
+| `summary` | A generated summary of the document or a section. |
+
+<SectionTab as="h1" sectionId="metadata">Metadata</SectionTab>
+
+`DocumentMetadata` and `DocumentChunkMetadata` are immutable once created, and you can add your own keys. The toolkit ships typed subtypes for common cases, such as `DocumentFileMetadata` (`filename`, `filepath`) and `PagedDocumentChunkMetadata` (`page_number`).
+
+A metadata key must not collide with a model field name (for example, you cannot put `source_id` in metadata), since that would be ambiguous when the chunk is persisted.
+
+<SectionTab as="h1" sectionId="search-results">Search results</SectionTab>
+
+On the retrieval side, `SearchResultChunk` carries the same identity contract: `id`, `source_id`, `locator`, `parent_ref`, and `chunk_type`. Every result maps straight back to the chunk that was ingested.
+
+<SectionTab as="h1" sectionId="see-also">See also</SectionTab>
+
+- **[Ingestion](/studio-api/search-toolkit/ingestion)**: how documents and chunks are produced.
+- **[Retrieval](/studio-api/search-toolkit/retrieval)**: how chunks are searched and returned.
+- **[Search index](/studio-api/search-toolkit/search-index)**: how chunks are persisted.

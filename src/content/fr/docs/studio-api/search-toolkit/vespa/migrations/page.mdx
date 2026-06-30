@@ -30,22 +30,24 @@ class MyMigration(VespaMigration):
 
 <SectionTab as="h2" sectionId="defining-a-schema">Définition d’un schema</SectionTab>
 
-Utilisez `create_default_schema` pour les schemas compatibles avec `VespaSearchIndex` dès leur création :
+Utilisez `create_schema` avec un `indexing_mode` explicite. `DOCUMENT_PER_CHUNK` est le mode recommandé : il indexe un document Vespa par fragment et injecte automatiquement les champs standard du fragment (contenu, plongement, identité, métadonnées) :
 
 ```python
-from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition, SearchMode
-from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_default_schema, set_app_name
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition, IndexingMode, SearchMode
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
 
 
 class InitialSchema(VespaMigration):
     def migrate(self) -> None:
         set_app_name("myapp")
-        create_default_schema(
+        create_schema(
             name="articles",
             mode=SearchMode.INDEX,
             embedding_dimensions=1024,
-            schema_version=1,
-            additional_fields=[
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
+            # The standard chunk fields (content, embedding, identity, metadata) are
+            # added automatically. `fields` only declares your extra fields.
+            fields=[
                 FieldDefinition.TextField(name="title"),
                 FieldDefinition.TimestampField(name="created_at"),
             ],
@@ -56,9 +58,11 @@ class InitialSchema(VespaMigration):
 **Restrictions pour le nom de l’application** : le nom passé à `set_app_name()` doit contenir uniquement des lettres minuscules (`a-z`). Les chiffres, traits de soulignement, traits d’union et autres caractères spéciaux ne sont pas autorisés.
 :::
 
-Cela crée un schema avec tous les champs nécessaires au pipeline (fragments, embeddings, métadonnées, etc.) ainsi que vos champs spécifiques au projet via `additional_fields`.
+Cela injecte les champs nécessaires au pipeline (contenu du fragment, plongement, identité, métadonnées) et ajoute vos champs spécifiques au projet via `fields`.
 
-Utilisez `create_schema` avec des champs explicites lorsque vous avez besoin d’un contrôle total sur l’ensemble des champs.
+:::warning
+`create_default_schema(...)` est obsolète : il ne produit que l'ancien jeu de champs `IndexingMode.SINGLE_DOCUMENT` et sera supprimé avant la version 1.0.0. Utilisez plutôt `create_schema(..., indexing_mode=...)`.
+:::
 
 ### Ajout de champs à un schema existant
 
@@ -78,15 +82,15 @@ Définissez `multi_dimensional=True` pour les champs de type tableau (par exempl
 
 ### Schemas multiples
 
-Appelez `create_schema()` ou `create_default_schema()` plusieurs fois pour enregistrer plusieurs types de documents sous une même application. Chaque schema génère son propre fichier `.sd` et son profil de requête. Les noms doivent être uniques.
+Appelez `create_schema()` plusieurs fois pour enregistrer plusieurs types de documents sous une seule application. Chaque schéma génère son propre fichier `.sd` et profil de requête. Les noms doivent être uniques.
 
 <SectionTab as="h2" sectionId="migration-helpers">Aides pour les migrations</SectionTab>
 
 | Aide | Description |
 |---|---|
 | `set_app_name(name)` | Définir le nom de l’application (obligatoire dans la première migration) |
-| `create_default_schema(...)` | Créer un schema avec les champs par défaut requis par `VespaSearchIndex` (recommandé) |
-| `create_schema(...)` | Créer un schema avec des champs explicites (pour un contrôle total) |
+| `create_schema(...)` | Créer un schéma avec un `indexing_mode` explicite et des champs (recommandé) |
+| `create_default_schema(...)` | Schéma hérité à document unique (**obsolète** — supprimé avant la version 1.0.0) |
 | `add_field(schema, field)` | Ajouter un champ à un schema existant |
 | `add_query_profiles(...)` | Ajouter ou mettre à jour des profils de requête |
 | `add_schema_rank_profiles(schema, paths)` | Ajouter des fichiers de profils de classement personnalisés |

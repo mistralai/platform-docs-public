@@ -21,6 +21,16 @@ export const CodeSampleTabbedSection = ({
 }) => {
   const tabChildren = useChildren<CodeSampleTabProps>(children, 'tab');
   const contentChildren = useChildren<SectionContentProps>(children, 'content');
+  const { selectedLanguage } = useSelectedLang();
+
+  const availableLangs = tabChildren
+    .map(t => t.props.tags?.codeSample as string | undefined)
+    .filter(Boolean) as string[];
+
+  const localLangOverride =
+    availableLangs.length > 0 && !availableLangs.includes(selectedLanguage)
+      ? availableLangs[0]
+      : undefined;
 
   const contentChildrenWithLang = Children.toArray(contentChildren).map(
     content => {
@@ -40,7 +50,7 @@ export const CodeSampleTabbedSection = ({
   );
 
   return (
-    <TabbedSectionWrapper>
+    <TabbedSectionWrapper data-selected-language={localLangOverride}>
       <TabbedSectionTabs>{tabChildren}</TabbedSectionTabs>
       <SectionContentWrapper>{contentChildrenWithLang}</SectionContentWrapper>
     </TabbedSectionWrapper>

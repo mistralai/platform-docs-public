@@ -5,14 +5,14 @@ sidebar_label: Local development
 ---
 import { SectionTab } from '@/components/layout/section-tab';
 
-This guide covers the full local development loop: create a schema, deploy locally, feed and query documents, then iterate with new migrations. See [Manage Schema](migrations) to learn how to manage schemas and the [CLI reference](cli) for the full set of flags.
+This guide covers the full local development loop: create a schema, deploy locally, feed and query documents, then iterate with new migrations. See [Manage schema](migrations) to learn how to manage schemas and the [CLI reference](cli) for the full set of flags.
 
 <SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
 
 - Search Toolkit Vespa Plugin installed ([Installation](../#installation))
 - Docker installed and running
 
-<SectionTab as="h2" sectionId="step-1-create-your-first-migration">Step 1: Create Your First Migration</SectionTab>
+<SectionTab as="h2" sectionId="step-1-create-your-first-migration">Step 1: Create your first migration</SectionTab>
 
 ```bash
 uv run mistral-vespa generate-migration --app-dir ./vespa_app initial_schema
@@ -23,28 +23,31 @@ Fill in the generated file:
 ```python
 from mistralai.search.toolkit.plugins.vespa.app.schemas.app import (
     FieldDefinition,
+    IndexingMode,
     SearchMode,
 )
-from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_default_schema, set_app_name
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
 
 
 class InitialSchema(VespaMigration):
     def migrate(self) -> None:
         set_app_name("mynewproject")
 
-        create_default_schema(
+        create_schema(
             name="articles",
             mode=SearchMode.INDEX,
             embedding_dimensions=1024,
-            schema_version=1,
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
             default_query_profile_name="hybrid-profile",
-            additional_fields=[
+            # The standard chunk fields (content, embedding, identity, metadata) are
+            # added automatically. `fields` only declares your extra fields.
+            fields=[
                 FieldDefinition.TextField(name="title"),
             ],
         )
 ```
 
-`create_default_schema()` includes all required fields for VespaSearchIndex by default. Use `additional_fields` to add custom fields for your use case. For full control over the field set, use `create_schema()` with explicit fields.
+With `IndexingMode.DOCUMENT_PER_CHUNK`, `create_schema()` injects the standard chunk fields (content, embedding, identity, metadata) automatically; use `fields` to add your own. (The legacy `create_default_schema()` helper is deprecated and will be removed before 1.0.0.)
 
 :::info
 **Application name restrictions:** The name passed to `set_app_name()` must contain only lowercase letters (`a-z`). Numbers, underscores, hyphens, and other special characters are not allowed.
@@ -54,7 +57,7 @@ class InitialSchema(VespaMigration):
 **Chunk functions are generated automatically when chunk fields are present.** If a schema includes both a multi-dimensional embedding field and a multi-dimensional text field, the plugin generates `best_chunks`, `chunk_scores`, and related helpers automatically.
 :::
 
-<SectionTab as="h2" sectionId="step-2-start-a-local-vespa-instance">Step 2: Start a Local Vespa Instance</SectionTab>
+<SectionTab as="h2" sectionId="step-2-start-a-local-vespa-instance">Step 2: Start a local Vespa instance</SectionTab>
 
 ```bash
 uv run mistral-vespa local up --query-port 18080 --config-port 19171 --name vespa-dev
@@ -65,7 +68,7 @@ uv run mistral-vespa local up --query-port 18080 --config-port 19171 --name vesp
 | 18080 | Container HTTP | Query and document feed |
 | 19171 | Config server  | Application deploys     |
 
-<SectionTab as="h2" sectionId="step-3-deploy-from-migrations">Step 3: Deploy From Migrations</SectionTab>
+<SectionTab as="h2" sectionId="step-3-deploy-from-migrations">Step 3: Deploy from migrations</SectionTab>
 
 ```bash
 uv run mistral-vespa migrate \
@@ -76,7 +79,7 @@ uv run mistral-vespa migrate \
 
 `mistral-vespa migrate` builds the application package from migrations in memory, deploys it, and polls the query endpoint until the app is up.
 
-<SectionTab as="h2" sectionId="step-4-feed-and-query-documents">Step 4: Feed and Query Documents</SectionTab>
+<SectionTab as="h2" sectionId="step-4-feed-and-query-documents">Step 4: Feed and query documents</SectionTab>
 
 Feed a document:
 
@@ -99,7 +102,7 @@ curl -H "Content-Type: application/json" \
   "http://localhost:18080/search/"
 ```
 
-<SectionTab as="h2" sectionId="step-5-modify-the-schema">Step 5: Modify the Schema</SectionTab>
+<SectionTab as="h2" sectionId="step-5-modify-the-schema">Step 5: Modify the schema</SectionTab>
 
 Create a new migration to evolve the schema:
 
@@ -140,7 +143,7 @@ uv run mistral-vespa migrate \
   --query-port 18080
 ```
 
-<SectionTab as="h2" sectionId="understanding-schema-changes">Understanding Schema Changes</SectionTab>
+<SectionTab as="h2" sectionId="understanding-schema-changes">Understand schema changes</SectionTab>
 
 What happens when you change the schema of a running application:
 
@@ -153,7 +156,7 @@ What happens when you change the schema of a running application:
 
 For more details, see [Vespa's documentation on modifying schemas](https://docs.vespa.ai/en/reference/schemas/schemas.html#modifying-schemas).
 
-<SectionTab as="h2" sectionId="custom-ranking-profiles-and-extra-assets">Custom Ranking Profiles and Extra Assets</SectionTab>
+<SectionTab as="h2" sectionId="custom-ranking-profiles-and-extra-assets">Custom ranking profiles and extra assets</SectionTab>
 
 Add custom rank profiles or model files from a migration:
 
@@ -173,7 +176,7 @@ class AddCustomRankingProfile(VespaMigration):
 
 You can use the same pattern for `add_schema_model_files`, `add_schema_custom_document_summary`, and `add_query_profiles`.
 
-<SectionTab as="h2" sectionId="optional-generate-a-vespalock-snapshot">Optional: Generate a `vespa.lock` Snapshot</SectionTab>
+<SectionTab as="h2" sectionId="optional-generate-a-vespalock-snapshot">Optional: Generate a `vespa.lock` snapshot</SectionTab>
 
 If your repo keeps a generated reference package for CI or review:
 
@@ -185,10 +188,10 @@ uv run mistral-vespa generate \
 
 Regenerate after every schema change. Deployment should still happen from migrations via `mistral-vespa migrate`.
 
-<SectionTab as="h2" sectionId="ide-support">IDE Support</SectionTab>
+<SectionTab as="h2" sectionId="ide-support">IDE support</SectionTab>
 
 Use an IDE with the Vespa plugin for syntax highlighting, code completion, navigation between functions and profiles, and error detection. See [Vespa IDE support documentation](https://docs.vespa.ai/en/applications/ide-support.html).
 
-<SectionTab as="h2" sectionId="see-also">See Also</SectionTab>
+<SectionTab as="h2" sectionId="see-also">See also</SectionTab>
 
-- **[Deploy and Operate](operations)** — Production deployment and health checks
+- **[Deploy and operate](operations)**: production deployment and health checks

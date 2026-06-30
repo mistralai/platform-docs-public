@@ -227,18 +227,37 @@ backend = InMemoryCacheBackend(
 # Expired entries are removed on next access or eviction
 ```
 
-**Gestion manuelle** (pour les backends personnalisés) :
+**Backends personnalisés** Wirkungsgrads l’ABC `CacheBackend` pour connecter n’importe quel stockage (Redis, pgvector, etc.) :
 
 ```python
-from mistralai.search.toolkit.retrieval.cache import CacheBackend
+from mistralai.search.toolkit.retrieval.cache import CacheBackend, CacheEntry
 
 class CustomCacheBackend(CacheBackend):
-    async def invalidate_old_entries(self, before_timestamp: float):
-        """Remove entries older than timestamp."""
+    @property
+    def max_entries(self) -> int:
+        return 1000
+
+    async def search(self, query_embedding, namespace, n_results):
+        # Vector similarity search in your store
         ...
 
-    async def get_cache_size(self) -> int:
-        """Return current cache size in entries."""
+    async def store(self, entry: CacheEntry) -> None:
+        # Store entry, evict if needed
+        ...
+
+    async def delete(self, entry_id: str):
+        ...
+
+    async def get_all(self, namespace=None):
+        ...
+
+    async def count(self, namespace=None) -> int:
+        ...
+
+    async def clear(self):
+        ...
+
+    async def update_hit(self, entry: CacheEntry):
         ...
 ```
 

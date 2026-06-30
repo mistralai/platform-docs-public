@@ -62,19 +62,21 @@ mistral-vespa generate-migration \
 Fill in the generated file:
 
 ```python
-from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition, SearchMode
-from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_default_schema, set_app_name
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import FieldDefinition, IndexingMode, SearchMode
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
 
 
 class InitialSchema(VespaMigration):
     def migrate(self) -> None:
         set_app_name("myquickstart")
-        create_default_schema(
+        create_schema(
             name="quickstart_collection",
             mode=SearchMode.INDEX,
             embedding_dimensions=1024,
-            schema_version=1,
-            additional_fields=[
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
+            # The standard chunk fields (content, embedding, identity, metadata) are
+            # added automatically. `fields` only declares your extra fields.
+            fields=[
                 FieldDefinition.TextField(name="title"),
             ],
         )
@@ -132,14 +134,11 @@ async def main():
         extractor=PlainTextExtractor(),
         text_splitter=CharacterTextSplitter(chunk_size=500),
         embedder=MistralEmbedder(client=mistral_client, model_name="mistral-embed"),
-        vector_store=vector_store,
+        stores=vector_store,
     )
 
     # Ingest documents
-    await pipeline.run(
-        documents=[Path("doc1.txt"), Path("doc2.txt")],
-        collection_name="quickstart_collection",
-    )
+    await pipeline.run(documents=[Path("doc1.txt"), Path("doc2.txt")])
     print("Documents ingested!")
 
 
@@ -217,6 +216,6 @@ pipeline = Pipeline(
         MarkdownTextSplitterConfig(chunk_size=5048, chunk_overlap=50)
     ),
     embedder=MistralEmbedder(client=mistral_client),
-    vector_store=vector_store,
+    stores=vector_store,
 )
 ```

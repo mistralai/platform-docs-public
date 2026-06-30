@@ -181,8 +181,9 @@ chunks = splitter.split_document(document)
 Implémentez le protocole `TextSplitter` :
 
 ```python
+from mistralai.search.toolkit.context import IngestContext
 from mistralai.search.toolkit.ingestion.text_splitters import TextSplitter
-from mistralai.search.toolkit.document import DocumentChunk
+from mistralai.search.toolkit.ingestion.text_splitters.models import TextFragment
 
 class ParagraphSplitter(TextSplitter):
     """Split text into chunks by paragraphs."""
@@ -190,24 +191,24 @@ class ParagraphSplitter(TextSplitter):
     def __init__(self, max_paragraphs_per_chunk: int = 3):
         self.max_paragraphs_per_chunk = max_paragraphs_per_chunk
 
-    def split_text(self, text: str, **kwargs) -> list[DocumentChunk]:
+    def split_text(self, text: str, context: IngestContext = IngestContext()) -> list[TextFragment]:
         paragraphs = text.split("\n\n")
-        chunks = []
+        fragments = []
         offset = 0
 
         for i in range(0, len(paragraphs), self.max_paragraphs_per_chunk):
             chunk_paragraphs = paragraphs[i:i + self.max_paragraphs_per_chunk]
             content = "\n\n".join(chunk_paragraphs)
 
-            chunks.append(DocumentChunk(
+            fragments.append(TextFragment(
                 content=content,
                 start_offset=offset,
                 end_offset=offset + len(content),
             ))
             offset += len(content) + 2
 
-        return chunks
+        return fragments
 
 splitter = ParagraphSplitter(max_paragraphs_per_chunk=3)
-chunks = splitter.split_text("First paragraph.\n\nSecond paragraph.\n\nThird paragraph.")
+fragments = splitter.split_text("First paragraph.\n\nSecond paragraph.\n\nThird paragraph.")
 ```

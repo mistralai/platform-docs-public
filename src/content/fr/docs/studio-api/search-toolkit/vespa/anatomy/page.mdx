@@ -58,6 +58,17 @@ Chaque schéma fonctionne selon l’un des deux modes suivants :
 | `SearchMode.INDEX` | Recherche indexée traditionnelle — BM25, ANN/HNSW, classement en deux phases |
 | `SearchMode.STREAMING` | Recherche en streaming — voisin le plus proche exact, filtrage par attribut, classement en une phase |
 
+### Mode d’indexation
+
+Chaque schéma déclare également un **mode d’indexation** qui contrôle la manière dont les documents sont organisés dans Vespa. Ce paramètre est obligatoire pour chaque schéma, afin que la disposition soit toujours explicite.
+
+| Mode | Description |
+|---|---|
+| `IndexingMode.DOCUMENT_PER_CHUNK` | **Recommandé.** Un document Vespa par fragment, chacun identifiable individuellement par son ID déterministe. |
+| `IndexingMode.SINGLE_DOCUMENT` | Héritage : un document Vespa par source, avec les fragments regroupés sous forme de tableaux. **Obsolète** — supprimé avant la version 1.0.0. |
+
+Avec `DOCUMENT_PER_CHUNK`, `create_schema()` injecte automatiquement les champs standard des fragments (contenu, embedding, identité, métadonnées). Consultez le [Modèle de document](/studio-api/search-toolkit/document-model) pour savoir comment les fragments sont identifiés et [Gérer le schéma](migrations) pour définir le mode.
+
 <SectionTab as="h2" sectionId="fields">Champs</SectionTab>
 
 Les champs définissent les données qu’un document contient et la manière dont ces données sont utilisées pour l’indexation et le classement. Le plugin propose cinq types de champs :
@@ -70,7 +81,7 @@ Les champs définissent les données qu’un document contient et la manière do
 | `TimestampField` | Classement basé sur le temps (type : `long`) | attribut + résumé | Fraîcheur, boost de récence |
 | `CountField` | Classement numérique (type : `int`) | attribut + résumé | Normalisation, boost |
 
-Les champs peuvent être à valeur unique ou multidimensionnels (tableaux). Par exemple, les incorporations et les fragments de texte par fragment sont des champs multidimensionnels.
+Les champs peuvent être monolignes ou multidimensionnels (tableaux). Pour un champ de type tableau, définissez `multi_dimensional=True`, par exemple pour une liste d’étiquettes ou d’embeddings de sections.
 
 ### Jeu de champs par défaut
 

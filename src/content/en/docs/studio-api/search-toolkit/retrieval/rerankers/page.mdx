@@ -12,8 +12,8 @@ import { SectionTab } from '@/components/layout/section-tab';
 Rerankers apply more sophisticated scoring to improve ranking quality. Initial retrieval is fast but approximate; rerankers use deeper models or logic to refine results.
 
 Search Toolkit provides rerankers in two categories:
-- **`ReRanker`** — operates on a single result list (LLMReRanker, CrossEncoderReRanker)
-- **`GroupedRanker`** — operates on multiple result groups (RRFRanker for fusion)
+- **`ReRanker`**: operates on a single result list (LLMReRanker, CrossEncoderReRanker)
+- **`GroupedRanker`**: operates on multiple result groups (RRFRanker for fusion)
 
 Multiple rerankers can be chained in `QueryEngine.rerankers` list and are applied sequentially.
 
@@ -134,9 +134,9 @@ result = await query_engine.search(query="What is RAG?", top_k=10)
 | `timeout` | int | 30 | Request timeout in seconds |
 
 **Popular models**:
-- `cross-encoder/ms-marco-MiniLM-L-6-v2` — Fast, general-purpose
-- `cross-encoder/ms-marco-TinyBERT-L-2-v2` — Lightweight, low latency
-- `cross-encoder/qnli-distilroberta-base` — Question-answer matching
+- `cross-encoder/ms-marco-MiniLM-L-6-v2`: fast, general-purpose
+- `cross-encoder/ms-marco-TinyBERT-L-2-v2`: lightweight, low latency
+- `cross-encoder/qnli-distilroberta-base`: question-answer matching
 
 **When to use**:
 - Need reranking but want to avoid LLM costs
@@ -149,14 +149,15 @@ result = await query_engine.search(query="What is RAG?", top_k=10)
 Implement the `ReRanker` protocol for single-list reranking:
 
 ```python
+from mistralai.search.toolkit.context import RetrievalContext
 from mistralai.search.toolkit.retrieval.rerankers import ReRanker
-from mistralai.search.toolkit.indices import SearchResult
+from mistralai.search.toolkit.search import SearchResult
 
 class MetadataReRanker(ReRanker):
     """Boost results based on metadata."""
 
     async def rerank(
-        self, query: str, search_results: list[SearchResult]
+        self, query: str, search_results: list[SearchResult], context: RetrievalContext = RetrievalContext()
     ) -> list[SearchResult]:
         """Re-score results by boosting verified content."""
         for result in search_results:
@@ -182,25 +183,26 @@ query_engine = QueryEngine(
 Implement the `GroupedRanker` protocol for multi-group fusion:
 
 ```python
+from mistralai.search.toolkit.context import RetrievalContext
 from mistralai.search.toolkit.retrieval.rerankers import GroupedRanker
-from mistralai.search.toolkit.indices import SearchResult
+from mistralai.search.toolkit.search import SearchResultGroup
 
 class CustomFusionRanker(GroupedRanker):
-    """Custom fusion of multiple retriever results."""
+    """Custom fusion of multiple retriever result groups."""
 
-    async def rerank_groups(
-        self, query: str, result_groups: list[list[SearchResult]]
-    ) -> list[SearchResult]:
-        """Fuse multiple retriever results with custom logic."""
-        # result_groups[0] = vector retriever results
-        # result_groups[1] = keyword retriever results
-        # etc.
+    async def rank(
+        self,
+        query: str,
+        result_groups: list[SearchResultGroup],
+        context: RetrievalContext = RetrievalContext(),
+    ) -> list[SearchResultGroup]:
+        """Fuse multiple retriever result groups with custom logic."""
+        # Each SearchResultGroup holds the results from one retriever.
+        return self._custom_fusion(query, result_groups)
 
-        # Custom fusion logic
-        fused = self._custom_fusion(query, result_groups)
-        return fused
-
-    def _custom_fusion(self, query: str, groups: list[list[SearchResult]]) -> list[SearchResult]:
+    def _custom_fusion(
+        self, query: str, groups: list[SearchResultGroup]
+    ) -> list[SearchResultGroup]:
         # Implement your fusion algorithm
         ...
 ```
@@ -211,7 +213,7 @@ Reciprocal Rank Fusion (RRF) combines results from multiple retrievers using ran
 
 **Installation**: Core library (no extra required)
 
-**Example** — multiple vector retrievers with different query profiles:
+**Example**: multiple vector retrievers with different query profiles:
 
 ```python
 from mistralai.client import Mistral
@@ -271,7 +273,7 @@ RRFRanker(rrf_k=100, top_k=10)  # Higher k, flattens differences
 - Combining multiple retrieval strategies on the same index (dense vectors, hybrid search, etc.)
 - Results from multiple sources with incomparable scores
 - No additional model or cost constraints
-- Robust fusion that doesn't require score normalization
+- Fusion that doesn't require score normalization
 
 <SectionTab as="h1" sectionId="chaining-rerankers">Chaining rerankers</SectionTab>
 
@@ -305,6 +307,6 @@ result = await query_engine.search(query="...", top_k=10)
 
 <SectionTab as="h1" sectionId="see-also">See also</SectionTab>
 
-- [Retrieval overview](../retrieval) — Retrieval pipeline architecture
-- [Retrievers](retrievers) — Vector search and custom retrievers
-- [Query preprocessing](preprocessing) — Improve queries before retrieval
+- [Retrieval overview](../retrieval): retrieval pipeline architecture
+- [Retrievers](retrievers): vector search and custom retrievers
+- [Query preprocessing](preprocessing): improve queries before retrieval

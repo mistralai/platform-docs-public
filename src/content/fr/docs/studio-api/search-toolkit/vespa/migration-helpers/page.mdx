@@ -1,0 +1,284 @@
+---
+title: Référence des assistants de migration
+sidebar_position: 8
+sidebar_label: Assistants de migration
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+Référence pour les assistants utilisés dans les [migrations](migrations). Tous les assistants sont importés depuis `mistralai.search.toolkit.plugins.vespa.migration` et appelés depuis la méthode `migrate()` d’une migration.
+
+```python
+from mistralai.search.toolkit.plugins.vespa.migration import (
+    VespaMigration,
+    set_app_name,
+    create_schema,
+    add_field,
+    add_query_profiles,
+)
+```
+
+<SectionTab as="h2" sectionId="application-configuration">Configuration de l’application</SectionTab>
+
+### `set_app_name`
+
+```python
+def set_app_name(app_name: str) -> None
+```
+
+Définir le nom de l’application pour l’exécution de la migration. Obligatoire dans la première migration. Doit contenir uniquement des lettres minuscules (`a-z`).
+
+### `set_content_id`
+
+```python
+def set_content_id(content_id: str) -> None
+```
+
+Remplace l’ID du cluster de contenu utilisé dans `services.xml` (par défaut, le nom de l’application). Utilisez ceci si le cluster déployé a été créé initialement avec un ID différent — une modification du nom serait sinon considérée par Vespa comme une suppression + recréation, détruisant tous les documents stockés.
+
+### `allow_schema_removal`
+
+```python
+def allow_schema_removal(until: str) -> None
+```
+
+Marquez une migration comme supprimant intentionnellement un ou plusieurs schémas. Vespa rejette les suppressions de schémas par défaut pour protéger les données ; ceci écrit un fichier `validation-overrides.xml` autorisant la suppression jusqu’à la date `until` (au format ISO `"AAAA-MM-JJ"`). Choisissez une date une ou deux semaines après votre fenêtre de déploiement.
+
+### `set_distribute_across_groups`
+
+```python
+def set_distribute_across_groups(value: bool) -> None
+```
+
+:::warning
+**Obsolète.** Un mécanisme de compatibilité pour l’autodécouverte Kubernetes. Définissez les groupes explicitement dans le fichier de topologie pour les nouveaux déploiements.
+:::
+
+<SectionTab as="h2" sectionId="creating-schemas">Création de schémas</SectionTab>
+
+### `create_schema`
+
+```python
+def create_schema(
+    name: str,
+    mode: SearchMode,
+    embedding_dimensions: int,
+    indexing_mode: IndexingMode,
+    fields: list[FieldDefinition] | None = None,
+    custom_functions: list[FunctionWithInputs] | None = None,
+    default_query_profile_name: str | None = None,
+    top_chunks: int | None = None,
+    id_field: str | None = None,
+    content_cluster: str = "content",
+) -> None
+```
+
+Créer un schéma avec un mode d’indexation explicite. Il s’agit de la méthode recommandée pour définir un schéma.
+
+| Paramètre | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `name` | `str` | *(obligatoire)* | Nom du type de document (uniquement des lettres minuscules et des traits de soulignement) |
+| `mode` | `SearchMode` | *(obligatoire)* | `INDEX` ou `STREAMING` |
+| `embedding_dimensions` | `int` | *(obligatoire)* | Taille des embeddings appliquée à tous les champs d’embedding |
+| `indexing_mode` | `IndexingMode` | *(obligatoire)* | Disposition du document : `DOCUMENT_PER_CHUNK` (recommandé) ou `SINGLE_DOCUMENT` (obsolète, déconseillé) |
+| `fields` | `list[FieldDefinition] | None` | `None` | Champs ajoutés en plus des valeurs par défaut du mode d’indexation. Avec `DOCUMENT_PER_CHUNK`, les champs fragment standards sont injectés automatiquement ; `SINGLE_DOCUMENT` nécessite au moins un champ |
+| `custom_functions` | `list[FunctionWithInputs] | None` | `None` | Fonctions de classement personnalisées (voir [Gestion du classement](query-profiles)) |
+| `default_query_profile_name` | `str | None` | `None` | Nom pour le profil de requête généré automatiquement. Par défaut, le nom du schéma |
+| `top_chunks` | `int | None` | `None` | Uniquement pour `SINGLE_DOCUMENT` — nombre de fragments principaux à sélectionner. Rejeté avec `DOCUMENT_PER_CHUNK` |
+| `id_field` | `str | None` | `None` | Uniquement pour `SINGLE_DOCUMENT` — obsolète. Rejeté avec `DOCUMENT_PER_CHUNK` (l’identité du fragment est toujours `id`) |
+| `content_cluster` | `str` | ""content"" | Cluster de contenu Vespa qui contient les documents de ce schéma |
+
+### `create_default_schema`
+
+:::warning
+**Obsolète** — supprimé avant la version 1.0.0. Assistant historique pour les schémas `SINGLE_DOCUMENT` : il prend `schema_version` et `additional_fields` au lieu de `indexing_mode`/`fields`. Utilisez plutôt `create_schema(..., indexing_mode=...)`.
+:::
+
+<SectionTab as="h2" sectionId="enums">Énumérations</SectionTab>
+
+Les deux sont importées depuis `mistralai.search.toolkit.plugins.vespa.app.schemas.app`.
+
+### `SearchMode`
+
+| Valeur | Description |
+|---|---|
+| `SearchMode.INDEX` | Recherche indexée traditionnelle — BM25, ANN/HNSW, classement en deux phases |
+| `SearchMode.STREAMING` | Recherche en streaming — voisin le plus proche exact, filtrage d’attributs, classement en une seule phase |
+
+### `IndexingMode`
+
+| Valeur | Description |
+|---|---|
+| `IndexingMode.DOCUMENT_PER_CHUNK` | **Recommandé.** Un document Vespa par fragment, adressable individuellement par son ID déterministe |
+| `IndexingMode.SINGLE_DOCUMENT` | Héritage : un document Vespa par source, les fragments regroupés dans des tableaux. **Obsolète** — supprimé avant la version 1.0.0 |
+
+<SectionTab as="h2" sectionId="field-types">Types de champs</SectionTab>
+
+Les champs sont déclarés avec `FieldDefinition`, importé depuis `mistralai.search.toolkit.plugins.vespa.app.schemas.app`, puis passés à `create_schema(fields=[...])` ou `add_field(...)`. Définissez `multi_dimensional=True` (lorsqu’il est pris en charge) pour rendre un champ multivalué.
+
+| Type de champ | Objectif | Utilisé dans la correspondance de requête | Génère des Fonctions de classement |
+|---|---|---|---|
+| `EmbeddingField` | Embeddings vectoriels pour la recherche sémantique | Oui (ANN/HNSW) | Distance, similarité cosinus |
+| `TextField` | Texte pour la recherche par mot-clé/BM25 | Oui | BM25, correspondance de champ |
+| `StringField` | Métadonnées stockées, non utilisées pour la correspondance | Non | Aucune |
+| `TimestampField` | Classement basé sur le temps | Non | Actualité, récence |
+| `CountField` | Valeur numérique utilisée pour le classement | Non | Normalisation, boost |
+| `IntField` | Entier stocké, non classé | Non | Aucune |
+| `BoolField` | Booléen stocké, non classé | Non | Aucune |
+| `LanguageField` | Balise de langue par document (RFC 3066) | Non (filtre) | Aucune |
+
+### `EmbeddingField`
+
+```python
+FieldDefinition.EmbeddingField(name: str, multi_dimensional: bool = False)
+```
+
+Embeddings vectoriels indexés avec HNSW. La dimension du tenseur est dérivée des `embedding_dimensions` du schéma. Définissez `multi_dimensional=True` pour un tableau d’embeddings (par exemple par fragment).
+
+### `TextField`
+
+```python
+FieldDefinition.TextField(
+    name: str,
+    multi_dimensional: bool = False,
+    summary: SummaryDefinition = SummaryDefinition(),
+)
+```
+
+Texte tokenisé correspondant à la requête utilisateur (BM25). Inclus dans le jeu de champs par défaut. `summary` contrôle la manière dont le champ est affiché dans les résultats.
+
+### `StringField`
+
+```python
+FieldDefinition.StringField(
+    name: str,
+    multi_dimensional: bool = False,
+    fast_search: bool = False,
+    match: MatchDefinition | None = None,
+    summary: SummaryDefinition | None = SummaryDefinition(),
+    attribute: bool = True,
+)
+```
+
+Métadonnées stockées qui **ne sont pas** utilisées pour la correspondance avec la requête (à utiliser pour les filtres, les identifiants, les balises). `fast_search` construit un index d’attributs dédié (plus de mémoire/CPU, recherches plus rapides) ; `match` définit un schéma de correspondance explicite ; `attribute=False` conservent la valeur hors des attributs en mémoire.
+
+### `TimestampField`
+
+```python
+FieldDefinition.TimestampField(name: str, type: Literal["long", "int"] = "long")
+```
+
+Horodatage numérique utilisé pour les Fonctions d’actualité et de récence.
+
+### `CountField`
+
+```python
+FieldDefinition.CountField(name: str)
+```
+
+Compteur entier qui génère des Fonctions de normalisation et de boost. Pour un entier que vous **ne souhaitez pas** classer, utilisez `IntField`.
+
+### `IntField`
+
+```python
+FieldDefinition.IntField(
+    name: str,
+    multi_dimensional: bool = False,
+    summary: SummaryDefinition = SummaryDefinition(),
+)
+```
+
+Entier stocké non utilisé pour le classement ou la correspondance.
+
+### `BoolField`
+
+```python
+FieldDefinition.BoolField(name: str)
+```
+
+Booléen stocké, non utilisé pour le classement ou la correspondance.
+
+### `LanguageField`
+
+```python
+FieldDefinition.LanguageField(name: str = "language")
+```
+
+Définissez la langue du document (balise RFC 3066) et créez un index pour permettre le filtrage des documents par langue.
+
+<SectionTab as="h2" sectionId="evolving-schemas">Évolution des schémas</SectionTab>
+
+Ajout à un schéma existant dans une migration ultérieure. Chacun lève une `ValueError` si le schéma nommé n’existe pas.
+
+### `add_field`
+
+```python
+def add_field(schema_name: str, field: FieldDefinition) -> None
+```
+
+Ajoute un champ unique à un schéma existant.
+
+### `add_custom_functions`
+
+```python
+def add_custom_functions(schema_name: str, functions: list[FunctionWithInputs]) -> None
+```
+
+Ajoute des Fonctions de classement personnalisées à un schéma existant.
+
+### `add_query_profiles`
+
+```python
+def add_query_profiles(query_profiles: list[QueryProfile]) -> None
+```
+
+Ajoute ou met à jour les profils de requête sur l’application. Voir [Gestion du classement](query-profiles).
+
+### `add_schema_rank_profiles`
+
+```python
+def add_schema_rank_profiles(schema_name: str, rank_profiles: list[Path]) -> None
+```
+
+Attachez des fichiers de profil de classement personnalisés à un schéma.
+
+### `add_schema_model_files`
+
+```python
+def add_schema_model_files(schema_name: str, model_files: list[Path]) -> None
+```
+
+Attachez des fichiers de Modèle de ML à un schéma.
+
+### `add_schema_custom_document_summary`
+
+```python
+def add_schema_custom_document_summary(schema_name: str, custom_document_summary: DocumentSummary) -> None
+```
+
+Attachez un résumé de document personnalisé à un schéma.
+
+<SectionTab as="h2" sectionId="vespamigration">`VespaMigration`</SectionTab>
+
+Classe de base pour chaque migration. Sous-classez-la et implémentez `migrate()`, en appelant les assistants ci-dessus :
+
+```python
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import IndexingMode, SearchMode
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
+
+
+class InitialSchema(VespaMigration):
+    def migrate(self) -> None:
+        set_app_name("myapp")
+        create_schema(
+            name="articles",
+            mode=SearchMode.INDEX,
+            embedding_dimensions=1024,
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
+        )
+```
+
+<SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Gérer un schéma](migrations)** — Comment créer et faire évoluer les schémas avec ces assistants
+- **[Anatomie d’une application Vespa](anatomy)** — Concepts : schémas, champs, classement, profils de requête
+- **[Gestion du classement](query-profiles)** — Profils de requête et configuration du classement

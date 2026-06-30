@@ -1,0 +1,105 @@
+---
+title: Modèle de document
+description: Comment Search Toolkit représente les documents et les fragments, ainsi que l'identité déterministe qui les relie.
+sidebar_position: 1.2
+sidebar_label: Modèle de document
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Modèle de document
+
+Search Toolkit représente chaque source ingérée avec un modèle de document unifié. Deux classes transportent les données tout au long du pipeline :
+
+- **`Document`** — la sortie complète d'un extracteur pour une source.
+- **`DocumentChunk`** — une section récupérable de ce document, pouvant inclure une intégration (embedding).
+
+Les deux sont liés par une **identité déterministe** dérivée d'un `source_id` et d'un `locator`. Cette même identité est reflétée côté récupération par `SearchResultChunk`, de sorte qu'un fragment conserve le même identifiant depuis l'ingestion jusqu'à la recherche.
+
+:::info
+Les versions préliminaires exposaient auparavant une représentation de *page* distincte entre les documents et les fragments. Celle-ci a été supprimée : les extracteurs produisent désormais directement des objets `DocumentChunk`.
+:::
+
+<SectionTab as="h1" sectionId="document">Document</SectionTab>
+
+Un `Document` est ce qu'un extracteur produit pour une seule source. Son `id` est calculé automatiquement à partir de `source_id`, vous n'avez donc presque jamais à le définir manuellement.
+
+```python
+class Document:
+    id: str                       # deterministic, computed from source_id
+    source_id: str                # stable identifier of the source
+    content: str                  # full extracted text
+    chunks: list[DocumentChunk]   # the document's chunks
+    metadata: DocumentMetadata    # extensible, immutable metadata
+```
+
+<SectionTab as="h1" sectionId="documentchunk">DocumentChunk</SectionTab>
+
+Un `DocumentChunk` est l'unité qui est indexée et récupérée. Son `id` est calculé à partir de `source_id` + `locator`, et `parent_ref` pointe vers l'`id` du `Document` auquel il appartient.
+
+```python
+class DocumentChunk:
+    id: str                          # deterministic, computed from source_id + locator
+    source_id: str                   # same source_id as the parent document
+    locator: str                     # semantic position within the source
+    start_offset: int                # inclusive character offset
+    end_offset: int                  # exclusive character offset
+    parent_ref: str | None           # id of the parent Document
+    chunk_type: ChunkType            # content, image_annotation, or summary
+    content: str                     # the chunk text
+    metadata: DocumentChunkMetadata  # extensible, immutable metadata
+    embedding: list[float] | None    # populated once embedded
+```
+
+<SectionTab as="h1" sectionId="identity">Identité : source_id, locator et identifiants déterministes</SectionTab>
+
+<SectionTab as="h2" sectionId="source-id">source_id</SectionTab>
+
+Le `source_id` est l'identifiant stable du document source — un chemin de fichier, une URL ou tout schéma personnalisé comme `arxiv:1706.03762`. Il est défini dans `File.source_id` (par défaut, le chemin ou le nom du fichier) et apposé par les extracteurs sur le document résultant ainsi que sur chacun de ses fragments.
+
+Comme l'identité découle de `source_id` plutôt que de l'emplacement des octets, vous pouvez dissocier l'identité d'un document de son emplacement de stockage : la réingestion de la même source logique produit les mêmes identifiants, même si le fichier a été déplacé.
+
+<SectionTab as="h2" sectionId="locator">locator</SectionTab>
+
+Le `locator` décrit la position sémantique d'un fragment au sein de sa source. Les formats intégrés sont :
+
+- `char:{start}-{end}` — une plage de caractères.
+- `page:{n}:char:{start}-{end}` — une plage de caractères sur une page connue, pour les sources paginées.
+
+Lorsque le fragment n'est pas un contenu brut, son type précède le locator, par exemple `summary:char:0-512` ou `image_annotation:page:2:char:0-128`.
+
+<SectionTab as="h2" sectionId="deterministic-ids">Identifiants déterministes</SectionTab>
+
+Les identifiants ne sont pas aléatoires : ce sont des hachages UUID5 dérivés des champs d'identité :
+
+- `Document.id` = hachage de `source_id`
+- `DocumentChunk.id` = hachage de `source_id` + `locator`
+- `parent_ref` = hachage de `source_id` (un fragment pointe toujours vers son document)
+
+Comme les identifiants sont dérivés, la réingestion du même contenu écrase les mêmes enregistrements au lieu de créer des doublons, ce qui rend l'indexation **idempotente**.
+
+<SectionTab as="h1" sectionId="chunk-types">Types de fragments</SectionTab>
+
+Le `chunk_type` distingue les différents types de fragments qu'un document peut contenir :
+
+| Type | Description |
+|------|-------------|
+| `content` | Une portion du texte principal du document. |
+| `image_annotation` | Texte décrivant une image (par exemple une légende OCR). |
+| `summary` | Un résumé généré du document ou d'une section. |
+
+<SectionTab as="h1" sectionId="metadata">Métadonnées</SectionTab>
+
+`DocumentMetadata` et `DocumentChunkMetadata` sont **extensibles** (vous pouvez ajouter vos propres clés) et **immuables** (figées une fois créées). La boîte à outils fournit des sous-types typés pour les cas courants, comme `DocumentFileMetadata` (`filename`, `filepath`) et `PagedDocumentChunkMetadata` (`page_number`).
+
+Une clé de métadonnées ne doit pas entrer en conflit avec un nom de champ de modèle (par exemple, vous ne pouvez pas mettre `source_id` dans les métadonnées), car cela créerait une ambiguïté lors de la persistance du fragment.
+
+<SectionTab as="h1" sectionId="search-results">Résultats de recherche</SectionTab>
+
+Côté récupération, `SearchResultChunk` respecte le même contrat d'identité — `id`, `source_id`, `locator`, `parent_ref` et `chunk_type` — de sorte que chaque résultat correspond directement au fragment qui a été ingéré.
+
+<SectionTab as="h1" sectionId="see-also">Voir également</SectionTab>
+
+- **[Ingestion](/studio-api/search-toolkit/ingestion)** : comment les documents et les fragments sont produits.
+- **[Récupération](/studio-api/search-toolkit/retrieval)** : comment les fragments sont recherchés et retournés.
+- **[Index de recherche](/studio-api/search-toolkit/search-index)** : comment les fragments sont persistés.

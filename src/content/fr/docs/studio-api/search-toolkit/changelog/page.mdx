@@ -1,0 +1,66 @@
+---
+title: Changelog
+description: Historique des versions pour Search Toolkit.
+sidebar_position: 10
+sidebar_label: Changelog
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Changelog
+
+Toutes les modifications notables apportées à Search Toolkit sont documentées ici.
+
+<SectionTab as="h2" sectionId="0-0-9">0.0.9</SectionTab>
+
+**Modifications incompatibles**
+
+*modèle de document*
+
+Search Toolkit utilise désormais un modèle de document unifié construit autour de `Document` et `DocumentChunk`, avec une identité déterministe dérivée d’un `source_id` et d’un `locator`. Consultez la page [Modèle de document](/studio-api/search-toolkit/document-model) pour plus de détails.
+
+- Les extracteurs produisent désormais des objets `DocumentChunk` directement ; la représentation séparée de *page* a été supprimée.
+- Les identifiants `Document.id` et `DocumentChunk.id` sont désormais calculés de manière déterministe à partir de `source_id` (et de `locator` pour les fragments), ce qui rend l’indexation idempotente. Le champ `id` explicite sur `File` et `document_id` sur `DocumentChunk` ont été supprimés.
+- Ajout de `source_id`, `locator`, `parent_ref` et `chunk_type` en tant que champs de première classe, ainsi que des modèles de métadonnées typés et extensibles. Le même contrat d’identité est reproduit sur `SearchResultChunk`.
+
+*modèle d’indexation Vespa*
+
+Vespa indexe désormais un fragment par document via le nouveau mode d’indexation `DOCUMENT_PER_CHUNK`, qui devient le modèle recommandé. L’ancien modèle à document unique est obsolète.
+
+- Ajout du mode d’indexation `DOCUMENT_PER_CHUNK`, y compris les champs par défaut, les profils de classement et les chemins complets d’écriture, de suppression et de recherche.
+- Ajout d’un `IndexingMode` à la définition du schéma, avec des mécanismes d’obsolescence pour migrer les schémas existants.
+- L’API d’indexation est divisée en une base `VespaSearchIndex` et un `SingleDocumentSearchIndex` dédié ; le modèle à document unique est obsolète au profit de `DOCUMENT_PER_CHUNK`.
+- Le champ `id_field` du schéma est obsolète et n’est plus autorisé pour les index `DOCUMENT_PER_CHUNK`.
+
+*Autres*
+
+- Le module `indices` a été renommé en `search`. Mettez à jour les imports en conséquence.
+
+**Améliorations**
+
+- Ajout des implémentations `FileLoader` de stockage blob pour S3, Azure et GCS, ainsi qu’un extra `storage-s3`.
+- Ajout d’un plugin `language-detection-fasttext`.
+- Ajout des littéraux et constantes de modèle OCR.
+- Vespa : extraction d’un `VespaClient` dédié avec une meilleure gestion des erreurs.
+- Vespa : ajout d’une définition de services indépendante du backend, de la topologie v2 et d’un traducteur, avec génération automatique de topologie v2 pour les déploiements Docker à nœud unique.
+- Vespa : ajout des workflows de copie Vespa-à-Vespa et de migration index-vers-streaming.
+- Vespa : émission d’un consommateur de métriques dans `services.xml`.
+- Vespa : avertissement lorsqu’un classement de type rank2 est configuré sans rank1, et lorsque les poids de classement sont par défaut à 0.
+
+**Sécurité**
+
+- Mise à jour de `langchain-core` vers `~=1.4`.
+
+**Corrections de bugs**
+
+- Vespa : classement par similarité cosinus au lieu de distance euclidienne.
+- Vespa : correction de la récupération du compte de documents.
+- Vespa : propagation de `distribute_across_groups` dans `load_topology_file`.
+- CLI Vespa : importation différée des modèles SDK d’enregistrement d’index.
+- Traitement des réponses LLM tronquées comme réessayables et enrichissement de `LLMException` et `SummaryGenerationError` pour le journalisation structurée.
+- Extracteur OCR : utilisation des métadonnées de type MIME pour la détection du type de fichier.
+- Ajout des types MIME `text/x-file` et `text/x-script.python` au registre.
+
+<SectionTab as="h2" sectionId="0-0-8">0.0.8</SectionTab>
+
+Première version de Search Toolkit en tant qu’aperçu technique.

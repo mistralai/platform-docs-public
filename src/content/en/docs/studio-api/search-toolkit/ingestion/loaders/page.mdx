@@ -19,9 +19,9 @@ File loaders load files from various sources into `File` objects that can be pro
 | **[Azure Blob Storage Loader](#azure-blob-storage-loader)** | Azure Blob Storage |
 | **[Custom Loaders](#custom-loaders)** | Any source |
 
-<SectionTab as="h1" sectionId="filesystem-file-loader">Filesystem File Loader</SectionTab>
+<SectionTab as="h1" sectionId="filesystem-file-loader">Filesystem file loader</SectionTab>
 
-`FilesystemFileLoader` loads files from the local filesystem. It accepts a `root` parameter that restricts access — any path resolving outside the root is rejected, preventing path traversal.
+`FilesystemFileLoader` loads files from the local filesystem. It accepts a `root` parameter that restricts access. Any path resolving outside the root is rejected, preventing path traversal.
 
 **Installation**: Core library (no extra required)
 
@@ -55,16 +55,16 @@ A `FileSizeLimitExceededException` is raised when a file exceeds the limit.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `root` | `Path \| str` | `"/"` | Root directory — paths resolving outside this directory are rejected |
+| `root` | `Path \| str` | `"/"` | Root directory. Paths resolving outside this directory are rejected. |
 | `max_file_size` | `int \| None` | `None` | Maximum file size in bytes. Files exceeding this limit are rejected before loading. `None` means no limit. |
 
 **Security**:
 
 The `root` parameter prevents path traversal attacks. Any path resolving outside the root directory is rejected before attempting to open the file.
 
-<SectionTab as="h1" sectionId="aws-s3-file-loader">AWS S3 File Loader</SectionTab>
+<SectionTab as="h1" sectionId="aws-s3-file-loader">AWS S3 file loader</SectionTab>
 
-Load files from AWS S3 buckets (or S3-compatible services like MinIO, Ceph).
+Load files from AWS S3 buckets (or S3-compatible services like MinIO, Ceph). `S3FileLoader` is a convenience wrapper around `FileLoader` backed by `S3BlobStorage`.
 
 **Installation**:
 
@@ -75,27 +75,27 @@ uv add "mistralai-search-toolkit-storage-s3"
 **Example**:
 
 ```python
-from mistralai.search.toolkit.ingestion.loaders import FileLoader
-from mistralai.search.toolkit.plugins.storage.s3 import S3BlobStorage
+from mistralai.search.toolkit.plugins.storage.s3 import S3FileLoader
 
-loader = FileLoader(
-    lambda: S3BlobStorage(
-        bucket_name="my-bucket",
-        region_name="us-east-1",
-        endpoint_url="http://localhost:9000",  # optional for MinIO / other S3-compatible backends
-    )
+loader = S3FileLoader(
+    bucket_name="my-bucket",
+    region_name="us-east-1",
+    endpoint_url="http://localhost:9000",  # optional, for MinIO / other S3-compatible backends
 )
 
 file = await loader.load_file("reports/example.pdf")
 ```
 
-**Parameters** (`S3BlobStorage`):
+**Parameters** (`S3FileLoader`):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `bucket_name` | `str` | *(required)* | S3 bucket name |
-| `region_name` | `str` | `"us-east-1"` | AWS region |
+| `region_name` | `str \| None` | `None` | AWS region (falls back to the SDK/env default) |
 | `endpoint_url` | `str \| None` | `None` | Custom endpoint URL (for MinIO, Ceph, or other S3-compatible services) |
+| `aws_access_key_id` | `str \| None` | `None` | Explicit AWS access key (falls back to the credential chain) |
+| `aws_secret_access_key` | `str \| None` | `None` | Explicit AWS secret key |
+| `max_file_size` | `int \| None` | `None` | Reject files larger than this many bytes |
 
 **Authentication**:
 
@@ -104,9 +104,9 @@ Uses the default AWS credentials chain:
 - Environment variables: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
 - AWS credentials file: `~/.aws/credentials`
 
-<SectionTab as="h1" sectionId="azure-blob-storage-loader">Azure Blob Storage Loader</SectionTab>
+<SectionTab as="h1" sectionId="azure-blob-storage-loader">Azure Blob Storage loader</SectionTab>
 
-Load files from Azure Blob Storage.
+Load files from Azure Blob Storage. `AzureBlobFileLoader` is a convenience wrapper around `FileLoader` backed by `AzureBlobStorage`.
 
 **Installation**:
 
@@ -117,28 +117,26 @@ uv add "mistralai-search-toolkit-storage-azure"
 **Example**:
 
 ```python
-from mistralai.search.toolkit.ingestion.loaders import FileLoader
-from mistralai.search.toolkit.plugins.storage.azure import AzureBlobStorage
+from mistralai.search.toolkit.plugins.storage.azure import AzureBlobFileLoader
 
-loader = FileLoader(
-    lambda: AzureBlobStorage(
-        container_name="my-container",
-        account_url="https://myaccount.blob.core.windows.net",
-        use_workload_identity=True,  # or pass azure_connection_string=... for connection-string auth
-    )
+loader = AzureBlobFileLoader(
+    container_name="my-container",
+    account_url="https://myaccount.blob.core.windows.net",
+    use_workload_identity=True,  # or pass azure_connection_string=... for connection-string auth
 )
 
 file = await loader.load_file("reports/example.pdf")
 ```
 
-**Parameters** (`AzureBlobStorage`):
+**Parameters** (`AzureBlobFileLoader`):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `container_name` | `str` | *(required)* | Azure Blob Storage container name |
-| `account_url` | `str` | *(required)* | Azure storage account URL (e.g., `https://myaccount.blob.core.windows.net`) |
+| `azure_connection_string` | `str \| None` | `None` | Connection string for authentication (required unless `use_workload_identity` is `True`) |
+| `account_url` | `str \| None` | `None` | Azure storage account URL, e.g. `https://myaccount.blob.core.windows.net` (required when `use_workload_identity` is `True`) |
 | `use_workload_identity` | `bool` | `False` | Use workload identity for authentication (recommended for Azure VMs/Functions) |
-| `azure_connection_string` | `str \| None` | `None` | Connection string for authentication (alternative to workload identity) |
+| `max_file_size` | `int \| None` | `None` | Reject files larger than this many bytes |
 
 **Authentication**:
 
@@ -146,9 +144,9 @@ file = await loader.load_file("reports/example.pdf")
 - **Connection string**: Pass via `azure_connection_string` parameter or set `AZURE_STORAGE_CONNECTION_STRING` environment variable
 - **SAS token**: Time-limited access (configure via account credentials)
 
-<SectionTab as="h1" sectionId="google-cloud-storage-loader">Google Cloud Storage Loader</SectionTab>
+<SectionTab as="h1" sectionId="google-cloud-storage-loader">Google Cloud Storage loader</SectionTab>
 
-Load files from Google Cloud Storage (GCS).
+Load files from Google Cloud Storage (GCS). `GCSFileLoader` is a convenience wrapper around `FileLoader` backed by `GCSBlobStorage`.
 
 **Installation**:
 
@@ -159,40 +157,38 @@ uv add "mistralai-search-toolkit-storage-gcs"
 **Example**:
 
 ```python
-from mistralai.search.toolkit.ingestion.loaders import FileLoader
-from mistralai.search.toolkit.plugins.storage.gcs import GCSBlobStorage
+from mistralai.search.toolkit.plugins.storage.gcs import GCSFileLoader
 
-loader = FileLoader(
-    lambda: GCSBlobStorage(
-        bucket_name="my-bucket",
-        project="my-gcp-project",
-        service_account_file="/path/to/service-account.json",  # optional; falls back to ADC
-    )
+loader = GCSFileLoader(
+    bucket_name="my-bucket",
+    service_account_file="/path/to/service-account.json",  # optional; falls back to ADC
 )
 
 file = await loader.load_file("reports/example.pdf")
 ```
 
-**Parameters** (`GCSBlobStorage`):
+**Parameters** (`GCSFileLoader`):
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `bucket_name` | `str` | *(required)* | GCS bucket name |
-| `project` | `str` | *(required)* | GCP project ID |
 | `service_account_file` | `str \| None` | `None` | Path to service account JSON file. If not provided, uses Application Default Credentials (ADC) |
+| `api_root` | `str \| None` | `None` | Custom API endpoint for a local emulator (e.g. fake-gcs-server); falls back to `STORAGE_EMULATOR_HOST` |
+| `max_file_size` | `int \| None` | `None` | Reject files larger than this many bytes |
 
 **Authentication**:
 
-- **Application Default Credentials (ADC)** (recommended) — uses credentials from environment, metadata service, or gcloud CLI
+- **Application Default Credentials (ADC)** (recommended): uses credentials from environment, metadata service, or gcloud CLI
 - **Service account file**: Pass via `service_account_file` parameter or set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
-<SectionTab as="h1" sectionId="batch-loading">Batch Loading</SectionTab>
+<SectionTab as="h1" sectionId="batch-loading">Batch loading</SectionTab>
 
 Load multiple files with concurrency control:
 
 ```python
 import asyncio
 from mistralai.search.toolkit.ingestion.loaders import FileLoader
+from mistralai.search.toolkit.plugins.storage.s3 import S3FileLoader
 
 async def load_files_batch(
     loader: FileLoader,
@@ -217,7 +213,7 @@ async def load_files_batch(
     return [f for f in results if f is not None]
 
 # Usage
-loader = FileLoader(lambda: S3BlobStorage(bucket_name="my-bucket"))
+loader = S3FileLoader(bucket_name="my-bucket")
 files = await load_files_batch(
     loader,
     ["doc1.pdf", "doc2.pdf", "doc3.pdf"],
@@ -225,7 +221,11 @@ files = await load_files_batch(
 )
 ```
 
-<SectionTab as="h1" sectionId="custom-loaders">Custom Loaders</SectionTab>
+:::info
+**Advanced**: each cloud loader wraps a generic `FileLoader` over an `ObjectStorage` backend. For full control (custom storage settings, a backend not covered by a wrapper), construct it directly: `FileLoader(lambda: S3BlobStorage(...))`.
+:::
+
+<SectionTab as="h1" sectionId="custom-loaders">Custom loaders</SectionTab>
 
 Implement the `FileLoader` protocol for custom sources not covered above:
 

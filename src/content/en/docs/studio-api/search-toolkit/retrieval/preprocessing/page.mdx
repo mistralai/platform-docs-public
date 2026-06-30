@@ -169,16 +169,16 @@ result = await query_engine.search(query="...", top_k=10)
 
 <SectionTab as="h1" sectionId="custom-preprocessors">Custom query preprocessors</SectionTab>
 
-Implement the `QueryPreprocessor` protocol:
+Query preprocessors are plain classes. No base class is required. `QueryEngine` accepts any object exposing `rewrite(query, context=RetrievalContext())` for its `query_rewriter` (or `extend(...)` for `query_extension`):
 
 ```python
-from mistralai.search.toolkit.retrieval.pre_processors import QueryPreprocessor
+from mistralai.search.toolkit.context import RetrievalContext
 
-class DomainSpecificRewriter(QueryPreprocessor):
+class DomainSpecificRewriter:
     """Rewrite queries for a specific domain."""
 
-    async def preprocess(self, query: str) -> str:
-        """Preprocess the query."""
+    async def rewrite(self, query: str, context: RetrievalContext = RetrievalContext()) -> str:
+        """Rewrite the query."""
         # 1. Normalize
         normalized = query.lower().strip()
 
@@ -223,8 +223,8 @@ query_engine = QueryEngine(
 
 ```python
 # Optional preprocessing based on query length
-class OptionalRewriter(QueryPreprocessor):
-    async def preprocess(self, query: str) -> str:
+class OptionalRewriter:
+    async def rewrite(self, query: str, context: RetrievalContext = RetrievalContext()) -> str:
         # Only rewrite short queries
         if len(query.split()) < 3:
             # Expand short query
@@ -239,7 +239,7 @@ query_engine = QueryEngine(
 
 <SectionTab as="h1" sectionId="see-also">See also</SectionTab>
 
-- [Retrieval overview](../retrieval) — Retrieval pipeline architecture
-- [Retrievers](retrievers) — Vector and keyword search
-- [Rerankers](rerankers) — Refine results after retrieval
-- [Semantic cache](semantic-cache) — Cache preprocessed queries
+- [Retrieval overview](../retrieval): retrieval pipeline architecture
+- [Retrievers](retrievers): vector and keyword search
+- [Rerankers](rerankers): refine results after retrieval
+- [Semantic cache](semantic-cache): cache preprocessed queries

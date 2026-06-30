@@ -6,6 +6,10 @@
  *     a synthetic object with `content` and `fileName` fields. During that
  *     expansion, the original `File.description` is not rendered at the root
  *     property level. Re-inject it on each generated `file` property.
+ *   - Admin endpoints are served from console.mistral.ai, not api.mistral.ai.
+ *     docs-md ignores per-path/operation `servers` overrides when generating
+ *     code samples and always uses the document-level host, so rewrite the host
+ *     in generated `/api/admin/*` URLs.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -120,28 +124,43 @@ function injectFileDescription(content: string): { content: string; count: numbe
   return { content: updated, count };
 }
 
+const ADMIN_API_HOST = 'https://api.mistral.ai/api/admin';
+const ADMIN_CONSOLE_HOST = 'https://console.mistral.ai/api/admin';
+
+function rewriteAdminServerHost(content: string): { content: string; count: number } {
+  const parts = content.split(ADMIN_API_HOST);
+  const count = parts.length - 1;
+  if (count === 0) return { content, count };
+  return { content: parts.join(ADMIN_CONSOLE_HOST), count };
+}
+
 async function main() {
   const files = await glob(PAGE_GLOB);
   let total = 0;
+  let hostTotal = 0;
   let changed = 0;
 
   for (const file of files) {
-    const content = readFileSync(file, 'utf8');
+    const original = readFileSync(file, 'utf8');
     // NOTE: isolateResponseTabbedSectionTitles is intentionally disabled. It
     // rewrote <SectionTitle slot="title"> -> <OperationResponsesSectionTitle
     // slot="responses-title">, which (a) is ignored by ResponseTabbedSection
     // (it only reads slot "tab"/"content") and (b) stripped the required title
     // child from the wrapping <Section>, crashing at runtime with
     // "Section must have exactly one title child, not 0".
-    const result = injectFileDescription(content);
-    if (result.content !== content) {
-      writeFileSync(file, result.content);
+    const fileResult = injectFileDescription(original);
+    const hostResult = rewriteAdminServerHost(fileResult.content);
+    if (hostResult.content !== original) {
+      writeFileSync(file, hostResult.content);
       changed += 1;
-      total += result.count;
+      total += fileResult.count;
+      hostTotal += hostResult.count;
     }
   }
 
-  console.log(`Post-processed MDX: injected ${total} file description(s) across ${changed} file(s)`);
+  console.log(
+    `Post-processed MDX: injected ${total} file description(s), rewrote ${hostTotal} admin host(s) across ${changed} file(s)`
+  );
 }
 
 main().catch(error => {

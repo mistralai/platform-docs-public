@@ -23,28 +23,31 @@ Remplissez le fichier généré :
 ```python
 from mistralai.search.toolkit.plugins.vespa.app.schemas.app import (
     FieldDefinition,
+    IndexingMode,
     SearchMode,
 )
-from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_default_schema, set_app_name
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
 
 
 class InitialSchema(VespaMigration):
     def migrate(self) -> None:
         set_app_name("mynewproject")
 
-        create_default_schema(
+        create_schema(
             name="articles",
             mode=SearchMode.INDEX,
             embedding_dimensions=1024,
-            schema_version=1,
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
             default_query_profile_name="hybrid-profile",
-            additional_fields=[
+            # The standard chunk fields (content, embedding, identity, metadata) are
+            # added automatically. `fields` only declares your extra fields.
+            fields=[
                 FieldDefinition.TextField(name="title"),
             ],
         )
 ```
 
-`create_default_schema()` inclut par défaut tous les champs requis pour VespaSearchIndex. Utilisez `additional_fields` pour ajouter des champs personnalisés à votre cas d’usage. Pour un contrôle total sur l’ensemble des champs, utilisez `create_schema()` avec des champs explicites.
+Avec `IndexingMode.DOCUMENT_PER_CHUNK`, `create_schema()` injecte automatiquement les champs standard de fragment (contenu, embedding, identité, métadonnées) ; utilisez `fields` pour en ajouter. (L’ancienne fonction `create_default_schema()` est obsolète et sera supprimée avant la version 1.0.0.)
 
 :::info
 **Restrictions sur le nom de l’application** : le nom passé à `set_app_name()` ne doit contenir que des lettres minuscules (`a-z`). Les chiffres, les soulignés, les trait d’union et les autres caractères spéciaux ne sont pas autorisés.

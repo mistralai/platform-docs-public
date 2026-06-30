@@ -9,7 +9,7 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Semantic cache
 
-The semantic cache matches queries by meaning rather than exact string matching. When a query is semantically similar to a previously cached one, the cache returns stored results — skipping embedding, retrieval, preprocessing, and reranking.
+The semantic cache matches queries by meaning rather than exact string matching. When a query is semantically similar to a previously cached one, the cache returns stored results and skips embedding, retrieval, preprocessing, and reranking.
 
 <SectionTab as="h1" sectionId="basic-setup">Basic setup</SectionTab>
 
@@ -46,7 +46,7 @@ cached_engine = CachedQueryEngine(
     embedder=embedder,  # Used to embed incoming queries
 )
 
-# 4. Use normally — caching is transparent
+# 4. Use normally. Caching is transparent.
 result = await cached_engine.search("What is RAG?", top_k=10)
 # First call: embedding + retrieval → cached
 # Second call with similar query: cache hit → instant
@@ -95,9 +95,9 @@ cache = SemanticCache(
 
 **Eviction policies**:
 
-- **LRU** (Least Recently Used) — Evict least recently accessed entries
-- **LFU** (Least Frequently Used) — Evict least frequently accessed entries
-- **FIFO** (First In First Out) — Evict oldest entries
+- **LRU** (Least Recently Used): evict least recently accessed entries
+- **LFU** (Least Frequently Used): evict least frequently accessed entries
+- **FIFO** (First In First Out): evict oldest entries
 
 ```python
 backend = InMemoryCacheBackend(
@@ -193,7 +193,7 @@ result = await cached_engine.search(query="...", top_k=10)
 snapshot = metrics.snapshot()
 if snapshot.errors > 0:
     print(f"Cache errors: {snapshot.errors}")
-    print("Check logs for details — retrieval pipeline is unaffected")
+    print("Check logs for details. Retrieval pipeline is unaffected.")
 ```
 
 <SectionTab as="h1" sectionId="cache-invalidation">Cache management</SectionTab>
@@ -227,18 +227,37 @@ backend = InMemoryCacheBackend(
 # Expired entries are removed on next access or eviction
 ```
 
-**Manual management** (for custom backends):
+**Custom backends** implement the `CacheBackend` ABC to plug in any storage (Redis, pgvector, etc.):
 
 ```python
-from mistralai.search.toolkit.retrieval.cache import CacheBackend
+from mistralai.search.toolkit.retrieval.cache import CacheBackend, CacheEntry
 
 class CustomCacheBackend(CacheBackend):
-    async def invalidate_old_entries(self, before_timestamp: float):
-        """Remove entries older than timestamp."""
+    @property
+    def max_entries(self) -> int:
+        return 1000
+
+    async def search(self, query_embedding, namespace, n_results):
+        # Vector similarity search in your store
         ...
 
-    async def get_cache_size(self) -> int:
-        """Return current cache size in entries."""
+    async def store(self, entry: CacheEntry) -> None:
+        # Store entry, evict if needed
+        ...
+
+    async def delete(self, entry_id: str):
+        ...
+
+    async def get_all(self, namespace=None):
+        ...
+
+    async def count(self, namespace=None) -> int:
+        ...
+
+    async def clear(self):
+        ...
+
+    async def update_hit(self, entry: CacheEntry):
         ...
 ```
 
@@ -249,7 +268,7 @@ class CustomCacheBackend(CacheBackend):
 ```python
 # Track performance to validate cache effectiveness
 if metrics.snapshot().hit_rate < 0.2:
-    # Cache not being utilized effectively
+    # Cache isn't being used effectively
     # Consider:
     # - Lowering similarity_threshold
     # - Increasing max_entries
@@ -302,7 +321,7 @@ similarity_threshold=0.90
 
 <SectionTab as="h1" sectionId="see-also">See also</SectionTab>
 
-- [Retrieval overview](../retrieval) — Retrieval pipeline architecture
-- [Retrievers](retrievers) — Vector search
-- [Rerankers](rerankers) — Refine results after retrieval
-- [Query preprocessing](preprocessing) — Improve queries before retrieval
+- [Retrieval overview](../retrieval): retrieval pipeline architecture
+- [Retrievers](retrievers): vector search
+- [Rerankers](rerankers): refine results after retrieval
+- [Query preprocessing](preprocessing): improve queries before retrieval

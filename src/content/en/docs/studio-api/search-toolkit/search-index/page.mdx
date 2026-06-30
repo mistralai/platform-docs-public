@@ -15,22 +15,22 @@ Storage backends persist processed chunks and enable efficient search across you
 
 | Vector Store | Purpose |
 |--------------|---------|
-| **[Vespa Search Index](#vespa-search-index)** | Scalable vector database with schema management and deployment |
-| **[Custom Vector Stores](#custom-vector-stores)** | Custom storage backend |
+| **[Vespa search index](#vespa-search-index)** | Vector database with schema management and deployment |
+| **[Custom vector stores](#custom-vector-stores)** | Custom storage backend |
 
-<SectionTab as="h1" sectionId="vespa-search-index">Vespa Search Index</SectionTab>
+<SectionTab as="h1" sectionId="vespa-search-index">Vespa search index</SectionTab>
 
-Use Vespa as a vector store in Search Toolkit ingestion and retrieval pipelines. Vespa provides scalable vector search with schema management, ranking, and production-ready clustering.
+Use Vespa as a vector store in Search Toolkit ingestion and retrieval pipelines. Vespa provides vector search with schema management, ranking, clustering, and replication.
 
 :::info
-**Requirement**: You must have a **running Vespa application** before connecting with this search index. See **[Manage and deploy Vespa](vespa)** to define schemas and deploy your application first.
+Requirement: You must have a running Vespa application before connecting with this search index. See [Manage and deploy Vespa](vespa) to define schemas and deploy your application first.
 :::
 
 **Features**:
-- Scalable vector search natively optimized with HNSW indexing
+- Vector search with HNSW indexing
 - BM25 text search for hybrid ranking
 - Multi-phase ranking with custom scoring functions
-- Production-ready with clustering and replication support
+- Clustering and replication support
 
 **Installation**:
 ```bash
@@ -41,15 +41,13 @@ uv add "mistralai-search-toolkit[vespa]"
 
 Before using Vespa as a search index:
 
-1. **Define your application** — Create schemas with fields and ranking profiles using Python migrations
-2. **Deploy Vespa** — Run `mistral-vespa migrate` to deploy your application
-3. **Get the endpoint** — Note the Vespa query endpoint (e.g., `http://localhost:8080`)
+1. **Define your application**: create schemas with fields and ranking profiles using Python migrations.
+2. **Deploy Vespa**: run `mistral-vespa migrate` to deploy your application.
+3. **Get the endpoint**: note the Vespa query endpoint, such as `http://localhost:8080`.
 
-See **[Manage and deploy Vespa](vespa)** for complete setup instructions.
+For complete setup instructions, see [Manage and deploy Vespa](vespa).
 
-### Quick start
-
-Configure Vespa as a vector store:
+### Configure Vespa as a vector store
 
 ```python
 from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
@@ -93,27 +91,27 @@ query_engine = QueryEngine(
 result = await query_engine.search(query="What is RAG?", top_k=5)
 ```
 
-For comprehensive setup, schema design, and operations, see **[Manage and deploy Vespa](vespa)**.
+For setup instructions, schema design, and operations, see [Manage and deploy Vespa](vespa).
 
 <SectionTab as="h1" sectionId="custom-vector-stores">Custom vector stores</SectionTab>
 
-Implement custom storage backends by implementing the `VectorStoreClient` protocol:
+Implement custom storage backends by subclassing `VectorStoreIndex` (or `KeywordStoreIndex` for keyword search) and implementing its three methods:
 
 ```python
-from mistralai.search.toolkit.indices import VectorStoreClient
+from mistralai.search.toolkit.context import IngestContext, RetrievalContext
+from mistralai.search.toolkit.search import VectorStoreIndex, VectorSearchQuery, SearchResult
 from mistralai.search.toolkit.document import Document
-from mistralai.search.toolkit.indices import VectorSearchQuery, SearchResult
 
-class MyVectorStore(VectorStoreClient):
-    async def create_index(self) -> bool:
+class MyVectorStore(VectorStoreIndex):
+    async def index_document(self, document: Document, context: IngestContext = IngestContext()) -> None:
+        # Store the document and its chunks
         pass
 
-    async def upsert(self, document: Document) -> bool:
+    async def search(self, query: VectorSearchQuery, context: RetrievalContext = RetrievalContext()) -> list[SearchResult]:
+        # Search and return results
         pass
 
-    async def search(self, query: VectorSearchQuery) -> list[SearchResult]:
-        pass
-
-    async def delete_document(self, doc_id: str) -> None:
+    async def delete_document(self, doc_id: str, context: IngestContext = IngestContext()) -> None:
+        # Delete a document by ID
         pass
 ```

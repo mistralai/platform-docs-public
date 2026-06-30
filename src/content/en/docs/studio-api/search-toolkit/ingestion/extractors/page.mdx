@@ -7,9 +7,9 @@ sidebar_label: Document extractors
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-Document extractors extract the content from a `File` into a `Document` object that can be later processed. Different file types require different extraction logic — PDFs can be extracted through OCR, while Excel files require tabular extraction.
+Document extractors extract content from a `File` into a `Document` object that can be processed later. Different file types require different extraction logic. PDFs can be extracted through OCR, while Excel files require tabular extraction.
 
-All built-in extractors set the document ID to `file.id`.
+All built-in extractors stamp `file.source_id` onto the produced `Document` and its chunks, and the document ID is computed deterministically from it. See the [Document model](/studio-api/search-toolkit/document-model) for details.
 
 <SectionTab as="h2" sectionId="available-document-extractors">Available document extractors</SectionTab>
 
@@ -364,7 +364,7 @@ Use `iter_csv_pages(blob, options=...)` to iterate over CSV strings without buil
 
 <SectionTab as="h1" sectionId="legacy-office-extractor">Legacy Office Extractor</SectionTab>
 
-Extract legacy Office formats (`.doc`, `.ppt`, `.hwp`, `.hwpx`) by converting them to PDF with PyMuPDF Pro, then running Mistral OCR. Does not handle `.xls` — use `SpreadsheetExtractor` for that.
+Extract legacy Office formats (`.doc`, `.ppt`, `.hwp`, `.hwpx`) by converting them to PDF with PyMuPDF Pro, then running Mistral OCR. This extractor doesn't handle `.xls`. Use `SpreadsheetExtractor` for that.
 
 **Installation**:
 
@@ -405,24 +405,44 @@ Implement the `DocumentExtractor` protocol:
 
 ```python
 import base64
+from mistralai.search.toolkit.context import IngestContext
 from mistralai.search.toolkit.ingestion.extractors import DocumentExtractor
-from mistralai.search.toolkit.document import Document, Page
+from mistralai.search.toolkit.document import (
+    Document,
+    DocumentChunk,
+    DocumentFileMetadata,
+    compute_char_locator,
+    compute_id,
+)
 from mistralai.search.toolkit.ingestion import File
 
 class Base64FileExtractor(DocumentExtractor):
     """Extract content from base64-encoded text files."""
 
-    async def extract(self, file: File, **kwargs) -> Document:
+    async def extract(self, file: File, context: IngestContext = IngestContext()) -> Document:
         decoded_content = base64.b64decode(file.raw).decode("utf-8")
+        source_id = file.path or file.name
 
         return Document(
-            id=file.id,
-            extractor_type="text",
+            source_id=source_id,
             content=decoded_content,
-            pages=[Page(page_number=1, markdown=decoded_content, ref_to_images={})],
-            metadata={"encoding": "base64"},
-            filename=file.name,
-            filepath=file.path,
+            chunks=[
+                DocumentChunk(
+                    source_id=source_id,
+                    locator=compute_char_locator(0, len(decoded_content)),
+                    start_offset=0,
+                    end_offset=len(decoded_content),
+                    parent_ref=compute_id(source_id),
+                    content=decoded_content,
+                )
+            ],
+            # File-backed documents use DocumentFileMetadata; extra keys (e.g. "encoding") are allowed.
+            metadata=DocumentFileMetadata(
+                extractor_type="text",
+                filename=file.name,
+                filepath=file.path,
+                encoding="base64",
+            ),
         )
 
 extractor = Base64FileExtractor()

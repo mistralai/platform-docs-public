@@ -10,11 +10,17 @@ import { useReponseActiveTab } from '../../response-example';
 
 export const TabbedSectionWrapper = ({
   children,
+  'data-selected-language': dataSelectedLanguage,
 }: {
   children: React.ReactNode;
+  'data-selected-language'?: string;
 }) => {
   return (
-    <div data-type="tabbed-section" className={$multiCodeBlockWrapper()}>
+    <div
+      data-type="tabbed-section"
+      className={$multiCodeBlockWrapper()}
+      {...(dataSelectedLanguage && { 'data-selected-language': dataSelectedLanguage })}
+    >
       <div data-slot="tabs" className="flex flex-col gap-0">
         {children}
       </div>

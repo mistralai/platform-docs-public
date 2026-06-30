@@ -3,6 +3,7 @@ import voxtralTts2603 from './voxtral-tts-26-03';
 import mistralMedium352604 from './mistral-medium-3-5-26-04';
 import mistralSmall402603 from './mistral-small-4-0-26-03';
 import leanstral26032603 from './leanstral-26-03';
+import leanstral152606 from './leanstral-1-5-26-06';
 import mistralLarge32512 from './mistral-large-3-25-12';
 import mistralMedium312508 from './mistral-medium-3-1-25-08';
 import mistralSmall322506 from './mistral-small-3-2-25-06';
@@ -64,6 +65,7 @@ export const MODELS = defineModels([
   mistralMedium352604,
   voxtralTts2603,
   mistralSmall402603,
+  leanstral152606,
   leanstral26032603,
   mistralLarge32512,
   mistralMedium312508,

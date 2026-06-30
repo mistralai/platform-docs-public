@@ -1,25 +1,25 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'Leanstral',
+  name: 'Leanstral 1.5',
   describe: (l) => ({
-    description: l.text(`Our first open-source code agent designed for Lean 4, built for formal proof engineering in realistic repositories. 119B parameters with 6.5B active.`, { context: 'Full description of an AI model' }),
-    shortDescription: l.text(`Open-source code agent for Lean 4 formal proof engineering.`, { context: 'Short description of an AI model' }),
+    description: l.text(`An updated Lean 4 formal proof engineering model optimised for automated theorem proving and autoformalization. 119B total parameters, 6.5B active.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`Updated code agent for Lean 4 formal proof engineering and automated theorem proving.`, { context: 'Short description of an AI model' }),
   }),
-  slug: 'leanstral-26-03',
-  releaseDate: '2026-03-16',
-  version: '26.03',
+  slug: 'leanstral-1-5-26-06',
+  releaseDate: '2026-06-30',
+  version: '1.5',
   frontier: true,
   class: 'Specialist',
   type: 'Labs',
   legalButton: null,
-  status: 'Retired',
+  status: 'Active',
   avatar: { icon: 'leanstral', backgroundColor: 'teal' },
   weights: [
     {
       name: 'Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
-      url: 'https://huggingface.co/mistralai/Leanstral-2603',
+      url: null,
       parameters: '119',
       minGpuRam: {
         bf16: '238',
@@ -36,7 +36,7 @@ export default {
   contextLength: '256k',
   ratings: {
     speed: 4.0,
-    performance: 3.5,
+    performance: 4.0,
     input: 4.0,
     output: 3.5,
   },
@@ -50,14 +50,13 @@ export default {
       { type: 'range', price: 0.0, denominator: '/M Tokens' },
     ],
   },
-  identifiers: { apiNames: ['labs-leanstral-2603'] },
+  identifiers: { apiNames: ['labs-leanstral-1-5'] },
   capabilities: {
     input: ['text', 'image'],
     output: ['text'],
     features: ['chat-completions', 'function-calling', 'agents-conversations', 'structured-outputs'],
-
   },
-  metadata: {deprecationDate: '2026-05-22', retirementDate: '2026-06-30', replacement: 'Leanstral 1.5'},
+  metadata: { retirementDate: '2026-09-30' },
   playground: 'https://console.mistral.ai/build/playground',
-  legacy: true,
+  legacy: false,
 } as const satisfies StaticModel;

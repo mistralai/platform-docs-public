@@ -1,0 +1,98 @@
+---
+id: skills
+title: Skills
+slug: skills
+sidebar_position: 8
+---
+
+# Skills
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Skills are reusable, versioned capabilities you store once and reuse across agents and applications. A Skill packages a set of instructions (and optional assets) that teach a model how to perform a specific task — for example, reviewing code, drafting release notes, or triaging support tickets. Skills follow the [Agent Skills](https://agentskills.io/specification) format: a `SKILL.md`-style body with YAML frontmatter plus an optional bundle of assets.
+
+Skills live in the AI Registry and are managed through the `/v2/skills` API. Every update creates a new immutable **version**, so you can iterate safely and roll back or pin a specific version at any time.
+
+:::note
+The Skills API is versioned under `/v2`. All requests require an `Authorization: Bearer $MISTRAL_API_KEY` header. See the [API reference](/api/endpoint/beta/skills) for the full schema of every endpoint.
+:::
+
+<SectionTab as="h1" sectionId="creating-a-skill">Creating a Skill</SectionTab>
+
+Create a Skill by providing a `name` and a `definition`. The `definition.body` holds the instructions; `definition.description` is a short summary shown when the Skill is listed.
+
+```bash
+curl https://api.mistral.ai/v2/skills \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "code-review",
+    "definition": {
+      "description": "Reviews code changes for quality, style, and potential bugs.",
+      "body": "---\nname: code-review\ndescription: Reviews code changes for quality, style, and potential bugs.\n---\n\n# Code Review\n\nAnalyze the provided diff and report issues grouped by severity, then suggest concrete improvements."
+    },
+    "notes": "Initial version."
+  }'
+```
+
+The response contains the Skill `id`, its current `version` (starting at `1`), and `latestVersion`. Store the `id` to reference the Skill later.
+
+<SectionTab as="h1" sectionId="listing-skills">Listing and fetching Skills</SectionTab>
+
+List the Skills you have access to. Results are paginated with `pageSize` and `pageToken`, and you can narrow the returned payload with `fields` or resolve a named `alias`.
+
+```bash
+curl "https://api.mistral.ai/v2/skills?pageSize=20" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+Fetch a single Skill by `id`:
+
+```bash
+curl https://api.mistral.ai/v2/skills/{skill_id} \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+<SectionTab as="h1" sectionId="versioning">Versioning a Skill</SectionTab>
+
+Skills are immutable per version. To change a Skill's instructions, publish a new version — the previous versions remain available.
+
+```bash
+curl https://api.mistral.ai/v2/skills/{skill_id}/versions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "definition": {
+      "description": "Reviews code changes for quality, style, and potential bugs.",
+      "body": "---\nname: code-review\n---\n\n# Code Review\n\nAnalyze the provided diff, flag security-sensitive changes first, then report remaining issues grouped by severity."
+    },
+    "notes": "Prioritize security-sensitive changes."
+  }'
+```
+
+List every version, or fetch a specific one:
+
+```bash
+curl https://api.mistral.ai/v2/skills/{skill_id}/versions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+
+curl https://api.mistral.ai/v2/skills/{skill_id}/versions/{version} \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+Use **aliases** (for example `production`) to point a stable name at a chosen version, so consumers can pin to `production` while you promote new versions behind the scenes.
+
+<SectionTab as="h1" sectionId="sharing">Sharing Skills</SectionTab>
+
+Each Skill has a `sharingScope` that controls who can use it — for example private to you or shared with your organization. Set it on creation or update it later with a `PATCH` to `/v2/skills/{skill_id}`, so teammates can reuse the same Skill without redefining it.
+
+<SectionTab as="h1" sectionId="deleting">Deleting a Skill</SectionTab>
+
+```bash
+curl -X DELETE https://api.mistral.ai/v2/skills/{skill_id} \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+:::tip
+Pair Skills with [Prompts](/studio-api/prompts) for reusable prompt templates, and with [Agents](/studio-api/agents/introduction) to give your agents a consistent, versioned set of capabilities.
+:::

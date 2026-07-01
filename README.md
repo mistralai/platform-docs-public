@@ -30,7 +30,7 @@ Ensure that you commit any changes to submodules to keep the repository consiste
 
 ## Project Setup
 
-You will need to install `pnpm` and `node` first. For example, if you are using Mac, You can install [Homebrew](https://brew.sh/) and then install `pnpm` and `node`:
+You will need to install `pnpm` **>= 9.8.0** and `node` **>= 20** first. For example, if you are using Mac, You can install [Homebrew](https://brew.sh/) and then install `pnpm` and `node`:
 
 ```
 brew install pnpm

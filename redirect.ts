@@ -35,6 +35,7 @@ const rawRedirects: RedirectRule[] = [
   { source: "/models/devstral-small-1-1-25-07", destination: "/models/model-cards/devstral-small-1-1-25-07", permanent: true },
   { source: "/models/devstral-small-2-25-12", destination: "/models/model-cards/devstral-small-2-25-12", permanent: true },
   { source: "/models/leanstral-26-03", destination: "/models/model-cards/leanstral-26-03", permanent: true },
+  { source: "/models/model-cards/leanstral-1-5-26-06", destination: "/models/model-cards/leanstral-1-5", permanent: true },
   { source: "/models/magistral-medium-1-0-25-06", destination: "/models/model-cards/magistral-medium-1-0-25-06", permanent: true },
   { source: "/models/magistral-medium-1-1-25-07", destination: "/models/model-cards/magistral-medium-1-1-25-07", permanent: true },
   { source: "/models/magistral-medium-1-2-25-09", destination: "/models/model-cards/magistral-medium-1-2-25-09", permanent: true },

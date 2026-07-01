@@ -459,8 +459,6 @@ declare module "@lingo.dev/react" {
     "Open Vibe": { context: "Call to open Vibe" };
     "Open Vibe Work, run a multi-step task end-to-end, and review the result.": { context: "Quickstart description about running a first Vibe Work task" };
     "Open-source code agent for Lean 4 formal proof engineering.": { context: "Short description of an AI model" };
-    "An updated Lean 4 formal proof engineering model optimised for automated theorem proving and autoformalization. 119B total parameters, 6.5B active.": { context: "Full description of an AI model" };
-    "Updated code agent for Lean 4 formal proof engineering and automated theorem proving.": { context: "Short description of an AI model" };
     "Opt-out": { context: "Keyword tag for the Data Privacy Controls feature" };
     "Organization setup, security, user management, and billing.": { context: "Subtitle for admin documentation" };
     "OTHER": { context: "Changelog entry badge for miscellaneous changes" };

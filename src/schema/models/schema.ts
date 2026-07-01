@@ -197,7 +197,7 @@ export const isMinGpuRam = (value: unknown): value is MinGpuRam => {
 };
 export interface ModelWeight {
   name: string;
-  url: string | null;
+  url: string;
   license?: string;
   licenseUrl: string;
   parameters: string;

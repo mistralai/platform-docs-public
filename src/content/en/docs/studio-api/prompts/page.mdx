@@ -1,0 +1,107 @@
+---
+id: prompts
+title: Prompts
+slug: prompts
+sidebar_position: 9
+---
+
+# Prompts
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+Prompts are reusable, versioned prompt templates stored in the AI Registry. Instead of hard-coding prompt strings across your codebase, you define a template once — with typed `{{variables}}` — and reference it by `id` or `alias`. Every update creates a new immutable **version**, so you can experiment, compare, and roll back without breaking callers.
+
+Prompts are managed through the `/v2/prompts` API.
+
+:::note
+The Prompts API is versioned under `/v2`. All requests require an `Authorization: Bearer $MISTRAL_API_KEY` header. See the [API reference](/api/endpoint/beta/prompts) for the full schema of every endpoint.
+:::
+
+<SectionTab as="h1" sectionId="creating-a-prompt">Creating a Prompt</SectionTab>
+
+Create a Prompt by providing a `name` and a `definition`. The `definition.content` holds the template; reference variables with `{{variable_name}}` and declare them in `definition.variables`.
+
+```bash
+curl https://api.mistral.ai/v2/prompts \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "text-summarizer",
+    "title": "Text Summarizer",
+    "description": "Summarizes a block of text into a short paragraph.",
+    "definition": {
+      "content": "Summarize the following text in {{sentence_count}} sentences:\n\n{{text}}",
+      "variables": [
+        { "name": "text" },
+        { "name": "sentence_count" }
+      ]
+    },
+    "notes": "Initial version."
+  }'
+```
+
+The response contains the Prompt `id`, its current `version` (starting at `1`), and `latestVersion`.
+
+<SectionTab as="h1" sectionId="listing-prompts">Listing and fetching Prompts</SectionTab>
+
+List the Prompts you have access to (paginated with `pageSize` and `pageToken`):
+
+```bash
+curl "https://api.mistral.ai/v2/prompts?pageSize=20" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+Fetch a single Prompt by `id`:
+
+```bash
+curl https://api.mistral.ai/v2/prompts/{prompt_id} \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+<SectionTab as="h1" sectionId="versioning">Versioning a Prompt</SectionTab>
+
+To change a template, publish a new version — earlier versions stay available so in-flight callers are unaffected.
+
+```bash
+curl https://api.mistral.ai/v2/prompts/{prompt_id}/versions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "definition": {
+      "content": "Summarize the following text for a {{audience}} audience in {{sentence_count}} sentences:\n\n{{text}}",
+      "variables": [
+        { "name": "text" },
+        { "name": "sentence_count" },
+        { "name": "audience" }
+      ]
+    },
+    "notes": "Add an audience variable."
+  }'
+```
+
+List every version, or fetch a specific one:
+
+```bash
+curl https://api.mistral.ai/v2/prompts/{prompt_id}/versions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+
+curl https://api.mistral.ai/v2/prompts/{prompt_id}/versions/{version} \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+Use **aliases** to keep a stable reference (for example `production`) pointing at the version you trust, and promote new versions when they're ready.
+
+<SectionTab as="h1" sectionId="sharing">Sharing Prompts</SectionTab>
+
+Each Prompt has a `sharingScope` controlling who can use it. Set it on creation or update it later with a `PATCH` to `/v2/prompts/{prompt_id}` to share a template across your organization.
+
+<SectionTab as="h1" sectionId="deleting">Deleting a Prompt</SectionTab>
+
+```bash
+curl -X DELETE https://api.mistral.ai/v2/prompts/{prompt_id} \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+:::tip
+Combine Prompts with [Skills](/studio-api/skills) for reusable capabilities, and reference them from your [Agents](/studio-api/agents/introduction) to standardize how your application talks to models.
+:::

@@ -90,11 +90,11 @@ export default {
   codeSamples: [
     {
       language: 'typescript',
-      sdkTarballPath: './sdks/client-ts-1.10.0.tar.gz',
+      sdkTarballPath: './sdks/client-ts-2.4.0.tar.gz',
     },
     {
       language: 'python',
-      sdkTarballPath: './sdks/client-python-2.0.0.tar.gz',
+      sdkTarballPath: './sdks/client-python-2.5.1.tar.gz',
     },
     {
       language: 'curl',

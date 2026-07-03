@@ -19,7 +19,7 @@ export default {
       name: 'Weights',
       license: 'Apache 2.0',
       licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
-      url: null,
+      url: 'https://huggingface.co/mistralai/Leanstral-1.5-119B-A6B',
       parameters: '119',
       minGpuRam: {
         bf16: '238',
@@ -31,7 +31,7 @@ export default {
       contextSize: '256k',
     },
   ],
-  bloglink: null,
+  bloglink: 'https://mistral.ai/news/leanstral-1-5/',
   paperlink: null,
   contextLength: '256k',
   ratings: {

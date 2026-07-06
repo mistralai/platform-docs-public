@@ -87,19 +87,6 @@ export const flattenSidebar = (
     if (betaGroup.children && betaGroup.children.length > 0) result.push(betaGroup);
     if (deprecatedGroup.children && deprecatedGroup.children.length > 0) result.push(deprecatedGroup);
 
-    const allItems: ApiSidebarItem[] = [];
-
-    const collectItems = (items: ApiSidebarItem[]) => {
-        for (const item of items) {
-           allItems.push(item);
-           if (item.children && item.children.length > 0) {
-               collectItems(item.children as ApiSidebarItem[]);
-           }
-        }
-    }
-    
-    // We only collect pagination sequentially
-    // But since the sidebar might nest multiple levels now, flatten carefully for pagination
     const flattenForPagination = (items: ApiSidebarItem[]) => {
         const flat: ApiSidebarItem[] = [];
         const walk = (nodes: ApiSidebarItem[]) => {

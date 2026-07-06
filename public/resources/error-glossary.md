@@ -10,18 +10,18 @@ This page lists the HTTP status codes returned by the Mistral API, their meaning
 <SectionTab as="h2" sectionId="client-errors">Client errors (4xx)</SectionTab>
 
 <Faq>
-  <FaqItem question="400 — Bad request">
+  <FaqItem question="400: Bad request">
     The request body is malformed or missing required fields.
 
     **Common causes:**
     - Invalid JSON syntax
     - Missing the `model` or `messages` field
-    - Unsupported parameter value (e.g., `temperature` outside 0–1 range)
+    - Unsupported parameter value (e.g., `temperature` outside 0 to 1 range)
 
     **Resolution:** Check your request body against the [API reference](/api). Validate JSON before sending.
   </FaqItem>
 
-  <FaqItem question="401 — Unauthorized">
+  <FaqItem question="401: Unauthorized">
     The API key is missing, invalid, or expired.
 
     **Common causes:**
@@ -32,7 +32,7 @@ This page lists the HTTP status codes returned by the Mistral API, their meaning
     **Resolution:** Verify your API key in <AppLink href="https://console.mistral.ai/api-keys" app="studio">API keys</AppLink>. Ensure the header format is `Authorization: Bearer YOUR_API_KEY`.
   </FaqItem>
 
-  <FaqItem question="403 — Forbidden">
+  <FaqItem question="403: Forbidden">
     Your account does not have permission to access the requested resource.
 
     **Common causes:**
@@ -43,7 +43,7 @@ This page lists the HTTP status codes returned by the Mistral API, their meaning
     **Resolution:** Check your subscription tier and model access. Contact your workspace admin if you believe this is an error.
   </FaqItem>
 
-  <FaqItem question="404 — Not found">
+  <FaqItem question="404: Not found">
     The requested resource does not exist.
 
     **Common causes:**
@@ -54,7 +54,7 @@ This page lists the HTTP status codes returned by the Mistral API, their meaning
     **Resolution:** Verify the resource ID and endpoint path. Use the list endpoints to confirm the resource exists.
   </FaqItem>
 
-  <FaqItem question="422 — Validation error">
+  <FaqItem question="422: Validation error">
     The request is well-formed JSON but contains invalid parameter values.
 
     **Common causes:**
@@ -65,7 +65,7 @@ This page lists the HTTP status codes returned by the Mistral API, their meaning
     **Resolution:** Check the response body for detailed field-level validation errors. Cross-reference with the API schema.
   </FaqItem>
 
-  <FaqItem question="429 — Too many requests">
+  <FaqItem question="429: Too many requests">
     You have exceeded the rate limit for your subscription tier.
 
     **Common causes:**
@@ -80,25 +80,25 @@ This page lists the HTTP status codes returned by the Mistral API, their meaning
 <SectionTab as="h2" sectionId="server-errors">Server errors (5xx)</SectionTab>
 
 <Faq>
-  <FaqItem question="500 — Internal server error">
+  <FaqItem question="500: Internal server error">
     An unexpected error occurred on the server side.
 
     **Resolution:** Retry the request after a brief delay. If the error persists, check [status.mistral.ai](https://status.mistral.ai) or email [support@mistral.ai](mailto:support@mistral.ai).
   </FaqItem>
 
-  <FaqItem question="502 — Bad gateway">
+  <FaqItem question="502: Bad gateway">
     The server received an invalid response from an upstream service.
 
-    **Resolution:** Wait 30–60 seconds and retry. This is typically transient.
+    **Resolution:** Wait 30 to 60 seconds and retry. This is typically transient.
   </FaqItem>
 
-  <FaqItem question="503 — Service unavailable">
+  <FaqItem question="503: Service unavailable">
     The service is temporarily overloaded or under maintenance.
 
     **Resolution:** Retry with exponential backoff. Check [status.mistral.ai](https://status.mistral.ai) for ongoing incidents.
   </FaqItem>
 
-  <FaqItem question="504 — Gateway timeout">
+  <FaqItem question="504: Gateway timeout">
     The request took too long to process.
 
     **Common causes:**

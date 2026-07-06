@@ -10,14 +10,11 @@ Mistral AI's open and commercial models can be deployed on the Microsoft Azure A
 - _Real-time endpoints_: With quota-based billing tied to the underlying GPU infrastructure you choose to deploy.
 
 As of today, the following models are available:
+- Mistral Medium 3.5
 - Mistral Large 3 (25.12)
-- Mistral Large (24.07, 24.11)
-- Mistral Medium (25.05)
-- Mistral Small (25.03)
-- Mistral Document AI (25.05)
-- Mistral OCR (25.05)
+- Mistral Small (25.06)
+- Document AI (with OCR 4)
 - Ministral 3B (24.10)
-- Mistral Nemo
 - Codestral (25.01)
 
 <SectionTab as="h1" sectionId="getting-started">Getting Started</SectionTab>

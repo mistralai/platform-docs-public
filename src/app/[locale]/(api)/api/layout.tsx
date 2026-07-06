@@ -1,7 +1,7 @@
 import { Sidebar, SidebarProvider } from '@/components/ui/sidebar';
 import PageContent from '@/components/layout/page-content';
 import { ApiSidebarItem, ApiSidebarMetadataItem } from '../schema/api-sidebar';
-import { ApiDocsSidebar } from '../components/sidebar';
+import { ContextualHiddenApiSidebar } from '../components/sidebar';
 import { ApiBreadcrumb } from '@/components/layout/api-breadcrumb';
 import { ActiveElementHashProvider } from '../components/hash-auto-change';
 import { DocsVariantProvider } from '@/contexts/docs-variant';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { DownloadIcon } from '@/components/icons/pixel';
 import Link from 'next/link';
 import { getApiSidebarMetadata } from '@/lib/content/localized-api-sidebar';
+import { isApiEndpointHidden } from '@/lib/content/hidden';
 import type { Locale } from '@/i18n/config';
 import { getLingo } from '@/i18n/server';
 
@@ -24,8 +25,10 @@ export default async function DocsLayout({
 }) {
   const { locale } = (await params) as { locale: Locale };
   const l = await getLingo(locale);
-  const sidebarMetadata = await getApiSidebarMetadata(locale);
-  const flattenedSidebar = flattenSidebar(sidebarMetadata, l);
+  const sidebarMetadata = await getApiSidebarMetadata(locale, {
+    includeHidden: true,
+  });
+  const flattenedSidebar = flattenSidebar(sidebarMetadata, l, locale);
   return (
     <ActiveElementHashProvider>
       <SidebarProvider>
@@ -35,14 +38,14 @@ export default async function DocsLayout({
             collapsible="none"
           >
             <div>
-              <ApiDocsSidebar sidebar={flattenedSidebar}>
+              <ContextualHiddenApiSidebar sidebar={flattenedSidebar}>
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/openapi.yaml" download="mistral-openapi.yaml">
                     <DownloadIcon className="size-4" />
                     {l.text('Download OpenAPI Spec', { context: 'Button to download the OpenAPI specification as YAML' })}
                   </Link>
                 </Button>
-              </ApiDocsSidebar>
+              </ContextualHiddenApiSidebar>
             </div>
           </Sidebar>
           <div className="flex flex-1 gap-8 min-w-0 lg:pr-sides">
@@ -74,6 +77,7 @@ export default async function DocsLayout({
 const flattenSidebar = (
   sidebar: ApiSidebarMetadataItem[],
   l: Awaited<ReturnType<typeof getLingo>>,
+  locale: Locale
 ): ApiSidebarItem[] => {
   const stableEndpoints: ApiSidebarItem[] = [];
   const betaEndpoints: ApiSidebarItem[] = [];
@@ -107,6 +111,7 @@ const flattenSidebar = (
   };
 
   const traverse = (node: ApiSidebarMetadataItem) => {
+    const isHidden = isApiEndpointHidden(node.slug, locale);
     const targetCategory = node.slug.includes('deprecated')
       ? deprecatedEndpoints
       : node.slug.includes('beta')
@@ -119,6 +124,7 @@ const flattenSidebar = (
       href: !node.slug ? '/api' : `/api/${node.slug}`,
       clickable: true,
       pagination: { prev: undefined, next: undefined },
+      hidden: isHidden,
       children: node.tags.flatMap(tag =>
         tag.operations.map(
           operation =>
@@ -156,7 +162,7 @@ const flattenSidebar = (
 
   for (const item of result) {
     if (item.children && item.children.length > 0) {
-      allItems.push(...item.children);
+      allItems.push(...item.children.filter(child => !child.hidden));
     }
   }
 

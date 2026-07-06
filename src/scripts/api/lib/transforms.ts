@@ -7,6 +7,7 @@
  *                       we inline them into components/schemas with unique names.
  *   - pruneUnreferencedSchemas: removes schemas that are no longer referenced
  *                       after patches (keeps the generated reference page small).
+ *   - applyTagOrder: keeps related API groups adjacent in docs navigation.
  *   - applyHeuristicExamples: fills a property `example` (from the shared
  *                       proposal-heuristics) wherever one is missing AND an
  *                       explicit name- or format-rule applies, so docs-md doesn't
@@ -145,6 +146,39 @@ export function applyTagRenames(spec: JsonObject): { renamed: number } {
   }
 
   return { renamed };
+}
+
+const TAG_ADJACENCY_RULES: Array<{ after: string; names: string[] }> = [
+  { after: 'beta.prompts', names: ['beta.skills'] },
+];
+
+export function applyTagOrder(spec: JsonObject): { moved: number } {
+  if (!Array.isArray(spec.tags)) return { moved: 0 };
+
+  let moved = 0;
+  for (const rule of TAG_ADJACENCY_RULES) {
+    const anchorIndex = spec.tags.findIndex(
+      (tag: unknown) => isObject(tag) && tag.name === rule.after
+    );
+    if (anchorIndex === -1) continue;
+
+    const moving: JsonObject[] = [];
+    spec.tags = spec.tags.filter((tag: unknown) => {
+      if (!isObject(tag) || !rule.names.includes(tag.name)) return true;
+      moving.push(tag);
+      return false;
+    });
+
+    if (moving.length === 0) continue;
+
+    const nextAnchorIndex = spec.tags.findIndex(
+      (tag: unknown) => isObject(tag) && tag.name === rule.after
+    );
+    spec.tags.splice(nextAnchorIndex + 1, 0, ...moving);
+    moved += moving.length;
+  }
+
+  return { moved };
 }
 
 function collectSchemaRefs(node: unknown, refs: Set<string>) {

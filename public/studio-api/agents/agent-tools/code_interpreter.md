@@ -16,7 +16,11 @@ Code Interpreter adds the capability to safely execute code in an isolated conta
   centered
 />
 
-To use the code interpreter, you can create an agent with the code interpreter tool, once done you can start a conversation with the agent and it will run code on demand, leveraging the outputs to answer your questions.
+:::warning
+`code_interpreter` works with the [Conversations API](/studio-api/connectors/conversations) (`/v1/conversations`) and the Agents API. It isn't **supported** in the Chat Completions API (`/v1/chat/completions`). To use it with an Agent, create the Agent with `code_interpreter`, then start the conversation with `/v1/conversations`.
+:::
+
+To use the code interpreter, create an Agent with the code interpreter tool. Then start a conversation with the Agent, and it runs code on demand to answer your questions.
 
 <SectionTab as="h1" sectionId="create-a-code-interpreter-agent">Create a Code Interpreter Agent</SectionTab>
 

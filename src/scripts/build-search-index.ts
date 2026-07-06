@@ -11,6 +11,7 @@ import remarkMdx from 'remark-mdx';
 import { visit } from 'unist-util-visit';
 import { Doc, DocsDoc, EndpointDoc } from '@/schema/doc';
 import sidebarMetadata from '@/content/en/api/sidebar-metadata.json';
+import { isApiEndpointHidden, isDocsRouteHidden } from '@/lib/content/hidden';
 import { defaultLocale, locales, type Locale } from '@/i18n/config';
 
 // --- config ---
@@ -219,7 +220,7 @@ async function collectMDX(
       if (!/\/page\.mdx$/.test(file)) continue;
 
       const url = urlFromDir(root, path.dirname(file), locale);
-      if (seenUrls.has(url)) continue;
+      if (seenUrls.has(url) || isDocsRouteHidden(url, locale)) continue;
       seenUrls.add(url);
 
       const raw = await fs.readFile(file, 'utf8');
@@ -268,6 +269,8 @@ async function collectEndpoints(locale: Locale): Promise<EndpointDoc[]> {
     }
 
     for (const category of sidebarMetadata) {
+      if (isApiEndpointHidden(category.slug, locale)) continue;
+
       const categoryName = category.sidebarLabel;
       const categorySlug = category.slug;
       const categoryUrl = `/${locale}/api/${categorySlug}`;

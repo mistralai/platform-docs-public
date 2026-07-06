@@ -6,11 +6,9 @@ sidebar_position: 1
 # Agents
 
 :::warning
-**Heads up.** This is a legacy feature, still available in the **Chat** tab. It works just like before, no rush. See [Get started with Work](/vibe/work/get-started) for the entry point.
+Agents are a legacy Chat feature. They remain available in the **Chat** tab, with no public deprecation date.
 
-In Vibe Work, this idea lives on as **[Skills](/vibe/work/skills)** — give it a try when you're ready.
-
-Both stay around for now. No deprecation date set — we'll keep you posted.
+In Vibe Work, use **[Skills](/vibe/work/skills)** for reusable methods that apply across tasks. For the Work entry point, see [Get started with Work](/vibe/work/get-started).
 :::
 
 An Agent is a **specialized assistant** you configure once and reuse across conversations. Give it instructions, tools, and knowledge sources, and it handles the rest.

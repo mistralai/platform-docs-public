@@ -2,6 +2,7 @@ import 'server-only';
 import enSidebarMetadata from '@/content/en/api/sidebar-metadata.json';
 import type { ApiSidebarMetadata } from '@/app/[locale]/(api)/schema/api-sidebar';
 import { defaultLocale, type Locale } from '@/i18n/config';
+import { isApiEndpointHidden } from './hidden';
 
 const IDENTITY_KEYS = ['elementId', 'slug', 'name'] as const;
 
@@ -66,10 +67,14 @@ async function loadOverlay(locale: Locale): Promise<unknown | null> {
 }
 
 export async function getApiSidebarMetadata(
-  locale: Locale
+  locale: Locale,
+  options: { includeHidden?: boolean } = {}
 ): Promise<ApiSidebarMetadata> {
-  if (locale === defaultLocale) return enSidebarMetadata;
-  const overlay = await loadOverlay(locale);
-  if (!overlay) return enSidebarMetadata;
-  return mergeStructural(enSidebarMetadata, overlay);
+  const metadata =
+    locale === defaultLocale
+      ? enSidebarMetadata
+      : mergeStructural(enSidebarMetadata, await loadOverlay(locale));
+
+  if (options.includeHidden) return metadata;
+  return metadata.filter(item => !isApiEndpointHidden(item.slug, locale));
 }

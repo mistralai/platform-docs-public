@@ -91,6 +91,7 @@ export type SideBarTreeNode = {
   };
   metadata?: AnyDocsMetadata | null;
   isExternalLink?: boolean;
+  hidden?: boolean;
 };
 
 const isPathContained = (

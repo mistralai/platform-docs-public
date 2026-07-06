@@ -6,11 +6,9 @@ sidebar_position: 2
 # Think mode
 
 :::warning
-**Heads up.** This is a legacy feature, still available in the **Chat** tab. It works just like before, no rush. See [Get started with Work](/vibe/work/get-started) for the entry point.
+Think mode is a legacy Chat feature. It remains available in the **Chat** tab, with no public deprecation date.
 
-In Vibe Work, step-by-step reasoning kicks in automatically when the task needs it — no toggle required.
-
-Think mode stays around for now. No deprecation date set — we'll keep you posted.
+In Vibe Work, step-by-step reasoning starts automatically when the task needs it. You don't need to enable a toggle. For the Work entry point, see [Get started with Work](/vibe/work/get-started).
 :::
 
 Think mode lets Vibe **reason through complex problems**.

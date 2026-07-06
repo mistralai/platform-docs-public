@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import sidebarMetadata from '@/content/en/api/sidebar-metadata.json';
+import { isApiEndpointHidden } from '@/lib/content/hidden';
 import { resolveContentLocale } from '@/lib/content/locale-content';
 import type { Locale } from '@/i18n/config';
 
@@ -11,7 +12,10 @@ type Params = { locale: string; slug: string[] };
 function endpointSlugs(): string[] {
   return sidebarMetadata
     .map(category => category.slug)
-    .filter((slug): slug is string => typeof slug === 'string' && slug.startsWith(ENDPOINT_PREFIX))
+    .filter(
+      (slug): slug is string =>
+        typeof slug === 'string' && slug.startsWith(ENDPOINT_PREFIX)
+    )
     .map(slug => slug.slice(ENDPOINT_PREFIX.length));
 }
 
@@ -44,10 +48,19 @@ export async function generateMetadata({
     title?: string;
     description?: string;
   };
-  return {
+  const metadata: Metadata = {
     title: fm.title,
     description: fm.description,
   };
+
+  if (isApiEndpointHidden(`endpoint/${slug.join('/')}`, locale)) {
+    metadata.robots = {
+      index: false,
+      follow: false,
+    };
+  }
+
+  return metadata;
 }
 
 export default async function EndpointPage({

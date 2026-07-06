@@ -500,7 +500,7 @@ The body request will follow the same format as the endpoint you want to run you
         },
         "document_annotation_format": {...}, # The document annotation schema, see our Annotations documentation for more
         "bbox_annotation_format": {...}, # The bbox annotation schema, see our Annotations documentation for more
-        "pages": [0,1,2,3,4,5,6,7] # The pages to annotate, when using document annotation there is a limit of 8 pages
+        "pages": [0,1,2,3,4,5,6,7] # The pages to annotate
     }
 }
 ```

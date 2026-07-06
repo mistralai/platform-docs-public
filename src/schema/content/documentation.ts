@@ -37,6 +37,13 @@ export interface DocsMetadata {
   category?: string;
   /* If the page has no pagination, it will not be displayed in the sidebar */
   hidePagination?: boolean;
+  /**
+   * If true:
+   * - Page will NOT appear in sidebar navigation
+   * - Page will NOT be included in sitemap
+   * - Search engines will be instructed NOT to index (noindex meta tag)
+   */
+  hidden?: boolean;
 }
 
 export interface DocsCategoryMetadata {
@@ -52,6 +59,10 @@ export interface DocsCategoryMetadata {
   hidePagination?: boolean;
   /* If true, this category will be expanded by default on all pages */
   defaultExpanded?: boolean;
+  /**
+   * If true, the category and all its children will be hidden from sidebar navigation
+   */
+  hidden?: boolean;
 }
 
 export type AnyDocsMetadata = DocsCategoryMetadata | DocsMetadata;

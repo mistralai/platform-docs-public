@@ -41,8 +41,10 @@ const getExpandedPaths = (
         const slugSegments = segments.filter(Boolean);
 
         if (
-          targetSlugs.some((targetSlug: any) =>
-            isPathContained(slugSegments, targetSlug)
+          targetSlugs.some(
+            (targetSlug: any) =>
+              slugSegments.join('/') === targetSlug.join('/') ||
+              isPathContained(slugSegments, targetSlug)
           )
         ) {
           expandedPaths.add(pathKey);

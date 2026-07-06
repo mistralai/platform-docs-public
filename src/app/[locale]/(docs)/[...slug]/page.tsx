@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { isDocsRouteHidden } from '@/lib/content/hidden';
 import { resolveContentLocale } from '@/lib/content/locale-content';
 import type { Locale } from '@/i18n/config';
 
@@ -76,7 +77,24 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, slug } = (await params) as { locale: Locale; slug: string[] };
   const mod = await loadPage(locale, slug);
-  return (mod?.metadata ?? {}) as Metadata;
+
+  if (!mod) {
+    return {};
+  }
+
+  const baseMetadata = (mod.metadata ?? {}) as Metadata;
+
+  if (isDocsRouteHidden(slug.join('/'), locale)) {
+    return {
+      ...baseMetadata,
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  return baseMetadata;
 }
 
 export default async function DocsCatchAllPage({

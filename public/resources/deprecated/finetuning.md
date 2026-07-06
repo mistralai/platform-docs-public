@@ -17,7 +17,7 @@ When deciding whether to use prompt engineering or fine-tuning for an AI model, 
   - Does not require any fine-tuning data or training to work
   - Can easily be updated for new workflows and prototyping
 
-  Check out our [prompting doc](/models/best-practices/prompt-engineering) to explore various prompting methods to leverage Mistral models.
+  See the [prompt engineering guide](/models/best-practices/prompt-engineering) to explore prompting methods for Mistral models.
 
 <SectionTab as="h2" variant="secondary" sectionId="benefits-of-fine-tuning">Benefits of Fine-tuning</SectionTab>
   - Works significantly better than prompting
@@ -31,10 +31,10 @@ Fine-tuning has a wide range of use cases, some of which include:
 
 - Customizing the model to generate responses in a specific format and tone
 - Specializing the model for a specific topic or domain to improve its performance on domain-specific tasks
-- Improving the model through distillation from a stronger and more powerful model by training it to mimic the behavior of the larger model
+- Improving the model through distillation from a stronger model by training it to mimic the behavior of the larger model
 - Enhancing the model’s performance by mimicking the behavior of a model with a complex prompt, but without the need for the actual prompt, thereby saving tokens, and reducing associated costs
 - Reducing cost and latency by using a small yet efficient fine-tuned model
 
 <SectionTab as="h1" sectionId="fine-tuning-vs-prompting">Fine-tuning Services</SectionTab>
-- [Text & Vision General Fine-tuning](/resources/deprecated/finetuning/text_vision_finetuning) via SFT: Supervised Fine-tuning, the most common fine-tuning method to teach the model knowledge and how to follow instructions.
+- [Text and vision general fine-tuning](/resources/deprecated/finetuning/text_vision_finetuning) via SFT: supervised fine-tuning, the most common fine-tuning method to teach the model knowledge and how to follow instructions.
 - [Classifier Factory](/resources/deprecated/finetuning/classifier_factory): A tool to finetune and create classifier specific models from a dataset of text.

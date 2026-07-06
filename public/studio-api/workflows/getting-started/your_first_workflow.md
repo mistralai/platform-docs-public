@@ -25,7 +25,7 @@ To complete this quickstart, you need:
 Run the following `uvx` command in your terminal:
 
 ```bash
-uvx mistralai-workflows-cli setup
+uvx mistralai-workflows-cli@latest setup
 ```
 
 This scaffolds a ready-to-run Python project with the Workflows SDK already configured, a minimal example workflow, and helper commands to run your worker and trigger executions.

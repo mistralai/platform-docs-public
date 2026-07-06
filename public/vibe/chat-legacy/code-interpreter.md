@@ -6,11 +6,9 @@ sidebar_position: 3
 # Code Interpreter
 
 :::warning
-**Heads up.** This is a legacy feature, still available in the **Chat** tab. It works just like before, no rush. See [Get started with Work](/vibe/work/get-started) for the entry point.
+Code Interpreter is a legacy Chat feature. It remains available in the **Chat** tab, with no public deprecation date.
 
-Vibe Work has a built-in **TypeScript code environment** that covers most data-processing and graphing use cases (cleaning data, generating charts, transforming files). Pick Work when TypeScript fits the task; pick Chat with Code Interpreter when you specifically need Python or a Python-only library.
-
-Code Interpreter stays around for now. No deprecation date set — we'll keep you posted.
+Vibe Work has a built-in **TypeScript code environment** that covers most data-processing and graphing use cases, including cleaning data, generating charts, and transforming files. Pick Work when TypeScript fits the task. Pick Chat with Code Interpreter when you specifically need Python or a Python-only library.
 :::
 
 Code Interpreter lets you **run Python directly inside Vibe**.

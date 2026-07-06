@@ -1,5 +1,6 @@
 import path from 'path';
 import { readdir, mkdir, readFile, writeFile } from 'fs/promises';
+import { isDocsRouteHidden } from '@/lib/content/hidden';
 
 const DOCS_ROOT = path.join(process.cwd(), 'src', 'content', 'en', 'docs');
 const OUT_ROOT = path.join(process.cwd(), 'public');
@@ -123,7 +124,8 @@ async function main(): Promise<void> {
   const mappings = mdxFiles
     .filter(relativePath => {
       const baseLower = path.basename(relativePath).toLowerCase();
-      return baseLower === 'page.mdx';
+      const route = path.dirname(relativePath).replace(/\\/g, '/');
+      return baseLower === 'page.mdx' && !isDocsRouteHidden(route);
     })
     .map(relativePath => {
       const parsed = path.parse(relativePath);

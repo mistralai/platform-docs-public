@@ -78,9 +78,9 @@ For non-trivial tasks, Work often asks **follow-up questions** before doing anyt
 
 Typical clarifications:
 
-- *"Which Project should I look at — Q3 launch or Q4 planning?"*
+- *"Which Project should I look at: Q3 launch or Q4 planning?"*
 - *"Should the brief be one page or a full report?"*
-- *"Which Connector should I use to find the contract — Notion or Google Drive?"*
+- *"Which Connector should I use to find the contract: Notion or Google Drive?"*
 
 Select one of the provided answers in the chat and Work continues. You can also redirect Work at any time by rewriting the prompt.
 
@@ -90,7 +90,7 @@ Treat clarifying questions as a feature, not friction. Two seconds of clarificat
 
 <SectionTab as="h2" sectionId="todos-panel">Todos panel</SectionTab>
 
-For longer or multi-step tasks, Work displays its **todos** in the **right-hand panel** as it works, a live checklist of steps it has just done or is about to do. There is no upfront plan to approve: Work starts immediately and you watch the steps appear and tick off in real time.
+For longer or multi-step tasks, Work displays its **todos** in the **right-hand panel** as it works, a live checklist of steps it has completed or is about to do. There is no upfront plan to approve: Work starts immediately, and you watch the steps appear and complete in real time.
 
 You stay in control by:
 
@@ -102,9 +102,9 @@ You stay in control by:
 Not every task gets a todos panel. Quick one-shot tasks (a summary, a translation, a single lookup) respond directly.
 :::
 
-<SectionTab as="h2" sectionId="reasoning">See Work's reasoning in real time</SectionTab>
+<SectionTab as="h2" sectionId="reasoning">See Work's reasoning summary in real time</SectionTab>
 
-While Work executes, it surfaces its **chain of thought** (the reasoning behind each step). You see what Work is reading, comparing, deciding, and ruling out.
+While Work executes, it shows a **reasoning summary** for each step. You see what Work is reading, comparing, deciding, and ruling out.
 
 This serves three purposes:
 

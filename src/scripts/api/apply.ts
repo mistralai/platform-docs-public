@@ -18,6 +18,7 @@ import { existsByPointer, setByPointer } from './lib/json-pointer';
 import { loadPatchDb, type Patch } from './lib/patch-db';
 import {
   applyHeuristicExamples,
+  applyTagOrder,
   applyTagRenames,
   hoistLocalDefs,
   pruneUnreferencedSchemas,
@@ -95,6 +96,7 @@ function main() {
 
   const { applied, ignored, orphans } = applyPatches(spec, db.patches);
   const { renamed } = applyTagRenames(spec);
+  const { moved } = applyTagOrder(spec);
   const { hoisted } = hoistLocalDefs(spec);
   const { pruned } = pruneUnreferencedSchemas(spec);
   const { filled } = applyHeuristicExamples(spec);
@@ -114,6 +116,7 @@ function main() {
   console.log(`Patches ignored:   ${ignored}`);
   console.log(`Patches orphaned:  ${orphans.length}`);
   console.log(`Tags renamed:      ${renamed}`);
+  console.log(`Tags reordered:    ${moved}`);
   console.log(`$defs hoisted:     ${hoisted}`);
   console.log(`Schemas pruned:    ${pruned}`);
   console.log(`Examples filled:   ${filled}`);

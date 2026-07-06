@@ -4,6 +4,650 @@ info:
   description: Our Chat Completion and Embeddings APIs specification. Create your account on [La Plateforme](https://console.mistral.ai) to get access and read the [docs](https://docs.mistral.ai) to learn how to use it.
   version: 1.0.0
 paths:
+  /v2/prompts:
+    get:
+      tags:
+        - beta.prompts
+      summary: ListPrompts
+      operationId: prompts_list
+      parameters:
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            title: page_size
+            format: int32
+        - name: pageToken
+          in: query
+          schema:
+            type: string
+            title: page_token
+        - name: alias
+          in: query
+          schema:
+            type: string
+            title: alias
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+            title: fields
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPromptsResponse'
+      x-speakeasy-pagination:
+        type: cursor
+        inputs:
+          - name: pageToken
+            in: parameters
+            type: cursor
+          - name: pageSize
+            in: parameters
+            type: limit
+        outputs:
+          results: $.data
+          nextCursor: $.nextPageToken
+      description: ListPrompts
+    post:
+      tags:
+        - beta.prompts
+      summary: CreatePrompt
+      operationId: prompts_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePromptRequest'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+      description: CreatePrompt
+  /v2/prompts/{prompt_id}:
+    get:
+      tags:
+        - beta.prompts
+      summary: GetPrompt
+      operationId: prompts_get
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+        - name: version
+          in: query
+          schema:
+            type: integer
+            title: version
+            format: int32
+            example: 1
+          example: 1
+        - name: alias
+          in: query
+          schema:
+            type: string
+            title: alias
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+            title: fields
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+      description: GetPrompt
+    delete:
+      tags:
+        - beta.prompts
+      summary: DeletePrompt
+      operationId: prompts_delete
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletePromptResponse'
+      description: DeletePrompt
+    patch:
+      tags:
+        - beta.prompts
+      summary: UpdatePrompt
+      operationId: prompts_update
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  title: title
+                  nullable: true
+                  description: Display title.
+                description:
+                  type: string
+                  title: description
+                  nullable: true
+                  description: Display description.
+                sharingScope:
+                  title: sharing_scope
+                  nullable: true
+                  $ref: '#/components/schemas/RegistrySharingScope'
+                  description: Registry sharing scope.
+              title: UpdatePromptRequest
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+      x-speakeasy-max-method-params: 2
+      description: UpdatePrompt
+  /v2/prompts/{prompt_id}/versions:
+    get:
+      tags:
+        - beta.prompts
+      summary: ListPromptVersions
+      operationId: prompts_list_versions
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPromptVersionsResponse'
+      description: ListPromptVersions
+    post:
+      tags:
+        - beta.prompts
+      summary: CreatePromptVersion
+      operationId: prompts_create_version
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                definition:
+                  title: definition
+                  $ref: '#/components/schemas/PromptDefinition'
+                notes:
+                  type: string
+                  title: notes
+                  nullable: true
+                  description: Notes for this version.
+                aliases:
+                  type: array
+                  items:
+                    type: string
+                  title: aliases
+                  description: Aliases pointing to this version.
+              title: CreatePromptVersionRequest
+              additionalProperties: false
+              required:
+                - definition
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePromptVersionResponse'
+      x-speakeasy-max-method-params: 2
+      description: CreatePromptVersion
+  /v2/prompts/{prompt_id}/versions/{version}:
+    get:
+      tags:
+        - beta.prompts
+      summary: GetPromptVersion
+      operationId: prompts_get_version
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: version
+            format: int32
+            example: 1
+          example: 1
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+            title: fields
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+      description: GetPromptVersion
+    patch:
+      tags:
+        - beta.prompts
+      summary: UpdatePromptVersionMetadata
+      operationId: prompts_update_version_metadata
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: prompt_id
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: version
+            format: int32
+            example: 1
+          example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  title: notes
+                  nullable: true
+                  description: Notes for this version.
+                aliases:
+                  title: aliases
+                  description: Aliases pointing to this version.
+                  $ref: '#/components/schemas/AliasList'
+              title: UpdatePromptVersionRequest
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+      x-speakeasy-max-method-params: 3
+      description: UpdatePromptVersionMetadata
+  /v2/skills:
+    get:
+      tags:
+        - beta.skills
+      summary: ListSkills
+      operationId: skills_list
+      parameters:
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            title: page_size
+            format: int32
+        - name: pageToken
+          in: query
+          schema:
+            type: string
+            title: page_token
+        - name: alias
+          in: query
+          schema:
+            type: string
+            title: alias
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+            title: fields
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSkillsResponse'
+      x-speakeasy-pagination:
+        type: cursor
+        inputs:
+          - name: pageToken
+            in: parameters
+            type: cursor
+          - name: pageSize
+            in: parameters
+            type: limit
+        outputs:
+          results: $.data
+          nextCursor: $.nextPageToken
+      description: ListSkills
+    post:
+      tags:
+        - beta.skills
+      summary: CreateSkill
+      operationId: skills_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSkillRequest'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+      description: CreateSkill
+  /v2/skills/{skill_id}:
+    get:
+      tags:
+        - beta.skills
+      summary: GetSkill
+      operationId: skills_get
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+        - name: version
+          in: query
+          schema:
+            type: integer
+            title: version
+            format: int32
+            example: 1
+          example: 1
+        - name: alias
+          in: query
+          schema:
+            type: string
+            title: alias
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+            title: fields
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+      description: GetSkill
+    delete:
+      tags:
+        - beta.skills
+      summary: DeleteSkill
+      operationId: skills_delete
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSkillResponse'
+      description: DeleteSkill
+    patch:
+      tags:
+        - beta.skills
+      summary: UpdateSkill
+      operationId: skills_update
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sharingScope:
+                  title: sharing_scope
+                  nullable: true
+                  $ref: '#/components/schemas/RegistrySharingScope'
+                  description: Registry sharing scope.
+              title: UpdateSkillRequest
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+      x-speakeasy-max-method-params: 2
+      description: UpdateSkill
+  /v2/skills/{skill_id}/versions:
+    get:
+      tags:
+        - beta.skills
+      summary: ListSkillVersions
+      operationId: skills_list_versions
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListSkillVersionsResponse'
+      description: ListSkillVersions
+    post:
+      tags:
+        - beta.skills
+      summary: CreateSkillVersion
+      operationId: skills_create_version
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                definition:
+                  title: definition
+                  $ref: '#/components/schemas/SkillDefinition'
+                notes:
+                  type: string
+                  title: notes
+                  nullable: true
+                  description: Notes for this version.
+                aliases:
+                  type: array
+                  items:
+                    type: string
+                  title: aliases
+                  description: Aliases pointing to this version.
+              title: CreateSkillVersionRequest
+              additionalProperties: false
+              required:
+                - definition
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSkillVersionResponse'
+      x-speakeasy-max-method-params: 2
+      description: CreateSkillVersion
+  /v2/skills/{skill_id}/versions/{version}:
+    get:
+      tags:
+        - beta.skills
+      summary: GetSkillVersion
+      operationId: skills_get_version
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: version
+            format: int32
+            example: 1
+          example: 1
+        - name: fields
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+            title: fields
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+      description: GetSkillVersion
+    patch:
+      tags:
+        - beta.skills
+      summary: UpdateSkillVersionMetadata
+      operationId: skills_update_version_metadata
+      parameters:
+        - name: skill_id
+          in: path
+          required: true
+          schema:
+            type: string
+            title: skill_id
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: version
+            format: int32
+            example: 1
+          example: 1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  title: notes
+                  nullable: true
+                  description: Notes for this version.
+                aliases:
+                  title: aliases
+                  description: Aliases pointing to this version.
+                  $ref: '#/components/schemas/AliasList'
+              title: UpdateSkillVersionRequest
+              additionalProperties: false
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+      x-speakeasy-max-method-params: 3
+      description: UpdateSkillVersionMetadata
   /v1/audio/speech:
     post:
       summary: Speech
@@ -32755,6 +33399,417 @@ components:
       title: UpdateSchemaSummaryRequestSummary
       required:
         - summary
+    AliasList:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+          title: values
+      title: AliasList
+      additionalProperties: false
+      description: Presence wrapper for a set of alias labels on update RPCs. As a message field it carries presence, so callers can distinguish "leave aliases unchanged" (field omitted) from "clear all aliases" (field set, empty ``values``).
+    CreatePromptRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          description: Stable object name.
+        definition:
+          title: definition
+          $ref: '#/components/schemas/PromptDefinition'
+        title:
+          type: string
+          title: title
+          nullable: true
+          description: Display title.
+        description:
+          type: string
+          title: description
+          nullable: true
+          description: Display description.
+        notes:
+          type: string
+          title: notes
+          nullable: true
+          description: Notes for this version.
+        sharingScope:
+          title: sharing_scope
+          nullable: true
+          $ref: '#/components/schemas/RegistrySharingScope'
+          description: Registry sharing scope.
+        aliases:
+          type: array
+          items:
+            type: string
+          title: aliases
+          description: Aliases pointing to this version.
+      title: CreatePromptRequest
+      additionalProperties: false
+      required:
+        - name
+        - definition
+    CreatePromptVersionResponse:
+      type: object
+      properties:
+        version:
+          type: integer
+          title: version
+          format: int32
+          example: 1
+        deduplicated:
+          type: boolean
+          title: deduplicated
+          example: false
+      title: CreatePromptVersionResponse
+      additionalProperties: false
+    CreateSkillRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          description: Stable object name.
+        definition:
+          title: definition
+          $ref: '#/components/schemas/SkillDefinition'
+        notes:
+          type: string
+          title: notes
+          nullable: true
+          description: Notes for this version.
+        sharingScope:
+          title: sharing_scope
+          nullable: true
+          $ref: '#/components/schemas/RegistrySharingScope'
+          description: Registry sharing scope.
+        aliases:
+          type: array
+          items:
+            type: string
+          title: aliases
+          description: Aliases pointing to this version.
+      title: CreateSkillRequest
+      additionalProperties: false
+      required:
+        - name
+        - definition
+    CreateSkillVersionResponse:
+      type: object
+      properties:
+        version:
+          type: integer
+          title: version
+          format: int32
+          example: 1
+        deduplicated:
+          type: boolean
+          title: deduplicated
+          example: false
+      title: CreateSkillVersionResponse
+      additionalProperties: false
+    DeletePromptResponse:
+      type: object
+      title: DeletePromptResponse
+      additionalProperties: false
+    DeleteSkillResponse:
+      type: object
+      title: DeleteSkillResponse
+      additionalProperties: false
+    ListPromptVersionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptVersion'
+          title: data
+      title: ListPromptVersionsResponse
+      additionalProperties: false
+    ListPromptsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prompt'
+          title: data
+        nextPageToken:
+          type: string
+          title: next_page_token
+      title: ListPromptsResponse
+      additionalProperties: false
+    ListSkillVersionsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillVersion'
+          title: data
+      title: ListSkillVersionsResponse
+      additionalProperties: false
+    ListSkillsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+          title: data
+        nextPageToken:
+          type: string
+          title: next_page_token
+      title: ListSkillsResponse
+      additionalProperties: false
+    Prompt:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        name:
+          type: string
+          title: name
+          description: Stable object name.
+        definition:
+          title: definition
+          $ref: '#/components/schemas/PromptDefinition'
+        version:
+          type: integer
+          title: version
+          format: int32
+          example: 1
+        notes:
+          type: string
+          title: notes
+          description: Notes for this version.
+        aliases:
+          type: array
+          items:
+            type: string
+          title: aliases
+          description: Aliases pointing to this version.
+        sharingScope:
+          title: sharing_scope
+          $ref: '#/components/schemas/RegistrySharingScope'
+          description: Registry sharing scope.
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/Timestamp'
+          description: Creation time.
+        updatedAt:
+          title: updated_at
+          $ref: '#/components/schemas/Timestamp'
+          description: Last update time.
+        latestVersion:
+          type: integer
+          title: latest_version
+          format: int32
+          description: Latest version number.
+          example: 1
+        title:
+          type: string
+          title: title
+          description: Display title.
+        description:
+          type: string
+          title: description
+          description: Display description.
+      title: Prompt
+      additionalProperties: false
+    PromptDefinition:
+      type: object
+      properties:
+        content:
+          type: string
+          title: content
+          description: Prompt template content.
+        variables:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptVariable'
+          title: variables
+          description: Variables used by the prompt.
+      title: PromptDefinition
+      additionalProperties: false
+      description: Versioned prompt content.
+      required:
+        - content
+    PromptVariable:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          description: Stable object name.
+      title: PromptVariable
+      additionalProperties: false
+    PromptVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+          title: version
+          format: int32
+          example: 1
+        definition:
+          title: definition
+          $ref: '#/components/schemas/PromptDefinition'
+        notes:
+          type: string
+          title: notes
+          description: Notes for this version.
+        aliases:
+          type: array
+          items:
+            type: string
+          title: aliases
+          description: Aliases pointing to this version.
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/Timestamp'
+          description: Creation time.
+      title: PromptVersion
+      additionalProperties: false
+    RegistrySharingScope:
+      type: string
+      title: RegistrySharingScope
+      enum:
+        - sharing_scope_unspecified
+        - private
+        - workspace
+    Skill:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        name:
+          type: string
+          title: name
+          description: Stable object name.
+        definition:
+          title: definition
+          $ref: '#/components/schemas/SkillDefinition'
+        version:
+          type: integer
+          title: version
+          format: int32
+          example: 1
+        notes:
+          type: string
+          title: notes
+          description: Notes for this version.
+        aliases:
+          type: array
+          items:
+            type: string
+          title: aliases
+          description: Aliases pointing to this version.
+        sharingScope:
+          title: sharing_scope
+          $ref: '#/components/schemas/RegistrySharingScope'
+          description: Registry sharing scope.
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/Timestamp'
+          description: Creation time.
+        updatedAt:
+          title: updated_at
+          $ref: '#/components/schemas/Timestamp'
+          description: Last update time.
+        latestVersion:
+          type: integer
+          title: latest_version
+          format: int32
+          description: Latest version number.
+          example: 1
+      title: Skill
+      additionalProperties: false
+    SkillAssetContent:
+      type: object
+      oneOf:
+        - properties:
+            rawContent:
+              type: string
+              title: raw_content
+              format: byte
+          title: raw_content
+          required:
+            - rawContent
+        - properties:
+            textContent:
+              type: string
+              title: text_content
+          title: text_content
+          required:
+            - textContent
+      properties:
+        isExecutable:
+          type: boolean
+          title: is_executable
+      title: SkillAssetContent
+      additionalProperties: false
+    SkillDefinition:
+      type: object
+      properties:
+        description:
+          type: string
+          title: description
+          description: Model-facing trigger and usage description.
+        body:
+          type: string
+          title: body
+          description: Skill body content.
+        assets:
+          type: object
+          title: assets
+          additionalProperties:
+            title: value
+            $ref: '#/components/schemas/SkillAssetContent'
+          description: Additional files available to the skill.
+      title: SkillDefinition
+      additionalProperties: false
+      description: Versioned skill content.
+    SkillVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+          title: version
+          format: int32
+          example: 1
+        definition:
+          title: definition
+          $ref: '#/components/schemas/SkillDefinition'
+        notes:
+          type: string
+          title: notes
+          description: Notes for this version.
+        aliases:
+          type: array
+          items:
+            type: string
+          title: aliases
+          description: Aliases pointing to this version.
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/Timestamp'
+          description: Creation time.
+      title: SkillVersion
+      additionalProperties: false
+    Timestamp:
+      type: string
+      examples:
+        - 1s
+        - 1.000340012s
+      format: date-time
+      description: RFC 3339 timestamp.
+      title: Timestamp
+
   securitySchemes:
     AdminApiKey:
       type: http
@@ -32836,6 +33891,12 @@ tags:
   - name: beta.admin.analytics
     x-displayName: (beta) Admin - Analytics
     description: (beta) Admin API - access usage analytics. Requires an admin API key.
+  - name: beta.prompts
+    x-displayName: (beta) Prompts
+    description: (beta) Prompts API.
+  - name: beta.skills
+    x-displayName: (beta) Skills
+    description: (beta) Skills API.
 security:
   - ApiKey: []
 servers:

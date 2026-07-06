@@ -15,6 +15,7 @@ interface ApiSidebarEndpoint extends SideBarTreeNode {
 interface ApiSidebarCategory extends SideBarTreeNode {
   type: 'category';
   children: ApiSidebarItem[];
+  hidden?: boolean;
 }
 
 interface ApiSidebarAction extends SideBarTreeNode {

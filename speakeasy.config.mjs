@@ -1,5 +1,5 @@
 import { join, resolve } from 'node:path';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import yaml from 'js-yaml';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
@@ -11,6 +11,22 @@ const OPENAPI_YAML = process.env.SPEAKEASY_OPENAPI_YAML || './openapi.yaml';
 const PAGE_OUT_DIR = process.env.API_PAGE_OUT_DIR || './src/content/en/api';
 const SIDEBAR_META_PATH =
   process.env.API_SIDEBAR_META_PATH || './src/content/en/api/sidebar-metadata.json';
+
+function existingHiddenLine(frontmatter) {
+  const slug = frontmatter?.slug || frontmatter?.sidebarLabel;
+  if (!slug) return '';
+
+  const pagePath = resolve(join(PAGE_OUT_DIR, `${slug}/page.mdx`));
+  if (!existsSync(pagePath)) return '';
+
+  const frontmatterMatch = readFileSync(pagePath, 'utf8').match(
+    /^---\n([\s\S]*?)\n---/
+  );
+  if (!frontmatterMatch) return '';
+
+  const hiddenMatch = frontmatterMatch[1].match(/^hidden:\s*(true|false)\s*$/m);
+  return hiddenMatch ? hiddenMatch[0] : '';
+}
 /**
  * @type {import("@speakeasy-api/docs-md").FrameworkConfig}
  */
@@ -25,10 +41,11 @@ const framework = {
   },
 
   buildPagePreamble(frontmatter) {
+    const hiddenLine = existingHiddenLine(frontmatter);
     const yamlFrontmatter = `---
 type: api
 title: ${frontmatter.sidebarLabel || frontmatter.title || 'Api Reference'}
-description: Welcome to Mistral AI's Api Reference
+description: Welcome to Mistral AI's Api Reference${hiddenLine ? `\n${hiddenLine}` : ''}
 ---`;
     return yamlFrontmatter;
   },
@@ -90,11 +107,11 @@ export default {
   codeSamples: [
     {
       language: 'typescript',
-      sdkTarballPath: './sdks/client-ts-1.10.0.tar.gz',
+      sdkTarballPath: './sdks/client-ts-2.4.1.tar.gz',
     },
     {
       language: 'python',
-      sdkTarballPath: './sdks/client-python-2.0.0.tar.gz',
+      sdkTarballPath: './sdks/client-python-2.5.2.tar.gz',
     },
     {
       language: 'curl',

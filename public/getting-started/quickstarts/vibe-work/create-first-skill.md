@@ -68,7 +68,7 @@ In the `SKILL.md` field, write the procedure Work should follow. Be explicit abo
 >
 > Tone: professional, concise. Don't invent information that isn't in the source. If owners or dates are missing, mark them as `[TBD]`.
 
-Keep instructions tight. If a step needs an example, attach a sample file or template alongside the Skill (templates, references, brand guidelines, sample outputs). Work loads them as needed when the Skill activates.
+Keep instructions tight. If a step needs an example, attach a sample file or template alongside the Skill (templates, references, brand guidelines, sample outputs). Supporting files are subject to a file-count limit, so keep references focused and use progressive disclosure for larger methods. See [Structure large Skills with progressive disclosure](https://agentskills.io/skill-creation/best-practices#structure-large-skills-with-progressive-disclosure) for guidance.
 
 <SectionTab as="h2" sectionId="step-4">Step 4: Create and test</SectionTab>
 
@@ -77,13 +77,14 @@ Keep instructions tight. If a step needs an example, attach a sample file or tem
 3. Watch the todos panel: if the description matches, Work picks the Skill up automatically. You can also invoke it explicitly with `/{skill-name}` or by mentioning it in your prompt.
 4. Compare the output to your expected format. Iterate on the `SKILL.md` if anything is off.
 
-<SectionTab as="h2" sectionId="step-5">Step 5: Publish to your team (optional)</SectionTab>
+<SectionTab as="h2" sectionId="step-5">Step 5: Share with your team (optional)</SectionTab>
 
-If the Skill is useful beyond your own work, **Publish** it to the workspace:
+If the Skill is useful beyond your own work, share it with the workspace:
 
 1. From the Skills view, open the Skill.
-2. Click **Publish** to make it available to teammates in the same workspace.
-3. Workspace admins can also **force-enable** specific Skills for everyone in the workspace.
+2. Click **Share**.
+3. Choose whether to keep the Skill private or share it with the entire workspace.
+4. Workspace admins can also **force-enable** specific Skills for everyone in the workspace.
 
 <SectionTab as="h2" sectionId="verify">Verify</SectionTab>
 
@@ -96,7 +97,7 @@ Your Skill is working if:
 <SectionTab as="h2" sectionId="whats-next">What's next</SectionTab>
 
 <UsefullLinkContainer>
-  <LinkCard href="/vibe/work/skills" title="Skills reference" description="Full doc: progressive disclosure, file bundling, edits, publish." />
+  <LinkCard href="/vibe/work/skills" title="Skills reference" description="Full doc: progressive disclosure, file bundling, edits, sharing." />
   <LinkCard href="/vibe/work/custom-instructions" title="Custom instructions" description="Set persistent preferences that apply across tasks." />
   <LinkCard href="/vibe/work/safety-and-approvals" title="Safety and approvals" description="How Skills interact with Connector approvals and workspace controls." />
   <LinkCard href="/#quickstarts" title="All Vibe Work quickstarts" />

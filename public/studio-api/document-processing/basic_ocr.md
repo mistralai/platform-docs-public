@@ -27,6 +27,7 @@ Mistral Document AI API comes with a Document OCR (Optical Character Recognition
     - `markdown`: Tables are returned as markdown tables separately.
     - `html`: Tables are returned as html tables separately.
 - Option to **extract headers and footers** via the `extract_header` and the `extract_footer` parameter, when used, the headers and footers content will be provided in the `header` and `footer` fields. By default, headers and footers are considered as part of the main content output.
+- Option to extract **paragraph-level bounding boxes and structural block labels** via the `include_blocks` parameter. When enabled, each page contains a `blocks` array listing every block (text, title, list, table, image, equation, caption, code, references, aside_text, header, footer, signature) in reading order with its bounding box and content.
 - Returns results in markdown format for easy parsing and rendering.
 - Handles complex layouts including multi-column text and mixed content and returns hyperlinks when available.
 - Provides **confidence scores** for extracted content at word or page granularity via the `confidence_scores_granularity` parameter.
@@ -41,6 +42,7 @@ Learn more about our API [here](https://docs.mistral.ai/api/endpoint/ocr).
 
 :::info
 Table formatting as well as header and footer extraction is only available for OCR 2512 or newer.
+Block extraction via `include_blocks` is only available for OCR 4 (`mistral-ocr-4-0`) or newer.
 :::
 
 The OCR processor returns the extracted **text content**, **images bboxes** and metadata about the document structure, making it easy to work with the recognized content programmatically.
@@ -888,7 +890,8 @@ The output will be a JSON object containing the extracted text content, images b
       "header": str|null, # Header content when using `extract_header=True`
       "footer": str|null, # Footer content when using `extract_footer=True`
       "dimensions": dict, # The dimensions of the page
-      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+      "confidence_scores": dict|null, # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+      "blocks": list|null # Paragraph-level bounding boxes with block labels when using `include_blocks=True`
     }
   ],
   "model": str, # The model used for the OCR
@@ -1182,7 +1185,8 @@ The output will be a JSON object containing the extracted text content, images b
       "header": str|null, # Header content when using `extract_header=True`
       "footer": str|null, # Footer content when using `extract_footer=True`
       "dimensions": dict, # The dimensions of the page
-      "confidence_scores": dict|null # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+      "confidence_scores": dict|null, # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
+      "blocks": list|null # Paragraph-level bounding boxes with block labels when using `include_blocks=True`
     }
   ],
   "model": str, # The model used for the OCR
@@ -1197,6 +1201,202 @@ When extracting images and tables they will be replaced with placeholders, such 
 - `[tbl-3.html](tbl-3.html)`
 
 You can map them to the actual images and tables by using the `images` and `tables` fields.
+:::
+
+<SectionTab as="h1" sectionId="block-extraction">Block Extraction</SectionTab>
+
+### Extract Structural Blocks with Bounding Boxes
+
+Set `include_blocks=True` to receive a `blocks` array on each page. Each block describes a single content region with its label (`type`), bounding box coordinates, and the extracted content. Blocks are returned in **reading order**.
+
+Each block shares the following fields: `type`, `top_left_x`, `top_left_y`, `bottom_right_x`, `bottom_right_y`, and `content`.
+
+<details>
+<summary><b>Available block types</b></summary>
+
+| Block type | Description |
+| --- | --- |
+| `text` | A paragraph of body text. |
+| `title` | A document title or section heading. |
+| `list` | A bulleted or numbered list. |
+| `table` | A table region. When tables are extracted, includes a `table_id` referencing the corresponding entry in `tables`. |
+| `image` | An image region. Includes an `image_id` referencing the corresponding entry in `images`. |
+| `equation` | A math equation. |
+| `caption` | A caption associated with a figure or table. |
+| `code` | A code block. |
+| `references` | A bibliography or references section. |
+| `aside_text` | A sidebar, callout, or other marginal text block. |
+| `header` | A page header. |
+| `footer` | A page footer. |
+| `signature` | A signature region. `content` holds the transcribed name when legible, otherwise an empty string. |
+
+</details>
+
+<ExplorerTabs id="block-extraction">
+  <ExplorerTab value="block-extraction-example" label="Block Extraction">
+    <Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import os
+from mistralai.client import Mistral
+
+api_key = os.environ["MISTRAL_API_KEY"]
+
+client = Mistral(api_key=api_key)
+
+ocr_response = client.ocr.process(
+    model="mistral-ocr-latest",
+    document={
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    include_blocks=True
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+
+const apiKey = process.env.MISTRAL_API_KEY;
+
+const client = new Mistral({ apiKey: apiKey });
+
+const ocrResponse = await client.ocr.process({
+    model: "mistral-ocr-latest",
+    document: {
+        type: "document_url",
+        documentUrl: "https://arxiv.org/pdf/2201.04234"
+    },
+    includeBlocks: true
+});
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/ocr \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  -d '{
+    "model": "mistral-ocr-latest",
+    "document": {
+        "type": "document_url",
+        "document_url": "https://arxiv.org/pdf/2201.04234"
+    },
+    "include_blocks": true
+  }'
+```
+
+  </TabItem>
+  <TabItem value="output" label="output">
+
+```json
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "# Leveraging Unlabeled Data to Predict Out-of-Distribution Performance\n\n![img-0.jpeg](img-0.jpeg)\n\nFigure 1: Illustration of our proposed method ATC.\n\nReal-world machine learning deployments are characterized by mismatches between the source (training) and target (test) distributions...",
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 294,
+          "top_left_y": 222,
+          "bottom_right_x": 943,
+          "bottom_right_y": 635,
+          "image_base64": null,
+          "image_annotation": null
+        }
+      ],
+      "tables": [],
+      "hyperlinks": [],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2200,
+        "width": 1700
+      },
+      "blocks": [
+        {
+          "type": "title",
+          "top_left_x": 240,
+          "top_left_y": 180,
+          "bottom_right_x": 1460,
+          "bottom_right_y": 260,
+          "content": "Leveraging Unlabeled Data to Predict Out-of-Distribution Performance"
+        },
+        {
+          "type": "image",
+          "top_left_x": 294,
+          "top_left_y": 222,
+          "bottom_right_x": 943,
+          "bottom_right_y": 635,
+          "content": "",
+          "image_id": "img-0.jpeg"
+        },
+        {
+          "type": "caption",
+          "top_left_x": 294,
+          "top_left_y": 640,
+          "bottom_right_x": 943,
+          "bottom_right_y": 690,
+          "content": "Figure 1: Illustration of our proposed method ATC."
+        },
+        {
+          "type": "text",
+          "top_left_x": 290,
+          "top_left_y": 720,
+          "bottom_right_x": 1410,
+          "bottom_right_y": 1100,
+          "content": "Real-world machine learning deployments are characterized by mismatches between the source (training) and target (test) distributions..."
+        },
+        {
+          "type": "equation",
+          "top_left_x": 600,
+          "top_left_y": 1140,
+          "bottom_right_x": 1080,
+          "bottom_right_y": 1200,
+          "content": "$p_{s}(x, y) \\neq p_{t}(x, y)$"
+        },
+        {
+          "type": "list",
+          "top_left_x": 290,
+          "top_left_y": 1240,
+          "bottom_right_x": 1410,
+          "bottom_right_y": 1480,
+          "content": "- Prompts: Several benchmarks have default prompts...\n- Evaluation Metrics: The official metrics typically require exact match..."
+        },
+        {
+          "type": "footer",
+          "top_left_x": 290,
+          "top_left_y": 2100,
+          "bottom_right_x": 1410,
+          "bottom_right_y": 2150,
+          "content": "Published as a conference paper at ICLR 2022"
+        }
+      ]
+    }
+  ],
+  "model": "mistral-ocr-4-0",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 1,
+    "doc_size_bytes": 102400
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+  </ExplorerTab>
+</ExplorerTabs>
+
+:::info
+Block extraction is only available for OCR 4 (`mistral-ocr-4-0`) or newer. Older models accept the parameter but return an empty array.
 :::
 
 <SectionTab as="h1" sectionId="confidence-scores">Confidence Scores</SectionTab>

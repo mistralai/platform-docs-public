@@ -17,6 +17,7 @@ import { getModelsBreadcrumb } from '@/app/[locale]/(docs)/models/model-cards/[s
  * - Sorting: explicit position/sidebar_position first; ties resolved alphabetically by label/slug.
  * - Pagination includes clickable categories (index pages) before their children.
  * - Empty folders (no children and no page/meta) are skipped.
+ * - Items with hidden: true are excluded from sidebar navigation.
  */
 
 export const IGNORED_DIRS = [
@@ -25,12 +26,16 @@ export const IGNORED_DIRS = [
   'robots',
 ];
 
-/** Detect Next.js route groups — directories like (products) or (developers) */
+/** Detect Next.js route groups, such as (products) or (developers). */
 const isRouteGroup = (name: string) => /^\(.*\)$/.test(name);
 
 const PAGE_BASENAMES = ['page.md', 'page.mdx', 'page.tsx', 'page.jsx'];
 const META_BASENAMES = ['_meta.mdx', '_meta.md'];
 const CATEGORY_JSON = '_category_.json';
+
+function isHiddenFlag(value: unknown): boolean {
+  return value === true || value === 'true';
+}
 
 // -----------------------------
 // Public API
@@ -45,11 +50,12 @@ const sidebarCache = new Map<string, { value: SidebarItem[]; expires: number }>(
 
 export async function getSidebar(
   rootDir: string | string[],
-  basePath = ''
+  basePath = '',
+  options: { includeHidden?: boolean } = {}
 ): Promise<SidebarItem[]> {
   // Normalize to an ordered array of roots. Earlier roots win in conflicts.
   const rootDirs = Array.isArray(rootDir) ? rootDir : [rootDir];
-  const cacheKey = rootDirs.join('\0');
+  const cacheKey = `${rootDirs.join('\0')}::hidden=${options.includeHidden ? '1' : '0'}`;
 
   // Only cache root-level invocations (the recursive ones pass basePath).
   if (basePath === '') {
@@ -83,7 +89,11 @@ export async function getSidebar(
 
     const categoryJson = loadCategoryMetadataMulti(subPaths); // may be null
 
-    const children = await getSidebar(subPaths, path.join(basePath, name));
+    const children = await getSidebar(
+      subPaths,
+      path.join(basePath, name),
+      options
+    );
 
     const hasChildren = children.length > 0;
 
@@ -96,15 +106,22 @@ export async function getSidebar(
       ? loadFileMetadataAndToc(metaMdPath)
       : { metadata: null as DocsMetadata | null, toc: [] as TocItem[] };
 
+    const categoryMeta = deriveCategoryMetadata({
+      dirName: name,
+      pageMeta: pageData.metadata,
+      metaMd: metaMdData.metadata,
+      categoryJson,
+    });
+    const mergedMeta = mergeFileMetadata(pageData.metadata, metaMdData.metadata);
+    const isHidden =
+      shouldHideCategory(name) ||
+      shouldHideSidebarRoute(slug) ||
+      isHiddenFlag(categoryMeta.hidden) ||
+      isHiddenFlag(mergedMeta?.hidden);
+
     // Case resolution
     // 1) If there are children -> this is a category. It is clickable when there is a page.* or a _meta.md.
     if (hasChildren) {
-      const categoryMeta = deriveCategoryMetadata({
-        dirName: name,
-        pageMeta: pageData.metadata,
-        metaMd: metaMdData.metadata,
-        categoryJson,
-      });
 
       // Prefer page title as label if we have a real index page.
       if (!categoryMeta.label && hasPage && pageData.metadata?.title) {
@@ -120,7 +137,6 @@ export async function getSidebar(
         else overridedSlug = categoryMeta.link.split('/');
       }
 
-      const shouldHide = shouldHideCategory(name) || shouldHideSidebarRoute(slug);
       const categoryItem: SidebarItem = {
         slug,
         overridedSlug,
@@ -128,25 +144,34 @@ export async function getSidebar(
         metadata: categoryMeta,
         children,
         pagination: { prev: undefined, next: undefined },
-        hidden: shouldHide,
+        hidden: isHidden,
         clickable: hasPage || categoryMeta.link !== undefined,
         hasPage,
         isMarkdownFile: hasPage && pageIsMdx,
       };
 
-      items.push(categoryItem);
+      if (!isHidden || options.includeHidden) {
+        items.push(categoryItem);
+      }
       continue;
     }
 
     // 2) Leaf: if we have a page -> file item with toc (metadata merged with _meta.md if present)
     if (hasPage) {
-      if (shouldHideCategory(name) || shouldHideSidebarRoute(slug)) {
+      if (
+        !options.includeHidden &&
+        (shouldHideCategory(name) || shouldHideSidebarRoute(slug))
+      ) {
         continue;
       }
       const mergedMeta = mergeFileMetadata(
         pageData.metadata,
         metaMdData.metadata
       );
+
+      if (!options.includeHidden && isHiddenFlag(mergedMeta?.hidden)) {
+        continue;
+      }
 
       let toc: TocItem[] = [];
       if (mergedMeta?.template_custom_toc) {
@@ -177,6 +202,7 @@ export async function getSidebar(
         metadata: mergedMeta,
         toc,
         pagination: { prev: undefined, next: undefined },
+        hidden: isHidden,
         clickable: true,
         isMarkdownFile: pageIsMdx,
       };
@@ -186,6 +212,9 @@ export async function getSidebar(
 
     // 3) Leaf: if we only have _meta.md -> treat as a file-like leaf (no ToC)
     if (hasMetaMd && metaMdData.metadata) {
+      if (!options.includeHidden && isHiddenFlag(metaMdData.metadata.hidden)) {
+        continue;
+      }
       const fileItem: SidebarItem = {
         slug,
         overridedSlug: slug,
@@ -193,6 +222,7 @@ export async function getSidebar(
         metadata: metaMdData.metadata,
         toc: [],
         pagination: { prev: undefined, next: undefined },
+        hidden: isHiddenFlag(metaMdData.metadata.hidden),
         clickable: true,
         isMarkdownFile: pageIsMdx,
       };
@@ -202,6 +232,9 @@ export async function getSidebar(
 
     // 4) Leaf with only _category_.json that has a link: treat as a clickable redirect
     if (categoryJson?.link) {
+      if (!options.includeHidden && isHiddenFlag(categoryJson.hidden)) {
+        continue;
+      }
       let overridedSlug: SidebarItem['overridedSlug'];
       let link = categoryJson.link;
       if (link.startsWith('/')) link = link.slice(1);
@@ -219,6 +252,7 @@ export async function getSidebar(
         } as DocsMetadata,
         toc: [],
         pagination: { prev: undefined, next: undefined },
+        hidden: isHiddenFlag(categoryJson.hidden),
         clickable: true,
         isMarkdownFile: false,
       };
@@ -255,7 +289,7 @@ function readEligibleDirs(dir: string): fs.Dirent[] {
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch {
-    // Missing roots are OK — we may be scanning a dir that only exists under one root.
+    // Missing roots are OK because a dir may exist under only one root.
     return [];
   }
 
@@ -407,18 +441,21 @@ function deriveCategoryMetadata(args: {
   const tocFromMetaMd = (metaMd as any)?.table_of_contents as
     | boolean
     | undefined;
+  const hiddenFromMetaMd = (metaMd as any)?.hidden as boolean | undefined;
 
   const labelFromCategory = categoryJson?.label;
   const positionFromCategory = categoryJson?.position;
   const tocFromCategory = categoryJson?.table_of_contents as
     | boolean
     | undefined;
+  const hiddenFromCategory = categoryJson?.hidden as boolean | undefined;
 
   const fallbackLabel = humanizeSlug(dirName);
 
   const label = labelFromMetaMd ?? labelFromCategory ?? fallbackLabel;
   const position = positionFromMetaMd ?? positionFromCategory ?? undefined;
   const table_of_contents = tocFromMetaMd ?? tocFromCategory;
+  const hidden = hiddenFromMetaMd ?? hiddenFromCategory ?? undefined;
 
   // Some Docusaurus-like category JSONs can include link info; we ignore here because routing is file-based.
   const out: DocsCategoryMetadata = {
@@ -427,6 +464,7 @@ function deriveCategoryMetadata(args: {
     link: categoryJson?.link,
     table_of_contents,
     defaultExpanded: categoryJson?.defaultExpanded,
+    hidden,
   } as DocsCategoryMetadata;
 
   return out;
@@ -454,6 +492,7 @@ function mergeFileMetadata(
     custom_toc: pageMeta?.custom_toc ?? metaMd?.custom_toc,
     template_custom_toc:
       pageMeta?.template_custom_toc ?? metaMd?.template_custom_toc,
+    hidden: pageMeta?.hidden ?? metaMd?.hidden,
   } as DocsMetadata;
 
   return out;
@@ -530,6 +569,10 @@ function getNavigableItemsInOrder(items: SidebarItem[]): SidebarItem[] {
 
   function traverse(list: SidebarItem[]) {
     for (const item of list) {
+      if (item.hidden) {
+        continue;
+      }
+
       if (item.type === 'file') {
         result.push(item);
         continue;

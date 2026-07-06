@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { getSidebar } from '@/lib/content';
-import { DocsSidebar, SideBarTreeNode } from '@/components/layout/sidebar';
+import { ContextualHiddenDocsSidebar } from '@/components/layout/contextual-hidden-sidebar';
+import { SideBarTreeNode } from '@/components/layout/sidebar';
 import { SidebarProvider, Sidebar } from '@/components/ui/sidebar';
 import PageContent from '@/components/layout/page-content';
 import { DocsBreadcrumb } from '@/components/layout/docs-breadcrumb';
@@ -49,10 +50,11 @@ export default async function SidebarLayout({
     locale === defaultLocale
       ? [`src/content/${defaultLocale}/docs`]
       : [`src/content/${locale}/docs`, `src/content/${defaultLocale}/docs`];
-  const sidebar = await getSidebar([
-    ...contentRoots,
-    'src/app/[locale]/(docs)',
-  ]);
+  const sidebar = await getSidebar(
+    [...contentRoots, 'src/app/[locale]/(docs)'],
+    '',
+    { includeHidden: true }
+  );
   const apiSidebarMetadata = await getApiSidebarMetadata(locale);
   const { tree: sidebarTree, defaultExpandedCategories } = sidebarTreeData(
     sidebar,
@@ -69,7 +71,7 @@ export default async function SidebarLayout({
           className="h-fold sticky top-header overflow-y-auto scrollbar-none shrink-0"
           collapsible="none"
         >
-          <DocsSidebar
+          <ContextualHiddenDocsSidebar
             sidebar={sidebarTree}
             expandedCategoriesOptions={{
               overridedExpandedCategories: {
@@ -146,10 +148,6 @@ const sidebarTreeData = (
   const apiSidebarData = mapApiSidebarToTreeNode(flattenSidebar(apiSidebarMetadata));
 
   for (const item of sidebar) {
-    if (item.hidden) {
-      continue;
-    }
-
     switch (item.type) {
       /* File --- */
       case 'file': {
@@ -173,6 +171,7 @@ const sidebarTreeData = (
             children: apiSidebarData,
             pagination: { prev: undefined, next: undefined },
             clickable: true,
+            hidden: item.hidden,
           });
           break;
         }
@@ -184,6 +183,7 @@ const sidebarTreeData = (
           children: [] as SideBarTreeNode[],
           pagination: { prev: undefined, next: undefined },
           clickable: true,
+          hidden: item.hidden,
         });
         break;
       }
@@ -258,6 +258,7 @@ const sidebarTreeData = (
           categoryPath,
           pagination: { prev: undefined, next: undefined },
           clickable: isGettingStarted || item.clickable ? true : false,
+          hidden: item.hidden,
         });
         break;
       }

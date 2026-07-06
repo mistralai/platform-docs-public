@@ -1,100 +1,750 @@
 ---
 id: scheduling
-title: Workflow Scheduling
+title: Workflow scheduling
 sidebar_position: 7
 ---
 
 # Workflow scheduling
 
-Run workflows on a recurring cron schedule, with policies for catchup and overlap.
-
-<SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
-
-Workers register their workflow schedules with the platform at startup. The platform fires the workflow at the scheduled time and applies the policies you've defined for catchup and overlap.
+Run workflows on a recurring cron, interval, or calendar schedule. Schedules persist across worker restarts and are managed independently of your worker code.
 
 :::note
-Schedule changes require a worker restart to take effect. The worker reads schedule definitions once at startup — changes to cron expressions or policies in your code are not picked up by a running worker.
+Schedules were previously defined using the `@workflow.define(schedules=[...])` decorator. That approach is deprecated. See [Deprecated: decorator-based schedules](#deprecated-decorator-based-schedules) for details and migration guidance.
 :::
 
-<SectionTab as="h1" sectionId="defining-schedules">Defining Schedules</SectionTab>
+<SectionTab as="h1" sectionId="how-it-works">
+  How it works
+</SectionTab>
 
-Add schedules to workflows using cron expressions. Schedules use **UTC** by default — convert from your local timezone before writing the expression.
+Mistral AI Workflows store schedules and fire workflow executions at the scheduled times. Overlap and catchup policies control what happens when runs are missed or overlap with each other. You can create, list, and delete schedules at any time without restarting workers.
 
-<Tabs>
-  <TabItem value="python" label="Python">
+<SectionTab as="h1" sectionId="creating-a-schedule">
+  Creating a schedule
+</SectionTab>
 
-```python
-import mistralai.workflows as workflows
-from mistralai.workflows.models import ScheduleDefinition
-
-schedule = ScheduleDefinition(
-    input={"report_type": "daily"},
-    cron_expressions=["0 0 * * *"]  # Daily at midnight UTC
-)
-
-@workflows.workflow.define(name="report_workflow", schedules=[schedule])
-class ReportWorkflow:
-    @workflows.workflow.entrypoint
-    async def run(self, report_type: str = "daily") -> None:
-        # Generate report
-        pass
-```
-
-  </TabItem>
-</Tabs>
-
-<SectionTab as="h1" sectionId="defining-schedule-policies">Defining Schedule Policies</SectionTab>
-
-Policies control what happens when schedules are missed or overlap:
-
-- **`catchup_window_seconds`** — If the platform was down or missed scheduled runs, it will retroactively trigger all missed executions within this window. Runs older than the window are skipped.
-- **`overlap`** — What to do when a new run is due but the previous one is still running:
-  - `SKIP` — drop the new run. Use this when you only care about the latest data and overlapping runs would do duplicate work (e.g., periodic sync jobs).
-  - `BUFFER_ONE` — queue one pending run, drop further ones until the buffered run starts. Use this when you want to guarantee one follow-up run but don't want a backlog.
-  - `ALLOW_ALL` — start every scheduled run concurrently. Use this only when runs are independent and the workload can absorb the parallelism.
+To create a schedule, pass a `workflow_identifier` and a `ScheduleDefinition`. The `workflow_identifier` must match the `name` you passed to `@workflow.define()`.
 
 <Tabs>
   <TabItem value="python" label="Python">
 
 ```python
-import mistralai.workflows as workflows
-from mistralai.workflows.models import ScheduleDefinition, SchedulePolicy, ScheduleOverlapPolicy
+from mistralai.client import Mistral, models
 
-# Override default schedule policy
-schedule_policy = SchedulePolicy(
-    catchup_window_seconds=86400,  # Allow 1 day of catchup
-    overlap=ScheduleOverlapPolicy.SKIP,  # Skip overlapping executions
+client = Mistral()
+
+response = await client.workflows.schedules.schedule_workflow(
+    workflow_identifier="report-workflow",
+    deployment_name="production",
+    schedule=models.ScheduleDefinition(
+        input={"report_type": "daily"},
+        calendars=[
+            models.ScheduleCalendar(
+                hour=[models.ScheduleRange(start=9)],
+                minute=[models.ScheduleRange(start=0)],
+            )
+        ],  # daily at 9:00 AM UTC
+    ),
 )
+print(response.schedule_id)
+```
 
-schedule = ScheduleDefinition(
-    input={"report_type": "daily"},
-    cron_expressions=["0 0 * * *"],  # Daily at midnight UTC
-    policy=schedule_policy
-)
+  </TabItem>
+  <TabItem value="curl" label="cURL">
 
-@workflows.workflow.define(name="report_workflow", schedules=[schedule])
-class ReportWorkflow:
-    @workflows.workflow.entrypoint
-    async def run(self, report_type: str = "daily") -> None:
-        # Generate report
-        pass
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {"report_type": "daily"},
+      "calendars": [
+        {
+          "hour": [{"start": 9}],
+          "minute": [{"start": 0}]
+        }
+      ]
+    }
+  }'
 ```
 
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="managing-schedules">Managing schedules</SectionTab>
+`response.schedule_id` is the identifier for the created schedule. Use it to get, update, pause, resume, and delete the schedule — as shown in the [Managing schedules](#managing-schedules) section.
 
-Schedules can be managed in two ways:
+**`workflow_identifier`**: The workflow name from `@workflow.define(name=...)`, or a workflow registration ID.
 
-- **In code (recommended for most cases)**: declare schedules on the workflow via `@workflows.workflow.define(..., schedules=[...])`. Workers register them at startup. Changes to the `ScheduleDefinition` take effect after restarting the worker.
-- **Via the REST API**: `POST /v1/workflows/schedules` to create, `GET /v1/workflows/schedules` to list, and `DELETE /v1/workflows/schedules/{schedule_id}` to remove. Use the API when you want to manage schedules independently of worker deployments (e.g., one-off ad-hoc schedules, or schedules driven by an external control plane).
+**`deployment_name`**: Optional. Required if there is more than one named deployment for the workflow. Routes the schedule to a specific named deployment. If omitted, the platform uses the default deployment, but returns an error if the workflow has more than one. See [Deployments](/studio-api/workflows/managing-workflows-in-production/deployments) for details.
+
+<SectionTab as="h1" sectionId="schedule-specifications">
+  Schedule specifications
+</SectionTab>
+
+To specify a schedule, use a `ScheduleDefinition`. A `ScheduleDefinition` combines `calendars`, `intervals`, and `cron_expressions` in any mix. A run fires when any of the definitions match the current condition. Use `skip` to exclude specific times from the result.
+
+<SectionTab as="h2" variant="secondary" sectionId="calendars">
+  Calendars
+</SectionTab>
+
+Calendars are the recommended way to define schedules. They are Mistral Workflows' native representation, and cron expressions are converted to calendars server-side. Calendars also support ranges and steps that cron cannot express cleanly.
+
+A `ScheduleCalendar` matches when all of its fields match simultaneously. Each field accepts a list of `ScheduleRange(start, end, step)` values:
+
+- `ScheduleRange(start=9)`: exactly 9
+- `ScheduleRange(start=1, end=5)`: 1 through 5 inclusive
+- `ScheduleRange(start=0, end=59, step=15)`: 0, 15, 30, 45
+
+Fields and their ranges: `second` (0 to 59), `minute` (0 to 59), `hour` (0 to 23), `day_of_month` (1 to 31), `month` (1 to 12), `year`, `day_of_week` (0 to 6, where 0 is Sunday).
+
+The following shows a `ScheduleCalendar` that runs Monday through Friday at 9:30 AM UTC:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule=models.ScheduleDefinition(
+    input={},
+    calendars=[
+        models.ScheduleCalendar(
+            hour=[models.ScheduleRange(start=9)],        # 9 AM
+            minute=[models.ScheduleRange(start=30)],     # at :30
+            day_of_week=[models.ScheduleRange(start=1, end=5)],  # Mon-Fri (1=Mon, 5=Fri)
+        )
+    ],
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "calendars": [
+        {
+          "hour": [{"start": 9}],
+          "minute": [{"start": 30}],
+          "day_of_week": [{"start": 1, "end": 5}]
+        }
+      ]
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="intervals">
+  Intervals
+</SectionTab>
+
+To fire on a fixed repeating interval, use `intervals`. Intervals are defined with an ISO 8601 duration string for `every` and an optional `offset` to shift the start within each period.
+
+Common duration strings: `PT30M` (30 minutes), `PT1H` (1 hour), `PT4H` (4 hours), `P1D` (1 day), `PT2H30M` (2.5 hours).
+
+The following example uses `every="PT4H"` and `offset="PT30M"`, to shift each run 30 minutes into the window. It fires at `00:30`, `04:30`, `08:30`, `12:30`, `16:30`, and `20:30` UTC. Without `offset`, runs fire on the boundary, such as `00:00`, `04:00`, and `08:00`.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule=models.ScheduleDefinition(
+    input={},
+    intervals=[
+        models.ScheduleInterval(
+            every="PT4H",    # repeat every 4 hours
+            offset="PT30M", # fire 30 min after each 4-hour boundary
+        )
+    ],
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "sync-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "intervals": [
+        { "every": "PT4H", "offset": "PT30M" }
+      ]
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="cron-expressions">
+  Cron expressions
+</SectionTab>
+
+The `cron_expressions` parameter uses the standard 5-field syntax common in cron jobs: `minute hour day-of-month month day-of-week`. All times are UTC unless you set `time_zone_name`.
+
+:::note
+Cron expressions are converted to calendar specs server-side. Use `calendars` directly when you need ranges, steps, or multiple values that cron syntax cannot express cleanly.
+:::
+
+The following example uses `cron_expressions` to run a workflow Monday through Friday at 9:00 AM UTC:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule=models.ScheduleDefinition(
+    input={},
+    cron_expressions=["0 9 * * 1-5"],  # 9 AM UTC, Monday-Friday
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "cron_expressions": ["0 9 * * 1-5"]
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+`cron_expressions`, `calendars`, and `intervals` are merged. Every active spec fires independently.
+
+<SectionTab as="h2" variant="secondary" sectionId="bounding-and-skipping">
+  Bounding and skipping
+</SectionTab>
+
+To restrict a schedule to a time window, use `start_at` and `end_at`. To exclude specific calendar times from firing, use `skip` (same `ScheduleCalendar` structure).
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import datetime, timezone
+
+schedule=models.ScheduleDefinition(
+    input={},
+    calendars=[
+        models.ScheduleCalendar(
+            hour=[models.ScheduleRange(start=9)],        # 9 AM
+            minute=[models.ScheduleRange(start=30)],     # at :30
+        )
+    ],
+    start_at=datetime(2026, 1, 1, 9, 30, tzinfo=timezone.utc),   # first run: Jan 1 2026 at 09:30 UTC
+    end_at=datetime(2026, 12, 31, 9, 30, tzinfo=timezone.utc),   # last run: Dec 31 2026 at 09:30 UTC
+    skip=[
+        # skip December 25th
+        models.ScheduleCalendar(
+            month=[models.ScheduleRange(start=12)],
+            day_of_month=[models.ScheduleRange(start=25)],
+        )
+    ],
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "calendars": [
+        {
+          "hour": [{"start": 9}],
+          "minute": [{"start": 30}]
+        }
+      ],
+      "start_at": "2026-01-01T09:30:00Z",
+      "end_at": "2026-12-31T09:30:00Z",
+      "skip": [
+        {
+          "month": [{"start": 12}],
+          "day_of_month": [{"start": 25}]
+        }
+      ]
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="schedule-policies">
+  Schedule policies
+</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="overlap-policy">
+  Overlap policy
+</SectionTab>
+
+The overlap policy controls what happens when a new run is due but the previous execution is still running.
+
+To define the policy, pass an `overlap` value from 1–6 based on the following behaviors:
+
+| Value | Name            | Behavior                                                                                                                     |
+| ----- | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `1`   | SKIP            | Drop the new run. **(default)** Use for sync jobs where only the latest data matters.                                        |
+| `2`   | BUFFER_ONE      | Queue one pending run; drop further runs until the buffered one starts. Guarantees one follow-up without building a backlog. |
+| `3`   | BUFFER_ALL      | Queue every pending run. May create an unbounded backlog. Use with caution.                                                  |
+| `4`   | CANCEL_OTHER    | Gracefully cancel the running execution and start the new one.                                                               |
+| `5`   | TERMINATE_OTHER | Forcefully terminate the running execution and start the new one.                                                            |
+| `6`   | ALLOW_ALL       | Start all runs concurrently. Use only when runs are fully independent and the system can absorb the parallelism.             |
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule=models.ScheduleDefinition(
+    input={"source": "postgres"},
+    calendars=[
+        models.ScheduleCalendar(
+            hour=[models.ScheduleRange(start=8, end=18)],  # 8 AM-6 PM UTC
+            minute=[models.ScheduleRange(start=0)],
+        )
+    ],
+    policy=models.SchedulePolicy(
+        overlap=models.ScheduleOverlapPolicy.BUFFER_ONE,
+    ),
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "sync-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {"source": "postgres"},
+      "calendars": [
+        {
+          "hour": [{"start": 8, "end": 18}],
+          "minute": [{"start": 0}]
+        }
+      ],
+      "policy": {
+        "overlap": 2
+      }
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="catchup-window">
+  Catchup window
+</SectionTab>
+
+To control how far back missed runs are retroactively fired after a platform outage, use `catchup_window_seconds`. Runs scheduled before the window are skipped. Defaults to `31536000` (365 days). Modify this value to make up missed runs based on the requirements of your use case.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+policy=models.SchedulePolicy(
+    catchup_window_seconds=86400,
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "calendars": [{"hour": [{"start": 9}], "minute": [{"start": 0}]}],
+      "policy": {
+        "catchup_window_seconds": 86400
+      }
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="pause-on-failure">
+  Pause on failure
+</SectionTab>
+
+To automatically pause the schedule when a triggered workflow run fails, set `pause_on_failure=True`. The schedule stays paused until manually resumed using the API.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+policy=models.SchedulePolicy(
+    pause_on_failure=True,
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "calendars": [{"hour": [{"start": 9}], "minute": [{"start": 0}]}],
+      "policy": {
+        "pause_on_failure": true
+      }
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="jitter">
+  Jitter
+</SectionTab>
+
+`jitter` adds a random delay between `0` and the specified duration to each scheduled run. Use an ISO 8601 duration string. Use this setting to spread load when many schedules would otherwise fire simultaneously, for example, hundreds of hourly schedules all triggering at `:00`. The delay is bounded: it won't push a run past the next scheduled time.
+
+The following example runs every hour, with a jitter window of 5 minutes, meaning runs will be randomly delayed between on the hour and up to 5 minutes past the hour.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule=models.ScheduleDefinition(
+    input={"tenant_id": "acme"},
+    intervals=[
+        models.ScheduleInterval(every="PT1H"),  # every hour
+    ],
+    jitter="PT5M",  # actual fire time is random within [scheduled_time, scheduled_time + 5 min)
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {"tenant_id": "acme"},
+      "intervals": [{"every": "PT1H"}],
+      "jitter": "PT5M"
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="max-executions">
+  Max executions
+</SectionTab>
+
+To stop the schedule automatically after a fixed number of runs, set `max_executions`. Once the limit is reached, no further executions are triggered. `null` (the default) means runs are unlimited and the schedule will continue indefinitely.
+
+The following example runs every Monday for 4 weeks, and then stops:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule=models.ScheduleDefinition(
+    input={},
+    cron_expressions=["0 9 * * 1"],  # every Monday
+    max_executions=4,                # run for 4 weeks then stop
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflow_identifier": "report-workflow",
+    "deployment_name": "production",
+    "schedule": {
+      "input": {},
+      "cron_expressions": ["0 9 * * 1"],
+      "max_executions": 4
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="managing-schedules">
+  Managing schedules
+</SectionTab>
+
+:::note
+For full request and response schemas for all schedule operations, see the [API reference](/api/endpoint/beta/workflows/schedules).
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="listing-schedules">
+  Listing schedules
+</SectionTab>
+
+The following example lists all schedules for all active workflows in the workspace:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+response = client.workflows.schedules.get_schedules()
+for s in response.schedules:
+    print(s.schedule_id, s.workflow_name)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  "https://api.mistral.ai/v1/workflows/schedules"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="getting-a-schedule">
+  Getting a schedule
+</SectionTab>
+
+The following example shows getting a schedule by schedule ID. The response returns the complete schedule specification.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+schedule = client.workflows.schedules.get_schedule(
+    schedule_id="your-schedule-id",
+)
+print(schedule.paused, schedule.future_executions)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  "https://api.mistral.ai/v1/workflows/schedules/your-schedule-id"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="updating-a-schedule">
+  Updating a schedule
+</SectionTab>
+
+Update a schedule's timing, policy, or input without deleting and recreating it. Only the fields you include are changed. Unset fields keep their existing values.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+client.workflows.schedules.update_schedule(
+    schedule_id="your-schedule-id",
+    schedule=models.PartialScheduleDefinition(
+        calendars=[
+            models.ScheduleCalendar(
+                hour=[models.ScheduleRange(start=10)],
+                minute=[models.ScheduleRange(start=0)],
+            )
+        ],
+    ),
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X PATCH "https://api.mistral.ai/v1/workflows/schedules/your-schedule-id" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schedule": {
+      "calendars": [
+        {
+          "hour": [{"start": 10}],
+          "minute": [{"start": 0}]
+        }
+      ]
+    }
+  }'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="pausing-and-resuming">
+  Pausing and resuming
+</SectionTab>
+
+A paused schedule stops firing runs until explicitly resumed. Both methods accept an optional `note` recorded alongside the pause/resume state.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# Pause
+client.workflows.schedules.pause_schedule(
+    schedule_id="your-schedule-id",
+    note="Paused for maintenance",
+)
+
+# Resume
+client.workflows.schedules.resume_schedule(
+    schedule_id="your-schedule-id",
+    note="Maintenance complete",
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+# Pause
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules/your-schedule-id/pause" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"note": "Paused for maintenance"}'
+
+# Resume
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules/your-schedule-id/resume" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"note": "Maintenance complete"}'
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="deleting-a-schedule">
+  Deleting a schedule
+</SectionTab>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+client.workflows.schedules.unschedule_workflow(
+    schedule_id="your-schedule-id",
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  "https://api.mistral.ai/v1/workflows/schedules/your-schedule-id"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="triggering-a-run-manually">
+  Triggering a run manually
+</SectionTab>
+
+Fire an immediate run outside the normal schedule. By default, the schedule's own overlap policy applies. If it is set to `SKIP` and a run is already active, the triggered run is dropped. Pass `overlap` to override the policy for this single trigger. Set it to `ALLOW_ALL` to execute immediately regardless of what is currently running.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+client.workflows.schedules.trigger(
+    schedule_id="your-schedule-id",
+    overlap=models.ScheduleOverlapPolicy.ALLOW_ALL,
+)
+```
+
+  </TabItem>
+  <TabItem value="curl" label="cURL">
+
+```bash
+curl -X POST "https://api.mistral.ai/v1/workflows/schedules/your-schedule-id/trigger" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"overlap": 6}'
+```
+
+  </TabItem>
+</Tabs>
+
+:::info
+You can also create, edit, delete, pause, resume, and trigger schedules directly in [AI Studio](https://console.mistral.ai/build/workflows/schedules).
+:::
+
+<SectionTab as="h1" sectionId="deprecated-decorator-based-schedules">
+  Deprecated: decorator-based schedules
+</SectionTab>
 
 :::warning
-**Workers must agree on schedule definitions**: every worker for a given workflow registers its own copy of the in-code schedules. If two workers run different versions of the same workflow with different `ScheduleDefinition` configs, the platform sees conflicting registrations and behavior is undefined. Roll out worker updates so all workers converge on the same definition.
-:::
+**The `schedules=` argument on `@workflow.define` is deprecated.** Use `client.workflows.schedules.schedule_workflow()` instead.
 
-<SectionTab as="h1" sectionId="complete-example">Complete Example</SectionTab>
+Two problems make the decorator approach fragile:
+
+1. **Schedule changes require a worker restart.** The worker reads schedule definitions once at startup. Updates to cron expressions or policies are not picked up by a running worker.
+2. **Multi-worker conflicts.** Every worker instance registers its own copy of the in-code schedules. If two workers for the same workflow run different `ScheduleDefinition` configs, the platform sees conflicting registrations and the behavior is undefined.
+
+To migrate, call `client.workflows.schedules.schedule_workflow()` from outside your worker, for example from a deployment script or control plane. Then remove the `schedules=[...]` argument from `@workflow.define`.
+:::
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -103,33 +753,29 @@ Schedules can be managed in two ways:
 import mistralai.workflows as workflows
 from mistralai.workflows.models import ScheduleDefinition, SchedulePolicy, ScheduleOverlapPolicy
 
-# Run every Saturday at 3 AM UTC
-backup_schedule = ScheduleDefinition(
-    input={"retention_days": 30},
-    cron_expressions=["0 3 * * 6"],
+schedule = ScheduleDefinition(
+    input={"report_type": "daily"},
+    cron_expressions=["0 9 * * *"],
     policy=SchedulePolicy(
-        catchup_window_seconds=604800,  # 7 days
+        catchup_window_seconds=86400,
         overlap=ScheduleOverlapPolicy.SKIP,
     )
 )
 
-@workflows.workflow.define(name="database_backup_workflow", schedules=[backup_schedule])
-class DatabaseBackupWorkflow:
+@workflows.workflow.define(name="report_workflow", schedules=[schedule])
+class ReportWorkflow:
     @workflows.workflow.entrypoint
-    async def run(self, retention_days: int = 30) -> None:
-        print(f"Starting backup with {retention_days} day retention")
-        # Backup implementation here
-
-# Start worker with:
-# asyncio.run(workflows.run_worker([DatabaseBackupWorkflow]))
+    async def run(self, report_type: str = "daily") -> None:
+        pass
 ```
 
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="notes">Notes</SectionTab>
+<SectionTab as="h1" sectionId="notes">
+  Notes
+</SectionTab>
 
 - Cron expressions follow standard 5-field syntax (`minute hour day-of-month month day-of-week`).
-- A workflow can have multiple `cron_expressions` — they all fire independently.
-- Each schedule passes its own `input` payload to the workflow's entrypoint.
-- Schedule changes require a worker restart to take effect.
+- Schedules use **UTC** by default. Set `time_zone_name` to an IANA timezone name (e.g., `"Europe/Paris"`) to use a local timezone instead.
+- Each schedule carries its own `input` payload, passed directly to the workflow's entrypoint.

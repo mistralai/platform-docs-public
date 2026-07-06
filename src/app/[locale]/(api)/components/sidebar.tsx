@@ -1,11 +1,11 @@
 'use client';
-import { DocsSidebar } from '@/components/layout/sidebar';
+import { ContextualHiddenDocsSidebar } from '@/components/layout/contextual-hidden-sidebar';
 import { ApiSidebarItem } from '../schema/api-sidebar';
 import React from 'react';
 import { MethodBadge } from './method-badge';
 import { DownloadIcon } from '@/components/icons/pixel';
 
-export const ApiDocsSidebar = ({
+export const ContextualHiddenApiSidebar = ({
   sidebar,
   children,
 }: {
@@ -36,7 +36,7 @@ export const ApiDocsSidebar = ({
   );
 
   return (
-    <DocsSidebar<ApiSidebarItem>
+    <ContextualHiddenDocsSidebar<ApiSidebarItem>
       expandedCategoriesOptions={{
         overridedExpandedCategories: {
           '/api': [['api', 'endpoint', 'chat']],
@@ -48,6 +48,6 @@ export const ApiDocsSidebar = ({
       filterByActiveHeaderTab={false}
     >
       {children}
-    </DocsSidebar>
+    </ContextualHiddenDocsSidebar>
   );
 };

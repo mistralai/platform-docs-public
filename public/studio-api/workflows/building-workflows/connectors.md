@@ -8,9 +8,10 @@ sidebar_position: 3
 
 Use [Connectors](/studio-api/connectors) inside a Workflow to call external services (GitHub, Notion, Slack, Outlook, etc.) without managing credentials yourself. The Workflow declares which Connectors it needs, the Mistral platform resolves credentials at runtime and triggers OAuth flows on demand.
 
-:::warning
-Connectors can only be used in [on-behalf-of workflows](/studio-api/workflows/building-workflows/on_behalf_of), which require a [hardened deployment](/studio-api/workflows/managing-workflows-in-production/hardened_deployments). See [Registering an OBO workflow](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow) for setup steps.
-:::
+A Workflow resolves Connector credentials from the identity it runs under:
+
+- **[On-behalf-of (OBO) workflows](/studio-api/workflows/building-workflows/on_behalf_of)** use the **triggering user's** credentials. OBO requires a [hardened deployment](/studio-api/workflows/managing-workflows-in-production/hardened_deployments) — see [Registering an OBO workflow](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow).
+- **Regular workflows** use the **worker's** credentials (the identity of the API key the worker runs under).
 
 :::info
 The Workflow Connector integration uses `mistralai-workflows-plugins-mistralai`. These are **Public Preview** APIs and may change.
@@ -22,7 +23,7 @@ Without Connector slots, every Workflow that talks to an external API has to han
 
 - **No secrets in Workflow code**: credentials are resolved at runtime by the platform.
 - **Automatic OAuth**: if the caller hasn't authorized yet, the Workflow pauses and emits an auth URL, then resumes when the flow completes.
-- **Per-user identity**: Workflows run on behalf of the caller, so each user uses their own stored credentials.
+- **Identity-scoped credentials**: credentials resolve from whichever identity the Workflow runs under — the triggering user (OBO) or the worker.
 - **Swappable auth**: bearer (PAT) and OAuth2 Connectors use the same Workflow code.
 
 <SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
@@ -49,7 +50,7 @@ Each user stores their own credentials per Connector in Studio. You can keep a s
 3. Click **+ Add credentials**, give it a name (alphanumeric and hyphens), and complete the bearer token paste or OAuth flow.
 4. One credential is always the **default**. To change which one runs when no name is specified, edit a credential and mark it as default.
 
-Credentials are stored per **user**: each caller uses their own stored credentials when the Workflow runs.
+Credentials are stored per **user**. At runtime the Workflow uses the credentials of the identity it runs under: the triggering user in an OBO Workflow, or the worker otherwise.
 
 <SectionTab as="h3" variant="secondary" sectionId="credentials-sdk">Manage credentials from the SDK</SectionTab>
 
@@ -98,7 +99,7 @@ The `client.beta.connectors` API is in **Public Preview**. See the [multiple aut
 
 <SectionTab as="h2" sectionId="oauth-flow">How the fallback OAuth flow works</SectionTab>
 
-When a Workflow execution starts, the worker's auth interceptor runs a preflight on every Connector slot declared with `@uses_connectors`. If valid credentials exist for the caller, the Workflow body runs immediately. If not (typical first OAuth2 use), the worker pauses, gets an auth URL from the Mistral API, forwards it to the client as an `auth_url` event, and waits while the user completes authorization in their browser. Once the credentials land in storage, the Workflow resumes.
+When a Workflow execution starts, the worker's auth interceptor runs a preflight on every Connector slot declared with `@uses_connectors`. If valid credentials exist for the resolved identity, the Workflow body runs immediately. If not (typical first OAuth2 use), the worker pauses, gets an auth URL from the Mistral API, forwards it to the client as an `auth_url` event, and waits while the user completes authorization in their browser. Once the credentials land in storage, the Workflow resumes.
 
 <div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
 <Image
@@ -177,7 +178,7 @@ async def create_github_issue(
 
 <SectionTab as="h3" variant="secondary" sectionId="attach-workflow">Step 3: Attach slots to the Workflow class</SectionTab>
 
-Use `@uses_connectors` to register the slots, and `on_behalf_of=True` so the Workflow runs with the caller's identity:
+Use `@uses_connectors` to register the slots. Add `on_behalf_of=True` to resolve credentials from the triggering user; omit it to use the worker's credentials:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -213,7 +214,7 @@ class GitHubIssueCreatorWorkflow:
 
 Notes:
 
-- `on_behalf_of=True` runs the Workflow under the caller's identity. Required to resolve per-user credentials.
+- `on_behalf_of=True` runs the Workflow under the triggering user's identity, resolving that user's credentials. Omit it to run under the worker's identity and credentials.
 - Pass several slots in one call when the Workflow needs more than one Connector: `@uses_connectors(github_connector, notion_connector)`.
 - Apply `@uses_connectors` **after** `@workflow.define`. The order matters.
 

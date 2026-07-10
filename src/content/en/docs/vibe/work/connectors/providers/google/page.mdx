@@ -1,0 +1,89 @@
+---
+title: Google Connectors
+sidebar_position: 1
+description: How le Chat by Mistral AI uses Google APIs — scopes, data access, and privacy details for Gmail, Google Calendar, Google Drive, Google BigQuery, and Google Workspace.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Google Connectors
+
+[le Chat](https://chat.mistral.ai) is an AI assistant built by [Mistral AI](https://mistral.ai). It connects to Google services through **Connectors** — secure OAuth 2.0 integrations that let users interact with their Google data using natural language.
+
+When a user connects a Google service, le Chat can read, search, and — with explicit user approval — act on data in that service. Every write action requires the user's confirmation before it is executed. Passwords and credentials are never stored by le Chat; authentication is handled entirely through Google's OAuth 2.0 flow.
+
+<SectionTab as="h2" sectionId="google-services">Supported Google services</SectionTab>
+
+le Chat integrates with the following Google services:
+
+| Service | What le Chat does |
+|---------|-------------------|
+| **Gmail** | Search email threads, read messages, create drafts for user review, and organize emails with labels. |
+| **Google Calendar** | List calendars, search events, create, update, or delete events, and respond to invitations. |
+| **Google Drive** | Search files, read file content (including Google Docs and Sheets), and view file metadata and permissions. |
+| **Google BigQuery** | Explore datasets and tables, and run SQL queries to analyze data. |
+| **Google Workspace** (admin) | Sync Google Groups with le Chat's role-based access control for enterprise customers. |
+
+<SectionTab as="h2" sectionId="gmail">Gmail</SectionTab>
+
+le Chat uses the Gmail API to help users manage their email through natural language (e.g. *"Summarize my unread emails from the legal team"* or *"Draft a reply to the last message from Alice"*).
+
+**Scopes requested:**
+
+- **`gmail.readonly`** — Search email threads, read message content, list drafts, and list labels. These read-only operations are the foundation of every email-related task.
+- **`gmail.compose`** — Create email drafts for the user to review. Drafts are never sent automatically — the user must manually review and send them from Gmail. le Chat uses `compose` instead of `send` because it only creates drafts, never sends emails directly.
+- **`gmail.modify`** — Organize emails by creating, updating, and deleting labels, and by applying or removing labels on individual messages and threads. The `readonly` and `compose` scopes cannot modify labels or message metadata, so `modify` is required for these organizational actions.
+
+<SectionTab as="h2" sectionId="google-calendar">Google Calendar</SectionTab>
+
+le Chat uses the Google Calendar API to help users manage their schedule (e.g. *"What meetings do I have tomorrow?"* or *"Create a team meeting for Friday at 2 pm"*).
+
+**Scope requested:**
+
+- **`calendar`** (full access) — List the user's calendars, search and retrieve events, create new events, update existing events, delete events, and respond to invitations (accept, decline, tentative). The `calendar.readonly` scope is insufficient because le Chat also creates, updates, and deletes events on behalf of the user.
+
+<SectionTab as="h2" sectionId="google-drive">Google Drive</SectionTab>
+
+le Chat uses the Google Drive API to help users find and read their files (e.g. *"Find the latest Q3 revenue deck and summarize it"*).
+
+**Scope requested:**
+
+- **`drive.readonly`** — Search files by title, content, type, or owner; list recently accessed files; read file content including Google Docs and Sheets via export; retrieve file metadata; and check file permissions. le Chat needs `drive.readonly` rather than the narrower `drive.file` scope because users need to search and read any file in their Drive, not only files created by le Chat.
+
+<SectionTab as="h2" sectionId="google-bigquery">Google BigQuery</SectionTab>
+
+le Chat uses the BigQuery API to help users explore and query their data warehouses (e.g. *"Show me the top 10 customers by revenue from the sales dataset"*).
+
+**Scope requested:**
+
+- **`bigquery`** — Explore datasets and tables, and execute SQL queries on the user's behalf. The `bigquery.readonly` scope is insufficient because users also need to run queries that create temporary tables and manage job execution.
+
+<SectionTab as="h2" sectionId="google-workspace">Google Workspace (Admin Directory)</SectionTab>
+
+le Chat offers a Google Workspace integration for enterprise customers. Organization administrators can sync their Google Groups with le Chat's internal permission system so that team memberships are automatically reflected in le Chat's access controls.
+
+**Scopes requested:**
+
+- **`admin.directory.user.readonly`** — List users in the customer's Google Workspace domain to map Workspace identities to le Chat accounts. Only user metadata (email, name, organizational unit) is read; user accounts are never modified.
+- **`admin.directory.group.readonly`** — List Google Groups in the customer's domain and enumerate group members. This lets administrators automatically map Google Groups to le Chat permission roles. Groups are never created, modified, or deleted.
+
+<SectionTab as="h2" sectionId="user-consent">User consent and approval</SectionTab>
+
+le Chat follows a strict consent model:
+
+1. **OAuth consent** — Users authenticate directly with Google and see exactly which permissions le Chat requests before granting access.
+2. **Per-action approval** — Every write action (sending a draft, creating an event, modifying a label) requires the user's explicit approval inside le Chat before it is executed. Users can approve, decline, or pre-authorize specific actions. See [Safety and approvals](/vibe/work/safety-and-approvals) for details.
+3. **Disconnect at any time** — Users can revoke le Chat's access from the Connectors page or from their [Google Account permissions](https://myaccount.google.com/permissions). Disconnecting immediately stops all access.
+
+<SectionTab as="h2" sectionId="data-handling">Data handling and privacy</SectionTab>
+
+- **No data storage**: data from Gmail, Google Calendar, Google Drive, and BigQuery is fetched in real time for the current request and is not stored on our servers.
+- **No training**: data accessed through Connectors is **never used to train or fine-tune Mistral AI models**, regardless of the user's plan.
+- **European infrastructure**: all processing occurs in Mistral AI's European data centers.
+- **Encryption**: all communication with Google APIs uses TLS encryption in transit.
+
+For full details, see Mistral AI's [Privacy Policy](https://mistral.ai/terms#privacy-policy) and [Trust Center](https://trust.mistral.ai/).
+
+<SectionTab as="h2" sectionId="limited-use">Google API Services User Data Policy</SectionTab>
+
+le Chat's use and transfer of information received from Google APIs adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.

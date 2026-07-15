@@ -1,0 +1,81 @@
+---
+id: client-auth
+title: Authentification client
+sidebar_position: 2
+---
+
+# Authentification client
+
+Les clients navigateur ne peuvent pas stocker en toute sécurité des clés API de longue durée ni définir les en-têtes `Authorization` pour les connexions WebSocket. Pour prendre en charge la transcription en temps réel depuis un navigateur, Mistral fournit des **tokens temporaires** (`rt_*`) que votre serveur génère au nom du client.
+
+## Fonctionnement
+
+1. Votre backend appelle `POST /v1/client/sessions` avec votre clé API pour générer un token temporaire lié à un modèle spécifique.
+2. Votre backend transmet le token au navigateur, par exemple dans une réponse REST.
+3. Le navigateur ouvre la connexion WebSocket en utilisant le token dans l’en-tête `Sec-WebSocket-Protocol`.
+
+```text
+Navigateur → Votre serveur → POST /v1/client/sessions → API Mistral
+Navigateur ← Votre serveur ← { client_secret: { value: "rt_..." } }
+Navigateur → WSS /v1/audio/transcriptions/realtime?model=<m> + Sec-WebSocket-Protocol: realtime, rt_...
+```
+
+## Étape 1 : Générer un token (côté serveur)
+
+Appelez `POST /v1/client/sessions` depuis votre backend avec votre clé API. Précisez le modèle que le client utilisera.
+
+```bash
+curl https://api.mistral.ai/v1/client/sessions \
+  -X POST \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "purpose": "realtime",
+    "model": "voxtral-mini-transcribe-realtime-2602"
+  }'
+```
+
+**Réponse `201`**
+
+```json
+{
+  "object": "client.session",
+  "purpose": "realtime",
+  "expires_at": "2026-07-03T10:01:00Z",
+  "client_secret": {
+    "value": "rt_...",
+    "expires_at": "2026-07-03T10:01:00Z"
+  }
+}
+```
+
+Retournez `client_secret.value` au navigateur. N’exposez pas votre clé API.
+
+:::note
+Les tokens expirent après environ 60 secondes. Générez un nouveau token peu avant que le client n’ait besoin de se connecter ; pas au chargement de la page.
+:::
+
+## Étape 2 : Se connecter depuis le navigateur (côté client)
+
+Ouvrez le WebSocket en utilisant le token dans `Sec-WebSocket-Protocol`. Les navigateurs ne peuvent pas définir d’en-tête `Authorization` sur les connexions WebSocket, cet en-tête est donc le seul transport pris en charge pour les tokens `rt_*`.
+
+```typescript
+const token = await fetchTokenFromYourBackend(); // "rt_..."
+const model = "voxtral-mini-transcribe-realtime-2602";
+
+const ws = new WebSocket(
+  `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${model}`,
+  ["realtime", token] // passé comme Sec-WebSocket-Protocol
+);
+```
+
+## Propriétés des tokens
+
+| Propriété | Valeur |
+|---|---|
+| Préfixe | `rt_` |
+| Durée de vie | ~60 secondes (configurable) |
+| Portée | Un seul modèle (spécifié lors de la génération) |
+| Réutilisable | Oui, jusqu’à expiration |
+
+Un token généré pour le modèle A sera rejeté s’il est utilisé avec le modèle B.

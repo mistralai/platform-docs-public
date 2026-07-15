@@ -118,6 +118,22 @@ const ContextTooltip = async ({ locale }: { locale: Locale }) => {
   );
 };
 
+const OutputTokenTooltip = async ({ locale }: { locale: Locale }) => {
+  const l = await getLingo(locale);
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <InfoHint />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[230px]">
+        <p>
+          {l.text('Maximum number of output tokens per request. Requests exceeding this limit are rejected with an error.', { context: 'Explanation of an AI model output token limit' })}
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 const MAX_API_NAMES = 1;
 
 export default async function ModelPage({ params }: ModelPageProps) {
@@ -278,19 +294,32 @@ export default async function ModelPage({ params }: ModelPageProps) {
                     />
                   </SectionBlock>
                 </ModelCardInner>
-                {model.contextLength && (
+                {(model.contextLength || model.outputTokenLimit) && (
                   <ModelCardInner className="border-l border-dashed pt-6 px-4 shrink ml-auto">
-                    {/* Context Length */}
-                    <SectionBlock>
-                      <SectionLabel>
-                        <span>{l.text('Context', { context: 'Label for an AI model context window' })}</span>
-                        <ContextTooltip locale={locale} />
-                      </SectionLabel>
-                      <div className="text-lg font-bold font-mono text-primary-soft">
-                        {model.contextLength}
-                      </div>
-                      <span />
-                    </SectionBlock>
+                    {model.contextLength && (
+                      <SectionBlock>
+                        <SectionLabel>
+                          <span>{l.text('Context', { context: 'Label for an AI model context window' })}</span>
+                          <ContextTooltip locale={locale} />
+                        </SectionLabel>
+                        <div className="text-lg font-bold font-mono text-primary-soft">
+                          {model.contextLength}
+                        </div>
+                        <span />
+                      </SectionBlock>
+                    )}
+                    {model.outputTokenLimit && (
+                      <SectionBlock>
+                        <SectionLabel>
+                          <span>{l.text('Max output', { context: 'Label for an AI model maximum output token limit' })}</span>
+                          <OutputTokenTooltip locale={locale} />
+                        </SectionLabel>
+                        <div className="text-lg font-bold font-mono text-primary-soft">
+                          {model.outputTokenLimit}
+                        </div>
+                        <span />
+                      </SectionBlock>
+                    )}
                   </ModelCardInner>
                 )}
 
@@ -364,6 +393,21 @@ export default async function ModelPage({ params }: ModelPageProps) {
                     <SectionLabel>{l.text('Context', { context: 'Label for an AI model context window' })}</SectionLabel>
                     <div className="text-lg font-bold font-mono text-primary-soft">
                       {model.contextLength}
+                    </div>
+                  </SectionBlock>
+                </ModelCardInner>
+              </ModelCard>
+            )}
+            {model.outputTokenLimit && (
+              <ModelCard
+                className={cn(hasLargePricing ? 'xl:hidden' : 'lg:hidden')}
+                isLegacy={isLegacy}
+              >
+                <ModelCardInner>
+                  <SectionBlock>
+                    <SectionLabel>{l.text('Max output', { context: 'Label for an AI model maximum output token limit' })}</SectionLabel>
+                    <div className="text-lg font-bold font-mono text-primary-soft">
+                      {model.outputTokenLimit}
                     </div>
                   </SectionBlock>
                 </ModelCardInner>

@@ -1,0 +1,86 @@
+---
+id: client-auth
+title: Client authentication
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Client authentication
+
+Browser clients cannot store long-lived API keys safely and cannot set `Authorization` headers on WebSocket connections. To support browser-based realtime transcription, Mistral provides **short-lived realtime tokens** (`rt_*`) that your server mints on behalf of the client.
+
+<SectionTab as="h2" sectionId="how-it-works">How it works</SectionTab>
+
+1. Your backend calls `POST /v1/client/sessions` using your API key to mint a short-lived token scoped to a specific model.
+2. Your backend passes the token to the browser, for example in a REST response.
+3. The browser opens the WebSocket connection using the token in the `Sec-WebSocket-Protocol` header.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/audio_realtime_client_auth_flow.svg'}
+  alt="Client authentication flow: the browser asks your server for a token, your server mints an rt_* token with the Mistral API, returns it to the browser, and the browser opens the realtime transcription WebSocket using Sec-WebSocket-Protocol."
+  centered
+  className="border-none!"
+/>
+</div>
+
+<SectionTab as="h2" sectionId="mint-token">Step 1: Mint a token (server-side)</SectionTab>
+
+Call `POST /v1/client/sessions` from your backend with your API key. Pass the model the client will use.
+
+```bash
+curl https://api.mistral.ai/v1/client/sessions \
+  -X POST \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "purpose": "realtime",
+    "model": "voxtral-mini-transcribe-realtime-2602"
+  }'
+```
+
+**`201` response**
+
+```json
+{
+  "object": "client.session",
+  "purpose": "realtime",
+  "expires_at": "2026-07-03T10:01:00Z",
+  "client_secret": {
+    "value": "rt_...",
+    "expires_at": "2026-07-03T10:01:00Z"
+  }
+}
+```
+
+Return `client_secret.value` to the browser. Do not expose your API key.
+
+:::note
+Tokens expire after approximately 60 seconds. Mint a fresh token close to when the client needs to connect, not on page load.
+:::
+
+<SectionTab as="h2" sectionId="connect-browser">Step 2: Connect from the browser (client-side)</SectionTab>
+
+Open the WebSocket using the token in `Sec-WebSocket-Protocol`. Browsers cannot set `Authorization` headers on WebSocket connections, so this header is the only supported transport for `rt_*` tokens.
+
+```typescript
+const token = await fetchTokenFromYourBackend(); // "rt_..."
+const model = "voxtral-mini-transcribe-realtime-2602";
+
+const ws = new WebSocket(
+  `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${model}`,
+  ["realtime", token] // passed as Sec-WebSocket-Protocol
+);
+```
+
+<SectionTab as="h2" sectionId="token-properties">Token properties</SectionTab>
+
+| Property | Value |
+|---|---|
+| Prefix | `rt_` |
+| Lifetime | ~60 seconds (configurable) |
+| Scope | Single model (specified at mint time) |
+| Reusable | Yes, until expiry |
+
+A token minted for model A is rejected if used with model B.

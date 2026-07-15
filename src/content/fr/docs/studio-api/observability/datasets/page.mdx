@@ -20,7 +20,7 @@ Contrairement au trafic brut dans [Explorer](./explorer), les enregistrements d'
 Chaque enregistrement comprend trois parties :
 
 | Champ          | Contenu                                               | Objectif                                      |
-|----------------|------------------------------------------------------|-----------------------------------------------|
+|----------------|-------------------------------------------------------|----------------------------------------------|
 | **Conversation**   | Messages système, saisies utilisateur, réponses de l’assistant et appels d’outils. | Les données centrales évaluées par les Judges. |
 | **Propriétés** | Métadonnées personnalisées : sortie attendue, catégorie, consignes de notation, difficulté, etc. | Les Judges se réfèrent aux propriétés dans leurs consignes via `{{ properties.* }}`. |
 | **Source**     | Origine de l'enregistrement : `EXPLORER`, `UPLOADED_FILE`, `DIRECT_INPUT` ou `PLAYGROUND`. | Permet de remonter à l'origine de l'enregistrement. |
@@ -129,16 +129,16 @@ Le [SDK](/resources/sdks) permet de créer des Datasets, d’importer des enregi
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 mistral = Mistral(
     api_key=os.getenv("MISTRAL_API_KEY", ""),
 )
 
-# Créer un Dataset vide
+# Create an empty Dataset
 dataset = mistral.beta.observability.datasets.create(
     name="Customer Support Analysis Set",
-    description="Exemples sélectionnés pour analyser la qualité du support"
+    description="Curated examples for analyzing support agent quality"
 )
 
 print(f"Dataset created: {dataset.id}")
@@ -155,10 +155,10 @@ mistral = Mistral(
     api_key=os.getenv("MISTRAL_API_KEY", ""),
 )
 
-# Créer un Dataset vide
+# Create an empty Dataset
 dataset = mistral.beta.observability.datasets.create(
     name="Customer Support Analysis Set",
-    description="Exemples sélectionnés pour analyser la qualité du support"
+    description="Curated examples for analyzing support agent quality"
 )
 
 print(f"Dataset created: {dataset.id}")
@@ -176,7 +176,7 @@ print(f"Dataset created: {dataset.id}")
     <TabItem value="python" label="python" default>
 
 ```python
-# Ajouter un enregistrement avec des messages et des propriétés
+# Add a single record with messages and properties
 record = mistral.beta.observability.datasets.create_record(
     dataset_id=dataset.id,
     payload={
@@ -205,8 +205,8 @@ print(f"Record added: {record.id}")
     <TabItem value="python" label="python" default>
 
 ```python
-# Importer depuis un fichier JSONL
-# Commencez par télécharger le fichier pour obtenir un file_id :
+# Import from a JSONL file
+# First, upload your file to get a file_id:
 uploaded_file = mistral.files.upload(
     file={"file_name": "records.jsonl", "content": open("records.jsonl", "rb")}
 )
@@ -217,7 +217,7 @@ import_task = mistral.beta.observability.datasets.import_from_file(
 )
 print(f"Import started: {import_task.id} ({import_task.status})")
 
-# Importer depuis les résultats de recherche Explorer
+# Import from Explorer search results
 result = mistral.beta.observability.chat_completion_events.search(
     search_params={
         "filters": {
@@ -249,7 +249,7 @@ print(f"Imported {len(result.completion_events.results)} events into dataset")
     <TabItem value="python" label="python" default>
 
 ```python
-# Lister les enregistrements d’un Dataset
+# List records in a Dataset
 result = mistral.beta.observability.datasets.list_records(
     dataset_id=dataset.id,
     page_size=50

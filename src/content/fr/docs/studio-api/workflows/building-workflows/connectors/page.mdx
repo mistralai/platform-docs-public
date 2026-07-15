@@ -1,6 +1,6 @@
 ---
 id: connectors-in-workflows
-title: Connecteurs dans les Workflows
+title: Connecteurs dans les workflows
 sidebar_position: 3
 ---
 
@@ -13,7 +13,7 @@ Utilisez les [Connecteurs](/studio-api/connectors) dans un workflow pour appeler
 
 Un workflow résout les informations d'identification du Connecteur à partir de l'identité sous laquelle il s'exécute :
 
-- **[Workflow de type « on-behalf-of » (OBO)](/studio-api/workflows/building-workflows/on_behalf_of)** utilise les **informations d'identification de l'utilisateur déclenchant**. L'OBO nécessite un [déploiement renforcé](/studio-api/workflows/managing-workflows-in-production/hardened_deployments) — voir [Enregistrement d'un workflow OBO](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow).
+- **[Workflow de type « on-behalf-of » (OBO)](/studio-api/workflows/building-workflows/on_behalf_of)** utilise les **informations d'identification de l'utilisateur déclenchant**. L'OBO nécessite un [déploiement renforcé](/studio-api/workflows/managing-workflows-in-production/hardened_deployments). Consultez [Enregistrement d'un workflow OBO](/studio-api/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow).
 - **Les workflows classiques** utilisent les **informations d'identification du worker** (l'identité de la clé API sous laquelle le worker s'exécute).
 
 :::info
@@ -26,7 +26,7 @@ Sans emplacement de connecteur, chaque workflow qui interagit avec une API exter
 
 - **Aucun secret dans le code du workflow** : les identifiants sont résolus dynamiquement par la plateforme.
 - **OAuth automatique** : si l'appelant n'a pas encore autorisé, le workflow s'interrompt et fournit une URL d'authentification, puis reprend une fois l'autorisation effectuée.
-- **Informations d'identification liées à l'identité** : les informations d'identification sont résolues à partir de l'identité sous laquelle le workflow s'exécute — l'utilisateur déclenchant (OBO) ou le worker.
+- **Informations d'identification liées à l'identité** : les informations d'identification sont résolues à partir de l'identité sous laquelle le workflow s'exécute : l'utilisateur déclenchant (OBO) ou le worker.
 - **Authentification interchangeable** : les connecteurs bearer (PAT) et OAuth2 utilisent le même code workflow.
 
 <SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
@@ -64,7 +64,7 @@ Vous pouvez aussi créer, lister et supprimer des identifiants de manière progr
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
@@ -137,6 +137,7 @@ notion_connector = connector("Notion")
 | `name` | requis | Nom ou ID du connecteur tel qu'enregistré dans Studio. |
 | `auto_auth` | `True` | Lancement du pré-check OAuth avant le début du workflow. |
 | `credentials_name` | `None` | Lie l'emplacement à un identifiant nommé précis. Omettez pour utiliser l'identifiant par défaut de l'appelant, ou surchargez à l’exécution via les liaisons dynamiques (voir [Choisir un identifiant à l'exécution](#runtime-binding)). |
+| `allow_mcp_ui` | `False` | Autorise les outils MCP dotés d'une app visible sur ce connecteur à afficher leur app `ui://` comme side app lorsqu'ils sont appelés avec `ToolCallClient.call_tool()` (voir [Afficher des MCP Apps depuis des outils de connecteur](#mcp-apps)). |
 
 <SectionTab as="h3" variant="secondary" sectionId="write-activity">Étape 2 : Écrire une activité qui appelle le connecteur</SectionTab>
 
@@ -314,6 +315,66 @@ response = await execute_with_connector_auth_async(
 
 Le même code workflow peut circuler en équipe : chaque utilisateur l'exécute avec ses propres identifiants. Omettez `credentials_name` pour tomber sur la valeur par défaut de l'utilisateur pour ce connecteur.
 
+<SectionTab as="h2" sectionId="mcp-apps">Afficher des MCP Apps depuis des outils de connecteur</SectionTab>
+
+Certains connecteurs MCP exposent des outils avec une app interactive. Pour permettre à un workflow d'afficher ces apps, activez l'option `allow_mcp_ui=True` sur l'emplacement du connecteur, puis appelez l'outil directement via le `ToolCallClient` injecté.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows import Depends
+from mistralai.workflows.plugins.mistralai.connectors import (
+    ToolCallClient,
+    connector,
+    uses_connectors,
+)
+
+connector_with_mcp_app = connector("my_mcp_connector", allow_mcp_ui=True)
+MCP_APP_TOOL_NAME = "tool-name-tied-to-mcp-app"
+
+
+@workflows.activity(name="open-mcp-app-tool")
+async def open_mcp_app_tool(
+    mcp_client: ToolCallClient = Depends(connector_with_mcp_app),
+) -> None:
+    await mcp_client.call_tool(
+        tool_name=MCP_APP_TOOL_NAME,
+        arguments={
+            "arg1": "value1",
+            "arg2": "value2",
+        },
+    )
+
+
+@workflows.workflow.define(name="mcp-app-workflow", on_behalf_of=True)
+@uses_connectors(connector_with_mcp_app)
+class WorkflowUsingMCPApp:
+    @workflows.workflow.entrypoint
+    async def run(self) -> None:
+        await workflows_mistralai.send_assistant_message(
+            "Let's use a tool tied to an MCP App"
+        )
+        await open_mcp_app_tool()
+        await workflows_mistralai.send_assistant_message(
+            "The MCP App should be visible now"
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+Quand le worker résout un emplacement de connecteur avec `allow_mcp_ui=True`, il découvre les outils qui déclarent une ressource `ui://` exposée en tant qu'app. Ensuite, lorsque `ToolCallClient.call_tool()` invoque l'un de ces outils, le workflow émet une étape d'app MCP : la side app démarre avant l'appel de l'outil, se termine lorsque l'appel réussit, et échoue si l'appel lève une erreur ou retourne une erreur MCP. L'appel Python continue à retourner la réponse normale de l'outil du connecteur.
+
+Limites :
+
+- Les MCP Apps sont affichées uniquement pour les appels directs à `ToolCallClient.call_tool()` depuis des activités de workflow. Les outils connecteur appelés indirectement par un modèle, un agent ou un sous-agent n'affichent pas d'app par ce chemin.
+- La définition de l'outil doit déclarer une ressource d'app `ui://` dans les métadonnées MCP, comme `_meta.ui.resourceUri` ou l'ancien `_meta["ui/resourceUri"]`. Si `_meta.ui.visibility` est présent, il doit inclure `"app"`.
+- L'app est une side app : le workflow n'attend pas que l'utilisateur interagisse avec elle et ne peut pas consommer les résultats d'interaction de manière déterministe. Les interactions avec l'app peuvent tout de même avoir des effets de bord sur la ressource externe contrôlée par l'app ; évitez donc de supposer que les étapes suivantes du workflow et les interactions utilisateur sont ordonnées.
+- Le rendu dépend d'une surface client compatible avec les MCP Apps dans les workflows. Les appelants qui utilisent uniquement le SDK reçoivent toujours le résultat habituel de `call_tool()`.
+
 <SectionTab as="h2" sectionId="agents">Utiliser des connecteurs avec des agents durables</SectionTab>
 
 Passez un emplacement de connecteur directement à un [agent durable](/studio-api/workflows/building-workflows/durable_agents) pour le laisser invoquer les outils connecteur de façon autonome dans sa boucle de conversation. Conservez bien `@uses_connectors` sur le workflow afin que l’intercepteur d’authentification fonctionne toujours :
@@ -357,4 +418,5 @@ L'agent reçoit les outils du connecteur dans sa toolbox et les appelle à chaqu
 | `ConnectorAuthTimeout` | Le flux OAuth n'a pas été complété dans les 10 minutes. | Relancez le workflow et terminez l'étape navigateur rapidement. |
 | `ConnectorError: ... requires bearer authentication` | Connecteur Bearer seul sans identifiant enregistré. | Ajoutez un identifiant bearer dans Studio avant de lancer. L'authentification bearer à la volée n'est pas supportée. |
 | `ConnectorError: Extension bindings reference unknown connectors` | Un `ConnectorSlot` en runtime fait référence à un emplacement non déclaré avec `@uses_connectors`. | Faites correspondre le `connector_name` à un slot du workflow. |
+| Aucune MCP app n'apparaît après `call_tool()` | L'emplacement n'utilise pas `allow_mcp_ui=True`, l'outil ne déclare pas de ressource `ui://` visible comme app, l'outil a été appelé indirectement par un agent/modèle, ou la surface client ne prend pas en charge les MCP Apps dans les workflows. | Activez l'option sur l'emplacement, appelez l'outil directement via `ToolCallClient.call_tool()`, et vérifiez que les métadonnées de l'outil déclarent une ressource `ui://` visible comme app. |
 | `404` à l'exécution du workflow | Worker non démarré, ou nom de workflow incorrect. | Lancez le worker en premier et vérifiez la valeur exacte de `workflow_identifier`. |

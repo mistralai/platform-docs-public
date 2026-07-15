@@ -521,6 +521,8 @@ declare module "@lingo.dev/react" {
     "Output": { context: "Tab label for the output/result pane of a multi-language code block" };
     "OUTPUT": { context: "Row label for output token price" | "Row label for supported output types" };
     "Output Cost": { context: "Tooltip label for output token price" };
+    "Max output": { context: "Label for an AI model maximum output token limit" };
+    "Maximum number of output tokens per request. Requests exceeding this limit are rejected with an error.": { context: "Explanation of an AI model output token limit" };
     "Overview": { context: "Title of a navigation card to the full AI model catalog" };
     "Package a repeatable method into a Skill so Work applies the same procedure every time.": { context: "Quickstart description about creating a first Skill in Vibe Work" };
     "Package reusable instructions and files into a Skill for repeated tasks.": { context: "Quickstart description about creating a Skill in Studio" };

@@ -34,6 +34,7 @@ export default {
   bloglink: 'https://mistral.ai/news/leanstral-1-5/',
   paperlink: null,
   contextLength: '256k',
+  outputTokenLimit: '128k',
   ratings: {
     speed: 4.0,
     performance: 4.0,

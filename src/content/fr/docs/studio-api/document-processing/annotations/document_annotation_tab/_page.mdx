@@ -1,13 +1,13 @@
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 import { SectionTab } from '@/components/layout/section-tab';
 
-Voici un exemple d'utilisation de nos fonctionnalités d'annotation de documents.
+Voici un exemple d’utilisation de nos fonctionnalités d’annotation de documents.
 
 <SectionTab as="h3" variant="secondary" sectionId="document-define-the-data-model">Définir le modèle de données</SectionTab>
 
-Commencez par définir les formats de réponse pour l'`Annotation de documents`, en utilisant soit des schémas Pydantic ou Zod pour nos SDK, soit un schéma JSON pour un appel d'API curl.
+Commencez par définir les formats de réponse pour l’`annotation de documents`, en utilisant soit des schémas Pydantic ou Zod pour nos SDK, soit un schéma JSON pour un appel d’API via curl.
 
-Les schémas Pydantic/Zod/JSON acceptent les objets imbriqués, les tableaux, les énumérations, etc.
+Les schémas Pydantic, Zod et JSON acceptent les objets imbriqués, les tableaux, les énumérations, etc.
 
 <Tabs groupId="code">
     <TabItem value="python" label="python" default>
@@ -15,7 +15,7 @@ Les schémas Pydantic/Zod/JSON acceptent les objets imbriqués, les tableaux, le
 ```python
 from pydantic import BaseModel
 
-# Format de réponse pour l'annotation de documents
+# Document Annotation response format
 class Document(BaseModel):
   language: str
   chapter_titles: list[str]
@@ -28,7 +28,7 @@ class Document(BaseModel):
 ```typescript
 import { z } from 'zod';
 
-// Format de réponse pour l'annotation de documents
+// Document Annotation response format
 const DocumentSchema = z.object({
   language: z.string(),
   chapter_titles: z.array(z.string()),
@@ -76,7 +76,7 @@ const DocumentSchema = z.object({
     </TabItem>
 </Tabs>
 
-Vous pouvez également fournir une description pour chaque entrée ; la description sera utilisée comme information détaillée et instructions lors de l'annotation. Par exemple :
+Vous pouvez également fournir une description pour chaque entrée. Cette description servira d’informations détaillées et d’instructions pendant l’annotation, par exemple :
 
 <Tabs groupId="code">
     <TabItem value="python" label="python" default>
@@ -84,7 +84,7 @@ Vous pouvez également fournir une description pour chaque entrée ; la descript
 ```python
 from pydantic import BaseModel, Field
 
-# Format de réponse pour l'annotation de documents
+# Document Annotation response format
 class Document(BaseModel):
   language: str = Field(..., description="The language of the document.")
   chapter_titles: list[str] = Field(..., description="List of chapter titles found in the document.")
@@ -97,7 +97,7 @@ class Document(BaseModel):
 ```typescript
 import { z } from 'zod';
 
-// Format de réponse pour l'annotation de documents
+// Document Annotation response format
 const DocumentSchema = z.object({
   language: z.string().describe("The language of the document."),
   chapter_titles: z.array(z.string()).describe("List of chapter titles found in the document."),
@@ -106,7 +106,7 @@ const DocumentSchema = z.object({
 ```
 
     </TabItem>
-    <TabItem value="curl" label="curl json schema">
+    <TabItem value="curl" label="schéma JSON curl">
 
 ```json
 {
@@ -147,9 +147,9 @@ const DocumentSchema = z.object({
     </TabItem>
 </Tabs>
 
-<SectionTab as="h3" variant="secondary" sectionId="document-annotation-prompt">Prompt d'annotation (optionnel)</SectionTab>
+<SectionTab as="h3" variant="secondary" sectionId="document-annotation-prompt">Prompt d’annotation (facultatif)</SectionTab>
 
-Après avoir défini votre schéma d'annotation, vous pouvez avoir besoin de fournir davantage de contexte et d'instructions concernant l'annotation et le document en question. Nous autorisons le passage d'un `document_annotation_prompt` qui sera utilisé comme prompt système de haut niveau pour l'étape d'annotation, fournissant un contexte et des instructions supplémentaires sur la manière dont l'annotation doit être effectuée. Un exemple de prompt serait :
+Après avoir défini votre schéma d’annotation, vous pouvez avoir besoin de fournir davantage de Contexte et d’instructions sur l’annotation et le document concerné. Nous permettons de transmettre un `document_annotation_prompt` qui servira de prompt système de haut niveau pour l’étape d’annotation, offrant un Contexte supplémentaire et des instructions sur la manière dont l’annotation doit être effectuée. Un exemple de prompt serait :
 
 <Tabs groupId="code">
     <TabItem value="python" label="python" default>
@@ -188,11 +188,11 @@ Be precise and include only exact matches.
     </TabItem>
 </Tabs>
 
-En production, vous pouvez vouloir fournir un contexte sur le cas d'usage et affiner les instructions si la sortie ne correspond pas exactement aux attentes.
+En production, vous pouvez souhaiter fournir un Contexte sur le cas d’usage et affiner davantage les instructions si la sortie ne correspond pas exactement aux attentes.
 
 <SectionTab as="h3" variant="secondary" sectionId="document-start-request">Lancer la requête</SectionTab>
 
-Ensuite, effectuez une requête et assurez-vous que la réponse adhère aux structures définies en utilisant `document_annotation_format` défini sur les schémas correspondants :
+Ensuite, effectuez une requête et vérifiez que la réponse respecte les structures définies en utilisant `document_annotation_format` paramétré sur les schémas correspondants :
 
 <Tabs groupId="code">
     <TabItem value="python" label="python" default>
@@ -201,14 +201,15 @@ Ensuite, effectuez une requête et assurez-vous que la réponse adhère aux stru
 
 ```python
 import os
-from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.client import Mistral
+from mistralai import DocumentURLChunk, ImageURLChunk, ResponseFormat
 from mistralai.extra import response_format_from_pydantic_model
 
 api_key = os.environ["MISTRAL_API_KEY"]
 
 client = Mistral(api_key=api_key)
 
-# Appel client
+# Client call
 response = client.ocr.process(
     model="mistral-ocr-latest",
     pages=list(range(8)),
@@ -233,7 +234,7 @@ api_key = os.environ["MISTRAL_API_KEY"]
 
 client = Mistral(api_key=api_key)
 
-# Appel client
+# Client call
 response = client.ocr.process(
     model="mistral-ocr-latest",
     pages=list(range(8)),
@@ -316,7 +317,7 @@ curl --location 'https://api.mistral.ai/v1/ocr' \
 ```
 
     </TabItem>
-    <TabItem value="output" label="output">
+    <TabItem value="output" label="sortie">
 
 ```json
 {
@@ -397,9 +398,9 @@ curl --location 'https://api.mistral.ai/v1/ocr' \
 
 
 
-<SectionTab as="h3" variant="secondary" sectionId="document-example-output">Exemple de sortie d'annotation de documents</SectionTab>
+<SectionTab as="h3" variant="secondary" sectionId="document-example-output">Exemple de sortie d’annotation de document</SectionTab>
 
-La fonctionnalité d'annotation de documents permet d'extraire des données et d'annoter des documents. Ci-dessous, vous trouverez un exemple de sortie d'annotation :
+La fonctionnalité d’annotation de documents permet d’extraire des données et d’annoter des documents. Ci-dessous, un exemple de sortie d’annotation :
 
 ```json
 {

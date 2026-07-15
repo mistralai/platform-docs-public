@@ -244,6 +244,7 @@ export interface ModelTemplate<
   paperlink?: string | null;
   weights: ModelWeight[];
   contextLength?: string | undefined | null;
+  outputTokenLimit?: string | undefined | null;
   ratings: {
     speed: StarRating;
     performance: StarRating;

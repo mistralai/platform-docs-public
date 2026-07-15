@@ -452,7 +452,10 @@ paths:
     get:
       operationId: agents_api_v1_agents_list
       summary: List agent entities.
-      description: Retrieve a list of agent entities sorted by creation time.
+      description: 'Retrieve a list of agent entities sorted by creation time. Deprecated: some features such as agent sharing are not supported by this endpoint. Use the cursor-paginated `GET /v1/agents/pages` instead.'
+      deprecated: true
+      x-speakeasy-deprecation-message: Some features such as agent sharing are not supported by this endpoint.
+      x-speakeasy-deprecation-replacement: v1_agents_list_pages
       tags:
       - beta.agents
       parameters:
@@ -639,6 +642,117 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /v1/agents/pages:
+    get:
+      operationId: agents_api_v1_agents_list_pages
+      summary: List agent entities, cursor-paginated.
+      description: Retrieve a page of agent entities. Unlike the deprecated `GET /v1/agents`, this endpoint paginates by opaque cursor and honors per-agent sharing, returning only agents the caller is authorized to see.
+      tags:
+      - beta.agents
+      parameters:
+      - name: page_size
+        in: query
+        description: Number of agents per page
+        required: false
+        schema:
+          type: integer
+          title: Page Size
+          maximum: 1000
+          minimum: 1
+          description: Number of agents per page
+          default: 20
+      - name: deployment_chat
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Deployment Chat
+      - name: sources
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/RequestSource'
+          - type: 'null'
+          title: Sources
+      - name: name
+        in: query
+        description: Filter by agent name
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+          description: Filter by agent name
+      - name: search
+        in: query
+        description: Search agents by name or ID
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+          description: Search agents by name or ID
+      - name: id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Id
+      - name: metadata
+        in: query
+        required: false
+        content:
+          application/json:
+            schema:
+              anyOf:
+              - type: object
+                additionalProperties: true
+              - type: 'null'
+              title: Metadata
+      - name: page_token
+        in: query
+        description: Opaque cursor from a previous response's next_page_token. When set, results page forward from the cursor.
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Page Token
+          description: Opaque cursor from a previous response's next_page_token. When set, results page forward from the cursor.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentListPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-speakeasy-pagination:
+        type: cursor
+        inputs:
+        - name: page_token
+          in: parameters
+          type: cursor
+        - name: page_size
+          in: parameters
+          type: limit
+        outputs:
+          results: $.data
+          nextCursor: $.next_page_token
   /v1/agents/{agent_id}/version:
     patch:
       operationId: agents_api_v1_agents_update_version
@@ -7777,6 +7891,28 @@ components:
       - updated_at
       - deployment_chat
       - source
+      additionalProperties: false
+    AgentListPage:
+      type: object
+      properties:
+        object:
+          type: string
+          title: Object
+          default: list
+          const: list
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+          title: Data
+        next_page_token:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Page Token
+      title: AgentListPage
+      required:
+      - data
       additionalProperties: false
     AgentAliasResponse:
       type: object

@@ -9,24 +9,24 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 ## Citations et références
 
-Les citations permettent aux modèles de fonder leurs réponses et de fournir des références, ce qui en fait une fonctionnalité puissante pour la génération augmentée par récupération (RAG) et les applications agentiques. Cette fonctionnalité permet au modèle de fournir la source de l'information extraite d'un document ou d'un fragment de données provenant d'un appel d'outil.
+Les citations permettent aux modèles de s'appuyer sur des documents et de fournir des références, ce qui en fait une fonctionnalité puissante pour le RAG ( Retrieval-Augmented Generation) et les applications agentiques. Cette fonctionnalité permet au modèle de fournir la source des informations extraites d'un document ou d'un fragment de données provenant d'un appel d'outil.
 
-Nos modèles ont été profondément entraînés pour se fonder sur des documents et fournir des sources, avec une fonctionnalité intégrée pour extraire les références et les citations.
+Nos modèles ont été profondément entraînés pour s'appuyer sur des documents et fournir des sources, avec une fonction intégrée pour extraire les références et les citations.
 
 :::tip
-Avant de continuer, nous vous recommandons de lire la documentation [Chat Completions](/studio-api/conversations/chat-completion) pour en savoir plus sur l'API de chat completions et comment l'utiliser avant de poursuivre.
+Avant de continuer, nous vous recommandons de lire la documentation sur les [complétions de conversation](/studio-api/conversations/chat-completion) pour en savoir plus sur l'API de complétions de conversation et sur son utilisation avant de poursuivre.
 :::
 
 <SectionTab as="h1" sectionId="usage">Utilisation</SectionTab>
 
-### Comment utiliser les citations et les références
+### Comment utiliser les citations et références
 
-Pour fournir des documents au modèle, vous pouvez inclure les sources en tant que réponse d'appel de fonction.  
-Voici un exemple de références, dans ce cas depuis Wikipédia, utilisant des appels d'outils.
+Pour fournir des documents au modèle, vous pouvez inclure les sources sous forme de réponse d'appel de fonction.
+Voici un exemple de références, dans ce cas issu de Wikipédia, utilisant des appels d'outils.
 
 <SectionTab as="h2" variant="secondary" sectionId="setup">Configurer l'outil</SectionTab>
 
-Pour utiliser les citations et les références, vous devez configurer un appel d'outil qui renverra les références.
+Pour utiliser les citations et références, vous devez configurer un appel d'outil qui retournera les références.
 
 **Exemple de références**
 
@@ -53,7 +53,7 @@ references = {
     "title": "Climate Change",
     "snippets": [
       [
-        "Present-day climate change includes both global warming—the ongoing increase in global average temperature—and its wider effects on Earth's climate system. Climate change in a broader sense also includes previous long-term changes to Earth's climate. The current rise in global temperatures is driven by human activities, especially fossil fuel burning since the Industrial Revolution. Fossil fuel use, deforestation, and some agricultural and industrial practices release greenhouse gases. These gases absorb some of the heat that the Earth radiates after it warms from sunlight, warming the lower atmosphere. Carbon dioxide, the primary gas driving global warming, has increased in concentration by about 50% since the pre-industrial era to levels not seen for millions of years."
+        "Present-day climate change includes both global warming—the ongoing increase in global average temperature—and its wider effects on Earth’s climate system. Climate change in a broader sense also includes previous long-term changes to Earth's climate. The current rise in global temperatures is driven by human activities, especially fossil fuel burning since the Industrial Revolution. Fossil fuel use, deforestation, and some agricultural and industrial practices release greenhouse gases. These gases absorb some of the heat that the Earth radiates after it warms from sunlight, warming the lower atmosphere. Carbon dioxide, the primary gas driving global warming, has increased in concentration by about 50% since the pre-industrial era to levels not seen for millions of years."
       ]
     ],
     "description": None,
@@ -78,7 +78,7 @@ references = {
 </Tabs>
 
 Ensuite, vous devez définir l'outil qui sera utilisé pour récupérer les informations depuis la source externe.
-Dans ce cas, nous allons créer un outil `get_information` qui renverra les références mentionnées précédemment.
+Dans ce cas, nous allons créer un outil `get_information` qui retournera les références mentionnées précédemment.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -116,7 +116,8 @@ Pour commencer, vous devez initialiser le client avec votre clé API comme d'hab
 
 ```python
 import os
-from mistralai import Mistral, ToolMessage
+from mistralai.client import Mistral
+from mistralai import ToolMessage
 import json
 
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -146,7 +147,7 @@ client = Mistral(api_key=api_key)
 
 <SectionTab as="h2" variant="secondary" sectionId="set-up-chat-history">Configurer l'historique de conversation</SectionTab>
 
-Vous pouvez configurer l'historique de conversation avec le message utilisateur initial et le message système optionnel.
+Vous pouvez configurer l'historique de conversation avec le message initial de l'utilisateur et le message système facultatif.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -167,9 +168,9 @@ chat_history = [
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="make-initial-chat-request">Effectuer la requête de conversation initiale</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="make-initial-chat-request">Effectuer la première requête de conversation</SectionTab>
 
-Vous pouvez effectuer la requête de conversation initiale au modèle avec l'historique de conversation et l'outil.
+Vous pouvez envoyer la première requête de conversation au modèle avec l'historique de conversation et l'outil.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -266,7 +267,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 
 Le modèle souhaite appeler l'outil `get_information` pour récupérer les informations depuis la source externe.
 
-De notre côté, nous pouvons gérer l'appel d'outil et ajouter le résultat à l'historique de conversation.
+Maintenant, de notre côté, nous pouvons traiter l'appel d'outil et ajouter le résultat à l'historique de conversation.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -289,7 +290,7 @@ chat_history.append(tool_call_result)
 
 <SectionTab as="h2" variant="secondary" sectionId="make-final-chat-request">Effectuer la requête de conversation finale</SectionTab>
 
-Enfin, vous pouvez effectuer la requête de conversation finale au modèle avec l'historique de conversation mis à jour, en fournissant la **requête d'origine**, l'**appel d'outil** du modèle et le **résultat de l'outil**.
+Enfin, vous pouvez effectuer la requête de conversation finale au modèle avec l'historique de conversation mis à jour, en fournissant **la requête originale**, **l'appel d'outil du modèle** et **le résultat de l'outil**.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -407,9 +408,9 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
   </TabItem>
 </Tabs>
 
-Comme vous pouvez le constater, le modèle a fourni la réponse à la requête de l'utilisateur ainsi que la référence à la source de l'information.
+Comme vous pouvez le constater, le modèle a fourni la réponse à la requête de l'utilisateur ainsi que la référence vers la source de l'information.
 
-Vous pouvez extraire et afficher ces références de la réponse comme vous le souhaitez.
+Vous pouvez extraire et afficher ces références depuis la réponse comme vous le souhaitez.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python">
@@ -475,7 +476,7 @@ Sources:
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
+<SectionTab as="h1" sectionId="cookbooks">Exemples pratiques</SectionTab>
 
-Vous pouvez trouver un cookbook complet explorant les citations et les références en tirant parti du RAG avec Wikipédia [ici](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/mistral-reference-rag.ipynb).  
-Ce modèle vous aidera à démarrer avec la recherche web et l'ancrage documentaire avec citations.
+Vous trouverez un guide complet explorant les citations et références avec le RAG et Wikipédia [ici](https://colab.research.google.com/github/mistralai/cookbook/blob/main/mistral/rag/mistral-reference-rag.ipynb).
+Ce modèle vous aidera à démarrer avec la recherche web et l'ancrage de documents avec citations.

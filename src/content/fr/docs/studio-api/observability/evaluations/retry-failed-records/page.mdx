@@ -1,0 +1,98 @@
+---
+id: observability_evaluations_retry_failed_records
+title: Relancer les enregistrements en échec
+sidebar_position: 10
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Relancer les enregistrements en échec
+
+Les évaluations peuvent partiellement échouer : une erreur API temporaire, une limite de débit ou un bug dans votre système de notation. Au lieu de relancer l’évaluation complète, le SDK vous permet de relancer uniquement les enregistrements en échec et de corriger les résultats en place.
+
+<SectionTab as="h1" sectionId="why-it-matters">Pourquoi c’est important</SectionTab>
+
+Une exécution typique d’évaluation peut impliquer des centaines, voire des milliers d’appels au modèle. Si 5 des 500 enregistrements échouent, tout relancer gaspille du temps et des ressources. `retry_failed_records()` identifie les enregistrements en échec (au niveau de la génération ou de la notation), relance uniquement ceux-ci et corrige l’exécution initiale afin que vos résultats restent en un seul endroit dans Studio.
+
+<SectionTab as="h1" sectionId="basic-workflow">Workflow de base</SectionTab>
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import (
+    Evaluation, Evaluator, Mistral, ScorerContext, System, TaskContext,
+)
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+dataset = [
+    {"prompt": "Say hello", "expected": "hello"},
+    {"prompt": "Say goodbye", "expected": "goodbye"},
+]
+
+async def task(ctx: TaskContext):
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+
+def scorer(ctx: ScorerContext):
+    return 1 if ctx.input_record["expected"] in str(ctx.output).lower() else 0
+
+async def main():
+    system = System(name="mistral-small", params={"model": "mistral-small-latest"})
+
+    # Step 1: run the evaluation
+    run = await client.evaluation.run(
+        evaluation=Evaluation(name="My Eval"),
+        system=system,
+        dataset=dataset,
+        task=task,
+        evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+    )
+
+    # Step 2: if some records failed, retry them
+    result = await client.evaluation.retry_failed_records(
+        run_id=run.run_id,
+        dataset=dataset,
+        task=task,
+        evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+        system=system,
+    )
+    print(f"Retried: {result.retried_count}, Patched: {result.patched_count}")
+
+asyncio.run(main())
+```
+
+<SectionTab as="h1" sectionId="fixing-the-task-before-retrying">Corriger la tâche avant de relancer</SectionTab>
+
+Vous n’êtes pas obligé de relancer avec la même tâche. Si les échecs étaient causés par un bug dans votre code, corrigez-le et transmettez la version corrigée :
+
+```python
+# Fix the task, retry only the failed records
+async def fixed_task(ctx: TaskContext):
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+
+result = await client.evaluation.retry_failed_records(
+    run_id=run.run_id,
+    dataset=dataset,
+    task=fixed_task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+    system=system,
+)
+```
+
+<SectionTab as="h1" sectionId="what-happens">Ce qui se passe</SectionTab>
+
+1. Le SDK récupère l’exécution existante et identifie les enregistrements dont le statut est `"error"` (échec de génération ou de notation).
+2. Seuls ces enregistrements sont retraités avec la tâche et les évaluateurs fournis.
+3. Les résultats succès sont intégrés dans l’exécution initiale.
+4. Si l’exécution initiale utilisait `run_evaluators`, leurs scores sont recalculés avec les données mises à jour.
+
+L’exécution initiale dans Studio est mise à jour en place. Aucune exécution en double, aucune intervention manuelle.

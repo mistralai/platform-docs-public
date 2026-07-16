@@ -1,0 +1,148 @@
+---
+title: Hooks
+sidebar_position: 10
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Hooks
+
+Les hooks intègrent des commandes shell arbitraires au cycle de vie de la CLI Vibe Code pour **filtrer, auditer ou réécrire** le comportement de l'agent. Utilisez-les pour bloquer des appels d'outils dangereux, masquer des arguments avant l'exécution d'un outil, ajouter du contexte après le retour d'un outil ou forcer l'agent à reprendre une réponse insatisfaisante.
+
+Déclarez-les dans un fichier `hooks.toml` et ils prennent effet au prochain lancement.
+
+<SectionTab as="h2" sectionId="file-locations">Emplacements des fichiers de configuration</SectionTab>
+
+Les hooks sont déclarés dans `hooks.toml`. La CLI les recherche dans cet ordre :
+
+1. `./.vibe/hooks.toml` dans le répertoire de travail (**niveau projet**, chargé en premier, **uniquement pour les dossiers de confiance**).
+2. `~/.vibe/hooks.toml` dans votre répertoire personnel (**niveau utilisateur**, chargé en second).
+
+Quand un même `name` apparaît dans les deux fichiers, **l'entrée du projet l'emporte**. Les hooks de niveau projet ne sont chargés que lorsque le répertoire de travail est [de confiance](/vibe/code/safety-approvals-permissions#trusted-folders).
+
+Les sous-agents héritent de la configuration des hooks du parent, de sorte que les politiques s'appliquent de façon transitive.
+
+<SectionTab as="h2" sectionId="declare">Déclarer un hook</SectionTab>
+
+Chaque hook est une table `[[hooks]]` :
+
+```toml
+[[hooks]]
+name = "deny-rm-rf"
+type = "pre_tool"
+match = "bash"
+command = "uv run python /path/to/guard-bash"
+timeout = 60.0
+strict = false
+description = "Rejette les commandes shell dangereuses."
+```
+
+| Champ | Requis | Détails |
+|---|---|---|
+| `name` | oui | Identifiant unique. Utilisé pour dédupliquer entre les fichiers projet et utilisateur. |
+| `type` | oui | Une valeur parmi `pre_tool`, `post_tool`, `post_agent`. |
+| `command` | oui | Commande shell à exécuter. Reçoit la charge utile du hook sur `stdin`. |
+| `match` | `pre_tool` / `post_tool` | Filtre sur le nom de l'outil : glob fnmatch, ou regex avec le préfixe `re:`. Insensible à la casse. |
+| `timeout` | non | Secondes avant que le hook ne soit interrompu. Défaut : `60`. |
+| `strict` | hooks d'outil uniquement | Si `true`, les échecs de parsing et d'exécution deviennent des refus (`pre_tool`) ou des effacements de texte (`post_tool`) au lieu d'avertissements. Défaut : `false`. |
+| `description` | non | Texte libre affiché dans les diagnostics. |
+
+<SectionTab as="h2" sectionId="contract">Contrat du hook</SectionTab>
+
+Chaque hook est invoqué avec un objet JSON UTF-8 sur `stdin` contenant le contexte de session : `session_id`, `parent_session_id`, `transcript_path`, `cwd` et `hook_event_name`. Les hooks d'outil ajoutent des champs spécifiques (voir ci-dessous).
+
+Les hooks répondent via leur **code de sortie** et leur **stdout**. Utilisez `stderr` pour les diagnostics et les logs de debug.
+
+| Code de sortie / stdout | Effet |
+|---|---|
+| Code `0`, `stdout` vide | Passthrough. |
+| Code `0`, objet JSON valide sur `stdout` | Réponse structurée (voir les champs ci-dessous). |
+| Code `0`, `stdout` non vide mais non conforme | Échec du hook. Avertissement par défaut ; refus / effacement sous `strict = true` sur un hook d'outil. |
+| Code non nul, timeout ou échec de spawn | Échec du hook. Diagnostic tiré de `stderr` (fallback sur `stdout`, puis le code de sortie). |
+
+Champs universels de premier niveau dans la réponse JSON :
+
+- **`system_message`** (chaîne, optionnel) — affiché à l'utilisateur dans l'interface.
+- **`decision`** (`"allow"` | `"deny"`, optionnel, défaut `"allow"`) — l'effet de `"deny"` dépend du type de hook.
+- **`reason`** (chaîne, optionnel) — accompagne `decision: "deny"`.
+- **`hook_specific_output`** (objet, optionnel) — charge utile spécifique à l'événement.
+
+Les champs JSON inconnus sont tolérés à tous les niveaux (compatibilité ascendante). Les champs qui n'ont pas de sens pour le type de hook courant sont ignorés silencieusement.
+
+<SectionTab as="h2" sectionId="pre-tool">`pre_tool`</SectionTab>
+
+Déclenché à chaque appel d'outil, **avant** la demande d'autorisation utilisateur. Le premier refus court-circuite les hooks `pre_tool` restants pour cet appel.
+
+**Reçoit** (en plus du contexte de session) : `tool_name`, `tool_call_id`, `tool_input` (les arguments bruts du modèle).
+
+**Peut renvoyer** :
+
+- `decision: "deny"` + `reason` — refuse l'appel ; `reason` devient l'erreur d'outil visible par le LLM.
+- `hook_specific_output.tool_input` (objet) — **remplacement complet** des arguments du modèle. Le remplacement est de nouveau validé selon le schéma de l'outil ; un échec de validation devient un refus synthétisé. Les réécritures s'enchaînent de gauche à droite d'un hook à l'autre. Les arguments réécrits sont aussi ceux qu'affiche la demande d'autorisation, ceux avec lesquels l'outil s'exécute et ceux que voient les tours LLM suivants dans le message de l'assistant.
+- `system_message` — interface uniquement.
+
+<SectionTab as="h2" sectionId="post-tool">`post_tool`</SectionTab>
+
+Déclenché à chaque appel d'outil, **mais uniquement si le corps de l'outil s'est réellement exécuté**. Il ne se déclenche pas lorsque l'outil n'a pas été exécuté : refus en `pre_tool`, refus de l'utilisateur à la demande d'autorisation, permission `NEVER`, ou annulation avant le début de l'exécution du corps. L'annulation pendant l'exécution du corps est protégée, de sorte que les hooks d'audit s'exécutent tout de même.
+
+**Reçoit** (en plus du contexte de session) :
+
+- `tool_name`, `tool_call_id`
+- `tool_input` (post-réécriture)
+- `tool_status` — `success`, `failure` ou `cancelled`
+- `tool_output` — dict de résultat structuré ; `null` en cas d'échec
+- `tool_output_text` — le texte courant que le LLM verra, mutable par les hooks précédents
+- `tool_error`
+- `duration_ms`
+
+**Peut renvoyer** :
+
+- `decision: "deny"` + `reason` — remplace `tool_output_text` par `reason`. Le pipeline continue ; les hooks suivants voient le remplacement.
+- `hook_specific_output.additional_context` (chaîne) — **ajouté** (avec un séparateur `\n`) à `tool_output_text`. Se combine avec un refus du même hook : le refus remplace d'abord, puis `additional_context` est ajouté au remplacement.
+- `system_message` — interface uniquement.
+
+<SectionTab as="h2" sectionId="post-agent">`post_agent`</SectionTab>
+
+Déclenché après chaque tour de l'assistant qui se termine sans appel d'outil en attente.
+
+**Reçoit** (en plus du contexte de session) : aucun champ supplémentaire.
+
+**Peut renvoyer** :
+
+- `decision: "deny"` + `reason` — `reason` est injecté en tant que nouveau message utilisateur demandant à l'agent de recommencer. Limité à **3 retries par hook et par tour utilisateur** ; les refus suivants deviennent des avertissements définitifs.
+- `system_message` — interface uniquement.
+
+<SectionTab as="h2" sectionId="example">Exemple : bloquer les commandes shell destructrices</SectionTab>
+
+`./.vibe/hooks.toml` :
+
+```toml
+[[hooks]]
+name = "deny-rm-rf"
+type = "pre_tool"
+match = "bash"
+command = "python ./.vibe/hooks/guard-bash.py"
+strict = true
+description = "Rejette rm -rf et autres commandes shell destructrices."
+```
+
+`./.vibe/hooks/guard-bash.py` :
+
+```python
+import json
+import sys
+
+payload = json.load(sys.stdin)
+command = payload.get("tool_input", {}).get("command", "")
+
+if "rm -rf" in command:
+    print(json.dumps({
+        "decision": "deny",
+        "reason": "rm -rf est bloqué par le hook deny-rm-rf.",
+    }))
+    sys.exit(0)
+
+# Passthrough : stdout vide, code 0.
+```
+
+Avec `strict = true`, tout crash du script ou toute sortie JSON malformée refuse également l'appel au lieu de se limiter à un avertissement.

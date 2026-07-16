@@ -1,0 +1,126 @@
+---
+id: observability_explorer
+title: Explorer les traces
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Explorer les traces
+
+L’Explorateur de traces permet de rechercher, filtrer et inspecter chaque trace traversant vos applications IA. Il est disponible dans Studio sous [Observabilité → Traces](https://console.mistral.ai/observability/traces).
+
+Avant de pouvoir explorer les traces, votre application doit être instrumentée. Consultez [Envoyer des traces](./send-traces) pour les instructions de configuration.
+
+<SectionTab as="h1" sectionId="what-traces-contain">Contenu des traces</SectionTab>
+
+Chaque trace est un arbre de spans. Chaque span représente une opération dans la chaîne d’exécution.
+
+| Champ | Description |
+|-------|-------------|
+| **ID de trace** | Identifiant unique pour la chaîne d’exécution complète |
+| **Spans** | Opérations individuelles : appels au modèle, appels d’outils, étapes de workflow |
+| **Durée** | Temps écoulé pour chaque span et pour l’intégralité de la trace |
+| **Nombre de tokens** | Tokens d’entrée et de sortie par appel de modèle |
+| **Statut** | Succès ou erreur, avec les messages d’erreur le cas échéant |
+| **Source** | Produit ayant généré la trace (SDK, Workflows, Vibe Code, Vibe Work) |
+| **Tags** | Tags personnalisés depuis l’utilisation du SDK, ainsi que des métadonnées automatiques comme le nom du modèle |
+
+Cliquez sur une trace dans la liste pour ouvrir l’arbre des spans. Développez les spans individuels pour inspecter les entrées, les sorties, la latence et l’utilisation des tokens à chaque étape.
+
+<SectionTab as="h1" sectionId="searching-traces">Recherche et filtrage</SectionTab>
+
+L’Explorateur accepte un **langage d’expression de recherche** : écrivez des conditions sur les champs de trace et combinez-les avec `AND`, `OR` et `NOT`.
+
+<SectionTab as="h2" variant="secondary" sectionId="operators">Opérateurs</SectionTab>
+
+| Catégorie | Opérateurs | Exemple |
+|----------|-----------|---------|
+| Comparaison | `=`, `!=`, `<`, `<=`, `>`, `>=` | `duration_ns > 5000000000` |
+| Correspondance de motif | `LIKE`, `ILIKE`, `NOT LIKE` | `service_name LIKE '%agent%'` |
+| Sous-chaîne | `CONTAINS`, `NOT CONTAINS` | `service_name CONTAINS 'sdk'` |
+| Expression rationnelle | `REGEXP`, `NOT REGEXP` | `service_name REGEXP '^my-'` |
+| Plage | `BETWEEN ... AND ...` | `duration_ns BETWEEN 1000000 AND 5000000000` |
+| Liste | `IN (...)`, `NOT IN (...)` | `status_code IN ('Error', 'Ok')` |
+| Vérification de nullité | `EXISTS`, `NOT EXISTS` | `error_message EXISTS` |
+| Booléen | `AND`, `OR`, `NOT`, `()` | `status_code = 'Error' AND duration_ns > 1000000` |
+
+<SectionTab as="h2" variant="secondary" sectionId="available-fields">Champs disponibles</SectionTab>
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `service_name` | chaîne de caractères | Nom du service ayant Produit la trace |
+| `status_code` | chaîne de caractères | Statut de la trace : `Ok` ou `Error` |
+| `duration_ns` | nombre | Durée totale de la trace en nanosecondes |
+| `error_message` | chaîne de caractères | Message d’erreur si la trace a échoué |
+| `start_time` | horodatage | Moment où la trace a commencé (ISO 8601) |
+| `models_used` | tableau | Modèles appelés dans la trace |
+| `span_attributes['key']` | valeur de mappage | Tout attribut de span, en utilisant la syntaxe entre crochets |
+
+<SectionTab as="h2" variant="secondary" sectionId="span-attribute-queries">Requêtes sur les attributs de span</SectionTab>
+
+Utilisez la syntaxe entre crochets pour filtrer sur n’importe quel attribut de span OpenTelemetry :
+
+```
+span_attributes['gen_ai.request.model'] CONTAINS 'mistral-large'
+span_attributes['gen_ai.operation.name'] = 'chat'
+span_attributes['custom.tag'] EXISTS
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="array-fields">Champs de type tableau</SectionTab>
+
+Pour les champs de type tableau comme `models_used` :
+
+| Fonction | Exemple |
+|----------|---------|
+| `CONTAINS` | `models_used CONTAINS 'mistral-medium-latest'` |
+| `has(field, value)` | `has(models_used, 'mistral-medium-latest')` |
+| `hasany(field, [values])` | `hasany(models_used, ['mistral-large-latest', 'mistral-small-latest'])` |
+| `hasall(field, [values])` | `hasall(models_used, ['mistral-large-latest', 'mistral-small-latest'])` |
+
+<SectionTab as="h2" variant="secondary" sectionId="common-examples">Exemples courants</SectionTab>
+
+```
+# All failed traces from a specific service
+service_name = 'my-agent' AND status_code = 'Error'
+
+# Traces slower than 5 seconds
+duration_ns > 5000000000
+
+# Traces using a specific model
+span_attributes['gen_ai.request.model'] CONTAINS 'mistral-large'
+```
+
+<SectionTab as="h1" sectionId="api-access">Requêter les traces par programmation</SectionTab>
+
+Toutes les données de trace sont accessibles via l’API REST. Les endpoints sont documentés dans la référence de l’API :
+
+- [Traces](/api/endpoint/beta/observability/traces) : recherche de traces, récupération d’une seule trace, liste des champs et des options de champ.
+- [Spans](/api/endpoint/beta/observability/spans) : liste des spans pour une trace, requête d’évaluations de span.
+
+<SectionTab as="h1" sectionId="access">Accès</SectionTab>
+
+La lecture des traces nécessite une organisation Enterprise et l’un des rôles suivants :
+
+| Rôle | Accès |
+|------|--------|
+| Admin Org | Toutes les traces sur tous les espaces de travail |
+| Workspace Admin | Toutes les traces dans son espace de travail |
+| Observability Viewer | Toutes les traces dans son espace de travail (lecture seule) |
+
+Un Workspace Admin ou un Admin Org peut attribuer le rôle Observability Viewer pour accorder un accès en lecture seule sans privilèges d’administrateur.
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="J’ai activé le SDK mais je ne vois aucune trace">
+  Assurez-vous d’avoir appelé `configure_telemetry(client)` avant tout appel à l’API. Effectuez au moins une requête, puis attendez quelques secondes. Vérifiez que votre espace de travail a activé l’Observabilité et que vous disposez de l’un des rôles requis.
+  </FaqItem>
+  <FaqItem question="Ma recherche ne retourne aucun résultat">
+  Commencez par supprimer toutes les conditions sauf une plage temporelle, puis ajoutez les filtres un par un. Une erreur courante consiste à filtrer sur `status_code = 'Error'` alors que la plupart des traces réussissent. Essayez de supprimer cette condition en premier.
+  </FaqItem>
+  <FaqItem question="Je ne vois pas l’Explorateur de traces dans Studio">
+  L’Explorateur nécessite le rôle Org Admin, Workspace Admin ou Observability Viewer dans une organisation Enterprise. Vérifiez auprès de l’administrateur de votre espace de travail si vous n’avez pas accès.
+  </FaqItem>
+</Faq>

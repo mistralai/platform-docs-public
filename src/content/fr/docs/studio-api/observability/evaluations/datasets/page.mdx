@@ -1,0 +1,143 @@
+---
+id: observability_datasets
+title: Jeux de données
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Jeux de données
+
+Un jeu de données est un ensemble de cas de test qui pilotent une évaluation hors ligne. Dans le [SDK Evaluation](../evaluations#installation), un jeu de données est une **liste de dictionnaires Python** où chaque dictionnaire est un enregistrement d'entrée, et vous définissez les clés pour correspondre à ce que votre fonction de tâche attend.
+
+<SectionTab as="h1" sectionId="record-structure">Structure des enregistrements</SectionTab>
+
+Chaque enregistrement est un dictionnaire simple. Les clés dépendent de vous :
+
+```python
+dataset = [
+    {"sentence": "Hello, how are you?", "groundtruth": "English"},
+    {"sentence": "Bonjour, comment ça va?", "groundtruth": "French"},
+    {"sentence": "Hola, ¿cómo estás?", "groundtruth": "Spanish"},
+]
+```
+
+Dans votre tâche et votre notation, accédez à l'enregistrement via `ctx.input_record` :
+
+```python
+from mistralai.observability import TaskContext, ScorerContext
+
+async def task(ctx: TaskContext) -> str:
+    return ctx.input_record["sentence"]  # access any key you defined
+
+def scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["groundtruth"].lower() == str(ctx.output).lower() else 0
+```
+
+<SectionTab as="h1" sectionId="type-safety">Sécurité des types avec TypedDict</SectionTab>
+
+Utilisez `TypedDict` pour rendre les schémas des enregistrements explicites et obtenir une autocomplétion dans l'IDE :
+
+```python
+from typing import TypedDict
+
+class LanguageRecord(TypedDict):
+    sentence: str
+    groundtruth: str
+
+dataset: list[LanguageRecord] = [
+    {"sentence": "Hello, how are you?", "groundtruth": "English"},
+    {"sentence": "Bonjour, comment ça va?", "groundtruth": "French"},
+]
+```
+
+<SectionTab as="h1" sectionId="what-to-include">Que mettre dans les enregistrements</SectionTab>
+
+Les enregistrements peuvent contenir tout ce dont votre tâche ou votre notation a besoin :
+
+| Type de champ | Objectif | Exemple |
+|------------|---------|---------|
+| Entrées de tâche | Ce que la tâche traite | `prompt`, `contexte`, `texte`, `question` |
+| Vérité de référence | Sortie de référence pour la notation | `expected`, `groundtruth`, `reference_answer` |
+| Métadonnées | Contexte supplémentaire pour les notateurs ou les juges LLM | `category`, `difficulty`, `grading_guidance` |
+
+Incluez la vérité de référence dans les enregistrements lorsque vous souhaitez comparer la sortie de la tâche à une réponse connue comme correcte :
+
+```python
+dataset = [
+    {
+        "prompt": "What is the capital of France?",
+        "expected": "Paris",
+        "difficulty": "easy",
+    },
+    {
+        "prompt": "Explain the difference between precision and recall.",
+        "expected": "Precision measures true positives over predicted positives; recall measures true positives over actual positives.",
+        "difficulty": "medium",
+    },
+]
+
+def accuracy_scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+```
+
+<SectionTab as="h1" sectionId="best-practices">Bonnes pratiques</SectionTab>
+
+### Gardez les jeux de données ciblés
+
+Un jeu de données construit autour d'une seule tâche ou capacité produit des signaux plus clairs qu'une collection large et multithème. Maintenez des jeux de données séparés pour des objectifs d'évaluation distincts (par exemple, `language_detection`, `qa_factual`, `code_generation`).
+
+### Sélectionnez des données représentatives
+
+- Incluez des cas particuliers et des modes de défaillance, pas uniquement des exemples faciles.
+- Équilibrez votre jeu de données : si 90 % des enregistrements sont des cas faciles, l'évaluation ne révélera pas de problèmes réels.
+- Supprimez les enregistrements où même un humain ne pourrait pas noter la réponse de manière fiable (les entrées ambiguës ajoutent du bruit).
+
+### Versionnez vos jeux de données
+
+Figez votre jeu de données entre les exécutions si vous souhaitez suivre les performances au fil du temps. Même de petites modifications aux enregistrements peuvent rendre les exécutions non comparables. Utilisez des noms explicites comme `qa_baseline_2025_06` plutôt que `test_data`.
+
+### La qualité de la vérité de référence est cruciale
+
+Une vérité de référence inexacte ou ambiguë produit des notes bruitées. Si vous utilisez un juge LLM (voir [Juges](../evaluations/judges)), incluez un champ `grading_guidance` pour donner au juge des instructions de notation explicites par enregistrement.
+
+<SectionTab as="h1" sectionId="organizing-in-studio">Organisation dans Studio</SectionTab>
+
+Le SDK Evaluation organise les résultats à l'aide de **Projets**, **Évaluations** et **Exécutions** dans Studio, et non en fonction du jeu de données lui-même. Passez votre jeu de données directement à `evaluation.run()` :
+
+```python
+from mistralai.observability import Evaluation, Project
+
+run = await client.evaluation.run(
+    project=Project(name="Language Detection"),
+    evaluation=Evaluation(name="Accuracy Eval"),
+    dataset=dataset,  # your list of dicts
+    task=task,
+    evaluators=[...],
+)
+```
+
+Les balises et métadonnées de l'exécution vous aident à retracer quelle version du jeu de données a été utilisée :
+
+```python
+run = await client.evaluation.run(
+    ...
+    tags=["dataset:qa_baseline_2025_06", "model:mistral-small"],
+    metadata={"dataset_version": "2025-06", "record_count": len(dataset)},
+)
+```
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Quelle taille peut avoir mon jeu de données ?">
+  Il n'y a pas de limite stricte imposée par le SDK. En pratique, gardez les jeux de données assez petits pour pouvoir être exécutés pendant les itérations. Utilisez `local=True` pour tester sur un sous-ensemble avant une exécution complète.
+  </FaqItem>
+  <FaqItem question="Puis-je charger des enregistrements à partir d'un fichier ?">
+  Oui. Chargez n'importe quel format de fichier (JSONL, CSV, etc.) dans une liste de dictionnaires avant de le passer à `evaluation.run()`. Le SDK exige simplement une liste Python.
+  </FaqItem>
+  <FaqItem question="Mes notes sont bruitées. Est-ce dû au jeu de données ou au notateur ?">
+  Commencez par le jeu de données. Inspectez les enregistrements mal notés : les entrées sont-elles ambiguës ? La vérité de référence est-elle exacte ? Corrigez d'abord le jeu de données, puis ajustez le notateur ou les instructions du juge.
+  </FaqItem>
+</Faq>

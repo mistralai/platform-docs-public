@@ -1,0 +1,100 @@
+---
+id: observability_evaluations_system_params
+title: Configurer les paramètres système
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Configurer les paramètres système
+
+Lorsque vous exécutez un pipeline LLM, de nombreux paramètres influencent le résultat : le modèle, la température, le prompt système, les définitions d’outils, les paramètres de recherche, etc. Par défaut, ceux-ci sont codés en dur dans votre fonction de tâche, invisibles pour Studio et difficiles à comparer entre les différentes exécutions.
+
+`System` résout ce problème : il externalise la configuration de votre tâche pour que chaque exécution enregistre les paramètres ayant produit ses résultats.
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+Transmettez un objet `System` à `evaluation.run()`. Il devient accessible via `ctx.system` dans les tâches et les noteurs :
+
+```python
+from mistralai.observability import Evaluation, Evaluator, Goal, Mistral, System, TaskContext
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        temperature=float(ctx.system.params["temperature"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["system_prompt"])},
+            {"role": "user", "content": ctx.input_record["prompt"]},
+        ],
+    )
+    return str(response.choices[0].message.content)
+
+run = await client.evaluation.run(
+    evaluation=Evaluation(name="My Eval"),
+    dataset=dataset,
+    task=task,
+    system=System(name="small-t0", params={
+        "model": "mistral-small-latest",
+        "temperature": 0,
+        "system_prompt": "Answer concisely in one sentence.",
+    }),
+    evaluators=[Evaluator(name="accuracy", description="1 if the expected answer is in the output.", scorer=scorer, goal=Goal.gte(0.5))],
+)
+```
+
+`params` est libre. Placez-y tout paramètre influençant votre tâche : modèle, température, prompt système, nombre maximal de token, définitions d’outils, Skills activées, configuration de recherche, etc.
+
+:::tip
+`System` décrit le pipeline que vous évaluez, et non les noteurs ou juges. Pour des juges LLM configurables, codez en dur le modèle de juge dans le noteur ou utilisez une usine de noteurs.
+:::
+
+<SectionTab as="h1" sectionId="why-use-it">Pourquoi l’utiliser</SectionTab>
+
+**Sans System** : vous modifiez la température dans votre code, relancez l’exécution, et devez vous rappeler quelle valeur a été utilisée. Studio affiche deux exécutions sans différence visible dans la configuration.
+
+**Avec System** : chaque exécution stocke ses paramètres. Dans Studio, vous voyez en un coup d’œil que l’exécution A a utilisé `temperature: 0` et l’exécution B `temperature: 0,9`, et pouvez comparer leurs scores côte à côte.
+
+<SectionTab as="h1" sectionId="comparing-configurations">Comparaison des configurations</SectionTab>
+
+Exécutez la même évaluation avec différents objets `System` pour comparer :
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import Evaluation, Evaluator, Goal, Mistral, System, TaskContext, ScorerContext
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+
+def scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+
+async def main():
+    for model in ["mistral-small-latest", "mistral-large-latest"]:
+        run = await client.evaluation.run(
+            evaluation=Evaluation(name="Model Comparison"),
+            dataset=dataset,
+            task=task,
+            system=System(name=model, params={
+                "model": model,
+                "temperature": 0,
+                "system_prompt": "Answer concisely.",
+            }),
+            evaluators=[Evaluator(name="accuracy", description="1 if the expected answer is in the output.", scorer=scorer, goal=Goal.gte(0.5))],
+        )
+        run.show(level="run")
+
+asyncio.run(main())
+```
+
+Dans Studio, chaque exécution affiche son objet `System`, ce qui vous permet d’identifier quel modèle a donné les meilleurs résultats.

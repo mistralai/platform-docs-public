@@ -1,0 +1,96 @@
+---
+id: observability_evaluations_multiple_evaluators
+title: Combiner des évaluateurs
+sidebar_position: 6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Combiner des évaluateurs
+
+Vous pouvez empiler autant d’évaluateurs que nécessaire en une seule exécution. Le SDK calcule automatiquement les statistiques (moyenne, min, max, écart-type) pour chaque évaluateur.
+
+<SectionTab as="h1" sectionId="example-multiple-rule-based-scorers">Exemple : plusieurs notateurs basés sur des règles</SectionTab>
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import Evaluation, Evaluator, Mistral, ScorerContext, System, TaskContext
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+def contains_expected(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"] in str(ctx.output).lower() else 0
+
+def is_short(ctx: ScorerContext) -> int:
+    return 1 if len(str(ctx.output)) < 80 else 0
+
+def starts_capitalized(ctx: ScorerContext) -> int:
+    text = str(ctx.output).strip()
+    return 1 if text and text[0].isupper() else 0
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model="mistral-small-latest",
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+
+async def main():
+    run = await client.evaluation.run(
+        evaluation=Evaluation(name="Multi-metric eval"),
+        dataset=dataset,
+        task=task,
+        evaluators=[
+            Evaluator(name="contains_expected", description="1 if expected substring is in the output.", scorer=contains_expected),
+            Evaluator(name="is_short", description="1 if the output is under 80 characters.", scorer=is_short),
+            Evaluator(name="starts_capitalized", description="1 if the output starts with an uppercase letter.", scorer=starts_capitalized),
+        ],
+    )
+    run.show(level="run")
+
+asyncio.run(main())
+```
+
+<SectionTab as="h1" sectionId="mixing-rule-based-and-llm-judges">Combiner des évaluateurs basés sur des règles et des juges LLM</SectionTab>
+
+Vous pouvez combiner librement des notateurs basés sur des règles et des notateurs basés sur des LLM dans la même exécution :
+
+```python
+evaluators=[
+    Evaluator(name="exact_match", description="1 if output matches expected exactly.", scorer=exact_match_scorer),
+    Evaluator(name="llm_quality", description="LLM judge quality score (0 to 5).", scorer=llm_judge, num_scores=3),
+    Evaluator(name="response_length", description="Character count of the output.", scorer=length_scorer),
+]
+```
+
+Chaque évaluateur produit des statistiques indépendantes. Dans Studio, vous pouvez filtrer et comparer toutes les métriques.
+
+<SectionTab as="h1" sectionId="independent-goals-per-evaluator">Objectifs indépendants par évaluateur</SectionTab>
+
+Définissez des critères de réussite/échec différents pour chaque évaluateur :
+
+```python
+from mistralai.observability import Goal
+
+evaluators=[
+    Evaluator(name="exact_match", description="1 if output matches expected exactly.", scorer=exact_match_scorer, goal=Goal.gte(0.8)),
+    Evaluator(name="llm_quality", description="LLM judge quality score (0 to 5).", scorer=llm_judge, goal=Goal.gte(3.5)),
+    Evaluator(name="response_length", description="Character count of the output.", scorer=length_scorer, goal=Goal.lte(500)),
+]
+```
+
+Consultez [les objectifs](../evaluations/goals) pour le guide complet.
+
+<SectionTab as="h1" sectionId="statistics-computed-per-evaluator">Statistiques calculées par évaluateur</SectionTab>
+
+| Statistique | Description |
+|-----------|-------------|
+| `avg` | Note moyenne sur tous les enregistrements |
+| `min` | Note minimale |
+| `max` | Note maximale |
+| `std` | Écart-type |
+| `count` | Nombre d’enregistrements notés |
+
+Pour les notes non numériques (valeurs catégorielles), le SDK calcule les distributions de fréquences et le mode à la place.

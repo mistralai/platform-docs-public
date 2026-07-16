@@ -1,0 +1,68 @@
+---
+id: observability_evaluations_context_objects
+title: Utiliser les objets de Contexte
+sidebar_position: 3
+---
+
+# Utiliser les objets de Contexte
+
+Les Fonctions et les évaluateurs reçoivent leurs entrées par le biais d’**objets de Contexte** : des modèles Pydantic typés qui regroupent toutes les données disponibles en un seul paramètre. Cette page est une référence aux trois types de Contexte.
+
+## TaskContext
+
+Une Fonction de tâche reçoit un `TaskContext` avec l’enregistrement d’entrée, la configuration système et les métadonnées d’exécution :
+
+```python
+from mistralai.observability import TaskContext
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `input_record` | `dict[str, Any]` | L’enregistrement actuel du jeu de données |
+| `system` | `System | None` | Configuration système de `evaluation.run(system=...)` |
+| `metadata` | `dict[str, Any] | None` | Métadonnées de l’exécution de `evaluation.run(metadata=...)` |
+
+## ScorerContext
+
+Une Fonction d’évaluateur reçoit un `ScorerContext` avec l’enregistrement d’entrée et la sortie de la tâche :
+
+```python
+from mistralai.observability import ScorerContext
+
+def accuracy_scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `input_record` | `dict[str, Any]` | L’enregistrement actuel du jeu de données |
+| `output` | `Any` | La sortie de la tâche pour cette génération |
+| `system` | `System | None` | Configuration système de `evaluation.run(system=...)` |
+| `metadata` | `dict[str, Any] | None` | Métadonnées de l’exécution de `evaluation.run(metadata=...)` |
+
+## RunEvaluatorContext
+
+[Les évaluateurs de run](../evaluations/run-evaluators) reçoivent tous les enregistrements et les statistiques globalisées une fois le run terminé :
+
+```python
+from mistralai.observability import RunEvaluatorContext
+
+def accuracy_gate(ctx: RunEvaluatorContext):
+    return ctx.statistics["accuracy"].avg >= 0.8
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `records` | `list[RunEvaluatorRecord]` | Tous les enregistrements traités avec leurs scores |
+| `statistics` | `dict[str, EvaluatorStatistics]` | Statistiques globales par évaluateur |
+| `metadata` | `dict[str, JsonValue]` | Métadonnées du run |
+| `system` | `System | None` | Configuration système de `evaluation.run(system=...)` |
+
+Utilisez `get_score(record, "evaluator_name")` pour accéder au score d’un évaluateur spécifique pour un enregistrement donné.

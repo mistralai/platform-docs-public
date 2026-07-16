@@ -1,0 +1,175 @@
+---
+id: observability_data_redaction
+title: Masquage des données
+sidebar_label: Masquage des données
+sidebar_position: 3
+---
+
+import { SectionTab } from "@/components/layout/section-tab";
+import { ExplorerTabs, ExplorerTab } from "@/components/common/explorer-tabs";
+import { Faq, FaqItem } from "@/components/common/faq";
+
+# Masquage des données
+
+Les spans capturent les entrées et sorties de chaque opération, y compris les prompts, les réponses, ainsi que les arguments et résultats des appels d'outils. Ces données peuvent contenir des secrets ou des informations personnellement identifiables (PII). Pour limiter ce qui quitte votre environnement, Mistral applique un **masquage côté client** : les spans sont nettoyées sur la machine qui les produit, avant d'être exportées vers notre plateforme.
+
+Le masquage est **activé par défaut** dans tous les produits et SDK Mistral. Il est basé sur des expressions régulières et fait de son mieux pour supprimé les motifs reconnus tout en conservant la structure de vos spans. La seule exception concerne l'exécution de votre propre pipeline OpenTelemetry, où vous devez l'activer explicitement (voir ci-dessous).
+
+:::caution
+Le masquage est un filet de sécurité, et non une garantie. La politique par défaut cible les motifs courants de secrets et de PII, mais elle peut manquer des PII libres ou des secrets qui ne correspondent pas à un motif connu. Ne vous fiez pas uniquement à ce mécanisme pour contrôler des données hautement sensibles.
+:::
+
+<SectionTab as="h1" sectionId="how-it-works">
+  Fonctionnement du masquage
+</SectionTab>
+
+Le masquage s'exécute au niveau de l'exportateur OpenTelemetry, il s'applique donc à chaque span, quelle que soit sa méthode de création. Chaque attribut de span est inspecté et réécrit selon la politique active avant l'envoi du span. Le span original, non masqué, ne quitte jamais le processus.
+
+Comme il s'exécute côté client, le masquage n'ajoute aucune latence supplémentaire et garde les données sensibles hors du réseau.
+
+<SectionTab as="h1" sectionId="policies">
+  Politiques de masquage
+</SectionTab>
+
+Chaque surface expose les mêmes trois modes. Les SDK permettent en plus de fournir votre propre politique.
+
+| Mode               | Action                                                                                                                                                                    | Compromis                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `default` (activé)     | Orienté contenu. Analyse les valeurs de type chaîne et masque les secrets et PII correspondants (jetons API, e-mails, séquences de type carte bancaire, adresses IPv4), tout en conservant les clés et la structure des attributs. | Conserve la plupart des données d'observabilité. Fonctionne au mieux, donc il peut manquer des motifs hors de l'ensemble connu. |
+| `strict`           | Orienté clé. Masque les valeurs entières pour les clés sensibles et toutes les valeurs non primitives, puis analyse les valeurs restantes pour détecter les motifs de secrets.                                        | Très prudent : supprime la plupart du contenu des prompts et des réponses.                                     |
+| `none`             | Aucun masquage. Les spans sont exportées telles quelles.                                                                                                                                   | Fidélité totale. À utiliser uniquement dans des environnements de confiance.                                                |
+| Personnalisé (SDK uniquement) | Fournissez votre propre politique ou un callback par attribut qui décide comment chaque valeur est masquée.                                                                                       | Contrôle total. Vous gérez la logique.                                                                |
+
+<SectionTab as="h1" sectionId="by-source">
+  Masquage par source
+</SectionTab>
+
+| Source                   | Par défaut | Configurable | Où                                            |
+| ------------------------ | ------- | ------------ | ------------------------------------------------ |
+| Mistral SDK (Python)     | Activé      | Oui        | Argument `redaction` sur `configure_telemetry`    |
+| Mistral SDK (TypeScript) | Activé      | Oui        | Option `redaction` sur `configureTelemetry`       |
+| Workflows                | Activé      | Oui          | Variable d'environnement `OTEL_REDACTION`            |
+| Vibe Code CLI            | Activé      | Oui          | Configuration `otel_redaction` ou variable `VIBE_OTEL_REDACTION` |
+| Vibe Work                | Activé      | Non           | Géré par Mistral, côté serveur                  |
+| Personnalisé (OTEL)            | Désactivé     | Oui          | Enveloppez votre exportateur avec `RedactingSpanExporter`  |
+
+<SectionTab as="h1" sectionId="configure">
+  Configurer le masquage
+</SectionTab>
+
+<ExplorerTabs id="configure-redaction">
+  <ExplorerTab value="python" label="Mistral SDK (Python)">
+
+Le masquage est activé par défaut en mode dédié. Utilisez l'argument `redaction` pour le modifier :
+
+```python
+from mistralai.extra.observability import (
+    configure_telemetry,
+    AttributeRedactionPolicy,
+)
+
+configure_telemetry(client)                                        # politique par défaut
+configure_telemetry(client, redaction=AttributeRedactionPolicy())  # strict, orienté clé
+configure_telemetry(client, redaction=False)                       # désactivé
+configure_telemetry(                                               # callback personnalisé par attribut
+    client,
+    redaction=lambda key, value: None if "email" in key else value,
+)
+```
+
+:::note
+Si vous pointez le SDK vers votre propre configuration OpenTelemetry au lieu de le laisser gérer le traçage, le SDK ne contrôle plus l'exportateur et l'argument `redaction` n'a aucun effet. Appliquez plutôt le masquage dans votre propre pipeline (voir l'onglet **Personnalisé (OTEL)**).
+:::
+
+Pour plus de détails, consultez la [section sur le masquage du README du SDK](https://github.com/mistralai/client-python#redaction) et les [exemples d'observabilité](https://github.com/mistralai/client-python/tree/main/examples/mistral/observability).
+
+  </ExplorerTab>
+  <ExplorerTab value="typescript" label="Mistral SDK (TypeScript)">
+
+Le masquage est activé par défaut en mode dédié. Utilisez l'option `redaction` pour le modifier :
+
+```typescript
+import {
+  configureTelemetry,
+  AttributeRedactionPolicy,
+} from "@mistralai/mistralai/extra/observability";
+
+await configureTelemetry(client); // politique par défaut
+await configureTelemetry(client, "dedicated", { redaction: new AttributeRedactionPolicy() }); // strict
+await configureTelemetry(client, "dedicated", { redaction: false }); // désactivé
+await configureTelemetry(client, "dedicated", {
+  // callback personnalisé
+  redaction: (key, value) => (key.includes("email") ? undefined : value),
+});
+```
+
+:::note
+Si vous pointez le SDK vers votre propre configuration OpenTelemetry au lieu de le laisser gérer le traçage, le SDK ne contrôle plus l'exportateur et l'option `redaction` n'a aucun effet. Appliquez plutôt le masquage dans votre propre pipeline (voir l'onglet **Personnalisé (OTEL)**).
+:::
+
+{/* TODO: add TypeScript SDK README redaction section and examples/src/observability links once merged. */}
+
+  </ExplorerTab>
+  <ExplorerTab value="workflows" label="Workflows">
+
+Définissez la variable d'environnement `OTEL_REDACTION` sur le service Workflows. Il s'agit d'un paramètre au niveau de l'infrastructure :
+
+```bash
+OTEL_REDACTION=default  # default | strict | none
+```
+
+Le masquage s'applique à chaque span avant l'export OTLP, indépendamment du commutateur maître `OTEL_ENABLED`.
+
+  </ExplorerTab>
+  <ExplorerTab value="vibe-cli" label="Vibe Code CLI">
+
+Définissez le mode de masquage dans votre configuration Vibe Code CLI :
+
+```bash
+# Single session
+VIBE_OTEL_REDACTION=strict vibe
+
+# Permanent setting in ~/.vibe/config.toml
+otel_redaction = "default"  # default | strict | none
+```
+
+  </ExplorerTab>
+  <ExplorerTab value="vibe-work" label="Vibe Work">
+
+Les traces de conversation Vibe Work sont masquées avec la politique par défaut avant de quitter l'infrastructure de Mistral. Cela est géré côté serveur et n'est pas configurable par les utilisateurs de l'espace de travail.
+
+  </ExplorerTab>
+  <ExplorerTab value="custom" label="Personnalisé (OTEL)">
+
+Si vous gérez le pipeline OpenTelemetry, le masquage n'est pas appliqué automatiquement. Enveloppez votre exportateur de spans avec `RedactingSpanExporter` du SDK Mistral pour masquer les spans avant leur exportation :
+
+```python
+from mistralai.extra.observability import RedactingSpanExporter, default_redaction_policy
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+processor = BatchSpanProcessor(
+    RedactingSpanExporter(OTLPSpanExporter(), default_redaction_policy())
+)
+```
+
+Le SDK TypeScript expose le même `RedactingSpanExporter` depuis `@mistralai/mistralai/extra/observability`.
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">
+  FAQ
+</SectionTab>
+
+<Faq>
+  <FaqItem question="Le masquage est-il activé par défaut ?">
+    Oui, partout où Mistral contrôle le pipeline d'export : dans les SDK en mode dédié, Workflows, Vibe Code CLI et Vibe Work. Si vous exécutez votre propre pipeline OpenTelemetry, enveloppez votre exportateur avec `RedactingSpanExporter` pour l'activer.
+  </FaqItem>
+  <FaqItem question="Le masquage garantit-il qu'aucune donnée sensible n'est exportée ?">
+    Non. Le masquage est basé sur des motifs et fait de son mieux. Il supprime ce qu'il reconnaît tout en préservant la valeur d'observabilité, mais il peut manquer des PII libres ou des secrets qui ne correspondent pas à un motif connu. Utilisez le mode `strict` ou une politique personnalisée pour des garanties plus fortes, et appliquez des contrôles supplémentaires pour les données hautement sensibles.
+  </FaqItem>
+  <FaqItem question="Le masquage a-t-il un impact sur les performances ?">
+    Il s'exécute au niveau de l'exportateur, en dehors du chemin critique des requêtes, donc l'impact sur votre application est négligeable.
+  </FaqItem>
+</Faq>

@@ -1,0 +1,345 @@
+---
+id: observability_evaluations
+title: Offline evaluations
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Offline evaluations
+
+The Evaluation SDK (`mistralai-observability`) lets you run offline evaluations on your LLM pipelines in a few lines of Python. Define a dataset, a task, and scorers to get results in your terminal and in Studio.
+
+:::info
+Offline evaluations are available to **Enterprise-tier organizations** only. Contact your Mistral representative to get access to the `mistralai-observability` package.
+:::
+
+The SDK follows a simple mental model:
+
+```
+Dataset  →  Task  →  Evaluators  →  Results
+```
+
+- **Dataset**: a list of input records (dicts) with your test cases.
+- **Task**: an async or sync function that receives a `TaskContext` and produces an output.
+- **Evaluators**: functions that receive a `ScorerContext` and score each output.
+- **Results**: statistics and per-record scores, displayed in the terminal and uploaded to Studio.
+
+<SectionTab as="h1" sectionId="installation">Installation</SectionTab>
+
+**Prerequisites:** Python 3.12+, [uv](https://docs.astral.sh/uv/), and a Mistral API key.
+
+After you receive your entitlement token from Mistral, configure your credentials:
+
+```bash
+export UV_INDEX_CLOUDSMITH_USERNAME=token
+export UV_INDEX_CLOUDSMITH_PASSWORD=<your-entitlement-token>
+```
+
+Add the package and the Mistral private repository to your `pyproject.toml`:
+
+```toml
+[project]
+name = "my-eval-project"
+version = "0.1.0"
+dependencies = ["mistralai-observability"]
+
+[[tool.uv.index]]
+name = "cloudsmith"
+url = "https://dl.cloudsmith.io/basic/mistral-ai/sdk-distribution/python/simple/"
+```
+
+Then install:
+
+```bash
+uv sync
+```
+
+Set your API key:
+
+```bash
+export MISTRAL_API_KEY=<your-api-key>
+```
+
+<SectionTab as="h1" sectionId="quickstart">Quickstart</SectionTab>
+
+Create an `eval.py` file:
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import (
+    Evaluation, Evaluator, Goal, Mistral, Project, ScorerContext, System, TaskContext,
+)
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+dataset = [
+    {"sentence": "Hello, how are you?", "groundtruth": "English"},
+    {"sentence": "Bonjour, comment ça va?", "groundtruth": "French"},
+    {"sentence": "Hola, ¿cómo estás?", "groundtruth": "Spanish"},
+]
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["system_prompt"])},
+            {"role": "user", "content": ctx.input_record["sentence"]},
+        ],
+    )
+    return str(response.choices[0].message.content)
+
+def scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["groundtruth"].lower() == str(ctx.output).lower() else 0
+
+async def main():
+    run = await client.evaluation.run(
+        project=Project(name="Language Detection"),
+        evaluation=Evaluation(name="Accuracy Eval"),
+        system=System(name="mistral-small", params={
+            "model": "mistral-small-latest",
+            "system_prompt": "What language is this sentence in? Reply with ONLY the language name.",
+        }),
+        dataset=dataset,
+        task=task,
+        evaluators=[
+            Evaluator(
+                name="accuracy",
+                description="1 if the detected language matches the groundtruth, 0 otherwise.",
+                scorer=scorer,
+                goal=Goal.gte(0.8),
+            ),
+        ],
+    )
+    run.show(level="records")
+
+asyncio.run(main())
+```
+
+Run it:
+
+```bash
+uv run eval.py
+```
+
+Results are printed in your terminal and uploaded to Studio under **Observability > Evaluate > Evaluations**.
+
+<SectionTab as="h1" sectionId="core-concepts">Core concepts</SectionTab>
+
+<ExplorerTabs id="concepts">
+  <ExplorerTab value="task" label="Task">
+
+A task is an async (or sync) function that receives a `TaskContext` and returns an output. This is the code you want to evaluate:
+
+```python
+from mistralai.observability import TaskContext
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["system_prompt"])},
+            {"role": "user", "content": ctx.input_record["prompt"]},
+        ],
+    )
+    return str(response.choices[0].message.content)
+```
+
+The task can return any type: strings, Pydantic models, or dicts. The SDK serializes the output for upload.
+
+`TaskContext` gives you typed access to `ctx.input_record` (the current dataset record), `ctx.system` (the `System` config from `evaluation.run()`), and `ctx.metadata` (run metadata).
+
+  </ExplorerTab>
+  <ExplorerTab value="evaluators" label="Evaluators">
+
+An evaluator has a name, an optional description, and a scorer function. The scorer receives a `ScorerContext` and returns a score:
+
+```python
+from mistralai.observability import Evaluator, Goal, ScorerContext
+
+def accuracy_scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+
+evaluator = Evaluator(
+    name="accuracy",
+    description="1 if expected answer appears in the output.",
+    scorer=accuracy_scorer,
+    goal=Goal.gte(0.8),
+)
+```
+
+`ScorerContext` gives you `ctx.input_record` (the current dataset record), `ctx.output` (the task output for this generation), and `ctx.system` (the `System` config).
+
+You can stack as many evaluators as you need in a single run. The SDK computes statistics (avg, min, max, std) per evaluator automatically.
+
+  </ExplorerTab>
+  <ExplorerTab value="system" label="System">
+
+`System` externalizes your task configuration so each run records which settings produced its results:
+
+```python
+from mistralai.observability import System
+
+system = System(name="mistral-small-t0", params={
+    "model": "mistral-small-latest",
+    "temperature": 0,
+    "system_prompt": "Answer concisely in one sentence.",
+})
+```
+
+`params` is free-form: include model, temperature, system prompt, max tokens, tool definitions, or any other setting that drives your task.
+
+In Studio, each run shows its `System` config, so you can compare runs side by side.
+
+:::tip Compare configurations
+Run the same evaluation with different `System` objects to compare model versions or prompt variants without changing your task code.
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="goals" label="Goals">
+
+Goals let you define pass/fail criteria on evaluator scores. When a goal is set, the SDK displays `PASS` or `FAIL` verdicts in the terminal output:
+
+```python
+from mistralai.observability import Goal
+
+Evaluator(
+    name="accuracy",
+    scorer=accuracy_scorer,
+    goal=Goal.gte(0.8),           # each record must score >= 0.8
+    aggregate_goal=Goal.gte(0.9), # overall average must be >= 0.9
+)
+```
+
+| Goal | Meaning |
+|------|---------|
+| `Goal.gte(0.8)` | Score must be `>= 0.8` |
+| `Goal.lte(0.1)` | Score must be `<= 0.1` |
+| `Goal.between(0.2, 0.8)` | Score must be in [0.2, 0.8] |
+| `Goal.higher_is_better()` | Direction hint only, no threshold |
+| `Goal.lower_is_better()` | Direction hint only, no threshold |
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="organizing-in-studio">Organizing runs in Studio</SectionTab>
+
+Use **Projects** and **Evaluations** to organize runs:
+
+- **Project**: groups related evaluations for a system (for example, `"Language Detection"`).
+- **Evaluation**: a specific evaluation within a project (for example, `"Accuracy Eval"`).
+- **Run**: each call to `evaluation.run()` creates a new run under the evaluation.
+
+```python
+run = await client.evaluation.run(
+    project=Project(name="My Project"),       # created if it doesn't exist
+    evaluation=Evaluation(name="My Eval"),    # created if it doesn't exist
+    dataset=dataset,
+    task=task,
+    evaluators=[...],
+)
+```
+
+You can also reference existing entities by slug:
+
+```python
+project=Project(slug="my-project")
+evaluation=Evaluation(slug="my-eval")
+```
+
+Tags and metadata help you filter and compare runs in Studio:
+
+```python
+run = await client.evaluation.run(
+    ...
+    tags=["model:mistral-small", "prompt:v2"],
+    metadata={"commit": "abc123"},
+)
+```
+
+<SectionTab as="h1" sectionId="local-mode">Local mode</SectionTab>
+
+Use `local=True` to run evaluations without uploading results to Studio. This is useful for fast iteration during development:
+
+```python
+run = await client.evaluation.run(
+    dataset=dataset,
+    task=task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+    local=True,  # no upload, no project/evaluation required
+)
+run.show(level="records")
+```
+
+A typical development workflow:
+
+1. **Iterate locally**: set `local=True` and adjust your task and scorers until results look right.
+2. **Push to Studio**: remove `local=True` and add `project` and `evaluation` to track results over time.
+
+<SectionTab as="h1" sectionId="displaying-results">Displaying results</SectionTab>
+
+The `run.show()` method prints results at different levels of detail:
+
+```python
+run.show(level="run")          # Summary statistics only
+run.show(level="records")      # Per-record results
+run.show(level="generations")  # Per-generation details
+run.show(level="scores")       # Full score breakdown
+```
+
+Export as JSON for further processing:
+
+```python
+run.show(mode="json", level="records")
+```
+
+<SectionTab as="h1" sectionId="results-in-studio">Results in Studio</SectionTab>
+
+Once a run completes, results are available at **Observability > Evaluate > Evaluations** in Studio. Each run uploads its scores, statistics, and metadata automatically.
+
+The Studio UI gives you four ways to explore results:
+
+- **Trend charts**: score averages over time with min/max bands, so you can spot regressions across runs.
+- **Distribution charts**: pie and stacked area charts showing score distribution across records and runs.
+- **Composable filters**: filter by tag, run ID, or metric threshold to isolate specific subsets.
+- **Run detail view**: open any run to inspect per-record inputs, outputs, and scores — with expandable generation details when `num_generations > 1`.
+
+Cell values render automatically based on type: plain text, JSON objects, and LLM conversation arrays each get their own display format.
+
+<SectionTab as="h1" sectionId="guides">Guides</SectionTab>
+
+- [Judges](./evaluations/judges): use LLM-based scorers for criteria that rule-based functions can't capture.
+- [Datasets](./evaluations/datasets): structure your test cases as typed Python records.
+- [Use context objects](./evaluations/context-objects): `TaskContext`, `ScorerContext`, and `RunEvaluatorContext` reference.
+- [Set goals](./evaluations/goals): define pass/fail thresholds and direction hints on evaluator scores.
+- [Configure system params](./evaluations/system-params): externalize task configuration for side-by-side comparison in Studio.
+- [Combine evaluators](./evaluations/multiple-evaluators): combine rule-based and LLM-based scorers in a single run.
+- [Use run-level evaluators](./evaluations/run-evaluators): aggregate metrics (F1, custom gates) computed after all records are scored.
+- [Iterate locally](./evaluations/local-mode): iterate without uploading results to Studio.
+- [Reduce variance with multiple generations](./evaluations/num-generations): reduce variance by running each record N times.
+- [Retry failed records](./evaluations/retry-failed-records): rerun only the records that errored, patch results in place.
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="What Python version is required?">
+  Python 3.12 or later is required. The package uses `uv` for dependency management.
+  </FaqItem>
+  <FaqItem question="Can I use synchronous functions for tasks and scorers?">
+  Yes. Both async and sync functions work for tasks and scorers. The SDK detects which style you're using automatically.
+  </FaqItem>
+  <FaqItem question="How do I use an LLM as a judge?">
+  An evaluator is a function: call the Mistral API inside your scorer and return a numeric score. See [Judges](./evaluations/judges) for detailed examples including structured output and variance reduction.
+  </FaqItem>
+  <FaqItem question="Can I run multiple evaluators in a single run?">
+  Yes. Pass a list to `evaluators`. The SDK runs all of them and computes statistics independently per evaluator. See [Combine evaluators](./evaluations/multiple-evaluators) for details.
+  </FaqItem>
+  <FaqItem question="How do I compare two model versions?">
+  Run the same evaluation twice, each time with a different `System` object. Studio displays the runs side by side with their system configs. See [Configure system params](./evaluations/system-params) for details.
+  </FaqItem>
+</Faq>

@@ -1,0 +1,174 @@
+---
+id: observability_send_traces
+title: Envoyer des traces
+sidebar_label: Envoyer des traces
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Envoyer des traces
+
+Cette page explique comment instrumenter chaque source de données prise en charge afin qu'elle envoie des traces [OpenTelemetry](https://opentelemetry.io/) à Mistral. Une fois les traces transmises, vous pouvez les explorer dans l'[Explorateur de traces](https://console.mistral.ai/observability/traces).
+
+L'envoi de traces nécessite uniquement une clé API Mistral valide : aucun critère d'activation ou rôle spécial n'est requis.
+
+<SectionTab as="h1" sectionId="coverage">Couverture par intégration</SectionTab>
+
+| Intégration | Activation | Appels LLM | Appels d'outils | Étendues d'agent |
+|-------------|-----------|-----------|------------|-------------|
+| SDK Mistral (Python) | Activation acte par acte (`configure_telemetry`) | Oui | Manuelle, via `get_telemetry_tracer` | Oui |
+| SDK Mistral (TypeScript) | Activation acte par acte (`configureTelemetry`) | Oui | Manuelle, via `getTelemetryTracer` | Oui |
+| workflow | Automatique (`OTEL_ENABLED=true` sur le service) | Oui | Oui | Non applicable |
+| CLI Vibe Code | Activation acte par acte (`enable_otel = true`) | Oui | Oui | Oui |
+| Vibe Work | option Admin dans Studio | Oui | Oui | Oui |
+
+:::note
+Toutes les sources ci-dessus masquent les passages côté client avant l'export par défaut. Consultez [Masquage des données](./data-redaction) pour examiner la politique ou modifier les éléments masqués.
+:::
+
+Les produits Mistral suivants n'envoient pas encore de traces :
+
+- Vibe Code Web (basé sur navigateur)
+- Bac à sable AI Studio
+
+<SectionTab as="h1" sectionId="enable-tracing">Activer le traçage</SectionTab>
+
+<ExplorerTabs id="enable-tracing">
+  <ExplorerTab value="python" label="SDK Mistral (Python)">
+
+**Prérequis :** SDK Mistral Python avec l'extra `telemetry`. Les exemples de code nécessitent `mistralai[telemetry] >= 2.4.13`.
+
+L'observabilité est en Private Preview et l'intégration du SDK évolue rapidement, nous recommandons d'utiliser la dernière version du SDK.
+
+```bash
+uv add "mistralai[telemetry]"
+```
+
+Pour plus de détails, consultez le [README d'observabilité du SDK](https://github.com/mistralai/client-python#telemetry--observability) et les [exemples](https://github.com/mistralai/client-python/tree/main/examples/mistral/observability).
+
+```python
+from mistralai.client import Mistral
+from mistralai.extra.observability import configure_telemetry
+
+client = Mistral(api_key="your-api-key")
+configure_telemetry(client)
+```
+
+Après cet appel, le SDK génère automatiquement des traces pour tous les appels LLM, les embeddings, les opérations d'agent, les complétions FIM et les requêtes OCR.
+
+**Ajouter manuellement des étendues pour les outils :**
+
+Les appels d'outils au sein de votre application ne sont pas traçables automatiquement. Utilisez `get_telemetry_tracer` pour les ajouter :
+
+```python
+from mistralai.client import Mistral
+from mistralai.extra.observability import configure_telemetry, get_telemetry_tracer
+
+client = Mistral(api_key="your-api-key")
+configure_telemetry(client)
+tracer = get_telemetry_tracer(client, "my-agent")
+
+with tracer.start_as_current_span("invoke_agent"):
+    response = client.chat.complete(
+        model="mistral-small-latest",
+        messages=[{"role": "user", "content": "Search for recent news."}],
+    )
+
+    with tracer.start_as_current_span("execute_tool web_search") as tool_span:
+        tool_span.set_attribute("gen_ai.tool.name", "web_search")
+        tool_span.set_attribute("gen_ai.tool.call.arguments", "recent news")
+        # run your tool here
+```
+
+  </ExplorerTab>
+  <ExplorerTab value="typescript" label="SDK Mistral (TypeScript)">
+
+**Prérequis :** SDK Mistral TypeScript. Les exemples de code nécessitent `@mistralai/mistralai >= 2.3.0`.
+
+L'observabilité est en Private Preview et l'intégration du SDK évolue rapidement, nous recommandons d'utiliser la dernière version du SDK.
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { configureTelemetry } from "@mistralai/mistralai/extra/observability";
+
+const client = new Mistral({ apiKey: "your-api-key" });
+await configureTelemetry(client, "dedicated");
+```
+
+Après cet appel, le SDK génère automatiquement des traces pour tous les appels LLM, les embeddings, les opérations d'agent, les complétions FIM, l'OCR, la modération et les requêtes de Recherche.
+
+  </ExplorerTab>
+  <ExplorerTab value="workflows" label="workflow">
+
+Définissez `OTEL_ENABLED=true` sur le service workflow. Il s'agit d'un paramètre au niveau de l'infrastructure. Une fois activé, chaque exécution de workflow génère automatiquement des traces sans qu'aucune configuration par workflow ne soit nécessaire.
+
+Les traces de workflow incluent chaque étape : appels LLM, invocations d'outils, décisions de branchement et tentatives de nouvelle exécution.
+
+  </ExplorerTab>
+  <ExplorerTab value="vibe-cli" label="CLI Vibe Code">
+
+Activez le traçage dans votre configuration CLI de Vibe Code :
+
+```bash
+# Session unique
+VIBE_ENABLE_OTEL=true vibe
+
+# Paramètre permanent dans ~/.vibe/config.toml
+enable_otel = true
+```
+
+:::caution
+Les traces incluent les arguments et résultats des appels d'outils, qui peuvent contenir des données sensibles. Ces éléments sont masqués côté client par défaut ; consultez [Masquage des données](./data-redaction) pour examiner ou ajuster la politique.
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="vibe-work" label="Vibe Work">
+
+Un Admin d'espace de travail ou un Admin d'organisation active le traçage des conversations par espace de travail. Dans Studio, accédez à `Espace de travail` → `Paramètres` → `Observabilité` et activez le bouton **Traçage des conversations**.
+
+:::caution
+Les traces incluent les arguments et résultats des appels d'outils, qui peuvent contenir des données sensibles. Ces éléments sont masqués côté client par défaut ; consultez [Masquage des données](./data-redaction) pour examiner ou ajuster la politique.
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="custom" label="Personnalisé (OTEL)">
+
+Toute application instrumentée avec OpenTelemetry peut envoyer des traces directement au collecteur de télémétrie de Mistral.
+
+**Point de terminaison :** `https://api.mistral.ai/telemetry/v1/traces`
+
+**Protocole :** OTLP/HTTP (JSON)
+
+**Authentification :** `Authorization: Bearer <MISTRAL_API_KEY>`
+
+Aucun critère d'activation n'est nécessaire : toute clé API Mistral valide fonctionne. Suivez les [conventions sémantiques OpenTelemetry GenAI](https://github.com/open-telemetry/semantic-conventions-genai) pour nommer les étendues et les attributs.
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="verify">Vérifier que les traces arrivent</SectionTab>
+
+Après avoir activé l'instrumentation, effectuez une ou plusieurs requêtes via votre application, puis ouvrez l'[Explorateur de traces](https://console.mistral.ai/observability/traces) dans Studio. Les traces apparaissent généralement en quelques secondes.
+
+Si vous ne voyez aucune trace, vérifiez les points suivants :
+
+1. Votre clé API appartient à un espace de travail Enterprise avec l'Observabilité activée.
+2. Vous avez appelé `configure_telemetry(client)` (ou l'équivalent TypeScript) avant d'effectuer des appels API.
+3. Votre rôle dans l'espace de travail est Admin d'Organisation, Admin d'espace de travail ou Visionneuse Observabilité.
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Dois-je modifier le code de mon application ?">
+  Pour le SDK Mistral, deux lignes suffisent : installez l'extra telemetry et appelez `configure_telemetry(client)`. Toutes les appels SDK suivants sont automatiquement tracés.
+  </FaqItem>
+  <FaqItem question="Les traces sont-elles stockées en toute sécurité ?">
+  Les traces sont stockées dans l'infrastructure de Mistral et ne sont accessibles qu'aux utilisateurs disposant du rôle approprié dans votre espace de travail. Les données sont conservées pendant 30 jours.
+  </FaqItem>
+  <FaqItem question="Puis-je envoyer des traces à partir d'un framework LLM non Mistral ?">
+  Oui. Toute application conforme aux conventions sémantiques OpenTelemetry GenAI peut envoyer des traces à `https://api.mistral.ai/telemetry/v1/traces` avec OTLP/HTTP et une clé API Mistral valide.
+  </FaqItem>
+</Faq>

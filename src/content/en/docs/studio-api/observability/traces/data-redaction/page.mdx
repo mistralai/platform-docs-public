@@ -1,0 +1,181 @@
+---
+id: observability_data_redaction
+title: Data redaction
+sidebar_label: Data redaction
+sidebar_position: 3
+---
+
+import { SectionTab } from "@/components/layout/section-tab";
+import { ExplorerTabs, ExplorerTab } from "@/components/common/explorer-tabs";
+import { Faq, FaqItem } from "@/components/common/faq";
+
+# Data redaction
+
+Spans capture the input and output of each operation, including prompts, responses, and tool call arguments and results. This data can contain secrets or personally identifiable information (PII). To limit what leaves your environment, Mistral applies **client-side redaction**: spans are scrubbed on the machine that produces them, before they are exported to our platform.
+
+Redaction is **on by default** across Mistral products and SDKs. It is best-effort and based on regular expressions, so it removes the patterns it recognizes while keeping the structure of your spans intact. The one exception is when you run your own OpenTelemetry pipeline, where you opt in explicitly (see below).
+
+:::caution
+Redaction is a safety net, not a guarantee. The default policy targets common secret and PII patterns, but it can miss free-form PII or secrets that do not match a known pattern. Do not rely on it as the only control for highly sensitive data.
+:::
+
+<SectionTab as="h1" sectionId="how-it-works">
+  How redaction works
+</SectionTab>
+
+Redaction runs at the OpenTelemetry exporter level, so it applies to every span regardless of how the span was created. Each span attribute is inspected and rewritten according to the active policy before the span is sent. The original, unredacted span never leaves the process.
+
+Because it runs on the client, redaction adds no extra round trip and keeps sensitive data off the network entirely.
+
+<SectionTab as="h1" sectionId="policies">
+  Redaction policies
+</SectionTab>
+
+Every surface exposes the same three modes. The SDKs additionally let you supply your own policy.
+
+| Mode               | What it does                                                                                                                                                                    | Trade-off                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `default` (on)     | Content-oriented. Scans string values and redacts matched secrets and PII (API tokens, emails, card-like sequences, IPv4 addresses) while keeping attribute keys and structure. | Preserves most observability value. Best-effort, so it may miss patterns outside the known set. |
+| `strict`           | Key-oriented. Redacts whole values for sensitive keys and all non-primitive values, then scans the remaining values for secret patterns.                                        | Very conservative. Erases most prompt and response content.                                     |
+| `none`             | No redaction. Spans are exported as captured.                                                                                                                                   | Full fidelity. Use only in trusted environments.                                                |
+| Custom (SDKs only) | Supply your own policy or a per-attribute callback that decides how each value is masked.                                                                                       | Full control. You own the logic.                                                                |
+
+<SectionTab as="h1" sectionId="by-source">
+  Redaction by source
+</SectionTab>
+
+| Source                   | Default | Configurable | Where                                            |
+| ------------------------ | ------- | ------------ | ------------------------------------------------ |
+| Mistral SDK (Python)     | On      | Fully        | `redaction` argument on `configure_telemetry`    |
+| Mistral SDK (TypeScript) | On      | Fully        | `redaction` option on `configureTelemetry`       |
+| Workflows                | On      | Yes          | `OTEL_REDACTION` environment variable            |
+| Vibe Code CLI            | On      | Yes          | `otel_redaction` config or `VIBE_OTEL_REDACTION` |
+| Vibe Work                | On      | No           | Managed by Mistral, server-side                  |
+| Custom (OTEL)            | Off     | Yes          | Wrap your exporter with `RedactingSpanExporter`  |
+
+<SectionTab as="h1" sectionId="configure">
+  Configure redaction
+</SectionTab>
+
+<ExplorerTabs id="configure-redaction">
+  <ExplorerTab value="python" label="Mistral SDK (Python)">
+
+Redaction is on by default in dedicated mode. Pass the `redaction` argument to change it:
+
+```python
+from mistralai.extra.observability import (
+    configure_telemetry,
+    AttributeRedactionPolicy,
+)
+
+configure_telemetry(client)                                        # default policy
+configure_telemetry(client, redaction=AttributeRedactionPolicy())  # strict, key-oriented
+configure_telemetry(client, redaction=False)                       # disabled
+configure_telemetry(                                               # custom per-attribute callback
+    client,
+    redaction=lambda key, value: None if "email" in key else value,
+)
+```
+
+:::note
+If you point the SDK at your own OpenTelemetry setup instead of letting it manage tracing, the SDK no longer owns the exporter and the `redaction` argument has no effect. Redact in your own pipeline instead (see the **Custom (OTEL)** tab).
+:::
+
+For more detail, see the [redaction section of the SDK README](https://github.com/mistralai/client-python#redaction) and the [observability examples](https://github.com/mistralai/client-python/tree/main/examples/mistral/observability).
+
+  </ExplorerTab>
+  <ExplorerTab value="typescript" label="Mistral SDK (TypeScript)">
+
+Redaction is on by default in dedicated mode. Pass the `redaction` option to change it:
+
+```typescript
+import {
+  configureTelemetry,
+  AttributeRedactionPolicy,
+} from "@mistralai/mistralai/extra/observability";
+
+await configureTelemetry(client); // default policy
+await configureTelemetry(client, "dedicated", { redaction: new AttributeRedactionPolicy() }); // strict
+await configureTelemetry(client, "dedicated", { redaction: false }); // disabled
+await configureTelemetry(client, "dedicated", {
+  // custom callback
+  redaction: (key, value) => (key.includes("email") ? undefined : value),
+});
+```
+
+:::note
+If you point the SDK at your own OpenTelemetry setup instead of letting it manage tracing, the SDK no longer owns the exporter and the `redaction` option has no effect. Redact in your own pipeline instead (see the **Custom (OTEL)** tab).
+:::
+
+{/* TODO: add TypeScript SDK README redaction section and examples/src/observability links once merged. */}
+
+  </ExplorerTab>
+  <ExplorerTab value="workflows" label="Workflows">
+
+Set the `OTEL_REDACTION` environment variable on the Workflows service. This is an infrastructure-level setting:
+
+```bash
+OTEL_REDACTION=default  # default | strict | none
+```
+
+Redaction applies to every span before OTLP export, independently of the `OTEL_ENABLED` master switch.
+
+  </ExplorerTab>
+  <ExplorerTab value="vibe-cli" label="Vibe Code CLI">
+
+Set the redaction mode in your Vibe Code CLI configuration:
+
+```bash
+# Single session
+VIBE_OTEL_REDACTION=strict vibe
+
+# Permanent setting in ~/.vibe/config.toml
+otel_redaction = "default"  # default | strict | none
+```
+
+  </ExplorerTab>
+  <ExplorerTab value="vibe-work" label="Vibe Work">
+
+Vibe Work conversation traces are redacted with the default policy before they leave Mistral's infrastructure. This is managed server-side and is not configurable by workspace users.
+
+  </ExplorerTab>
+  <ExplorerTab value="custom" label="Custom (OTEL)">
+
+If you own the OpenTelemetry pipeline, redaction is not applied automatically. Wrap your span exporter with `RedactingSpanExporter` from the Mistral SDK to redact spans before they are exported:
+
+```python
+from mistralai.extra.observability import RedactingSpanExporter, default_redaction_policy
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+processor = BatchSpanProcessor(
+    RedactingSpanExporter(OTLPSpanExporter(), default_redaction_policy())
+)
+```
+
+The TypeScript SDK exposes the same `RedactingSpanExporter` from `@mistralai/mistralai/extra/observability`.
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h1" sectionId="faq">
+  FAQ
+</SectionTab>
+
+<Faq>
+  <FaqItem question="Is redaction on by default?">
+    Yes, everywhere Mistral controls the export pipeline: the SDKs in dedicated mode, Workflows,
+    Vibe Code CLI, and Vibe Work. If you run your own OpenTelemetry pipeline, wrap your exporter
+    with `RedactingSpanExporter` to enable it.
+  </FaqItem>
+  <FaqItem question="Does redaction guarantee no sensitive data is exported?">
+    No. Redaction is best-effort and pattern-based. It removes what it recognizes while preserving
+    observability value, but it can miss free-form PII or secrets that do not match a known pattern.
+    Use `strict` mode or a custom policy for stronger guarantees, and apply additional controls to
+    highly sensitive data.
+  </FaqItem>
+  <FaqItem question="Does redaction affect performance?">
+    It runs at the exporter level, outside the request hot path, so the impact on your application
+    is negligible.
+  </FaqItem>
+</Faq>

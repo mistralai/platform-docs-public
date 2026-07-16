@@ -1,0 +1,149 @@
+---
+id: observability_evaluations_goals
+title: Définir des objectifs
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Définir des objectifs
+
+Les objectifs vous permettent de définir des critères de réussite/échec pour les scores des évaluateurs. Lorsqu’un objectif est défini, le SDK affiche les verdicts `PASS` ou `FAIL` dans la sortie du terminal à côté de chaque score.
+
+<SectionTab as="h1" sectionId="goal-types">Types d’objectifs</SectionTab>
+
+| Méthode | Signification |
+|--------|---------|
+| `Goal.gte(0,8)` | Le score doit être `>= 0,8` |
+| `Goal.lte(0,1)` | Le score doit être `<= 0,1` |
+| `Goal.between(0,2, 0,8)` | Le score doit être dans l’intervalle `[0,2, 0,8]` |
+| `Goal.higher_is_better()` | Indication de direction uniquement, pas de seuil |
+| `Goal.lower_is_better()` | Indication de direction uniquement, pas de seuil |
+
+Les objectifs de direction uniquement (`higher_is_better`, `lower_is_better`) ne produisent pas de verdicts `PASS`/`FAIL`. Ils servent de métadonnées pour les vues de comparaison dans Studio.
+
+Toutes les méthodes d’objectif acceptent un paramètre `metric` optionnel (`"avg"`, `"min"`, `"max"`, `"std"`) pour cibler une statistique spécifique au lieu de la moyenne par défaut.
+
+<SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+```python
+from mistralai.observability import Evaluator, Goal
+
+Evaluator(
+    name="accuracy",
+    description="1 if the expected answer appears in the output.",
+    scorer=accuracy_scorer,
+    goal=Goal.gte(0.8),
+)
+```
+
+<SectionTab as="h1" sectionId="per-generation-and-aggregate-goals">Objectifs par génération et agrégés</SectionTab>
+
+Les évaluateurs prennent en charge deux niveaux d’objectifs :
+
+- `goal` : évalué par rapport au score de chaque génération individuelle.
+- `aggregate_goal` : évalué par rapport au résultat agrégé sur toutes les générations.
+
+```python
+Evaluator(
+    name="accuracy",
+    description="1 if the expected answer appears in the output.",
+    scorer=accuracy_scorer,
+    goal=Goal.gte(0.7),           # each generation must score >= 0.7
+    aggregate_goal=Goal.gte(0.9), # overall average must be >= 0.9
+)
+```
+
+Lorsque vous appelez `run.show()` :
+- **Niveau de l’exécution** : indique si l’agrégat respecte l’`aggregate_goal` (revient à `goal` sur la moyenne si aucun agrégat n’est défini).
+- **Niveau de l’enregistrement** (avec `num_generations > 1`) : indique combien de générations ont respecté le `goal` (par exemple, « 2/3 PASS »), avec le verdict agrégé le cas échéant.
+- **Niveau de la génération** : affiche `PASS`/`FAIL` pour chaque score individuel par rapport à `goal`.
+
+<SectionTab as="h1" sectionId="goals-on-run-evaluators">Objectifs sur les évaluateurs d’exécution</SectionTab>
+
+[Les évaluateurs d’exécution](../evaluations/run-evaluators) prennent également en charge les objectifs :
+
+```python
+from mistralai.observability import RunEvaluator, Goal
+
+RunEvaluator(
+    name="f1",
+    description="Harmonic mean of precision and recall across all records.",
+    scorer=f1_scorer,
+    goal=Goal.gte(0.85),
+)
+```
+
+<SectionTab as="h1" sectionId="full-example">Exemple complet</SectionTab>
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import (
+    Evaluation, Evaluator, Goal, Mistral, Project,
+    RunEvaluator, RunEvaluatorContext, ScorerContext, System, TaskContext,
+)
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+dataset = [
+    {"prompt": "What is 2+2?", "expected": "4"},
+    {"prompt": "Capital of France?", "expected": "Paris"},
+    {"prompt": "Largest planet?", "expected": "Jupiter"},
+]
+
+async def task(ctx: TaskContext) -> str:
+    r = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(r.choices[0].message.content)
+
+def accuracy_scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+
+def accuracy_gate(ctx: RunEvaluatorContext):
+    return ctx.statistics["accuracy"].avg
+
+async def main():
+    run = await client.evaluation.run(
+        project=Project(name="QA Pipeline"),
+        evaluation=Evaluation(name="Accuracy with Goals"),
+        system=System(name="mistral-small", params={"model": "mistral-small-latest"}),
+        dataset=dataset,
+        task=task,
+        evaluators=[
+            Evaluator(
+                name="accuracy",
+                description="1 if the expected answer appears in the output.",
+                scorer=accuracy_scorer,
+                goal=Goal.gte(0.8),
+                aggregate_goal=Goal.gte(0.9),
+            ),
+        ],
+        run_evaluators=[
+            RunEvaluator(
+                name="accuracy_avg",
+                description="Average accuracy across all records.",
+                scorer=accuracy_gate,
+                goal=Goal.gte(0.85),
+            ),
+        ],
+        num_generations=3,
+    )
+    run.show(level="generations")
+
+asyncio.run(main())
+```
+
+<Faq>
+  <FaqItem question="Que se passe-t-il si je définis à la fois goal et aggregate_goal ?">
+  Les deux sont évalués indépendamment. `goal` vérifie le score de chaque génération. `aggregate_goal` vérifie la statistique agrégée (par défaut : la moyenne) sur toutes les générations et enregistrements. Chacun peut échouer indépendamment.
+  </FaqItem>
+  <FaqItem question="Puis-je cibler une métrique autre que la moyenne ?">
+  Oui. Passez un paramètre `metric` : `Goal.gte(0,8, metric="min")` exige que le score minimal soit au moins de 0,8.
+  </FaqItem>
+</Faq>

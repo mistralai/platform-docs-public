@@ -1,0 +1,100 @@
+---
+id: observability_evaluations_system_params
+title: Configure system params
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Configure system params
+
+When you run an LLM pipeline, many parameters influence the output: the model, temperature, system prompt, tool definitions, retrieval settings, and more. By default, these live as hardcoded values inside your task function, invisible to Studio and hard to compare across runs.
+
+`System` solves this: it externalizes your task configuration so each run records which settings produced its results.
+
+<SectionTab as="h1" sectionId="how-it-works">How it works</SectionTab>
+
+Pass a `System` to `evaluation.run()`. It becomes available via `ctx.system` in both tasks and scorers:
+
+```python
+from mistralai.observability import Evaluation, Evaluator, Goal, Mistral, System, TaskContext
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        temperature=float(ctx.system.params["temperature"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["system_prompt"])},
+            {"role": "user", "content": ctx.input_record["prompt"]},
+        ],
+    )
+    return str(response.choices[0].message.content)
+
+run = await client.evaluation.run(
+    evaluation=Evaluation(name="My Eval"),
+    dataset=dataset,
+    task=task,
+    system=System(name="small-t0", params={
+        "model": "mistral-small-latest",
+        "temperature": 0,
+        "system_prompt": "Answer concisely in one sentence.",
+    }),
+    evaluators=[Evaluator(name="accuracy", description="1 if the expected answer is in the output.", scorer=scorer, goal=Goal.gte(0.5))],
+)
+```
+
+`params` is freeform. Put anything that drives your task: model, temperature, system prompt, max tokens, tool definitions, enabled skills, retrieval config, and so on.
+
+:::tip
+`System` describes the pipeline you are evaluating, not the scorers or judges. For configurable LLM judges, hardcode the judge model in the scorer or use a scorer factory.
+:::
+
+<SectionTab as="h1" sectionId="why-use-it">Why use it</SectionTab>
+
+**Without System**: you change the temperature in your code, rerun, and have to remember which run used which value. Studio shows two runs with no visible difference in configuration.
+
+**With System**: each run stores its params. In Studio you can see at a glance that run A used `temperature: 0` and run B used `temperature: 0.9`, and compare their scores side by side.
+
+<SectionTab as="h1" sectionId="comparing-configurations">Comparing configurations</SectionTab>
+
+Run the same evaluation with different systems to compare:
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import Evaluation, Evaluator, Goal, Mistral, System, TaskContext, ScorerContext
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+
+def scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+
+async def main():
+    for model in ["mistral-small-latest", "mistral-large-latest"]:
+        run = await client.evaluation.run(
+            evaluation=Evaluation(name="Model Comparison"),
+            dataset=dataset,
+            task=task,
+            system=System(name=model, params={
+                "model": model,
+                "temperature": 0,
+                "system_prompt": "Answer concisely.",
+            }),
+            evaluators=[Evaluator(name="accuracy", description="1 if the expected answer is in the output.", scorer=scorer, goal=Goal.gte(0.5))],
+        )
+        run.show(level="run")
+
+asyncio.run(main())
+```
+
+In Studio, each run shows its `System`, so you can spot which model performed better.

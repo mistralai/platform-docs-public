@@ -1,0 +1,230 @@
+---
+id: observability_judges
+title: Juges
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Juges
+
+Les juges sont des évaluateurs basés sur des modèles de langage que vous pouvez utiliser dans le [SDK Evaluation](../evaluations#installation). Au lieu d'une fonction basée sur des règles, un juge appelle un modèle pour noter chaque sortie. Ils sont utiles pour des critères difficiles à capturer avec du code, comme l'utilité, l'exactitude factuelle ou le ton.
+
+:::note
+Assurez-vous d'avoir installé le package `mistralai-observability` avant de suivre les exemples de cette page. Voir [Évaluations hors ligne → Installation](../evaluations#installation).
+:::
+
+<SectionTab as="h1" sectionId="basic-llm-judge">Juge LLM de base</SectionTab>
+
+Un sy­stème de notation est une fonction. Pour utiliser un modèle de langage comme juge, appelez l'API Mistral dans votre fonction de notation et retournez un score numérique :
+
+```python
+from mistralai.observability import ScorerContext
+
+JUDGE_PROMPT = """You are a strict grader. Given a user prompt and a model answer,
+respond with a single integer between 0 and 5 (higher is better) measuring how helpful and on-topic
+the answer is. Respond with only the integer, no other text.
+
+User prompt: {prompt}
+Model answer: {answer}
+"""
+
+def llm_judge(ctx: ScorerContext) -> int:
+    response = client.chat.complete(
+        model="mistral-large-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": JUDGE_PROMPT.format(
+                    prompt=ctx.input_record["prompt"], answer=ctx.output
+                ),
+            }
+        ],
+        temperature=0,
+    )
+    raw = str(response.choices[0].message.content).strip()
+    try:
+        return int(raw[0])
+    except (ValueError, IndexError):
+        return 0
+```
+
+Utilisez-le dans un évaluateur :
+
+```python
+from mistralai.observability import Evaluator, Goal
+
+Evaluator(
+    name="helpfulness",
+    description="LLM judge: helpfulness score from 0 to 5.",
+    scorer=llm_judge,
+    goal=Goal.gte(3.5),
+)
+```
+
+<SectionTab as="h1" sectionId="structured-output">Sortie structurée avec Score</SectionTab>
+
+Pour obtenir des retours plus riches, retournez un objet `Score` avec une valeur et une justification. La justification est stockée avec le score dans Mistral Studio :
+
+```python
+from pydantic import BaseModel
+from mistralai.observability import ScorerContext, Score
+
+class RecallJudgment(BaseModel):
+    score: float
+    comment: str
+
+async def recall_scorer(ctx: ScorerContext) -> Score:
+    completion = await client.chat.parse_async(
+        model="mistral-large-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Evaluate recall between 0.0 and 1.0.\n\n"
+                    f"Expected: {ctx.input_record['expected']}\n"
+                    f"Got: {ctx.output}\n\n"
+                    f"Provide a score and a short comment."
+                ),
+            }
+        ],
+        response_format=RecallJudgment,
+    )
+    judgment = completion.choices[0].message.parsed
+    return Score(value=judgment.score, rationale=judgment.comment)
+```
+
+<SectionTab as="h1" sectionId="reducing-variance">Réduction de la variance des juges</SectionTab>
+
+Les juges basés sur des modèles de langage peuvent produire des résultats variables. Définissez `num_scores` sur l'évaluateur pour noter chaque génération plusieurs fois et faire la moyenne des résultats :
+
+```python
+Evaluator(
+    name="recall",
+    description="LLM judge: recall score (0.0 to 1.0).",
+    scorer=recall_scorer,
+    num_scores=3,  # scored 3 times per generation, results are averaged
+)
+```
+
+<SectionTab as="h1" sectionId="multiple-evaluators">Combinaison de juges basés sur des règles et des modèles de langage</SectionTab>
+
+Vous pouvez mélanger des systèmes de notation basés sur des règles et des modèles de langage dans une même exécution :
+
+```python
+import asyncio
+import os
+
+from pydantic import BaseModel
+from mistralai.observability import (
+    Evaluation, Evaluator, Goal, Mistral, Project, Score, ScorerContext, System, TaskContext,
+)
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+dataset = [
+    {
+        "text": "Kim Wong documented over 300 species across multiple continents.",
+        "facts": ["wildlife photographer", "documented 300 species"],
+    },
+]
+
+class FactList(BaseModel):
+    facts: list[str]
+
+class RecallJudgment(BaseModel):
+    score: float
+    comment: str
+
+async def task(ctx: TaskContext) -> FactList:
+    completion = await client.chat.parse_async(
+        model=str(ctx.system.params["model"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["system_prompt"])},
+            {"role": "user", "content": ctx.input_record["text"]},
+        ],
+        response_format=FactList,
+    )
+    return completion.choices[0].message.parsed
+
+def conciseness_scorer(ctx: ScorerContext) -> float:
+    gt_chars = sum(len(f) for f in ctx.input_record["facts"])
+    pred_chars = sum(len(f) for f in ctx.output.facts)
+    return min(1.0, gt_chars / pred_chars) if pred_chars > 0 else 0.0
+
+async def recall_scorer(ctx: ScorerContext) -> Score:
+    completion = await client.chat.parse_async(
+        model="mistral-small-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Ground truth: {ctx.input_record['facts']}\n"
+                    f"Predicted: {ctx.output.facts}\n"
+                    f"Score recall from 0.0 to 1.0 with a comment."
+                ),
+            }
+        ],
+        response_format=RecallJudgment,
+    )
+    j = completion.choices[0].message.parsed
+    return Score(value=j.score, rationale=j.comment)
+
+async def main():
+    run = await client.evaluation.run(
+        project=Project(name="Fact Extraction"),
+        evaluation=Evaluation(name="Recall + Conciseness"),
+        dataset=dataset,
+        task=task,
+        system=System(name="mistral-small", params={
+            "model": "mistral-small-latest",
+            "system_prompt": "Extract the key facts from the given text as a structured list.",
+        }),
+        evaluators=[
+            Evaluator(
+                name="conciseness",
+                description="Ratio of groundtruth length to predicted length. 1.0 = as concise or more.",
+                scorer=conciseness_scorer,
+                goal=Goal.gte(0.3),
+            ),
+            Evaluator(
+                name="recall",
+                description="LLM judge: how well predicted facts cover the groundtruth (0.0 to 1.0).",
+                scorer=recall_scorer,
+                num_scores=3,
+                goal=Goal.gte(0.3),
+            ),
+        ],
+    )
+    run.show(level="scores")
+
+asyncio.run(main())
+```
+
+<SectionTab as="h1" sectionId="instruction-guidelines">Rédiger de bonnes instructions pour les juges</SectionTab>
+
+Rédigez vos prompts pour les juges avec soin :
+
+- **Soyez précis.** Évitez les critères vagues : décrivez exactement à quoi ressemble une bonne réponse pour votre cas d'usage.
+- **Ne supposez pas** que le juge connaît votre contexte. Expliquez explicitement ce que signifie « bon ».
+- **Utilisez des exemples de limites** : *« Un score de 3 signifie que la réponse répond partiellement à la question, mais omet un détail clé. »*
+- **Gardez une température basse** (par exemple, `temperature=0`) pour des jugements plus déterministes.
+- **Testez sur un petit échantillon** avant d'utiliser un juge dans une grande exécution d'évaluation. Relevez les incohérences tôt.
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Mon juge donne des scores incohérents pour des entrées similaires">
+  Le prompt est probablement trop vague. Ajoutez des critères explicites et des exemples concrets de limites. Essayez un modèle plus performant. Exécutez la même entrée plusieurs fois et définissez `num_scores` pour réduire le bruit.
+  </FaqItem>
+  <FaqItem question="Le juge retourne des erreurs d'analyse ou des valeurs hors plage">
+  Utilisez une sortie structurée (`response_format`) avec un modèle Pydantic pour forcer une sortie valide. Ajoutez un bloc try/except autour de la logique d'analyse pour retourner un score de secours plutôt que de planter.
+  </FaqItem>
+  <FaqItem question="Puis-je utiliser le même juge pour plusieurs exécutions d'évaluation ?">
+  Oui. Un juge est une fonction. Réutilisez-le pour n'importe quel nombre d'évaluateurs et d'exécutions. Si vous modifiez le prompt du juge entre les exécutions, les scores ne seront pas directement comparables.
+  </FaqItem>
+  <FaqItem question="Comment choisir entre un système de notation basé sur des règles et un juge basé sur un modèle de langage ?">
+  Utilisez un système de notation basé sur des règles chaque fois que possible : c'est déterministe, rapide et économique. Utilisez un juge basé sur un modèle de langage lorsque le critère de qualité ne peut pas être capturé par du code, comme le ton, la cohérence ou l'exactitude factuelle nuancée.
+  </FaqItem>
+</Faq>

@@ -1,0 +1,129 @@
+---
+id: observability_evaluations_run_evaluators
+title: Use run-level evaluators
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Use run-level evaluators
+
+While regular evaluators score each record individually, **run evaluators** operate on the full set of results after all records have been processed. Use them for global assertions, aggregate metrics like F1, or cross-record analysis.
+
+<SectionTab as="h1" sectionId="basic-run-evaluator">Basic run evaluator</SectionTab>
+
+A run evaluator receives a `RunEvaluatorContext` with all records, statistics, and metadata:
+
+```python
+import asyncio
+import os
+
+from mistralai.observability import (
+    Evaluation, Evaluator, Mistral, RunEvaluator, RunEvaluatorContext,
+    ScorerContext, System, TaskContext,
+)
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+def accuracy_scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+
+def accuracy_gate(ctx: RunEvaluatorContext):
+    return ctx.statistics["accuracy"].avg > 0.8
+
+async def task(ctx: TaskContext) -> str:
+    r = await client.chat.complete_async(
+        model="mistral-small-latest",
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(r.choices[0].message.content)
+
+async def main():
+    run = await client.evaluation.run(
+        evaluation=Evaluation(name="Gated Eval"),
+        dataset=dataset,
+        task=task,
+        evaluators=[Evaluator(name="accuracy", description="1 if the expected answer appears in the output.", scorer=accuracy_scorer)],
+        run_evaluators=[
+            RunEvaluator(
+                name="accuracy_above_80pct",
+                description="True if average accuracy exceeds 80%.",
+                scorer=accuracy_gate,
+            ),
+        ],
+    )
+    print(run.run_scores)  # {"accuracy_above_80pct": True}
+
+asyncio.run(main())
+```
+
+<SectionTab as="h1" sectionId="computing-f1-with-get-score">Computing F1 with get_score</SectionTab>
+
+The `get_score()` helper extracts individual evaluator scores from run evaluator records:
+
+```python
+from mistralai.observability import RunEvaluator, RunEvaluatorContext, Score, get_score
+
+def f1_scorer(ctx: RunEvaluatorContext) -> Score:
+    tp = fp = fn = 0
+    for record in ctx.records:
+        predicted = get_score(record, "predicted_label").value
+        expected = get_score(record, "expected_label").value
+        if predicted == 1 and expected == 1:
+            tp += 1
+        elif predicted == 1 and expected == 0:
+            fp += 1
+        elif predicted == 0 and expected == 1:
+            fn += 1
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+    return Score(
+        value=f1,
+        rationale=f"precision={precision:.2f}, recall={recall:.2f}",
+    )
+
+run = await client.evaluation.run(
+    # ...
+    run_evaluators=[RunEvaluator(name="f1", description="Harmonic mean of precision and recall across all records.", scorer=f1_scorer)],
+)
+```
+
+<SectionTab as="h1" sectionId="runevaluatorcontext-reference">RunEvaluatorContext reference</SectionTab>
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `records` | `list[RunEvaluatorRecord]` | All processed records with their scores |
+| `statistics` | `dict[str, EvaluatorStatistics]` | Per-evaluator aggregate statistics |
+| `metadata` | `dict[str, JsonValue]` | Run metadata |
+| `system` | `System \| None` | System config from `evaluation.run(system=...)` |
+
+<SectionTab as="h1" sectionId="adding-goals">Adding goals</SectionTab>
+
+Run evaluators support pass/fail goals the same way regular evaluators do:
+
+```python
+from mistralai.observability import Goal
+
+RunEvaluator(
+    name="f1",
+    description="Harmonic mean of precision and recall.",
+    scorer=f1_scorer,
+    goal=Goal.gte(0.85),
+)
+```
+
+See [Goals](../evaluations/goals) for the full guide.
+
+<Faq>
+  <FaqItem question="When does the run evaluator run?">
+  After all records have been processed and scored. If any record fails, the run evaluator still runs on the successfully processed records.
+  </FaqItem>
+  <FaqItem question="Can I access individual record scores inside a run evaluator?">
+  Yes. Use `get_score(record, "evaluator_name")` to retrieve a specific evaluator's score for any record in `ctx.records`.
+  </FaqItem>
+</Faq>

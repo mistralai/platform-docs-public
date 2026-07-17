@@ -99,7 +99,8 @@ Détectez les activités non réactives en exigeant des signaux de heartbeat ré
 
 ```python
 from datetime import timedelta
-from mistralai.workflows import activity
+import mistralai.workflows as workflows
+from mistralai.workflows import activity_heartbeat
 
 @workflows.activity(
     start_to_close_timeout=timedelta(minutes=30),
@@ -111,14 +112,14 @@ async def long_running_task(items: list[str]) -> dict:
         result = await process_item(item)
         results.append(result)
         # Signaler l’avancement pour éviter le timeout
-        activity.heartbeat({"processed": i + 1, "total": len(items)})
+        activity_heartbeat({"processed": i + 1, "total": len(items)})
     return {"results": results}
 ```
 
   </TabItem>
 </Tabs>
 
-Quand `heartbeat_timeout` est défini, les activités doivent régulièrement appeler `activity.heartbeat()`. Si aucun heartbeat n’est reçu dans le délai imparti, l’activité est considérée comme échouée et une reprise est déclenchée. Ce mécanisme permet à la plateforme de réagir sans attendre la fin du `start_to_close_timeout`.
+Quand `heartbeat_timeout` est défini, les activités doivent régulièrement appeler `activity_heartbeat()`. Si aucun heartbeat n’est reçu dans le délai imparti, l’activité est considérée comme échouée et une reprise est déclenchée. Ce mécanisme permet à la plateforme de réagir sans attendre la fin du `start_to_close_timeout`.
 
 Cette sous-section fait référence pour le comportement des heartbeats ; les sections [Concepts de base > Activités](/studio-api/workflows/getting-started/core_concepts/activities#long-running-activities-heartbeats) et [Concepts de base > Workers](/studio-api/workflows/getting-started/core_concepts/workers) renvoient ici.
 

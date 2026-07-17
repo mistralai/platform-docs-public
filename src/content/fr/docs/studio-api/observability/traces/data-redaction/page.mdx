@@ -44,14 +44,14 @@ Chaque surface expose les mêmes trois modes. Les SDK permettent en plus de four
   Masquage par source
 </SectionTab>
 
-| Source                   | Par défaut | Configurable | Où                                            |
-| ------------------------ | ------- | ------------ | ------------------------------------------------ |
-| Mistral SDK (Python)     | Activé      | Oui        | Argument `redaction` sur `configure_telemetry`    |
-| Mistral SDK (TypeScript) | Activé      | Oui        | Option `redaction` sur `configureTelemetry`       |
-| Workflows                | Activé      | Oui          | Variable d'environnement `OTEL_REDACTION`            |
-| Vibe Code CLI            | Activé      | Oui          | Configuration `otel_redaction` ou variable `VIBE_OTEL_REDACTION` |
-| Vibe Work                | Activé      | Non           | Géré par Mistral, côté serveur                  |
-| Personnalisé (OTEL)            | Désactivé     | Oui          | Enveloppez votre exportateur avec `RedactingSpanExporter`  |
+| Source                   | Par défaut | Configurable                                                         |
+| ------------------------ | ------- | -------------------------------------------------------------------- |
+| Mistral SDK (Python)     | Activé      | Complètement (y compris une politique avec callback personnalisé)                           |
+| Mistral SDK (TypeScript) | Activé      | Complètement (y compris une politique avec callback personnalisé)                           |
+| Workflows                | Activé      | Oui sur les workers que vous exécutez ; sur les workers hébergés uniquement dans des déploiements dédiés |
+| Vibe Code CLI            | Activé      | Oui                                                                  |
+| Vibe Work                | Activé      | Uniquement dans des déploiements dédiés                                        |
+| Personnalisé (OTEL)            | Désactivé     | Complètement (y compris une politique avec callback personnalisé)                           |
 
 <SectionTab as="h1" sectionId="configure">
   Configurer le masquage
@@ -86,7 +86,7 @@ Pour plus de détails, consultez la [section sur le masquage du README du SDK](h
   </ExplorerTab>
   <ExplorerTab value="typescript" label="Mistral SDK (TypeScript)">
 
-Le masquage est activé par défaut en mode dédié. Utilisez l'option `redaction` pour le modifier :
+Le masquage est activé par défaut en mode dédié. Utilisez l’option `redaction` pour le modifier :
 
 ```typescript
 import {
@@ -104,10 +104,10 @@ await configureTelemetry(client, "dedicated", {
 ```
 
 :::note
-Si vous pointez le SDK vers votre propre configuration OpenTelemetry au lieu de le laisser gérer le traçage, le SDK ne contrôle plus l'exportateur et l'option `redaction` n'a aucun effet. Appliquez plutôt le masquage dans votre propre pipeline (voir l'onglet **Personnalisé (OTEL)**).
+Si vous pointez le SDK vers votre propre configuration OpenTelemetry au lieu de le laisser gérer le traçage, le SDK ne contrôle plus l'exportateur et l'argument `redaction` n'a aucun effet. Appliquez plutôt le masquage dans votre propre pipeline (voir l'onglet **Personnalisé (OTEL)**).
 :::
 
-{/* TODO: add TypeScript SDK README redaction section and examples/src/observability links once merged. */}
+Pour plus de détails, consultez la [section sur le masquage du README du SDK](https://github.com/mistralai/client-ts#redaction) et les [exemples d’observabilité](https://github.com/mistralai/client-ts/tree/main/examples/src/observability).
 
   </ExplorerTab>
   <ExplorerTab value="workflows" label="Workflows">
@@ -119,6 +119,8 @@ OTEL_REDACTION=default  # default | strict | none
 ```
 
 Le masquage s'applique à chaque span avant l'export OTLP, indépendamment du commutateur maître `OTEL_ENABLED`.
+
+Sur les workers que vous exécutez vous-même, définissez directement cette variable. Pour les workers hébergés par Mistral, la politique par défaut est appliquée pour vous et n'est pas configurable, sauf dans les déploiements dédiés où le niveau est défini pour l'ensemble du déploiement.
 
   </ExplorerTab>
   <ExplorerTab value="vibe-cli" label="Vibe Code CLI">
@@ -136,7 +138,7 @@ otel_redaction = "default"  # default | strict | none
   </ExplorerTab>
   <ExplorerTab value="vibe-work" label="Vibe Work">
 
-Les traces de conversation Vibe Work sont masquées avec la politique par défaut avant de quitter l'infrastructure de Mistral. Cela est géré côté serveur et n'est pas configurable par les utilisateurs de l'espace de travail.
+Les traces de conversation Vibe Work sont masquées avec la politique par défaut avant de quitter l'infrastructure de Mistral. Dans le service hébergé par Mistral, cela est géré pour vous et n'est pas configurable. Dans un déploiement dédié, le niveau de masquage est défini pour l'ensemble du déploiement.
 
   </ExplorerTab>
   <ExplorerTab value="custom" label="Personnalisé (OTEL)">

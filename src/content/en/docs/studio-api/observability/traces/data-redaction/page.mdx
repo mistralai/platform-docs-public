@@ -44,14 +44,14 @@ Every surface exposes the same three modes. The SDKs additionally let you supply
   Redaction by source
 </SectionTab>
 
-| Source                   | Default | Configurable | Where                                            |
-| ------------------------ | ------- | ------------ | ------------------------------------------------ |
-| Mistral SDK (Python)     | On      | Fully        | `redaction` argument on `configure_telemetry`    |
-| Mistral SDK (TypeScript) | On      | Fully        | `redaction` option on `configureTelemetry`       |
-| Workflows                | On      | Yes          | `OTEL_REDACTION` environment variable            |
-| Vibe Code CLI            | On      | Yes          | `otel_redaction` config or `VIBE_OTEL_REDACTION` |
-| Vibe Work                | On      | No           | Managed by Mistral, server-side                  |
-| Custom (OTEL)            | Off     | Yes          | Wrap your exporter with `RedactingSpanExporter`  |
+| Source                   | Default | Configurable                                                         |
+| ------------------------ | ------- | -------------------------------------------------------------------- |
+| Mistral SDK (Python)     | On      | Fully (including a custom callback policy)                           |
+| Mistral SDK (TypeScript) | On      | Fully (including a custom callback policy)                           |
+| Workflows                | On      | Yes on workers you run; hosted workers only in dedicated deployments |
+| Vibe Code CLI            | On      | Yes                                                                  |
+| Vibe Work                | On      | Only in dedicated deployments                                        |
+| Custom (OTEL)            | Off     | Fully (including a custom callback policy)                           |
 
 <SectionTab as="h1" sectionId="configure">
   Configure redaction
@@ -107,7 +107,7 @@ await configureTelemetry(client, "dedicated", {
 If you point the SDK at your own OpenTelemetry setup instead of letting it manage tracing, the SDK no longer owns the exporter and the `redaction` option has no effect. Redact in your own pipeline instead (see the **Custom (OTEL)** tab).
 :::
 
-{/* TODO: add TypeScript SDK README redaction section and examples/src/observability links once merged. */}
+For more detail, see the [redaction section of the SDK README](https://github.com/mistralai/client-ts#redaction) and the [observability examples](https://github.com/mistralai/client-ts/tree/main/examples/src/observability).
 
   </ExplorerTab>
   <ExplorerTab value="workflows" label="Workflows">
@@ -119,6 +119,8 @@ OTEL_REDACTION=default  # default | strict | none
 ```
 
 Redaction applies to every span before OTLP export, independently of the `OTEL_ENABLED` master switch.
+
+On workers you run yourself, set this variable directly. On Mistral-hosted workers the default policy is applied for you and is not configurable, except in dedicated deployments where the level is set for the whole deployment.
 
   </ExplorerTab>
   <ExplorerTab value="vibe-cli" label="Vibe Code CLI">
@@ -136,7 +138,7 @@ otel_redaction = "default"  # default | strict | none
   </ExplorerTab>
   <ExplorerTab value="vibe-work" label="Vibe Work">
 
-Vibe Work conversation traces are redacted with the default policy before they leave Mistral's infrastructure. This is managed server-side and is not configurable by workspace users.
+Vibe Work conversation traces are redacted with the default policy before they leave Mistral's infrastructure. In Mistral's hosted service this is managed for you and is not configurable. In a dedicated deployment, the redaction level is set for the whole deployment.
 
   </ExplorerTab>
   <ExplorerTab value="custom" label="Custom (OTEL)">

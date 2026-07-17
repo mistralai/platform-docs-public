@@ -1,0 +1,86 @@
+---
+id: regional-inference
+title: Regional Inference
+sidebar_position: 99
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Regional Inference
+
+Regional inference routes your API requests to models hosted in a specific geographic region, guaranteeing that all data is processed within that region and never leaves it. If you don't specify a region, the API uses the global Mistral endpoint.
+
+<SectionTab as="h2" sectionId="region-groups">Region groups</SectionTab>
+
+Use a regional endpoint when your application needs requests processed in a specific geographic region. Each region group maps to a dedicated base URL and can include several data centers in that geography.
+
+| Region group | Base URL | Availability | Geography |
+|---|---|---|---|
+| `eu` | [`api.eu.mistral.ai`](https://api.eu.mistral.ai) | Available | Multiple data centers in EU/EFTA countries |
+| `us` | [`api.us.mistral.ai`](https://api.us.mistral.ai) | Coming soon | Multiple data centers in the United States |
+
+<SectionTab as="h2" sectionId="use-regional-endpoint">How to use a regional endpoint</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="python-sdk-version">Python SDK version ≥ 2.70</SectionTab>
+
+Use the `server` parameter when initializing the client to specify the region:
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"], server="eu")
+response = client.chat.complete(
+    model="mistral-medium-latest",
+    messages=[{"role": "user", "content": "What is Mistral AI?"}],
+)
+print(response.choices[0].message.content)
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="older-sdk-versions">Older SDK versions</SectionTab>
+
+If using an older SDK, use the `server_url` parameter instead:
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"], server_url="https://api.eu.mistral.ai/")
+list_models_response = client.models.list()
+print(list_models_response)
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="curl">Using curl</SectionTab>
+
+```bash
+curl https://api.eu.mistral.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-large-latest",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+<SectionTab as="h2" sectionId="available-models">Available models</SectionTab>
+
+Regional endpoints only serve models hosted in that region. Use `models.list` against the regional base URL to see which models are available.
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"], server="eu")
+models = client.models.list()
+for model in models.data:
+    print(model.id)
+```
+
+<SectionTab as="h2" sectionId="pricing">Pricing</SectionTab>
+
+Regional inference is billed at **1.1× standard list pricing** (a 10% upcharge) for input tokens, output tokens, cached reads, and cache writes.
+
+<SectionTab as="h2" sectionId="limitations">Limitations</SectionTab>
+
+- Not all [Tool calls](https://docs.mistral.ai/studio-api/agents/agent-tools) are currently supported. [Function Calling](https://docs.mistral.ai/studio-api/agents/agent-tools/function-calling) is the only supported regional tool.
+- **Stateful features** (Agents, Batch, Files API) are not available on regional endpoints.
+- Available models vary by region.

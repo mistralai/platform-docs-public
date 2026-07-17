@@ -18,7 +18,7 @@ Lors du déploiement de LLM en production, différents secteurs peuvent nécessi
 Dans d'autres applications, il peut être nécessaire de détecter et de filtrer le contenu nuisible ou les informations personnelles identifiables (PII).
 
 Nous proposons deux méthodes pour protéger vos applications :
-- **[Guardrails personnalisés](#custom-guardrails)** *(recommandé)* : déclarez les règles de modération directement dans vos requêtes API — pas d'appels séparés, pas de logique de seuil dans votre code. Compatible avec les chat completions, les conversations et la configuration au niveau de l'agent.
+- **[Guardrails personnalisés](#custom-guardrails)** *(recommandé)* : déclarez des règles de modération directement dans vos requêtes API. Pas d’appels séparés ni de logique de seuil à implémenter dans votre code. Prend en charge les Chat completion, les Conversations et la configuration au niveau agent.
 - **[API de modération](#moderation)** : une API dédiée pour classifier le texte selon les catégories de politique, pour les pipelines personnalisés où vous avez besoin de scores bruts et d'un contrôle total.
 
 <SectionTab as="h1" sectionId="moderation">Modération</SectionTab>
@@ -77,28 +77,30 @@ Pour une vue plus large, il existe également un [cookbook plus exploratoire](ht
 
 <Faq>
   <FaqItem question="Quelle est la distribution des résultats faux positifs et faux négatifs sur les nouveaux modèles d'API de modération ? Plus précisément, seront-ils plus susceptibles de signaler quelque chose comme nuisible alors que ce n'est pas le cas, ou de ne pas signaler quelque chose qui est nuisible ?">
-    Sur notre ensemble de test interne, les politiques ont une précision comprise entre [0,8 - 1,0] et un rappel entre [0,7 - 1,0]. Nous vous recommandons d'utiliser les scores bruts plutôt que les réponses booléennes si vous avez des objectifs applicatifs spécifiques (par exemple, réduire les faux positifs) et de définir les seuils en conséquence. Nous recueillons continuellement des retours sur les performances et améliorons nos modèles.
+    Sur notre jeu de tests interne, les politiques ont une précision comprise entre [0,8 – 1,0] et un rappel entre [0,7 – 1,0]. Nous vous recommandons d’utiliser les scores bruts plutôt que les réponses booléennes si vous avez des objectifs d’application spécifiques (par exemple, réduire les faux positifs) et d’ajuster les seuils en conséquence. Nous recueillons en continu le retour des utilisateurs sur les performances et améliorons nos modèles.
   </FaqItem>
 </Faq>
 
 <SectionTab as="h1" sectionId="custom-guardrails">Garde-fous personnalisés</SectionTab>
 
-Les garde-fous personnalisés vous permettent de déclarer des règles de modération directement dans vos requêtes API, sans avoir à appeler manuellement l'API de modération ni à implémenter la logique de seuil dans le code de votre application. Les garde-fous s'appliquent **uniquement à la modération des entrées** — ils s'exécutent avant que la requête n'atteigne le modèle. Lorsqu'un garde-fou est déclenché, la requête est bloquée et une erreur `403` est retournée.
+Les gardrails personnalisés vous permettent de déclarer des règles de modération directement dans vos requêtes API, sans avoir à appeler manuellement l’API Moderation et à implémenter une logique de seuil dans votre code. Les guardrails appliquent **uniquement la modération en entrée**. Ils s’exécutent avant que la requête n’atteigne le modèle. Lorsqu’un guardrail est déclenché, la requête est bloquée et une erreur `403` est retournée.
 
 Chaque garde-fou utilise la configuration `moderation_llm_v2`, s'appuyant sur `mistral-moderation-2603`.
 
 Chaque configuration accepte :
-- **`custom_category_thresholds`** : objet associant des noms de catégories à des valeurs de seuil (0–1). Définir une catégorie à `1` pour la désactiver explicitement.
+- **`custom_category_thresholds`** : objet associant les noms de catégories à des valeurs de seuil (0 à 1). Définissez une catégorie à `1` pour la désactiver explicitement.
 - **`ignore_other_categories`** : si `true`, seules les catégories listées dans `custom_category_thresholds` sont évaluées ; toutes les autres sont ignorées.
 - **`action`** : `"block"` pour bloquer la requête en cas de violation.
 - **`block_on_error`** : si `true`, la requête est bloquée lorsque l'API de modération elle-même échoue (par garde-fou).
 - **`model_name`** *(optionnel)* : remplace le modèle de modération par défaut pour cette configuration.
 
-Plusieurs garde-fous peuvent être spécifiés par requête — la requête est bloquée si l'un d'entre eux est déclenché. Une seule configuration `moderation_llm_v2` peut être spécifiée par objet garde-fou, mais vous pouvez inclure plusieurs objets garde-fous.
+Vous pouvez spécifier plusieurs guardrails par requête. La requête est bloquée si l’un d’eux est déclenché. Chaque objet de guardrail peut inclure une configuration `moderation_llm_v2`, mais vous pouvez inclure plusieurs objets de guardrail.
 
-<SectionTab as="h2" variant="secondary" sectionId="inline-guardrails">Garde-fous en ligne</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="inline-guardrails">Guardrails pour Chat completion</SectionTab>
 
-Passez un champ `guardrails` dans n'importe quelle requête `POST /v1/chat/completions` ou `POST /v1/conversations`.
+Utilisez `POST /v1/chat/completions` lorsque vous souhaitez appliquer des guardrails à une seule requête de Chat completion. La requête inclut la liste complète des messages, et la réponse ne crée pas de Conversation persistante.
+
+Passez un champ `guardrails` dans le corps de la requête.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -268,9 +270,9 @@ curl https://api.mistral.ai/v1/chat/completions \
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="conversations-guardrails">Point de terminaison Conversations</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="conversations-guardrails">Guardrails pour Conversations</SectionTab>
 
-Vous pouvez également passer des garde-fous directement sur une requête `POST /v1/conversations`, soit avec un `model`, soit lorsque vous souhaitez remplacer les garde-fous d'un agent.
+Utilisez `POST /v1/conversations` lorsque vous souhaitez appliquer des gardrails à une Conversation avec état. Ce endpoint démarre ou continue une Conversation et peut appliquer des guardrails à une requête qui utilise un modèle, ou remplacer des guardrails hérités d’un agent.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>

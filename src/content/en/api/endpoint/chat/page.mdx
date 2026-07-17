@@ -104,28 +104,19 @@ TypeScript
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
 
-const mistral = new Mistral({
-  apiKey: "MISTRAL_API_KEY",
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.chat.complete({
+  model: "mistral-large-latest",
+  messages: [
+    {
+      role: "user",
+      content: "Who is the best French painter? Answer in one short sentence.",
+    },
+  ],
 });
 
-async function run() {
-  const result = await mistral.chat.complete({
-    model: "mistral-large-latest",
-    messages: [
-      {
-        role: "user",
-        content: "Who is the best French painter? Answer in one short sentence.",
-      },
-    ],
-    responseFormat: {
-      type: "text",
-    },
-  });
-
-  console.log(result);
-}
-
-run();
+console.log(response.choices[0].message.content);
 
 ```
 
@@ -151,26 +142,22 @@ Python
 <CodeSample>
 
 ```python
-from mistralai.client import Mistral
 import os
+from mistralai.client import Mistral
 
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
-with Mistral(
-    api_key=os.getenv("MISTRAL_API_KEY", ""),
-) as mistral:
-
-    res = mistral.chat.complete(model="mistral-large-latest", messages=[
+response = client.chat.complete(
+    model="mistral-large-latest",
+    messages=[
         {
             "role": "user",
             "content": "Who is the best French painter? Answer in one short sentence.",
-        },
-    ], stream=False, response_format={
-        "type": "text",
-    })
+        }
+    ],
+)
 
-    # Handle response
-    print(res)
-
+print(response.choices[0].message.content)
 
 ```
 
@@ -197,17 +184,18 @@ cURL
 
 ```curl
 curl https://api.mistral.ai/v1/chat/completions \
- -X POST \
- -H 'Authorization: Bearer YOUR_APIKEY_HERE' \
- -H 'Content-Type: application/json' \
- -d '{
-  "messages": [
-    {
-      "content": "Example content."
-    }
-  ],
-  "model": "mistral-large-latest"
-}'
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-large-latest",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Who is the best French painter? Answer in one short sentence."
+      }
+    ]
+  }'
+
 ```
 
 </CodeSample>
@@ -234,7 +222,8 @@ curl https://api.mistral.ai/v1/chat/completions \
 {
   "messages": [
     {
-      "content": "Example content."
+      "role": "user",
+      "content": "Who is the best French painter? Answer in one short sentence."
     }
   ],
   "model": "mistral-large-latest"

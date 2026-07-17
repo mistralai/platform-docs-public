@@ -18,7 +18,7 @@ When deploying LLMs in production, different verticals may require different lev
 In other applications, it may be required to detect and filter out harmful or PII (Personally Identifiable Information) content.
 
 We provide two ways to guardrail your applications:
-- **[Custom Guardrails](#custom-guardrails)** *(recommended)*: Declare moderation rules directly in your API requests — no separate calls, no threshold logic in your code. Supports chat completions, conversations, and agent-level configuration.
+- **[Custom Guardrails](#custom-guardrails)** *(recommended)*: Declare moderation rules directly in your API requests. No separate calls or threshold logic in your code. Supports chat completions, conversations, and agent-level configuration.
 - **[Moderation API](#moderation)**: A dedicated API to classify text across policy categories, for custom pipelines where you need raw scores and full control.
 
 <SectionTab as="h1" sectionId="moderation">Moderation</SectionTab>
@@ -77,28 +77,30 @@ For a more broad view, there is also a more [explorative cookbook](https://colab
 
 <Faq>
   <FaqItem question="What is the distribution of false-positive and false-negative results on the new moderation API models. Specifically, will they be more likely to flag something as harmful when it is not or not flag something that is harmful?">
-    On our internal testset, policies have a precision between [0.8 - 1.0] and a recall between [0.7 - 1.0]. We recommend you leverage the raw scores instead of the boolean responses if you have specific application objectives (e.g. reduce false positives) and set thresholds accordingly. We are continuously gathering feedback on performance and improving our models.
+    On our internal test set, policies have a precision between [0.8 - 1.0] and a recall between [0.7 - 1.0]. We recommend using the raw scores instead of the boolean responses if you have specific application objectives (e.g. reduce false positives) and setting thresholds accordingly. We continuously gather feedback on performance and improve our models.
   </FaqItem>
 </Faq>
 
 <SectionTab as="h1" sectionId="custom-guardrails">Custom Guardrails</SectionTab>
 
-Custom guardrails let you declare moderation rules directly in your API requests, without manually calling the Moderation API and implementing threshold logic in your application code. Guardrails apply **input moderation only** — they run before the request reaches the model. When a guardrail is triggered, the request is blocked and a `403` error is returned.
+Custom guardrails let you declare moderation rules directly in your API requests, without manually calling the Moderation API and implementing threshold logic in your application code. Guardrails apply **input moderation only**. They run before the request reaches the model. When a guardrail is triggered, the request is blocked and a `403` error is returned.
 
 Each guardrail uses the `moderation_llm_v2` config, backed by `mistral-moderation-2603`.
 
 Each config accepts:
-- **`custom_category_thresholds`**: object mapping category names to threshold values (0–1). Set a category to `1` to explicitly disable it.
+- **`custom_category_thresholds`**: object mapping category names to threshold values (0 to 1). Set a category to `1` to explicitly disable it.
 - **`ignore_other_categories`**: if `true`, only the categories listed in `custom_category_thresholds` are evaluated; all others are ignored.
 - **`action`**: `"block"` to block the request on violation.
 - **`block_on_error`**: if `true`, the request is blocked when the moderation API itself fails (per guardrail).
 - **`model_name`** *(optional)*: override the default moderation model for that config.
 
-Multiple guardrails can be specified per request — the request is blocked if any one is triggered. Only one `moderation_llm_v2` config can be specified per guardrail object, but you can include multiple guardrail objects.
+You can specify multiple guardrails per request. The request is blocked if any one is triggered. Each guardrail object can include one `moderation_llm_v2` config, but you can include multiple guardrail objects.
 
-<SectionTab as="h2" variant="secondary" sectionId="inline-guardrails">Inline Guardrails</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="inline-guardrails">Chat completions guardrails</SectionTab>
 
-Pass a `guardrails` field in any `POST /v1/chat/completions` or `POST /v1/conversations` request.
+Use `POST /v1/chat/completions` when you want guardrails on a single chat completion request. The request includes the full message list, and the response doesn't create a persistent Conversation.
+
+Pass a `guardrails` field in the request body.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -268,9 +270,9 @@ curl https://api.mistral.ai/v1/chat/completions \
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="conversations-guardrails">Conversations Endpoint</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="conversations-guardrails">Conversations guardrails</SectionTab>
 
-You can also pass guardrails directly on a `POST /v1/conversations` request, either with a `model` or when you want to override an agent's guardrails.
+Use `POST /v1/conversations` when you want guardrails on a stateful Conversation. This endpoint starts or continues a Conversation and can apply guardrails to a request that uses a `model`, or override guardrails inherited from an agent.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>

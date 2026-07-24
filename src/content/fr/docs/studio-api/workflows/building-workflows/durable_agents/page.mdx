@@ -9,7 +9,7 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Agents durables
 
-Un agent durable est un agent LLM dont la boucle (appels au modèle, utilisation d'outils, transmissions) s'exécute **au sein d'un workflow**, ce qui permet de préserver son état lors de crashs ou de redémarrages. Le plugin Mistral (`mistralai-workflows[mistralai]`) fournit les briques fondamentales — `Agent`, `Runner`, `RemoteSession` et `LocalSession` (expérimental) — pour construire ce type d'agent.
+Un agent durable est un agent LLM dont la boucle (appels au modèle, utilisation d'outils, transmissions) s'exécute **au sein d'un workflow**, ce qui permet de préserver son état lors de crashs ou de redémarrages. Le plugin Mistral (`mistralai-workflows[mistralai]`) fournit les briques fondamentales pour construire ce type d'agent : `Agent`, `Runner`, `RemoteSession` et `LocalSession` (expérimental).
 
 Voici ce qu'un agent durable apporte par rapport à une boucle d'agent classique :
 
@@ -214,6 +214,29 @@ agent = workflows_mistralai.Agent(
 
   </TabItem>
 </Tabs>
+
+**Transmettre des identifiants à un serveur stdio**
+
+Certains serveurs MCP stdio nécessitent des identifiants (par exemple un token de bot) pour s'authentifier. Utilisez `env_mapping` pour les injecter dans le sous-processus depuis l'environnement du worker. Chaque entrée du mapping associe le nom de la variable du sous-processus à celui de la variable du worker :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai import MCPStdioConfig
+
+mcp_config = MCPStdioConfig(
+    command="npx",
+    args=["-y", "@notionhq/notion-mcp-server"],
+    name="notion",
+    env_mapping={"NOTION_TOKEN": "NOTION_TOKEN_BOT_A"},
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Pourquoi passer un mapping plutôt que les valeurs brutes ? Les paramètres d'entrée des activités sont conservés dans l'[historique des événements](/studio-api/workflows/getting-started/core_concepts/events) du workflow ; charger les secrets depuis l'environnement du worker et les transmettre directement les y exposerait donc. Avec `env_mapping`, seuls les noms des variables sont sérialisés ; les valeurs secrètes sont lues dans l'environnement du worker au sein de l'activité et ne le quittent jamais. Passer un mapping permet aussi d'exécuter plusieurs instances du même serveur avec des identifiants différents sur un seul worker. Si une variable de worker déclarée est absente de l'environnement, l'activité lève une erreur.
 
 <SectionTab as="h2" variant="secondary" sectionId="sse-mcp-server">Serveur MCP SSE</SectionTab>
 

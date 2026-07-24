@@ -7701,9 +7701,6 @@ paths:
                 anyOf:
                   - type: array
                     items:
-                      $ref: '#/components/schemas/ConnectorTool'
-                  - type: array
-                    items:
                       $ref: '#/components/schemas/MCPTool'
                   - type: array
                     items:
@@ -9336,6 +9333,20 @@ paths:
               - type: 'null'
             title: Next Page Token
             description: Token for the next page of results
+        - name: search_key
+          in: query
+          description: Filter executions by search key as repeated 'key:value' entries. Each entry matches an exact key and a similar value; multiple entries are AND'd together (max 3).
+          required: false
+          schema:
+            anyOf:
+              - type: array
+                items:
+                  type: string
+                  pattern: ^[^:]+:.+$
+                maxItems: 3
+              - type: 'null'
+            title: Search Key
+            description: Filter executions by search key as repeated 'key:value' entries. Each entry matches an exact key and a similar value; multiple entries are AND'd together (max 3).
       responses:
         '200':
           description: Successful Response
@@ -10000,7 +10011,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       description: List Deployments
+    post:
+      operationId: create_deployment_v1_workflows_deployments_post
+      summary: Create Deployment
+      tags:
+        - workflows.deployments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeploymentRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedDeploymentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: Create Deployment
   /v1/workflows/deployments/{name}:
+    patch:
+      operationId: update_deployment_v1_workflows_deployments__name__patch
+      summary: Update Deployment
+      tags:
+        - workflows.deployments
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Name
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeploymentRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedDeploymentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: Update Deployment
+    delete:
+      operationId: delete_deployment_v1_workflows_deployments__name__delete
+      summary: Delete Deployment
+      tags:
+        - workflows.deployments
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Name
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedDeploymentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: Delete Deployment
     get:
       operationId: get_deployment_v1_workflows_deployments__name__get
       summary: Get Deployment
@@ -10027,6 +10121,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
       description: Get Deployment
+  /v1/workflows/deployments/{name}/stop:
+    post:
+      operationId: stop_deployment_v1_workflows_deployments__name__stop_post
+      summary: Stop Deployment
+      tags:
+        - workflows.deployments
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Name
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedDeploymentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: Stop Deployment
+  /v1/workflows/deployments/{name}/start:
+    post:
+      operationId: start_deployment_v1_workflows_deployments__name__start_post
+      summary: Start Deployment
+      tags:
+        - workflows.deployments
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Name
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedDeploymentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: Start Deployment
+  /v1/workflows/deployments/{name}/restart:
+    post:
+      operationId: restart_deployment_v1_workflows_deployments__name__restart_post
+      summary: Restart Deployment
+      tags:
+        - workflows.deployments
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+            title: Name
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedDeploymentResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: Restart Deployment
   /v1/workflows/deployments/{name}/logs:
     get:
       operationId: get_deployment_logs
@@ -11714,7 +11889,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserIdentity'
       description: Get Identity
-  /api/admin/users:
+  /v1/admin/users:
     get:
       operationId: users_api_admin_users_get_users
       summary: Get Users
@@ -11752,8 +11927,11 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            examples:
+              - alice.martin@example.com
             title: Email
             description: Email address to filter users and invitations.
+          examples: {}
       responses:
         '200':
           description: OK
@@ -11786,10 +11964,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizationUsersCreateOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/users-invite:
+  /v1/admin/users-invite:
     post:
       operationId: users_api_admin_users_invite_users
       summary: Invite Users
@@ -11831,10 +12006,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/OrganizationUserInviteOUT'
                 title: Response
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/users-invite/{invite_uuid}:
+  /v1/admin/users-invite/{invite_uuid}:
     delete:
       operationId: users_api_admin_users_delete_invite
       summary: Delete Invite
@@ -11860,10 +12032,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeleteOUT'
       description: Delete Invite
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/users/{user_id}:
+  /v1/admin/users/{user_id}:
     patch:
       operationId: users_api_admin_users_update_user
       summary: Update User
@@ -11945,10 +12114,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminUserOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/roles:
+  /v1/admin/roles:
     get:
       operationId: users_api_admin_roles_get_roles
       summary: Get Roles
@@ -11965,10 +12131,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RolesOut'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/workspaces:
+  /v1/admin/workspaces:
     get:
       operationId: users_api_admin_workspaces_get_workspaces
       summary: Get Workspaces
@@ -12015,8 +12178,11 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            examples:
+              - Product
             title: Search
             description: Search term to filter Workspaces by name.
+          examples: {}
       responses:
         '200':
           description: OK
@@ -12046,10 +12212,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorkspaceEnrichedOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/workspaces/{workspace_uuid}:
+  /v1/admin/workspaces/{workspace_uuid}:
     patch:
       operationId: users_api_admin_workspaces_update_workspaces
       summary: Update Workspaces
@@ -12102,10 +12265,7 @@ paths:
       responses:
         '204':
           description: No Content
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/workspaces/{workspace_uuid}/add-users:
+  /v1/admin/workspaces/{workspace_uuid}/add-users:
     post:
       operationId: users_api_admin_workspaces_add_users_workspaces
       summary: Add Users Workspaces
@@ -12137,10 +12297,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AddUsersToWorkspaceOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/workspaces/{workspace_uuid}/users:
+  /v1/admin/workspaces/{workspace_uuid}/users:
     patch:
       operationId: users_api_admin_workspaces_add_or_update_users_workspaces
       summary: Add Or Update Users Workspaces
@@ -12172,10 +12329,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AddOrUpdateUsersToWorkspaceOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/workspaces/{workspace_uuid}/remove-users:
+  /v1/admin/workspaces/{workspace_uuid}/remove-users:
     delete:
       operationId: users_api_admin_workspaces_remove_users_workspaces
       summary: Remove Users Workspaces
@@ -12207,10 +12361,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoveWorkspaceMembersOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/rate-limit:
+  /v1/admin/rate-limit:
     get:
       operationId: users_api_admin_rate_limits_get_rate_limits
       summary: Get Rate Limits
@@ -12227,10 +12378,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RateLimitsOUT'
       description: Get Rate Limits
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/spend-limit:
+  /v1/admin/spend-limit:
     get:
       operationId: users_api_admin_spend_limits_get_spend_limits
       summary: Get Spend Limits
@@ -12269,10 +12417,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LimitsOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/usage:
+  /v1/admin/usage:
     get:
       operationId: users_api_admin_usage_get_usage
       summary: Get Usage
@@ -12329,10 +12474,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UsageOUTJSON'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/audit-logs:
+  /v1/admin/audit-logs:
     get:
       operationId: users_api_admin_audit_logs_get_audit_logs
       summary: Get Audit Logs
@@ -12442,10 +12584,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/AuditLogOut'
                 title: Response
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups:
+  /v1/admin/user-groups:
     get:
       operationId: users_api_admin_user_groups_get_user_groups
       summary: Get User Groups
@@ -12484,8 +12623,11 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            examples:
+              - Engineering
             title: Search
             description: Search term used to filter user groups by name.
+          examples: {}
       responses:
         '200':
           description: OK
@@ -12515,10 +12657,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminUserGroupOut'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups/provision-workspace:
+  /v1/admin/user-groups/provision-workspace:
     post:
       operationId: users_api_admin_user_groups_provision_group_to_workspace
       summary: Provision Group To Workspace
@@ -12537,10 +12676,7 @@ paths:
       responses:
         '204':
           description: No Content
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups/{group_uuid}:
+  /v1/admin/user-groups/{group_uuid}:
     get:
       operationId: users_api_admin_user_groups_get_user_group
       summary: Get User Group
@@ -12616,10 +12752,7 @@ paths:
       responses:
         '204':
           description: No Content
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups/{group_uuid}/members:
+  /v1/admin/user-groups/{group_uuid}/members:
     get:
       operationId: users_api_admin_user_groups_get_user_group_members
       summary: Get User Group Members
@@ -12713,10 +12846,7 @@ paths:
       responses:
         '204':
           description: No Content
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups/{group_uuid}/workspaces:
+  /v1/admin/user-groups/{group_uuid}/workspaces:
     get:
       operationId: users_admin_user_groups_get_group_workspace_assignments
       summary: Get Group Workspace Assignments
@@ -12790,10 +12920,7 @@ paths:
       responses:
         '201':
           description: Created
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups/{group_uuid}/workspaces/{workspace_uuid}:
+  /v1/admin/user-groups/{group_uuid}/workspaces/{workspace_uuid}:
     patch:
       operationId: users_admin_user_groups_update_group_workspace_assignment
       summary: Update Group Workspace Assignment
@@ -12860,10 +12987,7 @@ paths:
       responses:
         '204':
           description: No Content
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/user-groups/{group_uuid}/organization-role:
+  /v1/admin/user-groups/{group_uuid}/organization-role:
     patch:
       operationId: users_admin_user_groups_update_user_group_organization_role
       summary: Update User Group Organization Role
@@ -12891,10 +13015,7 @@ paths:
       responses:
         '204':
           description: No Content
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/api-keys:
+  /v1/admin/api-keys:
     get:
       operationId: users_api_admin_api_keys_get_api_keys
       summary: Get Api Keys
@@ -12951,10 +13072,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/APIKeyOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/api-keys/{key_id}:
+  /v1/admin/api-keys/{key_id}:
     delete:
       operationId: users_api_admin_api_keys_delete_api_key
       summary: Delete Api Key
@@ -12980,16 +13098,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteAPIKeyOUT'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/analytics/vibe/usage/by_user_stats:
+  /v1/admin/analytics/vibe/work/usage/by_user_stats:
     get:
-      operationId: get_by_user_stats_api_admin_analytics_vibe_usage_by_user_stats
-      summary: Get By User Stats
-      description: Get Le Chat usage by user for a time range.
+      operationId: get_by_user_stats_v1_admin_analytics_vibe_work_usage_by_user_stats
+      summary: Usage by user
+      description: Get Vibe Work usage by user for a time range.
       tags:
-        - beta.admin.analytics
+        - beta.admin.vibe-work-analytics
       security:
         - AdminApiKey: []
       parameters:
@@ -12999,6 +13114,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1764547200
             title: Start Time
             description: Start of the queried window, as a Unix timestamp in seconds.
         - name: end_time
@@ -13007,6 +13124,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1767225600
             title: End Time
             description: End of the queried window, as a Unix timestamp in seconds.
       responses:
@@ -13015,23 +13134,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LeChatByUserStatsOUT'
+                $ref: '#/components/schemas/VibeWorkByUserStatsOUT'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/analytics/vibe/usage/by_agent_stats:
+  /v1/admin/analytics/vibe/work/usage/by_agent_stats:
     get:
-      operationId: get_by_agent_stats_api_admin_analytics_vibe_usage_by_agent_stats
-      summary: Get By Agent Stats
-      description: Get Le Chat usage by agent for a time range.
+      operationId: get_by_agent_stats_v1_admin_analytics_vibe_work_usage_by_agent_stats
+      summary: Usage by agent
+      description: Get Vibe Work usage by agent for a time range.
       tags:
-        - beta.admin.analytics
+        - beta.admin.vibe-work-analytics
       security:
         - AdminApiKey: []
       parameters:
@@ -13041,6 +13157,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1764547200
             title: Start Time
             description: Start of the queried window, as a Unix timestamp in seconds.
         - name: end_time
@@ -13049,6 +13167,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1767225600
             title: End Time
             description: End of the queried window, as a Unix timestamp in seconds.
       responses:
@@ -13057,23 +13177,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LeChatByAgentStatsOUT'
+                $ref: '#/components/schemas/VibeWorkByAgentStatsOUT'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/analytics/vibe/usage/by_time_stats:
+  /v1/admin/analytics/vibe/work/usage/by_time_stats:
     get:
-      operationId: get_by_time_stats_api_admin_analytics_vibe_usage_by_time_stats
-      summary: Get By Time Stats
-      description: Get Le Chat usage over time.
+      operationId: get_by_time_stats_v1_admin_analytics_vibe_work_usage_by_time_stats
+      summary: Usage over time
+      description: Get Vibe Work usage over time.
       tags:
-        - beta.admin.analytics
+        - beta.admin.vibe-work-analytics
       security:
         - AdminApiKey: []
       parameters:
@@ -13083,6 +13200,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1764547200
             title: Start Time
             description: Start of the queried window, as a Unix timestamp in seconds.
         - name: end_time
@@ -13091,6 +13210,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1767225600
             title: End Time
             description: End of the queried window, as a Unix timestamp in seconds.
         - name: granularity
@@ -13106,6 +13227,8 @@ paths:
                   - week
                   - month
               - type: 'null'
+            examples:
+              - day
             title: Granularity
             description: Time interval used to group usage results.
       responses:
@@ -13114,23 +13237,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LeChatByTimeStatsOUT'
+                $ref: '#/components/schemas/VibeWorkByTimeStatsOUT'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/analytics/vibe/usage/by_workspace:
+  /v1/admin/analytics/vibe/code/usage/by_workspace:
     get:
-      operationId: get_workspace_stats_api_admin_analytics_vibe_usage_by_workspace
-      summary: Get Workspace Stats
-      description: Get Vibe usage for a Workspace.
+      operationId: get_workspace_stats_v1_admin_analytics_vibe_code_usage_by_workspace
+      summary: Usage by workspace
+      description: Get Vibe Code usage for a Workspace.
       tags:
-        - beta.admin.analytics
+        - beta.admin.vibe-code-analytics
       security:
         - AdminApiKey: []
       parameters:
@@ -13140,6 +13260,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1764547200
             title: Start Time
             description: Start of the queried window, as a Unix timestamp in seconds.
         - name: end_time
@@ -13148,6 +13270,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1767225600
             title: End Time
             description: End of the queried window, as a Unix timestamp in seconds.
         - name: workspace_id
@@ -13158,6 +13282,8 @@ paths:
             anyOf:
               - type: string
               - type: 'null'
+            examples:
+              - e2f0a7c4-1b6d-4a9e-8c3f-5d7b9a1c2e3f
             title: Workspace Id
             description: Workspace ID to filter results.
       responses:
@@ -13173,16 +13299,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
-  /api/admin/analytics/vibe/usage/by_organization:
+  /v1/admin/analytics/vibe/code/usage/by_organization:
     get:
-      operationId: get_organization_stats_api_admin_analytics_vibe_usage_by_organization
-      summary: Get Organization Stats
-      description: Get Vibe usage for the Organization.
+      operationId: get_organization_stats_v1_admin_analytics_vibe_code_usage_by_organization
+      summary: Usage by organization
+      description: Get Vibe Code usage for the Organization.
       tags:
-        - beta.admin.analytics
+        - beta.admin.vibe-code-analytics
       security:
         - AdminApiKey: []
       parameters:
@@ -13192,6 +13315,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1764547200
             title: Start Time
             description: Start of the queried window, as a Unix timestamp in seconds.
         - name: end_time
@@ -13200,6 +13325,8 @@ paths:
           required: true
           schema:
             type: integer
+            examples:
+              - 1767225600
             title: End Time
             description: End of the queried window, as a Unix timestamp in seconds.
       responses:
@@ -13215,9 +13342,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-    servers:
-      - url: https://console.mistral.ai
-        description: Console server
 components:
   schemas:
     RegistrySharingScope:
@@ -13685,6 +13809,10 @@ components:
             - type: number
             - type: 'null'
           title: Default Model Temperature
+        internal:
+          type: boolean
+          title: Internal
+          default: false
         type:
           type: string
           title: Type
@@ -13749,6 +13877,10 @@ components:
             - type: number
             - type: 'null'
           title: Default Model Temperature
+        internal:
+          type: boolean
+          title: Internal
+          default: false
         type:
           type: string
           title: Type
@@ -16761,7 +16893,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRCaptionBlock:
       type: object
       properties:
@@ -16797,7 +16928,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRCodeBlock:
       type: object
       properties:
@@ -16833,7 +16963,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRConfidenceScore:
       type: object
       properties:
@@ -16857,7 +16986,6 @@ components:
         - text
         - confidence
         - start_index
-      additionalProperties: false
       description: Confidence score for a token or word in OCR output.
     OCREquationBlock:
       type: object
@@ -16894,7 +17022,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRFooterBlock:
       type: object
       properties:
@@ -16930,7 +17057,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRHeaderBlock:
       type: object
       properties:
@@ -16966,7 +17092,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRImageBlock:
       type: object
       properties:
@@ -17007,7 +17132,6 @@ components:
         - bottom_right_y
         - content
         - image_id
-      additionalProperties: false
     OCRImageObject:
       type: object
       properties:
@@ -17062,7 +17186,6 @@ components:
         - top_left_y
         - bottom_right_x
         - bottom_right_y
-      additionalProperties: false
     OCRListBlock:
       type: object
       properties:
@@ -17098,7 +17221,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRPageConfidenceScores:
       type: object
       properties:
@@ -17124,7 +17246,6 @@ components:
       required:
         - average_page_confidence_score
         - minimum_page_confidence_score
-      additionalProperties: false
       description: "Confidence scores for an OCR page at various granularities.\n\nNote on page-level stats:\n- For 'page' granularity: average/minimum are computed from per-token exp(logprob).\n- For 'word' granularity: average/minimum are computed from per-word confidence,\n  where each word's confidence is exp(mean(token_logprobs)) — a geometric mean\n  over the word's subword tokens."
     OCRPageDimensions:
       type: object
@@ -17149,7 +17270,6 @@ components:
         - dpi
         - height
         - width
-      additionalProperties: false
     OCRPageObject:
       type: object
       properties:
@@ -17245,7 +17365,6 @@ components:
         - markdown
         - images
         - dimensions
-      additionalProperties: false
     OCRReferencesBlock:
       type: object
       properties:
@@ -17281,7 +17400,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRRequest:
       type: object
       properties:
@@ -17351,16 +17469,18 @@ components:
         extract_header:
           type: boolean
           title: Extract Header
+          description: Extract the page header into the response's `header` field and remove it from the markdown content
           default: false
         extract_footer:
           type: boolean
           title: Extract Footer
+          description: Extract the page footer into the response's `footer` field and remove it from the markdown content
           default: false
         include_blocks:
           type: boolean
           title: Include Blocks
           description: Return paragraph-level bounding boxes for all content blocks in the response
-          default: false
+          default: true
         confidence_scores_granularity:
           anyOf:
             - type: string
@@ -17368,7 +17488,7 @@ components:
                 - word
                 - page
             - type: 'null'
-          description: 'Granularity for confidence scores: ''word'' (per-word scores) or ''page'' (aggregate only). Defaults to None (no confidence scores) to keep response payload small.'
+          description: 'Granularity for confidence scores: ''page'' (aggregate only), ''word'' (per-word scores). Defaults to None (no confidence scores) to keep response payload small.'
       title: OCRRequest
       required:
         - document
@@ -17401,7 +17521,6 @@ components:
         - pages
         - model
         - usage_info
-      additionalProperties: false
     OCRSignatureBlock:
       type: object
       properties:
@@ -17437,7 +17556,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
       description: Signature region. ``content`` is the transcribed name when legible, else ``""``.
     OCRTableBlock:
       type: object
@@ -17480,7 +17598,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRTableObject:
       type: object
       properties:
@@ -17512,7 +17629,6 @@ components:
         - id
         - content
         - format
-      additionalProperties: false
     OCRTextBlock:
       type: object
       properties:
@@ -17548,7 +17664,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRTitleBlock:
       type: object
       properties:
@@ -17584,7 +17699,6 @@ components:
         - bottom_right_x
         - bottom_right_y
         - content
-      additionalProperties: false
     OCRUsageInfo:
       type: object
       properties:
@@ -17602,7 +17716,6 @@ components:
       title: OCRUsageInfo
       required:
         - pages_processed
-      additionalProperties: false
     SystemMessage:
       type: object
       properties:
@@ -18680,28 +18793,6 @@ components:
         - audio_url
         - model
         - response_message
-    ConversationPayload:
-      type: object
-      properties:
-        messages:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
-          title: Messages
-      title: ConversationPayload
-      required:
-        - messages
-      additionalProperties: true
-      description: ''
-    ConversationSource:
-      type: string
-      title: ConversationSource
-      enum:
-        - EXPLORER
-        - UPLOADED_FILE
-        - DIRECT_INPUT
-        - PLAYGROUND
     DatasetImportTask:
       type: object
       properties:
@@ -18875,13 +18966,13 @@ components:
           title: Dataset Id
           format: uuid
         payload:
-          $ref: '#/components/schemas/ConversationPayload'
+          $ref: '#/components/schemas/DatasetRecordPayload'
         properties:
           type: object
           title: Properties
           additionalProperties: true
         source:
-          $ref: '#/components/schemas/ConversationSource'
+          $ref: '#/components/schemas/DatasetRecordSource'
       title: DatasetRecord
       required:
         - id
@@ -18892,6 +18983,19 @@ components:
         - payload
         - properties
         - source
+    DatasetRecordPayload:
+      type: object
+      title: DatasetRecordPayload
+      additionalProperties: true
+      description: Caller-authored input object stored on a dataset record.
+    DatasetRecordSource:
+      type: string
+      title: DatasetRecordSource
+      enum:
+        - EXPLORER
+        - UPLOADED_FILE
+        - DIRECT_INPUT
+        - PLAYGROUND
     FieldGroup:
       type: object
       properties:
@@ -21336,6 +21440,17 @@ components:
         - tool_execution_data
         - errors
       description: Credentials-free projection of ExecutionEnv for the public /connectors/mistral response.
+    PublicResourceVisibility:
+      type: string
+      title: PublicResourceVisibility
+      enum:
+        - shared_org
+        - shared_workspace
+        - private
+      description: 'Visibility options available to public API callers.
+
+
+        Excludes ``shared_global`` which is reserved for system-owned connectors.'
     ResourceLink:
       type: object
       properties:
@@ -22788,6 +22903,22 @@ components:
       title: BatchExecutionResult
       required:
         - status
+    CreateDeploymentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Name
+        spec:
+          $ref: '#/components/schemas/DeploymentWorkerSpecInput'
+        resources:
+          anyOf:
+            - $ref: '#/components/schemas/DeploymentResourceConfig'
+            - type: 'null'
+      title: CreateDeploymentRequest
+      required:
+        - name
+        - spec
     CustomTaskCanceledResponse:
       type: object
       properties:
@@ -23265,6 +23396,42 @@ components:
         - custom_task_id
         - custom_task_type
       description: Attributes for custom task timed out events.
+    DeploymentBuildState:
+      type: object
+      properties:
+        phase:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Phase
+        commit_sha:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Commit Sha
+        image:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Image
+        message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Message
+        started_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Started At
+        finished_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Finished At
+      title: DeploymentBuildState
     DeploymentDetailResponse:
       type: object
       properties:
@@ -23301,6 +23468,27 @@ components:
             - $ref: '#/components/schemas/DeploymentLocation'
             - type: 'null'
           description: Where the deployment is running
+        worker_count:
+          type: integer
+          title: Worker Count
+          description: Number of workers registered to the deployment
+          default: 0
+        active_worker_count:
+          type: integer
+          title: Active Worker Count
+          description: Number of workers currently live within the liveness cutoff
+          default: 0
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationType'
+          title: Locations
+          description: Distinct location types reported by the deployment's workers
+        managed:
+          anyOf:
+            - $ref: '#/components/schemas/ManagedDeploymentResponse'
+            - type: 'null'
+          description: Live managed service state for managed deployments; null for self-hosted deployments or when managed services are unavailable
         workers:
           type: array
           items:
@@ -23409,6 +23597,111 @@ components:
       title: DeploymentLogSearchResponse
       required:
         - results
+    DeploymentObservedState:
+      type: object
+      properties:
+        phase:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Phase
+        available_replicas:
+          type: integer
+          title: Available Replicas
+          default: 0
+        ready_replicas:
+          type: integer
+          title: Ready Replicas
+          default: 0
+        endpoint:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Endpoint
+        message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Message
+        last_seen:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Last Seen
+        deployed_revision:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Deployed Revision
+        generation:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Generation
+        build_state:
+          anyOf:
+            - $ref: '#/components/schemas/DeploymentBuildState'
+            - type: 'null'
+      title: DeploymentObservedState
+    DeploymentResourceConfig:
+      type: object
+      properties:
+        replicas:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Replicas
+        cpu_request:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Cpu Request
+        cpu_limit:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Cpu Limit
+        memory_request:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Memory Request
+        memory_limit:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Memory Limit
+      title: DeploymentResourceConfig
+    DeploymentResourceConfigUpdate:
+      type: object
+      properties:
+        replicas:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Replicas
+        cpu_request:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Cpu Request
+        cpu_limit:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Cpu Limit
+        memory_request:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Memory Request
+        memory_limit:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Memory Limit
+      title: DeploymentResourceConfigUpdate
     DeploymentResponse:
       type: object
       properties:
@@ -23445,6 +23738,27 @@ components:
             - $ref: '#/components/schemas/DeploymentLocation'
             - type: 'null'
           description: Where the deployment is running
+        worker_count:
+          type: integer
+          title: Worker Count
+          description: Number of workers registered to the deployment
+          default: 0
+        active_worker_count:
+          type: integer
+          title: Active Worker Count
+          description: Number of workers currently live within the liveness cutoff
+          default: 0
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationType'
+          title: Locations
+          description: Distinct location types reported by the deployment's workers
+        managed:
+          anyOf:
+            - $ref: '#/components/schemas/ManagedDeploymentResponse'
+            - type: 'null'
+          description: Live managed service state for managed deployments; null for self-hosted deployments or when managed services are unavailable
       title: DeploymentResponse
       required:
         - id
@@ -23473,12 +23787,81 @@ components:
           type: boolean
           title: Is Active
           description: Whether this worker's liveness key is currently alive
+        location:
+          anyOf:
+            - $ref: '#/components/schemas/DeploymentLocation'
+            - type: 'null'
+          description: Where the worker is running; null if the worker did not report a location
       title: DeploymentWorkerResponse
       required:
         - name
         - created_at
         - updated_at
         - is_active
+    DeploymentWorkerSpecInput:
+      type: object
+      properties:
+        github_url:
+          type: string
+          title: Github Url
+        revision:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Revision
+          default: main
+        entrypoint:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Entrypoint
+          default: worker:main
+        working_dir:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Working Dir
+      title: DeploymentWorkerSpecInput
+      required:
+        - github_url
+    DeploymentWorkerSpecResponse:
+      type: object
+      properties:
+        github_url:
+          type: string
+          title: Github Url
+        type:
+          type: string
+          title: Type
+          default: workflows_worker
+        revision:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Revision
+        entrypoint:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Entrypoint
+        working_dir:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Working Dir
+        restarted_at:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Restarted At
+        commit_sha:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Commit Sha
+      title: DeploymentWorkerSpecResponse
+      required:
+        - github_url
     EncodedPayloadOptions:
       type: string
       title: EncodedPayloadOptions
@@ -23799,6 +24182,68 @@ components:
         - local
         - k8s
         - managed
+    ManagedDeploymentResponse:
+      type: object
+      properties:
+        service_id:
+          type: string
+          title: Service Id
+        name:
+          type: string
+          title: Name
+        spec:
+          $ref: '#/components/schemas/DeploymentWorkerSpecResponse'
+        resources:
+          $ref: '#/components/schemas/DeploymentResourceConfig'
+        status:
+          $ref: '#/components/schemas/DeploymentObservedState'
+        created_at:
+          type: string
+          title: Created At
+          format: date-time
+        updated_at:
+          type: string
+          title: Updated At
+          format: date-time
+        stopped:
+          type: boolean
+          title: Stopped
+          default: false
+        rollout_status:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Rollout Status
+        created_by:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Created By
+        updated_by:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Updated By
+        deployed_by:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Deployed By
+        deployed_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Deployed At
+      title: ManagedDeploymentResponse
+      required:
+        - service_id
+        - name
+        - spec
+        - resources
+        - status
+        - created_at
+        - updated_at
     NetworkEncodedInput:
       type: object
       properties:
@@ -24797,6 +25242,18 @@ components:
       required:
         - name
         - input_schema
+    UpdateDeploymentRequest:
+      type: object
+      properties:
+        spec:
+          anyOf:
+            - $ref: '#/components/schemas/WorkflowsWorkerSpecUpdate'
+            - type: 'null'
+        resources:
+          anyOf:
+            - $ref: '#/components/schemas/DeploymentResourceConfigUpdate'
+            - type: 'null'
+      title: UpdateDeploymentRequest
     UpdateInvocationBody:
       type: object
       properties:
@@ -26789,6 +27246,30 @@ components:
         - customer_id
         - workspace_id
         - active
+    WorkflowsWorkerSpecUpdate:
+      type: object
+      properties:
+        github_url:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Github Url
+        revision:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Revision
+        entrypoint:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Entrypoint
+        working_dir:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Working Dir
+      title: WorkflowsWorkerSpecUpdate
     StreamError:
       type: object
       properties:
@@ -27366,47 +27847,6 @@ components:
       required:
         - id
         - fields
-    UserIdentityWorkspace:
-      type: object
-      properties:
-        id:
-          type: string
-          title: Id
-        name:
-          type: string
-          title: Name
-      title: UserIdentityWorkspace
-      required:
-        - id
-        - name
-    UserIdentityOrganization:
-      type: object
-      properties:
-        id:
-          type: string
-          title: Id
-        name:
-          type: string
-          title: Name
-      title: UserIdentityOrganization
-      required:
-        - id
-        - name
-    UserIdentityApiKey:
-      type: object
-      properties:
-        id:
-          type: string
-          title: Id
-        name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Name
-      title: UserIdentityApiKey
-      required:
-        - id
-        - name
     UserIdentity:
       type: object
       properties:
@@ -27432,23 +27872,61 @@ components:
           anyOf:
             - $ref: '#/components/schemas/UserIdentityWorkspace'
             - type: 'null'
-          default: null
         organization:
           anyOf:
             - $ref: '#/components/schemas/UserIdentityOrganization'
             - type: 'null'
-          default: null
         api_key:
           anyOf:
             - $ref: '#/components/schemas/UserIdentityApiKey'
             - type: 'null'
-          default: null
       title: UserIdentity
       required:
         - id
         - email
         - first_name
         - last_name
+    UserIdentityApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name
+      title: UserIdentityApiKey
+      required:
+        - id
+        - name
+    UserIdentityOrganization:
+      type: object
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+      title: UserIdentityOrganization
+      required:
+        - id
+        - name
+    UserIdentityWorkspace:
+      type: object
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+      title: UserIdentityWorkspace
+      required:
+        - id
+        - name
     APIPlan:
       type: string
       title: APIPlan
@@ -27474,12 +27952,16 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Alice Martin
           title: Name
           description: Name of the Organization member.
         email:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - alice.martin@example.com
           title: Email
           description: Email address of the Organization member.
         is_sso_outsider:
@@ -27609,7 +28091,10 @@ components:
           description: Workspace ID.
         name:
           type: string
+          examples:
+            - Product Team
           title: Name
+          maxLength: 255
           description: Workspace name.
         is_default:
           type: boolean
@@ -27710,6 +28195,8 @@ components:
           deprecated: true
         email:
           type: string
+          examples:
+            - alice.martin@example.com
           title: Email
           description: Email address invited to the Organization.
         expired:
@@ -27767,6 +28254,7 @@ components:
         - b23cd6e0-91cd-4a8a-9869-b30366bf3966
         - 731eb2be-a74f-4070-b797-35bf7009e553
         - ff86d432-7f27-47f8-b02f-b5c102ef6a55
+        - 0f9acbf6-93b5-42c7-a227-fc7652755f65
         - b23cd6e0-91cd-4a8a-9869-b30366bf3966
     SubscriptionStatus:
       type: string
@@ -27861,15 +28349,24 @@ components:
           deprecated: true
         email:
           type: string
+          examples:
+            - alice.martin@example.com
           title: Email
+          maxLength: 255
           description: Email address of the user to create.
         first_name:
           type: string
+          examples:
+            - Alice
           title: First Name
+          maxLength: 255
           description: First name of the user to create.
         last_name:
           type: string
+          examples:
+            - Martin
           title: Last Name
+          maxLength: 255
           description: Last name of the user to create.
         subscription_types:
           anyOf:
@@ -27959,6 +28456,8 @@ components:
           deprecated: true
         email:
           type: string
+          examples:
+            - alice.martin@example.com, bob.smith@example.com
           title: Email
           description: Email address, comma-separated emails, or newline-separated emails to invite.
         subscription_type:
@@ -28019,6 +28518,8 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - alice.martin@example.com
           title: Email
           description: Email address invited to the Organization.
         roles:
@@ -28051,6 +28552,8 @@ components:
       properties:
         message:
           type: string
+          examples:
+            - Organization member deleted successfully
           title: Message
           description: Deletion result message.
       title: DeleteOUT
@@ -28123,25 +28626,36 @@ components:
           type: string
           title: Uuid
           format: uuid
-          description: User ID.
-        first_name:
+          description: Organization member ID.
+        oid_id:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+          title: Oid Id
+          description: Identity provider ID for the member.
+        name:
           anyOf:
             - type: string
             - type: 'null'
-          title: First Name
-          description: User first name.
-        last_name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Last Name
-          description: User last name.
+          examples:
+            - Alice Martin
+          title: Name
+          description: Name of the Organization member.
         email:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - alice.martin@example.com
           title: Email
-          description: User email address.
+          description: Email address of the Organization member.
+        is_sso_outsider:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Is Sso Outsider
+          description: Whether the member is outside the SSO domain.
         workspaces:
           anyOf:
             - type: array
@@ -28149,18 +28663,83 @@ components:
                 $ref: '#/components/schemas/MemberWorkspaceInfo'
             - type: 'null'
           title: Workspaces
-          description: Workspaces the user belongs to, with the user's role in each.
+          description: Workspaces the member belongs to.
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemberSubscriptionOUT'
+          title: Subscriptions
+          description: Subscriptions assigned to the member.
+          default: []
+        raw_roles:
+          anyOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/UserRole'
+              minItems: 1
+            - type: array
+              items:
+                $ref: '#/components/schemas/StaticOrganizationRoles'
+              minItems: 1
+          title: Raw Roles
+          description: Organization roles assigned to the member.
+        raw_role:
+          anyOf:
+            - $ref: '#/components/schemas/UserRole'
+            - $ref: '#/components/schemas/StaticOrganizationRoles'
+          title: Raw Role
+          description: Deprecated single organization role. Use 'raw_roles' instead.
+          deprecated: true
+        subscription_types:
+          anyOf:
+            - type: array
+              items:
+                type: string
+                enum:
+                  - CHAT
+                  - MISTRAL_CODE
+            - type: 'null'
+          title: Subscription Types
+          description: Product seats assigned to the member.
+        created_at:
+          type: string
+          title: Created At
+          format: date-time
+          description: Date the member was added to the Organization.
+        first_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          examples:
+            - Alice
+          title: First Name
+          description: User first name.
+        last_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          examples:
+            - Martin
+          title: Last Name
+          description: User last name.
       title: AdminUserOUT
       required:
         - uuid
+        - oid_id
+        - name
+        - email
+        - raw_roles
+        - raw_role
+        - created_at
         - first_name
         - last_name
-        - email
     RoleOut:
       type: object
       properties:
         name:
           type: string
+          examples:
+            - workspace_admin
           title: Name
           description: Role name.
         uuid:
@@ -28172,6 +28751,8 @@ components:
           description: Role UUID. Null for legacy roles.
         description:
           type: string
+          examples:
+            - Can manage workspace members and settings
           title: Description
           description: Short description of the role.
         is_custom_role:
@@ -28219,18 +28800,25 @@ components:
           description: Workspace ID.
         name:
           type: string
+          examples:
+            - Product Team
           title: Name
+          maxLength: 255
           description: Workspace name.
         description:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Workspace for product and design teams
           title: Description
           description: Workspace description.
         icon:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - ★
           title: Icon
           description: Workspace icon.
         members_count:
@@ -28268,6 +28856,8 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - USD
           title: Currency
           description: Currency used for the Workspace spending limit.
         no_monthly_limit:
@@ -28323,18 +28913,25 @@ components:
           description: Workspace ID.
         name:
           type: string
+          examples:
+            - Product Team
           title: Name
+          maxLength: 255
           description: Workspace name.
         description:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Workspace for product and design teams
           title: Description
           description: Workspace description.
         icon:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - ★
           title: Icon
           description: Workspace icon.
         members_count:
@@ -28384,17 +28981,23 @@ components:
       properties:
         name:
           type: string
+          examples:
+            - Product Team
           title: Name
           maxLength: 255
           description: Workspace name.
         description:
           type: string
+          examples:
+            - Workspace for product and design teams
           title: Description
           maxLength: 255
           description: Workspace description.
           default: ''
         icon:
           type: string
+          examples:
+            - ★
           title: Icon
           maxLength: 2
           description: Workspace icon.
@@ -28421,6 +29024,8 @@ components:
             - type: string
               maxLength: 255
             - type: 'null'
+          examples:
+            - Product Team
           title: Name
           description: Updated Workspace name.
         description:
@@ -28428,6 +29033,8 @@ components:
             - type: string
               maxLength: 255
             - type: 'null'
+          examples:
+            - Workspace for product and design teams
           title: Description
           description: Updated Workspace description.
         icon:
@@ -28435,6 +29042,8 @@ components:
             - type: string
               maxLength: 2
             - type: 'null'
+          examples:
+            - ★
           title: Icon
           description: Updated Workspace icon.
       title: UpdateWorkspaceIN
@@ -28479,6 +29088,7 @@ components:
                   - workspace_contributor
                   - workspace_admin
                   - observability_viewer
+                  - workflow_executor
               minItems: 1
             - type: 'null'
           title: Role Names
@@ -28510,6 +29120,7 @@ components:
                 - workspace_contributor
                 - workspace_admin
                 - observability_viewer
+                - workflow_executor
             - type: 'null'
           title: Role Name
           description: Deprecated single role name, kept for backward compatibility. Mutually exclusive with 'role'.
@@ -28637,6 +29248,8 @@ components:
           description: Whether payment failure protection is enabled.
         currency:
           type: string
+          examples:
+            - USD
           title: Currency
           description: Currency used for usage and limit amounts.
       title: LimitsContext
@@ -28945,6 +29558,7 @@ components:
         - WORKSPACE
         - API_KEY
         - ADMIN_API_KEY
+        - SERVICE_ACCOUNT
         - AGENT
         - SKILL
         - PROMPT
@@ -28977,6 +29591,12 @@ components:
         - CRAWLER_CONFIG
         - SHARED_RESOURCE
         - RATE_LIMIT_RULE
+        - APP
+        - DEPLOYMENT
+        - DOMAIN
+        - PERSISTENT_VOLUME
+        - SECRET
+        - SERVICE
     AuditLogOut:
       type: object
       properties:
@@ -29050,12 +29670,18 @@ components:
           description: User group ID.
         name:
           type: string
+          examples:
+            - Engineering Team
           title: Name
+          maxLength: 255
           description: Name of the user group.
         description:
           anyOf:
             - type: string
+              maxLength: 255
             - type: 'null'
+          examples:
+            - Members of the platform engineering team
           title: Description
           description: Optional description of the user group.
         externally_managed:
@@ -29118,12 +29744,18 @@ components:
       properties:
         name:
           type: string
+          examples:
+            - Engineering Team
           title: Name
+          maxLength: 255
           description: Name of the user group.
         description:
           anyOf:
             - type: string
+              maxLength: 255
             - type: 'null'
+          examples:
+            - Members of the platform engineering team
           title: Description
           description: Optional description of the user group.
         target_type:
@@ -29168,6 +29800,7 @@ components:
                 - workspace_contributor
                 - workspace_admin
                 - observability_viewer
+                - workflow_executor
             - type: 'null'
           title: Workspace Role Name
           description: Workspace role name to assign to the group. Mutually exclusive with 'workspace_role'.
@@ -29181,13 +29814,19 @@ components:
         name:
           anyOf:
             - type: string
+              maxLength: 255
             - type: 'null'
+          examples:
+            - Engineering Team
           title: Name
           description: Updated name of the user group.
         description:
           anyOf:
             - type: string
+              maxLength: 255
             - type: 'null'
+          examples:
+            - Members of the platform engineering team
           title: Description
           description: Updated description of the user group.
         target_type:
@@ -29208,12 +29847,16 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Alice Martin
           title: Name
           description: Name of the group member.
         email:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - alice.martin@example.com
           title: Email
           description: Email address of the group member.
       title: AdminUserGroupMemberOut
@@ -29286,7 +29929,10 @@ components:
           format: uuid
         workspace_name:
           type: string
+          examples:
+            - Product Team
           title: Workspace Name
+          description: Name of the Workspace.
         created:
           type: string
           title: Created
@@ -29357,6 +30003,7 @@ components:
                   - workspace_contributor
                   - workspace_admin
                   - observability_viewer
+                  - workflow_executor
               minItems: 1
             - type: 'null'
           title: Role Names
@@ -29406,6 +30053,7 @@ components:
                   - workspace_contributor
                   - workspace_admin
                   - observability_viewer
+                  - workflow_executor
               minItems: 1
             - type: 'null'
           title: Role Names
@@ -29499,16 +30147,22 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - HQSxfB7IaJRKNHRv0e5OAYJNO1h2Ug6Y
           title: Key
           description: Plaintext API key value. Only returned at creation time.
         name:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Production API Key
           title: Name
           description: Name of the API key.
         hidden_key:
           type: string
+          examples:
+            - HQSx...Ug6Y
           title: Hidden Key
           description: Masked API key value for display.
         created_at:
@@ -29539,12 +30193,16 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Product Team
           title: Workspace Name
           description: Name of the Workspace for the API key.
         created_by:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - alice.martin@example.com
           title: Created By
           description: User or API key that created this API key.
         product:
@@ -29692,16 +30350,22 @@ components:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - HQSxfB7IaJRKNHRv0e5OAYJNO1h2Ug6Y
           title: Key
           description: Plaintext API key value. Only returned at creation time.
         name:
           anyOf:
             - type: string
             - type: 'null'
+          examples:
+            - Production API Key
           title: Name
           description: Name of the API key.
         hidden_key:
           type: string
+          examples:
+            - HQSx...Ug6Y
           title: Hidden Key
           description: Masked API key value for display.
         created_at:
@@ -29736,7 +30400,10 @@ components:
         name:
           anyOf:
             - type: string
+              maxLength: 255
             - type: 'null'
+          examples:
+            - Production API Key
           title: Name
           description: Optional name for the API key.
         expiration:
@@ -29765,6 +30432,8 @@ components:
       properties:
         detail:
           type: string
+          examples:
+            - API key deleted successfully
           title: Detail
           description: API key deletion result message.
       title: DeleteAPIKeyOUT
@@ -29787,6 +30456,7 @@ components:
         - organization.create
         - organization.update
         - organization.invite.send
+        - organization.invite.resend
         - organization.invite.accepted
         - organization.invite.revoked
         - organization.join_by_email_domain
@@ -29857,6 +30527,12 @@ components:
         - secret_store.entry.create
         - secret_store.entry.update
         - secret_store.entry.delete
+        - service_account.create
+        - service_account.update
+        - service_account.delete
+        - service_account.client_secret.create
+        - service_account.client_secret.delete
+        - service_account.roles.set
         - agent.create
         - agent.delete
         - agent.update
@@ -29887,6 +30563,33 @@ components:
         - resource.unshare
         - la_plateforme.training.enabled
         - la_plateforme.training.disabled
+        - cloud_runtime.app.created
+        - cloud_runtime.app.updated
+        - cloud_runtime.app.deleted
+        - cloud_runtime.app.paused
+        - cloud_runtime.app.resumed
+        - cloud_runtime.deployment.created
+        - cloud_runtime.deployment.succeeded
+        - cloud_runtime.deployment.canceled
+        - cloud_runtime.deployment.stopped
+        - cloud_runtime.deployment.failed
+        - cloud_runtime.deployment.autoscaled
+        - cloud_runtime.domain.created
+        - cloud_runtime.domain.updated
+        - cloud_runtime.domain.deleted
+        - cloud_runtime.secret.created
+        - cloud_runtime.secret.updated
+        - cloud_runtime.secret.deleted
+        - cloud_runtime.service.created
+        - cloud_runtime.service.paused
+        - cloud_runtime.service.resumed
+        - cloud_runtime.service.deleted
+        - cloud_runtime.service.manually_scaled
+        - cloud_runtime.service.manual_scaling_deleted
+        - cloud_runtime.persistent_volume.created
+        - cloud_runtime.persistent_volume.deleted
+        - cloud_runtime.persistent_volume.attached
+        - cloud_runtime.persistent_volume.detached
         - fine_tuning_job.create
         - fine_tuning_job.cancel
         - batch_job.create
@@ -29928,6 +30631,7 @@ components:
         - integration.preferences.deleted
         - integration.authentication_method.created_or_updated
         - integration.connection.created
+        - integration.shared
         - connectors_gateway.tool_called
         - crawler.config.create
         - crawler.config.update
@@ -29937,211 +30641,34 @@ components:
         - rate_limit.rule.create
         - rate_limit.rule.update
         - rate_limit.rule.delete
-    LeChatByAgentStat:
-      type: object
-      properties:
-        messages_count:
-          type: integer
-          title: Messages Count
-        files_count:
-          type: integer
-          title: Files Count
-        images_count:
-          type: integer
-          title: Images Count
-        spreadsheets_count:
-          type: integer
-          title: Spreadsheets Count
-        unique_conversations_count:
-          type: integer
-          title: Unique Conversations Count
-        agent_id:
-          type: string
-          title: Agent Id
-        last_message_at:
-          type: string
-          title: Last Message At
-          format: date-time
-        unique_users_count:
-          type: integer
-          title: Unique Users Count
-      title: LeChatByAgentStat
-      required:
-        - messages_count
-        - files_count
-        - images_count
-        - spreadsheets_count
-        - unique_conversations_count
-        - agent_id
-        - last_message_at
-        - unique_users_count
-    LeChatByAgentStatsOUT:
-      type: object
-      properties:
-        start_time:
-          type: integer
-          title: Start Time
-          description: Start of the queried window, as a Unix timestamp in seconds.
-        end_time:
-          type: integer
-          title: End Time
-          description: End of the queried window, as a Unix timestamp in seconds.
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/LeChatByAgentStat'
-          title: Data
-      title: LeChatByAgentStatsOUT
-      required:
-        - start_time
-        - end_time
-        - data
-    LeChatByTimeStat:
-      type: object
-      properties:
-        messages_count:
-          type: integer
-          title: Messages Count
-        files_count:
-          type: integer
-          title: Files Count
-        images_count:
-          type: integer
-          title: Images Count
-        spreadsheets_count:
-          type: integer
-          title: Spreadsheets Count
-        unique_conversations_count:
-          type: integer
-          title: Unique Conversations Count
-        time_bucket:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: 'null'
-          title: Time Bucket
-        unique_users_count:
-          type: integer
-          title: Unique Users Count
-        messages_to_agents_count:
-          type: integer
-          title: Messages To Agents Count
-        unique_agents_count:
-          type: integer
-          title: Unique Agents Count
-      title: LeChatByTimeStat
-      required:
-        - messages_count
-        - files_count
-        - images_count
-        - spreadsheets_count
-        - unique_conversations_count
-        - time_bucket
-        - unique_users_count
-        - messages_to_agents_count
-        - unique_agents_count
-    LeChatByTimeStatsOUT:
-      type: object
-      properties:
-        start_time:
-          type: integer
-          title: Start Time
-          description: Start of the queried window, as a Unix timestamp in seconds.
-        end_time:
-          type: integer
-          title: End Time
-          description: End of the queried window, as a Unix timestamp in seconds.
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/LeChatByTimeStat'
-          title: Data
-      title: LeChatByTimeStatsOUT
-      required:
-        - start_time
-        - end_time
-        - data
-    LeChatByUserStat:
-      type: object
-      properties:
-        messages_count:
-          type: integer
-          title: Messages Count
-        files_count:
-          type: integer
-          title: Files Count
-        images_count:
-          type: integer
-          title: Images Count
-        spreadsheets_count:
-          type: integer
-          title: Spreadsheets Count
-        unique_conversations_count:
-          type: integer
-          title: Unique Conversations Count
-        user_id:
-          type: string
-          title: User Id
-        last_message_at:
-          type: string
-          title: Last Message At
-          format: date-time
-        unique_agents_count:
-          type: integer
-          title: Unique Agents Count
-        messages_to_agents_count:
-          type: integer
-          title: Messages To Agents Count
-      title: LeChatByUserStat
-      required:
-        - messages_count
-        - files_count
-        - images_count
-        - spreadsheets_count
-        - unique_conversations_count
-        - user_id
-        - last_message_at
-        - unique_agents_count
-        - messages_to_agents_count
-    LeChatByUserStatsOUT:
-      type: object
-      properties:
-        start_time:
-          type: integer
-          title: Start Time
-          description: Start of the queried window, as a Unix timestamp in seconds.
-        end_time:
-          type: integer
-          title: End Time
-          description: End of the queried window, as a Unix timestamp in seconds.
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/LeChatByUserStat'
-          title: Data
-      title: LeChatByUserStatsOUT
-      required:
-        - start_time
-        - end_time
-        - data
     VibeActiveUsersStat:
       type: object
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         nb_active_users_total:
           type: integer
+          examples:
+            - 148
           title: Nb Active Users Total
         nb_active_users_cli:
           type: integer
+          examples:
+            - 96
           title: Nb Active Users Cli
         nb_active_users_acp:
           type: integer
+          examples:
+            - 40
           title: Nb Active Users Acp
         nb_active_users_programmatic:
           type: integer
+          examples:
+            - 12
           title: Nb Active Users Programmatic
       title: VibeActiveUsersStat
       required:
@@ -30155,19 +30682,29 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         model:
           type: string
+          examples:
+            - codestral-latest
           title: Model
         cached_tokens:
           type: integer
+          examples:
+            - 128000
           title: Cached Tokens
         input_tokens:
           type: integer
+          examples:
+            - 512000
           title: Input Tokens
         output_tokens:
           type: integer
+          examples:
+            - 98000
           title: Output Tokens
       title: VibeConsumedTokensStat
       required:
@@ -30181,10 +30718,14 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         nb_active_users:
           type: integer
+          examples:
+            - 87
           title: Nb Active Users
       title: VibeNextEditActiveUsersStat
       required:
@@ -30195,19 +30736,29 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         lines_inserted:
           type: integer
+          examples:
+            - 4200
           title: Lines Inserted
         lines_deleted:
           type: integer
+          examples:
+            - 1800
           title: Lines Deleted
         lines_unchanged:
           type: integer
+          examples:
+            - 12000
           title: Lines Unchanged
         lines_total:
           type: integer
+          examples:
+            - 18000
           title: Lines Total
       title: VibeNextEditModifiedLOCStat
       required:
@@ -30221,37 +30772,59 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         total_suggestions:
           type: integer
+          examples:
+            - 5400
           title: Total Suggestions
         outcome_accepted:
           type: integer
+          examples:
+            - 3100
           title: Outcome Accepted
         outcome_rejected:
           type: integer
+          examples:
+            - 1500
           title: Outcome Rejected
         outcome_timeout:
           type: integer
+          examples:
+            - 400
           title: Outcome Timeout
         outcome_aborted:
           type: integer
+          examples:
+            - 250
           title: Outcome Aborted
         outcome_dismissed:
           type: integer
+          examples:
+            - 150
           title: Outcome Dismissed
         force_generated_true:
           type: integer
+          examples:
+            - 900
           title: Force Generated True
         force_generated_false:
           type: integer
+          examples:
+            - 4500
           title: Force Generated False
         surface_widget:
           type: integer
+          examples:
+            - 2000
           title: Surface Widget
         surface_ghost_text:
           type: integer
+          examples:
+            - 3400
           title: Surface Ghost Text
       title: VibeNextEditSuggestionStat
       required:
@@ -30271,10 +30844,14 @@ components:
       properties:
         start_time:
           type: integer
+          examples:
+            - 1764547200
           title: Start Time
           description: Start of the queried window, as a Unix timestamp in seconds.
         end_time:
           type: integer
+          examples:
+            - 1767225600
           title: End Time
           description: End of the queried window, as a Unix timestamp in seconds.
         next_edit_suggestions:
@@ -30304,10 +30881,14 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         total_duration_hours:
           type: number
+          examples:
+            - 214.5
           title: Total Duration Hours
       title: VibeSessionDurationStat
       required:
@@ -30318,19 +30899,29 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         nb_sessions:
           type: integer
+          examples:
+            - 342
           title: Nb Sessions
         nb_sessions_cli:
           type: integer
+          examples:
+            - 210
           title: Nb Sessions Cli
         nb_sessions_acp:
           type: integer
+          examples:
+            - 98
           title: Nb Sessions Acp
         nb_sessions_programmatic:
           type: integer
+          examples:
+            - 34
           title: Nb Sessions Programmatic
       title: VibeSessionStat
       required:
@@ -30344,13 +30935,19 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         tool_name:
           type: string
+          examples:
+            - run_command
           title: Tool Name
         count:
           type: integer
+          examples:
+            - 342
           title: Count
       title: VibeToolCallsByNameStat
       required:
@@ -30362,28 +30959,44 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         total:
           type: integer
+          examples:
+            - 890
           title: Total
         status_success:
           type: integer
+          examples:
+            - 780
           title: Status Success
         status_failure:
           type: integer
+          examples:
+            - 62
           title: Status Failure
         status_skipped:
           type: integer
+          examples:
+            - 48
           title: Status Skipped
         approval_ask:
           type: integer
+          examples:
+            - 120
           title: Approval Ask
         approval_always:
           type: integer
+          examples:
+            - 700
           title: Approval Always
         approval_never:
           type: integer
+          examples:
+            - 70
           title: Approval Never
       title: VibeToolCallsStat
       required:
@@ -30400,19 +31013,29 @@ components:
       properties:
         day:
           type: string
+          examples:
+            - '2025-12-17'
           title: Day
           format: date
         nb_prompts_total:
           type: integer
+          examples:
+            - 2450
           title: Nb Prompts Total
         nb_prompts_cli:
           type: integer
+          examples:
+            - 1500
           title: Nb Prompts Cli
         nb_prompts_acp:
           type: integer
+          examples:
+            - 720
           title: Nb Prompts Acp
         nb_prompts_programmatic:
           type: integer
+          examples:
+            - 230
           title: Nb Prompts Programmatic
       title: VibeUserPromptsStat
       required:
@@ -30421,15 +31044,270 @@ components:
         - nb_prompts_cli
         - nb_prompts_acp
         - nb_prompts_programmatic
+    VibeWorkByAgentStat:
+      type: object
+      properties:
+        messages_count:
+          type: integer
+          examples:
+            - 1543
+          title: Messages Count
+        files_count:
+          type: integer
+          examples:
+            - 87
+          title: Files Count
+        images_count:
+          type: integer
+          examples:
+            - 42
+          title: Images Count
+        spreadsheets_count:
+          type: integer
+          examples:
+            - 15
+          title: Spreadsheets Count
+        unique_conversations_count:
+          type: integer
+          examples:
+            - 312
+          title: Unique Conversations Count
+        agent_id:
+          type: string
+          examples:
+            - 5d1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b
+          title: Agent Id
+        last_message_at:
+          type: string
+          examples:
+            - '2025-12-17T10:25:07Z'
+          title: Last Message At
+          format: date-time
+        unique_users_count:
+          type: integer
+          examples:
+            - 64
+          title: Unique Users Count
+      title: VibeWorkByAgentStat
+      required:
+        - messages_count
+        - files_count
+        - images_count
+        - spreadsheets_count
+        - unique_conversations_count
+        - agent_id
+        - last_message_at
+        - unique_users_count
+    VibeWorkByAgentStatsOUT:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          examples:
+            - 1764547200
+          title: Start Time
+          description: Start of the queried window, as a Unix timestamp in seconds.
+        end_time:
+          type: integer
+          examples:
+            - 1767225600
+          title: End Time
+          description: End of the queried window, as a Unix timestamp in seconds.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VibeWorkByAgentStat'
+          title: Data
+      title: VibeWorkByAgentStatsOUT
+      required:
+        - start_time
+        - end_time
+        - data
+    VibeWorkByTimeStat:
+      type: object
+      properties:
+        messages_count:
+          type: integer
+          examples:
+            - 1543
+          title: Messages Count
+        files_count:
+          type: integer
+          examples:
+            - 87
+          title: Files Count
+        images_count:
+          type: integer
+          examples:
+            - 42
+          title: Images Count
+        spreadsheets_count:
+          type: integer
+          examples:
+            - 15
+          title: Spreadsheets Count
+        unique_conversations_count:
+          type: integer
+          examples:
+            - 312
+          title: Unique Conversations Count
+        time_bucket:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          examples:
+            - '2025-12-17T00:00:00Z'
+          title: Time Bucket
+        unique_users_count:
+          type: integer
+          examples:
+            - 128
+          title: Unique Users Count
+        messages_to_agents_count:
+          type: integer
+          examples:
+            - 640
+          title: Messages To Agents Count
+        unique_agents_count:
+          type: integer
+          examples:
+            - 12
+          title: Unique Agents Count
+      title: VibeWorkByTimeStat
+      required:
+        - messages_count
+        - files_count
+        - images_count
+        - spreadsheets_count
+        - unique_conversations_count
+        - time_bucket
+        - unique_users_count
+        - messages_to_agents_count
+        - unique_agents_count
+    VibeWorkByTimeStatsOUT:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          examples:
+            - 1764547200
+          title: Start Time
+          description: Start of the queried window, as a Unix timestamp in seconds.
+        end_time:
+          type: integer
+          examples:
+            - 1767225600
+          title: End Time
+          description: End of the queried window, as a Unix timestamp in seconds.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VibeWorkByTimeStat'
+          title: Data
+      title: VibeWorkByTimeStatsOUT
+      required:
+        - start_time
+        - end_time
+        - data
+    VibeWorkByUserStat:
+      type: object
+      properties:
+        messages_count:
+          type: integer
+          examples:
+            - 1543
+          title: Messages Count
+        files_count:
+          type: integer
+          examples:
+            - 87
+          title: Files Count
+        images_count:
+          type: integer
+          examples:
+            - 42
+          title: Images Count
+        spreadsheets_count:
+          type: integer
+          examples:
+            - 15
+          title: Spreadsheets Count
+        unique_conversations_count:
+          type: integer
+          examples:
+            - 312
+          title: Unique Conversations Count
+        user_id:
+          type: string
+          examples:
+            - 9c0ab39f-0cd0-46cd-bd30-8bf2d50be5ce
+          title: User Id
+        last_message_at:
+          type: string
+          examples:
+            - '2025-12-17T10:25:07Z'
+          title: Last Message At
+          format: date-time
+        unique_agents_count:
+          type: integer
+          examples:
+            - 8
+          title: Unique Agents Count
+        messages_to_agents_count:
+          type: integer
+          examples:
+            - 214
+          title: Messages To Agents Count
+      title: VibeWorkByUserStat
+      required:
+        - messages_count
+        - files_count
+        - images_count
+        - spreadsheets_count
+        - unique_conversations_count
+        - user_id
+        - last_message_at
+        - unique_agents_count
+        - messages_to_agents_count
+    VibeWorkByUserStatsOUT:
+      type: object
+      properties:
+        start_time:
+          type: integer
+          examples:
+            - 1764547200
+          title: Start Time
+          description: Start of the queried window, as a Unix timestamp in seconds.
+        end_time:
+          type: integer
+          examples:
+            - 1767225600
+          title: End Time
+          description: End of the queried window, as a Unix timestamp in seconds.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VibeWorkByUserStat'
+          title: Data
+      title: VibeWorkByUserStatsOUT
+      required:
+        - start_time
+        - end_time
+        - data
     VibeWorkspaceStatsOUT:
       type: object
       properties:
         start_time:
           type: integer
+          examples:
+            - 1764547200
           title: Start Time
           description: Start of the queried window, as a Unix timestamp in seconds.
         end_time:
           type: integer
+          examples:
+            - 1767225600
           title: End Time
           description: End of the queried window, as a Unix timestamp in seconds.
         sessions:
@@ -32782,7 +33660,7 @@ components:
       type: object
       properties:
         payload:
-          $ref: '#/components/schemas/ConversationPayload'
+          $ref: '#/components/schemas/DatasetRecordPayload'
         properties:
           type: object
           title: Properties
@@ -32790,7 +33668,6 @@ components:
       title: CreateDatasetRecordRequest
       required:
         - payload
-        - properties
     JudgeDatasetRecordRequest:
       type: object
       properties:
@@ -32864,7 +33741,7 @@ components:
       type: object
       properties:
         payload:
-          $ref: '#/components/schemas/ConversationPayload'
+          $ref: '#/components/schemas/DatasetRecordPayload'
       title: UpdateDatasetRecordPayloadRequest
       required:
         - payload
@@ -32924,11 +33801,6 @@ components:
     CreateConnectorRequest:
       type: object
       properties:
-        protocol:
-          type: string
-          title: Protocol
-          default: mcp
-          const: mcp
         name:
           type: string
           title: Name
@@ -32951,9 +33823,9 @@ components:
           title: Icon Url
           description: The optional url of the icon you want to associate to the connector.
         visibility:
-          $ref: '#/components/schemas/ResourceVisibility'
+          $ref: '#/components/schemas/PublicResourceVisibility'
           description: Visibility of the connector. Use 'shared_workspace' for workspace scoped connectors, or 'private' for private connectors.
-          default: shared_org
+          default: private
         server:
           type: string
           title: Server
@@ -32998,7 +33870,16 @@ components:
         - name
         - description
         - server
-      additionalProperties: false
+      description: 'Public create schema for MCP connectors.
+
+
+        Standalone model that excludes internal-only fields (``hosted_internally``,
+
+        ``mistral_integration``, ``private_tool_execution``, ``auth_scheme``, ``locale``,
+
+        ``github_app_data``) and restricts visibility to :class:`PublicResourceVisibility`
+
+        (no ``shared_global``).'
     UpdateConnectorRequest:
       type: object
       properties:
@@ -33033,20 +33914,6 @@ components:
             - type: 'null'
           title: System Prompt
           description: Optional system prompt for the connector.
-        connection_config:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Connection Config
-          description: Optional new connection config.
-        connection_secrets:
-          anyOf:
-            - type: object
-              additionalProperties: true
-            - type: 'null'
-          title: Connection Secrets
-          description: Optional new connection secrets
         protocol:
           type: string
           title: Protocol
@@ -33300,15 +34167,18 @@ tags:
   - name: beta.admin.user-groups
     x-displayName: (beta) Admin - User Groups
     description: (beta) Admin API - manage user groups. Requires an admin API key.
-  - name: beta.admin.analytics
-    x-displayName: (beta) Admin - Analytics
-    description: (beta) Admin API - access usage analytics. Requires an admin API key.
   - name: audio.speech
     x-displayName: Speech API
     description: API for speech generation.
   - name: audio.voices
     x-displayName: Voices API
     description: API for voice management.
+  - name: beta.admin.vibe-code-analytics
+    x-displayName: Vibe Code Analytics
+    description: Admin usage analytics for Vibe Code.
+  - name: beta.admin.vibe-work-analytics
+    x-displayName: Vibe Work Analytics
+    description: Admin usage analytics for Vibe Work.
   - name: beta.observability.campaigns
     x-displayName: (beta) Observability - Campaigns
     description: (beta) Observability API - campaigns.

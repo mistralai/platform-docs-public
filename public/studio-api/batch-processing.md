@@ -666,7 +666,7 @@ To upload your batch file, you need to use the `files` endpoint.
         <TabItem value="v1" label="V1" default>
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 import os
 
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -807,7 +807,7 @@ For batches of fewer than 10,000 requests, we support inline batching. Instead o
         <TabItem value="v1" label="V1" default>
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 import os
 
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -1079,8 +1079,8 @@ const listJob = await client.batch.jobs.list({
   <TabItem value="curl" label="curl">
 
 ```bash
-curl 'https://api.mistral.ai/v1/batch/jobs?status=RUNNING&job_type=testing'\
---header 'x-api-key: $MISTRAL_API_KEY'
+curl 'https://api.mistral.ai/v1/batch/jobs?status=RUNNING' \
+--header "Authorization: Bearer $MISTRAL_API_KEY"
 ```
 
   </TabItem>

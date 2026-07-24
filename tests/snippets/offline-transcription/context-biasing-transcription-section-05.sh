@@ -1,0 +1,22 @@
+curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
+  --header "x-api-key: $MISTRAL_API_KEY" \
+  --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
+  --form 'model="voxtral-mini-latest"' \
+  --form 'language="en"' \
+  --form 'context_bias="Chicago"' \
+  --form 'context_bias="Joplin"' \
+  --form 'context_bias="Boston"' \
+  --form 'context_bias="Charleston"' \
+  --form 'context_bias="farewell_address"' \
+  --form 'context_bias="self-government"' \
+  --form 'context_bias="citizenship"' \
+  --form 'context_bias="democracy"' \
+  --form 'context_bias="American_people"' \
+  --form 'context_bias="cancer_survivors"' \
+  --form 'context_bias="affordable_health_care"' \
+  --form 'context_bias="wounded_warriors"' \
+  --form 'context_bias="refugees"' \
+  --form 'context_bias="elected_officials"' \
+  --form 'context_bias="American_spirit"' \
+  --form 'context_bias="work_of_citizenship"' \
+  --form 'context_bias="guardians_of_our_democracy"'

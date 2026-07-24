@@ -89,7 +89,7 @@ Next, make a request and ensure the response adheres to the defined structure us
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-8b-latest"

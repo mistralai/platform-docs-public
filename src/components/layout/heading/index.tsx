@@ -29,7 +29,7 @@ const headingVariants = cva('flex', {
   },
 });
 
-const headingTitleVariantsDocs = cva('font-bold shrink-0', {
+const headingTitleVariantsDocs = cva('font-bold shrink-0 scroll-mt-[calc(var(--header)+2rem)]', {
   variants: {
     size: {
       h1: 'text-4xl lg:text-5xl',
@@ -160,14 +160,18 @@ export function HeadingTitle({
   color,
   asChild = false,
   as = 'h1',
+  id,
+  children,
   ...props
 }: HeadingTitleProps) {
   const Comp = asChild ? Slot : as;
   const effectiveSize = size || as;
   const [_, dvc] = useDocsVariant();
+  const showAnchor = !asChild && !!id;
 
   return (
     <Comp
+      id={id}
       data-slot="heading-title"
       data-type="heading"
       className={cn(
@@ -175,10 +179,22 @@ export function HeadingTitle({
           docs: headingTitleVariantsDocs({ size: effectiveSize, color }),
           api: headingTitleVariantsApi({ size: effectiveSize }),
         }),
+        showAnchor && 'group/heading',
         className
       )}
       {...props}
-    />
+    >
+      {children}
+      {showAnchor && (
+        <a
+          href={`#${id}`}
+          className="ml-2 opacity-0 group-hover/heading:opacity-100 focus:opacity-100 transition-opacity font-normal no-underline text-muted-foreground hover:text-foreground text-[0.7em]"
+          aria-label="Link to this section"
+        >
+          #
+        </a>
+      )}
+    </Comp>
   );
 }
 

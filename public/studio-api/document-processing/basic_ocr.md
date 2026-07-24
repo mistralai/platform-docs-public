@@ -68,7 +68,7 @@ Among the PDF methods, you can use a **public available URL**, a **base64 encode
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 
@@ -266,7 +266,7 @@ curl https://api.mistral.ai/v1/ocr \
 ```python
 import base64
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 
@@ -490,7 +490,7 @@ First, you will have to upload your PDF file to our cloud, this file will be sto
         <TabItem value="v1" label="V1" default>
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 import os
 
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -923,7 +923,7 @@ To perform OCR on an image, you can either pass a URL to the image or directly u
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 
@@ -1039,7 +1039,7 @@ curl https://api.mistral.ai/v1/ocr \
 ```python
 import base64
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 

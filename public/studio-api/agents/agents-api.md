@@ -52,7 +52,7 @@ Agents are a set of pre-selected values, such as tools, instructions, and comple
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key)

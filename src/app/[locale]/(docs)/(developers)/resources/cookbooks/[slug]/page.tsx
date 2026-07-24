@@ -115,22 +115,24 @@ export default async function CookbookDetailPage({
 
   if (!content) notFound();
   return (
-    <div className="not-prose max-md:pt-sides">
+    <div className="max-md:pt-sides">
       {/* Header */}
-      <CookbookHeader
-        cookbook={entry}
-        //date={entry.displayDate ? entry.date : undefined} // Only pass date if displayDate is true
-        readingTime={entry.readingTime}
-        githubUrl={entry.githubUrl}
-        colabUrl={entry.colabUrl}
-        locale={locale}
-      />
+      <div className="not-prose">
+        <CookbookHeader
+          cookbook={entry}
+          //date={entry.displayDate ? entry.date : undefined} // Only pass date if displayDate is true
+          readingTime={entry.readingTime}
+          githubUrl={entry.githubUrl}
+          colabUrl={entry.colabUrl}
+          locale={locale}
+        />
+      </div>
 
       <div className="relative flex gap-8 mt-14">
         {/* Table of Contents */}
 
         <TableOfContents
-          className="hidden xl:flex h-auto w-64 shrink-0 self-stretch"
+          className="not-prose hidden xl:flex h-auto w-64 shrink-0 self-stretch"
           maxDepth={3}
           showBackToTop={true}
           title={l.text('Contents', { context: 'Heading for the table of contents' })}
@@ -202,7 +204,7 @@ export default async function CookbookDetailPage({
                       const isExternal = href.startsWith('http');
                       return (
                         <Link
-                          href={`/resources/cookbooks/${slug}`}
+                          href={href}
                           className={cn('text-primary-soft hover:text-primary', className)}
                           target={isExternal ? '_blank' : undefined}
                           rel={isExternal ? 'noopener noreferrer' : undefined}

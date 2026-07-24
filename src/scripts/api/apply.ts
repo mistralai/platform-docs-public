@@ -22,6 +22,7 @@ import {
   applyTagRenames,
   hoistLocalDefs,
   pruneUnreferencedSchemas,
+  removeDeprecatedWorkflowRoutingAliases,
 } from './lib/transforms';
 
 type JsonObject = Record<string, any>;
@@ -97,6 +98,7 @@ function main() {
   const { applied, ignored, orphans } = applyPatches(spec, db.patches);
   const { renamed } = applyTagRenames(spec);
   const { moved } = applyTagOrder(spec);
+  const { removed } = removeDeprecatedWorkflowRoutingAliases(spec);
   const { hoisted } = hoistLocalDefs(spec);
   const { pruned } = pruneUnreferencedSchemas(spec);
   const { filled } = applyHeuristicExamples(spec);
@@ -117,6 +119,7 @@ function main() {
   console.log(`Patches orphaned:  ${orphans.length}`);
   console.log(`Tags renamed:      ${renamed}`);
   console.log(`Tags reordered:    ${moved}`);
+  console.log(`Workflow aliases removed: ${removed}`);
   console.log(`$defs hoisted:     ${hoisted}`);
   console.log(`Schemas pruned:    ${pruned}`);
   console.log(`Examples filled:   ${filled}`);

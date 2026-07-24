@@ -170,7 +170,7 @@ Raw `.jsonl` file example.
         <TabItem value="v1" label="V1" default>
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 import os
 
 api_key = os.environ["MISTRAL_API_KEY"]

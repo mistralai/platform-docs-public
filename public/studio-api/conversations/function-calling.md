@@ -431,7 +431,7 @@ With all our tools, system and query ready, we can call the model to **either re
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
@@ -731,7 +731,7 @@ Below you can find a full example of the above steps looping to simulate a chat 
 # Imports
 import pandas as pd
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 import json
 
 # Example Dataset to query from

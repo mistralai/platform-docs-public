@@ -38,7 +38,7 @@ We allow you to provide any stream of audio as input as follows.
         <TabItem value="v1" label="V1" default>
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 from mistralai.extra.realtime import UnknownRealtimeEvent
 from mistralai.models import AudioFormat, RealtimeTranscriptionError, RealtimeTranscriptionSessionCreated, TranscriptionStreamDone, TranscriptionStreamTextDelta
 
@@ -180,7 +180,7 @@ Below we provide an implementation example using your microphone to stream audio
         <TabItem value="v1" label="V1" default>
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 from mistralai.extra.realtime import UnknownRealtimeEvent
 from mistralai.models import AudioFormat, RealtimeTranscriptionError, RealtimeTranscriptionSessionCreated, TranscriptionStreamDone, TranscriptionStreamTextDelta
 
@@ -518,7 +518,7 @@ import asyncio
 import sys
 from typing import AsyncIterator
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 from mistralai.extra.realtime import UnknownRealtimeEvent
 from mistralai.models import AudioFormat, RealtimeTranscriptionError, RealtimeTranscriptionSessionCreated, TranscriptionStreamDone, TranscriptionStreamTextDelta
 
@@ -698,7 +698,7 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.text import Text
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 from mistralai.extra.realtime import UnknownRealtimeEvent
 from mistralai.models import (
     AudioFormat,

@@ -11,7 +11,7 @@ import { load } from 'js-yaml';
 
 const ROOT = process.cwd();
 const DASHBOARD_REF =
-  process.env.DASHBOARD_REF ?? '68c825be8c66fa9670f56f70ce695406626bdbb3';
+  process.env.DASHBOARD_REF ?? '55e27978c032171155a815eb16e0dec7a50db13c';
 const AUDIT_LOGS_DIR = join(
   ROOT,
   'src/content/en/docs/admin/monitor-comply/audit-logs'
@@ -418,7 +418,8 @@ function buildFilterRows(
   spec: OpenApiSpec,
   schemas: Record<string, OpenApiSchema>
 ): FilterRow[] {
-  const operation = spec.paths?.['/api/admin/audit-logs']?.get as
+  const auditLogsPath = Object.keys(spec.paths ?? {}).find(p => p.endsWith('/admin/audit-logs'));
+  const operation = (auditLogsPath ? spec.paths?.[auditLogsPath]?.get : undefined) as
     | { parameters?: unknown[] }
     | undefined;
   const parameters = operation?.parameters ?? [];

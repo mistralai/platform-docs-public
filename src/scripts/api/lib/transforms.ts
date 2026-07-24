@@ -8,6 +8,8 @@
  *   - pruneUnreferencedSchemas: removes schemas that are no longer referenced
  *                       after patches (keeps the generated reference page small).
  *   - applyTagOrder: keeps related API groups adjacent in docs navigation.
+ *   - removeDeprecatedWorkflowRoutingAliases: hides legacy task-queue routing
+ *                       aliases from public workflow API docs.
  *   - applyHeuristicExamples: fills a property `example` (from the shared
  *                       proposal-heuristics) wherever one is missing AND an
  *                       explicit name- or format-rule applies, so docs-md doesn't
@@ -179,6 +181,65 @@ export function applyTagOrder(spec: JsonObject): { moved: number } {
   }
 
   return { moved };
+}
+
+const WORKFLOW_SCHEMA_PROPERTIES_TO_REMOVE: Record<string, string[]> = {
+  WorkflowExecutionRequest: ['task_queue'],
+  WorkflowRegistration: ['task_queue'],
+  WorkflowRegistrationWithWorkerStatus: ['task_queue'],
+  WorkflowScheduleRequest: ['workflow_task_queue'],
+};
+
+const WORKFLOW_PARAMETERS_TO_REMOVE: Record<string, string[]> = {
+  '/v1/workflows/registrations': ['task_queue'],
+};
+
+function removeSchemaProperty(spec: JsonObject, schemaName: string, propertyName: string): number {
+  const schema = spec.components?.schemas?.[schemaName];
+  if (!isObject(schema)) return 0;
+
+  let removed = 0;
+  if (isObject(schema.properties) && propertyName in schema.properties) {
+    delete schema.properties[propertyName];
+    removed += 1;
+  }
+  if (Array.isArray(schema.required)) {
+    schema.required = schema.required.filter((name: unknown) => name !== propertyName);
+  }
+  return removed;
+}
+
+function removePathParameters(spec: JsonObject, path: string, parameterNames: string[]): number {
+  const pathItem = spec.paths?.[path];
+  if (!isObject(pathItem)) return 0;
+
+  let removed = 0;
+  for (const operation of Object.values(pathItem)) {
+    if (!isObject(operation) || !Array.isArray(operation.parameters)) continue;
+    const before = operation.parameters.length;
+    operation.parameters = operation.parameters.filter((parameter: unknown) => {
+      if (!isObject(parameter)) return true;
+      return typeof parameter.name !== 'string' || !parameterNames.includes(parameter.name);
+    });
+    removed += before - operation.parameters.length;
+  }
+  return removed;
+}
+
+export function removeDeprecatedWorkflowRoutingAliases(spec: JsonObject): { removed: number } {
+  let removed = 0;
+
+  for (const [schemaName, propertyNames] of Object.entries(WORKFLOW_SCHEMA_PROPERTIES_TO_REMOVE)) {
+    for (const propertyName of propertyNames) {
+      removed += removeSchemaProperty(spec, schemaName, propertyName);
+    }
+  }
+
+  for (const [path, parameterNames] of Object.entries(WORKFLOW_PARAMETERS_TO_REMOVE)) {
+    removed += removePathParameters(spec, path, parameterNames);
+  }
+
+  return { removed };
 }
 
 function collectSchemaRefs(node: unknown, refs: Set<string>) {

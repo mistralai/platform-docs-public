@@ -22,6 +22,7 @@ import {
   FrontMatterDisplayType,
   Operation,
   OperationCodeSamplesSection,
+  OperationDescriptionSection,
   OperationRequestBodyExamplesSection,
   OperationRequestBodySection,
   OperationResponseBodyDescriptionSection,
@@ -69,9 +70,15 @@ API de complétion de chat.
 
 <OperationSummarySection slot="summary">
 
-Complétion de chat
+_Complétion de chat_
 
 </OperationSummarySection>
+
+<OperationDescriptionSection slot="description">
+
+Chat completion
+
+</OperationDescriptionSection>
 
 <OperationCodeSamplesSection slot="code-samples">
 
@@ -97,25 +104,19 @@ TypeScript
 ```typescript
 import { Mistral } from "@mistralai/mistralai";
 
-const mistral = new Mistral({
-  apiKey: "MISTRAL_API_KEY",
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.chat.complete({
+  model: "mistral-large-latest",
+  messages: [
+    {
+      role: "user",
+      content: "Who is the best French painter? Answer in one short sentence.",
+    },
+  ],
 });
 
-async function run() {
-  const result = await mistral.chat.complete({
-    model: "mistral-small-latest",
-    messages: [
-      {
-        content: "Who is the best French painter? Answer in one short sentence.",
-        role: "user",
-      },
-    ],
-  });
-
-  console.log(result);
-}
-
-run();
+console.log(response.choices[0].message.content);
 
 ```
 
@@ -141,26 +142,22 @@ Python
 <CodeSample>
 
 ```python
-from mistralai.client import Mistral
 import os
+from mistralai.client import Mistral
 
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
-with Mistral(
-    api_key=os.getenv("MISTRAL_API_KEY", ""),
-) as mistral:
-
-    res = mistral.chat.complete(model="mistral-large-latest", messages=[
+response = client.chat.complete(
+    model="mistral-large-latest",
+    messages=[
         {
             "role": "user",
             "content": "Who is the best French painter? Answer in one short sentence.",
-        },
-    ], stream=False, response_format={
-        "type": "text",
-    })
+        }
+    ],
+)
 
-    # Handle response
-    print(res)
-
+print(response.choices[0].message.content)
 
 ```
 
@@ -187,17 +184,18 @@ cURL
 
 ```curl
 curl https://api.mistral.ai/v1/chat/completions \
- -X POST \
- -H 'Authorization: Bearer YOUR_APIKEY_HERE' \
- -H 'Content-Type: application/json' \
- -d '{
-  "messages": [
-    {
-      "content": "Example content."
-    }
-  ],
-  "model": "mistral-large-latest"
-}'
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -d '{
+    "model": "mistral-large-latest",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Who is the best French painter? Answer in one short sentence."
+      }
+    ]
+  }'
+
 ```
 
 </CodeSample>
@@ -224,7 +222,8 @@ curl https://api.mistral.ai/v1/chat/completions \
 {
   "messages": [
     {
-      "content": "Example content."
+      "role": "user",
+      "content": "Who is the best French painter? Answer in one short sentence."
     }
   ],
   "model": "mistral-large-latest"
@@ -5865,7 +5864,7 @@ La graine à utiliser pour l'échantillonnage aléatoire. Si définie, différen
 
 <ExpandablePropertyDescription slot="description">
 
-Spécifiez le format que le modèle doit produire. Par défaut, il utilisera `\{ "type": "text" \}`. Définir à `\{ "type": "json_object" \}` active le mode JSON, qui garantit que le message généré par le modèle est en JSON. Lorsque vous utilisez le mode JSON, vous DEVEZ également indiquer au modèle de produire du JSON vous-même avec un message système ou utilisateur. Définir à `\{ "type": "json_schema" \}` active le mode schéma JSON, qui garantit que le message généré par le modèle est en JSON et suit le schéma que vous fournissez.
+Spécifiez le format que le modèle doit produire. Par défaut, il utilisera `{ "type": "text" }`. Définir à `{ "type": "json_object" }` active le mode JSON, qui garantit que le message généré par le modèle est en JSON. Lorsque vous utilisez le mode JSON, vous DEVEZ également indiquer au modèle de produire du JSON vous-même avec un message système ou utilisateur. Définir à `{ "type": "json_schema" }` active le mode schéma JSON, qui garantit que le message généré par le modèle est en JSON et suit le schéma que vous fournissez.
 
 </ExpandablePropertyDescription>
 
@@ -5888,7 +5887,7 @@ Spécifiez le format que le modèle doit produire. Par défaut, il utilisera `\{
 
 <ExpandableBreakoutDescription slot="description">
 
-Spécifiez le format que le modèle doit produire. Par défaut, il utilisera `\{ "type": "text" \}`. Définir à `\{ "type": "json_object" \}` active le mode JSON, qui garantit que le message généré par le modèle est en JSON. Lorsque vous utilisez le mode JSON, vous DEVEZ également indiquer au modèle de produire du JSON vous-même avec un message système ou utilisateur. Définir à `\{ "type": "json_schema" \}` active le mode schéma JSON, qui garantit que le message généré par le modèle est en JSON et suit le schéma que vous fournissez.
+Spécifiez le format que le modèle doit produire. Par défaut, il utilisera `{ "type": "text" }`. Définir à `{ "type": "json_object" }` active le mode JSON, qui garantit que le message généré par le modèle est en JSON. Lorsque vous utilisez le mode JSON, vous DEVEZ également indiquer au modèle de produire du JSON vous-même avec un message système ou utilisateur. Définir à `{ "type": "json_schema" }` active le mode schéma JSON, qui garantit que le message généré par le modèle est en JSON et suit le schéma que vous fournissez.
 
 </ExpandableBreakoutDescription>
 
@@ -6203,7 +6202,7 @@ Température d'échantillonnage à utiliser, nous recommandons une valeur entre 
 
 <ExpandablePropertyDescription slot="description">
 
-Contrôle quel outil (le cas échéant) est appelé par le modèle. `none` signifie que le modèle n'appellera aucun outil et générera plutôt un message. `auto` signifie que le modèle peut choisir entre générer un message ou appeler un ou plusieurs outils. `any` ou `required` signifie que le modèle doit appeler un ou plusieurs outils. Spécifier un outil particulier via `\{"type": "function", "function": \{"name": "my_function"\}\}` force le modèle à appeler cet outil.
+Contrôle quel outil (le cas échéant) est appelé par le modèle. `none` signifie que le modèle n'appellera aucun outil et générera plutôt un message. `auto` signifie que le modèle peut choisir entre générer un message ou appeler un ou plusieurs outils. `any` ou `required` signifie que le modèle doit appeler un ou plusieurs outils. Spécifier un outil particulier via `{"type": "function", "function": {"name": "my_function"}}` force le modèle à appeler cet outil.
 
 </ExpandablePropertyDescription>
 

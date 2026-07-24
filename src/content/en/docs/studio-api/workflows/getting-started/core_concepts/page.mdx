@@ -22,7 +22,7 @@ Your code lives outside the API, in **Workers**: processes you deploy that conne
 
 Starting a workflow produces an **Execution**: a single run with its own ID, result, and history of **Events**. Events record what happens during the run, such as `started`, `activity completed`, or `signal received`. They stream live to clients and remain in the execution history.
 
-Workers belong to a **Deployment** — a named group that owns a set of workflow definitions and shares its task queues.
+Workers belong to a **Deployment** — a named group that owns a set of workflow definitions and receives executions for those definitions.
 
 <div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
 <Image
@@ -41,14 +41,14 @@ Workers belong to a **Deployment** — a named group that owns a set of workflow
 | **Activity** | A single unit of real work the workflow calls into, such as calling an LLM, making an HTTP request, writing to a database, or running a tool. Where side effects happen. |
 | **Execution** | A single run of a workflow. Has a unique ID, an event history, and a result. |
 | **Event** | A record of something that happened during an execution, such as `started`, `activity completed`, or `signal received`. Streamed in real time and stored in history. |
-| **Deployment** | A named group of workers that shares workflow definitions and task queues. |
+| **Deployment** | A named group of workers that shares workflow definitions and receives executions routed to those definitions. |
 
 <SectionTab as="h2" sectionId="how-it-fits-together">How it fits together</SectionTab>
 
 A typical run plays out like this:
 
 1. A client (your code, Studio, Vibe Work, or a schedule) calls the Workflows API to start an execution.
-2. The orchestrator records the request as an event and dispatches a task to the right deployment's queue.
+2. The orchestrator records the request as an event and routes it to the right deployment.
 3. A worker in that deployment picks up the task, instantiates the workflow class, and runs the entrypoint.
 4. The workflow calls activities. Each activity call becomes a task; any worker in the deployment can pick it up and run it.
 5. Every step is recorded as an event in the execution's history. Clients can stream events live or read history later.

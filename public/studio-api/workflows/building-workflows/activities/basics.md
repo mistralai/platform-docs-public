@@ -96,7 +96,8 @@ Detect unresponsive activities by requiring periodic heartbeat signals:
 
 ```python
 from datetime import timedelta
-from mistralai.workflows import activity
+import mistralai.workflows as workflows
+from mistralai.workflows import activity_heartbeat
 
 @workflows.activity(
     start_to_close_timeout=timedelta(minutes=30),
@@ -108,14 +109,14 @@ async def long_running_task(items: list[str]) -> dict:
         result = await process_item(item)
         results.append(result)
         # Report progress to prevent timeout
-        activity.heartbeat({"processed": i + 1, "total": len(items)})
+        activity_heartbeat({"processed": i + 1, "total": len(items)})
     return {"results": results}
 ```
 
   </TabItem>
 </Tabs>
 
-When `heartbeat_timeout` is set, activities must call `activity.heartbeat()` periodically. If no heartbeat is received within the timeout, the activity is considered failed and a retry is triggered. This pattern lets the platform detect unresponsive activities without waiting for the full `start_to_close_timeout`.
+When `heartbeat_timeout` is set, activities must call `activity_heartbeat()` periodically. If no heartbeat is received within the timeout, the activity is considered failed and a retry is triggered. This pattern lets the platform detect unresponsive activities without waiting for the full `start_to_close_timeout`.
 
 This subsection is the canonical reference for heartbeats; both [Core Concepts > Activities](/studio-api/workflows/getting-started/core_concepts/activities#long-running-activities-heartbeats) and [Core Concepts > Workers](/studio-api/workflows/getting-started/core_concepts/workers) link here.
 

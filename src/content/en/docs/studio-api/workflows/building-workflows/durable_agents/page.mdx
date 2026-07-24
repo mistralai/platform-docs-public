@@ -1,22 +1,22 @@
 ---
 id: durable-agents
-title: Durable Agents
+title: Durable agents
 sidebar_position: 6
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
-# Durable Agents
+# Durable agents
 
-A Durable Agent is an LLM agent whose loop (model calls, tool use, handoffs) runs **inside a workflow**, so its state survives crashes and restarts. The Mistral plugin (`mistralai-workflows[mistralai]`) provides the primitives — `Agent`, `Runner`, `RemoteSession`, and `LocalSession` (experimental) — for building them.
+A durable agent is an LLM agent whose loop (model calls, tool use, and handoffs) runs **inside a workflow**, so its state survives crashes and restarts. The Mistral plugin (`mistralai-workflows[mistralai]`) provides the primitives for building them: `Agent`, `Runner`, `RemoteSession`, and `LocalSession` (experimental).
 
 What you get on top of a regular agent loop:
 
 - **Durability**: agent state is preserved across worker crashes and restarts
 - **Tool integration**: workflow activities can be passed directly as agent tools
 - **Multi-agent handoffs**: agents can delegate tasks to specialized agents
-- **MCP support**: connect to external tools via the Model Context Protocol (stdio / SSE)
+- **MCP support**: connect to external tools with the Model Context Protocol (stdio or SSE)
 
 <SectionTab as="h1" sectionId="installation">Installation</SectionTab>
 
@@ -27,11 +27,11 @@ uv add 'mistralai-workflows[mistralai]'
 ```
 
 
-<SectionTab as="h1" sectionId="core-components">Core Components</SectionTab>
+<SectionTab as="h1" sectionId="core-components">Core components</SectionTab>
 
 <SectionTab as="h2" variant="secondary" sectionId="agent">Agent</SectionTab>
 
-The `Agent` class defines an LLM agent with its model, instructions, tools and handoffs:
+The `Agent` class defines an LLM agent with its model, instructions, tools, and handoffs:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -81,7 +81,7 @@ The returned `outputs` is a list of output items produced by the agent during th
 
 Sessions manage agent state and API communication. Two session types are available:
 
-| Session         | Use Case                   | Backend               |
+| Session         | Use case                   | Backend               |
 | --------------- | -------------------------- | --------------------- |
 | `RemoteSession` | Production (recommended)   | Mistral Agents SDK    |
 | `LocalSession`  | Experimental / On-premises | Direct completion API |
@@ -143,7 +143,7 @@ class FinanceAgentWorkflow:
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="multi-agent-handoffs">Multi-Agent Handoffs</SectionTab>
+<SectionTab as="h1" sectionId="multi-agent-handoffs">Multi-agent handoffs</SectionTab>
 
 Agents can delegate tasks to specialized agents using handoffs. The coordinator agent's `instructions` and the specialized agents' `description` fields guide handoff decisions; the model decides when to hand off based on the user query and the available specialists' descriptions. The system automatically manages the handoff conversation.
 
@@ -183,11 +183,11 @@ outputs = await workflows_mistralai.Runner.run(
 
 When the finance agent receives a query about ECB interest rates, it can automatically hand off to the specialized `interest_rate_agent`.
 
-<SectionTab as="h1" sectionId="mcp-integration">MCP Integration</SectionTab>
+<SectionTab as="h1" sectionId="mcp-integration">MCP integration</SectionTab>
 
 Connect to external tool servers using the Model Context Protocol. Two transport types are supported:
 
-<SectionTab as="h2" variant="secondary" sectionId="stdio-mcp-server">Stdio MCP Server</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="stdio-mcp-server">Stdio MCP server</SectionTab>
 
 For local command-line MCP servers:
 
@@ -215,7 +215,32 @@ agent = workflows_mistralai.Agent(
   </TabItem>
 </Tabs>
 
-<SectionTab as="h2" variant="secondary" sectionId="sse-mcp-server">SSE MCP Server</SectionTab>
+**Forwarding credentials to a stdio server**
+
+Some stdio MCP servers need credentials, such as a bot token, to authenticate. Use `env_mapping` to pass them from the worker's environment into the subprocess. Each mapping entry pairs the subprocess variable name with the worker variable name:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai import MCPStdioConfig
+
+mcp_config = MCPStdioConfig(
+    command="npx",
+    args=["-y", "@notionhq/notion-mcp-server"],
+    name="notion",
+    env_mapping={"NOTION_TOKEN": "NOTION_TOKEN_BOT_A"},
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Use a mapping instead of raw values because activity inputs are persisted to the workflow's [event history](/studio-api/workflows/getting-started/core_concepts/events). Loading secrets from the worker's environment and passing them directly would expose them there.
+
+With `env_mapping`, only the variable names are serialized. The activity reads the secret values from the worker's environment, and the values never leave the worker. A mapping also lets you run several instances of the same server with different credentials on one worker. If a declared worker variable is missing from the environment, the activity fails fast.
+
+<SectionTab as="h2" variant="secondary" sectionId="sse-mcp-server">SSE MCP server</SectionTab>
 
 For remote MCP servers over Server-Sent Events:
 
@@ -243,7 +268,7 @@ agent = workflows_mistralai.Agent(
   </TabItem>
 </Tabs>
 
-<SectionTab as="h1" sectionId="built-in-tools">Built-in Tools</SectionTab>
+<SectionTab as="h1" sectionId="built-in-tools">Built-in tools</SectionTab>
 
 Use Mistral's built-in tools alongside activities:
 
@@ -282,9 +307,9 @@ These tools are executed server-side by the Mistral platform; they do not run in
 **Built-in tools require RemoteSession**: `LocalSession` silently drops built-in tools (logs a warning and proceeds without them). Use `RemoteSession` for any agent that relies on `WebSearchTool`, `CodeInterpreterTool`, `ImageGenerationTool`, or `DocumentLibraryTool`.
 :::
 
-<SectionTab as="h1" sectionId="session-types">Session Types</SectionTab>
+<SectionTab as="h1" sectionId="session-types">Session types</SectionTab>
 
-<SectionTab as="h2" variant="secondary" sectionId="remote-session">RemoteSession (Recommended)</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="remote-session">RemoteSession (recommended)</SectionTab>
 
 Uses the Mistral Agents SDK for production workloads:
 
@@ -314,12 +339,12 @@ Features:
 - Managed conversation state
 - Production-ready
 
-<SectionTab as="h3" variant="secondary" sectionId="agent-lifecycle">Agent Lifecycle</SectionTab>
+<SectionTab as="h3" variant="secondary" sectionId="agent-lifecycle">Agent lifecycle</SectionTab>
 
 When a `RemoteSession` initializes a conversation, it iterates over every agent in the handoff graph and either creates or updates it via the Agents API:
 
-- **`Agent(id=None)`** — a new remote agent is created via `beta.agents.create()`. The returned ID is stored back on the `Agent` object, so subsequent runs with the **same instance** will reuse it.
-- **`Agent(id="existing-id")`** — the existing remote agent is updated via `beta.agents.update()`. No new agent is created.
+- **`Agent(id=None)`**: a new remote agent is created with `beta.agents.create()`. The returned ID is stored back on the `Agent` object, so subsequent runs with the **same instance** reuse it.
+- **`Agent(id="existing-id")`**: the existing remote agent is updated with `beta.agents.update()`. No new agent is created.
 
 To reuse a pre-existing agent across workflow executions, set `agent.id` before calling `Runner.run()`:
 
@@ -343,7 +368,7 @@ agent = workflows_mistralai.Agent(
 Agents created by `RemoteSession` are **not cleaned up automatically** after a run completes. If you create agents dynamically (without setting `id`), a new remote agent will be created on every workflow execution.
 :::
 
-<SectionTab as="h2" variant="secondary" sectionId="local-session">LocalSession (Experimental)</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="local-session">LocalSession (experimental)</SectionTab>
 
 Runs agents locally using the completion endpoint:
 
@@ -373,12 +398,12 @@ Use cases:
 - Full context control
 
 :::warning
-`LocalSession` is experimental and may be removed in future versions. Use `RemoteSession` for production workloads.
+`LocalSession` is experimental and might be removed in a later version. Use `RemoteSession` for production workloads.
 :::
 
-<SectionTab as="h1" sectionId="complete-workflow-example">Complete Workflow Example</SectionTab>
+<SectionTab as="h1" sectionId="complete-workflow-example">Complete workflow example</SectionTab>
 
-A full example combining activities, handoffs and workflow orchestration:
+A full example combining activities, handoffs, and workflow orchestration:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -462,5 +487,5 @@ Agent activity emits the same workflow and activity events as any other workflow
 <SectionTab as="h1" sectionId="best-practices">Best practices</SectionTab>
 
 1. **Use `RemoteSession` for production** so the agent runs against the Agents API rather than the raw completion endpoint.
-2. **Set `agent.id`** on agents you want to reuse across runs, otherwise `RemoteSession` creates a new remote agent on every execution and never cleans them up.
+2. **Set `agent.id`** on agents you want to reuse across runs. Otherwise, `RemoteSession` creates a new remote agent on every execution and never cleans them up.
 3. **Wrap tool side-effects in activities** so they get retry isolation and appear in the execution history.

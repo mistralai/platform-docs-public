@@ -53,7 +53,7 @@ The content can be either a string, the most standard usage of llms:
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
@@ -78,7 +78,7 @@ chat_response = client.chat.complete(
 import asyncio
 import os
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 from mistralai.models import UserMessage
 
 async def main():
@@ -244,7 +244,7 @@ The content can be either a string, the most standard usage of llms:
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-large-latest"
@@ -273,7 +273,7 @@ for chunk in stream_response:
 import asyncio
 import os
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 async def main():
     api_key = os.environ["MISTRAL_API_KEY"]
@@ -558,7 +558,7 @@ if you are interested on a simplified way to handle multi-turn conversations, yo
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-medium-latest"
@@ -722,7 +722,7 @@ The model will reply always starting with the exact same string as a prefix, onl
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-medium-latest"
@@ -862,7 +862,7 @@ curl --location "https://api.mistral.ai/v1/chat/completions" \
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-medium-latest"
@@ -1027,7 +1027,7 @@ The output will hence not contain the stop string.
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-medium-latest"

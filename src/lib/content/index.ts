@@ -8,6 +8,7 @@ import { SidebarItem, TocItem } from '@/schema';
 import { parseFrontmatter } from './parse-metadata';
 import { extractHeadingsFromContent } from './extract-headings';
 import { getModelsBreadcrumb } from '@/app/[locale]/(docs)/models/model-cards/[slug]/_get-breacrumb';
+import { getCookbooksBreadcrumb } from '@/app/[locale]/(docs)/(developers)/resources/cookbooks/[slug]/_get-breadcrumb';
 
 /**
  * NOTE: Assumptions (tweak to taste):
@@ -652,11 +653,16 @@ type BreadcrumbProvider = (
 
 // IMPORTANT, ENSURE THIS MATCH WITH THE CORRECT ROUTE
 const MODELS_SLUG_DIR = path.join('src', 'app', '[locale]', '(docs)', 'models', 'model-cards');
+const COOKBOOKS_SLUG_DIR = path.join('src', 'app', '[locale]', '(docs)', '(developers)', 'resources', 'cookbooks');
 const registry: Array<{ matchDirname: string; provider: BreadcrumbProvider }> =
   [
     {
       matchDirname: path.join(MODELS_SLUG_DIR, '[slug]'),
       provider: getModelsBreadcrumb,
+    },
+    {
+      matchDirname: path.join(COOKBOOKS_SLUG_DIR, '[slug]'),
+      provider: getCookbooksBreadcrumb,
     },
   ];
 

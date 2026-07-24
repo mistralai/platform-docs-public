@@ -47,7 +47,7 @@ Before continuing, we recommend reading the [Chat Completions](/studio-api/conve
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-small-latest"
@@ -208,7 +208,7 @@ curl https://api.mistral.ai/v1/chat/completions \
 import base64
 import requests
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-small-latest"

@@ -480,9 +480,10 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
   const filteredSidebar = React.useMemo(() => {
     if (!pathname || !filterByActiveHeaderTab) return sidebar;
     const activeHrefs = getActiveSidebarItemHrefs(pathname);
-    return sidebar.filter(
-      item => !!item.href && activeHrefs.includes(item.href)
-    );
+    return sidebar.filter(item => {
+      const identities = [item.categoryPath, item.href].filter(Boolean);
+      return identities.some(identity => activeHrefs.includes(identity!));
+    });
   }, [sidebar, pathname, filterByActiveHeaderTab]);
 
   React.useEffect(() => {

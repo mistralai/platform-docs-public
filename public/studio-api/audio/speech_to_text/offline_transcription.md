@@ -40,7 +40,7 @@ Before continuing, we recommend reading the [Chat Completions](/studio-api/conve
 
 ```python
 import base64
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -209,7 +209,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -372,7 +372,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -680,7 +680,7 @@ We provide a live transcription functionality. You can find more info about Real
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -791,7 +791,8 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 import os
 import asyncio
 import pathlib
-from mistralai import Mistral, File
+from mistralai.client import Mistral
+from mistralai import File
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -951,7 +952,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -1052,7 +1053,8 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 import os
 import asyncio
 import pathlib
-from mistralai import Mistral, File
+from mistralai.client import Mistral
+from mistralai import File
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -1211,7 +1213,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -1361,7 +1363,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -1615,7 +1617,7 @@ It will return the start and end time of each segment in the audio file.
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-latest"
@@ -1996,7 +1998,7 @@ Provide up to 100 words or phrases to guide the model toward correct spellings o
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "voxtral-mini-2602"

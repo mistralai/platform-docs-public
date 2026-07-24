@@ -143,6 +143,7 @@ notion_connector = connector("Notion")
 | `auto_auth` | `True` | Run the OAuth preflight before the workflow starts. |
 | `credentials_name` | `None` | Pin the slot to a specific named credential. Omit to use the caller's default credentials, or override per-execution with runtime bindings (see [Pick a credential at execution time](#runtime-binding)). |
 | `allow_mcp_ui` | `False` | Let app-visible MCP tools on this Connector show their `ui://` app as a side app when called with `ToolCallClient.call_tool()` (see [Show MCP apps from Connector tools](#mcp-apps)). |
+| `run_as` | `"auto"` | Mistral identity used to access the Connector. `"auto"` follows the Workflow's `on_behalf_of` flag (triggering user under OBO, worker otherwise); `"deployment"` always uses the worker's service identity. See [Choose the Connector identity](#run-as). |
 
 <SectionTab as="h3" variant="secondary" sectionId="write-activity">Step 2: Write an activity that calls the Connector</SectionTab>
 
@@ -232,7 +233,41 @@ Notes:
 
 When the worker starts, the plugin auto-registers a `ConnectorAuthInterceptor` that handles the preflight and OAuth pause described in [How the fallback OAuth flow works](#oauth-flow).
 
-<SectionTab as="h2" sectionId="execute">Execute a Connector workflow</SectionTab>
+<SectionTab as="h2" sectionId="run-as">Choose the Connector identity (run_as)</SectionTab>
+
+The `run_as=` argument on `connector()` lets you select which Mistral identity is used to access a specific Connector. Depending on your use case, you may want to leverage the executor's data through their Connectors, or expose a pre-configured Connector independent of the executor.
+
+Each Connector runs its credential preflight (resolve, list credentials, OAuth, tool validation) and its tool calls under one identity. `run_as=` sets it per Connector:
+
+| `run_as` | Runs as |
+|---|---|
+| `"auto"` (default) | Follows the Workflow's `on_behalf_of` flag: the **triggering user's** credentials when the Workflow runs on behalf of a user, the **worker's** credentials otherwise. |
+| `"deployment"` | Always the **worker's** (deployment's) service identity, regardless of how the Workflow runs. |
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai.connectors import connector
+
+# Follows the Workflow's on_behalf_of flag (the triggering user under OBO).
+user_github = connector("github_app", run_as="auto")
+
+# Acts as the worker's own service identity, regardless of how the Workflow runs.
+shared_slack = connector("slack", run_as="deployment")
+```
+
+  </TabItem>
+</Tabs>
+
+Because `run_as` is set per Connector, a single Workflow can mix identities. For example, read the triggering user's GitHub with `run_as="auto"` while posting to a shared Slack with `run_as="deployment"`. To have an `auto` Connector act as the triggering user, define the Workflow with `on_behalf_of=True`.
+
+:::warning
+- **`deployment` cannot run interactive OAuth.** A `deployment` Connector runs as the worker's service identity, which has no interactive user. If it has no usable credentials and requires OAuth2, the preflight fails fast instead of emitting an auth URL, add the worker's credentials in Studio beforehand.
+- **Durable Agents need a single `run_as`.** All Connectors attached to one `Agent` must share the same `run_as`, because the agent's conversation runs as one identity; mixed values are rejected. Use `ToolCallClient` for per-Connector identity.
+:::
+
+<SectionTab as="h2" sectionId="execute">Execute a Connector Workflow</SectionTab>
 
 <SectionTab as="h3" variant="secondary" sectionId="execute-studio">From Studio</SectionTab>
 

@@ -35,7 +35,16 @@ function processLines(
     const headingMatch = line.match(/^\s*(#{1,6})\s+(.+?)\s*$/);
     if (headingMatch) {
       const depth = headingMatch[1].length;
-      const value = headingMatch[2].trim();
+      const raw = headingMatch[2].trim();
+      // Strip markdown formatting to match what rehypeHeadingId sees in the rendered AST:
+      // 1. Images: ![alt](url) → (remove entirely, matches getNodeText which skips image nodes)
+      // 2. Links: [text](url) → text
+      // 3. {#id} explicit heading ID syntax (stripped by remark-heading-id before rehype runs)
+      const value = raw
+        .replace(/!\[[^\]]*\]\([^\)]*\)/g, '')
+        .replace(/\[([^\]]*)\]\([^\)]*\)/g, '$1')
+        .replace(/\s*\{#[^}]*\}\s*$/, '')
+        .trim();
       const slug = slugify(value);
       const id = uniqueHeadingId(slug, usedIds);
       toc.push({ id, value, depth });

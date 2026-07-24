@@ -36,7 +36,7 @@ Here's an example of how to use the `N` parameter in the API:
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-3b-latest"
@@ -140,7 +140,7 @@ You can set a temperature value easily via our clients, let's experiment with ou
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-3b-latest"
@@ -303,7 +303,7 @@ Here's an example of how to use the `Top P` parameter with our python client:
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-3b-latest"
@@ -434,7 +434,7 @@ Both parameters can be tweaked to shape the quality and diversity of the generat
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-3b-latest"
@@ -508,7 +508,7 @@ print(chat_response.choices[0].message.content)
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-3b-latest"
@@ -586,7 +586,7 @@ print(chat_response.choices[0].message.content)
 
 ```py
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "ministral-3b-latest"

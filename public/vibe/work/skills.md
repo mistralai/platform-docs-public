@@ -122,4 +122,4 @@ When you edit a Skill, your changes take effect in new chats from that point on.
 - **Keep Skills focused.** One Skill per job. If a Skill grows into many unrelated procedures, split it.
 - **Avoid near-duplicates.** Two Skills with overlapping descriptions confuse Work and inflate context. Edit the existing Skill rather than saving a slight variant.
 - **Bundle supporting files.** Templates, brand guides, sample outputs, or reference data live next to the `SKILL.md` and load when the Skill activates. Supporting files are subject to a file-count limit; for larger methods, use [progressive disclosure](https://agentskills.io/skill-creation/best-practices#structure-large-skills-with-progressive-disclosure).
-- **Iterate.** Run the Skill on real tasks, note what's missing, edit, and improve.
+- **Iterate.** Run the Skill on real tasks, note gaps, edit, and improve.

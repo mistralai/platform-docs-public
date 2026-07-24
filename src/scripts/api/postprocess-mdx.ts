@@ -6,10 +6,9 @@
  *     a synthetic object with `content` and `fileName` fields. During that
  *     expansion, the original `File.description` is not rendered at the root
  *     property level. Re-inject it on each generated `file` property.
- *   - Admin endpoints are served from console.mistral.ai, not api.mistral.ai.
- *     docs-md ignores per-path/operation `servers` overrides when generating
- *     code samples and always uses the document-level host, so rewrite the host
- *     in generated `/api/admin/*` URLs.
+ *   - docs-md escapes braces in all MDX text, including inline code spans. That
+ *     turns examples like `{ "type": "text" }` into `\{ "type": "text" \}`.
+ *     Undo that only inside inline code spans.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -124,20 +123,22 @@ function injectFileDescription(content: string): { content: string; count: numbe
   return { content: updated, count };
 }
 
-const ADMIN_API_HOST = 'https://api.mistral.ai/api/admin';
-const ADMIN_CONSOLE_HOST = 'https://console.mistral.ai/api/admin';
-
-function rewriteAdminServerHost(content: string): { content: string; count: number } {
-  const parts = content.split(ADMIN_API_HOST);
-  const count = parts.length - 1;
-  if (count === 0) return { content, count };
-  return { content: parts.join(ADMIN_CONSOLE_HOST), count };
+function unescapeInlineCodeBraces(content: string): { content: string; count: number } {
+  let count = 0;
+  const updated = content.replace(/`([^`\n]*)`/g, (match, inlineCode) => {
+    const unescaped = inlineCode.replace(/\\([{}])/g, (_braceMatch: string, brace: string) => {
+      count += 1;
+      return brace;
+    });
+    return unescaped === inlineCode ? match : `\`${unescaped}\``;
+  });
+  return { content: updated, count };
 }
 
 async function main() {
   const files = await glob(PAGE_GLOB);
   let total = 0;
-  let hostTotal = 0;
+  let inlineCodeBraceTotal = 0;
   let changed = 0;
 
   for (const file of files) {
@@ -149,17 +150,17 @@ async function main() {
     // child from the wrapping <Section>, crashing at runtime with
     // "Section must have exactly one title child, not 0".
     const fileResult = injectFileDescription(original);
-    const hostResult = rewriteAdminServerHost(fileResult.content);
-    if (hostResult.content !== original) {
-      writeFileSync(file, hostResult.content);
+    const inlineCodeResult = unescapeInlineCodeBraces(fileResult.content);
+    if (inlineCodeResult.content !== original) {
+      writeFileSync(file, inlineCodeResult.content);
       changed += 1;
       total += fileResult.count;
-      hostTotal += hostResult.count;
+      inlineCodeBraceTotal += inlineCodeResult.count;
     }
   }
 
   console.log(
-    `Post-processed MDX: injected ${total} file description(s), rewrote ${hostTotal} admin host(s) across ${changed} file(s)`
+    `Post-processed MDX: injected ${total} file description(s), unescaped ${inlineCodeBraceTotal} inline-code brace(s) across ${changed} file(s)`
   );
 }
 

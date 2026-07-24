@@ -31,7 +31,7 @@ A Library is a container for documents that the model can search during conversa
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 

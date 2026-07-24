@@ -43,7 +43,7 @@ response = client.chat.completions.create(
 **After (Mistral):**
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key="your_mistral_api_key")
 response = client.chat.complete(
@@ -184,7 +184,7 @@ pip install "mistralai>=2"
 **Before (V1):**
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 ```
 
 **After (V2):**

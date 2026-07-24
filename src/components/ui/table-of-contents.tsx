@@ -175,16 +175,12 @@ export function TableOfContents({
 
   const tocData = useMemo(() => {
     if (tocItems) {
-      const data = createTocData(tocItems, { maxDepth, minItems: 1 });
-      setActiveId(data.filteredToc[0]?.id);
-      return data;
+      return createTocData(tocItems, { maxDepth, minItems: 1 });
     } else if (sidebar) {
       const slug = pathname === '/' ? [] : pathname.slice(1).split('/');
       const currentItem = findItemBySlug(sidebar, slug);
       const toc = currentItem?.type === 'file' ? currentItem.toc : [];
-      const data = createTocData(toc || [], { maxDepth, minItems: 1 });
-      setActiveId(data.filteredToc[0]?.id);
-      return data;
+      return createTocData(toc || [], { maxDepth, minItems: 1 });
     } else
       return {
         toc: [],
@@ -192,7 +188,11 @@ export function TableOfContents({
         filteredToc: [],
         shouldShow: false,
       };
-  }, [tocItems, sidebar, pathname]);
+  }, [tocItems, sidebar, pathname, maxDepth]);
+
+  useEffect(() => {
+    setActiveId(tocData.filteredToc[0]?.id);
+  }, [tocData.filteredToc]);
 
   // Track active heading and scroll position
   useEffect(() => {

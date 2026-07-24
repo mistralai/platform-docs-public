@@ -24,7 +24,7 @@ Generate speech from text using a [saved voice](voices) (`voice_id`) or a one-of
 ```python
 import base64
 from pathlib import Path
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key="your-api-key")
 
@@ -121,7 +121,7 @@ Use `response_format="pcm"` for the lowest streaming latency (~0.7s time-to-firs
 
 ```python
 import base64
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key="your-api-key")
 
@@ -253,7 +253,7 @@ writeFileSync("output_streamed.opus", audioBytes);
 ```python
 import base64
 from pathlib import Path
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key="your-api-key")
 
@@ -356,7 +356,7 @@ Use `response_format="pcm"` for the lowest streaming latency (~0.7s time-to-firs
 ```python
 import base64
 from pathlib import Path
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 client = Mistral(api_key="your-api-key")
 

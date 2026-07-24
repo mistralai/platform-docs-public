@@ -12,7 +12,7 @@ Create and manage user groups, assign them to Workspaces, and look up roles. For
 
 <SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
 
-All requests use the base URL `https://console.mistral.ai/api/admin` and an Admin API key in the `x-api-key` header. See [Authentication and Admin API keys](/admin/admin-api/authentication).
+All requests use the base URL `https://api.mistral.ai/v1/admin` and an Admin API key in the `x-api-key` header. See [Authentication and Admin API keys](/admin/admin-api/authentication).
 
 <SectionTab as="h1" sectionId="manage-groups">Manage groups</SectionTab>
 
@@ -20,11 +20,11 @@ List groups (`page`, `page_size`, `search`), or create one. `name` is required; 
 
 ```bash
 # List groups
-curl https://console.mistral.ai/api/admin/user-groups \
+curl https://api.mistral.ai/v1/admin/user-groups \
   -H "x-api-key: $ADMIN_API_KEY"
 
 # Create a group
-curl -X POST https://console.mistral.ai/api/admin/user-groups \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"name": "Interns", "description": "User group for interns"}'
@@ -33,14 +33,14 @@ curl -X POST https://console.mistral.ai/api/admin/user-groups \
 The response includes the group `uuid`. Get, update, or delete a group by its UUID:
 
 ```bash
-curl https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID> \
+curl https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 
-curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID> \
+curl -X PATCH https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID> \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"description": "Updated description"}'
 
-curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID> \
+curl -X DELETE https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -50,16 +50,16 @@ List members, or add and remove them with a `user_uuids` array.
 
 ```bash
 # List members
-curl https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
+curl https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
   -H "x-api-key: $ADMIN_API_KEY"
 
 # Add members
-curl -X POST https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"user_uuids": ["<USER_UUID_1>", "<USER_UUID_2>"]}'
 
 # Remove members
-curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
+curl -X DELETE https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"user_uuids": ["<USER_UUID_1>"]}'
 ```
@@ -69,7 +69,7 @@ curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/mem
 The quickest way to provision every member of a group into a Workspace is `provision-workspace`, which accepts a friendly `workspace_role_name`:
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/user-groups/provision-workspace \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups/provision-workspace \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{
     "user_group_uuid": "<GROUP_UUID>",
@@ -82,28 +82,28 @@ To manage assignments as resources, use the group's `workspaces` sub-collection,
 
 ```bash
 # List a group's Workspace assignments
-curl https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces \
+curl https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces \
   -H "x-api-key: $ADMIN_API_KEY"
 
 # Assign the group to a Workspace
-curl -X POST https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"workspace_uuid": "<WORKSPACE_UUID>", "role_names": ["user"]}'
 
 # Update the roles on an assignment
-curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
+curl -X PATCH https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"role_names": ["workspace_admin"]}'
 
 # Remove the group from a workspace
-curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
+curl -X DELETE https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 <SectionTab as="h2" variant="secondary" sectionId="group-org-role">Set a group's Organization role</SectionTab>
 
 ```bash
-curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/organization-role \
+curl -X PATCH https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/organization-role \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"organization_role": "member"}'
 ```
@@ -113,7 +113,7 @@ curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/orga
 List every role and its UUID. RBAC must be enabled for the Organization.
 
 ```bash
-curl https://console.mistral.ai/api/admin/roles \
+curl https://api.mistral.ai/v1/admin/roles \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -140,5 +140,5 @@ The response groups roles into `organization_roles` and `workspace_roles`.
 | `observability_viewer` | Observability product |
 
 :::note
-`GET /api/admin/roles` is the authoritative list of roles and their UUIDs.
+`GET /v1/admin/roles` is the authoritative list of roles and their UUIDs.
 :::

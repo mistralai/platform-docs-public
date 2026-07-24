@@ -22,7 +22,7 @@ Votre code s’exécute hors de l’API, dans des **Workers** : des processus 
 
 Démarrer un workflow crée une **Execution** : un run unique avec son propre identifiant, son résultat, et un historique d’**Events**. Les events consignent chaque étape : `started`, `activity completed`, `signal received`, etc. Ils sont diffusés en direct vers les clients et conservés dans l’historique d’exécution.
 
-Les workers appartiennent à un **Deployment** : un groupe identifié par un nom qui possède un ensemble de définitions de workflow et partage ses files de tâches.
+Les workers appartiennent à un **Deployment** : un groupe nommé qui possède un ensemble de définitions de workflow et reçoit les exécutions de ces définitions.
 
 <div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
 <Image
@@ -41,14 +41,14 @@ Les workers appartiennent à un **Deployment** : un groupe identifié par un n
 | **Activity** | Unité de travail réel appelée par le workflow : appel d’un LLM, requête HTTP, écriture en base, ou lancement d’un outil. C’est ici que les effets de bord se produisent. |
 | **Execution** | Exécution unique d’un workflow. Identifiant unique, historique d’événements, résultat. |
 | **Event** | Trace d’un événement survenu lors d’une exécution, par exemple : `started`, `activity completed`, `signal received`. Événements diffusés en temps réel et stockés dans l’historique. |
-| **Deployment** | Groupe nommé de workers partageant les définitions de workflow et files de tâches. |
+| **Deployment** | Groupe nommé de workers partageant les définitions de workflow et recevant les exécutions routées vers ces définitions. |
 
 <SectionTab as="h2" sectionId="how-it-fits-together">Comment tout s’articule</SectionTab>
 
 Un run type se déroule de la façon suivante :
 
 1. Un client (votre code, Studio, Vibe Work, ou une planification) appelle l’API Workflows pour démarrer une exécution.
-2. L’orchestrateur enregistre la requête comme event et envoie une tâche dans la file du bon déploiement.
+2. L’orchestrateur enregistre la requête comme event et la route vers le bon déploiement.
 3. Un worker du déploiement récupère la tâche, instancie la classe workflow et lance le point d’entrée.
 4. Le workflow appelle des activities. Chaque appel devient une tâche que n’importe quel worker du déploiement peut exécuter.
 5. Chaque étape est enregistrée comme event dans l’historique de l’exécution. Les clients peuvent suivre le flux en direct ou consulter l’historique plus tard.

@@ -53,7 +53,7 @@ Once installed, you can for example run the chat completion as follows:
 
 ```python
 import os
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
 model = "mistral-medium-latest"
@@ -145,7 +145,7 @@ pip install "mistralai>=2"
 **Before (V1):**
 
 ```python
-from mistralai import Mistral
+from mistralai.client import Mistral
 ```
 
 **After (V2):**

@@ -235,7 +235,8 @@ Next, make a request and ensure the response adheres to the defined structures u
 
 ```python
 import os
-from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.client import Mistral
+from mistralai import DocumentURLChunk, ImageURLChunk, ResponseFormat
 from mistralai.extra import response_format_from_pydantic_model
 
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -659,7 +660,8 @@ Next, make a request and ensure the response adheres to the defined structures u
 
 ```python
 import os
-from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.client import Mistral
+from mistralai import DocumentURLChunk, ImageURLChunk, ResponseFormat
 from mistralai.extra import response_format_from_pydantic_model
 
 api_key = os.environ["MISTRAL_API_KEY"]
@@ -1169,7 +1171,8 @@ Next, make a request and ensure the response adheres to the defined structures u
 
 ```python
 import os
-from mistralai import Mistral, DocumentURLChunk, ImageURLChunk, ResponseFormat
+from mistralai.client import Mistral
+from mistralai import DocumentURLChunk, ImageURLChunk, ResponseFormat
 from mistralai.extra import response_format_from_pydantic_model
 
 api_key = os.environ["MISTRAL_API_KEY"]

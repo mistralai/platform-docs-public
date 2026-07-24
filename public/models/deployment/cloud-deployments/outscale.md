@@ -54,7 +54,7 @@ To run the examples below, you will need to set the following environment variab
             <TabItem value="v1" label="V1" default>
                 ```python
                 import os
-                from mistralai import Mistral
+                from mistralai.client import Mistral
                 client = Mistral(server_url=os.environ["OUTSCALE_SERVER_URL"])
                 resp = client.chat.complete(
                     model=os.environ["OUTSCALE_MODEL_NAME"],
@@ -139,7 +139,7 @@ For more information, see the
             <TabItem value="v1" label="V1" default>
                ```python
                 import os
-                from mistralai import Mistral
+                from mistralai.client import Mistral
                 client = Mistral(server_url=os.environ["OUTSCALE_SERVER_URL"])
                 resp = client.fim.complete(
                     model=os.environ["OUTSCALE_MODEL_NAME"],

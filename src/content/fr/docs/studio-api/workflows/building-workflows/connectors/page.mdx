@@ -138,6 +138,7 @@ notion_connector = connector("Notion")
 | `auto_auth` | `True` | Lancement du pré-check OAuth avant le début du workflow. |
 | `credentials_name` | `None` | Lie l'emplacement à un identifiant nommé précis. Omettez pour utiliser l'identifiant par défaut de l'appelant, ou surchargez à l’exécution via les liaisons dynamiques (voir [Choisir un identifiant à l'exécution](#runtime-binding)). |
 | `allow_mcp_ui` | `False` | Autorise les outils MCP dotés d'une app visible sur ce connecteur à afficher leur app `ui://` comme side app lorsqu'ils sont appelés avec `ToolCallClient.call_tool()` (voir [Afficher des MCP Apps depuis des outils de connecteur](#mcp-apps)). |
+| `run_as` | `"auto"` | Identité Mistral utilisée pour accéder au Connecteur. `"auto"` suit l’option `on_behalf_of` du Workflow (utilisateur déclencheur en OBO, worker sinon) ; `"deployment"` utilise toujours l’identité de service du worker. Voir [Choisir l’identité du Connecteur](#run-as). |
 
 <SectionTab as="h3" variant="secondary" sectionId="write-activity">Étape 2 : Écrire une activité qui appelle le connecteur</SectionTab>
 
@@ -226,6 +227,40 @@ Remarques :
 - Appliquez `@uses_connectors` **après** `@workflow.define`. L’ordre des décorateurs est important.
 
 Au démarrage du worker, le plugin enregistre automatiquement un `ConnectorAuthInterceptor` qui gère le pré-check et la pause OAuth décrits dans [Fonctionnement du flux OAuth de secours](#oauth-flow).
+
+<SectionTab as="h2" sectionId="run-as">Choisir l’identité du Connecteur (run_as)</SectionTab>
+
+L’argument `run_as=` dans `connector()` vous permet de sélectionner quelle identité Mistral est utilisée pour accéder à un Connecteur spécifique. Selon votre cas d’usage, vous pouvez souhaiter exploiter les données de l’exécuteur via ses Connecteurs, ou exposer un Connecteur préconfiguré indépendant de l’exécuteur.
+
+Chaque Connecteur exécute sa prévalidation des identifiants (résolution, liste des identifiants, OAuth, validation de l’outil) et ses appels d’outil sous une seule identité. `run_as=` la définit par Connecteur :
+
+| `run_as` | S’exécute en tant que |
+|---|---|
+| `"auto"` (par défaut) | Suivant l’option `on_behalf_of` du Workflow : les identifiants de **l’utilisateur déclencheur** lorsque le Workflow s’exécute au nom d’un utilisateur, ceux du **worker** sinon. |
+| `"deployment"` | Toujours l’**identité de service du worker** (déploiement), quel que soit le mode d’exécution du Workflow. |
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai.connectors import connector
+
+# Follows the Workflow's on_behalf_of flag (the triggering user under OBO).
+user_github = connector("github_app", run_as="auto")
+
+# Acts as the worker's own service identity, regardless of how the Workflow runs.
+shared_slack = connector("slack", run_as="deployment")
+```
+
+  </TabItem>
+</Tabs>
+
+Comme `run_as` est défini par Connecteur, un seul Workflow peut mélanger les identités. Par exemple, lire le GitHub de l’utilisateur déclencheur avec `run_as="auto"`, tout en définissant un message dans un Slack partagé avec `run_as="deployment"`. Pour qu’un Connecteur `auto` agisse en tant qu’utilisateur déclencheur, définissez le Workflow avec `on_behalf_of=True`.
+
+:::warning
+- **`deployment` ne peut pas exécuter OAuth interactif.** Un Connecteur `deployment` s’exécute avec l’identité de service du worker, qui n’a pas d’utilisateur interactif. S’il n’a pas d’identifiants utilisables et nécessite OAuth2, la prévalidation échoue rapidement au lieu d’émettre une URL d’authentification : ajoutez les identifiants du worker dans Studio au préalable.
+- **Les agents durables nécessitent un seul `run_as`.** Tous les Connecteurs attachés à un même `agent` doivent partager le même `run_as`, car la conversation de l’agent s’exécute avec une seule identité ; les valeurs mixtes sont rejetées. Utilisez `ToolCallClient` pour une identité par Connecteur.
+:::
 
 <SectionTab as="h2" sectionId="execute">Exécuter un workflow connecteur</SectionTab>
 

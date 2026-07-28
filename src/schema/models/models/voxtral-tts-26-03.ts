@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Open',
   legalButton: null,
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [
     {
@@ -54,10 +54,10 @@ export default {
   capabilities: {
     input: ['text', 'audio'],
     output: ['audio'],
-    features: ['tts'],
+    features: ['tts', 'voice-cloning'],
 
   },
   metadata: {},
-  playground: 'https://console.mistral.ai/build/playground',
+  playground: 'https://console.mistral.ai/build/audio/text-to-speech',
   legacy: false,
 } as const satisfies StaticModel;

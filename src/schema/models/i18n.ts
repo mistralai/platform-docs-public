@@ -84,8 +84,10 @@ export function modelType(key: ModelType, l: Lingo): string {
 
 export function modelStatus(key: ModelStatus, l: Lingo): string {
   switch (key) {
-    case 'Active':
-      return l.text('Active', { context: 'Status label for an AI model that is currently available' });
+    case 'PublicPreview':
+      return l.text('Public Preview', { context: 'Lifecycle stage label for an AI model available in public preview' });
+    case 'GA':
+      return l.text('GA', { context: 'Lifecycle stage label for a generally available AI model (GA = Generally Available)' });
     case 'Deprecated':
       return l.text('Deprecated', { context: 'Status label for an AI model that is being phased out but still available' });
     case 'Retired':
@@ -150,6 +152,8 @@ export function featureLabel(key: FeatureKey, l: Lingo): string {
       return l.text('Transcriptions', { context: 'Name of an AI model API feature: audio speech-to-text' });
     case 'tts':
       return l.text('Text to Speech', { context: 'Name of an AI model API feature: audio text-to-speech' });
+    case 'voice-cloning':
+      return l.text('Voice Cloning', { context: 'Name of an AI model API feature: voice cloning for text-to-speech' });
     case 'timestamps':
       return l.text('Timestamps', { context: 'Name of an AI model API feature: word-level timestamps in audio transcriptions' });
     case 'batching':

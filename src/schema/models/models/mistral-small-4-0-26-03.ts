@@ -12,7 +12,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: 'DEFAULT',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'mistral-small', backgroundColor: 'orange' },
   weights: [
     {

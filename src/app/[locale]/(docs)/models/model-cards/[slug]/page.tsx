@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { models, findModelBySlug, isLegacyModel, Model } from '@/schema';
+import { models, findModelBySlug, getModelLicenses, isLegacyModel, Model } from '@/schema';
 import { ThunderIcon, LampIcon, FlagIcon } from '@/components/icons/pixel';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { getModelColorFallback, MODEL_COLORS } from '@/lib/colors';
@@ -33,6 +33,7 @@ import { Prose } from '@/components/common/prose';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { markdownComponents } from '@/components/markdown';
 import { ModelTypeBadge } from '@/components/model/type-badge';
+import { ModelStageBadge } from '@/components/model/stage-badge';
 import { ArrowRightLeftIcon, ExternalLinkIcon } from 'lucide-react';
 import { getLingo } from '@/i18n/server';
 import { performanceRating, speedRating } from '@/schema/models/i18n';
@@ -227,7 +228,13 @@ export default async function ModelPage({ params }: ModelPageProps) {
                   )}
                 </span>
                 <div className="flex items-center gap-2">
-                  {model.type && <ModelTypeBadge type={model.type} />}
+                  <ModelStageBadge status={model.status} l={l} />
+                  {model.type && (
+                    <ModelTypeBadge
+                      type={model.type}
+                      licenses={getModelLicenses(model)}
+                    />
+                  )}
                   <span className="text-xs font-mono text-foreground/20">
                     v{model.version}
                   </span>

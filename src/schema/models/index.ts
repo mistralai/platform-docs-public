@@ -21,6 +21,16 @@ export function getModelUrl(model: Model) {
   return `/models/model-cards/${getModelSlug(model)}`;
 }
 
+export function getModelLicenses(model: Model): string[] {
+  return Array.from(
+    new Set(
+      (model.weights ?? [])
+        .map(w => w.license)
+        .filter((license): license is string => !!license)
+    )
+  );
+}
+
 export const isLegacyModel = (model: Model) =>
   model.status === 'Deprecated' || model.status === 'Retired';
 

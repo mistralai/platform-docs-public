@@ -6,14 +6,23 @@ sidebar_position: 6
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { AppLink } from '@/components/common/app-link';
 
 # Observabilité des workflows
 
-Ce guide couvre les traces OpenTelemetry pour le diagnostic au niveau de l'exécution.
+Ce guide explique comment les données de télémétrie (logs, traces et métriques) sont exportées, ainsi que l'utilisation des traces OpenTelemetry pour les diagnostics au niveau de l'exécution.
+
+<SectionTab as="h1" sectionId="telemetry-setup">Configuration de la télémétrie</SectionTab>
+
+Par défaut, le worker exporte les **logs, traces et métriques** OpenTelemetry vers la plateforme d'observabilité hébergée par Mistral. Aucune configuration n'est requise : la télémétrie est authentifiée avec votre clé API Mistral et envoyée à l'endpoint de télémétrie de Mistral. C'est ce qui permet d'afficher directement dans Studio, sur la page [d'exécution](https://console.mistral.ai/build/workflows/executions), les logs et traces de vos workflows.
+
+Vous pouvez également envoyer les données de télémétrie vers votre propre pile d’observabilité ou les désactiver. Consultez la section **Configurer l’export des données de télémétrie** à la fin de cette page.
 
 <SectionTab as="h1" sectionId="traces-opentelemetry">Traces (OpenTelemetry)</SectionTab>
 
 Les traces capturent les détails d'exécution (spans, timings, erreurs) et sont optimisées pour le débogage et l'analyse de performance. Elles sont indépendantes des événements de tâches personnalisés.
+
+Les logs d’exécution sont également disponibles dans Studio. Ouvrez <AppLink href="https://console.mistral.ai/build/workflows/executions" app="studio" path={["Workflows", "Executions"]} /> et sélectionnez une exécution pour consulter ses logs sur la page correspondante.
 
 <SectionTab as="h2" variant="secondary" sectionId="activity-observability">Observabilité des activités</SectionTab>
 
@@ -33,17 +42,15 @@ async def process_emails(params: ActivityParams) -> ActivityResult:
 
 <SectionTab as="h2" variant="secondary" sectionId="trace-sampling">Échantillonnage des traces</SectionTab>
 
-La collecte de traces est échantillonnée. Par défaut, le worker utilise un échantillonneur basé sur le parent avec un taux configurable, ce qui permet de respecter les décisions en amont.
-
-**En bref :** pour un contrôle optimal de l'échantillonnage, transmettez un header `traceparent` au point d'entrée de votre workflow (ou à la périphérie de l'API). Cela vous permet de forcer l'activation ou la désactivation de l'échantillonnage et de propager la trace parente de manière cohérente.
+Par défaut, toutes les traces sont exportées (le worker échantillonne à un taux de 100 %). Pour contrôler l'échantillonnage, transmettez un en-tête `traceparent` au point d'entrée de votre workflow (ou à la périphérie de l'API) : le worker utilise un échantillonneur basé sur le parent, il respecte donc la décision d'échantillonnage en amont. Cela vous permet de forcer l'échantillonnage (activation/désactivation) et de propager la trace parente de manière cohérente.
 
 <SectionTab as="h2" variant="secondary" sectionId="fetching-workflow-traces">Récupération des traces de workflow</SectionTab>
 
 Trois méthodes sont disponibles pour récupérer les données de trace d'une exécution donnée :
 
-- **`get_workflow_execution_trace_otel()`** — Renvoie les données de trace OpenTelemetry brutes (spans avec timings, attributs et relations parent-enfant). Utilisez cette méthode pour alimenter vos propres backends d'observabilité (Jaeger, Grafana Tempo, etc.).
-- **`get_workflow_execution_trace_summary()`** — Renvoie un résumé de haut niveau de l'exécution : durée totale, nombre d'activités, nombre d'erreurs. Utile pour les tableaux de bord et les vérifications rapides de statut.
-- **`get_workflow_execution_trace_events()`** — Renvoie une liste chronologique des événements de l'exécution. Définissez `include_internal_events=False` pour filtrer les événements internes à la plateforme et voir uniquement vos événements de workflow et d'activité.
+- **`get_workflow_execution_trace_otel()`** : renvoie les données brutes de trace OpenTelemetry (spans avec temporisations, attributs et relations parent-enfant). Utilisez cette méthode pour alimenter vos traces dans votre propre backend d’observabilité (Jaeger, Grafana Tempo, etc.).
+- **`get_workflow_execution_trace_summary()`** : renvoie un résumé de haut niveau de l’exécution (durée totale, nombre d’activités, nombre d’erreurs). Utile pour les tableaux de bord et les vérifications de statut rapides.
+- **`get_workflow_execution_trace_events()`** : renvoie une liste chronologique des événements de l’exécution. Définissez `include_internal_events=False` pour filtrer les événements internes à la plateforme et ne voir que ceux de votre **workflow** et de vos activités.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -72,3 +79,82 @@ events = client.workflows.executions.get_workflow_execution_trace_events(
 
   </TabItem>
 </Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="fetching-workflow-logs">Récupération des logs du workflow</SectionTab>
+
+Les logs d’exécution (les mêmes que ceux affichés dans Studio) peuvent également être récupérés par programme :
+
+- **`get_workflow_execution_logs()`** : renvoie une page d’enregistrements de logs pour une exécution. Filtrez avec `run_id`, `activity_id` et une plage horaire (`after`, `before`), choisissez le tri de la première page avec `order` (`asc` ou `desc`), et paginez avec `cursor` et `limit`.
+- **`stream_workflow_execution_logs()`** : diffuse les enregistrements de logs en direct via Server-Sent Events (SSE).
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+# Get the first page of execution logs (oldest first)
+logs = client.workflows.executions.get_workflow_execution_logs(
+    execution_id=execution_id,
+    order="asc",
+    limit=50,
+)
+
+# Fetch the next page using the returned cursor
+if logs.next_cursor:
+    next_page = client.workflows.executions.get_workflow_execution_logs(
+        execution_id=execution_id,
+        cursor=logs.next_cursor,
+    )
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="configuring-telemetry-export">Configurer l’export des données de télémétrie</SectionTab>
+
+Par défaut, tous les signaux sont exportés vers Mistral AI (voir la section **Configuration de la télémétrie** ci-dessus). Vous pouvez rediriger des signaux individuels vers votre propre endpoint OTLP, router l’intégralité des données vers un seul endpoint ou désactiver complètement l’export.
+
+:::warning
+Si vous redirigez les signaux **journaux** ou **traces** vers un endpoint personnalisé (ou si vous les désactivez), ces données ne sont plus envoyées à Mistral AI. Elles ne seront pas stockées sur la plateforme d’observabilité de Mistral AI et ne seront pas visibles dans Studio.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="using-your-own-otel-endpoint">Utiliser votre propre endpoint OTEL</SectionTab>
+
+Pour envoyer la télémétrie du worker vers votre propre stack d'observabilité, orientez un ou plusieurs signaux vers votre propre endpoint OTLP. Chaque signal est acheminé indépendamment :
+
+| Variable d'environnement | Signal |
+| --- | --- |
+| `OTEL_TRACES_ENDPOINT` | Traces |
+| `OTEL_METRICS_ENDPOINT` | Métriques |
+| `OTEL_LOGS_ENDPOINT` | Logs |
+
+Indiquez l’**endpoint** OTLP HTTP de base (par exemple `https://otel.example.com`). L’application worker ajoute automatiquement le chemin standard du signal (`/v1/traces`, `/v1/metrics` ou `/v1/logs`).
+
+Les signaux que vous ne redirigez pas continuent d'être envoyés à Mistral, et restent donc visibles dans Studio. Lorsque vous définissez un endpoint personnalisé, le worker n'attache plus votre clé API Mistral pour ce signal : vous devez donc l'authentifier vous-même.
+
+Pour authentifier un endpoint personnalisé, utilisez la variable d'en-tête OTLP **spécifique au signal** (`OTEL_EXPORTER_OTLP_TRACES_HEADERS`, `OTEL_EXPORTER_OTLP_METRICS_HEADERS` ou `OTEL_EXPORTER_OTLP_LOGS_HEADERS`). Par exemple, pour envoyer uniquement les métriques à votre propre stack tout en conservant les logs et traces dans Studio :
+
+```bash
+OTEL_METRICS_ENDPOINT=https://otel.example.com
+OTEL_EXPORTER_OTLP_METRICS_HEADERS=Authorization=Bearer <your-token>
+```
+
+:::warning
+Évitez d'utiliser la variable générique `OTEL_EXPORTER_OTLP_HEADERS` ici : elle s'applique à **tous** les signaux, y compris ceux toujours exportés vers Mistral. Le worker utilise déjà cette variable en interne pour attacher votre clé API Mistral. La définir vous-même peut donc exposer votre token à un endpoint personnalisé ou perturber l'authentification Mistral. Limitez toujours les en-têtes des endpoints personnalisés aux signaux que vous redirigez.
+:::
+
+Pour acheminer **tous** les signaux vers un seul endpoint, définissez `OTEL_ENDPOINT`. Cela envoie les traces, métriques et logs à cet endpoint unique et n'attache aucune authentification Mistral. Utilisez les variables par signal ci-dessus lorsque vous avez besoin de destinations différentes ou souhaitez conserver certains signaux dans Studio.
+
+<SectionTab as="h2" variant="secondary" sectionId="disabling-telemetry-export">Désactiver l'export de télémétrie</SectionTab>
+
+Vous pouvez désactiver l'export entièrement ou par signal :
+
+| Variable d'environnement | Effet |
+| --- | --- |
+| `OTEL_ENABLED=false` | Désactive toute la télémétrie (logs, traces, métriques) |
+| `MISTRAL_WORKFLOWS_OTEL_TRACES_EXPORT=false` | Désactive uniquement l'export des traces |
+| `MISTRAL_WORKFLOWS_OTEL_METRICS_EXPORT=false` | Désactive uniquement l'export des métriques |
+| `MISTRAL_WORKFLOWS_OTEL_LOGS_EXPORT=false` | Désactive uniquement l'export des logs |
+
+:::info
+La désactivation de l’exportation des traces crée tout de même des spans en interne pour la propagation de **Contexte** et la corrélation des log / traces. Seule l’exportation OTLP est arrêtée.
+:::

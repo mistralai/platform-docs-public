@@ -12,7 +12,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-large-3',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'mistral-large', backgroundColor: 'red' },
   weights: [
     {

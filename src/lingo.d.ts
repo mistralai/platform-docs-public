@@ -66,7 +66,6 @@ declare module "@lingo.dev/react" {
     "Access": { context: "Keyword tag for the User Management feature" };
     "Activate Studio and generate an API key": { context: "Quickstart title about activating Studio and generating an API key" };
     "Activate Studio in Free mode and generate your first API key.": { context: "Quickstart description about activating Studio and generating an API key" };
-    "Active": { context: "Status label for an AI model that is currently available" };
     "ACTIVE": { context: "Row label for active mixture-of-experts parameters" };
     "Active participation in AI/ML communities through forums, social media, or open source contributions.": { context: "Description of a requirement for joining the Mistral ambassador program" };
     "Actively participate in community discussions and help fellow developers with Mistral AI questions.": { context: "Description of a Mistral ambassador responsibility" };
@@ -86,6 +85,7 @@ declare module "@lingo.dev/react" {
     "All": { context: "Quickstarts filter label for all categories" };
     "All ({count})": { values: { count: string | number }; context: "Filter tab on the cookbooks table that clears all filters; shows the total cookbook count" };
     "All IDs:": { context: "Tooltip heading for all API model identifiers" };
+    "All models": { context: "Heading for the full list of currently available AI models" };
     "All our documentation in your hands: build, customize, and deploy AI, your way.": { context: "Subtitle for the documentation home page" };
     "All users: chat in the web app, code in the terminal or editor": { context: "Intended audience for the Vibe product" };
     "Alternative": { context: "Table heading for the replacement AI model" };
@@ -138,7 +138,7 @@ declare module "@lingo.dev/react" {
     "benefits": { context: "Heading for ambassador program benefits" };
     "Best For": { context: "Label for the best-fit use case" };
     "Best practices": { context: "Title of a navigation card to AI model best practices" };
-    "Public Preview": { context: "Heading for Public Preview API endpoints" };
+    "Public Preview": { context: "Heading for Public Preview API endpoints" | "Lifecycle stage label for an AI model available in public preview" };
     "Billing": { context: "Glossary category label" };
     "Billing & Limits": { context: "Name of a Mistral platform feature" };
     "Billing & Usage": { context: "Title of a documentation card about Billing & Usage" };
@@ -223,10 +223,10 @@ declare module "@lingo.dev/react" {
     "Copy Logo as SVG": { context: "Right-click menu item on the Mistral logo that copies the SVG source to the clipboard" };
     "Copy markdown": { context: "Accessible label for copying the current page as Markdown" | "Command to copy the current page as Markdown" };
     "Copy section link": { context: "Accessible label for copying a section URL" | "Command to copy a section URL" };
-    "Create AI assistants for specific workflows. Define custom system instructions, attach tools (like MCP connectors), link knowledge bases, and share them securely with your team.": { context: "Detailed description of the Custom Agents feature" };
-    "Create isolated workspaces, generate keys, and set usage limits.": { context: "Quickstart description about managing workspaces and API keys" };
     "Create a reusable Prompt": { context: "Quickstart title about creating a reusable Prompt in Studio" };
     "Create a Skill in Studio": { context: "Quickstart title about creating a Skill in Studio" };
+    "Create AI assistants for specific workflows. Define custom system instructions, attach tools (like MCP connectors), link knowledge bases, and share them securely with your team.": { context: "Detailed description of the Custom Agents feature" };
+    "Create isolated workspaces, generate keys, and set usage limits.": { context: "Quickstart description about managing workspaces and API keys" };
     "Create tutorials, blog posts, or other educational content showcasing Mistral AI capabilities.": { context: "Description of a Mistral ambassador responsibility" };
     "Create your first Skill": { context: "Quickstart title about creating a first Skill in Vibe Work" };
     "Create your organization": { context: "Quickstart title about create your organization quickstart (used as browser tab title and on" | "Quickstart title about creating an organization" };
@@ -254,8 +254,9 @@ declare module "@lingo.dev/react" {
     "Deploy Mistral models within your existing cloud account via certified partners like AWS, Azure, GCP, or IBM.": { context: "Description of the private cloud deployment option" };
     "Deploy models to cloud providers and Mistral Compute.": { context: "Description of the navigation card to AI model deployment docs" };
     "Deployment": { context: "Title of a navigation card to AI model deployment docs" };
-    "Deprecated": { context: "Heading for deprecated API endpoints" | "Status label for an AI model that is being phased out but still available" };
+    "Deprecated": { context: "Heading for deprecated API endpoints" | "Heading for deprecated and retired AI models" | "Status label for an AI model that is being phased out but still available" };
     "DEPRECATED": { context: "Changelog entry badge indicating something was deprecated" };
+    "Deprecated & retired models": { context: "Subheading for deprecated and retired AI models" };
     "Deprecation": { context: "Table heading for the AI model deprecation date" };
     "Deprecation date": { context: "Deprecation date of an AI model" };
     "Describe a project in natural language and let Vibe Code generate the files and structure.": { context: "Quickstart description about scaffolding a project with Vibe Code" };
@@ -320,6 +321,7 @@ declare module "@lingo.dev/react" {
     "Fully offline with local models": { context: "Short description of the Local Mode feature" };
     "Function calling": { context: "Glossary term for model-initiated tool or API calls" | "Topic label for model tool calling" };
     "Function Calling": { context: "Name of an API feature supported by an AI model" };
+    "GA": { context: "Lifecycle stage label for a generally available AI model (GA = Generally Available)" };
     "GDPR": { context: "Keyword tag for the Data Privacy Controls feature" };
     "GDPR & training opt-outs": { context: "Short description of the Data Privacy Controls feature" };
     "Generalist": { context: "Label for a general-purpose AI model" | "Label for general-purpose models (used as a heading on the Models Overview page and as a class badge on model cards)" };
@@ -383,8 +385,6 @@ declare module "@lingo.dev/react" {
     "Learn how to deploy and use Mistral AI's Large Language Models with our comprehensive documentation, guides, and tutorials.": { context: "Meta description for the documentation home page" };
     "Learn more": { context: "Button to open the full AI model page" };
     "Learn more about this model": { context: "Link to the full AI model page" };
-    "Legacy Models": { context: "Subheading for legacy AI models" };
-    "Legacy/Deprecated": { context: "Heading for legacy and deprecated AI models" };
     "Legal": { context: "Label for AI model legal terms" };
     "LEGAL": { context: "Footer heading for legal information" };
     "Legal notice": { context: "Footer link to the legal notice" };
@@ -464,7 +464,7 @@ declare module "@lingo.dev/react" {
     "Opt-out": { context: "Keyword tag for the Data Privacy Controls feature" };
     "Organization setup, security, user management, and billing.": { context: "Subtitle for admin documentation" };
     "OTHER": { context: "Changelog entry badge for miscellaneous changes" };
-    "Other Models": { context: "Heading for other supported AI models" | "Subheading for other supported AI models" };
+    "Other Models": { context: "Heading for other supported AI models" };
     "Other supported models available.": { context: "Description of other supported AI models" };
     "Our best multilingual open source model released July 2024.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "Our customers": { context: "Footer link to customer stories" };
@@ -665,6 +665,10 @@ declare module "@lingo.dev/react" {
     "The requested model could not be found.": { context: "Meta description for a missing AI model page" };
     "The unified agent for productivity and coding. Chat with it on the web or mobile, or run it in your terminal and editor.": { context: "Description of Vibe on the discover-our-platform card on the home page" };
     "Theme": { context: "Label above the light/dark theme toggle in the mobile menu" };
+    "This model is deprecated and is being phased out.": { context: "Summary for a deprecated AI model without a replacement model" };
+    "This model is deprecated. Use {replacementModel} for new integrations.": { values: { replacementModel: string | number }; context: "Summary for a deprecated AI model with a replacement model" };
+    "This model is retired and is no longer available for new integrations.": { context: "Summary for a retired AI model without a replacement model" };
+    "This model is retired. Use {replacementModel} for new integrations.": { values: { replacementModel: string | number }; context: "Summary for a retired AI model with a replacement model" };
     "Three products, one platform. Pick where you want to start.": { context: "Intro line above the three-product bullet list on the home page" };
     "Time Commitment": { context: "Requirement for joining the Mistral ambassador program" };
     "Timestamps": { context: "Name of an AI model API feature: word-level timestamps in audio transcriptions" };
@@ -715,9 +719,11 @@ declare module "@lingo.dev/react" {
     "View your organization dashboard, manage workspaces, and configure workspace settings.": { context: "Description of a documentation card about Admin Panel" | "Description of a documentation card about Back Office" };
     "VIP experience": { context: "Benefit of the Mistral ambassador program" };
     "Vision": { context: "Label for an AI model capability: vision-understanding" };
+    "Voice Cloning": { context: "Name of an AI model API feature: voice cloning for text-to-speech" };
     "Warning": { context: "Admonition callout label for warnings" };
     "Weights": { context: "Heading for downloadable model weights" };
     "WEIGHTS": { context: "Row label for downloadable model weights" | "Section heading for downloadable model weights" };
+    "Weights under": { context: "Tooltip label preceding the list of open-weight license(s) of an AI model" };
     "Welcome to the": { context: "First half of the page title for the Mistral ambassador program" };
     "WHY MISTRAL": { context: "Footer heading for company information" };
     "Willingness to commit to the program for at least 6 months.": { context: "Description of a criterion used to evaluate ambassador applications" };

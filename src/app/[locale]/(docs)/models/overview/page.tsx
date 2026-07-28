@@ -27,18 +27,15 @@ export default async function ModelsPage({
     slug => models.find(model => model.slug === slug)!
   ).filter(Boolean);
 
-  // Legacy / deprecated models
+  // Deprecated / retired models, sorted by most recent deprecation date first
   const legacySlugs = models
     .filter(model => model.status === 'Deprecated' || model.status === 'Retired')
+    .sort((a, b) => {
+      const dateA = a.metadata?.deprecationDate ?? a.metadata?.retirementDate ?? '';
+      const dateB = b.metadata?.deprecationDate ?? b.metadata?.retirementDate ?? '';
+      return dateB.localeCompare(dateA);
+    })
     .map(model => model.slug);
-
-  // Separate SOTA models (state-of-the-art)
-  const frontierModels = nonLegacyModels.filter(model => model.frontier);
-  const otherModels = nonLegacyModels.filter(model => !model.frontier);
-
-  // Split SOTA models by class
-  const generalistFrontier = frontierModels.filter(m => m.class === 'Generalist');
-  const specialistFrontier = frontierModels.filter(m => m.class === 'Specialist');
 
   return (
     <div className="mx-auto space-y-14 w-full md:pt-8 not-prose">
@@ -70,65 +67,12 @@ export default async function ModelsPage({
         </div>
       </section>
 
-      {/* STATE OF THE ART MODELS */}
-      <section id="sota-models" className="flex flex-col gap-8">
-        <SectionTab sectionId="frontier-models">{l.text('Frontier Models', { context: 'Heading for frontier AI models' })}</SectionTab>
-
-        {/* Generalist SOTA */}
-        <div className="flex flex-col gap-4">
-          <Heading align="between">
-            <HeadingTitle as="h3">{l.text('Generalist', { context: 'Label for general-purpose models (used as a heading on the Models Overview page and as a class badge on model cards)' })}</HeadingTitle>
-            <HeadingSubtitle className="text-secondary-foreground/85">
-              {l.text('Versatile, high-performing models suitable for a broad range of tasks.', { context: 'Description of general-purpose frontier AI models' })}
-            </HeadingSubtitle>
-          </Heading>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {generalistFrontier.map(model => (
-              <ModelCard
-                key={model.name}
-                l={l}
-                model={model}
-                variant="compact"
-                showParameters
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Specialist SOTA */}
-        <div className="flex flex-col gap-4">
-          <Heading align="between">
-            <HeadingTitle as="h3">{l.text('Specialist', { context: 'Label for domain-specific models (used as a heading on the Models Overview page and as a class badge on model cards)' })}</HeadingTitle>
-            <HeadingSubtitle className="text-secondary-foreground/85">
-              {l.text('Models optimized for specific domains or a given purpose.', { context: 'Description of specialist frontier AI models' })}
-            </HeadingSubtitle>
-          </Heading>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {specialistFrontier.map(model => (
-              <ModelCard
-                key={model.name}
-                l={l}
-                model={model}
-                variant="compact"
-                showParameters
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* OTHER MODELS */}
-      <section id="other-models" className="flex flex-col gap-6">
-        <SectionTab sectionId="other-models">{l.text('Other Models', { context: 'Heading for other supported AI models' })}</SectionTab>
-        <Heading align="between">
-          <HeadingTitle as="h3">{l.text('Other Models', { context: 'Subheading for other supported AI models' })}</HeadingTitle>
-          <HeadingSubtitle className="text-secondary-foreground/85">
-            {l.text('Other supported models available.', { context: 'Description of other supported AI models' })}
-          </HeadingSubtitle>
-        </Heading>
+      {/* ALL MODELS */}
+      <section id="all-models" className="flex flex-col gap-6">
+        <SectionTab sectionId="all-models">{l.text('All models', { context: 'Heading for the full list of currently available AI models' })}</SectionTab>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {otherModels.map(model => (
+          {nonLegacyModels.map(model => (
             <ModelCard
               key={model.name}
               l={l}
@@ -140,14 +84,14 @@ export default async function ModelsPage({
         </div>
       </section>
 
-      {/* LEGACY MODELS */}
+      {/* DEPRECATED & RETIRED MODELS */}
       <section id="legacy-models" className="flex flex-col gap-6">
         <SectionTab variant="secondary" sectionId="legacy-models">
-          {l.text('Legacy/Deprecated', { context: 'Heading for legacy and deprecated AI models' })}
+          {l.text('Deprecated', { context: 'Heading for deprecated and retired AI models' })}
         </SectionTab>
         <Heading align="between">
           <HeadingTitle as="h3" className="text-2xl 2xl:text-3xl">
-            {l.text('Legacy Models', { context: 'Subheading for legacy AI models' })}
+            {l.text('Deprecated & retired models', { context: 'Subheading for deprecated and retired AI models' })}
           </HeadingTitle>
           <HeadingSubtitle className="md:text-right text-secondary-foreground/85">
             {l.text('Older models that have been deprecated or retired.', { context: 'Description of deprecated or retired AI models' })}

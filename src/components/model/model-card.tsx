@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { getModelUrl, Model } from '@/schema/models';
+import { getModelLicenses, getModelUrl, Model } from '@/schema/models';
 import { MODEL_COLORS, getModelColorFallback } from '@/lib/colors';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { ModelAvatar } from './avatar';
@@ -158,7 +158,12 @@ export function ModelCard({
           <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
             {model.name}
           </h3>
-          {model.type && <ModelTypeBadge type={model.type} />}
+          {model.type && (
+            <ModelTypeBadge
+              type={model.type}
+              licenses={getModelLicenses(model)}
+            />
+          )}
         </div>
         <div className="flex gap-2 justify-between items-baseline">
           <p className="text-sm text-foreground/70 line-clamp-2 text-ellipsis overflow-hidden">

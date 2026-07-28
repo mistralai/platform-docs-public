@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/voxtral-small',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [],
   bloglink: 'https://mistral.ai/news/voxtral-transcribe-2',
@@ -39,6 +39,6 @@ export default {
 
   },
   metadata: {},
-  playground: '',
+  playground: 'https://console.mistral.ai/build/audio/speech-to-text',
   legacy: false,
 } as const satisfies StaticModel;

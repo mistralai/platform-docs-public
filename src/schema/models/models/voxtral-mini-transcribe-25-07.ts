@@ -38,7 +38,7 @@ export default {
     features: ['timestamps', 'transcriptions'],
 
   },
-  metadata: {},
+  metadata: {deprecationDate: '2026-02-27', retirementDate: '2026-05-31', replacement: 'Voxtral Mini Transcribe 2'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

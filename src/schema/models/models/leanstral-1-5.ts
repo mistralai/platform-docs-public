@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Labs',
   legalButton: null,
-  status: 'Active',
+  status: 'PublicPreview',
   avatar: { icon: 'leanstral', backgroundColor: 'teal' },
   weights: [
     {

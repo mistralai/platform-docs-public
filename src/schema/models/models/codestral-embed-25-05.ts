@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/codestral',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'codestral-embed', backgroundColor: 'orange' },
   weights: [],
   bloglink: 'https://mistral.ai/news/codestral-embed',

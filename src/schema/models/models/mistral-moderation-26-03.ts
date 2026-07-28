@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-moderation',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'moderation', backgroundColor: 'beige' },
   weights: [],
   bloglink: null,

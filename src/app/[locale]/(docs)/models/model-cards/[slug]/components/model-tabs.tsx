@@ -1,11 +1,9 @@
 import { Link } from '@/i18n/navigation.client';
 import {
 	Heading,
-	HeadingSubtitle,
 	HeadingTitle,
 } from "@/components/layout/heading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {  MISTRAL_URL } from "@/lib/constants";
 import { resolveIcon } from "@/lib/icons";
 import {
 	AVAILABLE_ENDPOINTS,
@@ -28,18 +26,21 @@ interface ModelTabsProps {
 export async function ModelTabs({ model, locale }: ModelTabsProps) {
 	const l = await getLingo(locale);
 	const tabs: { value: string; label: string }[] = [];
-	if (model.capabilities.features.length > 0) {
+	const supportedFeatures = model.capabilities.features;
+	const modelHasWeights = model.weights.length > 0;
+
+	if (supportedFeatures.length > 0) {
 		tabs.push({ value: "features", label: l.text("FEATURES", { context: "Section heading for supported API features" }) });
 	}
-	tabs.push({ value: "weights", label: l.text("WEIGHTS", { context: "Section heading for downloadable model weights" }) });
+	if (modelHasWeights) {
+		tabs.push({ value: "weights", label: l.text("WEIGHTS", { context: "Section heading for downloadable model weights" }) });
+	}
 
 	const defaultValue = tabs[0]?.value;
 
 	if (!tabs.length) {
 		return null;
 	}
-
-	const modelHasWeights = model.weights.length > 0;
 
 	return (
 		<Tabs defaultValue={defaultValue} className="w-full flex-1">
@@ -64,14 +65,12 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 					</HeadingTitle>
 				</Heading>
 				<FeaturesGrid>
-					{Object.entries(AVAILABLE_FEATURES).map(([key, feature]) => {
-						if (!feature) return null;
+					{supportedFeatures.map((featureKey) => {
+						const feature = AVAILABLE_FEATURES[featureKey];
 
-						const featureKey = key as keyof typeof AVAILABLE_FEATURES;
-						const isSupported = model.capabilities.features.includes(featureKey);
 						return (
 							<FeatureItemWithList
-								key={key}
+								key={featureKey}
 								href={feature.link}
 								as={Link}
 								title={featureLabel(featureKey, l)}
@@ -79,11 +78,9 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 								icon={resolveIcon(
 									AVAILABLE_ENDPOINTS[feature.endpoints[0] as EndpointKey].icon,
 								)}
-								disabled={!isSupported}
 							>
 								{feature.endpoints.map((endpoint) => (
 									<EndpointItem
-										disabled={!isSupported}
 										key={endpoint}
 										value={AVAILABLE_ENDPOINTS[endpoint].path}
 									/>
@@ -95,7 +92,7 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 			</TabsContent>
 
 			{/* Weights Tab */}
-			{modelHasWeights ? (
+			{modelHasWeights && (
 				<TabsContent value="weights" className="mt-6">
 					<Heading className="mb-6">
 						<HeadingTitle as="h3" size="h4">
@@ -103,27 +100,6 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 						</HeadingTitle>
 					</Heading>
 					<WeightsTable weights={model.weights} />
-				</TabsContent>
-			) : (
-				<TabsContent value="weights" className="mt-6">
-					<Heading className="mb-6">
-						<HeadingTitle as="h3" size="h4">
-							{l.text("Contact Us", { context: "Heading for requesting access to model weights" })}
-						</HeadingTitle>
-						<HeadingSubtitle className="text-foreground/60">
-							{l.text("Reach out to get access to", { context: "Prompt to contact Mistral for access to model weights" })}{" "}
-							<Link
-								className="underline text-primary"
-								href={`${MISTRAL_URL}/contact`}
-							>
-								{l.text("{modelName} weights", {
-									context: "Link text naming an AI model followed by \"weights\"",
-									values: { modelName: model.name },
-								})}
-							</Link>
-							.
-						</HeadingSubtitle>
-					</Heading>
 				</TabsContent>
 			)}
 		</Tabs>

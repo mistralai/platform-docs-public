@@ -23,10 +23,26 @@ export default async function DeprecationNotice({ model, locale }: DeprecationNo
   const showRetirementDate = isRetired && model.metadata?.retirementDate;
   const showDeprecationDate = isDeprecated && model.metadata?.deprecationDate;
   const dateOptions: Intl.DateTimeFormatOptions = { dateStyle: undefined, year: 'numeric', month: 'numeric', day: 'numeric' };
+  const statusSummary = isRetired
+    ? replacementModel
+      ? l.text('This model is retired. Use {replacementModel} for new integrations.', {
+        context: 'Summary for a retired AI model with a replacement model',
+        values: { replacementModel: replacementModel.name },
+      })
+      : l.text('This model is retired and is no longer available for new integrations.', { context: 'Summary for a retired AI model without a replacement model' })
+    : replacementModel
+      ? l.text('This model is deprecated. Use {replacementModel} for new integrations.', {
+        context: 'Summary for a deprecated AI model with a replacement model',
+        values: { replacementModel: replacementModel.name },
+      })
+      : l.text('This model is deprecated and is being phased out.', { context: 'Summary for a deprecated AI model without a replacement model' });
 
   return (
     <ModelCard className="relative">
       <ModelCardInner className='max-sm:flex-col'>
+        <div className="flex-1 text-sm text-foreground/70">
+          {statusSummary}
+        </div>
         {showRetirementDate && model.metadata?.retirementDate && (
           <DeprecationMessage
             label={l.text('Retirement date', { context: 'Retirement date of an AI model' })}

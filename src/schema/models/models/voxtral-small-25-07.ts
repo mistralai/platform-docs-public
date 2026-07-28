@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/voxtral-small',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'voxtral', backgroundColor: 'pink' },
   weights: [
     {

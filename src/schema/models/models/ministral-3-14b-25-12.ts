@@ -12,7 +12,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/ministral-3-14b',
-  status: 'Active',
+  status: 'GA',
   avatar: { icon: 'ministral', backgroundColor: 'beige' },
   weights: [
     {

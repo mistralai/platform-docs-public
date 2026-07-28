@@ -14,7 +14,7 @@ export type PricingDenominator =
 
 export type ModelClass = 'Generalist' | 'Specialist';
 export type ModelType = 'Premier' | 'Open' | 'Labs';
-export type ModelStatus = 'Deprecated' | 'Retired' | 'Active';
+export type ModelStatus = 'PublicPreview' | 'GA' | 'Deprecated' | 'Retired';
 
 export interface ModelPricingFlat {
   type: 'flat';
@@ -159,6 +159,11 @@ export const AVAILABLE_FEATURES = {
   tts: {
     name: 'Text to Speech',
     link: '/studio-api/audio/text_to_speech',
+    endpoints: ['audio-speech'],
+  },
+  'voice-cloning': {
+    name: 'Voice Cloning',
+    link: '/studio-api/audio/text_to_speech/voices',
     endpoints: ['audio-speech'],
   },
   timestamps: {

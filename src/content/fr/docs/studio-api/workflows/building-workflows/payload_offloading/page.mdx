@@ -19,7 +19,7 @@ Pour rendre cela transparent, le SDK fournit deux assistants intégrés qui tran
 Les deux fonctionnalités s’exécutent côté worker et se configurent par déploiement.
 
 :::info
-Vous souhaitez chiffrer les charges utiles en plus de les déporter ? Consultez [Chiffrement](/studio-api/workflows/building-workflows/encryption) — les deux fonctions sont compatibles.
+Vous voulez chiffrer ou compresser les payloads en plus de les externaliser ? Consultez [Chiffrement](/studio-api/workflows/building-workflows/encryption) et [Compression](/studio-api/workflows/building-workflows/compression) — les trois fonctionnalités peuvent être combinées. La compression s’exécute en premier et peut ramener un payload sous la limite de 2 Mo, ce qui évite entièrement l’externalisation.
 :::
 
 <SectionTab as="h1" sectionId="when-to-use-what">Quand utiliser quoi ?</SectionTab>
@@ -38,16 +38,16 @@ Vous souhaitez chiffrer les charges utiles en plus de les déporter ? Consulte
 Installez le SDK Workflows avec le connecteur vers votre fournisseur de stockage cloud :
 
 ```bash
-# Support AWS S3
+# AWS S3 support
 uv add "mistralai-workflows[s3]"
 
-# Support Azure Blob Storage
+# Azure Blob Storage support
 uv add "mistralai-workflows[azure]"
 
-# Support Google Cloud Storage
+# Google Cloud Storage support
 uv add "mistralai-workflows[gcs]"
 
-# Tous les fournisseurs de stockage
+# All storage providers
 uv add "mistralai-workflows[storage]"
 ```
 
@@ -79,8 +79,8 @@ from mistralai.workflows.core.encoding.fields_offloader import (
 )
 
 class TranscriptionPayload(OffloadableModel):
-    audio_id: str                                            # champ classique
-    transcript: OffloadableField[str] = OffloadableField(    # déporté
+    audio_id: str                                            # regular field
+    transcript: OffloadableField[str] = OffloadableField(    # offloaded
         value=""
     )
 ```
@@ -128,7 +128,7 @@ class TranscribeWorkflow:
     async def run(self, audio_id: str) -> str:
         result = await transcribe(TranscriptionPayload(audio_id=audio_id))
 
-        # Passez le champ déporté tel quel — NE LE décompressez PAS dans le workflow
+        # Pass the offloaded field through — DON'T unwrap in the workflow
         summary = await summarize(SummaryInput(transcript=result.transcript))
         return summary.text
 ```
@@ -156,7 +156,7 @@ class LargeContext(BaseModel):
     audio_features: dict[str, float]
 
 class Payload(OffloadableModel):
-    large: OffloadableField[LargeContext]   # un blob, trois champs
+    large: OffloadableField[LargeContext]   # one blob, three fields
 ```
 
   </TabItem>
@@ -170,7 +170,7 @@ Définissez ces variables d’environnement sur vos workers. La présence du blo
   <TabItem value="azure" label="Azure">
 
 ```bash
-ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1 Mo (défaut)
+ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1MB (default)
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=azure
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__CONTAINER_NAME=my-workflow-payloads
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING="..."
@@ -180,11 +180,11 @@ ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING="..."
   <TabItem value="s3" label="AWS S3">
 
 ```bash
-ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1 Mo (défaut)
+ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1MB (default)
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=s3
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__BUCKET_NAME=my-workflow-payloads
-ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optionnel
-# Les identifiants sont optionnels — la chaîne de connexion par défaut d'AWS sera utilisée si non spécifiés
+ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optional
+# Credentials are optional — uses AWS default credential chain if not set
 # ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AWS_ACCESS_KEY_ID=your-access-key
 # ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
@@ -193,10 +193,10 @@ ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optionn
   <TabItem value="gcs" label="Google Cloud Storage">
 
 ```bash
-ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1 Mo (défaut)
+ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1MB (default)
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=gcs
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__BUCKET_ID=my-workflow-payloads
-# Utilise les identifiants d'application par défaut (ADC) depuis l'environnement
+# Uses Application Default Credentials (ADC) from environment
 ```
 
   </TabItem>
@@ -242,8 +242,8 @@ TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING="..."
 ```bash
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=s3
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__BUCKET_NAME=workflow-payloads
-TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optionnel
-# Les identifiants sont optionnels — la chaîne de connexion par défaut d'AWS sera utilisée si non spécifiés
+TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optional
+# Credentials are optional — uses AWS default credential chain if not set
 # TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AWS_ACCESS_KEY_ID=your-access-key
 # TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
@@ -254,7 +254,7 @@ TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optionnel
 ```bash
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=gcs
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__BUCKET_ID=workflow-payloads
-# Utilise les identifiants d'application par défaut (ADC) depuis l'environnement
+# Uses Application Default Credentials (ADC) from environment
 ```
 
   </TabItem>
@@ -286,7 +286,7 @@ client = Mistral(
 
 execution = client.workflows.execute_workflow(
     workflow_identifier="my-workflow",
-    input={"large_data": "..."},  # Sera déporté si > 2 Mo
+    input={"large_data": "..."},  # Will be offloaded if > 2MB
 )
 ```
 
@@ -303,8 +303,8 @@ client = Mistral(
         storage_config=BlobStorageConfig(
             storage_provider="s3",
             bucket_name="workflow-payloads",
-            region_name="us-east-1",  # optionnel
-            # Identifiants optionnels — utilise la chaîne par défaut AWS si non renseignés
+            region_name="us-east-1",  # optional
+            # Credentials are optional — uses AWS default credential chain if not set
             # aws_access_key_id="your-access-key",
             # aws_secret_access_key="your-secret-key",
         )
@@ -313,7 +313,7 @@ client = Mistral(
 
 execution = client.workflows.execute_workflow(
     workflow_identifier="my-workflow",
-    input={"large_data": "..."},  # Sera déporté si > 2 Mo
+    input={"large_data": "..."},  # Will be offloaded if > 2MB
 )
 ```
 
@@ -324,7 +324,7 @@ execution = client.workflows.execute_workflow(
 from mistralai.client import Mistral
 from mistralai.extra.workflows.encoding import PayloadOffloadingConfig, BlobStorageConfig
 
-# Utilise les identifiants d'application par défaut (ADC) depuis l'environnement
+# Uses Application Default Credentials (ADC) from environment
 client = Mistral(
     api_key="your_api_key",
     workflow_payload_offloading=PayloadOffloadingConfig(
@@ -337,7 +337,7 @@ client = Mistral(
 
 execution = client.workflows.execute_workflow(
     workflow_identifier="my-workflow",
-    input={"large_data": "..."},  # Sera déporté si > 2 Mo
+    input={"large_data": "..."},  # Will be offloaded if > 2MB
 )
 ```
 

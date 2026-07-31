@@ -70,8 +70,8 @@ export function getGlossaryData(l: Lingo): GlossaryTerm[] {
             term: l.text('Free mode', { context: 'Glossary term for the default free Studio API access tier' }),
             definition: (
                 <>
-                    {l.text('Default Studio API access. No credit card required. Conservative rate limits suitable for evaluation and prototyping.', { context: 'Definition of the Free mode glossary term' })}{' '}
-                    <em className="text-foreground/50 not-italic text-xs">{l.text('→ Scale plan', { context: 'Cross-reference label from Free mode to Scale plan' })}</em>
+                    {l.text('Default Mistral access mode. No credit card required. Includes monthly usage with rate limits suitable for evaluation and prototyping.', { context: 'Definition of the Free mode glossary term' })}{' '}
+                    <em className="text-foreground/50 not-italic text-xs">{l.text('→ Pay-as-you-go', { context: 'Cross-reference label from Free mode to Pay-as-you-go' })}</em>
                 </>
             ),
             categories: categories(['billing'], l),
@@ -133,11 +133,11 @@ export function getGlossaryData(l: Lingo): GlossaryTerm[] {
             categories: categories(['concepts'], l),
         },
         {
-            term: l.text('Scale plan', { context: 'Glossary term for the pay-as-you-go API tier' }),
+            term: l.text('Pay-as-you-go', { context: 'Glossary term for pay-as-you-go usage' }),
             definition: (
                 <>
-                    {l.text('Pay-as-you-go API tier. Billed by token consumption. Rate-limit tiers upgrade automatically based on cumulative billing. Suitable for production workloads above Free mode limits.', { context: 'Definition of the Scale plan glossary term' })}{' '}
-                    <em className="text-foreground/50 not-italic text-xs">{l.text('→ Free mode', { context: 'Cross-reference label from Scale plan to Free mode' })}</em>
+                    {l.text('Optional usage billing beyond included monthly usage. Billed by token with no monthly commitment. Suitable for workloads above Free mode limits.', { context: 'Definition of the Pay-as-you-go glossary term' })}{' '}
+                    <em className="text-foreground/50 not-italic text-xs">{l.text('→ Free mode', { context: 'Cross-reference label from Pay-as-you-go to Free mode' })}</em>
                 </>
             ),
             categories: categories(['billing'], l),

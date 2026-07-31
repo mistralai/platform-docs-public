@@ -25,8 +25,8 @@ declare module "@lingo.dev/react" {
     "/M Chars": { context: "Pricing unit meaning \"per million characters\"" };
     "/M Tokens": { context: "Pricing unit meaning \"per million tokens\"" };
     "/Min": { context: "Price denominator suffix meaning \"per minute\" (audio models)" };
-    "→ Free mode": { context: "Cross-reference label from Scale plan to Free mode" };
-    "→ Scale plan": { context: "Cross-reference label from Free mode to Scale plan" };
+    "→ Free mode": { context: "Cross-reference label from Pay-as-you-go to Free mode" };
+    "→ Pay-as-you-go": { context: "Cross-reference label from Free mode to Pay-as-you-go" };
     "→ Token": { context: "Cross-reference label from Context window to Token" };
     "A 12B model with image understanding capabilities in addition to text.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "A 24B text model, open source model that excels at SWE use cases.": { context: "Short description of an AI model" };
@@ -245,7 +245,7 @@ declare module "@lingo.dev/react" {
     "Data stays in your VPC; use existing cloud credits": { context: "Value for the \"Best For\" field of the VPC deployment option" };
     "Datasets": { context: "Keyword tag for the Evaluation feature" };
     "Deep Research": { context: "Name of a Mistral platform feature" };
-    "Default Studio API access. No credit card required. Conservative rate limits suitable for evaluation and prototyping.": { context: "Definition of the Free mode glossary term" };
+    "Default Mistral access mode. No credit card required. Includes monthly usage with rate limits suitable for evaluation and prototyping.": { context: "Definition of the Free mode glossary term" };
     "Define tools, let the model call functions, and return real-world data.": { context: "Quickstart description about building an agent with tools" };
     "Demonstrated experience with AI/ML technologies and familiarity with Mistral AI models.": { context: "Description of a requirement for joining the Mistral ambassador program" };
     "Deploy a custom model": { context: "Quickstart title about deploying a custom model with Docker" };
@@ -531,7 +531,7 @@ declare module "@lingo.dev/react" {
     "Participate in Mistral AI events, webinars, and community gatherings as a representative.": { context: "Description of a Mistral ambassador responsibility" };
     "Partners": { context: "Footer link to partners" };
     "Passion": { context: "Criterion used to evaluate ambassador applications" };
-    "Pay-as-you-go API tier. Billed by token consumption. Rate-limit tiers upgrade automatically based on cumulative billing. Suitable for production workloads above Free mode limits.": { context: "Definition of the Scale plan glossary term" };
+    "Optional usage billing beyond included monthly usage. Billed by token with no monthly commitment. Suitable for workloads above Free mode limits.": { context: "Definition of the Pay-as-you-go glossary term" };
     "Pay-as-you-go or committed throughput": { context: "Feature of the SaaS deployment option" };
     "Payments": { context: "Keyword tag for the Billing & Limits feature" };
     "PDFs": { context: "Keyword tag for the Document Intelligence feature" };
@@ -592,7 +592,7 @@ declare module "@lingo.dev/react" {
     "Save a prompt template with versions and a clear usage description.": { context: "Quickstart description about creating a reusable Prompt in Studio" };
     "Scaffold a durable AI pipeline, run a worker, and trigger your first execution.": { context: "Quickstart description about building a workflow" };
     "Scaffold a project with Vibe Code": { context: "Quickstart title about scaffolding a project with Vibe Code" };
-    "Scale plan": { context: "Glossary term for the pay-as-you-go API tier" };
+    "Pay-as-you-go": { context: "Glossary term for pay-as-you-go usage" };
     "Scores": { context: "Label for an AI model capability: scoring/moderation output" };
     "Scroll for more": { context: "Hover hint at the bottom of the model table indicating more rows are scrollable" };
     "SDKs": { context: "Title of a documentation card about SDKs" };

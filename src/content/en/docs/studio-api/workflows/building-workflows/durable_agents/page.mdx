@@ -268,6 +268,65 @@ agent = workflows_mistralai.Agent(
   </TabItem>
 </Tabs>
 
+<SectionTab as="h2" variant="secondary" sectionId="streamable-http-mcp-server">Streamable HTTP MCP Server</SectionTab>
+
+For remote MCP servers that speak the Streamable HTTP transport (`--transport http`), such as a self-hosted server behind an HTTP endpoint:
+
+:::note
+Requires `mistralai>=2.8.0` (the release that ships the Streamable HTTP client). If you use `MCPStreamableHTTPConfig`, pin `mistralai>=2.8.0` in your project's dependencies.
+:::
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai import MCPStreamableHTTPConfig
+
+mcp_config = MCPStreamableHTTPConfig(
+    url="https://your-mcp-server.com/mcp",
+    name="remote-tools",
+)
+
+agent = workflows_mistralai.Agent(
+    model="mistral-medium-latest",
+    name="streamable-http-mcp-agent",
+    description="Agent with access to a Streamable HTTP MCP server",
+    mcp_clients=[mcp_config],
+)
+```
+
+  </TabItem>
+</Tabs>
+
+**Forwarding credentials to a Streamable HTTP server**
+
+A Streamable HTTP server usually needs credentials on every request: a bearer token gating the endpoint and/or a per-request integration token. Set them from the worker's environment so no secret is serialized into the workflow's [event history](/studio-api/workflows/getting-started/core_concepts/events).
+
+Use `auth_token_env` for the endpoint bearer (the SDK reads the raw token from that worker variable and adds the `Bearer` scheme). Use `header_mapping` for any other per-request secret header, mapping an HTTP header name to a worker variable name:
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai import MCPStreamableHTTPConfig
+
+mcp_config = MCPStreamableHTTPConfig(
+    url="https://your-mcp-server.com/mcp",
+    name="notion",
+    auth_token_env="MCP_ENDPOINT_TOKEN",                    # -> Authorization: Bearer <value>
+    header_mapping={"Notion-Token": "NOTION_TOKEN_BOT_A"},  # header <- whole env value
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Only the variable names are serialized into activity params and event history; the secret values are read from the worker's environment inside the activity and never leave it. Put only non-secret values in the static `headers` field. If a declared worker variable is missing from the environment, the activity fails fast.
+
+**Redirects**
+
+By default the client does not follow HTTP redirects (`follow_redirects=False`). On a redirect, `httpx` only strips the `Authorization` header on cross-origin hops, so the per-request secret headers above (e.g. `Notion-Token`) would be resent to the redirect target. Set `follow_redirects=True` only if your MCP server relies on redirects (for example `/mcp` -> `/mcp/`) and you trust every host it can redirect to.
+
 <SectionTab as="h1" sectionId="built-in-tools">Built-in tools</SectionTab>
 
 Use Mistral's built-in tools alongside activities:

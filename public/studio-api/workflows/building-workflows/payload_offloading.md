@@ -16,7 +16,7 @@ To make this seamless, the SDK ships two built-in helpers that turn the referenc
 Both features run on the worker side and are configured per-deployment.
 
 :::info
-Want to encrypt payloads in addition to offloading them? See [Encryption](/studio-api/workflows/building-workflows/encryption) — both features can be combined.
+Want to encrypt or compress payloads in addition to offloading them? See [Encryption](/studio-api/workflows/building-workflows/encryption) and [Compression](/studio-api/workflows/building-workflows/compression) — all three features can be combined. Compression runs first and can pull a payload back under the 2MB limit, skipping offloading entirely.
 :::
 
 <SectionTab as="h1" sectionId="when-to-use-what">When to use what</SectionTab>

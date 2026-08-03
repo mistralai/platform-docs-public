@@ -256,7 +256,6 @@ export interface ModelTemplate<
     input: StarRating;
     output: StarRating;
   };
-  hideRatings?: boolean;
   pricing: ModelPricing;
   identifiers: ModelIdentifier;
   capabilities: ModelCapabilities;

@@ -29,7 +29,6 @@ export const AVATAR_ICONS = {
   'codestral-embed': '/assets/models/Codestral_Embed.svg',
   mathstral: '/assets/models/Mathstral.svg',
   leanstral: '/assets/models/Leanstral.svg',
-  shieldstral: '/assets/models/Shieldstral.svg',
 } as const;
 
 export type AvatarIconVariant = keyof typeof AVATAR_ICONS;

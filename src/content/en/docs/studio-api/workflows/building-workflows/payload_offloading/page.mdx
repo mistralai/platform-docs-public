@@ -9,17 +9,17 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Payload offloading
 
-To keep the orchestration layer fast and predictable for every workflow on the platform, Mistral Workflows enforces a **2MB limit** on workflow inputs, activity inputs, and activity outputs. When you need to move data larger than that between steps, the recommended pattern is to **pass references to the data, not the data itself** — for example, an object key in a bucket, a row ID in a database, or a document ID.
+To keep the orchestration layer fast and predictable for every workflow on the platform, Mistral Workflows enforces a **2MB limit** on workflow inputs, activity inputs, and activity outputs. When you need to move data larger than that between steps, the recommended pattern is to **pass references to the data, not the data itself**. For example, pass an object key in a bucket, a row ID in a database, or a document ID.
 
-To make this seamless, the SDK ships two built-in helpers that turn the reference pattern into a one-line annotation:
+To support this pattern, the SDK ships two built-in helpers that turn the reference pattern into a one-line annotation:
 
-- **Activity field offloading** — mark a field as offloadable, and the SDK transparently stores it in *your* blob storage on the way out and rehydrates it on the way in. The orchestration layer only ever sees a small reference.
-- **Payload offloading** — automatically offload any payload exceeding the 2MB limit to blob storage. Useful when the workflow itself needs to see or pass around a large value.
+- **Activity field offloading**: Mark a field as offloadable, and the SDK stores it in *your* blob storage on the way out and rehydrates it on the way in. The orchestration layer only ever sees a small reference.
+- **Payload offloading**: Automatically offload any payload exceeding the 2MB limit to blob storage. Useful when the workflow itself needs to see or pass around a large value.
 
 Both features run on the worker side and are configured per-deployment.
 
 :::info
-Want to encrypt or compress payloads in addition to offloading them? See [Encryption](/studio-api/workflows/building-workflows/encryption) and [Compression](/studio-api/workflows/building-workflows/compression) — all three features can be combined. Compression runs first and can pull a payload back under the 2MB limit, skipping offloading entirely.
+Want to encrypt or compress payloads in addition to offloading them? See [Encryption](/studio-api/workflows/building-workflows/encryption) and [Compression](/studio-api/workflows/building-workflows/compression). All three features can be combined. Compression runs first and can pull a payload back under the 2MB limit, skipping offloading entirely.
 :::
 
 <SectionTab as="h1" sectionId="when-to-use-what">When to use what</SectionTab>
@@ -30,7 +30,7 @@ Want to encrypt or compress payloads in addition to offloading them? See [Encryp
 | Workflow input or activity I/O > 2MB, accessed in workflow code | **Payload offloading** |
 
 :::tip
-**Quick guide**: if you can keep your large data inside activities (most common case), use **activity field offloading** — it has none of the replay-time costs of payload offloading. Only use payload offloading if the workflow itself needs to see or pass around a large value.
+**Quick guide**: if you can keep your large data inside activities (most common case), use **activity field offloading**. It has none of the replay-time costs of payload offloading. Only use payload offloading if the workflow itself needs to see or pass around a large value.
 :::
 
 <SectionTab as="h1" sectionId="prerequisites">Prerequisites</SectionTab>
@@ -65,7 +65,7 @@ Mark a Pydantic field as offloadable. The SDK uploads its value to your blob sto
 
 - Offloaded values are **only accessible in activities** (not in workflow context).
 - Upload and download happen **within the activity context**, governed by the activity's timeout settings.
-- Each `OffloadableField` is stored as a separate blob — group related fields in a single Pydantic model for better performance.
+- Each `OffloadableField` is stored as a separate blob. Group related fields in a single Pydantic model for better performance.
 
 <SectionTab as="h2" variant="secondary" sectionId="defining-offloadable-fields">Defining offloadable fields</SectionTab>
 
@@ -114,7 +114,7 @@ async def transcribe(payload: TranscriptionPayload) -> TranscriptionPayload:
 
 <SectionTab as="h2" variant="secondary" sectionId="using-in-workflows">Using in workflows</SectionTab>
 
-In the workflow body, do **not** call `.get_value()` — the value may not be local. Pass the `OffloadableField` object as-is to the next activity:
+In the workflow body, do **not** call `.get_value()`. The value might not be local. Pass the `OffloadableField` object as-is to the next activity:
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -128,7 +128,7 @@ class TranscribeWorkflow:
     async def run(self, audio_id: str) -> str:
         result = await transcribe(TranscriptionPayload(audio_id=audio_id))
 
-        # Pass the offloaded field through — DON'T unwrap in the workflow
+        # Pass the offloaded field through. Do not unwrap in the workflow
         summary = await summarize(SummaryInput(transcript=result.transcript))
         return summary.text
 ```
@@ -164,7 +164,7 @@ class Payload(OffloadableModel):
 
 <SectionTab as="h2" variant="secondary" sectionId="activity-field-config">Configuration</SectionTab>
 
-Set these env vars on your workers. Providing the storage block is what enables the feature — there is no separate `ENABLED` flag. The default minimum size is 1MB; tune it with `MIN_SIZE_BYTES`.
+Set these env vars on your workers. Providing the storage block enables the feature. There is no separate `ENABLED` flag. The default minimum size is 1MB; tune it with `MIN_SIZE_BYTES`.
 
 <Tabs>
   <TabItem value="azure" label="Azure">
@@ -184,7 +184,7 @@ ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1MB (default)
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=s3
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__BUCKET_NAME=my-workflow-payloads
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optional
-# Credentials are optional — uses AWS default credential chain if not set
+# Credentials are optional. Uses AWS default credential chain if not set
 # ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AWS_ACCESS_KEY_ID=your-access-key
 # ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
@@ -221,7 +221,7 @@ Offloaded data is stored in **your own cloud storage**. You are responsible for:
 - Creating and managing the storage bucket or container.
 - Configuring appropriate access credentials.
 - Ensuring **both the client and worker have access** to the same storage.
-- Setting up an **expiry policy** — Workflows does not automatically delete payloads. Align the expiry with your workflow retention period (default: 30 days).
+- Setting up an **expiry policy**. Workflows does not automatically delete payloads. Align the expiry with your workflow retention period (default: 30 days).
 
 <SectionTab as="h3" variant="secondary" sectionId="worker-config">Worker configuration</SectionTab>
 
@@ -243,7 +243,7 @@ TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING="..."
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=s3
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__BUCKET_NAME=workflow-payloads
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optional
-# Credentials are optional — uses AWS default credential chain if not set
+# Credentials are optional. Uses AWS default credential chain if not set
 # TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AWS_ACCESS_KEY_ID=your-access-key
 # TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
@@ -260,7 +260,7 @@ TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__BUCKET_ID=workflow-payloads
   </TabItem>
 </Tabs>
 
-As with activity field offloading, presence of the storage block enables the feature — there is no `ENABLED` flag.
+As with activity field offloading, the presence of the storage block enables the feature. There is no `ENABLED` flag.
 
 <SectionTab as="h3" variant="secondary" sectionId="client-config">Client configuration</SectionTab>
 
@@ -304,7 +304,7 @@ client = Mistral(
             storage_provider="s3",
             bucket_name="workflow-payloads",
             region_name="us-east-1",  # optional
-            # Credentials are optional — uses AWS default credential chain if not set
+            # Credentials are optional. Uses AWS default credential chain if not set
             # aws_access_key_id="your-access-key",
             # aws_secret_access_key="your-secret-key",
         )

@@ -39,7 +39,7 @@ A payload is compressed only when it is worth it:
 - The payload size is at least `min_size_bytes` (default: 1MB).
 - The compressed result is smaller than the original. If compression does not shrink the payload, the original bytes are sent instead.
 
-When a payload is compressed, the SDK records the algorithm and level used with the compressed bytes. Decoding reads those settings from the payload itself, so a worker can decompress a payload even if its own configured level differs — or if compression is not configured at all. You never need to keep the encode-time and decode-time configuration in sync.
+When a payload is compressed, the SDK records the algorithm and level used with the compressed bytes. Decoding reads those settings from the payload itself, so a worker can decompress a payload even if its own configured level differs, or if compression is not configured at all. You never need to keep the encode-time and decode-time configuration in sync.
 
 <SectionTab as="h1" sectionId="configuration">Configuration</SectionTab>
 
@@ -47,7 +47,7 @@ Compression requires configuration on **both the client and the worker** since p
 
 <SectionTab as="h2" variant="secondary" sectionId="worker-config">Worker configuration</SectionTab>
 
-Set these env vars on your workers. Providing the compression block is what enables the feature — there is no separate `ENABLED` flag. The default minimum size is 1MB and the default level is 3; tune them with `MIN_SIZE_BYTES` and `ALGORITHM_CONFIG__LEVEL`.
+Set these env vars on your workers. Providing the compression block enables the feature. There is no separate `ENABLED` flag. The default minimum size is 1MB and the default level is 3. Tune them with `MIN_SIZE_BYTES` and `ALGORITHM_CONFIG__LEVEL`.
 
 ```bash
 TEMPORAL_PAYLOAD_COMPRESSION__MIN_SIZE_BYTES=1048576             # 1MB (default)
@@ -65,6 +65,8 @@ When using the Mistral Python SDK to start workflows whose input may be large, c
   <TabItem value="python" label="Python">
 
 ```python
+import asyncio
+
 from mistralai.client import Mistral
 from mistralai.extra.workflows import (
     WorkflowEncodingConfig,
@@ -75,22 +77,28 @@ from mistralai.extra.workflows.encoding import (
     ZstdCompressionConfig,
 )
 
-client = Mistral(api_key="your_api_key")
+async def main():
+    client = Mistral(api_key="your_api_key")
 
-await configure_workflow_encoding(
-    WorkflowEncodingConfig(
-        payload_compression=PayloadCompressionConfig(
-            min_size_bytes=1024 * 1024,  # 1MB (default)
-            algorithm_config=ZstdCompressionConfig(level=3),
-        )
-    ),
-    client=client,
-)
+    await configure_workflow_encoding(
+        WorkflowEncodingConfig(
+            payload_compression=PayloadCompressionConfig(
+                min_size_bytes=1024 * 1024,  # 1MB (default)
+                algorithm_config=ZstdCompressionConfig(level=3),
+            )
+        ),
+        client=client,
+    )
 
-execution = client.workflows.execute_workflow(
-    workflow_identifier="my-workflow",
-    input={"large_data": "..."},  # Compressed if >= 1MB
-)
+    execution = client.workflows.execute_workflow(
+        workflow_identifier="my-workflow",
+        input={"large_data": "..."},  # Compressed if >= 1MB
+    )
+    print(execution)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
   </TabItem>
@@ -98,13 +106,13 @@ execution = client.workflows.execute_workflow(
 
 <SectionTab as="h1" sectionId="combining-features">Combining with offloading and encryption</SectionTab>
 
-Compression, offloading, and encryption are independent — enable any combination. When more than one is active, the SDK applies them in a fixed order so payloads always round-trip correctly:
+Compression, offloading, and encryption are independent. Enable any combination. When more than one is active, the SDK applies them in a fixed order so payloads always round-trip correctly:
 
 + **Compress** the payload if it is above the compression threshold.
 + **Offload** the (now smaller) payload to blob storage if it is still above the offloading threshold.
 + **Encrypt** the result last.
 
-Because compression runs first, it can pull a payload back under the 2MB limit and skip offloading entirely — avoiding the blob-storage upload and the replay-time download it would otherwise incur.
+Because compression runs first, it can pull a payload back under the 2MB limit and skip offloading entirely. This avoids the blob-storage upload and the replay-time download that offloading would otherwise require.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -149,4 +157,4 @@ uv add "mistralai[workflow-payload-compression]"
 
 **A payload larger than `min_size_bytes` is not compressed.**
 
-zstd could not make the payload smaller — already-compressed data (images, video, archives) does not shrink further. The SDK sends the original bytes in this case, which is expected.
+zstd could not make the payload smaller. Already-compressed data, such as images, video, and archives, does not shrink further. The SDK sends the original bytes in this case, which is expected.

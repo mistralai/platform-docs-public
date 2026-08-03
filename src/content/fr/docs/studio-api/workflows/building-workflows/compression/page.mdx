@@ -65,6 +65,8 @@ Lorsque vous utilisez le SDK Mistral Python pour démarrer des workflows dont l�
   <TabItem value="python" label="Python">
 
 ```python
+import asyncio
+
 from mistralai.client import Mistral
 from mistralai.extra.workflows import (
     WorkflowEncodingConfig,
@@ -75,22 +77,28 @@ from mistralai.extra.workflows.encoding import (
     ZstdCompressionConfig,
 )
 
-client = Mistral(api_key="your_api_key")
+async def main():
+    client = Mistral(api_key="your_api_key")
 
-await configure_workflow_encoding(
-    WorkflowEncodingConfig(
-        payload_compression=PayloadCompressionConfig(
-            min_size_bytes=1024 * 1024,  # 1MB (default)
-            algorithm_config=ZstdCompressionConfig(level=3),
-        )
-    ),
-    client=client,
-)
+    await configure_workflow_encoding(
+        WorkflowEncodingConfig(
+            payload_compression=PayloadCompressionConfig(
+                min_size_bytes=1024 * 1024,  # 1MB (default)
+                algorithm_config=ZstdCompressionConfig(level=3),
+            )
+        ),
+        client=client,
+    )
 
-execution = client.workflows.execute_workflow(
-    workflow_identifier="my-workflow",
-    input={"large_data": "..."},  # Compressed if >= 1MB
-)
+    execution = client.workflows.execute_workflow(
+        workflow_identifier="my-workflow",
+        input={"large_data": "..."},  # Compressed if >= 1MB
+    )
+    print(execution)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
   </TabItem>
@@ -98,13 +106,13 @@ execution = client.workflows.execute_workflow(
 
 <SectionTab as="h1" sectionId="combining-features">Associer à l’externalisation et au chiffrement</SectionTab>
 
-La compression, l’externalisation et le chiffrement sont indépendants — activez la combinaison de votre choix. Lorsque plusieurs mécanismes sont actifs, le SDK les applique dans un ordre fixe afin que les payloads fassent toujours l’aller-retour correctement :
+La compression, l’externalisation et le chiffrement sont indépendants. Activez la combinaison de votre choix. Lorsque plusieurs mécanismes sont actifs, le SDK les applique dans un ordre fixe afin que les payloads fassent toujours l’aller-retour correctement :
 
 + **Compressez** le payload s’il dépasse le seuil de compression.
 + **Externalisez** le payload, désormais plus petit, vers le stockage blob s’il dépasse encore le seuil d’externalisation.
 + **Chiffrez** le résultat en dernier.
 
-Comme la compression s’exécute en premier, elle peut ramener un payload sous la limite de 2 Mo et éviter entièrement l’externalisation — ce qui évite le téléchargement vers le stockage blob et le téléchargement au moment du replay qui seraient sinon nécessaires.
+Comme la compression s’exécute en premier, elle peut ramener un payload sous la limite de 2 Mo et éviter entièrement l’externalisation. Cela évite le téléchargement vers le stockage blob et le téléchargement au moment du replay qui seraient sinon nécessaires.
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -149,4 +157,4 @@ uv add "mistralai[workflow-payload-compression]"
 
 **Un payload supérieur à `min_size_bytes` n’est pas compressé.**
 
-zstd n’a pas pu réduire la taille du payload — les données déjà compressées (images, vidéos, archives) ne diminuent pas davantage. Dans ce cas, le SDK envoie les octets d’origine, ce qui est attendu.
+zstd n’a pas pu réduire la taille du payload. Les données déjà compressées, comme les images, les vidéos et les archives, ne diminuent pas davantage. Dans ce cas, le SDK envoie les octets d’origine, ce qui est attendu.

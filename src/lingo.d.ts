@@ -33,7 +33,6 @@ declare module "@lingo.dev/react" {
     "A 24B text model, open source model that excels at using tools to explore codebases, editing multiple files and power software engineering agents.": { context: "Full description of an AI model" };
     "A capability that lets the model request execution of external functions or APIs mid-conversation. Your application executes the function and returns the result, allowing the model to incorporate real-world data into its response.": { context: "Definition of the Function calling glossary term" };
     "A code generation mode where the model generates text based on both preceding (prefix) and following (suffix) context. Used for mid-function completion in IDEs. Available in Codestral.": { context: "Definition of the FIM glossary term" };
-    "A compact multimodal moderation model for prompt moderation, response moderation, prompt-response pair classification, refusal detection, and safety filtering across text and image inputs. It uses natural-language policy questions and returns a yes or no classification.": { context: "Full description of an AI model" };
     "A coding dedicated model using a mamba 2 architecture for research purposes under an open license.": { context: "Full description of an AI model" };
     "A coding dedicated model using a mamba 2 architecture for research purposes.": { context: "Short description of an AI model" };
     "A conversational interface to your codebase, right in the terminal. Reference files with @, run shell commands with !, and use slash-command skills to automate common workflows.": { context: "Detailed description of the Terminal Agent feature" };
@@ -167,7 +166,6 @@ declare module "@lingo.dev/react" {
     "Caution": { context: "Admonition callout label for caution warnings" };
     "Centrally administer your organization. Invite team members, enforce secure Admin/Billing/Member roles, and allocate paid seats for premium products like Vibe Team and Mistral Code.": { context: "Detailed description of the User Management feature" };
     "Change language": { context: "Accessible label for switching language" };
-    "Compact multimodal moderation model for text and image safety classification.": { context: "Short description of an AI model" };
     "Changelog": { context: "Main heading for product and API changelogs" };
     "Changelogs": { context: "Title of a documentation card about Changelogs" };
     "Charts": { context: "Keyword tag for the Code Interpreter feature" };

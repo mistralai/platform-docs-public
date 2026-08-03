@@ -23,6 +23,8 @@ export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
   'voxtral-mini-transcribe-realtime-26-02',
   'voxtral-tts-26-03',
   'ocr-4-0',
+  'shieldstral-1-0',
+  'leanstral-1-5',
 ];
 
 export const FEATURED_MODELS_COLOR_OVERRIDES = [

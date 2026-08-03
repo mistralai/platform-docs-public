@@ -9,17 +9,17 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Déport de charge utile (payload offloading)
 
-Pour garantir la rapidité et la prévisibilité de la couche d'orchestration pour chaque workflow sur la plateforme, Mistral Workflows impose une **limite de 2 Mo** sur les entrées de workflow, les entrées et sorties d'activité. Lorsque vous devez transférer des données plus volumineuses entre les étapes, le schéma recommandé est de **passer des références vers les données, pas les données elles-mêmes** — par exemple, une clé d’objet dans un bucket, un identifiant de ligne dans une base de données ou un identifiant de document.
+Pour garantir la rapidité et la prévisibilité de la couche d'orchestration pour chaque workflow sur la plateforme, Mistral Workflows impose une **limite de 2 Mo** sur les entrées de workflow, les entrées et sorties d'activité. Lorsque vous devez transférer des données plus volumineuses entre les étapes, le schéma recommandé est de **passer des références vers les données, pas les données elles-mêmes**. Par exemple, passez une clé d’objet dans un bucket, un identifiant de ligne dans une base de données ou un identifiant de document.
 
 Pour rendre cela transparent, le SDK fournit deux assistants intégrés qui transforment ce schéma de référence en une simple annotation :
 
-- **Déport de champ d'activité** — marquez un champ comme déportable : le SDK le stocke automatiquement dans *votre* stockage d’objets lors de la sortie et le restaure à l’entrée. La couche d’orchestration ne voit qu’une petite référence.
-- **Déport de payload** — bascule automatiquement toute charge utile dépassant 2 Mo dans un stockage d’objets. Utile lorsque le workflow doit manipuler ou accéder à une grande valeur.
+- **Déport de champ d'activité** : marquez un champ comme déportable. Le SDK le stocke automatiquement dans *votre* stockage d’objets lors de la sortie et le restaure à l’entrée. La couche d’orchestration ne voit qu’une petite référence.
+- **Déport de payload** : bascule automatiquement toute charge utile dépassant 2 Mo dans un stockage d’objets. Utile lorsque le workflow doit manipuler ou accéder à une grande valeur.
 
 Les deux fonctionnalités s’exécutent côté worker et se configurent par déploiement.
 
 :::info
-Vous voulez chiffrer ou compresser les payloads en plus de les externaliser ? Consultez [Chiffrement](/studio-api/workflows/building-workflows/encryption) et [Compression](/studio-api/workflows/building-workflows/compression) — les trois fonctionnalités peuvent être combinées. La compression s’exécute en premier et peut ramener un payload sous la limite de 2 Mo, ce qui évite entièrement l’externalisation.
+Vous voulez chiffrer ou compresser les payloads en plus de les externaliser ? Consultez [Chiffrement](/studio-api/workflows/building-workflows/encryption) et [Compression](/studio-api/workflows/building-workflows/compression). Les trois fonctionnalités peuvent être combinées. La compression s’exécute en premier et peut ramener un payload sous la limite de 2 Mo, ce qui évite entièrement l’externalisation.
 :::
 
 <SectionTab as="h1" sectionId="when-to-use-what">Quand utiliser quoi ?</SectionTab>
@@ -30,7 +30,7 @@ Vous voulez chiffrer ou compresser les payloads en plus de les externaliser ? 
 | Entrée de workflow ou entrée/sortie d’activité > 2 Mo, accès dans le code du workflow | **Déport de payload** |
 
 :::tip
-**Guide rapide** : si vous pouvez contenir vos données volumineuses dans une activité (cas le plus courant), privilégiez **le déport de champ d’activité** — il évite les coûts de relecture liés au déport de payload. Utilisez le déport de payload seulement si le workflow doit manipuler ou transmettre lui-même une valeur volumineuse.
+**Guide rapide** : si vous pouvez contenir vos données volumineuses dans une activité (cas le plus courant), privilégiez **le déport de champ d’activité**. Il évite les coûts de relecture liés au déport de payload. Utilisez le déport de payload seulement si le workflow doit manipuler ou transmettre lui-même une valeur volumineuse.
 :::
 
 <SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
@@ -114,7 +114,7 @@ async def transcribe(payload: TranscriptionPayload) -> TranscriptionPayload:
 
 <SectionTab as="h2" variant="secondary" sectionId="using-in-workflows">Utilisation dans les workflows</SectionTab>
 
-Dans le corps du workflow, **ne** faites **pas** appel à `.get_value()` : la valeur n’est pas forcément locale. Passez l’objet `OffloadableField` tel quel à l’activité suivante :
+Dans le corps du workflow, **ne** faites **pas** appel à `.get_value()`. La valeur n’est pas forcément locale. Passez l’objet `OffloadableField` tel quel à l’activité suivante :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -128,7 +128,7 @@ class TranscribeWorkflow:
     async def run(self, audio_id: str) -> str:
         result = await transcribe(TranscriptionPayload(audio_id=audio_id))
 
-        # Pass the offloaded field through — DON'T unwrap in the workflow
+        # Pass the offloaded field through. Do not unwrap in the workflow
         summary = await summarize(SummaryInput(transcript=result.transcript))
         return summary.text
 ```
@@ -164,7 +164,7 @@ class Payload(OffloadableModel):
 
 <SectionTab as="h2" variant="secondary" sectionId="activity-field-config">Configuration</SectionTab>
 
-Définissez ces variables d’environnement sur vos workers. La présence du bloc de configuration de stockage active la fonctionnalité — il n’y a pas de drapeau `ENABLED`. La taille minimale par défaut est 1 Mo ; vous pouvez l’ajuster avec `MIN_SIZE_BYTES`.
+Définissez ces variables d’environnement sur vos workers. La présence du bloc de configuration de stockage active la fonctionnalité. Il n’y a pas d’option `ENABLED`. La taille minimale par défaut est 1 Mo ; vous pouvez l’ajuster avec `MIN_SIZE_BYTES`.
 
 <Tabs>
   <TabItem value="azure" label="Azure">
@@ -184,7 +184,7 @@ ACTIVITY_ATTRIBUTES_OFFLOADING__MIN_SIZE_BYTES=1048576   # 1MB (default)
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=s3
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__BUCKET_NAME=my-workflow-payloads
 ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optional
-# Credentials are optional — uses AWS default credential chain if not set
+# Credentials are optional. Uses AWS default credential chain if not set
 # ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AWS_ACCESS_KEY_ID=your-access-key
 # ACTIVITY_ATTRIBUTES_OFFLOADING__STORAGE_CONFIG__AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
@@ -221,7 +221,7 @@ Les données déportées sont stockées **dans votre propre cloud**. Vous êtes 
 - Créer et gérer le bucket ou conteneur ;
 - Configurer les identifiants d’accès adéquats ;
 - Vérifier que **le client et le worker accèdent tous deux** au stockage ;
-- Mettre en place une **politique d’expiration** — la suppression n’est pas automatique. Ajustez l’expiration à la durée de rétention du workflow (par défaut : 30 jours).
+- Mettre en place une **politique d’expiration**. La suppression n’est pas automatique. Ajustez l’expiration à la durée de rétention du workflow (par défaut : 30 jours).
 
 <SectionTab as="h3" variant="secondary" sectionId="worker-config">Configuration worker</SectionTab>
 
@@ -243,7 +243,7 @@ TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AZURE_CONNECTION_STRING="..."
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__STORAGE_PROVIDER=s3
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__BUCKET_NAME=workflow-payloads
 TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__REGION_NAME=us-east-1  # optional
-# Credentials are optional — uses AWS default credential chain if not set
+# Credentials are optional. Uses AWS default credential chain if not set
 # TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AWS_ACCESS_KEY_ID=your-access-key
 # TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
@@ -260,7 +260,7 @@ TEMPORAL_PAYLOAD_OFFLOADING__STORAGE_CONFIG__BUCKET_ID=workflow-payloads
   </TabItem>
 </Tabs>
 
-Comme pour le déport de champ, la simple présence du bloc de configuration active la fonctionnalité — il n’y a pas de drapeau `ENABLED`.
+Comme pour le déport de champ, la présence du bloc de configuration active la fonctionnalité. Il n’y a pas d’option `ENABLED`.
 
 <SectionTab as="h3" variant="secondary" sectionId="client-config">Configuration client</SectionTab>
 
@@ -304,7 +304,7 @@ client = Mistral(
             storage_provider="s3",
             bucket_name="workflow-payloads",
             region_name="us-east-1",  # optional
-            # Credentials are optional — uses AWS default credential chain if not set
+            # Credentials are optional. Uses AWS default credential chain if not set
             # aws_access_key_id="your-access-key",
             # aws_secret_access_key="your-secret-key",
         )

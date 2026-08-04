@@ -147,8 +147,9 @@ export default async function ModelPage({ params }: ModelPageProps) {
   }
 
   const { description } = model.describe(l);
-  const speed = speedRating(model.ratings.speed, l);
-  const performance = performanceRating(model.ratings.performance, l);
+  const showRatings = !model.hideRatings;
+  const speed = showRatings ? speedRating(model.ratings.speed, l) : null;
+  const performance = showRatings ? performanceRating(model.ratings.performance, l) : null;
   const isLegacy = isLegacyModel(model);
 
   const modelIcon = model.avatar?.icon || getModelIconFallback(model.name);
@@ -162,9 +163,12 @@ export default async function ModelPage({ params }: ModelPageProps) {
 
   // Get the icon path
   const iconPath = AVATAR_ICONS[modelIcon];
-  const hasLargePricing =
-    model.pricing.type === 'custom' &&
-    model.pricing.input.length + model.pricing.output.length > 2;
+  const pricingItemsCount =
+    model.pricing.type === 'custom'
+      ? model.pricing.input.length + model.pricing.output.length
+      : 1;
+  const hasPricing = model.pricing.free || pricingItemsCount > 0;
+  const hasLargePricing = model.pricing.type === 'custom' && pricingItemsCount > 2;
 
   return (
     <div className="md:pt-8 text-foreground not-prose relative flex flex-col md:gap-24 gap-16 flex-1 w-full min-h-[calc(100%_-_64px)]">
@@ -272,22 +276,26 @@ export default async function ModelPage({ params }: ModelPageProps) {
               >
                 {/* left side */}
                 <ModelCardInner className="py-6 px-4">
-                  <SectionBlock>
-                    <SectionLabel icon={ThunderIcon}>{l.text('Speed', { context: 'Label for AI model speed' })}</SectionLabel>
-                    <StatRating
-                      isLegacy={isLegacy}
-                      rating={speed}
-                    />
-                  </SectionBlock>
+                  {showRatings && speed && performance && (
+                    <>
+                      <SectionBlock>
+                        <SectionLabel icon={ThunderIcon}>{l.text('Speed', { context: 'Label for AI model speed' })}</SectionLabel>
+                        <StatRating
+                          isLegacy={isLegacy}
+                          rating={speed}
+                        />
+                      </SectionBlock>
 
-                  <SectionBlock>
-                    <SectionLabel icon={LampIcon}>{l.text('Performance', { context: 'Label for AI model capability level' })}</SectionLabel>
-                    <StatRating
-                      maxStars={4}
-                      isLegacy={isLegacy}
-                      rating={performance}
-                    />
-                  </SectionBlock>
+                      <SectionBlock>
+                        <SectionLabel icon={LampIcon}>{l.text('Performance', { context: 'Label for AI model capability level' })}</SectionLabel>
+                        <StatRating
+                          maxStars={4}
+                          isLegacy={isLegacy}
+                          rating={performance}
+                        />
+                      </SectionBlock>
+                    </>
+                  )}
 
                   {/* Modalities */}
                   <SectionBlock>
@@ -331,23 +339,25 @@ export default async function ModelPage({ params }: ModelPageProps) {
                 )}
 
                 {/* right side */}
-                <ModelCardInner className="ml-auto border-l border-dashed pb-3 pt-3 px-4">
-                  <div className="ml-auto items-start flex flex-col gap-2 justify-center">
-                    <SectionLabel>
-                      <span>{l.text('Price', { context: 'Label for AI model pricing' })}</span>
-                      <PriceTooltip locale={locale} />
-                    </SectionLabel>
-                    <Price
-                      pricing={model.pricing}
-                      isRetired={model.status === 'Retired'}
-                      locale={locale}
-                    />
-                  </div>
-                </ModelCardInner>
+                {hasPricing && (
+                  <ModelCardInner className="ml-auto border-l border-dashed pb-3 pt-3 px-4">
+                    <div className="ml-auto items-start flex flex-col gap-2 justify-center">
+                      <SectionLabel>
+                        <span>{l.text('Price', { context: 'Label for AI model pricing' })}</span>
+                        <PriceTooltip locale={locale} />
+                      </SectionLabel>
+                      <Price
+                        pricing={model.pricing}
+                        isRetired={model.status === 'Retired'}
+                        locale={locale}
+                      />
+                    </div>
+                  </ModelCardInner>
+                )}
               </ModelCard>
             )}
 
-            {!isLegacy && (
+            {!isLegacy && showRatings && speed && performance && (
               <ModelCard
                 className={cn(hasLargePricing ? 'xl:hidden' : 'lg:hidden')}
                 isLegacy={isLegacy}
@@ -420,7 +430,7 @@ export default async function ModelPage({ params }: ModelPageProps) {
                 </ModelCardInner>
               </ModelCard>
             )}
-            {!isLegacy && (
+            {!isLegacy && hasPricing && (
               <ModelCard
                 className={cn(hasLargePricing ? 'xl:hidden' : 'lg:hidden')}
                 isLegacy={isLegacy}

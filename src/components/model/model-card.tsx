@@ -132,7 +132,7 @@ export function ModelCard({
     <Link
       href={modelUrl}
       className={cn(
-        'overflow-clip relative flex items-center border border-border rounded-md p-1',
+        'overflow-clip relative flex items-center gap-3 border border-border rounded-md p-3',
         className
       )}
       style={cardStyle}
@@ -153,7 +153,7 @@ export function ModelCard({
         size="lg"
         style={cardStyle}
       />
-      <div className="z-2 px-4 py-2 flex-1 flex flex-col gap-0.5">
+      <div className="z-2 flex-1 flex flex-col gap-0.5">
         <div className="flex items-center gap-2 justify-between">
           <h3 className="font-bold text-lg text-foreground min-w-0 w-full">
             {model.name}

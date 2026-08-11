@@ -33,8 +33,8 @@ export interface ModelPricingRange {
 export interface ModelPricingCustom {
   type: 'custom';
   free: boolean;
-  input: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator }[];
-  output: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator }[];
+  input: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string }[];
+  output: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string }[];
 }
 
 export type ModelPricing =
@@ -82,53 +82,53 @@ type Features = Record<
 export const AVAILABLE_FEATURES = {
   'chat-completions': {
     name: 'Chat Completions',
-    link: '/studio-api/conversations/chat-completion',
+    link: '/studio/conversations/chat-completion',
     endpoints: ['chat-completions'],
   },
   'function-calling': {
     name: 'Function Calling',
-    link: '/studio-api/conversations/function-calling',
+    link: '/studio/conversations/function-calling',
     endpoints: ['chat-completions', 'conversations'],
   },
   'agents-conversations': {
     name: 'Agents & Conversations',
-    link: '/studio-api/agents/agents-api',
+    link: '/studio/agents/agents-api',
     endpoints: ['agents', 'conversations'],
   },
   connectors: {
     name: 'Built-In Tools',
-    link: '/studio-api/agents/agent-tools',
+    link: '/studio/agents/agent-tools',
     endpoints: ['agents', 'conversations'],
   },
   'structured-outputs': {
     name: 'Structured Outputs',
-    link: '/studio-api/conversations/structured-output',
+    link: '/studio/conversations/structured-output',
     endpoints: ['chat-completions', 'conversations'],
   },
   'predicted-outputs': {
     name: 'Predicted Outputs',
-    link: '/studio-api/conversations/advanced/predicted-outputs',
+    link: '/studio/conversations/advanced/predicted-outputs',
     endpoints: ['chat-completions', 'conversations'],
   },
   prefix: {
     name: 'Prefix',
-    link: '/studio-api/conversations/chat-completion#other-useful-features',
+    link: '/studio/conversations/chat-completion#other-useful-features',
     endpoints: ['chat-completions', 'conversations'],
   },
-  ocr: { name: 'OCR', link: '/studio-api/document-processing/overview', endpoints: ['ocr'] },
+  ocr: { name: 'OCR', link: '/studio/document-processing/overview', endpoints: ['ocr'] },
   'annotations-structured-ocr': {
     name: 'Annotations - Structured',
-    link: '/studio-api/document-processing/annotations',
+    link: '/studio/document-processing/annotations',
     endpoints: ['ocr'],
   },
   'bbox-extraction': {
     name: 'BBox Extraction',
-    link: '/studio-api/document-processing/basic_ocr',
+    link: '/studio/document-processing/basic_ocr',
     endpoints: ['ocr'],
   },
   'document-qna': {
     name: 'Document QnA',
-    link: '/studio-api/document-processing/document_qna',
+    link: '/studio/document-processing/document_qna',
     endpoints: ['chat-completions', 'conversations'],
   },
   fim: {
@@ -138,42 +138,42 @@ export const AVAILABLE_FEATURES = {
   },
   embeddings: {
     name: 'Embeddings',
-    link: '/studio-api/knowledge-rag/embeddings',
+    link: '/studio/knowledge-rag/embeddings',
     endpoints: ['embeddings'],
   },
   moderations: {
     name: 'Moderations',
-    link: '/studio-api/safety-moderation',
+    link: '/studio/safety-moderation',
     endpoints: ['moderations'],
   },
   'chat-moderations': {
     name: 'Chat Moderations',
-    link: '/studio-api/safety-moderation',
+    link: '/studio/safety-moderation',
     endpoints: ['chat-moderations'],
   },
   transcriptions: {
     name: 'Transcriptions',
-    link: '/studio-api/audio/speech_to_text',
+    link: '/studio/audio/speech_to_text',
     endpoints: ['audio-transcriptions'],
   },
   tts: {
     name: 'Text to Speech',
-    link: '/studio-api/audio/text_to_speech',
+    link: '/studio/audio/text_to_speech',
     endpoints: ['audio-speech'],
   },
   'voice-cloning': {
     name: 'Voice Cloning',
-    link: '/studio-api/audio/text_to_speech/voices',
+    link: '/studio/audio/text_to_speech/voices',
     endpoints: ['audio-speech'],
   },
   timestamps: {
     name: 'Timestamps',
-    link: '/studio-api/audio/speech_to_text/offline_transcription#transcription-with-timestamps',
+    link: '/studio/audio/speech_to_text/offline_transcription#transcription-with-timestamps',
     endpoints: ['audio-transcriptions'],
   },
   batching: {
     name: 'Batching',
-    link: '/studio-api/batch-processing',
+    link: '/studio/batch-processing',
     endpoints: ['batch'],
   },
 } as const satisfies Features;
@@ -225,6 +225,13 @@ export interface ModelDescriptions {
   shortDescription: string;
 }
 
+export interface ModelExternalLink {
+  href: string;
+  label: string;
+}
+
+export type ModelTag = 'third-party';
+
 export interface ModelTemplate<
   K extends string = string,
   S extends string = string,
@@ -247,6 +254,11 @@ export interface ModelTemplate<
   avatar?: ModelAvatar;
   bloglink?: string | null;
   paperlink?: string | null;
+  externalLinks?: ModelExternalLink[];
+  tags?: ModelTag[];
+  pricingLayout?: 'stacked';
+  performanceMaxStars?: StarRating;
+  usageExample?: 'zai-glm-5-2';
   weights: ModelWeight[];
   contextLength?: string | undefined | null;
   outputTokenLimit?: string | undefined | null;

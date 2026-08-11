@@ -8,7 +8,7 @@ sidebar_position: 1
 Install **[Mistral Vibe for VS Code](https://marketplace.visualstudio.com/items?itemName=mistralai.mistral-vibe-code)**, open the Vibe panel, and sign in. The extension ships with the Vibe agent built in, so **no separate CLI install is required**.
 
 :::tip
-**Switching surface?** This page covers the **VS Code extension**. To set up Vibe in your terminal, see [Install the CLI](/vibe/code/cli/install-setup); for a cloud session on a GitHub repo, see [Vibe Code Web](/vibe/code/vibe-code-web/get-started). Configuration and sessions are shared between the CLI and the extension.
+**Switching interface?** This page covers the **VS Code extension**. To set up Vibe in your terminal, see [Install the CLI](/vibe/code/cli/install-setup); for a cloud session on a GitHub repo, see [Vibe Code Web](/vibe/code/vibe-code-web/get-started). Configuration and sessions are shared between the CLI and the extension.
 :::
 
 <SectionTab as="h2" sectionId="requirements">Requirements</SectionTab>
@@ -17,7 +17,7 @@ Install **[Mistral Vibe for VS Code](https://marketplace.visualstudio.com/items?
 |---|---|
 | **VS Code** | Version 1.94.0 or later. |
 | **Mistral account** | Required to create or manage API keys. |
-| **Access path** | A [Mistral plan](https://mistral.ai/pricing) (Free, Pro, or higher), or an API plan with a key you manage yourself. Usage and rate limits apply. |
+| **Access path** | A [Mistral plan](https://mistral.ai/pricing) or an API key you manage yourself. Usage and rate limits depend on your plan, included monthly usage, and pay-as-you-go settings. |
 
 <SectionTab as="h2" sectionId="install">Install the extension</SectionTab>
 

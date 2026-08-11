@@ -33,6 +33,7 @@ export interface ModelAvatarProps
   alt: string;
   href?: string;
   pixelEffect?: boolean;
+  imageClassName?: string;
 }
 
 export function ModelAvatar({
@@ -41,6 +42,7 @@ export function ModelAvatar({
   href,
   size = 'default',
   pixelEffect = false,
+  imageClassName,
   className,
   style,
   ...props
@@ -74,7 +76,7 @@ export function ModelAvatar({
       <Image
         src={src}
         alt={alt}
-        className="z-2 size-[60%]"
+        className={cn('z-2 size-[60%]', imageClassName)}
         width={pixelSize}
         height={pixelSize}
       />

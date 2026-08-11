@@ -38,7 +38,11 @@ export async function GET(request: NextRequest) {
         searchParams.get('description') || 'Mistral AI Language Model';
       const version = searchParams.get('version') || '0.1';
 
-      const modelIcon = getModelIconFallback(title);
+      const requestedModelIcon = searchParams.get('modelIcon');
+      const modelIcon =
+        requestedModelIcon && requestedModelIcon in AVATAR_ICONS
+          ? (requestedModelIcon as keyof typeof AVATAR_ICONS)
+          : getModelIconFallback(title);
       const modelColor = getModelColorFallback(title);
       const cssColorVar = MODEL_COLORS[modelColor];
       const backgroundColor = getHexColor(cssColorVar);

@@ -92,6 +92,7 @@ export type SideBarTreeNode = {
   metadata?: AnyDocsMetadata | null;
   isExternalLink?: boolean;
   hidden?: boolean;
+  isSectionLabel?: boolean;
 };
 
 const isPathContained = (
@@ -185,6 +186,14 @@ export const DocsSidebarProvider = <T extends SideBarTreeNode>({
 };
 
 import { MethodBadge } from '@/app/[locale]/(api)/components/method-badge';
+
+const SidebarSectionLabel = ({ label }: { label: string }) => (
+  <SidebarMenuItem>
+    <div className="mt-4 mb-1 px-2 text-[10px] font-mono uppercase tracking-[0.12em] text-sidebar-foreground/55 select-none">
+      {label}
+    </div>
+  </SidebarMenuItem>
+);
 
 const SidebarFileItem = <T extends SideBarTreeNode>({
   item,
@@ -567,7 +576,8 @@ const DocsSidebarContent = <T extends SideBarTreeNode>({
           // Check if we are in one of the new sections
           const isNewSection =
             pathname?.startsWith('/vibe') ||
-            pathname?.startsWith('/studio-api') ||
+            pathname?.startsWith('/studio') ||
+            pathname?.startsWith('/inference') ||
             pathname?.startsWith('/models') ||
             pathname?.startsWith('/admin') ||
             pathname?.startsWith('/getting-started') ||
@@ -664,6 +674,10 @@ const SidebarItem = <T extends SideBarTreeNode>({
     useExpandedCategories();
 
   const pathname = usePathnameWithHash({ hashResponsive });
+
+  if (item.isSectionLabel) {
+    return <SidebarSectionLabel label={item.label} />;
+  }
 
   if (!item.children.length) {
     const isOverridedExpanded =

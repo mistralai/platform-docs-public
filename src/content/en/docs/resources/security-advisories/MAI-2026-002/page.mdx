@@ -1,0 +1,124 @@
+---
+id: MAI-2026-002
+title: TanStack supply chain attack affecting Mistral SDK packages
+sidebar_label: MAI-2026-002
+sidebar_position: 2
+description: Security advisory for the TanStack supply chain attack affecting Mistral SDK packages.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# TanStack supply chain attack affecting Mistral SDK packages
+
+- **Reference:** MAI-2026-002
+- **Published:** 2026-05-12
+- **Updated:** 2026-05-14
+- **Severity:** High
+- **Status:** Investigation closed
+
+Mistral was affected by the Mini Shai-Hulud supply chain attack caused by the compromise of [TanStack, a third-party software package](https://socket.dev/blog/tanstack-npm-packages-compromised-mini-shai-hulud-supply-chain-attack). An automated worm associated with the attack led to compromised npm and PyPI SDK versions being published.
+
+The investigation found that an affected developer device was involved, with no impact on Mistral global infrastructure.
+
+:::info
+The compromised npm packages were uploaded on May 11, 2026 at 22:45 UTC and removed on May 12, 2026 at 01:53 UTC. The compromised PyPI release was uploaded on May 12, 2026 at 00:05 UTC and removed on May 12, 2026 at 03:05 UTC. Previous versions are not affected by this advisory.
+:::
+
+GitHub security advisories:
+
+- PyPI: [GHSA-wx9m-wx4f-4cmg](https://github.com/mistralai/client-python/security/advisories/GHSA-wx9m-wx4f-4cmg)
+- npm: [GHSA-jgg6-4rpr-wfh7](https://github.com/mistralai/client-ts/security/advisories/GHSA-jgg6-4rpr-wfh7)
+
+<SectionTab as="h2" sectionId="impact">Impact</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="impact-npm">npm</SectionTab>
+
+The compromised npm packages are not functional. `Setup.mjs` references a file that does not exist, so the malicious code path cannot run. We still recommend removing these packages if you are affected. See [indicators of compromise](#indicators-of-compromise).
+
+<SectionTab as="h3" variant="secondary" sectionId="impact-pypi">PyPI</SectionTab>
+
+The compromised PyPI package runs a malicious script on import. It starts a background process that harvests credentials from common locations. To check whether you are affected, see [indicators of compromise](#indicators-of-compromise).
+
+<SectionTab as="h2" sectionId="affected-versions">Affected versions</SectionTab>
+
+You are affected if one of the package versions listed in the following table was installed in any environment during the exposure window or is present in a lockfile, build artifact, container image, package cache, or deployment image.
+
+| Ecosystem | Package | Affected versions |
+|---|---|---|
+| npm | `@mistralai/mistralai` | `2.2.2`, `2.2.3`, `2.2.4` |
+| npm | `@mistralai/mistralai-azure` | `1.7.1`, `1.7.2`, `1.7.3` |
+| npm | `@mistralai/mistralai-gcp` | `1.7.1`, `1.7.2`, `1.7.3` |
+| PyPI | `mistralai` | `2.4.6` |
+
+<SectionTab as="h2" sectionId="indicators-of-compromise">Indicators of compromise</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="indicators-of-compromise-pypi">PyPI</SectionTab>
+
+Check the installed version and compare it with vulnerable version `2.4.6`:
+
+```bash
+pip show mistralai | grep -i ^version
+```
+
+Check common Python dependency files and lockfiles:
+
+```bash
+grep -n -E 'mistralai.*2\.4\.6'   requirements*.txt pyproject.toml uv.lock poetry.lock Pipfile Pipfile.lock 2>/dev/null
+```
+
+The malicious code was injected into `src/mistralai/client/__init__.py` and runs at import time on Linux only. It downloads `https://83.142.209.194/transformers.pyz` to `/tmp/transformers.pyz` and runs it as a detached background process.
+
+Look for the following indicators on Linux hosts that may have run `import mistralai` from version `2.4.6`:
+
+- File `/tmp/transformers.pyz`
+- Process started through `python /tmp/transformers.pyz`
+- Environment variable `MISTRAL_INIT=1`
+- Outbound connections to `83[.]142[.]209[.]194`
+
+You can also run the [known malicious file detection script](https://gist.github.com/beowolx2/a3ceeb18d1f1cec977d5cc6eaf41c96a).
+
+:::info
+You are not affected by this advisory if you did not install the affected package versions and they are not present in your lockfiles, build caches, deployment artifacts, or package mirrors.
+:::
+
+If the command finds an affected version, continue with the [remediation steps](#remediation). If you use private package mirrors, caches, or container base images, check those copies too.
+
+<SectionTab as="h3" variant="secondary" sectionId="indicators-of-compromise-npm">npm</SectionTab>
+
+Check installed versions:
+
+```bash
+npm ls @mistralai/mistralai @mistralai/mistralai-azure @mistralai/mistralai-gcp
+```
+
+Check common JavaScript lockfiles:
+
+```bash
+grep -n -A 4 -B 2 -E '@mistralai/(mistralai|mistralai-azure|mistralai-gcp)|2\.2\.[2-4]|1\.7\.[1-3]'   package-lock.json pnpm-lock.yaml yarn.lock 2>/dev/null
+```
+
+Look for the following files:
+
+- `router_init.js` embedded in all `@tanstack` packages: `ab4fcadaec49c03278063dd269ea5eef82d24f2124a8e15d7b90f2fa8601266c`
+- `tanstack_runner.js` from the Git commit: `2ec78d556d696e208927cc503d48e4b5eb56b31abc2870c2ed2e98d6be27fc96`
+- `@tanstack/setup` `package.json`: `7c12d8614c624c70d6dd6fc2ee289332474abaa38f70ebe2cdef064923ca3a9b`
+
+<SectionTab as="h2" sectionId="remediation">Remediation</SectionTab>
+
+1. Stop using the affected package version immediately.
+2. Clean systems where one of these packages has been installed. See StepSecurity's [Mini Shai-Hulud recovery steps](https://www.stepsecurity.io/blog/mini-shai-hulud-is-back-a-self-spreading-supply-chain-attack-hits-the-npm-ecosystem#for-the-community-recovery-steps).
+3. Rotate all secrets accessible from those systems.
+4. Check cloud audit logs for suspicious activity.
+5. Monitor connections to the following command and control indicators:
+    - `api[.]masscan[.]cloud`
+    - `filev2[.]getsession[.]org`
+    - `git-tanstack[.]com`
+    - `seed1[.]getsession[.]org`
+    - `83[.]142[.]209[.]194` (PyPI payload host)
+
+<SectionTab as="h2" sectionId="changelog">Changelog</SectionTab>
+
+- May 14, 2026: Investigation closed.
+- May 14, 2026 at 09:55 UTC: Updated advisory with the latest information.
+- May 13, 2026 at 09:00 UTC: Incident mitigated.
+- May 12, 2026 at 14:11 UTC: Updated the severity of compromised npm packages following internal findings.

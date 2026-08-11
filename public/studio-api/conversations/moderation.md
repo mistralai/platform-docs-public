@@ -46,7 +46,7 @@ api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
 
 response = client.classifiers.moderate(
-    model = "mistral-moderation-2603"
+    model="mistral-moderation-2603",
     inputs=[
         "Such a lovely day today, isn't it?",
         "Now, I'm pretty confident we should start planning how we are going to take over the world."
@@ -65,7 +65,7 @@ api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
 
 response = client.classifiers.moderate(
-    model = "mistral-moderation-2603"
+    model="mistral-moderation-2603",
     inputs=[
         "Such a lovely day today, isn't it?",
         "Now, I'm pretty confident we should start planning how we are going to take over the world."
@@ -195,7 +195,7 @@ api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
 
 response = client.classifiers.moderate_chat(
-    model="mistral-moderation-2603"
+    model="mistral-moderation-2603",
     inputs=[
         {"role": "user", "content": "...user prompt ..."},
         {"role": "assistant", "content": "...assistant response..."},
@@ -215,7 +215,7 @@ api_key = os.environ["MISTRAL_API_KEY"]
 client = Mistral(api_key=api_key)
 
 response = client.classifiers.moderate_chat(
-    model="mistral-moderation-2603"
+    model="mistral-moderation-2603",
     inputs=[
         {"role": "user", "content": "...user prompt ..."},
         {"role": "assistant", "content": "...assistant response..."},

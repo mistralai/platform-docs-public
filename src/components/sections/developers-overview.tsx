@@ -115,10 +115,10 @@ export function DevelopersOverview({ showCta = false, showHeader = true }: { loc
 
       {showCta && (
         <Link
-          href="/developers"
+          href="/resources"
           className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline mt-2"
         >
-          {l.text('Go to Developers', { context: 'Call to open the developer docs section' })}
+          Go to Resources
           <ArrowRightIcon className="size-4" />
         </Link>
       )}

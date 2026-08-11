@@ -6,11 +6,11 @@ import {
 import { stripLocale } from '@/i18n/utils';
 
 export type HeaderLinkId =
-  | 'getting-started'
-  | 'models'
-  | 'products'
-  | 'developers'
+  | 'vibe'
+  | 'studio'
+  | 'inference'
   | 'admin'
+  | 'resources'
   | 'api';
 
 export type HeaderLink = {
@@ -24,34 +24,34 @@ export type HeaderLink = {
 
 export const headerLinks: HeaderLink[] = [
   {
-    id: 'getting-started',
-    href: '/',
-    pathPrefixes: ['/', '/getting-started'],
-    sidebarItemHrefs: ['/'],
+    id: 'vibe',
+    href: '/vibe',
+    pathPrefixes: ['/vibe'],
+    sidebarItemHrefs: ['/vibe'],
   },
   {
-    id: 'models',
-    href: '/models',
-    pathPrefixes: ['/models'],
-    sidebarItemHrefs: ['/models'],
+    id: 'studio',
+    href: '/studio',
+    pathPrefixes: ['/studio'],
+    sidebarItemHrefs: ['/studio'],
   },
   {
-    id: 'products',
-    href: '/products',
-    pathPrefixes: ['/products', '/studio-api', '/vibe'],
-    sidebarItemHrefs: ['/studio-api/overview', '/vibe/overview'],
-  },
-  {
-    id: 'developers',
-    href: '/developers',
-    pathPrefixes: ['/developers', '/resources', '/community'],
-    sidebarItemHrefs: ['/resources', '/community'],
+    id: 'inference',
+    href: '/inference',
+    pathPrefixes: ['/inference', '/models'],
+    sidebarItemHrefs: ['/inference'],
   },
   {
     id: 'admin',
     href: '/admin',
     pathPrefixes: ['/admin'],
     sidebarItemHrefs: ['/admin'],
+  },
+  {
+    id: 'resources',
+    href: '/resources',
+    pathPrefixes: ['/resources'],
+    sidebarItemHrefs: ['/resources'],
   },
   {
     id: 'api',
@@ -62,8 +62,10 @@ export const headerLinks: HeaderLink[] = [
 ];
 
 /** Determine which header tab is active for a given pathname */
-export function getActiveHeaderTab(pathname: string): HeaderLink {
+export function getActiveHeaderTab(pathname: string): HeaderLink | null {
   const stripped = stripLocale(pathname);
+  if (stripped === '/') return null;
+
   // Check non-root tabs first (more specific paths)
   for (const link of headerLinks) {
     if (link.href === '/') continue;
@@ -71,13 +73,16 @@ export function getActiveHeaderTab(pathname: string): HeaderLink {
       return link;
     }
   }
-  // Default to Getting Started
-  return headerLinks[0];
+
+  return null;
 }
 
 /** Get top-level sidebar item hrefs for the active tab */
 export function getActiveSidebarItemHrefs(pathname: string): string[] {
-  return getActiveHeaderTab(pathname).sidebarItemHrefs;
+  const stripped = stripLocale(pathname);
+  if (stripped === '/' || stripped.startsWith('/getting-started')) return ['/'];
+
+  return getActiveHeaderTab(pathname)?.sidebarItemHrefs ?? [];
 }
 
 export type HeaderDropdownId = 'vibe' | 'ai-studio' | 'docs-api' | 'admin';

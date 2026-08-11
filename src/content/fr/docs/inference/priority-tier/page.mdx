@@ -1,0 +1,223 @@
+---
+id: priority-tier
+title: Priority Tier
+sidebar_position: 5
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Priority Tier
+
+Priority Tier (niveau de priorité) donne aux requêtes API éligibles une file d’attente prioritaire pour les workloads qui nécessitent un accès plus prévisible à une infrastructure partagée. Cette page s’adresse aux administrateurs d’entreprise qui planifient la capacité API et aux développeurs qui ajoutent le routage Priority Tier aux requêtes de completion.
+
+:::info
+Priority Tier nécessite une configuration de compte avec Mistral. Contactez votre responsable de compte ou votre contact Mistral pour configurer les limites de débit Priority Tier propres à chaque modèle pour votre organisation.
+:::
+
+<SectionTab as="h1" sectionId="how-priority-tier-works">Fonctionnement de Priority Tier</SectionTab>
+
+Priority Tier achemine les requêtes API éligibles via une file d’attente prioritaire avant le trafic Standard Tier pendant les périodes de forte charge. Il est conçu pour les workloads en temps réel et critiques pour l’activité qui nécessitent un accès prévisible aux modèles Mistral hébergés.
+
+La disponibilité de Priority Tier dépend de tous les éléments suivants :
+
+- Votre organisation dispose d’un droit Priority Tier actif.
+- La requête utilise un modèle configuré pour Priority Tier.
+- La requête respecte vos limites de débit Priority Tier personnalisées pour ce modèle.
+- La capacité Priority Tier est disponible pour le modèle et la région de déploiement.
+
+Si une requête n’est pas éligible à Priority Tier, elle peut tout de même s’exécuter comme trafic Standard Tier selon la valeur `service_tier` que vous envoyez.
+
+<SectionTab as="h1" sectionId="compare-service-tiers">Comparer les niveaux de service</SectionTab>
+
+| Fonctionnalité | Batch | Standard Tier | Priority Tier |
+|---|---|---|---|
+| Cas d’usage | Traitement asynchrone pour les workloads qui ne nécessitent pas de réponse en temps réel | Traitement standard des modèles | Workloads en temps réel et critiques pour l’activité |
+| Latence | Mis en file d’attente pour un traitement asynchrone | Secondes à minutes | Secondes |
+| Routage | File d’attente Batch | Routage best-effort | File d’attente prioritaire |
+| Limites de débit | Limites de traitement Batch | Limites standard basées sur l’utilisation ou personnalisées | Limites Priority Tier personnalisées par modèle |
+| Dépassement | Les requêtes sont mises en file d’attente et traitées sur une période de 24 heures | Comportement standard de limitation de débit | Bascule vers Standard Tier lorsque les limites Priority Tier sont dépassées |
+| Disponibilité | Globale | Globale ou régionale, selon l’endpoint et le modèle | Globale ou régionale, selon la configuration du compte, le modèle et la capacité |
+| SLA de disponibilité | Non disponible | Non disponible | 99,5% |
+| Fiabilité | Élevée | Élevée à moyenne | Élevée |
+
+<SectionTab as="h1" sectionId="request-priority-tier">Demander Priority Tier</SectionTab>
+
+Définissez le paramètre de requête `service_tier` sur les requêtes de completion prises en charge.
+
+| Valeur | Comportement |
+|---|---|
+| `auto` | Utilise Priority Tier lorsque votre requête est éligible. Bascule vers Standard Tier lorsque Priority Tier n’est pas disponible. |
+| `standard_only` | Utilise Standard Tier et ne consomme pas les limites Priority Tier. |
+
+Si vous omettez `service_tier`, la requête utilise `standard_only` par défaut.
+
+:::tip
+Définissez `service_tier` sur `auto` uniquement pour les requêtes qui doivent utiliser Priority Tier lorsqu’il est disponible. Laissez le champ non défini ou utilisez `standard_only` pour le trafic standard.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="send-priority-tier-request">Envoyer une requête Priority Tier</SectionTab>
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-medium-latest",
+    "service_tier": "auto",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+from mistralai import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.chat.complete(
+    model="mistral-medium-latest",
+    service_tier="auto",
+    messages=[
+        {
+            "role": "user",
+            "content": "What is the capital of France?",
+        }
+    ],
+)
+
+print(response.choices[0].message.content)
+print(response.usage.service_tier)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const mistral = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY,
+});
+
+const response = await mistral.chat.complete({
+  model: "mistral-medium-latest",
+  serviceTier: "auto",
+  messages: [
+    { role: "user", content: "What is the capital of France?" },
+  ],
+});
+
+console.log(response.choices?.[0]?.message?.content);
+console.log(response.usage?.serviceTier);
+```
+
+L’API REST utilise `service_tier`. Les noms de champs du SDK peuvent varier selon le langage et la version. Si votre SDK n’accepte pas le champ indiqué ici, mettez-le à jour vers la dernière version ou envoyez directement la requête REST.
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="check-served-tier">Vérifier le niveau qui a servi une requête</SectionTab>
+
+L’objet d’utilisation de la réponse inclut le niveau de service qui a traité la requête. Utilisez ce champ pour confirmer l’utilisation de Priority Tier, détecter une bascule vers Standard Tier et surveiller les rétrogradations inattendues.
+
+Les valeurs de réponse possibles sont :
+
+| Valeur de réponse | Signification |
+|---|---|
+| `priority` | La requête a été servie avec Priority Tier. |
+| `standard` | La requête a été servie avec Standard Tier. |
+
+Extrait de réponse :
+
+```json
+{
+  "model": "mistral-medium-latest",
+  "usage": {
+    "prompt_tokens": 22,
+    "completion_tokens": 70,
+    "total_tokens": 92,
+    "service_tier": "priority"
+  }
+}
+```
+
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
+
+Avant d’envoyer du trafic Priority Tier, vérifiez que vous disposez des éléments suivants :
+
+- Une clé API pour l’organisation configurée pour Priority Tier.
+- Un accord Priority Tier actif ou une configuration de compte active.
+- Des limites de débit Priority Tier personnalisées configurées pour chaque modèle cible.
+- Une version du SDK prise en charge si vous utilisez Python ou TypeScript.
+- La confirmation que votre modèle cible est éligible à Priority Tier.
+
+<SectionTab as="h1" sectionId="get-access">Obtenir l’accès à Priority Tier</SectionTab>
+
+1. Contactez votre responsable de compte ou votre contact Mistral.
+2. Partagez vos modèles cibles et votre profil de trafic attendu.
+3. Attendez que Mistral configure vos limites de débit Priority Tier personnalisées.
+4. Mettez à jour les requêtes éligibles pour définir `service_tier` sur `auto`.
+5. Vérifiez le niveau servi dans l’objet d’utilisation de la réponse.
+
+:::note
+Si vous avez besoin de plus de capacité Priority Tier, coordonnez-vous avec Mistral à l’avance. Les augmentations de capacité peuvent nécessiter un préavis.
+:::
+
+<SectionTab as="h1" sectionId="quotas-and-limits">Quotas et limites</SectionTab>
+
+Les limites Priority Tier sont personnalisées et propres à chaque modèle. Vos limites configurées peuvent inclure des requêtes par minute, des tokens par minute ou d’autres limites convenues avec Mistral.
+
+Lorsqu’une requête avec `service_tier` défini sur `auto` dépasse vos limites Priority Tier configurées, la requête bascule vers Standard Tier au lieu d’échouer uniquement parce que la capacité Priority Tier est épuisée.
+
+<SectionTab as="h1" sectionId="billing-and-pricing">Facturation et tarification</SectionTab>
+
+Priority Tier est facturé comme un multiplicateur premium au-dessus de la tarification catalogue Standard Tier. Le multiplicateur est de 1,75x la tarification catalogue standard, soit une prime de 75% sur les tokens d’entrée, de sortie et mis en cache.
+
+Les requêtes Priority conservent toute leur éligibilité aux remises de prompt caching, jusqu’à 90% d’économies sur les tokens d’entrée mis en cache. Le multiplicateur 1,75x s’applique après la remise de prompt cache.
+
+Les requêtes servies comme trafic Priority Tier sont facturées selon vos conditions Priority Tier. Les requêtes qui basculent vers Standard Tier sont traitées comme du trafic Standard Tier.
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Que se passe-t-il si j’omets service_tier ?">
+    La requête utilise `standard_only`. Elle est servie comme trafic Standard Tier et ne consomme pas les limites Priority Tier.
+  </FaqItem>
+
+  <FaqItem question="Que se passe-t-il lorsque je définis service_tier sur auto ?">
+    Nous essayons de servir la requête avec Priority Tier. Si Priority Tier n’est pas disponible pour cette requête, nous la servons comme trafic Standard Tier.
+  </FaqItem>
+
+  <FaqItem question="Pourquoi ma requête renvoie-t-elle service_tier: standard ?">
+    La requête a été servie comme trafic Standard Tier. Les causes courantes incluent des limites Priority Tier dépassées, un modèle non éligible à Priority Tier, un droit manquant, un accès expiré ou une capacité Priority Tier indisponible.
+  </FaqItem>
+
+  <FaqItem question="Puis-je utiliser Priority Tier sur tous les modèles ?">
+    Non. La disponibilité de Priority Tier est propre à chaque modèle et dépend de la configuration de votre compte ainsi que de la capacité disponible.
+  </FaqItem>
+
+  <FaqItem question="Priority Tier fonctionne-t-il avec l’inférence régionale ?">
+    Priority Tier peut être configuré pour le trafic API global ou régional, selon votre accord, le modèle cible et la capacité disponible. Consultez [Inférence régionale](/inference/regional-inference) pour les détails des endpoints régionaux.
+  </FaqItem>
+
+  <FaqItem question="Comment augmenter mes limites Priority Tier ?">
+    Contactez votre responsable de compte ou votre contact Mistral. Les augmentations de capacité peuvent nécessiter un préavis.
+  </FaqItem>
+</Faq>
+
+<SectionTab as="h1" sectionId="related-resources">Ressources associées</SectionTab>
+
+- [Inférence régionale](/inference/regional-inference)
+- [Traitement batch](/studio-api/batch-processing)
+- [SDK](/resources/sdks)
+- [Référence API](/api)

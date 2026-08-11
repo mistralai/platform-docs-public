@@ -18,7 +18,7 @@ export function getModelSlug(model: Model) {
 }
 
 export function getModelUrl(model: Model) {
-  return `/models/model-cards/${getModelSlug(model)}`;
+  return `/models/${getModelSlug(model)}`;
 }
 
 export function getModelLicenses(model: Model): string[] {

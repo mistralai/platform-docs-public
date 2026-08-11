@@ -114,7 +114,7 @@ export default async function Footer({ locale }: { locale: Locale }) {
         title: l.text('DOCUMENTATION', { context: 'Footer heading for documentation links' }),
         links: [
           { label: l.text('Documentation', { context: 'Footer link to documentation' }), href: '/' },
-          { label: l.text('Ambassadors', { context: 'Footer link to the Mistral ambassador program' }), href: '/community/ambassadors' },
+          { label: l.text('Ambassadors', { context: 'Footer link to the Mistral ambassador program' }), href: '/resources/ambassadors' },
           { label: l.text('Cookbooks', { context: 'Footer link to developer cookbooks' }), href: '/resources/cookbooks' },
         ],
       },
@@ -181,7 +181,7 @@ export default async function Footer({ locale }: { locale: Locale }) {
             external: true,
             icon: '↗',
           },
-          { label: l.text('Ambassadors', { context: 'Footer link to the Mistral ambassador community' }), href: '/community/ambassadors' },
+          { label: l.text('Ambassadors', { context: 'Footer link to the Mistral ambassador community' }), href: '/resources/ambassadors' },
         ],
       },
     ],

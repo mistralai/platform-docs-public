@@ -1,0 +1,457 @@
+---
+id: connectors-in-workflows
+title: Connecteurs dans les workflows
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Connecteurs dans les workflows
+
+Utilisez les [Connecteurs](/studio/connectors) dans un workflow pour appeler des services externes (GitHub, Notion, Slack, Outlook, etc.) sans avoir à gérer vous-même les identifiants. Le workflow déclare les connecteurs nécessaires ; la plateforme Mistral résout les identifiants à l'exécution et déclenche les flux OAuth à la demande.
+
+Un workflow résout les informations d'identification du Connecteur à partir de l'identité sous laquelle il s'exécute :
+
+- **[Workflow de type « on-behalf-of » (OBO)](/studio/workflows/building-workflows/on_behalf_of)** utilise les **informations d'identification de l'utilisateur déclenchant**. L'OBO nécessite un [déploiement renforcé](/studio/workflows/managing-workflows-in-production/hardened_deployments). Consultez [Enregistrement d'un workflow OBO](/studio/workflows/managing-workflows-in-production/hardened_deployments#registering-an-obo-workflow).
+- **Les workflows classiques** utilisent les **informations d'identification du worker** (l'identité de la clé API sous laquelle le worker s'exécute).
+
+:::info
+L'intégration des connecteurs dans les workflows s'appuie sur `mistralai-workflows-plugins-mistralai`. Ces API sont en **Public Preview** et peuvent évoluer.
+:::
+
+<SectionTab as="h2" sectionId="why">Pourquoi utiliser des emplacements de connecteur</SectionTab>
+
+Sans emplacement de connecteur, chaque workflow qui interagit avec une API externe doit gérer lui-même le stockage des identifiants, l'authentification OAuth et l'isolation des tokens par utilisateur. Les emplacements centralisent les trois :
+
+- **Aucun secret dans le code du workflow** : les identifiants sont résolus dynamiquement par la plateforme.
+- **OAuth automatique** : si l'appelant n'a pas encore autorisé, le workflow s'interrompt et fournit une URL d'authentification, puis reprend une fois l'autorisation effectuée.
+- **Informations d'identification liées à l'identité** : les informations d'identification sont résolues à partir de l'identité sous laquelle le workflow s'exécute : l'utilisateur déclenchant (OBO) ou le worker.
+- **Authentification interchangeable** : les connecteurs bearer (PAT) et OAuth2 utilisent le même code workflow.
+
+<SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
+
+Les emplacements de connecteur sont fournis avec le plugin Mistral :
+
+```bash
+uv add "mistralai-workflows[mistralai]"
+```
+
+Vous devez également avoir enregistré au moins un [Connecteur](/studio/connectors) pour votre espace de travail. Créez-en un via <a href="https://console.mistral.ai/build/connectors" target="_blank" rel="noopener">Studio &rsaquo; Contexte &rsaquo; Connecteurs</a>, ou via l'[API Connecteurs](/studio/connectors/management).
+
+[Ajoutez des identifiants](#credentials) avant d'exécuter un workflow :
+
+- Les connecteurs authentifiés **Bearer** (par ex. GitHub PAT) nécessitent d'enregistrer les identifiants dans Studio avant usage.
+- Les connecteurs **OAuth2** fonctionnent également mieux avec des identifiants ajoutés en amont. À défaut, le workflow déclenche un flux OAuth à la première exécution sans identifiant (voir [Comment fonctionne le flux OAuth alternatif](#oauth-flow)).
+
+<SectionTab as="h2" sectionId="credentials">Ajouter des identifiants</SectionTab>
+
+Chaque utilisateur stocke ses propres identifiants par connecteur dans Studio. Vous pouvez conserver un seul identifiant ou en stocker plusieurs nommés (par exemple deux PAT GitHub avec des autorisations différentes, ou un compte Microsoft personnel et un compte professionnel) et [choisir lequel utiliser](#runtime-binding) pour chaque exécution de workflow.
+
+1. Ouvrez <a href="https://console.mistral.ai/build/connectors" target="_blank" rel="noopener">Studio &rsaquo; Contexte &rsaquo; Connecteurs</a> puis sélectionnez un connecteur.
+2. Passez à l’onglet **Identifiants**.
+3. Cliquez sur **+ Ajouter des identifiants**, donnez-lui un nom (alphanumérique et tirets), puis effectuez le collage du token bearer ou suivez le flux OAuth.
+4. Un identifiant est toujours défini comme **par défaut**. Pour modifier le choix lorsqu'aucun nom n'est spécifié, éditez un identifiant puis définissez-le par défaut.
+
+Les informations d'identification sont stockées par **utilisateur**. À l'exécution, le workflow utilise les informations d'identification de l'identité sous laquelle il s'exécute : l'utilisateur déclenchant dans un workflow OBO, ou le worker dans les autres cas.
+
+<SectionTab as="h3" variant="secondary" sectionId="credentials-sdk">Gérer les identifiants depuis le SDK</SectionTab>
+
+Vous pouvez aussi créer, lister et supprimer des identifiants de manière programmatique via `client.beta.connectors`. Pratique pour automatiser la création à grande échelle, faire la rotation des tokens ou automatiser le flux OAuth.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+# Bearer connector: store a named credential and mark it default
+await client.beta.connectors.create_or_update_user_credentials_async(
+    connector_id_or_name="github_app",
+    name="github-pat-full",
+    credentials={"bearer_token": os.environ["GITHUB_PAT"]},
+    is_default=True,
+)
+
+# OAuth2 connector: request an auth URL, the user completes it in a browser
+result = await client.beta.connectors.get_auth_url_async(
+    connector_id_or_name="outlook_calendar",
+    credentials_name="personal",
+)
+print(result.auth_url)
+
+# List and delete
+await client.beta.connectors.list_user_credentials_async(
+    connector_id_or_name="github_app",
+)
+await client.beta.connectors.delete_user_credentials_async(
+    connector_id_or_name="github_app",
+    credentials_name="github-pat-old",
+)
+```
+
+  </TabItem>
+</Tabs>
+
+:::info
+L'API `client.beta.connectors` est en **Public Preview**. Consultez le [cookbook d'authentification multiple](https://github.com/mistralai/connector-sdk-demo/blob/main/cookbooks/06-multiple-authentication.md) pour un exemple complet Bearer + OAuth2.
+:::
+
+<SectionTab as="h2" sectionId="oauth-flow">Fonctionnement du flux OAuth de secours</SectionTab>
+
+Quand une exécution de workflow démarre, l'intercepteur d'authentification du worker effectue une vérification préalable sur chaque emplacement de Connecteur déclaré avec `@uses_connectors`. Si des informations d'identification valides existent pour l'identité résolue, le corps du workflow s'exécute immédiatement. Sinon (cas typique d'une première utilisation OAuth2), le worker met en pause, obtient une URL d'authentification à partir de l'API Mistral, la transmet au client sous forme d'événement `auth_url` et attend que l'utilisateur termine l'autorisation dans son navigateur. Une fois les informations d'identification enregistrées, le workflow reprend.
+
+<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
+<Image
+  url={'/img/workflows_connector_oauth_flow.svg'}
+  alt="Diagramme de séquence du flux OAuth Connecteur entre le client, le worker et l'API Mistral"
+  centered
+  className="border-none!"
+/>
+</div>
+
+L'activité de polling envoie un heartbeat pendant l'attente, ce qui évite qu'un utilisateur lent ne provoque un time-out du worker. L'URL d'authentification a une fenêtre de **10 minutes** avant déclenchement de `ConnectorAuthTimeout`.
+
+<SectionTab as="h2" sectionId="build">Créer un workflow avec des connecteurs</SectionTab>
+
+Un workflow connecteur comporte trois éléments : une **déclaration d'emplacement**, une **activité** qui utilise le connecteur, et une **classe de workflow** qui orchestre l'ensemble.
+
+<SectionTab as="h3" variant="secondary" sectionId="declare-slots">Étape 1 : Déclarer les emplacements de connecteur</SectionTab>
+
+Les emplacements se déclarent au niveau du module. Chaque emplacement contient le nom du connecteur tel qu'enregistré dans Studio :
+
+```python
+from mistralai.workflows.plugins.mistralai.connectors import connector
+
+github_connector = connector("github_app")
+notion_connector = connector("Notion")
+```
+
+`connector(name)` accepte les paramètres suivants :
+
+| Paramètre | Par défaut | Description |
+|---|---|---|
+| `name` | requis | Nom ou ID du connecteur tel qu'enregistré dans Studio. |
+| `auto_auth` | `True` | Lancement du pré-check OAuth avant le début du workflow. |
+| `credentials_name` | `None` | Lie l'emplacement à un identifiant nommé précis. Omettez pour utiliser l'identifiant par défaut de l'appelant, ou surchargez à l’exécution via les liaisons dynamiques (voir [Choisir un identifiant à l'exécution](#runtime-binding)). |
+| `allow_mcp_ui` | `False` | Autorise les outils MCP dotés d'une app visible sur ce connecteur à afficher leur app `ui://` comme side app lorsqu'ils sont appelés avec `ToolCallClient.call_tool()` (voir [Afficher des MCP Apps depuis des outils de connecteur](#mcp-apps)). |
+| `run_as` | `"auto"` | Identité Mistral utilisée pour accéder au Connecteur. `"auto"` suit l’option `on_behalf_of` du Workflow (utilisateur déclencheur en OBO, worker sinon) ; `"deployment"` utilise toujours l’identité de service du worker. Voir [Choisir l’identité du Connecteur](#run-as). |
+
+<SectionTab as="h3" variant="secondary" sectionId="write-activity">Étape 2 : Écrire une activité qui appelle le connecteur</SectionTab>
+
+Les activités reçoivent un `ToolCallClient` par injection de dépendance. `Depends(slot)` résout l'emplacement vers un client authentifié à l'exécution.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from typing import Any
+
+import mistralai.workflows as workflows
+from mistralai.workflows import Depends
+from mistralai.workflows.plugins.mistralai.connectors import ToolCallClient, connector
+
+github_connector = connector("github_app")
+
+
+@workflows.activity(name="create-github-issue")
+async def create_github_issue(
+    owner: str,
+    repo: str,
+    title: str,
+    body: str,
+    github: ToolCallClient = Depends(github_connector),
+) -> None:
+    await github.call_tool(
+        tool_name="issue_write",
+        arguments={
+            "method": "create",
+            "owner": owner,
+            "repo": repo,
+            "title": title,
+            "body": body,
+        },
+    )
+```
+
+  </TabItem>
+</Tabs>
+
+`call_tool(tool_name, arguments)` redirige l'appel vers le Connecteur MCP et retourne la réponse brute de l'outil.
+
+<SectionTab as="h3" variant="secondary" sectionId="attach-workflow">Étape 3 : Attacher les emplacements à la classe de workflow</SectionTab>
+
+Utilisez `@uses_connectors` pour enregistrer les emplacements. Ajoutez `on_behalf_of=True` pour résoudre les informations d'identification à partir de l'utilisateur déclenchant ; omettez ce paramètre pour utiliser les informations d'identification du worker :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import pydantic
+import mistralai.workflows as workflows
+from mistralai.workflows.plugins.mistralai.connectors import connector, uses_connectors
+
+github_connector = connector("github_app")
+
+
+class GitHubIssuePrompt(pydantic.BaseModel):
+    owner: str
+    repo: str
+    title: str
+    body: str
+
+
+@workflows.workflow.define(name="github-issue-creator", on_behalf_of=True)
+@uses_connectors(github_connector)
+class GitHubIssueCreatorWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, prompt: GitHubIssuePrompt) -> None:
+        await create_github_issue(
+            prompt.owner,
+            prompt.repo,
+            prompt.title,
+            prompt.body,
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+Remarques :
+
+- `?on_behalf_of=True?` exécute le workflow sous l'identité de l'utilisateur déclenchant, en résolvant ses informations d'identification. Omettez ce paramètre pour exécuter le workflow sous l'identité et les informations d'identification du worker.
+- Passez plusieurs emplacements dans un appel si le workflow a besoin de plusieurs connecteurs : `@uses_connectors(github_connector, notion_connector)`.
+- Appliquez `@uses_connectors` **après** `@workflow.define`. L’ordre des décorateurs est important.
+
+Au démarrage du worker, le plugin enregistre automatiquement un `ConnectorAuthInterceptor` qui gère le pré-check et la pause OAuth décrits dans [Fonctionnement du flux OAuth de secours](#oauth-flow).
+
+<SectionTab as="h2" sectionId="run-as">Choisir l’identité du Connecteur (run_as)</SectionTab>
+
+L’argument `run_as=` dans `connector()` vous permet de sélectionner quelle identité Mistral est utilisée pour accéder à un Connecteur spécifique. Selon votre cas d’usage, vous pouvez souhaiter exploiter les données de l’exécuteur via ses Connecteurs, ou exposer un Connecteur préconfiguré indépendant de l’exécuteur.
+
+Chaque Connecteur exécute sa prévalidation des identifiants (résolution, liste des identifiants, OAuth, validation de l’outil) et ses appels d’outil sous une seule identité. `run_as=` la définit par Connecteur :
+
+| `run_as` | S’exécute en tant que |
+|---|---|
+| `"auto"` (par défaut) | Suivant l’option `on_behalf_of` du Workflow : les identifiants de **l’utilisateur déclencheur** lorsque le Workflow s’exécute au nom d’un utilisateur, ceux du **worker** sinon. |
+| `"deployment"` | Toujours l’**identité de service du worker** (déploiement), quel que soit le mode d’exécution du Workflow. |
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai.connectors import connector
+
+# Follows the Workflow's on_behalf_of flag (the triggering user under OBO).
+user_github = connector("github_app", run_as="auto")
+
+# Acts as the worker's own service identity, regardless of how the Workflow runs.
+shared_slack = connector("slack", run_as="deployment")
+```
+
+  </TabItem>
+</Tabs>
+
+Comme `run_as` est défini par Connecteur, un seul Workflow peut mélanger les identités. Par exemple, lire le GitHub de l’utilisateur déclencheur avec `run_as="auto"`, tout en définissant un message dans un Slack partagé avec `run_as="deployment"`. Pour qu’un Connecteur `auto` agisse en tant qu’utilisateur déclencheur, définissez le Workflow avec `on_behalf_of=True`.
+
+:::warning
+- **`deployment` ne peut pas exécuter OAuth interactif.** Un Connecteur `deployment` s’exécute avec l’identité de service du worker, qui n’a pas d’utilisateur interactif. S’il n’a pas d’identifiants utilisables et nécessite OAuth2, la prévalidation échoue rapidement au lieu d’émettre une URL d’authentification : ajoutez les identifiants du worker dans Studio au préalable.
+- **Les agents durables nécessitent un seul `run_as`.** Tous les Connecteurs attachés à un même `agent` doivent partager le même `run_as`, car la conversation de l’agent s’exécute avec une seule identité ; les valeurs mixtes sont rejetées. Utilisez `ToolCallClient` pour une identité par Connecteur.
+:::
+
+<SectionTab as="h2" sectionId="execute">Exécuter un workflow connecteur</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="execute-studio">Depuis Studio</SectionTab>
+
+Ouvrez <a href="https://console.mistral.ai/build/workflows" target="_blank" rel="noopener">Studio &rsaquo; Workflows</a>, sélectionnez votre workflow puis cliquez sur **Démarrer le workflow**.
+
+- Si vous avez **plusieurs identifiants nommés** pour un connecteur, la fenêtre de lancement vous laisse choisir lequel utiliser pour cette exécution.
+- Pour ajouter ou mettre à jour des identifiants par connecteur avant de lancer un workflow, rendez-vous dans <a href="https://console.mistral.ai/build/connectors" target="_blank" rel="noopener">Studio &rsaquo; Contexte &rsaquo; Connecteurs</a> puis ouvrez l’onglet **Identifiants**.
+- En **solution de secours** : si vous lancez un workflow sur un connecteur OAuth2 sans identifiants enregistrés, le panneau d'exécution affiche une invite OAuth (icône de clé orange). Terminez le flux dans un onglet navigateur pour que le workflow reprenne automatiquement.
+
+<SectionTab as="h3" variant="secondary" sectionId="execute-sdk">Depuis le SDK</SectionTab>
+
+Utilisez `execute_with_connector_auth_async` pour automatiser le flux OAuth. Le helper vérifie l'exécution, détecte les demandes d'authentification, appelle votre callback `on_auth_required` avec l'URL, puis attend que l'utilisateur termine le flux.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+import webbrowser
+
+from mistralai.client import Mistral
+from mistralai.extra.workflows.connector_auth import (
+    ConnectorAuthTaskState,
+    execute_with_connector_auth_async,
+)
+from mistralai.extra.workflows.connector_slot import ConnectorSlot
+
+
+async def on_auth_required(state: ConnectorAuthTaskState) -> None:
+    if state.auth_url:
+        webbrowser.open(state.auth_url)
+    input("Press Enter after completing the OAuth flow...")
+
+
+async def main() -> None:
+    async with Mistral(api_key="<your-api-key>") as client:
+        response = await execute_with_connector_auth_async(
+            client=client,
+            workflow_identifier="github-issue-creator",
+            input_data={
+                "owner": "my-org",
+                "repo": "my-repo",
+                "title": "Bug: something is broken",
+                "body": "Steps to reproduce...",
+            },
+            on_auth_required=on_auth_required,
+        )
+        print(response)
+
+
+asyncio.run(main())
+```
+
+  </TabItem>
+</Tabs>
+
+Si l'appelant dispose déjà d'identifiants valides pour tous les emplacements requis, l'étape OAuth est ignorée et le workflow s'exécute directement.
+
+<SectionTab as="h3" variant="secondary" sectionId="runtime-binding">Choisir un identifiant à l'exécution (liaison dynamique)</SectionTab>
+
+Si vous avez plusieurs [identifiants nommés](#credentials) pour un connecteur, transmettez un `ConnectorSlot` par emplacement pour choisir celui à utiliser lors de cette exécution. Les noms des slots doivent correspondre aux emplacements déclarés avec `@uses_connectors` :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.extra.workflows.connector_slot import ConnectorSlot
+
+connector_slots = [
+    ConnectorSlot(connector_name="github_app", credentials_name="github-pat-full"),
+    ConnectorSlot(connector_name="Notion", credentials_name="work-notion"),
+]
+
+response = await execute_with_connector_auth_async(
+    client=client,
+    workflow_identifier="github-issue-creator",
+    input_data={...},
+    connectors=connector_slots,
+    on_auth_required=on_auth_required,
+)
+```
+
+  </TabItem>
+</Tabs>
+
+Le même code workflow peut circuler en équipe : chaque utilisateur l'exécute avec ses propres identifiants. Omettez `credentials_name` pour tomber sur la valeur par défaut de l'utilisateur pour ce connecteur.
+
+<SectionTab as="h2" sectionId="mcp-apps">Afficher des MCP Apps depuis des outils de connecteur</SectionTab>
+
+Certains connecteurs MCP exposent des outils avec une app interactive. Pour permettre à un workflow d'afficher ces apps, activez l'option `allow_mcp_ui=True` sur l'emplacement du connecteur, puis appelez l'outil directement via le `ToolCallClient` injecté.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+import mistralai.workflows.plugins.mistralai as workflows_mistralai
+from mistralai.workflows import Depends
+from mistralai.workflows.plugins.mistralai.connectors import (
+    ToolCallClient,
+    connector,
+    uses_connectors,
+)
+
+connector_with_mcp_app = connector("my_mcp_connector", allow_mcp_ui=True)
+MCP_APP_TOOL_NAME = "tool-name-tied-to-mcp-app"
+
+
+@workflows.activity(name="open-mcp-app-tool")
+async def open_mcp_app_tool(
+    mcp_client: ToolCallClient = Depends(connector_with_mcp_app),
+) -> None:
+    await mcp_client.call_tool(
+        tool_name=MCP_APP_TOOL_NAME,
+        arguments={
+            "arg1": "value1",
+            "arg2": "value2",
+        },
+    )
+
+
+@workflows.workflow.define(name="mcp-app-workflow", on_behalf_of=True)
+@uses_connectors(connector_with_mcp_app)
+class WorkflowUsingMCPApp:
+    @workflows.workflow.entrypoint
+    async def run(self) -> None:
+        await workflows_mistralai.send_assistant_message(
+            "Let's use a tool tied to an MCP App"
+        )
+        await open_mcp_app_tool()
+        await workflows_mistralai.send_assistant_message(
+            "The MCP App should be visible now"
+        )
+```
+
+  </TabItem>
+</Tabs>
+
+Quand le worker résout un emplacement de connecteur avec `allow_mcp_ui=True`, il découvre les outils qui déclarent une ressource `ui://` exposée en tant qu'app. Ensuite, lorsque `ToolCallClient.call_tool()` invoque l'un de ces outils, le workflow émet une étape d'app MCP : la side app démarre avant l'appel de l'outil, se termine lorsque l'appel réussit, et échoue si l'appel lève une erreur ou retourne une erreur MCP. L'appel Python continue à retourner la réponse normale de l'outil du connecteur.
+
+Limites :
+
+- Les MCP Apps sont affichées uniquement pour les appels directs à `ToolCallClient.call_tool()` depuis des activités de workflow. Les outils connecteur appelés indirectement par un modèle, un agent ou un sous-agent n'affichent pas d'app par ce chemin.
+- La définition de l'outil doit déclarer une ressource d'app `ui://` dans les métadonnées MCP, comme `_meta.ui.resourceUri` ou l'ancien `_meta["ui/resourceUri"]`. Si `_meta.ui.visibility` est présent, il doit inclure `"app"`.
+- L'app est une side app : le workflow n'attend pas que l'utilisateur interagisse avec elle et ne peut pas consommer les résultats d'interaction de manière déterministe. Les interactions avec l'app peuvent tout de même avoir des effets de bord sur la ressource externe contrôlée par l'app ; évitez donc de supposer que les étapes suivantes du workflow et les interactions utilisateur sont ordonnées.
+- Le rendu dépend d'une surface client compatible avec les MCP Apps dans les workflows. Les appelants qui utilisent uniquement le SDK reçoivent toujours le résultat habituel de `call_tool()`.
+
+<SectionTab as="h2" sectionId="agents">Utiliser des connecteurs avec des agents durables</SectionTab>
+
+Passez un emplacement de connecteur directement à un [agent durable](/studio/workflows/building-workflows/durable_agents) pour le laisser invoquer les outils connecteur de façon autonome dans sa boucle de conversation. Conservez bien `@uses_connectors` sur le workflow afin que l’intercepteur d’authentification fonctionne toujours :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.workflows.plugins.mistralai import Agent, Runner
+from mistralai.workflows.plugins.mistralai.connectors import connector, uses_connectors
+import mistralai.workflows as workflows
+
+github_connector = connector("github_app")
+
+
+@workflows.workflow.define(name="github-agent", on_behalf_of=True)
+@uses_connectors(github_connector)
+class GitHubAgentWorkflow:
+    @workflows.workflow.entrypoint
+    async def run(self, repo: str) -> str:
+        agent = Agent(
+            name="github-pr-lister",
+            model="mistral-medium-latest",
+            instructions=f"List recent pull requests on {repo}.",
+            connectors=[github_connector],
+        )
+        result = await Runner.run(agent=agent, inputs=f"Summarize PRs on {repo}.")
+        return result.final_output
+```
+
+  </TabItem>
+</Tabs>
+
+L'agent reçoit les outils du connecteur dans sa toolbox et les appelle à chaque tour. L'authentification OAuth et la résolution des identifiants s'effectuent toujours automatiquement via l'intercepteur de workflow.
+
+<SectionTab as="h2" sectionId="errors">Erreurs courantes</SectionTab>
+
+| Erreur | Cause | Résolution |
+|---|---|---|
+| `ConnectorError: Credential 'x' not found` | L'identifiant nommé n'existe pas pour ce connecteur. | Créez-le depuis Studio &rsaquo; Connecteurs &rsaquo; Identifiants, ou omettez `credentials_name` pour utiliser la valeur par défaut. |
+| `ConnectorAuthTimeout` | Le flux OAuth n'a pas été complété dans les 10 minutes. | Relancez le workflow et terminez l'étape navigateur rapidement. |
+| `ConnectorError: ... requires bearer authentication` | Connecteur Bearer seul sans identifiant enregistré. | Ajoutez un identifiant bearer dans Studio avant de lancer. L'authentification bearer à la volée n'est pas supportée. |
+| `ConnectorError: Extension bindings reference unknown connectors` | Un `ConnectorSlot` en runtime fait référence à un emplacement non déclaré avec `@uses_connectors`. | Faites correspondre le `connector_name` à un slot du workflow. |
+| Aucune MCP app n'apparaît après `call_tool()` | L'emplacement n'utilise pas `allow_mcp_ui=True`, l'outil ne déclare pas de ressource `ui://` visible comme app, l'outil a été appelé indirectement par un agent/modèle, ou la surface client ne prend pas en charge les MCP Apps dans les workflows. | Activez l'option sur l'emplacement, appelez l'outil directement via `ToolCallClient.call_tool()`, et vérifiez que les métadonnées de l'outil déclarent une ressource `ui://` visible comme app. |
+| `404` à l'exécution du workflow | Worker non démarré, ou nom de workflow incorrect. | Lancez le worker en premier et vérifiez la valeur exacte de `workflow_identifier`. |

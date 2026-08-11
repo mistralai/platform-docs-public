@@ -15,7 +15,7 @@ export function HeroCards() {
     {
       id: 'vibe',
       title: 'Vibe',
-      href: '/vibe/overview',
+      href: '/vibe',
       logo: '/assets/logos/m-white.svg',
       color: 'bg-[#FA500F]',
       rotation: '-rotate-[15deg]',
@@ -25,7 +25,7 @@ export function HeroCards() {
     {
       id: 'studio',
       title: 'Studio',
-      href: '/studio-api/overview',
+      href: '/studio',
       logo: '/assets/logos/m-white.svg',
       color: 'bg-[#0082E6]',
       rotation: '-rotate-[5deg]',

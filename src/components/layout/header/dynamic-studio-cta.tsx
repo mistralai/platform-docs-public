@@ -21,27 +21,27 @@ const DEFAULT_CTA = { href: "https://console.mistral.ai", key: 'studio' as CtaKe
 
 const CTA_BY_PATH: Record<string, { href: string; key: CtaKey }> = {
 
-  "/studio-api/audio/speech_to_text/offline_transcription": {
+  "/studio/audio/speech_to_text/offline_transcription": {
     href: "https://console.mistral.ai/build/audio/speech-to-text",
     key: 'audio',
   },
-  "/studio-api/audio/speech_to_text/realtime_transcription": {
+  "/studio/audio/speech_to_text/realtime_transcription": {
     href: "https://console.mistral.ai/build/audio/realtime",
     key: 'realtime',
   },
-  "/studio-api/batch-processing": {
+  "/studio/batch-processing": {
     href: "https://console.mistral.ai/build/batches",
     key: 'batch',
   },
-  "/models/overview": {
+  "/models": {
     href: "https://console.mistral.ai/build/playground",
     key: 'studio',
   },
-  "/models/model-selection-guide": {
+  "/inference/model-selection-guide": {
     href: "https://console.mistral.ai/build/playground",
     key: 'studio',
   },
-  "/studio-api/document-processing": {
+  "/studio/document-processing": {
     href: "https://console.mistral.ai/build/document-ai/ocr-playground",
     key: 'documentAi',
   },

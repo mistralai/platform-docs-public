@@ -1,0 +1,108 @@
+---
+title: Google
+sidebar_position: 1
+description: "Comment Vibe de Mistral AI utilise les API Google : scopes, accès aux données et détails de confidentialité pour Gmail, Google Calendar, Google Drive, Google BigQuery et Google Workspace."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Google
+
+[Vibe](https://chat.mistral.ai) est un assistant IA conçu par [Mistral AI](https://mistral.ai). Il se connecte aux services Google via des **Connecteurs** : des intégrations OAuth 2.0 sécurisées qui permettent aux utilisateurs d'interagir avec leurs données Google en langage naturel.
+
+Lorsqu'un utilisateur connecte un service Google, Vibe peut lire les données de ce service, y effectuer des recherches et, avec son approbation explicite, agir sur ces données. Chaque action d'écriture exige la confirmation de l'utilisateur avant son exécution. Les mots de passe et les informations d'identification ne sont jamais stockés par Vibe ; l'authentification est entièrement gérée par le flux OAuth 2.0 de Google.
+
+<SectionTab as="h2" sectionId="google-services">
+  Services Google pris en charge
+</SectionTab>
+
+Vibe s'intègre aux services Google suivants :
+
+| Service                      | Ce que fait Vibe                                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Gmail**                    | Rechercher dans les threads d'e-mails, lire les messages, créer des brouillons pour relecture par l'utilisateur et organiser les e-mails avec des libellés.        |
+| **Google Calendar**          | Lister les agendas, rechercher des événements, créer, mettre à jour ou supprimer des événements, et répondre aux invitations.                |
+| **Google Drive**             | Rechercher des fichiers, lire leur contenu, y compris Google Docs et Sheets, et afficher leurs métadonnées et autorisations. |
+| **Google BigQuery**          | Explorer les datasets et les tables, et exécuter des requêtes SQL pour analyser les données.                                           |
+| **Google Workspace** (Admin) | Synchroniser Google Groups avec le contrôle d'accès par rôle de Vibe pour les clients entreprise.                       |
+
+<SectionTab as="h2" sectionId="gmail">
+  Gmail
+</SectionTab>
+
+Vibe utilise l'API Gmail pour aider les utilisateurs à gérer leurs e-mails en langage naturel, par exemple _« Résume mes e-mails non lus de l'équipe juridique »_ ou _« Rédige une réponse au dernier message d'Alice »_.
+
+**Scopes demandés :**
+
+- **`gmail.readonly`** — Rechercher dans les threads d'e-mails, lire le contenu des messages, lister les brouillons et lister les libellés. Ces opérations en lecture seule sont la base de chaque tâche liée aux e-mails.
+- **`gmail.compose`** — Créer des brouillons d'e-mails que l'utilisateur peut relire. Les brouillons ne sont jamais envoyés automatiquement : l'utilisateur doit les relire et les envoyer manuellement depuis Gmail. Vibe utilise `compose` plutôt que `send`, car Vibe crée uniquement des brouillons et n'envoie jamais d'e-mails directement.
+- **`gmail.modify`** — Organiser les e-mails en créant, mettant à jour et supprimant des libellés, ainsi qu'en appliquant ou en retirant des libellés sur des messages et threads individuels. Les scopes `readonly` et `compose` ne permettent pas de modifier les libellés ni les métadonnées des messages ; `modify` est donc requis pour ces actions d'organisation.
+
+<SectionTab as="h2" sectionId="google-calendar">
+  Google Calendar
+</SectionTab>
+
+Vibe utilise l'API Google Calendar pour aider les utilisateurs à gérer leur planning, par exemple _« Quelles réunions ai-je demain ? »_ ou _« Crée une réunion d'équipe vendredi à 14 h »_.
+
+**Scope demandé :**
+
+- **`calendar`** (accès complet) — Lister les agendas de l'utilisateur, rechercher et récupérer des événements, créer de nouveaux événements, mettre à jour des événements existants, supprimer des événements et répondre aux invitations (acceptée, refusée, provisoire). Le scope `calendar.readonly` est insuffisant, car Vibe crée, met aussi à jour et supprime des événements pour le compte de l'utilisateur.
+
+<SectionTab as="h2" sectionId="google-drive">
+  Google Drive
+</SectionTab>
+
+Vibe utilise l'API Google Drive pour aider les utilisateurs à trouver et lire leurs fichiers, par exemple _« Trouve la dernière présentation du chiffre d'affaires du T3 et résume-la »_.
+
+**Scope demandé :**
+
+- **`drive.readonly`** — Rechercher des fichiers par titre, contenu, type ou propriétaire ; lister les fichiers récemment consultés ; lire le contenu des fichiers, y compris Google Docs et Sheets via export ; récupérer les métadonnées des fichiers ; et vérifier les autorisations des fichiers. Vibe a besoin de `drive.readonly` plutôt que du scope plus limité `drive.file`, car les utilisateurs doivent pouvoir rechercher et lire n'importe quel fichier dans leur Drive, pas seulement les fichiers créés par Vibe.
+
+<SectionTab as="h2" sectionId="google-bigquery">
+  Google BigQuery
+</SectionTab>
+
+Vibe utilise l'API BigQuery pour aider les utilisateurs à explorer et interroger leurs entrepôts de données, par exemple _« Affiche les 10 principaux clients par chiffre d'affaires dans le dataset des ventes »_.
+
+**Scope demandé :**
+
+- **`bigquery`** — Explorer les datasets et les tables, et exécuter des requêtes SQL pour le compte de l'utilisateur. Le scope `bigquery.readonly` est insuffisant, car les utilisateurs doivent aussi exécuter des requêtes qui créent des tables temporaires et gérer l'exécution des jobs.
+
+<SectionTab as="h2" sectionId="google-workspace">
+  Google Workspace (Admin Directory)
+</SectionTab>
+
+Vibe propose une intégration Google Workspace pour les clients entreprise. Les administrateurs de l'organisation peuvent synchroniser leurs Google Groups avec le système d'autorisations interne de Vibe, afin que l'appartenance aux équipes soit automatiquement reflétée dans les contrôles d'accès de Vibe.
+
+**Scopes demandés :**
+
+- **`admin.directory.user.readonly`** — Lister les utilisateurs dans le domaine Google Workspace du client afin de faire correspondre les identités Workspace aux comptes Vibe. Seules les métadonnées utilisateur (e-mail, nom, unité organisationnelle) sont lues ; les comptes utilisateur ne sont jamais modifiés.
+- **`admin.directory.group.readonly`** — Lister les Google Groups dans le domaine du client et énumérer les membres des groupes. Les administrateurs peuvent ainsi associer automatiquement les Google Groups aux rôles d'autorisation Vibe. Les groupes ne sont jamais créés, modifiés ni supprimés.
+
+<SectionTab as="h2" sectionId="user-consent">
+  Consentement et approbation de l'utilisateur
+</SectionTab>
+
+Vibe suit un modèle de consentement strict :
+
+1. **Consentement OAuth** — Les utilisateurs s'authentifient directement auprès de Google et voient exactement les autorisations demandées par Vibe avant d'accorder l'accès.
+2. **Approbation par action** — Chaque action d'écriture (envoi d'un brouillon, création d'un événement, modification d'un libellé) nécessite l'approbation explicite de l'utilisateur dans Vibe avant son exécution. Les utilisateurs peuvent approuver, refuser ou préautoriser certaines actions. Consultez [Sécurité et approbations](/vibe/work/safety-and-approvals) pour plus de détails.
+3. **Déconnexion à tout moment** — Les utilisateurs peuvent révoquer l'accès de Vibe depuis la page Connecteurs ou depuis leurs [autorisations de compte Google](https://myaccount.google.com/permissions). La déconnexion met immédiatement fin à tout accès.
+
+<SectionTab as="h2" sectionId="data-handling">
+  Traitement des données et confidentialité
+</SectionTab>
+
+- **Connecteurs en temps réel** (Gmail, Google Calendar, BigQuery) : les données sont récupérées en temps réel pour la requête en cours et ne sont **pas stockées** sur nos serveurs. La déconnexion révoque l'accès immédiatement.
+- **Connecteurs de connaissances** (Google Drive) : les fichiers sont **indexés et stockés** dans nos centres de données européens pour permettre aux utilisateurs de les rechercher instantanément. Les autorisations d'accès existantes sont respectées. Si un administrateur désactive le Connecteur, la suppression définitive des données indexées est planifiée. Consultez [Connecteurs de connaissances](/vibe/work/connectors/knowledge-connectors) pour plus de détails.
+- **Aucun entraînement** : les données accessibles via les Connecteurs ne sont **jamais utilisées pour entraîner ni faire de fine-tuning sur les modèles Mistral AI**, quel que soit le plan de l'utilisateur.
+- **Infrastructure européenne** : les données sont traitées et stockées dans les centres de données européens de Mistral AI.
+- **Chiffrement** : toutes les communications avec les API Google sont chiffrées avec TLS pendant le transit.
+
+Pour plus de détails, consultez la [Politique de confidentialité](https://mistral.ai/terms#privacy-policy) et le [trust center](https://trust.mistral.ai/) de Mistral AI.
+
+<SectionTab as="h2" sectionId="limited-use">
+  Google API Services User Data Policy
+</SectionTab>
+
+L'utilisation et le transfert par Vibe des informations reçues des API Google respectent la [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), y compris les exigences Limited Use.

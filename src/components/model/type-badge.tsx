@@ -30,7 +30,7 @@ export const ModelTypeBadge = ({
           onClick: (e: React.MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            router.push('/models/labs');
+            router.push('/inference/labs');
           },
         })}
       >

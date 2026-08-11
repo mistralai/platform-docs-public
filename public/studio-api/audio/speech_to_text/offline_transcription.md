@@ -12,8 +12,7 @@ sidebar_position: 1.1
 
 Audio capable models:
 - **Voxtral Small** (`voxtral-small-latest`) with audio input for [chat](#chat-with-audio) use cases.
-- **Voxtral Mini** (`voxtral-mini-latest`) with audio input for [chat](#chat-with-audio) use cases
-- And **Voxtral Mini Transcribe** (`voxtral-mini-latest` via `audio/transcriptions`), with an efficient [transcription](#transcription) only service.
+- **Voxtral Mini Transcribe 2** (`voxtral-mini-latest` via `audio/transcriptions`), with an efficient [transcription](#transcription) only service.
 
 :::tip
 For faster transcription time, we recommend uploading your audio files.
@@ -43,7 +42,7 @@ import base64
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
+model = "voxtral-small-latest"
 
 client = Mistral(api_key=api_key)
 
@@ -78,7 +77,7 @@ import base64
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
+model = "voxtral-small-latest"
 
 client = Mistral(api_key=api_key)
 
@@ -121,7 +120,7 @@ const audio_file = fs.readFileSync('local_audio.mp3');
 const audio_base64 = audio_file.toString('base64');
 
 const chatResponse = await client.chat.complete({
-  model: "voxtral-mini-latest",
+  model: "voxtral-small-latest",
   messages: [
     {
       role: "user",
@@ -148,7 +147,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
   --header "Authorization: Bearer $MISTRAL_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
-    "model": "voxtral-mini-latest",
+    "model": "voxtral-small-latest",
     "messages": [
       {
         "role": "user",
@@ -174,7 +173,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 {
   "id": "d719e752a0f845c895758933ea488cb0",
   "created": 1756386611,
-  "model": "voxtral-mini-latest",
+  "model": "voxtral-small-latest",
   "usage": {
     "prompt_audio_seconds": 19,
     "prompt_tokens": 10,
@@ -212,7 +211,7 @@ import os
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
+model = "voxtral-small-latest"
 
 client = Mistral(api_key=api_key)
 
@@ -246,7 +245,7 @@ import os
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
+model = "voxtral-small-latest"
 
 client = Mistral(api_key=api_key)
 
@@ -284,7 +283,7 @@ const apiKey = process.env["MISTRAL_API_KEY"];
 const client = new Mistral({ apiKey: apiKey });
 
 const chatResponse = await client.chat.complete({
-  model: "voxtral-mini-latest",
+  model: "voxtral-small-latest",
   messages: [
     {
       role: "user",
@@ -311,7 +310,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
   --header "Authorization: Bearer $MISTRAL_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
-    "model": "voxtral-mini-latest",
+    "model": "voxtral-small-latest",
     "messages": [
       {
         "role": "user",
@@ -337,7 +336,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 {
   "id": "d719e752a0f845c895758933ea488cb0",
   "created": 1756386611,
-  "model": "voxtral-mini-latest",
+  "model": "voxtral-small-latest",
   "usage": {
     "prompt_audio_seconds": 19,
     "prompt_tokens": 10,
@@ -375,7 +374,7 @@ import os
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
+model = "voxtral-small-latest"
 
 client = Mistral(api_key=api_key)
 
@@ -420,7 +419,7 @@ import os
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-latest"
+model = "voxtral-small-latest"
 
 client = Mistral(api_key=api_key)
 
@@ -479,7 +478,7 @@ const signedUrl = await client.files.getSignedUrl({
 });
 
 const chatResponse = await client.chat.complete({
-  model: "voxtral-mini-latest",
+  model: "voxtral-small-latest",
   messages: [
     {
       role: "user",
@@ -522,7 +521,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
   --header "Authorization: Bearer $MISTRAL_API_KEY" \
   --header "Content-Type: application/json" \
   --data '{
-    "model": "voxtral-mini-latest",
+    "model": "voxtral-small-latest",
     "messages": [
       {
         "role": "user",
@@ -548,7 +547,7 @@ curl --location https://api.mistral.ai/v1/chat/completions \
 {
   "id": "d719e752a0f845c895758933ea488cb0",
   "created": 1756386611,
-  "model": "voxtral-mini-latest",
+  "model": "voxtral-small-latest",
   "usage": {
     "prompt_audio_seconds": 19,
     "prompt_tokens": 10,
@@ -655,7 +654,7 @@ In contrast, the second speaker provides factual information about the weather i
 
 ### Transcribe any Audio
 
-Transcription provides an optimized endpoint for transcription purposes and currently supports `voxtral-mini-latest`, which runs **Voxtral Mini Transcribe**.
+Transcription provides an optimized endpoint for transcription purposes and currently supports `voxtral-mini-latest`, which runs **Voxtral Mini Transcribe 2**.
 
 **Parameters**  
 We provide different settings and parameters for transcription, such as:
@@ -759,7 +758,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file=@"/path/to/file/audio.mp3"' \
   --form 'model="voxtral-mini-latest"' \
-  --form 'language="en"'
+  --form 'language="en"' \
 ```
   </TabItem>
   <TabItem value="output" label="output">
@@ -789,18 +788,11 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```python
 import os
-import asyncio
-import pathlib
 from mistralai.client import Mistral
-from mistralai import File
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
+from mistralai.client.models import File
 def main():
     api_key = os.environ["MISTRAL_API_KEY"]
-    model = "voxtral-mini-2602"
+    model = "voxtral-mini-latest"
 
     client = Mistral(api_key=api_key)
     with open("/path/to/file/audio.mp3", "rb") as f:
@@ -823,17 +815,11 @@ main()
 
 ```python
 import os
-import asyncio
-import pathlib
-from mistralai.client import Mistral, File
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
+from mistralai.client import Mistral
+from mistralai.client.models import File
 def main():
     api_key = os.environ["MISTRAL_API_KEY"]
-    model = "voxtral-mini-2602"
+    model = "voxtral-mini-latest"
 
     client = Mistral(api_key=api_key)
     with open("/path/to/file/audio.mp3", "rb") as f:
@@ -858,12 +844,9 @@ main()
 
 ```typescript
 
-// Load environment variables from .env file
-dotenv.config();
-
 async function main() {
     const apiKey = process.env["MISTRAL_API_KEY"];
-    const model = "voxtral-mini-2602";
+    const model = "voxtral-mini-latest";
 
     const client = new Mistral({ apiKey: apiKey });
     const audioFile = fs.readFileSync("/path/to/file/audio.mp3");
@@ -875,7 +858,7 @@ async function main() {
             content: audioFile,
         },
         diarize: true,
-        timestamp_granularities: ["segment"],
+        timestampGranularities: ["segment"],
     });
 
     for (const segment of response.segments) {
@@ -895,9 +878,9 @@ main().catch(console.error);
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file=@"/path/to/file/audio.mp3"' \
-  --form 'model="voxtral-mini-2602"' \
+  --form 'model="voxtral-mini-latest"' \
   --form 'diarize=true' \
-  --form 'timestamp_granularities='segment''
+  --form 'timestamp_granularities="segment"'
 ```
 
 **With Language defined**  
@@ -905,16 +888,16 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file=@"/path/to/file/audio.mp3"' \
-  --form 'model="voxtral-mini-2602"' \
+  --form 'model="voxtral-mini-latest"' \
   --form 'language="en"' \
   --form 'diarize=true' \
-  --form 'timestamp_granularities='segment''
+  --form 'timestamp_granularities="segment"'
 ```
     </TabItem>
   <TabItem value="output" label="output">
 ```json
 {
-    "model":"voxtral-mini-2602", 
+    "model":"voxtral-mini-latest", 
     "text":" This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, My conversations with you, the American people, in living rooms, in schools, at farms, and on factory floors, at diners, and on distant military outposts, all these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better president, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers, and I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title, citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise, and I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you, and God bless the United States of America.",
     "language":null,
     "segments":
@@ -1019,7 +1002,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
   --form 'model="voxtral-mini-latest"' \
-  --form 'language="en"'
+  --form 'language="en"' \
 ```
 
     </TabItem>
@@ -1051,18 +1034,11 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```python
 import os
-import asyncio
-import pathlib
 from mistralai.client import Mistral
-from mistralai import File
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
+from mistralai.client.models import File
 def main():
     api_key = os.environ["MISTRAL_API_KEY"]
-    model = "voxtral-mini-2602"
+    model = "voxtral-mini-latest"
 
     client = Mistral(api_key=api_key)
     with open("/path/to/file/audio.mp3", "rb") as f:
@@ -1085,17 +1061,11 @@ main()
 
 ```python
 import os
-import asyncio
-import pathlib
-from mistralai.client import Mistral, File
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
+from mistralai.client import Mistral
+from mistralai.client.models import File
 def main():
     api_key = os.environ["MISTRAL_API_KEY"]
-    model = "voxtral-mini-2602"
+    model = "voxtral-mini-latest"
 
     client = Mistral(api_key=api_key)
     with open("/path/to/file/audio.mp3", "rb") as f:
@@ -1120,21 +1090,18 @@ main()
 
 ```typescript
 
-// Load environment variables from .env file
-dotenv.config();
-
 async function main() {
     const apiKey = process.env["MISTRAL_API_KEY"];
-    const model = "voxtral-mini-2602";
+    const model = "voxtral-mini-latest";
 
     const client = new Mistral({ apiKey: apiKey });
     const audioFile = fs.readFileSync("/path/to/file/audio.mp3");
 
     const response = await client.audio.transcriptions.complete({
         model: model,
-        fileUrl: "https://docs.mistral.ai/audio/obama.mp3"
+        fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
         diarize: true,
-        timestamp_granularities: ["segment"],
+        timestampGranularities: ["segment"],
     });
 
     for (const segment of response.segments) {
@@ -1154,9 +1121,9 @@ main().catch(console.error);
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
-  --form 'model="voxtral-mini-2602"' \
+  --form 'model="voxtral-mini-latest"' \
   --form 'diarize=true' \
-  --form 'timestamp_granularities='segment''
+  --form 'timestamp_granularities="segment"'
 ```
 
 **With Language defined**  
@@ -1164,17 +1131,17 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
-  --form 'model="voxtral-mini-2602"' \
+  --form 'model="voxtral-mini-latest"' \
   --form 'language="en"' \
   --form 'diarize=true' \
-  --form 'timestamp_granularities='segment''
+  --form 'timestamp_granularities="segment"'
 ```
     </TabItem>
     <TabItem value="output" label="output">
 
 ```json
 {
-    "model":"voxtral-mini-2602", 
+    "model":"voxtral-mini-latest", 
     "text":" This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, My conversations with you, the American people, in living rooms, in schools, at farms, and on factory floors, at diners, and on distant military outposts, all these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better president, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers, and I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title, citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise, and I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you, and God bless the United States of America.",
     "language":null,
     "segments":
@@ -1331,7 +1298,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
     --header "x-api-key: $MISTRAL_API_KEY" \
     --form 'file_url="<signed_url>"' \
     --form 'model="voxtral-mini-latest"' \
-    --form 'language="en"'
+    --form 'language="en"' \
 ```
 
     </TabItem>
@@ -1364,11 +1331,6 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 ```python
 import os
 from mistralai.client import Mistral
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 def main():
     api_key = os.environ["MISTRAL_API_KEY"]
     model = "voxtral-mini-latest"
@@ -1410,11 +1372,6 @@ if __name__ == "__main__":
 ```python
 import os
 from mistralai.client import Mistral
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 def main():
     api_key = os.environ["MISTRAL_API_KEY"]
     model = "voxtral-mini-latest"
@@ -1457,9 +1414,6 @@ if __name__ == "__main__":
 
 ```typescript
 
-// Load environment variables from .env file
-dotenv.config();
-
 async function main() {
     const apiKey = process.env["MISTRAL_API_KEY"];
     if (!apiKey) {
@@ -1488,7 +1442,7 @@ async function main() {
             model: model,
             fileUrl: signedUrl.url,
             diarize: true,
-            timestamp_granularities: ["segment"],
+            timestampGranularities: ["segment"],
         });
 
         // Print results with speaker diarization
@@ -1530,9 +1484,9 @@ curl --location "https://api.mistral.ai/v1/files/$id/url?expiry=24" \
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
     --header "x-api-key: $MISTRAL_API_KEY" \
     --form 'file_url="<signed_url>"' \
-    --form 'model="voxtral-mini-2602"' \
+    --form 'model="voxtral-mini-latest"' \
     --form 'diarize=true' \
-    --form 'timestamp_granularities='segment''
+    --form 'timestamp_granularities="segment"'
 ```
 
 **Send Transcription Request with Language defined**
@@ -1540,10 +1494,10 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
     --header "x-api-key: $MISTRAL_API_KEY" \
     --form 'file_url="<signed_url>"' \
-    --form 'model="voxtral-mini-2602"' \
+    --form 'model="voxtral-mini-latest"' \
     --form 'language="en"' \
     --form 'diarize=true' \
-    --form 'timestamp_granularities='segment''
+    --form 'timestamp_granularities="segment"'
 ```
 
     </TabItem>
@@ -1551,7 +1505,7 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 
 ```json
 {
-    "model":"voxtral-mini-2602", 
+    "model":"voxtral-mini-latest", 
     "text":" This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, My conversations with you, the American people, in living rooms, in schools, at farms, and on factory floors, at diners, and on distant military outposts, all these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better president, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer survivors who finally know the security of affordable health care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers, and I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work of citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title, citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise, and I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you, and God bless the United States of America.",
     "language":null,
     "segments":
@@ -1664,7 +1618,7 @@ const client = new Mistral({ apiKey: apiKey });
 const transcriptionResponse = await client.audio.transcriptions.complete({
   model: "voxtral-mini-latest",
   fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
-  timestamp_granularities: ["segment"] // or "word"
+  timestampGranularities: ["segment"] // or "word"
 });
 ```
 
@@ -2001,16 +1955,33 @@ import os
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-2602"
+model = "voxtral-mini-latest"
 
 client = Mistral(api_key=api_key)
 
-with open("/path/to/file/audio.mp3", "rb") as f:
-    transcription_response = client.audio.transcriptions.complete(
-        model=model,
-        file_url="https://docs.mistral.ai/audio/obama.mp3",
-        context_bias="Chicago,Joplin,Boston,Charleston,farewell_address,self-government,citizenship,democracy,American_people,cancer_survivors,affordable_health_care,wounded_warriors,refugees,elected_officials,American_spirit,work_of_citizenship,guardians_of_our_democracy"
-    )
+transcription_response = client.audio.transcriptions.complete(
+    model=model,
+    file_url="https://docs.mistral.ai/audio/obama.mp3",
+    context_bias=[
+        "Chicago",
+        "Joplin",
+        "Boston",
+        "Charleston",
+        "farewell_address",
+        "self-government",
+        "citizenship",
+        "democracy",
+        "American_people",
+        "cancer_survivors",
+        "affordable_health_care",
+        "wounded_warriors",
+        "refugees",
+        "elected_officials",
+        "American_spirit",
+        "work_of_citizenship",
+        "guardians_of_our_democracy",
+    ]
+)
 ```
 
             </TabItem>
@@ -2021,16 +1992,33 @@ import os
 from mistralai.client import Mistral
 
 api_key = os.environ["MISTRAL_API_KEY"]
-model = "voxtral-mini-2602"
+model = "voxtral-mini-latest"
 
 client = Mistral(api_key=api_key)
 
-with open("/path/to/file/audio.mp3", "rb") as f:
-    transcription_response = client.audio.transcriptions.complete(
-        model=model,
-        file_url="https://docs.mistral.ai/audio/obama.mp3",
-        context_bias="Chicago,Joplin,Boston,Charleston,farewell_address,self-government,citizenship,democracy,American_people,cancer_survivors,affordable_health_care,wounded_warriors,refugees,elected_officials,American_spirit,work_of_citizenship,guardians_of_our_democracy"
-    )
+transcription_response = client.audio.transcriptions.complete(
+    model=model,
+    file_url="https://docs.mistral.ai/audio/obama.mp3",
+    context_bias=[
+        "Chicago",
+        "Joplin",
+        "Boston",
+        "Charleston",
+        "farewell_address",
+        "self-government",
+        "citizenship",
+        "democracy",
+        "American_people",
+        "cancer_survivors",
+        "affordable_health_care",
+        "wounded_warriors",
+        "refugees",
+        "elected_officials",
+        "American_spirit",
+        "work_of_citizenship",
+        "guardians_of_our_democracy",
+    ]
+)
 ```
 
             </TabItem>
@@ -2044,11 +2032,28 @@ const apiKey = process.env["MISTRAL_API_KEY"];
 
 const client = new Mistral({ apiKey: apiKey });
 
-const audio_file = fs.readFileSync('/path/to/file/audio.mp3');
 const transcriptionResponse = await client.audio.transcriptions.complete({
-  model: "voxtral-mini-2602",
+  model: "voxtral-mini-latest",
   fileUrl: "https://docs.mistral.ai/audio/obama.mp3",
-  contextBias: "Chicago,Joplin,Boston,Charleston,farewell_address,self-government,citizenship,democracy,American_people,cancer_survivors,affordable_health_care,wounded_warriors,refugees,elected_officials,American_spirit,work_of_citizenship,guardians_of_our_democracy"
+  contextBias: [
+    "Chicago",
+    "Joplin",
+    "Boston",
+    "Charleston",
+    "farewell_address",
+    "self-government",
+    "citizenship",
+    "democracy",
+    "American_people",
+    "cancer_survivors",
+    "affordable_health_care",
+    "wounded_warriors",
+    "refugees",
+    "elected_officials",
+    "American_spirit",
+    "work_of_citizenship",
+    "guardians_of_our_democracy",
+  ]
 });
 ```
 
@@ -2059,8 +2064,24 @@ const transcriptionResponse = await client.audio.transcriptions.complete({
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
-  --form 'model="voxtral-mini-2602"' \
-  --form 'context_bias="Chicago,Joplin,Boston,Charleston,farewell_address,self-government,citizenship,democracy,American_people,cancer_survivors,affordable_health_care,wounded_warriors,refugees,elected_officials,American_spirit,work_of_citizenship,guardians_of_our_democracy"'
+  --form 'model="voxtral-mini-latest"' \
+  --form 'context_bias="Chicago"' \
+  --form 'context_bias="Joplin"' \
+  --form 'context_bias="Boston"' \
+  --form 'context_bias="Charleston"' \
+  --form 'context_bias="farewell_address"' \
+  --form 'context_bias="self-government"' \
+  --form 'context_bias="citizenship"' \
+  --form 'context_bias="democracy"' \
+  --form 'context_bias="American_people"' \
+  --form 'context_bias="cancer_survivors"' \
+  --form 'context_bias="affordable_health_care"' \
+  --form 'context_bias="wounded_warriors"' \
+  --form 'context_bias="refugees"' \
+  --form 'context_bias="elected_officials"' \
+  --form 'context_bias="American_spirit"' \
+  --form 'context_bias="work_of_citizenship"' \
+  --form 'context_bias="guardians_of_our_democracy"'
 ```
 
 **With Language defined**  
@@ -2068,15 +2089,31 @@ curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
 curl --location 'https://api.mistral.ai/v1/audio/transcriptions' \
   --header "x-api-key: $MISTRAL_API_KEY" \
   --form 'file_url="https://docs.mistral.ai/audio/obama.mp3"' \
-  --form 'model="voxtral-mini-2602"' \
-  --form 'language="en"'
-  --form 'context_bias="Chicago,Joplin,Boston,Charleston,farewell_address,self-government,citizenship,democracy,American_people,cancer_survivors,affordable_health_care,wounded_warriors,refugees,elected_officials,American_spirit,work_of_citizenship,guardians_of_our_democracy"'
+  --form 'model="voxtral-mini-latest"' \
+  --form 'language="en"' \
+  --form 'context_bias="Chicago"' \
+  --form 'context_bias="Joplin"' \
+  --form 'context_bias="Boston"' \
+  --form 'context_bias="Charleston"' \
+  --form 'context_bias="farewell_address"' \
+  --form 'context_bias="self-government"' \
+  --form 'context_bias="citizenship"' \
+  --form 'context_bias="democracy"' \
+  --form 'context_bias="American_people"' \
+  --form 'context_bias="cancer_survivors"' \
+  --form 'context_bias="affordable_health_care"' \
+  --form 'context_bias="wounded_warriors"' \
+  --form 'context_bias="refugees"' \
+  --form 'context_bias="elected_officials"' \
+  --form 'context_bias="American_spirit"' \
+  --form 'context_bias="work_of_citizenship"' \
+  --form 'context_bias="guardians_of_our_democracy"'
 ```
   </TabItem>
   <TabItem value="output" label="output">
 ```json
 {
-    "model":"voxtral-mini-2602",
+    "model":"voxtral-mini-latest",
     "text":"This week, I traveled to Chicago to deliver my final farewell_address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. Whether we've seen eye to eye or rarely agreed at all, My conversations with you, the American_people, in living rooms, in schools, at farms, and on factory floors, at diners, and on distant military outposts, all these conversations are what have kept me honest, kept me inspired, and kept me going. Every day, I learned from you. You made me a better president, and you made me a better man. Over the course of these eight years, I've seen the goodness, the resilience, and the hope of the American people. I've seen neighbors looking out for each other as we rescued our economy from the worst crisis of our lifetimes. I've hugged cancer_survivors who finally know the security of affordable_health_care. I've seen communities like Joplin rebuild from disaster, and cities like Boston show the world that no terrorist will ever break the American-spirit. I've seen the hopeful faces of young graduates and our newest military officers. I've mourned with grieving families searching for answers, and I found grace in a Charleston church. I've seen our scientists help a paralyzed man regain his sense of touch, and our wounded_warriors walk again. I've seen our doctors and volunteers rebuild after earthquakes and stop pandemics in their tracks. I've learned from students who are building robots and curing diseases, and who will change the world in ways we can't even imagine. I've seen the youngest of children remind us of our obligations to care for our refugees, to work in peace, and above all, to look out for each other. That's what's possible when we come together in the slow, hard, sometimes frustrating, but always vital work of self-government. But we can't take our democracy for granted. All of us, regardless of party, should throw ourselves into the work_of_citizenship. Not just when there is an election. Not just when our own narrow interest is at stake. But over the full span of a lifetime. If you're tired of arguing with strangers on the Internet, try to talk with one in real life. If something needs fixing, lace up your shoes and do some organizing. If you're disappointed by your elected officials, then grab a clipboard, get some signatures, and run for office yourself. Our success depends on our participation, regardless of which way the pendulum of power swings. It falls on each of us to be guardians of our democracy, to embrace the joyous task we've been given to continually try to improve this great nation of ours. Because for all our outward differences, we all share the same proud title, citizen. It has been the honor of my life to serve you as President. Eight years later, I am even more optimistic about our country's promise, and I look forward to working along your side as a citizen for all my days that remain. Thanks, everybody. God bless you, and God bless the United States of America.",
     "language":null,
     "segments":[],

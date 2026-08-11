@@ -5,6 +5,7 @@ export * from './content/documentation';
 export * from './content/getting-started';
 export * from './content/header';
 export * from './content/models';
+export * from './content/pricing';
 export * from './cookbook/data-formatted';
 export * from './cookbook/data';
 export * from './content/sidebar';

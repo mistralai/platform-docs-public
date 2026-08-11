@@ -24,7 +24,7 @@ By the end you'll have the Vibe CLI installed, configured, and responding to pro
 - *(Optional)* a Mistral account if you want to use Mistral-hosted models. The CLI also works fully [offline with local models](/vibe/code/cli/offline-models) or against any OpenAI-compatible API key you provide. See [API keys and profiles](/vibe/code/cli/api-keys-profiles) for the full provider matrix.
 
 :::tip
-On a different surface? See the [VS Code extension](/vibe/code/vs-code-extension/install-authenticate) or [Vibe Code Web](/vibe/code/vibe-code-web/get-started) guides.
+On a different interface? See the [VS Code extension](/vibe/code/vs-code-extension/install-authenticate) or [Vibe Code Web](/vibe/code/vibe-code-web/get-started) guides.
 :::
 
 <SectionTab as="h2" sectionId="step-1">Step 1: Install the CLI</SectionTab>
@@ -69,10 +69,7 @@ vibe
 
 On first launch, the CLI runs a **setup wizard** to register your API key. By default it opens a browser to sign you in with your Mistral account; credentials are stored locally so you don't need to enter them again.
 
-For non-Mistral providers or automation, paste an API key instead. Where to generate one depends on your plan:
-
-- **Mistral plan** (Free, Pro, or higher): <AppLink href="https://chat.mistral.ai/code/extensions" app="studio">Code › Vibe CLI</AppLink>.
-- **Pay-as-you-go API access** (Free mode or Scale plan): <AppLink href="https://console.mistral.ai/home?profile_dialog=api-keys" app="studio">API keys</AppLink>.
+For non-Mistral providers or automation, paste an API key instead. Generate one from <AppLink href="https://chat.mistral.ai/code/extensions" app="studio">Code › Vibe CLI</AppLink>. The same key works in Free mode, with a paid plan, or with pay-as-you-go enabled.
 
 ![Sign in on first launch](/assets/quickstarts/vibe/api-key.png)
 

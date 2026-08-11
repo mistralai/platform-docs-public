@@ -2,9 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { getOGImageUrl } from '@/components/og/helpers';
+import { BASE_URL, OG_IMAGE_DIMENSIONS } from '@/lib/constants';
 import { isDocsRouteHidden } from '@/lib/content/hidden';
 import { resolveContentLocale } from '@/lib/content/locale-content';
-import type { Locale } from '@/i18n/config';
+import { defaultLocale, type Locale } from '@/i18n/config';
 
 type Params = { locale: string; slug: string[] };
 
@@ -52,6 +54,13 @@ function knownSlugs(): Set<string> {
   return cachedSlugs;
 }
 
+const sectionRoutesWithPreview = new Set(['resources', 'inference']);
+
+function localizedDocsUrl(locale: Locale, slug: string[]) {
+  const localePrefix = locale === defaultLocale ? '' : `/${locale}`;
+  return `${BASE_URL}${localePrefix}/${slug.join('/')}`;
+}
+
 export function generateStaticParams(): Pick<Params, 'slug'>[] {
   return Array.from(knownSlugs()).map(slug => ({ slug: slug.split('/') }));
 }
@@ -84,9 +93,56 @@ export async function generateMetadata({
 
   const baseMetadata = (mod.metadata ?? {}) as Metadata;
 
+  const sectionRoute = slug.length === 1 ? slug[0] : undefined;
+  const hasSectionPreview =
+    sectionRoute !== undefined && sectionRoutesWithPreview.has(sectionRoute);
+  const title =
+    typeof baseMetadata.title === 'string' ? baseMetadata.title : undefined;
+  const description =
+    typeof baseMetadata.description === 'string'
+      ? baseMetadata.description
+      : undefined;
+
+  const sectionMetadata =
+    hasSectionPreview && title && description
+      ? (() => {
+          const ogImageUrl = getOGImageUrl({
+            path: 'generic',
+            title,
+            description,
+            eyebraw: 'Mistral docs',
+            image: '/ogs/docs.png',
+          });
+          const url = localizedDocsUrl(locale, slug);
+
+          return {
+            openGraph: {
+              title,
+              description,
+              url,
+              images: [
+                {
+                  url: ogImageUrl,
+                  width: OG_IMAGE_DIMENSIONS.width,
+                  height: OG_IMAGE_DIMENSIONS.height,
+                  alt: title,
+                },
+              ],
+            },
+            twitter: {
+              card: 'summary_large_image' as const,
+              title,
+              description,
+              images: [ogImageUrl],
+            },
+          };
+        })()
+      : {};
+
   if (isDocsRouteHidden(slug.join('/'), locale)) {
     return {
       ...baseMetadata,
+      ...sectionMetadata,
       robots: {
         index: false,
         follow: false,
@@ -94,7 +150,10 @@ export async function generateMetadata({
     };
   }
 
-  return baseMetadata;
+  return {
+    ...baseMetadata,
+    ...sectionMetadata,
+  };
 }
 
 export default async function DocsCatchAllPage({

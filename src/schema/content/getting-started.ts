@@ -66,7 +66,7 @@ export const QUICKSTART_CARDS = [
     title: 'Studio',
     description: '',
     logo: PRODUCT_LOGOS['studio'],
-    href: '/studio-api/overview',
+    href: '/studio',
     color: PRODUCT_COLORS['studio'],
   },
 ] as const;

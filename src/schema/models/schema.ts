@@ -20,21 +20,24 @@ export interface ModelPricingFlat {
   type: 'flat';
   free: boolean;
   price: number;
+  priceEur?: number;
   denominator: PricingDenominator;
 }
 export interface ModelPricingRange {
   type: 'range';
   free: boolean;
   input: number;
+  inputEur?: number;
   denominator: PricingDenominator;
   output: number;
+  outputEur?: number;
 }
 
 export interface ModelPricingCustom {
   type: 'custom';
   free: boolean;
-  input: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string }[];
-  output: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string }[];
+  input: { type: 'range' | 'flat'; price: number; priceEur?: number; denominator: PricingDenominator; label?: string }[];
+  output: { type: 'range' | 'flat'; price: number; priceEur?: number; denominator: PricingDenominator; label?: string }[];
 }
 
 export type ModelPricing =

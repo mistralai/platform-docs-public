@@ -41,10 +41,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.5, denominator: '/M Tokens' }
+      { type: 'range', price: 0.5, priceEur: 0.44, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 1.5, denominator: '/M Tokens' }
+      { type: 'range', price: 1.5, priceEur: 1.31, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['magistral-small-2509', 'magistral-small-latest'] },

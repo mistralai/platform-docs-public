@@ -41,10 +41,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.4, denominator: '/M Tokens' }
+      { type: 'range', price: 0.4, priceEur: 0.35, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 2.0, denominator: '/M Tokens' }
+      { type: 'range', price: 2.0, priceEur: 1.75, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['devstral-2512', 'devstral-latest', 'devstral-medium-latest'] },

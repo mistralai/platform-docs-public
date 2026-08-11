@@ -275,7 +275,7 @@ const SidebarFirstLevelCategoryItem = <T extends SideBarTreeNode>({
             href={item.href}
           >
             {item.label}
-            {(item.label === 'API Reference' || item.isExternalLink) && (
+            {(item.label === 'API Reference' || item.label === 'API' || item.isExternalLink) && (
               <ArrowUpRight className="size-3.5 opacity-50 hover:opacity-100" />
             )}
           </Link>

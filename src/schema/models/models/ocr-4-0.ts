@@ -25,8 +25,8 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 4.0, denominator: '/1000 Pages' },
-      { type: 'flat', price: 5.0, denominator: '/1000 Annotated Pages' }
+      { type: 'flat', price: 4.0, priceEur: 3.5, denominator: '/1000 Pages' },
+      { type: 'flat', price: 5.0, priceEur: 4.38, denominator: '/1000 Annotated Pages' }
     ],
     output: [
 

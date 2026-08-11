@@ -25,10 +25,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.4, denominator: '/M Tokens' }
+      { type: 'range', price: 0.4, priceEur: 0.4, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 2.0, denominator: '/M Tokens' }
+      { type: 'range', price: 2.0, priceEur: 2, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['mistral-medium-2505'] },

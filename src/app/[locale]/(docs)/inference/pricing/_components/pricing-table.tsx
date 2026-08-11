@@ -14,14 +14,20 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { PricingCurrencyToggle } from '@/components/model/pricing-currency-toggle';
 import { Link } from '@/i18n/navigation.client';
 import { useLingo } from '@lingo.dev/react';
 import {
+  DEFAULT_PRICING_CURRENCY,
   findModelBySlug,
   getModelUrl,
   Model,
   ModelPricing,
   ModelSlug,
+  priceForCurrency,
+  PricingCurrency,
+  pricingCurrencySymbol,
+  pricingHasEur,
 } from '@/schema';
 
 interface PricingTableProps {
@@ -38,7 +44,7 @@ const PRIORITY_FACTOR = 1.75;
 /** Regional inference adds 10% to every displayed price. */
 const REGIONAL_FACTOR = 1.1;
 
-type SidePrice = { price: number; denominator: string };
+type SidePrice = { price: number; priceEur?: number; denominator: string };
 type Mode = 'standard' | 'batch' | 'priority';
 
 const MODES: {
@@ -79,12 +85,12 @@ function getRawPrices(
   switch (pricing.type) {
     case 'flat':
       return {
-        input: { price: pricing.price, denominator: pricing.denominator },
+        input: { price: pricing.price, priceEur: pricing.priceEur, denominator: pricing.denominator },
       };
     case 'range':
       return {
-        input: { price: pricing.input, denominator: pricing.denominator },
-        output: { price: pricing.output, denominator: pricing.denominator },
+        input: { price: pricing.input, priceEur: pricing.inputEur, denominator: pricing.denominator },
+        output: { price: pricing.output, priceEur: pricing.outputEur, denominator: pricing.denominator },
       };
     case 'custom': {
       const input = pricing.input.find(
@@ -96,14 +102,17 @@ function getRawPrices(
       return {
         input: input && {
           price: input.price,
+          priceEur: input.priceEur,
           denominator: input.denominator,
         },
         cachedInput: cachedInput && {
           price: cachedInput.price,
+          priceEur: cachedInput.priceEur,
           denominator: cachedInput.denominator,
         },
         output: pricing.output[0] && {
           price: pricing.output[0].price,
+          priceEur: pricing.output[0].priceEur,
           denominator: pricing.output[0].denominator,
         },
       };
@@ -113,9 +122,9 @@ function getRawPrices(
   }
 }
 
-/** Round to 4 decimals and drop trailing zeros to avoid float artifacts. */
+/** Round to 5 decimals and drop trailing zeros to avoid float artifacts. */
 function formatPriceValue(value: number): string {
-  return String(Number(value.toFixed(4)));
+  return String(Number(value.toFixed(5)));
 }
 
 interface RowPrices {
@@ -131,22 +140,26 @@ function PricingRow({
   mode,
   regional,
   hideDenominator,
+  currency,
   l,
 }: {
   row: RowPrices;
   mode: Mode;
   regional: boolean;
   hideDenominator: boolean;
+  currency: PricingCurrency;
   l: ReturnType<typeof useLingo>;
 }) {
   const { model, isFree, input, cachedInput, output } = row;
   const factor = modeFactor(mode) * (regional ? REGIONAL_FACTOR : 1);
   const modelUrl = getModelUrl(model);
+  const currencySymbol = pricingCurrencySymbol(currency);
 
   const renderPrice = (side?: SidePrice, extraFactor = 1) => {
     if (isFree) return l.text('Free', { context: 'Free price label' });
     if (!side) return '—';
-    const value = `$${formatPriceValue(side.price * factor * extraFactor)}`;
+    const price = priceForCurrency(side.price, side.priceEur, currency);
+    const value = `${currencySymbol}${formatPriceValue(price * factor * extraFactor)}`;
     return hideDenominator ? value : `${value} ${side.denominator}`;
   };
 
@@ -192,6 +205,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
   const l = useLingo();
   const [mode, setMode] = React.useState<Mode>('standard');
   const [regional, setRegional] = React.useState(false);
+  const [currency, setCurrency] = React.useState<PricingCurrency>(DEFAULT_PRICING_CURRENCY);
 
   const rows: RowPrices[] = slugs
     .map(slug => findModelBySlug(slug))
@@ -218,6 +232,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
     denominators.size === 1 ? [...denominators][0] : undefined;
 
   const suffix = modeSuffix(mode, l) + (regional ? ` · ${l.text('Regional inference', { context: 'Link text to the regional inference documentation' })} (+10%)` : '');
+  const showCurrencyToggle = rows.some(row => pricingHasEur(row.model.pricing));
 
   return (
     <div className="flex flex-col gap-3">
@@ -229,6 +244,9 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
           {suffix}
         </span>
         <div className="flex items-center gap-3">
+          {showCurrencyToggle && (
+            <PricingCurrencyToggle value={currency} onValueChange={setCurrency} />
+          )}
           <Label className="font-mono text-xs uppercase cursor-pointer">
             <Checkbox
               checked={regional}
@@ -287,6 +305,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
               mode={mode}
               regional={regional}
               hideDenominator={Boolean(sharedDenominator)}
+              currency={currency}
               l={l}
             />
           ))}

@@ -69,10 +69,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.15, denominator: '/M Tokens' }
+      { type: 'range', price: 0.15, priceEur: 0.15, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 0.15, denominator: '/M Tokens' }
+      { type: 'range', price: 0.15, priceEur: 0.15, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['open-mistral-nemo-2407', 'open-mistral-nemo'] },

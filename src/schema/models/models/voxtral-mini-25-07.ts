@@ -41,11 +41,11 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.001, denominator: '/Min' },
-      { type: 'flat', price: 0.04, denominator: '/M Tokens' }
+      { type: 'range', price: 0.001, priceEur: 0.00088, denominator: '/Min' },
+      { type: 'flat', price: 0.04, priceEur: 0.03, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 0.04, denominator: '/M Tokens' }
+      { type: 'range', price: 0.04, priceEur: 0.04, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['voxtral-mini-2507', 'voxtral-mini-latest'] },

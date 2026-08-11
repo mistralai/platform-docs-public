@@ -35,11 +35,11 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 1.4, denominator: '/M Tokens', label: 'Input' },
-      { type: 'range', price: 0.26, denominator: '/M Tokens', label: 'Cached input' },
+      { type: 'range', price: 1.4, priceEur: 1.19, denominator: '/M Tokens', label: 'Input' },
+      { type: 'range', price: 0.26, priceEur: 0.22, denominator: '/M Tokens', label: 'Cached input' },
     ],
     output: [
-      { type: 'range', price: 4.4, denominator: '/M Tokens', label: 'Output' },
+      { type: 'range', price: 4.4, priceEur: 3.74, denominator: '/M Tokens', label: 'Output' },
     ],
   },
   identifiers: { apiNames: ['zai-glm-5-2'] },

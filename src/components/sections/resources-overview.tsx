@@ -1,6 +1,6 @@
 'use client';
 
-import { Link } from '@/i18n/navigation.client';
+import { Link, useLocale } from '@/i18n/navigation.client';
 import { FolderIcon, ArrowRightIcon } from '@/components/icons/pixel';
 import { SectionTab } from '@/components/layout/section-tab';
 import { LatestCookbookCards } from '@/components/common/cookbook-cards';
@@ -9,82 +9,139 @@ import { useLingo } from '@lingo.dev/react';
 
 export function ResourcesOverview({ showHeader = true }: { showHeader?: boolean }) {
   const l = useLingo();
+  const locale = useLocale();
+  const apiLabel =
+    locale === 'fr'
+      ? l.text('API', {
+          context: 'Title of the Resources landing card linking to the API reference',
+        })
+      : 'API Reference';
   const sections = [
     {
-      title: 'API Reference',
-      description: 'Explore endpoints, authentication, schemas, and errors.',
+      title: apiLabel,
+      description: l.text('Explore endpoints, authentication, schemas, and errors.', {
+        context: 'Description of the Resources landing card linking to the API reference',
+      }),
       href: '/api',
       color: PRODUCT_COLORS['api'],
     },
     {
-      title: 'SDKs',
-      description: 'Install official SDKs for Python, TypeScript, and other languages.',
+      title: l.text('SDKs', {
+        context: 'Title of the Resources landing card linking to SDKs',
+      }),
+      description: l.text('Install official SDKs for Python, TypeScript, and other languages.', {
+        context: 'Description of the Resources landing card linking to SDKs',
+      }),
       href: '/resources/sdks',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Security advisories',
-      description: 'Review security advisories and remediation guidance.',
+      title: l.text('Security advisories', {
+        context: 'Title of the Resources landing card linking to security advisories',
+      }),
+      description: l.text('Review security advisories and remediation guidance.', {
+        context: 'Description of the Resources landing card linking to security advisories',
+      }),
       href: '/resources/security-advisories',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Release notes',
-      description: 'Follow shipped updates across Vibe, Studio, Admin, models, and the API.',
+      title: l.text('Release notes', {
+        context: 'Title of the Resources landing card linking to release notes',
+      }),
+      description: l.text('Follow shipped updates across Vibe, Studio, Admin, models, and the API.', {
+        context: 'Description of the Resources landing card linking to release notes',
+      }),
       href: '/resources/release-notes',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Changelogs',
-      description: 'Track API updates, model releases, deprecations, and breaking changes.',
+      title: l.text('Changelogs', {
+        context: 'Title of the Resources landing card linking to changelogs',
+      }),
+      description: l.text('Track API updates, model releases, deprecations, and breaking changes.', {
+        context: 'Description of the Resources landing card linking to changelogs',
+      }),
       href: '/resources/changelogs',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Cookbooks',
-      description: 'Build with step-by-step examples for RAG, function calling, evaluation, and more.',
+      title: l.text('Cookbooks', {
+        context: 'Title of the Resources landing card linking to cookbooks',
+      }),
+      description: l.text('Build with step-by-step examples for RAG, function calling, evaluation, and more.', {
+        context: 'Description of the Resources landing card linking to cookbooks',
+      }),
       href: '/resources/cookbooks',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Ambassadors',
-      description: 'Find community programs, examples, and contribution paths.',
+      title: l.text('Ambassadors', {
+        context: 'Title of the Resources landing card linking to the ambassador program',
+      }),
+      description: l.text('Find community programs, examples, and contribution paths.', {
+        context: 'Description of the Resources landing card linking to the ambassador program',
+      }),
       href: '/resources/ambassadors',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Mistral Events ↗',
-      description: 'Join Mistral events, meetups, and community sessions.',
+      title: l.text('Mistral Events ↗', {
+        context: 'Title of the Resources landing card linking to Mistral events',
+      }),
+      description: l.text('Join Mistral events, meetups, and community sessions.', {
+        context: 'Description of the Resources landing card linking to Mistral events',
+      }),
       href: 'https://luma.com/mistral.ai',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Glossary',
-      description: 'Look up platform, model, API, and billing terms.',
+      title: l.text('Glossary', {
+        context: 'Title of the Resources landing card linking to the glossary',
+      }),
+      description: l.text('Look up platform, model, API, and billing terms.', {
+        context: 'Description of the Resources landing card linking to the glossary',
+      }),
       href: '/resources/glossary',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Error glossary',
-      description: 'Map HTTP errors to causes and fixes.',
+      title: l.text('Error glossary', {
+        context: 'Title of the Resources landing card linking to the error glossary',
+      }),
+      description: l.text('Map HTTP errors to causes and fixes.', {
+        context: 'Description of the Resources landing card linking to the error glossary',
+      }),
       href: '/resources/error-glossary',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Known limitations',
-      description: 'Review current platform, model, and API constraints.',
+      title: l.text('Known limitations', {
+        context: 'Title of the Resources landing card linking to known limitations',
+      }),
+      description: l.text('Review current platform, model, and API constraints.', {
+        context: 'Description of the Resources landing card linking to known limitations',
+      }),
       href: '/resources/known-limitations',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Migration guides',
-      description: 'Switch from another provider to the Mistral API with minimal code changes.',
+      title: l.text('Migration guides', {
+        context: 'Title of the Resources landing card linking to migration guides',
+      }),
+      description: l.text('Switch from another provider to the Mistral API with minimal code changes.', {
+        context: 'Description of the Resources landing card linking to migration guides',
+      }),
       href: '/resources/migration-guides',
       color: PRODUCT_COLORS['developer'],
     },
     {
-      title: 'Observability integrations',
-      description: 'Connect Mistral traces and evaluations to third-party tools.',
+      title: l.text('Observability integrations', {
+        context: 'Title of the Resources landing card linking to observability integrations',
+      }),
+      description: l.text('Connect Mistral traces and evaluations to third-party tools.', {
+        context: 'Description of the Resources landing card linking to observability integrations',
+      }),
       href: '/resources/observability-integrations',
       color: PRODUCT_COLORS['developer'],
     },
@@ -94,14 +151,19 @@ export function ResourcesOverview({ showHeader = true }: { showHeader?: boolean 
     <div className="flex flex-col gap-6">
       {showHeader && (
         <p className="text-muted-foreground text-base leading-relaxed max-w-3xl">
-          Resources bring together the references, examples, and support material that help you build with Mistral. Start here when you need an SDK, a cookbook, a glossary definition, release notes, migration guidance, or a support reference.
+          {l.text(
+            'Resources bring together the references, examples, and support material that help you build with Mistral. Start here when you need an SDK, a cookbook, a glossary definition, release notes, migration guidance, or a support reference.',
+            { context: 'Introductory description for the Resources landing page' }
+          )}
         </p>
       )}
       <SectionTab sectionId="resources-explore">
         {l.text('Explore', { context: 'Heading for developer documentation links' })}
       </SectionTab>
       <p className="text-muted-foreground text-base">
-        Find material for implementation, troubleshooting, and migration work.
+        {l.text('Find material for implementation, troubleshooting, and migration work.', {
+          context: 'Intro text for Resources landing page cards',
+        })}
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sections.map(item => {
@@ -135,9 +197,16 @@ export function ResourcesOverview({ showHeader = true }: { showHeader?: boolean 
         })}
       </div>
 
-      <SectionTab sectionId="latest-cookbooks">Latest cookbooks</SectionTab>
+      <SectionTab sectionId="latest-cookbooks">
+        {l.text('Latest cookbooks', {
+          context: 'Heading for the latest cookbooks section on the Resources landing page',
+        })}
+      </SectionTab>
       <p className="text-muted-foreground text-base">
-        Use recent examples to learn implementation patterns and adapt them to your project.
+        {l.text(
+          'Use recent examples to learn implementation patterns and adapt them to your project.',
+          { context: 'Intro text for the latest cookbooks section on the Resources landing page' }
+        )}
       </p>
       <LatestCookbookCards count={6} />
     </div>

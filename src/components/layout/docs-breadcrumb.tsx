@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from '@/i18n/navigation.client';
+import { useLocale, usePathname } from '@/i18n/navigation.client';
 import {
   TopCategoryCta,
   BreadcrumbHome,
@@ -14,6 +14,7 @@ import {
 import { SidebarItem } from '@/schema';
 import { getActiveHeaderTab } from '@/schema/content/header';
 import { headerLinkLabel } from '@/schema/content/i18n';
+import type { Locale } from '@/i18n/config';
 import { useLingo } from '@lingo.dev/react';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -62,6 +63,7 @@ export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
   const { setOpenMobile, openMobile } = useSidebar();
   const pathname = usePathname();
   const l = useLingo();
+  const locale = useLocale() as Locale;
   const slug =
     pathname === '/'
       ? ['getting-started', 'introduction']
@@ -88,11 +90,17 @@ export function DocsBreadcrumb({ sidebar }: { sidebar: SidebarItem[] }) {
     };
   });
 
-  // Prepend the active header tab as a virtual breadcrumb segment
-  // Skip for "Getting Started" (root tab) since those pages are already at the root level
-  if (activeTab.href !== '/') {
-    const activeTabLabel = headerLinkLabel(activeTab.id, l);
-    if (
+  // Prepend the active header tab as a virtual breadcrumb segment.
+  // Portal pages use the header label as their only breadcrumb segment.
+  if (activeTab && activeTab.href !== '/') {
+    const activeTabLabel = headerLinkLabel(activeTab.id, l, locale);
+    if (pathname === activeTab.href) {
+      breadcrumbItems.splice(0, breadcrumbItems.length, {
+        label: activeTabLabel,
+        href: activeTab.href,
+        isCurrentPage: true,
+      });
+    } else if (
       breadcrumbItems.length > 0 &&
       breadcrumbItems[0].label.toLowerCase() === activeTabLabel.toLowerCase()
     ) {

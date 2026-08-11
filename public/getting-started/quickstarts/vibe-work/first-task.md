@@ -15,7 +15,7 @@ By the end you'll have one completed task in your history and a clear sense of w
 
 <SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
 
-- A Mistral account. The Free plan is enough to try Vibe Work. <AppLink href="https://chat.mistral.ai">Create account</AppLink>.
+- A Mistral account. Free mode is enough to try Vibe Work. <AppLink href="https://chat.mistral.ai">Create account</AppLink>.
 
 <SectionTab as="h2" sectionId="step-1">Step 1: Open Vibe and switch to Work</SectionTab>
 

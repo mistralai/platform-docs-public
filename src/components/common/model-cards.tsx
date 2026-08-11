@@ -1,7 +1,7 @@
 'use client';
 
 import { useLingo } from '@lingo.dev/react';
-import { findModelBySlug, type Model } from '@/schema';
+import { findModelBySlug, nonLegacyModels, type Model } from '@/schema';
 import { ModelCard } from '@/components/model/model-card';
 
 /**
@@ -13,19 +13,33 @@ import { ModelCard } from '@/components/model/model-card';
  *   <ModelCardsBySlug slugs={['voxtral-tts-26-03', 'voxtral-mini-transcribe-26-02']} />
  *
  * Each card shows the model's category and version. Unknown slugs are skipped.
- * Cards link to their /models/model-cards/<slug> page.
+ * Cards link to their canonical /models/<slug> page.
  */
 export function ModelCardsBySlug({ slugs }: { slugs: string[] }) {
-  const l = useLingo();
   const items = slugs
     .map(slug => findModelBySlug(slug))
     .filter((model): model is Model => Boolean(model));
 
-  if (items.length === 0) return null;
+  return <ModelCardsGrid models={items} />;
+}
+
+export function LatestModelCards({ count = 6 }: { count?: number }) {
+  const items = [...nonLegacyModels]
+    .filter(model => model.releaseDate)
+    .sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''))
+    .slice(0, count);
+
+  return <ModelCardsGrid models={items} />;
+}
+
+function ModelCardsGrid({ models }: { models: Model[] }) {
+  const l = useLingo();
+
+  if (models.length === 0) return null;
 
   return (
     <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
-      {items.map(model => (
+      {models.map(model => (
         <ModelCard
           key={model.name}
           model={model}

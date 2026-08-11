@@ -4,7 +4,7 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const SOURCE_DIR = path.join(
   ROOT,
-  'src/content/en/docs/studio-api/audio/speech_to_text/offline_transcription'
+  'src/content/en/docs/studio/audio/speech_to_text/offline_transcription'
 );
 const OUT_DIR = path.join(ROOT, 'tests/snippets/offline-transcription');
 

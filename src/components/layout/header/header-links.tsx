@@ -7,8 +7,14 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { headerLinks, getActiveHeaderTab } from '@/schema/content/header';
 import { headerLinkLabel } from '@/schema/content/i18n';
+import { locales } from '@/i18n/config';
 import { useLingo } from '@lingo.dev/react';
 import { MobileMenuClose } from '../mobile-menu';
+
+const localeFromPathname = (pathname: string) => {
+  const firstSegment = pathname.split('/', 2)[1];
+  return locales.find(locale => locale === firstSegment) ?? 'en';
+};
 
 export default function DesktopHeaderLinks({
   className,
@@ -18,12 +24,13 @@ export default function DesktopHeaderLinks({
   const pathname = usePathname();
   const activeTab = getActiveHeaderTab(pathname);
   const l = useLingo();
+  const locale = localeFromPathname(pathname);
 
   return (
     <nav className={cn('flex items-center gap-1 pointer-events-auto flex-nowrap', className)}>
       {headerLinks.map(link => {
-        const isActive = activeTab.id === link.id;
-        const label = headerLinkLabel(link.id, l);
+        const isActive = activeTab?.id === link.id;
+        const label = headerLinkLabel(link.id, l, locale);
 
         return (
           <Link
@@ -55,11 +62,12 @@ export const MobileHeaderLinks = () => {
   const pathname = usePathname();
   const activeTab = getActiveHeaderTab(pathname);
   const l = useLingo();
+  const locale = localeFromPathname(pathname);
 
   return (
     <nav className="flex w-full flex-col gap-1">
       {headerLinks.map(link => {
-        const isActive = activeTab.id === link.id;
+        const isActive = activeTab?.id === link.id;
         const linkClassName = cn(
           'w-full h-10 px-3 flex items-center rounded-sm justify-between',
           { 'bg-sidebar-accent font-bold': isActive },
@@ -69,7 +77,7 @@ export const MobileHeaderLinks = () => {
         return (
           <MobileMenuClose key={link.id} asChild>
             <Link className={linkClassName} href={link.href}>
-              <span className="flex items-center">{headerLinkLabel(link.id, l)}</span>
+              <span className="flex items-center">{headerLinkLabel(link.id, l, locale)}</span>
               {isActive ? <Bullet variant="primary" /> : null}
             </Link>
           </MobileMenuClose>

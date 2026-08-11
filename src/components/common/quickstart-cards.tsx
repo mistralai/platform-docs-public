@@ -15,14 +15,14 @@ export function QuickstartDocLinks() {
       title: l.text('Vibe documentation', { context: 'Title of the Vibe documentation link on the quickstart doc-links row' }),
       description: l.text('Productivity in Work, coding in Code, legacy features in Chat.', { context: 'Description of the Vibe documentation link on the quickstart doc-links row' }),
       logo: PRODUCT_LOGOS['vibe'],
-      href: '/vibe/overview',
+      href: '/vibe',
       color: PRODUCT_COLORS['vibe'],
     },
     {
       title: l.text('Studio & API documentation', { context: 'Title of the Studio & API documentation link on the quickstart doc-links row' }),
       description: l.text('Build with chat completions, agents, RAG, and more.', { context: 'Description of the Studio & API documentation link on the quickstart doc-links row' }),
       logo: PRODUCT_LOGOS['studio'],
-      href: '/studio-api/overview',
+      href: '/studio',
       color: PRODUCT_COLORS['studio'],
     },
     {

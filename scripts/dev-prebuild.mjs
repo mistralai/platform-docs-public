@@ -172,3 +172,6 @@ if (!isCurrent(rawMdxStamp, rawMdxStamp, rawMdxFingerprint)) {
 } else {
   console.log('▸ rawmdx:export   skipped (up to date)');
 }
+
+// --- release assets ---
+run('copy-release-assets', 'pnpm -s copy-release-assets');

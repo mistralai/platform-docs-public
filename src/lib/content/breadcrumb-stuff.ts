@@ -55,6 +55,16 @@ function findItemBySlug(
         return item;
       }
 
+      if (
+        item.overridedSlug &&
+        item.overridedSlug.length === targetSlug.length &&
+        item.overridedSlug.every(
+          (part: string, index: number) => part === targetSlug[index]
+        )
+      ) {
+        return item;
+      }
+
       if (item.type === 'category' && item.children) {
         const found = findItemBySlug(item.children, targetSlug, debug);
         if (found) return found;
@@ -83,6 +93,10 @@ export function getSlugOrOverridedSlug(item: SidebarItem): string | null {
     }
 
     return null;
+  }
+
+  if (item.overridedSlug) {
+    return `/${item.overridedSlug.join('/')}`;
   }
 
   return `/${item.slug.join('/')}`;

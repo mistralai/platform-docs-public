@@ -21,7 +21,8 @@ export function getModelsBreadcrumb(prevSlug: string[]): SidebarItem[] {
         } as DocsMetadata,
         toc: [],
         pagination: { prev: undefined, next: undefined },
-        slug: [...prevSlug, getModelSlug(model)],
+        slug: ['inference', 'models', getModelSlug(model)],
+        overridedSlug: ['models', getModelSlug(model)],
         clickable: true,
         isMarkdownFile: false,
       }) satisfies SidebarItem

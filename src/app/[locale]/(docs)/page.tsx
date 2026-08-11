@@ -109,7 +109,7 @@ export default async function DocumentationPage({
               title: l.text('Vibe', { context: 'Product name on the discover-our-platform card on the home page' }),
               description: l.text('The unified agent for productivity and coding. Chat with it on the web or mobile, or run it in your terminal and editor.', { context: 'Description of Vibe on the discover-our-platform card on the home page' }),
               logo: PRODUCT_LOGOS['vibe'],
-              href: '/vibe/overview',
+              href: '/vibe',
               hoverText: 'group-hover:text-[#FA500F]',
               hoverBg: 'group-hover:bg-[#FA500F]',
               hoverBorder: 'hover:border-[#FA500F]/50',
@@ -118,7 +118,7 @@ export default async function DocumentationPage({
               title: l.text('Studio', { context: 'Product name on the discover-our-platform card on the home page' }),
               description: l.text('The developer console and the Mistral API. Keys, the Playground, evaluations, agents, and SDKs to ship applications.', { context: 'Description of Studio on the discover-our-platform card on the home page' }),
               logo: PRODUCT_LOGOS['studio'],
-              href: '/studio-api/overview',
+              href: '/studio',
               hoverText: 'group-hover:text-[#0082E6]',
               hoverBg: 'group-hover:bg-[#0082E6]',
               hoverBorder: 'hover:border-[#0082E6]/50',
@@ -187,7 +187,7 @@ export default async function DocumentationPage({
 
         <div className="flex justify-end">
           <Button size="sm" asChild>
-            <Link href="/models/overview">
+            <Link href="/models">
               {l.text('View all models', { context: 'Call to view the full AI model catalog' })} <ArrowRightIcon className="size-4" />
             </Link>
           </Button>

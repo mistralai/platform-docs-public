@@ -8,7 +8,7 @@ sidebar_position: 1
 Install the Vibe CLI, run `vibe` in your project, and complete the setup prompt.
 
 :::tip
-**On a different surface?** This page covers the **CLI** specifically. If you'd rather work inside your editor or against a remote repo, jump to [VS Code extension](/vibe/code/vs-code-extension/install-authenticate) or [Vibe Code Web](/vibe/code/vibe-code-web/get-started). See [Choose CLI, VS Code, or web sessions](/vibe/code/choose-cli-vscode-web-sessions) for a side-by-side comparison.
+**On a different interface?** This page covers the **CLI** specifically. If you'd rather work inside your editor or against a remote repo, jump to [VS Code extension](/vibe/code/vs-code-extension/install-authenticate) or [Vibe Code Web](/vibe/code/vibe-code-web/get-started). See [Choose CLI, VS Code, or web sessions](/vibe/code/choose-cli-vscode-web-sessions) for a side-by-side comparison.
 :::
 
 <SectionTab as="h2" sectionId="prerequisites">Prerequisites</SectionTab>
@@ -19,10 +19,7 @@ Before you install the CLI, make sure you have:
 - **Python 3.12 or later** for manual installation.
 - *(Optional)* a **Mistral account** to use Mistral-hosted models. The CLI also works fully offline with [local models](/vibe/code/cli/offline-models), or against any compatible API key you provide.
 
-If you choose to use Mistral-hosted models, you have two ways to get an API key, depending on your plan:
-
-- With a **[Mistral plan](https://mistral.ai/pricing)** (Free, Pro, or higher), Vibe Code is included; usage and rate limits apply.
-- With an **API plan**, you manage the API key yourself from the console.
+If you choose to use Mistral-hosted models, sign in with your Mistral account during setup. For non-Mistral providers or automation, create an API key from [Code > Vibe CLI](https://chat.mistral.ai/code/extensions). The same key works in Free mode, with a paid plan, or with pay-as-you-go enabled.
 
 <SectionTab as="h2" sectionId="install">Install the CLI</SectionTab>
 
@@ -97,10 +94,10 @@ On first launch, Vibe:
 
 <SectionTab as="h2" sectionId="choose-access-path">Choose your access path</SectionTab>
 
-The setup wizard asks for an [API key](/vibe/code/cli/api-keys-profiles). Pick the path that matches your plan:
+The setup wizard asks you to sign in or provide an [API key](/vibe/code/cli/api-keys-profiles):
 
-- **Sign in with a Mistral account**: pick a [Mistral plan](https://mistral.ai/pricing) (Free, Pro, or higher). Vibe Code is included; usage and rate limits apply, with pay-as-you-go beyond the included budget when available.
-- **Use your API plan**: generate an API key from [Studio](https://console.mistral.ai/home?profile_dialog=api-keys) or use one you already manage.
+- **Sign in with a Mistral account**: use your Mistral plan. Vibe Code is included, with usage and rate limits based on your plan and pay-as-you-go settings.
+- **Use a custom API key**: generate a key from [Code > Vibe CLI](https://chat.mistral.ai/code/extensions) or use a key from another compatible provider.
 
 Paste your API key when prompted. The wizard saves it for future sessions in the Vibe home directory. You can also set `MISTRAL_API_KEY` in your shell environment if you prefer not to use the interactive prompt.
 

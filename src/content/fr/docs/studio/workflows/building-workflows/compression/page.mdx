@@ -1,0 +1,160 @@
+---
+id: compression
+title: Compression
+sidebar_position: 14
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Compression
+
+Compressez tous les payloads (entrées de workflow, E/S d’activité, données de signal) avant qu’ils ne quittent votre worker. La plateforme stocke les octets compressés, et vos workers les décompressent de façon transparente au retour.
+
+| Mode | Entrée de workflow | E/S d’activité |
+|------|----------------|---------------|
+| Par défaut | non compressé | non compressé |
+| Compression | compressé | compressé |
+
+La compression réduit le nombre d’octets qui transitent sur le réseau et sont comptabilisés dans la **limite de 2 Mo** appliquée aux entrées de workflow, aux entrées d’activité et aux sorties d’activité. Un payload compressé sous 2 Mo n’a plus besoin de [l’externalisation des payloads](/studio/workflows/building-workflows/payload_offloading), ce qui supprime l’aller-retour vers le stockage blob et son coût de replay.
+
+:::info
+La compression fonctionne avec [le chiffrement](/studio/workflows/building-workflows/encryption) et [l’externalisation des payloads](/studio/workflows/building-workflows/payload_offloading). Chaque payload est d’abord compressé, puis externalisé s’il dépasse encore le seuil d’externalisation, puis chiffré. Le décodage inverse automatiquement cet ordre.
+:::
+
+<SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
+
+Installez l’extra de compression :
+
+```bash
+uv add "mistralai[workflow-payload-compression]"
+```
+
+Cela installe `zstandard`, que le SDK utilise pour la compression, et `msgpack`, qui stocke les paramètres de l’algorithme à côté des octets compressés.
+
+<SectionTab as="h1" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+Un payload est compressé uniquement lorsque cela en vaut la peine :
+
+- La taille du payload est d’au moins `min_size_bytes` (par défaut : 1 Mo).
+- Le résultat compressé est plus petit que l’original. Si la compression ne réduit pas la taille du payload, les octets d’origine sont envoyés à la place.
+
+Lorsqu’un payload est compressé, le SDK enregistre l’algorithme et le niveau utilisés avec les octets compressés. Le décodage lit ces paramètres dans le payload lui-même. Un worker peut donc décompresser un payload même si son propre niveau configuré diffère, ou si la compression n’est pas configurée du tout. Vous n’avez jamais besoin de synchroniser la configuration d’encodage et de décodage.
+
+<SectionTab as="h1" sectionId="configuration">Configuration</SectionTab>
+
+La compression doit être configurée sur **le client et le worker**, car les payloads peuvent être compressés au démarrage d’un workflow (côté client) et lors du passage de données entre activités (côté worker).
+
+<SectionTab as="h2" variant="secondary" sectionId="worker-config">Configuration du worker</SectionTab>
+
+Définissez ces variables d’environnement sur vos workers. C’est la présence du bloc de compression qui active la fonctionnalité : il n’existe pas d’option `ENABLED` distincte. La taille minimale par défaut est de 1 Mo et le niveau par défaut est 3 ; ajustez-les avec `MIN_SIZE_BYTES` et `ALGORITHM_CONFIG__LEVEL`.
+
+```bash
+TEMPORAL_PAYLOAD_COMPRESSION__MIN_SIZE_BYTES=1048576             # 1MB (default)
+TEMPORAL_PAYLOAD_COMPRESSION__ALGORITHM_CONFIG__ALGORITHM=zstd   # zstd (default)
+TEMPORAL_PAYLOAD_COMPRESSION__ALGORITHM_CONFIG__LEVEL=3          # 1-22 (default: 3)
+```
+
+`level` accepte un niveau de compression zstd de `1` à `22`. Les niveaux plus élevés compressent davantage, au prix d’un temps CPU plus long. Le niveau 3 est un bon choix par défaut pour la plupart des charges de travail.
+
+<SectionTab as="h2" variant="secondary" sectionId="client-config">Configuration du client</SectionTab>
+
+Lorsque vous utilisez le SDK Mistral Python pour démarrer des workflows dont l’entrée peut être volumineuse, configurez aussi la compression sur le client. Appelez `configure_workflow_encoding` avant de démarrer un workflow :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import asyncio
+
+from mistralai.client import Mistral
+from mistralai.extra.workflows import (
+    WorkflowEncodingConfig,
+    configure_workflow_encoding,
+)
+from mistralai.extra.workflows.encoding import (
+    PayloadCompressionConfig,
+    ZstdCompressionConfig,
+)
+
+async def main():
+    client = Mistral(api_key="your_api_key")
+
+    await configure_workflow_encoding(
+        WorkflowEncodingConfig(
+            payload_compression=PayloadCompressionConfig(
+                min_size_bytes=1024 * 1024,  # 1MB (default)
+                algorithm_config=ZstdCompressionConfig(level=3),
+            )
+        ),
+        client=client,
+    )
+
+    execution = client.workflows.execute_workflow(
+        workflow_identifier="my-workflow",
+        input={"large_data": "..."},  # Compressed if >= 1MB
+    )
+    print(execution)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="combining-features">Associer à l’externalisation et au chiffrement</SectionTab>
+
+La compression, l’externalisation et le chiffrement sont indépendants. Activez la combinaison de votre choix. Lorsque plusieurs mécanismes sont actifs, le SDK les applique dans un ordre fixe afin que les payloads fassent toujours l’aller-retour correctement :
+
++ **Compressez** le payload s’il dépasse le seuil de compression.
++ **Externalisez** le payload, désormais plus petit, vers le stockage blob s’il dépasse encore le seuil d’externalisation.
++ **Chiffrez** le résultat en dernier.
+
+Comme la compression s’exécute en premier, elle peut ramener un payload sous la limite de 2 Mo et éviter entièrement l’externalisation. Cela évite le téléchargement vers le stockage blob et le téléchargement au moment du replay qui seraient sinon nécessaires.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from mistralai.extra.workflows import WorkflowEncodingConfig
+from mistralai.extra.workflows.encoding import (
+    BlobStorageConfig,
+    PayloadCompressionConfig,
+    PayloadEncryptionConfig,
+    PayloadEncryptionMode,
+    PayloadOffloadingConfig,
+)
+
+config = WorkflowEncodingConfig(
+    payload_compression=PayloadCompressionConfig(),
+    payload_offloading=PayloadOffloadingConfig(
+        storage_config=BlobStorageConfig(
+            storage_provider="s3",
+            bucket_name="workflow-payloads",
+        ),
+    ),
+    payload_encryption=PayloadEncryptionConfig(
+        mode=PayloadEncryptionMode.FULL,
+        main_key="<your_hex_key>",
+    ),
+)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="troubleshooting">Résolution des problèmes</SectionTab>
+
+**`WorkflowPayloadCompressionException: Payload compression requires installing mistralai[workflow_payload_compression]`**
+
+L’extra de compression n’est pas installé. Installez-le sur chaque worker et client qui encode ou décode des payloads :
+
+```bash
+uv add "mistralai[workflow-payload-compression]"
+```
+
+**Un payload supérieur à `min_size_bytes` n’est pas compressé.**
+
+zstd n’a pas pu réduire la taille du payload. Les données déjà compressées, comme les images, les vidéos et les archives, ne diminuent pas davantage. Dans ce cas, le SDK envoie les octets d’origine, ce qui est attendu.

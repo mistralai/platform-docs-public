@@ -128,7 +128,7 @@ function collectModelCardRoutes(): string[] {
     if (!filePath.endsWith(".ts") || filePath.endsWith(`${path.sep}index.ts`)) return;
     const source = fs.readFileSync(filePath, "utf8");
     const match = source.match(/\bslug:\s*['"]([^'"]+)['"]/);
-    if (match?.[1]) addRoute(routes, `/models/model-cards/${match[1]}`);
+    if (match?.[1]) addRoute(routes, `/models/${match[1]}`);
   });
   return Array.from(routes);
 }

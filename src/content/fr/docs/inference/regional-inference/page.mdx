@@ -1,0 +1,199 @@
+---
+id: regional-inference
+title: Inférence régionale
+sidebar_position: 4
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Inférence régionale
+
+Mistral propose l’inférence régionale comme service optionnel via des endpoints API dédiés. Elle permet de traiter les requêtes d’inférence par des systèmes situés dans une zone géographique choisie : actuellement l’Union européenne ou les États-Unis.
+
+Utilisez l’inférence régionale si vous avez des exigences de localisation des données pour les entrées et sorties d’inférence, ou si vos utilisateurs sont concentrés dans une région et veulent réduire la latence. Si vous ne spécifiez pas de région, l’API utilise l’endpoint global de Mistral. L’inférence régionale ne rend pas le plan de contrôle Mistral régional.
+
+<SectionTab as="h1" sectionId="what-is-regional-inference">Qu’est-ce que l’inférence régionale ?</SectionTab>
+
+L’inférence est l’étape d’exécution pendant laquelle un modèle traite votre entrée et génère une sortie. Sur les endpoints hébergés par Mistral, cette exécution fonctionne sur une infrastructure GPU gérée par Mistral.
+
+L’inférence régionale achemine cette exécution de modèle vers une infrastructure située dans une zone géographique sélectionnée. La requête utilise toujours l’API Mistral, mais l’endpoint régional détermine où le traitement d’inférence a lieu.
+
+L’inférence régionale vous aide à :
+
+- Contrôler où les données d’entrée et de sortie d’inférence sont traitées.
+- Prendre en charge des charges de travail avec des exigences spécifiques de localisation des données.
+- Réduire la latence lorsque la plupart des utilisateurs ou systèmes sont proches de la zone géographique sélectionnée.
+
+L’inférence régionale ne fournit pas de stockage régional pour toutes les données du plan de contrôle. Par exemple, la configuration du compte, les clés API, la facturation, la gestion des accès, l’analyse d’usage, les logs et d’autres métadonnées opérationnelles peuvent toujours être traités par des systèmes Mistral en dehors de la zone géographique d’inférence sélectionnée.
+
+<SectionTab as="h1" sectionId="supported-by-regional-inference">Que prend en charge l’inférence régionale ?</SectionTab>
+
+Utilisez les endpoints régionaux uniquement pour les charges de travail dont les modèles, outils et fonctionnalités sont disponibles dans la région cible. Les endpoints régionaux ne servent que les modèles hébergés dans cette région.
+
+:::info[Tarification régionale]
+L’inférence régionale est facturée à **1,1× la tarification standard** (majoration de 10 %) pour les tokens d’entrée, les tokens de sortie, les lectures en cache et les écritures en cache.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="regional-inference-limitations">Limitations</SectionTab>
+
+Les endpoints régionaux ont des limitations de fonctionnalités. Si une charge de travail dépend d’une fonctionnalité non prise en charge, les garanties de traitement régional ne s’appliquent pas à cette charge de travail.
+
+- Tous les [appels d’outils](/studio/agents/agent-tools) ne sont pas actuellement pris en charge. [Function calling](/studio/agents/agent-tools/function-calling) est le seul outil régional pris en charge.
+- Les fonctionnalités avec état, notamment Agents, Batch et l’API Files, ne sont pas disponibles sur les endpoints régionaux.
+- Les modèles disponibles varient selon la région.
+
+:::note[Pour les développeurs]
+Avant d’acheminer du trafic vers un endpoint régional, vérifiez la disponibilité des modèles dans [Modèles disponibles](#available-models).
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="available-models">Modèles disponibles</SectionTab>
+
+Les endpoints régionaux ne servent que les modèles hébergés dans cette région. Utilisez les mêmes ID de modèle que l’API globale, mais vérifiez la disponibilité sur l’endpoint régional avant d’envoyer du trafic de production.
+
+Pour lister les modèles disponibles, appelez `models.list` sur l’URL de base régionale ou sur la valeur `server` du SDK correspondant à la région.
+
+<Tabs groupId="model-list-code">
+  <TabItem value="python" label="python">
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"], server="eu")
+models = client.models.list()
+
+for model in models.data:
+    print(model.id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const mistral = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY,
+  server: "eu",
+});
+
+async function main() {
+  const models = await mistral.models.list();
+
+  for (const model of models.data ?? []) {
+    console.log(model.id);
+  }
+}
+
+main();
+```
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl https://api.eu.mistral.ai/v1/models \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="configure-regional-inference">Configurer l’inférence régionale</SectionTab>
+
+Sélectionnez un endpoint régional en configurant le client SDK ou en envoyant directement les requêtes vers l’URL de base régionale.
+
+<SectionTab as="h2" variant="secondary" sectionId="sdk-version">SDK version 2.70 ou ultérieure</SectionTab>
+
+Utilisez le paramètre `server` lors de l’initialisation du client pour spécifier la région :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python">
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"], server="eu")
+response = client.chat.complete(
+    model="mistral-medium-latest",
+    messages=[{"role": "user", "content": "What is Mistral?"}],
+)
+print(response.choices[0].message.content)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const mistral = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY,
+  server: "eu",
+});
+
+async function main() {
+  const response = await mistral.chat.complete({
+    model: "mistral-medium-latest",
+    messages: [
+      { role: "user", content: "What is the best French cheese?" },
+    ],
+  });
+
+  console.log(response.choices?.[0]?.message?.content);
+}
+
+main();
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="older-sdk-versions">Anciennes versions du SDK</SectionTab>
+
+Si vous utilisez une ancienne version du SDK, utilisez le paramètre `server_url` :
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"], server_url="https://api.eu.mistral.ai/")
+list_models_response = client.models.list()
+print(list_models_response)
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="curl">Utiliser curl</SectionTab>
+
+```bash
+curl https://api.eu.mistral.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistral-large-latest",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="verify-region">Vérifier le traitement régional</SectionTab>
+
+L’endpoint régional que vous appelez est la source de vérité pour la zone géographique de traitement demandée. Pour l’auditabilité, journalisez le nom d’hôte de l’endpoint, la valeur `server` du SDK, l’ID du modèle, l’horodatage et l’identifiant de requête de réponse pour chaque requête régionale.
+
+Si vous acheminez le trafic via un proxy, une gateway ou un outil d’observabilité, conservez les logs de requête qui montrent l’URL de base cible (`api.eu.mistral.ai` ou `api.us.mistral.ai`). Ces logs vous aident à confirmer que la requête a été envoyée à l’endpoint régional attendu.
+
+<SectionTab as="h1" sectionId="supported-regions">Quelles régions sont prises en charge ?</SectionTab>
+
+Mistral distingue trois endpoints :
+
+| Endpoint | Région | Majoration régionale | Géographie | Quand l’utiliser |
+|---|---|---|---|---|
+| [`api.mistral.ai`](https://api.mistral.ai) | Global | Non | Pas de région spécifique | Utilisez l’endpoint global si vous n’avez pas besoin d’un lieu d’inférence spécifique. Mistral ne s’engage pas sur un lieu d’inférence précis pour les requêtes envoyées à cet endpoint. |
+| [`api.eu.mistral.ai`](https://api.eu.mistral.ai) | UE | Oui | Plusieurs data centers dans les pays de l’UE et de l’AELE | Utilisez l’endpoint régional UE pour prendre en charge le traitement d’inférence dans l’Union européenne. |
+| [`api.us.mistral.ai`](https://api.us.mistral.ai) | US | Oui | Plusieurs data centers aux États-Unis | Utilisez l’endpoint régional US pour prendre en charge le traitement d’inférence aux États-Unis. |
+
+<SectionTab as="h1" sectionId="zero-data-retention">Inférence régionale et zero data retention</SectionTab>
+
+L’inférence régionale contrôle où les requêtes d’inférence éligibles sont traitées. La zero data retention contrôle si le contenu des requêtes et réponses éligibles est conservé après traitement. Ce sont deux contrôles distincts, et vous pouvez avoir besoin des deux selon vos exigences de traitement des données.
+
+Pour comprendre le fonctionnement de la zero data retention, consultez [Zero data retention](/admin/monitor-comply/zero-data-retention).

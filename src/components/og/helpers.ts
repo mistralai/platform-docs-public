@@ -9,6 +9,7 @@ export const getOGImageUrl = ({
   eyebraw,
   image,
   imageBackground,
+  modelIcon,
   version = DEPLOYMENT_SHA,
 }: {
   path: 'generic' | 'model';
@@ -18,6 +19,7 @@ export const getOGImageUrl = ({
   description: string;
   image: string;
   imageBackground?: string;
+  modelIcon?: string;
   version?: string;
 }) => {
   const ogSearchParams = new URLSearchParams();
@@ -34,6 +36,9 @@ export const getOGImageUrl = ({
   }
   if (imageBackground) {
     ogSearchParams.set('bg', imageBackground);
+  }
+  if (modelIcon) {
+    ogSearchParams.set('modelIcon', modelIcon);
   }
 
   return `${BASE_URL}/api/og?${ogSearchParams.toString()}`;

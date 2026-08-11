@@ -150,10 +150,6 @@ Agent selection is available through the agent selector at the bottom of the pan
 
 Vibe Code Web runs sessions in a managed sandbox tied to a GitHub repository. Approvals appear in the browser UI, and repository-level actions (creating branches, pushing commits, opening pull requests) follow the GitHub permissions you granted when connecting the repository.
 
-:::info
-Vibe Code Web is being rolled out. Exact UI labels for approvals, the full list of sandboxed actions, and the GitHub permission scopes are being finalized. See [GitHub repositories and permissions](/vibe/code/vibe-code-web/github-repositories-permissions) and [Limits and lifecycle](/vibe/code/vibe-code-web/limits-and-lifecycle).
-:::
-
 </ExplorerTab>
 </ExplorerTabs>
 

@@ -30,6 +30,7 @@ export const AVATAR_ICONS = {
   mathstral: '/assets/models/Mathstral.svg',
   leanstral: '/assets/models/Leanstral.svg',
   shieldstral: '/assets/models/Shieldstral.svg',
+  'zai-glm': '/assets/models/Zai_GLM.svg',
 } as const;
 
 export type AvatarIconVariant = keyof typeof AVATAR_ICONS;

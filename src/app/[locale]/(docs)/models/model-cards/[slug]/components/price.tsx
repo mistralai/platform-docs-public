@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { ModelPricing } from '@/schema/models';
-import { ChevronRightIcon } from '@/components/icons/pixel';
 import {
   Tooltip,
   TooltipContent,
@@ -14,26 +13,39 @@ interface PriceProps {
   pricing: ModelPricing;
   className?: string;
   locale: Locale;
+  layout?: 'default' | 'stacked';
 }
 
 export function PriceValue({
   value,
   label,
+  unit,
   tooltip,
+  orientation = 'column',
 }: {
   value: number | string;
   label: string;
+  unit?: string;
   tooltip?: string;
+  orientation?: 'column' | 'row';
 }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex flex-col gap-1 px-3 first:pl-0 last:!pr-0 cursor-help">
+        <div
+          className={cn(
+            'min-w-0 cursor-help px-3 first:pl-0 last:!pr-0',
+            orientation === 'row'
+              ? 'grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-1 py-2'
+              : 'flex flex-col gap-1'
+          )}
+        >
           <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
             ${value}
           </span>
-          <p className="text-xs leading-none uppercase text-foreground/30 font-mono font-semibold whitespace-nowrap">
+          <p className="text-xs leading-tight uppercase text-foreground/30 font-mono font-semibold">
             {label}
+            {unit && <span className="block">{unit}</span>}
           </p>
         </div>
       </TooltipTrigger>
@@ -42,7 +54,7 @@ export function PriceValue({
   );
 }
 
-export async function Price({ pricing, className, locale }: PriceProps) {
+export async function Price({ pricing, className, locale, layout = 'default' }: PriceProps) {
   const l = await getLingo(locale);
   const inputCostLabel = l.text('Input Cost', { context: 'Tooltip label for input token price' });
   const outputCostLabel = l.text('Output Cost', { context: 'Tooltip label for output token price' });
@@ -73,56 +85,73 @@ export async function Price({ pricing, className, locale }: PriceProps) {
       );
     }
 
-    return (
-      <div className="flex items-center gap-2">
-        {/* Input */}
-        {pricing.type === 'range' ? (
-          <PriceValue
-            value={pricing.input}
-            tooltip={inputCostLabel}
-            label={pricing.denominator}
-          />
-        ) : (
-          <div className="flex divide-x divide-foreground/30 divide-dashed">
+    if (pricing.type === 'custom') {
+      if (layout === 'stacked') {
+        return (
+          <div className="flex min-w-0 flex-col divide-y divide-foreground/30 divide-dashed">
             {pricing.input.map((input, i) => (
               <PriceValue
-                key={`${input.denominator}-${i}`}
+                key={`input-${input.denominator}-${i}`}
                 value={input.price}
-                tooltip={inputCostLabel}
-                label={input.denominator}
+                tooltip={input.label ?? inputCostLabel}
+                label={input.label ?? input.denominator}
+                unit={input.label ? input.denominator : undefined}
+                orientation="row"
               />
             ))}
-          </div>
-        )}
-        {/* Separator */}
-        {pricing.type === 'custom' && pricing.output.length > 0 && (
-          <div className="flex -space-x-2.5 opacity-20">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <ChevronRightIcon
-                key={index}
-                className="size-4 text-foreground"
-              />
-            ))}
-          </div>
-        )}
-        {/* Output */}
-        {pricing.type === 'range' ? (
-          <PriceValue
-            value={pricing.output}
-            tooltip={outputCostLabel}
-            label={pricing.denominator}
-          />
-        ) : (
-          <div className="flex first:pl-0 last:!pr-0 divide-x divide-foreground/30 divide-dashed">
             {pricing.output.map((output, i) => (
               <PriceValue
-                key={`${output.denominator}-${i}`}
+                key={`output-${output.denominator}-${i}`}
                 value={output.price}
-                tooltip={outputCostLabel}
-                label={output.denominator}
+                tooltip={output.label ?? outputCostLabel}
+                label={output.label ?? output.denominator}
+                unit={output.label ? output.denominator : undefined}
+                orientation="row"
               />
             ))}
           </div>
+        );
+      }
+    }
+
+    return (
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {pricing.type === 'range' ? (
+          <>
+            <PriceValue
+              value={pricing.input}
+              tooltip={inputCostLabel}
+              label={pricing.denominator}
+            />
+            <PriceValue
+              value={pricing.output}
+              tooltip={outputCostLabel}
+              label={pricing.denominator}
+            />
+          </>
+        ) : (
+          <>
+            <div className="flex min-w-0 flex-wrap divide-x divide-foreground/30 divide-dashed">
+              {pricing.input.map((input, i) => (
+                <PriceValue
+                  key={`${input.denominator}-${i}`}
+                  value={input.price}
+                  tooltip={inputCostLabel}
+                  label={input.denominator}
+                />
+              ))}
+            </div>
+            <div className="flex min-w-0 flex-wrap first:pl-0 last:!pr-0 divide-x divide-foreground/30 divide-dashed">
+              {pricing.output.map((output, i) => (
+                <PriceValue
+                  key={`${output.denominator}-${i}`}
+                  value={output.price}
+                  tooltip={outputCostLabel}
+                  label={output.denominator}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     );

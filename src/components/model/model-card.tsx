@@ -68,7 +68,7 @@ export function ModelCard({
             alt={`${model.name} icon`}
             width={64}
             height={64}
-            className="size-full"
+            className={cn('size-full', model.avatar?.icon === 'zai-glm' && 'scale-[0.85]')}
           />
         </div>
         {showParameters && (
@@ -113,6 +113,7 @@ export function ModelCard({
           alt={`${model.name} icon`}
           className="z-2"
           size="lg"
+          imageClassName={model.avatar?.icon === 'zai-glm' ? 'size-[52%]' : undefined}
           style={cardStyle}
         />
         <div className="flex-1 flex flex-col min-w-0 px-2">
@@ -151,6 +152,7 @@ export function ModelCard({
         src={iconPath}
         alt={`${model.name} icon`}
         size="lg"
+        imageClassName={model.avatar?.icon === 'zai-glm' ? 'size-[52%]' : undefined}
         style={cardStyle}
       />
       <div className="z-2 px-4 py-2 flex-1 flex flex-col gap-0.5">

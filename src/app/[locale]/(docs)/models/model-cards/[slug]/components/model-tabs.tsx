@@ -1,4 +1,6 @@
 import { Link } from '@/i18n/navigation.client';
+import { SectionTab } from '@/components/layout/section-tab';
+import Admonition from '@/components/common/admonition';
 import {
 	Heading,
 	HeadingTitle,
@@ -17,6 +19,7 @@ import { FeatureItemWithList } from "./feature-item";
 import { EndpointItem } from "./features-endpoint";
 import { WeightsTable } from "./weights-table";
 import type { Locale } from "@/i18n/config";
+import type { Lingo } from '@lingo.dev/react';
 
 interface ModelTabsProps {
 	model: Model;
@@ -89,6 +92,7 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 						);
 					})}
 				</FeaturesGrid>
+				{model.usageExample === 'zai-glm-5-2' && <ZaiGlmUsageExample l={l} />}
 			</TabsContent>
 
 			{/* Weights Tab */}
@@ -105,6 +109,44 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 		</Tabs>
 	);
 }
+
+const ZaiGlmUsageExample = ({ l }: { l: Lingo }) => (
+	<div className="mt-10 space-y-6">
+		<SectionTab as="h2" variant="secondary" sectionId="regional-availability">
+			{l.text('Regional availability', { context: 'Heading for a GLM 5.2 regional availability callout on the model card' })}
+		</SectionTab>
+		<Admonition type="info" title={l.text('Regional availability', { context: 'Heading for a GLM 5.2 regional availability callout on the model card' })} hideType>
+			<p>
+				{l.text('GLM 5.2 is available through the global endpoint and the EU regional endpoint. It is not available through the US regional endpoint yet.', { context: 'Regional availability note for GLM 5.2' })}{' '}
+				{l.text('For details about regional endpoint behavior, see', { context: 'Intro text before the Regional Inference link on the GLM 5.2 model card' })}{' '}
+				<Link href="/inference/regional-inference">
+					{l.text('Regional Inference', { context: 'Link text to the Regional Inference documentation' })}
+				</Link>
+				.
+			</p>
+		</Admonition>
+		<SectionTab as="h2" variant="secondary" sectionId="use-glm-5-2-with-curl">
+			{l.text('Use GLM 5.2', { context: 'Heading for a GLM 5.2 curl onboarding example' })}
+		</SectionTab>
+		<p className="text-muted-foreground">
+			{l.text('Send a request to the Chat Completions API with the `zai-glm-5-2` model name.', { context: 'Intro for a GLM 5.2 curl onboarding example' })}
+		</p>
+		<pre className="overflow-x-auto rounded-lg border border-border bg-card p-4 text-sm">
+			<code>{`curl https://api.mistral.ai/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \\
+  -d '{
+    "model": "zai-glm-5-2",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Summarize the main migration risks in this codebase."
+      }
+    ]
+  }'`}</code>
+		</pre>
+	</div>
+);
 
 const FeaturesGrid = ({ children }: { children: React.ReactNode }) => {
 	return (

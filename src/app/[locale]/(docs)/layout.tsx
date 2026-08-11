@@ -75,7 +75,7 @@ export default async function SidebarLayout({
             sidebar={sidebarTree}
             expandedCategoriesOptions={{
               overridedExpandedCategories: {
-                '/': [['getting-started']],
+                '/': [['resources']],
               },
               defaultExpandedCategories,
             }}
@@ -138,6 +138,12 @@ const isGettingStartedSlug = (slug: string[]) =>
 
 const isResourcesSlug = (slug: string[]) =>
   slug.length === 1 && slug[0] === 'resources';
+
+const shouldShowOverviewChild = (item: SidebarItem) =>
+  item.type === 'category' &&
+  item.slug.length === 1 &&
+  (item.slug[0] === 'vibe' || item.slug[0] === 'studio') &&
+  item.hasPage === true;
 
 const sidebarTreeData = (
   sidebar: SidebarItem[],
@@ -208,9 +214,20 @@ const sidebarTreeData = (
           categoryChildren.push(...apiSidebarData);
         }
 
-        if (isResourcesSlug(item.slug)) {
+        if (shouldShowOverviewChild(item)) {
           categoryChildren.unshift({
-            label: 'API Reference',
+            label: 'Overview',
+            href,
+            categoryPath: href,
+            children: [],
+            pagination: { prev: undefined, next: undefined },
+            clickable: true,
+          });
+        }
+
+        if (item.slug.length === 1 && item.slug[0] === 'inference') {
+          categoryChildren.push({
+            label: 'API Reference ↗',
             href: '/api',
             categoryPath: '/api',
             children: [],
@@ -218,6 +235,72 @@ const sidebarTreeData = (
             clickable: true,
             isExternalLink: true,
           });
+        }
+
+        if (isResourcesSlug(item.slug)) {
+          const sectionLabel = (label: string): SideBarTreeNode => ({
+            label,
+            categoryPath: `/resources#${label.toLowerCase().replace(/\s+/g, '-')}`,
+            children: [],
+            pagination: { prev: undefined, next: undefined },
+            clickable: false,
+            isSectionLabel: true,
+          });
+
+          const takeByHref = (href: string): SideBarTreeNode | null => {
+            const index = categoryChildren.findIndex(child => child.href === href);
+            if (index === -1) return null;
+            return categoryChildren.splice(index, 1)[0] ?? null;
+          };
+
+          const apiReferenceItem: SideBarTreeNode = {
+            label: 'API Reference',
+            href: '/api',
+            categoryPath: '/api',
+            children: [],
+            pagination: { prev: undefined, next: undefined },
+            clickable: true,
+            isExternalLink: true,
+          };
+
+          const eventsItem: SideBarTreeNode = {
+            label: 'Mistral Events ↗',
+            href: 'https://luma.com/mistral.ai',
+            categoryPath: 'https://luma.com/mistral.ai',
+            children: [],
+            pagination: { prev: undefined, next: undefined },
+            clickable: true,
+            isExternalLink: true,
+          };
+
+          const groupedResources = [
+            sectionLabel('Build'),
+            apiReferenceItem,
+            takeByHref('/resources/sdks'),
+            takeByHref('/resources/languages'),
+            takeByHref('/resources/cookbooks'),
+            takeByHref('/resources/migration-guides'),
+            sectionLabel('Updates'),
+            takeByHref('/resources/release-notes'),
+            takeByHref('/resources/changelogs'),
+            takeByHref('/resources/security-advisories'),
+            sectionLabel('Knowledge base'),
+            takeByHref('/resources/glossary'),
+            takeByHref('/resources/error-glossary'),
+            takeByHref('/resources/known-limitations'),
+            takeByHref('/resources/observability-integrations'),
+            takeByHref('/resources/deprecated'),
+            sectionLabel('Community'),
+            takeByHref('/resources/ambassadors'),
+            eventsItem,
+            ...categoryChildren,
+          ].filter(Boolean) as SideBarTreeNode[];
+
+          categoryChildren.splice(
+            0,
+            categoryChildren.length,
+            ...groupedResources
+          );
         }
 
         const isGettingStarted = isGettingStartedSlug(item.slug);
@@ -230,6 +313,15 @@ const sidebarTreeData = (
 
         if (isGettingStarted) {
           categoryChildren.push(
+            {
+              label: 'Glossary ↗',
+              href: '/resources/glossary',
+              categoryPath: '/resources/glossary',
+              children: [],
+              pagination: { prev: undefined, next: undefined },
+              clickable: true,
+              isExternalLink: true,
+            },
             {
               label: 'SDK Clients ↗',
               href: '/resources/sdks',

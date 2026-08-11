@@ -676,7 +676,10 @@ export async function getDynamicBreadcrumbForDir(
     const target = entry.matchDirname.split(path.sep).join(path.sep);
 
     if (normalized.endsWith(target)) {
-      const out = await entry.provider(prevSlug.slice(0, -1));
+      const providerBase = entry.matchDirname === path.join(MODELS_SLUG_DIR, '[slug]')
+        ? ['inference', 'models']
+        : prevSlug.slice(0, -1);
+      const out = await entry.provider(providerBase);
 
       return out;
     }

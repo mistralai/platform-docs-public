@@ -58,7 +58,8 @@ export default async function SidebarLayout({
   const apiSidebarMetadata = await getApiSidebarMetadata(locale);
   const { tree: sidebarTree, defaultExpandedCategories } = sidebarTreeData(
     sidebar,
-    apiSidebarMetadata
+    apiSidebarMetadata,
+    locale
   );
 
   const asideClassName =
@@ -147,7 +148,8 @@ const shouldShowOverviewChild = (item: SidebarItem) =>
 
 const sidebarTreeData = (
   sidebar: SidebarItem[],
-  apiSidebarMetadata: Awaited<ReturnType<typeof getApiSidebarMetadata>>
+  apiSidebarMetadata: Awaited<ReturnType<typeof getApiSidebarMetadata>>,
+  locale: Locale
 ): { tree: SideBarTreeNode[]; defaultExpandedCategories: string[] } => {
   const items: SideBarTreeNode[] = [];
   const defaultExpandedCategories: string[] = [];
@@ -206,7 +208,7 @@ const sidebarTreeData = (
             ? `/${item.overridedSlug.join('/')}`
             : `/${item.slug.join('/')}`;
 
-        const childResult = sidebarTreeData(item.children || [], apiSidebarMetadata);
+        const childResult = sidebarTreeData(item.children || [], apiSidebarMetadata, locale);
         const categoryChildren = childResult.tree;
         defaultExpandedCategories.push(...childResult.defaultExpandedCategories);
 
@@ -227,7 +229,7 @@ const sidebarTreeData = (
 
         if (item.slug.length === 1 && item.slug[0] === 'inference') {
           categoryChildren.push({
-            label: 'API Reference ↗',
+            label: locale === 'fr' ? 'API ↗' : 'API Reference ↗',
             href: '/api',
             categoryPath: '/api',
             children: [],
@@ -254,7 +256,7 @@ const sidebarTreeData = (
           };
 
           const apiReferenceItem: SideBarTreeNode = {
-            label: 'API Reference',
+            label: locale === 'fr' ? 'API' : 'API Reference',
             href: '/api',
             categoryPath: '/api',
             children: [],
@@ -332,7 +334,7 @@ const sidebarTreeData = (
               isExternalLink: true,
             },
             {
-              label: 'API Reference ↗',
+              label: locale === 'fr' ? 'API ↗' : 'API Reference ↗',
               href: '/api',
               categoryPath: '/api',
               children: [],

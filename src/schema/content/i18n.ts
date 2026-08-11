@@ -14,7 +14,7 @@ export function headerLinkLabel(id: HeaderLinkId, l: Lingo, locale = 'en'): stri
     case 'resources':
       return locale === 'fr' ? 'Ressources' : 'Resources';
     case 'api':
-      return 'API Reference';
+      return locale === 'fr' ? 'API' : 'API Reference';
   }
 }
 

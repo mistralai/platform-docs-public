@@ -25,7 +25,7 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 0.1, denominator: '/M Tokens' }
+      { type: 'flat', price: 0.1, priceEur: 0.1, denominator: '/M Tokens' }
     ],
     output: [
       

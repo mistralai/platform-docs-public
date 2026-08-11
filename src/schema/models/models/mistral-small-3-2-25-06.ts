@@ -41,10 +41,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.1, denominator: '/M Tokens' }
+      { type: 'range', price: 0.1, priceEur: 0.1, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 0.3, denominator: '/M Tokens' }
+      { type: 'range', price: 0.3, priceEur: 0.3, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['mistral-small-2506'] },

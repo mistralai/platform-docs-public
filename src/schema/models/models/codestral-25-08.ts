@@ -25,10 +25,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.3, denominator: '/M Tokens' }
+      { type: 'range', price: 0.3, priceEur: 0.26, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 0.9, denominator: '/M Tokens' }
+      { type: 'range', price: 0.9, priceEur: 0.79, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['codestral-2508', 'codestral-latest'] },

@@ -25,10 +25,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 2.0, denominator: '/M Tokens' }
+      { type: 'range', price: 2.0, priceEur: 1.75, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 5.0, denominator: '/M Tokens' }
+      { type: 'range', price: 5.0, priceEur: 4.38, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['magistral-medium-2509', 'magistral-medium-latest'] },

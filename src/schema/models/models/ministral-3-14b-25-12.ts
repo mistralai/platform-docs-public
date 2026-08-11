@@ -69,10 +69,10 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.2, denominator: '/M Tokens' }
+      { type: 'range', price: 0.2, priceEur: 0.18, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 0.2, denominator: '/M Tokens' }
+      { type: 'range', price: 0.2, priceEur: 0.18, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['ministral-14b-2512', 'ministral-14b-latest'] },

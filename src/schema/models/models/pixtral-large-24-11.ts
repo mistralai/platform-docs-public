@@ -44,7 +44,7 @@ export default {
       { type: 'range', price: 2.0, denominator: '/M Tokens' }
     ],
     output: [
-      { type: 'range', price: 6.0, denominator: '/M Tokens' }
+      { type: 'range', price: 6.0, priceEur: 5.4, denominator: '/M Tokens' }
     ]
   },
   identifiers: { apiNames: ['pixtral-large-2411', 'pixtral-large-latest'] },

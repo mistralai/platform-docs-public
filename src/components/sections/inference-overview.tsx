@@ -1,6 +1,6 @@
 'use client';
 
-import { Link } from '@/i18n/navigation.client';
+import { Link, useLocale } from '@/i18n/navigation.client';
 import { FolderIcon, ArrowRightIcon } from '@/components/icons/pixel';
 import { Badge } from '@/components/ui/badge';
 import { SectionTab } from '@/components/layout/section-tab';
@@ -10,52 +10,105 @@ import { useLingo } from '@lingo.dev/react';
 
 export function InferenceOverview({ showHeader = true }: { showHeader?: boolean }) {
   const l = useLingo();
+  const locale = useLocale();
+  const apiLabel =
+    locale === 'fr'
+      ? l.text('API', {
+          context: 'Title of the Inference landing card linking to the API reference',
+        })
+      : 'API Reference';
   const sections = [
     {
-      title: 'Models',
-      description: 'View all models with specifications, benchmarks, and feature comparison.',
+      title: l.text('Models', {
+        context: 'Title of the Inference landing card linking to the model catalog',
+      }),
+      description: l.text(
+        'View all models with specifications, benchmarks, and feature comparison.',
+        {
+          context: 'Description of the Inference landing card linking to the model catalog',
+        }
+      ),
       href: '/models',
     },
     {
-      title: 'Pricing',
-      description: 'Compare model pricing by family.',
+      title: l.text('Pricing', {
+        context: 'Title of the Inference landing card linking to model pricing',
+      }),
+      description: l.text('Compare model pricing by family.', {
+        context: 'Description of the Inference landing card linking to model pricing',
+      }),
       href: '/inference/pricing',
     },
     {
-      title: 'Model lifecycle policy',
-      description: 'Plan for model maturity stages, aliases, deprecations, and retirement.',
+      title: l.text('Model lifecycle policy', {
+        context: 'Title of the Inference landing card linking to the model lifecycle policy',
+      }),
+      description: l.text(
+        'Plan for model maturity stages, aliases, deprecations, and retirement.',
+        {
+          context: 'Description of the Inference landing card linking to the model lifecycle policy',
+        }
+      ),
       href: '/inference/model-lifecycle',
     },
     {
-      title: 'Regional inference',
-      description: 'Route inference requests to a specific region.',
+      title: l.text('Regional inference', {
+        context: 'Title of the Inference landing card linking to regional inference',
+      }),
+      description: l.text('Route inference requests to a specific region.', {
+        context: 'Description of the Inference landing card linking to regional inference',
+      }),
       href: '/inference/regional-inference',
-      status: 'GA',
+      status: l.text('GA', {
+        context: 'Lifecycle status label for a generally available inference feature',
+      }),
+      statusVariant: 'outline' as const,
     },
     {
-      title: 'Priority tier',
-      description: 'Route eligible API requests through a priority queue.',
+      title: l.text('Priority tier', {
+        context: 'Title of the Inference landing card linking to Priority tier',
+      }),
+      description: l.text('Route eligible API requests through a priority queue.', {
+        context: 'Description of the Inference landing card linking to Priority tier',
+      }),
       href: '/inference/priority-tier',
-      status: 'Public Preview',
+      status: l.text('Public Preview', {
+        context: 'Lifecycle status label for a public preview inference feature',
+      }),
+      statusVariant: 'yellow' as const,
     },
     {
-      title: 'Labs',
-      description: 'Explore experimental model releases.',
+      title: l.text('Labs', {
+        context: 'Title of the Inference landing card linking to Labs',
+      }),
+      description: l.text('Explore experimental model releases.', {
+        context: 'Description of the Inference landing card linking to Labs',
+      }),
       href: '/inference/labs',
     },
     {
-      title: 'Prompting',
-      description: 'Design prompts for model requests.',
+      title: l.text('Prompting', {
+        context: 'Title of the Inference landing card linking to prompting guidance',
+      }),
+      description: l.text('Design prompts for model requests.', {
+        context: 'Description of the Inference landing card linking to prompting guidance',
+      }),
       href: '/inference/prompting',
     },
     {
-      title: 'Sampling',
-      description: 'Tune generation parameters.',
+      title: l.text('Sampling', {
+        context: 'Title of the Inference landing card linking to sampling guidance',
+      }),
+      description: l.text('Tune generation parameters.', {
+        context: 'Description of the Inference landing card linking to sampling guidance',
+      }),
       href: '/inference/sampling',
     },
     {
-      title: 'API reference',
-      description: 'Review endpoint details.',
+      title: apiLabel,
+      description: l.text('Review endpoint details.', {
+        context: 'Description of the Inference landing card linking to the API reference',
+      }),
       href: '/api',
     },
   ];
@@ -64,14 +117,20 @@ export function InferenceOverview({ showHeader = true }: { showHeader?: boolean 
     <div className="flex flex-col gap-6">
       {showHeader && (
         <p className="text-muted-foreground text-base leading-relaxed max-w-3xl">
-          Mistral inference is the serving layer for running models through the API. Use it to choose the right model, send low-latency requests, route traffic by region, and control generation behavior with prompting and sampling parameters.
+          {l.text(
+            'Mistral inference is the serving layer for running models through the API. Use it to choose the right model, send low-latency requests, route traffic by region, and control generation behavior with prompting and sampling parameters.',
+            { context: 'Introductory description for the Inference landing page' }
+          )}
         </p>
       )}
       <SectionTab sectionId="inference-explore">
         {l.text('Explore', { context: 'Heading for model-related documentation' })}
       </SectionTab>
       <p className="text-muted-foreground text-base">
-        Find reference material for model choice, pricing, lifecycle, regional routing, and request behavior.
+        {l.text(
+          'Find reference material for model choice, pricing, lifecycle, regional routing, and request behavior.',
+          { context: 'Intro text for Inference landing page cards' }
+        )}
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sections.map(item => {
@@ -98,7 +157,7 @@ export function InferenceOverview({ showHeader = true }: { showHeader?: boolean 
                     {item.title}
                   </h3>
                   {'status' in item && item.status && (
-                    <Badge variant={item.status === 'GA' ? 'outline' : 'yellow'} size="xs" className="font-mono uppercase text-[11px]">
+                    <Badge variant={item.statusVariant} size="xs" className="font-mono uppercase text-[11px]">
                       {item.status}
                     </Badge>
                   )}
@@ -112,7 +171,11 @@ export function InferenceOverview({ showHeader = true }: { showHeader?: boolean 
         })}
       </div>
 
-      <SectionTab sectionId="latest-models">Latest models</SectionTab>
+      <SectionTab sectionId="latest-models">
+        {l.text('Latest models', {
+          context: 'Heading for the latest models section on the Inference landing page',
+        })}
+      </SectionTab>
       <LatestModelCards count={6} />
     </div>
   );

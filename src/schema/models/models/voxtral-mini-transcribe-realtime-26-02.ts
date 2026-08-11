@@ -41,7 +41,7 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'flat', price: 0.006, denominator: '/Min' }
+      { type: 'flat', price: 0.006, priceEur: 0.0053, denominator: '/Min' }
     ],
     output: [
       

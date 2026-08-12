@@ -6,6 +6,7 @@ export default {
     shortDescription: l.text(`A state-of-the-art, open-weight, general-purpose multimodal model.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'mistral-large-3-25-12',
+  slugAliases: ['mistral-large'],
   releaseDate: '2025-12-02',
   version: '25.12',
   frontier: true,

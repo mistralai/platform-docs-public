@@ -6,6 +6,7 @@ export default {
     shortDescription: l.text(`Our cutting-edge language model for code completion released end of July 2025.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'codestral-25-08',
+  slugAliases: ['codestral'],
   releaseDate: '2025-07-30',
   version: '25.08',
   frontier: true,

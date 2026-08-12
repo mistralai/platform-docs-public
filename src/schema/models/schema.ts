@@ -246,6 +246,8 @@ export interface ModelTemplate<
    */
   describe: (l: Lingo) => ModelDescriptions;
   slug: S;
+  /** Evergreen URL aliases that redirect to this model card. */
+  slugAliases?: string[];
   /** ISO 8601 date string (YYYY-MM-DD). */
   releaseDate?: string;
   version?: string;
@@ -310,6 +312,15 @@ export type Slugs<T> = T extends readonly any[]
   : never;
 
 // factory function to define models
+export function getModelSlugAliases(
+  model: Pick<ModelTemplate, 'identifiers' | 'slugAliases'>
+): string[] {
+  return Array.from(new Set([
+    ...(model.slugAliases ?? []),
+    ...model.identifiers.apiNames.filter(name => name.endsWith('-latest')),
+  ]));
+}
+
 export const defineModels = <
   T extends readonly ModelTemplate<Names<T>, Slugs<T>>[],
 >(

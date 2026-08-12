@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { models, findModelBySlug, getModelLicenses, isLegacyModel, Model } from '@/schema';
+import { permanentRedirect } from '@/i18n/navigation.server';
+import { models, findModelBySlug, findModelBySlugAlias, getModelLicenses, getModelSlugAliases, isLegacyModel, Model } from '@/schema';
 import { ThunderIcon, LampIcon, FlagIcon } from '@/components/icons/pixel';
 import { AVATAR_ICONS, getModelIconFallback } from '@/lib/icons';
 import { getModelColorFallback, MODEL_COLORS } from '@/lib/colors';
@@ -46,9 +47,10 @@ interface ModelPageProps {
 
 // Generate static params for all models
 export async function generateStaticParams() {
-  return models.map(model => ({
-    slug: model.slug,
-  }));
+  return models.flatMap(model => [
+    model.slug,
+    ...getModelSlugAliases(model),
+  ].map(slug => ({ slug })));
 }
 
 export const dynamicParams = true;
@@ -59,7 +61,7 @@ export async function generateMetadata({
 }: ModelPageProps): Promise<Metadata> {
   const { locale, slug } = (await params) as { locale: Locale; slug: string };
   const l = await getLingo(locale);
-  const model = findModelBySlug(slug);
+  const model = findModelBySlug(slug) ?? findModelBySlugAlias(slug);
 
   if (!model) {
     return {
@@ -143,10 +145,15 @@ const MAX_API_NAMES = 1;
 export default async function ModelPage({ params }: ModelPageProps) {
   const { locale, slug } = (await params) as { locale: Locale; slug: string };
   const l = await getLingo(locale);
-  const model = findModelBySlug(slug);
+  const aliasModel = findModelBySlugAlias(slug);
+  const model = aliasModel ?? findModelBySlug(slug);
 
   if (!model) {
     notFound();
+  }
+
+  if (aliasModel) {
+    permanentRedirect(`/models/${aliasModel.slug}`, locale);
   }
 
   const { description } = model.describe(l);

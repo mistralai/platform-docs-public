@@ -1,50 +1,71 @@
 ---
-title: Authentification et clés d'Admin API
+title: Authentification
 sidebar_position: 2
-description: How Admin API keys work, where to create them, and how to authenticate requests.
+description: Découvrez comment créer des clés API Admin et authentifier vos requêtes.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { AppLink } from '@/components/common/app-link';
 import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
 
-# Authentication and Admin API keys
+# Authentification et clés API Admin
 
-Admin API requests authenticate with a dedicated **Admin API key**. Learn how those keys work and how to call the API.
+Authentifiez les requêtes auprès de l’API Admin avec une **clé API Admin** dédiée. Cette page explique comment ces clés fonctionnent et comment appeler l’API.
 
-<SectionTab as="h1" sectionId="admin-api-keys">Admin API keys</SectionTab>
+<SectionTab as="h1" sectionId="admin-api-keys">Clés API Admin</SectionTab>
 
-An Admin API key is created and managed in the **Backoffice** (<AppLink href="https://backoffice.mistral.ai">backoffice.mistral.ai</AppLink>). Each key is tied to a **single organization** and grants access to that organization's admin endpoints. Keys are managed from the Enterprise Account Backoffice for convenience, but their scope is always one organization.
-
-:::warning
-A user's standard API key never grants admin access, regardless of the user's role. Admin endpoints require an Admin API key created in the Backoffice. This is different from the regular [API keys](/admin/identity-access/api-keys) used for the inference API.
-:::
-
-<SectionTab as="h1" sectionId="create-key">Create an Admin API key</SectionTab>
-
-1. Open the <AppLink href="https://backoffice.mistral.ai">Backoffice</AppLink> and go to **API keys**.
-2. Click **Create key**.
-3. Choose a name, select the organization the key belongs to, and optionally set an expiration date.
-4. Copy the key and store it securely.
+Une clé API Admin est créée et gérée dans le **Backoffice** (<AppLink href="https://backoffice.mistral.ai">backoffice.mistral.ai</AppLink>). Chaque clé est rattachée à une **seule Organisation** et donne accès aux endpoints d’administration de cette Organisation. Les clés sont gérées depuis le Backoffice du compte Enterprise pour plus de simplicité, mais leur périmètre reste toujours une seule Organisation. Pour comprendre le fonctionnement du Backoffice, consultez [Comptes Enterprise et Backoffice](/admin/set-up-organization/enterprise-accounts).
 
 :::warning
-The key is shown in clear **only once**, at creation. If you lose it, create a new one.
+Une clé API utilisateur standard ne donne jamais d’accès administrateur, quel que soit le rôle de l’utilisateur. Les endpoints d’administration nécessitent une clé API Admin **créée dans le Backoffice**. Elle est différente des [clés API](/admin/identity-access/api-keys) standard utilisées pour l’API d’inférence.
 :::
 
-<SectionTab as="h1" sectionId="make-a-request">Make a request</SectionTab>
+<SectionTab as="h1" sectionId="create-key">Créer une clé API Admin</SectionTab>
 
-- **Base URL**: `https://api.mistral.ai/v1/admin`
-- **Authentication header**: `x-api-key: <ADMIN_API_KEY>`
+1. Ouvrez le <AppLink href="https://backoffice.mistral.ai">Backoffice</AppLink> et accédez à `API keys`.
+2. Cliquez sur `Create key`.
+3. Choisissez un nom, sélectionnez l’Organisation à laquelle la clé appartient et, si nécessaire, définissez une date d’expiration.
+4. Copiez la clé et stockez-la en lieu sûr.
+
+:::warning
+La clé est affichée uniquement lors de sa création. Si vous la perdez, vous devrez en créer une nouvelle.
+:::
+
+<SectionTab as="h1" sectionId="make-a-request">Faire une requête</SectionTab>
+
+Envoyez les requêtes de l’API Admin à l’URL de base de l’API Admin et transmettez votre clé API Admin dans l’en-tête `x-api-key`.
+
+- **URL de base** : `https://console.mistral.ai/api/admin`
+- **En-tête d’authentification** : `x-api-key: <ADMIN_API_KEY>`
+
+Définissez la clé comme variable d’environnement avant d’envoyer des requêtes :
 
 ```bash
-curl https://api.mistral.ai/v1/admin/users \
+export ADMIN_API_KEY="your-admin-api-key"
+```
+
+Envoyez ensuite une requête à un endpoint. Par exemple, pour lister les utilisateurs de l’Organisation rattachée à la clé :
+
+```bash
+curl "https://console.mistral.ai/api/admin/users?page=1&page_size=50" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h1" sectionId="next-steps">Next steps</SectionTab>
+Pour les requêtes avec un corps JSON, incluez aussi l’en-tête `Content-Type` :
+
+```bash
+curl -X POST https://console.mistral.ai/api/admin/users-invite \
+  -H "x-api-key: $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "ada@example.com"}'
+```
+
+Consultez la [référence de l’API Admin](/admin/admin-api/api-reference) pour les endpoints, paramètres et champs de réponse disponibles.
+
+<SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
 
 <UsefullLinkContainer>
-  <LinkCard href="/admin/admin-api/user-provisioning" title="User provisioning" />
-  <LinkCard href="/admin/admin-api/manage-users" title="Manage users" />
-  <LinkCard href="/admin/admin-api/api-reference" title="API reference" />
+  <LinkCard href="/admin/admin-api/user-provisioning" title="Provisionnement des utilisateurs" />
+  <LinkCard href="/admin/admin-api/manage-users" title="Gérer les utilisateurs" />
+  <LinkCard href="/admin/admin-api/api-reference" title="Référence de l’API" />
 </UsefullLinkContainer>

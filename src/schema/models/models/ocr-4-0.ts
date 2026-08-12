@@ -6,6 +6,7 @@ export default {
     shortDescription: l.text(`Our latest OCR service with paragraph-level bounding boxes and structural block labels.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'ocr-4-0',
+  slugAliases: ['ocr'],
   releaseDate: '2026-06-23',
   version: '4.0',
   frontier: true,

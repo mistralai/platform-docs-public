@@ -1,49 +1,49 @@
 ---
-title: Gérer les utilisateurs avec l'Admin API
+title: Gérer les utilisateurs
 sidebar_position: 3
-description: List, create, update, invite, and remove organization users with the Admin API.
+description: Listez, créez, mettez à jour, invitez et supprimez les utilisateurs de l’Organisation avec l’API Admin.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-# Manage users with the Admin API
+# Gérer les utilisateurs avec l’API Admin
 
-Manage the members of your organization programmatically. For an end-to-end onboarding flow, see [User provisioning](/admin/admin-api/user-provisioning).
+Gérez les membres de votre Organisation à l’aide de l’API Admin. Pour un processus d’intégration complet, consultez [Provisionnement des utilisateurs](/admin/admin-api/user-provisioning).
 
-<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
-All requests use the base URL `https://api.mistral.ai/v1/admin` and an Admin API key in the `x-api-key` header. See [Authentication and Admin API keys](/admin/admin-api/authentication).
+Toutes les requêtes utilisent l’URL de base `https://console.mistral.ai/api/admin` et une clé API Admin dans l’en-tête `x-api-key`. Consultez [Authentification et clés API Admin](/admin/admin-api/authentication).
 
-<SectionTab as="h1" sectionId="organization-roles">Organization roles</SectionTab>
+<SectionTab as="h1" sectionId="organization-roles">Rôles Organisation</SectionTab>
 
-Assign organization roles with the plural `role_names` field. Accepted names: `member`, `billing_manager`, `organization_admin`. You can also pass role UUIDs in `roles`. List them with `GET /v1/admin/roles`.
+Utilisez le champ pluriel `role_names` pour attribuer des rôles Organisation. Les noms acceptés sont `member`, `billing_manager` et `organization_admin`. Vous pouvez aussi transmettre les UUID des rôles dans `roles`. Listez-les avec `GET /api/admin/roles`.
 
 :::note
-The singular `role` and `role_name` fields are deprecated. Prefer the plural `roles` / `role_names`, which support assigning multiple roles.
+Les champs singuliers `role` et `role_name` sont obsolètes. Préférez les champs pluriels `roles` et `role_names`, qui permettent d’attribuer plusieurs rôles.
 :::
 
-<SectionTab as="h1" sectionId="list-users">List users</SectionTab>
+<SectionTab as="h1" sectionId="list-users">Lister les utilisateurs</SectionTab>
 
-Supports the `page`, `page_size`, and `email` query parameters.
+L’endpoint accepte les paramètres de requête `page`, `page_size` et `email`.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/users?page=1&page_size=50" \
+curl "https://console.mistral.ai/api/admin/users?page=1&page_size=50" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h2" variant="secondary" sectionId="get-user">Get a single user</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="get-user">Consulter un utilisateur</SectionTab>
 
 ```bash
-curl https://api.mistral.ai/v1/admin/users/<USER_UUID> \
+curl https://console.mistral.ai/api/admin/users/<USER_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h1" sectionId="create-users">Create users</SectionTab>
+<SectionTab as="h1" sectionId="create-users">Créer des utilisateurs</SectionTab>
 
-Send an array of users. Each entry requires `email`, `first_name`, and `last_name`. Set roles with `role_names` and product access with `subscription_types` (`CHAT`, `MISTRAL_CODE`).
+Envoyez un tableau d’utilisateurs. Chaque objet doit inclure `email`, `first_name` et `last_name`. Définissez les rôles avec `role_names` et l’accès aux produits avec `subscription_types` (`CHAT`, `MISTRAL_CODE`).
 
 ```bash
-curl -X POST https://api.mistral.ai/v1/admin/users \
+curl -X POST https://console.mistral.ai/api/admin/users \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '[
@@ -52,42 +52,42 @@ curl -X POST https://api.mistral.ai/v1/admin/users \
   ]'
 ```
 
-The response maps each email to its created user ID. Created users sign in by entering their email and completing the account recovery flow.
+La réponse associe chaque adresse e-mail à l’ID de l’utilisateur créé. Les utilisateurs créés se connectent en saisissant leur adresse e-mail et en suivant la procédure de récupération du compte.
 
-<SectionTab as="h1" sectionId="update-user">Update a user</SectionTab>
+<SectionTab as="h1" sectionId="update-user">Mettre à jour un utilisateur</SectionTab>
 
-Change a user's roles or product subscriptions.
+Modifiez les rôles ou les abonnements aux produits d’un utilisateur.
 
 ```bash
-curl -X PATCH https://api.mistral.ai/v1/admin/users/<USER_UUID> \
+curl -X PATCH https://console.mistral.ai/api/admin/users/<USER_UUID> \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"role_names": ["member"], "subscription_types": ["CHAT"]}'
 ```
 
-<SectionTab as="h1" sectionId="delete-user">Delete a user</SectionTab>
+<SectionTab as="h1" sectionId="delete-user">Supprimer un utilisateur</SectionTab>
 
 ```bash
-curl -X DELETE https://api.mistral.ai/v1/admin/users/<USER_UUID> \
+curl -X DELETE https://console.mistral.ai/api/admin/users/<USER_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 <SectionTab as="h1" sectionId="invitations">Invitations</SectionTab>
 
-Invite users by email instead of creating them directly. `email` is required and accepts one address, or several separated by commas or new lines. Optional fields include `role_names`, `subscription_types`, `workspace_uuids`, and `email_language`.
+Invitez les utilisateurs par e-mail au lieu de les créer directement. Le champ `email` est obligatoire. Il accepte une adresse ou plusieurs adresses séparées par des virgules ou des sauts de ligne. Les champs facultatifs incluent `role_names`, `subscription_types`, `workspace_uuids` et `email_language`.
 
 ```bash
-# Create an invitation
-curl -X POST https://api.mistral.ai/v1/admin/users-invite \
+# Créer une invitation
+curl -X POST https://console.mistral.ai/api/admin/users-invite \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"email": "grace@example.com", "role_names": ["member"], "workspace_uuids": ["<WORKSPACE_UUID>"]}'
 
-# List invitations
-curl https://api.mistral.ai/v1/admin/users-invite \
+# Lister les invitations
+curl https://console.mistral.ai/api/admin/users-invite \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Delete an invitation
-curl -X DELETE https://api.mistral.ai/v1/admin/users-invite/<INVITATION_UUID> \
+# Supprimer une invitation
+curl -X DELETE https://console.mistral.ai/api/admin/users-invite/<INVITATION_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```

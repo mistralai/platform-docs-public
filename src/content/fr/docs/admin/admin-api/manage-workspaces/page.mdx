@@ -1,95 +1,95 @@
 ---
-title: Gérer les espaces de travail avec l'Admin API
+title: Gérer les espaces de travail
 sidebar_position: 4
-description: List, create, update, and delete workspaces and manage their members with the Admin API.
+description: Listez, créez, mettez à jour et supprimez des espaces de travail, et gérez leurs membres avec l’API Admin.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-# Manage workspaces with the Admin API
+# Gérer les espaces de travail avec l’API Admin
 
-Manage workspaces and their members programmatically.
+Gérez les espaces de travail et leurs membres à l’aide de l’API Admin.
 
-<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
-All requests use the base URL `https://api.mistral.ai/v1/admin` and an Admin API key in the `x-api-key` header. See [Authentication and Admin API keys](/admin/admin-api/authentication).
+Toutes les requêtes utilisent l’URL de base `https://console.mistral.ai/api/admin` et une clé API Admin dans l’en-tête `x-api-key`. Consultez [Authentification et clés API Admin](/admin/admin-api/authentication).
 
-<SectionTab as="h1" sectionId="workspace-roles">Workspace roles</SectionTab>
+<SectionTab as="h1" sectionId="workspace-roles">Rôles d’espace de travail</SectionTab>
 
-Assign workspace roles with the plural `role_names` field. List every role and its UUID with `GET /v1/admin/roles`. See [Manage groups and roles](/admin/admin-api/manage-groups-roles#roles) for the full role catalog.
+Utilisez le champ pluriel `role_names` pour attribuer les rôles d’espace de travail. Listez les rôles disponibles et leurs UUID avec `GET /api/admin/roles`. Consultez [Gérer les groupes et les rôles](/admin/admin-api/manage-groups-roles#roles) pour la liste complète des rôles.
 
 :::note
-The singular `role` and `role_name` fields are deprecated. Prefer the plural `roles` / `role_names`.
+Les champs singuliers `role` et `role_name` sont obsolètes. Préférez les champs pluriels `roles` et `role_names`.
 :::
 
-<SectionTab as="h1" sectionId="list-workspaces">List workspaces</SectionTab>
+<SectionTab as="h1" sectionId="list-workspaces">Lister les espaces de travail</SectionTab>
 
-Supports the `is_archived`, `page`, `page_size`, and `search` query parameters.
+L’endpoint accepte les paramètres de requête `is_archived`, `page`, `page_size` et `search`.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/workspaces?page=1&page_size=50" \
+curl "https://console.mistral.ai/api/admin/workspaces?page=1&page_size=50" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h1" sectionId="create-workspace">Create a workspace</SectionTab>
+<SectionTab as="h1" sectionId="create-workspace">Créer un espace de travail</SectionTab>
 
-`name` and `admin_user_id` are required. Optional: `description`, `icon`, and `add_all_org_members`.
+`name` et `admin_user_id` sont obligatoires. Les champs `description`, `icon` et `add_all_org_members` sont facultatifs.
 
 ```bash
-curl -X POST https://api.mistral.ai/v1/admin/workspaces \
+curl -X POST https://console.mistral.ai/api/admin/workspaces \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{
     "name": "MySpace",
-    "description": "Small workspace",
+    "description": "Small Workspace",
     "icon": "",
     "add_all_org_members": false,
     "admin_user_id": "<USER_UUID>"
   }'
 ```
 
-The response includes the workspace `uuid`.
+La réponse inclut l’`uuid` de l’espace de travail.
 
-<SectionTab as="h1" sectionId="update-workspace">Update a workspace</SectionTab>
+<SectionTab as="h1" sectionId="update-workspace">Mettre à jour un espace de travail</SectionTab>
 
 ```bash
-curl -X PATCH https://api.mistral.ai/v1/admin/workspaces/<WORKSPACE_UUID> \
+curl -X PATCH https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID> \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
-  -d '{"name": "Renamed workspace", "description": "Updated description"}'
+  -d '{"name": "Renamed Workspace", "description": "Updated description"}'
 ```
 
-<SectionTab as="h1" sectionId="delete-workspace">Delete a workspace</SectionTab>
+<SectionTab as="h1" sectionId="delete-workspace">Supprimer un espace de travail</SectionTab>
 
 ```bash
-curl -X DELETE https://api.mistral.ai/v1/admin/workspaces/<WORKSPACE_UUID> \
+curl -X DELETE https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h1" sectionId="members">Manage members</SectionTab>
+<SectionTab as="h1" sectionId="members">Gérer les membres</SectionTab>
 
-Add or update members with a `members` array. Each entry takes a `user_uuid` and `role_names`.
+Ajoutez ou mettez à jour des membres avec un tableau `members`. Chaque objet doit inclure `user_uuid` et `role_names`.
 
 ```bash
-# Add members
-curl -X POST https://api.mistral.ai/v1/admin/workspaces/<WORKSPACE_UUID>/add-users \
+# Ajouter des membres
+curl -X POST https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID>/add-users \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"members": [{"user_uuid": "<USER_UUID>", "role_names": ["user"]}]}'
 
-# Add or update members (idempotent)
-curl -X PATCH https://api.mistral.ai/v1/admin/workspaces/<WORKSPACE_UUID>/users \
+# Ajouter ou mettre à jour des membres (répéter la requête produit le même résultat)
+curl -X PATCH https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID>/users \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"members": [{"user_uuid": "<USER_UUID>", "role_names": ["workspace_admin"]}]}'
 ```
 
-<SectionTab as="h2" variant="secondary" sectionId="remove-members">Remove members</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="remove-members">Retirer des membres</SectionTab>
 
-This removes the listed users from the workspace and deletes their permissions in it.
+Cette opération retire les utilisateurs listés de l’espace de travail et supprime leurs permissions dans cet espace.
 
 ```bash
-curl -X DELETE https://api.mistral.ai/v1/admin/workspaces/<WORKSPACE_UUID>/remove-users \
+curl -X DELETE https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID>/remove-users \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"members": [{"user_uuid": "<USER_UUID_1>"}, {"user_uuid": "<USER_UUID_2>"}]}'

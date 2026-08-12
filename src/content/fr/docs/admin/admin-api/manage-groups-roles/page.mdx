@@ -1,75 +1,75 @@
 ---
-title: Gérer les groupes et les rôles avec l'Admin API
+title: Gérer les groupes et les rôles
 sidebar_position: 5
-description: Create user groups, manage membership and workspace assignments, and list roles with the Admin API.
+description: Créez des groupes d’utilisateurs, gérez les membres et les affectations aux espaces de travail, et listez les rôles avec l’API Admin.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 
-# Manage groups and roles with the Admin API
+# Gérer les groupes et les rôles avec l’API Admin
 
-Create and manage user groups, assign them to workspaces, and look up roles. For the concept, see [Groups](/admin/identity-access/groups).
+Créez et gérez des groupes d’utilisateurs, attribuez-les à des espaces de travail et consultez les rôles. Pour en savoir plus sur les groupes, consultez [Groupes](/admin/identity-access/groups).
 
-<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
-All requests use the base URL `https://api.mistral.ai/v1/admin` and an Admin API key in the `x-api-key` header. See [Authentication and Admin API keys](/admin/admin-api/authentication).
+Toutes les requêtes utilisent l’URL de base `https://console.mistral.ai/api/admin` et une clé API Admin dans l’en-tête `x-api-key`. Consultez [Authentification et clés API Admin](/admin/admin-api/authentication).
 
-<SectionTab as="h1" sectionId="manage-groups">Manage groups</SectionTab>
+<SectionTab as="h1" sectionId="manage-groups">Gérer les groupes</SectionTab>
 
-List groups (`page`, `page_size`, `search`), or create one. `name` is required; `description` and `target_type` (`W` for workspace, `O` for organization) are optional.
+Listez les groupes avec `page`, `page_size` et `search`, ou créez-en un. `name` est obligatoire. `description` et `target_type` sont facultatifs. Utilisez `W` pour un espace de travail et `O` pour une Organisation.
 
 ```bash
-# List groups
-curl https://api.mistral.ai/v1/admin/user-groups \
+# Lister les groupes
+curl https://console.mistral.ai/api/admin/user-groups \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Create a group
-curl -X POST https://api.mistral.ai/v1/admin/user-groups \
+# Créer un groupe
+curl -X POST https://console.mistral.ai/api/admin/user-groups \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"name": "Interns", "description": "User group for interns"}'
 ```
 
-The response includes the group `uuid`. Get, update, or delete a group by its UUID:
+La réponse inclut l’`uuid` du groupe. Consultez, mettez à jour ou supprimez un groupe à l’aide de son UUID :
 
 ```bash
-curl https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID> \
+curl https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 
-curl -X PATCH https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID> \
+curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID> \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"description": "Updated description"}'
 
-curl -X DELETE https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID> \
+curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h1" sectionId="members">Manage members</SectionTab>
+<SectionTab as="h1" sectionId="members">Gérer les membres</SectionTab>
 
-List members, or add and remove them with a `user_uuids` array.
+Listez les membres, ou ajoutez ou retirez des membres en transmettant leurs identifiants dans le tableau `user_uuids`.
 
 ```bash
-# List members
-curl https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
+# Lister les membres
+curl https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Add members
-curl -X POST https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
+# Ajouter des membres
+curl -X POST https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"user_uuids": ["<USER_UUID_1>", "<USER_UUID_2>"]}'
 
-# Remove members
-curl -X DELETE https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
+# Retirer des membres
+curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"user_uuids": ["<USER_UUID_1>"]}'
 ```
 
-<SectionTab as="h1" sectionId="workspace-assignments">Assign a group to a workspace</SectionTab>
+<SectionTab as="h1" sectionId="workspace-assignments">Attribuer un groupe à un espace de travail</SectionTab>
 
-The quickest way to provision every member of a group into a workspace is `provision-workspace`, which accepts a friendly `workspace_role_name`:
+Pour ajouter tous les membres d’un groupe à un espace de travail, utilisez `provision-workspace`. Le paramètre `workspace_role_name` indique le nom du rôle à attribuer :
 
 ```bash
-curl -X POST https://api.mistral.ai/v1/admin/user-groups/provision-workspace \
+curl -X POST https://console.mistral.ai/api/admin/user-groups/provision-workspace \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{
     "user_group_uuid": "<GROUP_UUID>",
@@ -78,67 +78,67 @@ curl -X POST https://api.mistral.ai/v1/admin/user-groups/provision-workspace \
   }'
 ```
 
-To manage assignments as resources, use the group's `workspaces` sub-collection, with `role_names` (see [Roles](#roles)):
+Pour gérer individuellement les affectations aux espaces de travail, utilisez la sous-collection `workspaces` du groupe avec `role_names`. Consultez [Rôles](#roles).
 
 ```bash
-# List a group's workspace assignments
-curl https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces \
+# Lister les affectations d’un groupe aux espaces de travail
+curl https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Assign the group to a workspace
-curl -X POST https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces \
+# Attribuer le groupe à un espace de travail
+curl -X POST https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"workspace_uuid": "<WORKSPACE_UUID>", "role_names": ["user"]}'
 
-# Update the roles on an assignment
-curl -X PATCH https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
+# Mettre à jour les rôles d’une affectation
+curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"role_names": ["workspace_admin"]}'
 
-# Remove the group from a workspace
-curl -X DELETE https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
+# Retirer le groupe d’un espace de travail
+curl -X DELETE https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/workspaces/<WORKSPACE_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-<SectionTab as="h2" variant="secondary" sectionId="group-org-role">Set a group's organization role</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="group-org-role">Définir le rôle Organisation d’un groupe</SectionTab>
 
 ```bash
-curl -X PATCH https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/organization-role \
+curl -X PATCH https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/organization-role \
   -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"organization_role": "member"}'
 ```
 
-<SectionTab as="h1" sectionId="roles">Roles</SectionTab>
+<SectionTab as="h1" sectionId="roles">Rôles</SectionTab>
 
-List every role and its UUID. RBAC must be enabled for the organization.
+Listez les rôles disponibles et leurs UUID. Le contrôle d’accès basé sur les rôles (RBAC) doit être activé pour l’Organisation.
 
 ```bash
-curl https://api.mistral.ai/v1/admin/roles \
+curl https://console.mistral.ai/api/admin/roles \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-The response groups roles into `organization_roles` and `workspace_roles`.
+La réponse regroupe les rôles dans `organization_roles` et `workspace_roles`.
 
-**Organization roles**
+**Rôles Organisation**
 
-| `role_name` | Access |
+| `role_name` | Accès |
 |-------------|--------|
-| `member` | Product usage; manages their own profile |
-| `billing_manager` | Subscriptions, invoices, and payment methods; cannot change organization settings |
-| `organization_admin` | Full control of the organization |
+| `member` | Utilisation des produits. Gestion du profil personnel. |
+| `billing_manager` | Abonnements, factures et moyens de paiement. Ne permet pas de modifier les paramètres de l’Organisation. |
+| `organization_admin` | Contrôle complet de l’Organisation. |
 
-**Workspace roles**
+**Rôles d’espace de travail**
 
-| `role_name` | Access |
+| `role_name` | Accès |
 |-------------|--------|
-| `user` | le Chat and its features; no Studio |
-| `dev` | Studio and all primitives (agents, fine-tuning, etc.); no le Chat |
-| `mistral_code_user` | Mistral Code (requires a seat) |
-| `billing` | Usage and cost reports only |
-| `workspace_contributor` | All product features (`user`, `dev`, `mistral_code_user`); no management or observability |
-| `workspace_admin` | Workspace contributor plus workspace administration; no observability |
-| `observability_viewer` | Observability product |
+| `user` | le Chat et ses fonctionnalités. Aucun accès à Studio. |
+| `dev` | Studio et toutes ses fonctionnalités, y compris les agents et le fine-tuning. Aucun accès aux fonctionnalités de le Chat. |
+| `mistral_code_user` | Mistral Code. Nécessite un siège. |
+| `billing` | Rapports d’utilisation et de coûts uniquement. |
+| `workspace_contributor` | Toutes les fonctionnalités produit : `user`, `dev`, `mistral_code_user`. Aucun accès de gestion ni à nos outils d’observabilité. |
+| `workspace_admin` | Accès contributeur avec administration de l’espace de travail. Aucun accès à nos outils d’observabilité. |
+| `observability_viewer` | Accès à nos outils d’observabilité. |
 
 :::note
-`GET /v1/admin/roles` is the authoritative list of roles and their UUIDs.
+`GET /api/admin/roles` est la liste de référence des rôles et de leurs UUID.
 :::

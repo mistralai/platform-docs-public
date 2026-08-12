@@ -127,8 +127,19 @@ function collectModelCardRoutes(): string[] {
   walkFiles(modelFilesRoot, filePath => {
     if (!filePath.endsWith(".ts") || filePath.endsWith(`${path.sep}index.ts`)) return;
     const source = fs.readFileSync(filePath, "utf8");
-    const match = source.match(/\bslug:\s*['"]([^'"]+)['"]/);
-    if (match?.[1]) addRoute(routes, `/models/${match[1]}`);
+    const slugMatch = source.match(/\bslug:\s*['"]([^'"]+)['"]/);
+    const aliasMatch = source.match(/\bslugAliases:\s*\[([^\]]*)\]/);
+    const apiNamesMatch = source.match(/\bapiNames:\s*\[([^\]]*)\]/);
+    const aliases = aliasMatch?.[1]?.match(/['"]([^'"]+)['"]/g)
+      ?.map(alias => alias.slice(1, -1)) ?? [];
+    const latestApiNames = apiNamesMatch?.[1]?.match(/['"]([^'"]+-latest)['"]/g)
+      ?.map(alias => alias.slice(1, -1)) ?? [];
+
+    for (const slug of [slugMatch?.[1], ...aliases, ...latestApiNames]) {
+      if (!slug) continue;
+      addRoute(routes, `/models/${slug}`);
+      addRoute(routes, `/models/model-cards/${slug}`);
+    }
   });
   return Array.from(routes);
 }

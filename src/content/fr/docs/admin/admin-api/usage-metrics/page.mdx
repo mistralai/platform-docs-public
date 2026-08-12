@@ -1,124 +1,124 @@
 ---
-title: Métriques d'utilisation avec l'Admin API
+title: Métriques d’utilisation
 sidebar_position: 7
-description: Retrieve billing usage, spending and rate limits, and le Chat and Vibe product analytics with the Admin API.
+description: Consultez les données de facturation, les limites de dépenses et de débit, l’activité dans le Chat et les données d’utilisation de Vibe Code avec l’API Admin.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
 
-# Usage metrics
+# Métriques d’utilisation avec l’API Admin
 
-The Admin API exposes two kinds of consumption data:
+L’API Admin expose deux types de données de consommation :
 
-- **Billing usage**: cost and consumption for your organization over a billing period.
-- **Product analytics**: le Chat and Vibe activity metrics over a time range.
+- **Données de facturation** : coût et consommation de votre Organisation sur une période de facturation.
+- **Données d’utilisation des produits** : activité dans le Chat et métriques d’utilisation de Vibe Code sur une période.
 
-<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
+<SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
-You need an Admin API key created in the Backoffice. Every request uses the base URL `https://api.mistral.ai/v1/admin` and the `x-api-key` header. See [Admin API authentication](/admin/admin-api/authentication).
+Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requête utilise l’URL de base `https://console.mistral.ai/api/admin` et l’en-tête `x-api-key`. Consultez [Authentification de l’API Admin](/admin/admin-api/authentication).
 
-<SectionTab as="h1" sectionId="billing-usage">Billing usage</SectionTab>
+<SectionTab as="h1" sectionId="billing-usage">Données de facturation</SectionTab>
 
-Retrieve cost and consumption for the organization. The `month`, `year`, and `workspace_id` parameters are optional. `month` and `year` are whole numbers, so `5` and `05` both work.
+Consultez le coût et la consommation de l’Organisation. Les paramètres `month`, `year` et `workspace_id` sont facultatifs. `month` et `year` sont des nombres entiers. Vous pouvez donc utiliser `5` ou `05`.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/usage?month=5&year=2026" \
+curl "https://console.mistral.ai/api/admin/usage?month=5&year=2026" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-The response breaks consumption down by category (`chat`, `completion`, `ocr`, `audio`, `connectors`, `libraries_api`, `fine_tuning`, and `vibe_usage`), together with the period (`start_date`, `end_date`) and the `currency`.
+La réponse ventile la consommation par catégorie (`chat`, `completion`, `ocr`, `audio`, `connectors`, `libraries_api`, `fine_tuning` et `vibe_usage`). Elle inclut aussi la période (`start_date`, `end_date`) et la devise (`currency`).
 
-<SectionTab as="h1" sectionId="limits">Spending and rate limits</SectionTab>
+<SectionTab as="h1" sectionId="limits">Limites de dépenses et de débit</SectionTab>
 
-Read the current organization limits:
+Consultez les limites actuelles de l’Organisation :
 
 ```bash
-# Spend limits
-curl https://api.mistral.ai/v1/admin/spend-limit \
+# Limites de dépenses
+curl https://console.mistral.ai/api/admin/spend-limit \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Rate limits (requests per second and per-model token limits)
-curl https://api.mistral.ai/v1/admin/rate-limit \
+# Limites de débit (requêtes par seconde et limites de tokens par modèle)
+curl https://console.mistral.ai/api/admin/rate-limit \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Set the organization's monthly spending limit:
+Définissez la limite de dépenses mensuelle de l’Organisation :
 
 ```bash
-curl -X POST https://api.mistral.ai/v1/admin/spend-limit \
+curl -X POST https://console.mistral.ai/api/admin/spend-limit \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"amount": 500, "no_monthly_limit": false}'
 ```
 
-- `amount`: the monthly limit, as a whole number in your organization's billing currency (`500` means 500, not 500 cents).
-- `no_monthly_limit`: set to `true` to remove the cap.
+- `amount` : limite mensuelle, sous forme de nombre entier dans la devise de facturation de votre Organisation. `500` signifie 500, pas 500 centimes.
+- `no_monthly_limit` : définissez cette valeur sur `true` pour retirer le plafond.
 
-See [Usage limits](/admin/billing-usage/usage-limits) for the concept.
+Pour en savoir plus sur les limites, consultez [Limites d’utilisation](/admin/billing-usage/usage-limits).
 
-<SectionTab as="h1" sectionId="lechat-analytics">le Chat analytics</SectionTab>
+<SectionTab as="h1" sectionId="lechat-analytics">Données d’utilisation dans le Chat</SectionTab>
 
-The le Chat endpoints report messaging activity. All of them take `start_time` and `end_time` as Unix timestamps in seconds.
+Les endpoints `/analytics/lechat` fournissent les données d’activité de la messagerie dans le Chat. Ils acceptent tous `start_time` et `end_time` sous forme d’horodatages Unix en secondes.
 
-<SectionTab as="h2" variant="secondary" sectionId="lechat-by-user">By user</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="lechat-by-user">Par utilisateur</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_user_stats?start_time=1704067200&end_time=1706745600" \
+curl "https://console.mistral.ai/api/admin/analytics/lechat/usage/by_user_stats?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns, per user: message, file, image, and spreadsheet counts; unique conversations; unique agents; messages sent to agents; and the last message timestamp.
+La réponse indique, pour chaque utilisateur, le nombre de messages, de fichiers, d’images et de feuilles de calcul. Elle inclut aussi le nombre de conversations et d’agents distincts, les messages envoyés aux agents et l’horodatage du dernier message.
 
-<SectionTab as="h2" variant="secondary" sectionId="lechat-by-agent">By agent</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="lechat-by-agent">Par agent</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_agent_stats?start_time=1704067200&end_time=1706745600" \
+curl "https://console.mistral.ai/api/admin/analytics/lechat/usage/by_agent_stats?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns the same activity counts grouped by agent, plus the number of unique users per agent.
+La réponse reprend les mêmes indicateurs d’activité, regroupés par agent, et inclut le nombre d’utilisateurs distincts par agent.
 
-<SectionTab as="h2" variant="secondary" sectionId="lechat-by-time">Over time</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="lechat-by-time">Dans le temps</SectionTab>
 
-Add `granularity` (`hour`, `day`, `week`, or `month`) to bucket the results.
+Ajoutez `granularity` (`hour`, `day`, `week` ou `month`) pour regrouper les résultats.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_time_stats?start_time=1704067200&end_time=1706745600&granularity=day" \
+curl "https://console.mistral.ai/api/admin/analytics/lechat/usage/by_time_stats?start_time=1704067200&end_time=1706745600&granularity=day" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns activity counts per time bucket, including unique users and unique agents.
+La réponse regroupe les indicateurs d’activité par intervalle, avec les utilisateurs et les agents distincts.
 
-<SectionTab as="h1" sectionId="vibe-analytics">Vibe analytics</SectionTab>
+<SectionTab as="h1" sectionId="vibe-code-analytics">Données d’utilisation de Vibe Code</SectionTab>
 
-The Vibe endpoints report coding-assistant activity. They take `start_time` and `end_time` as Unix timestamps in seconds.
+Les endpoints `/analytics/vibe` fournissent les données d’activité de Vibe Code. Ils acceptent `start_time` et `end_time` sous forme d’horodatages Unix en secondes.
 
-<SectionTab as="h2" variant="secondary" sectionId="vibe-by-workspace">By workspace</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="vibe-by-workspace">Par espace de travail</SectionTab>
 
-Pass `workspace_id` to scope the report to a single workspace, or omit it for all workspaces.
+Transmettez `workspace_id` pour limiter le rapport à un seul espace de travail, ou omettez-le pour tous les espaces de travail.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_workspace?start_time=1704067200&end_time=1706745600" \
+curl "https://console.mistral.ai/api/admin/analytics/vibe/usage/by_workspace?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns daily series for sessions (CLI, ACP, programmatic), active users, consumed tokens (input, output, and cached, per model), tool calls, and session durations.
+La réponse fournit des séries quotidiennes pour les sessions (CLI, ACP et API), les utilisateurs actifs, les tokens consommés (entrée, sortie et cache, par modèle), les appels d’outils et les durées de session.
 
-<SectionTab as="h2" variant="secondary" sectionId="vibe-by-organization">By organization</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="vibe-by-organization">Par Organisation</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_organization?start_time=1704067200&end_time=1706745600" \
+curl "https://console.mistral.ai/api/admin/analytics/vibe/usage/by_organization?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns daily series for next-edit suggestions (by outcome), next-edit active users, and modified lines of code.
+La réponse fournit des séries quotidiennes pour les suggestions `next_edit` par résultat, les utilisateurs actifs `next_edit` et les lignes de code modifiées.
 
-{/* TODO: confirm the base host for the /analytics/* endpoints. They are generated from the datalake-api service (datalake-api/specs/openapi-admin.json); verify they are served from api.mistral.ai/v1/admin or a separate host. */}
+{/* TODO: confirm the base host for the /analytics/* endpoints. They are generated from the datalake-api service (datalake-api/specs/openapi-admin.json); verify they are served from console.mistral.ai/api/admin or a separate host. */}
 
-<SectionTab as="h1" sectionId="next-steps">Next steps</SectionTab>
+<SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
 
 <UsefullLinkContainer>
-  <LinkCard href="/admin/admin-api/user-provisioning" title="User provisioning" />
-  <LinkCard href="/admin/billing-usage/usage-limits" title="Usage limits" />
+  <LinkCard href="/admin/admin-api/user-provisioning" title="Provisionnement des utilisateurs" />
+  <LinkCard href="/admin/billing-usage/usage-limits" title="Limites d’utilisation" />
 </UsefullLinkContainer>

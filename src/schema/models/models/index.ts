@@ -1,4 +1,4 @@
-import { defineModels } from '../schema';
+import { defineModels, getModelSlugAliases } from '../schema';
 import zaiGlm52 from './zai-glm-5-2';
 import shieldstral10 from './shieldstral-1-0';
 import voxtralTts2603 from './voxtral-tts-26-03';
@@ -131,19 +131,18 @@ export const MODELS = defineModels([
 ] as const);
 
 const checkDuplicates = (throwError = true) => {
-  const set = new Set(MODELS.map(m => m.slug));
-  const modelSlugs = MODELS.map(m => m.slug);
-  if (modelSlugs.length !== set.size) {
-    const duplicates = modelSlugs.filter(
-      slug => modelSlugs.indexOf(slug) !== modelSlugs.lastIndexOf(slug)
+  const slugs = MODELS.flatMap(m => [m.slug, ...getModelSlugAliases(m)]);
+  const set = new Set(slugs);
+  if (slugs.length !== set.size) {
+    const duplicates = slugs.filter(
+      slug => slugs.indexOf(slug) !== slugs.lastIndexOf(slug)
     );
     const setOfDuplicates = Array.from(new Set(duplicates));
     if (throwError) {
       throw new Error(
-        '[ERROR] Duplicated model slugs: ' + setOfDuplicates.join(', ')
+        '[ERROR] Duplicated model slugs or aliases: ' + setOfDuplicates.join(', ')
       );
     }
-    console.log('[WARN] Duplicated model slugs: ' + setOfDuplicates.join(', '));
   }
 };
 checkDuplicates(false);

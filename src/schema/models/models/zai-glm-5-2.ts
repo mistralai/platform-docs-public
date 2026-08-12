@@ -36,7 +36,7 @@ export default {
     free: false,
     input: [
       { type: 'range', price: 1.4, priceEur: 1.19, denominator: '/M Tokens', label: 'Input' },
-      { type: 'range', price: 0.26, priceEur: 0.22, denominator: '/M Tokens', label: 'Cached input' },
+      { type: 'range', price: 0.14, priceEur: 0.119, denominator: '/M Tokens', label: 'Cached input' },
     ],
     output: [
       { type: 'range', price: 4.4, priceEur: 3.74, denominator: '/M Tokens', label: 'Output' },
@@ -45,7 +45,7 @@ export default {
   identifiers: { apiNames: ['zai-glm-5-2'] },
   capabilities: {
     input: ['text'],
-    output: ['text'],
+    output: ['reasoning', 'text'],
     features: ['chat-completions', 'function-calling', 'structured-outputs', 'predicted-outputs', 'prefix', 'batching'],
   },
   relatedModels: ['Mistral Medium 3.5', 'Mistral Large 3'],

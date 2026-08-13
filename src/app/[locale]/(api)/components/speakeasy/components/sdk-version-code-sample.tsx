@@ -12,13 +12,15 @@ const VERSIONS = [
   { value: 'v1', label: 'V1' },
 ] as const;
 
+type SDKVersion = (typeof VERSIONS)[number]['value'];
+
 /**
- * Renders V1/V2 Python SDK code samples with a version toggle.
+ * Renders Python SDK code samples with explicit SDK version tabs.
  *
- * Expects two `<div data-version="v2">` and `<div data-version="v1">` children,
- * each wrapping a <CodeSample> block. The selected version syncs globally via
- * SDKVersionSyncContext so switching it here updates all other SDK version tabs
- * on the page.
+ * Accepts `<div data-version="v2">` and optionally `<div data-version="v1">`
+ * children, each wrapping a <CodeSample> block. The selected version syncs
+ * globally via SDKVersionSyncContext so switching it here updates all other SDK
+ * version tabs on the page. If only V2 exists, only the V2 tab is shown.
  */
 export function SDKVersionCodeSample({
   children,
@@ -36,7 +38,12 @@ export function SDKVersionCodeSample({
         (child.props as { 'data-version'?: string })['data-version'] === version
     );
 
-  const activeChild = getVersionChild(selectedSDKVersion) ?? getVersionChild('v2');
+  const availableVersions = VERSIONS.filter(({ value }) => getVersionChild(value));
+  const activeVersion =
+    availableVersions.find(({ value }) => value === selectedSDKVersion)?.value ??
+    availableVersions[0]?.value ??
+    'v2';
+  const activeChild = getVersionChild(activeVersion);
 
   return (
     <div>
@@ -44,17 +51,17 @@ export function SDKVersionCodeSample({
         data-slot="tabs-list"
         className={cn(tabsListVariants({ variant: 'code' }), 'mb-0 rounded-b-none')}
       >
-        {VERSIONS.map(({ value, label }) => (
+        {availableVersions.map(({ value, label }) => (
           <button
             key={value}
             data-slot="tabs-trigger"
-            data-state={selectedSDKVersion === value ? 'active' : 'inactive'}
+            data-state={activeVersion === value ? 'active' : 'inactive'}
             className={cn(
               'speakeasy-code-tab-trigger cursor-pointer',
               tabsTriggerVariants({ variant: 'code', size: 'code' }),
               'data-[state=active]:bg-code-background dark:data-[state=active]:text-foreground'
             )}
-            onClick={() => setSelectedSDKVersion(value)}
+            onClick={() => setSelectedSDKVersion(value as SDKVersion)}
           >
             {label}
           </button>

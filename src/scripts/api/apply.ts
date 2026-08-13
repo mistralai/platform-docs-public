@@ -2,7 +2,8 @@
  * Build the final OpenAPI spec consumed by docs-md.
  *
  *   source spec (./openapi-public-doc.yaml)
- *     + patch DB (src/scripts/api-examples.yaml)   <- user-edited examples & overrides
+ *     + patch DB (src/scripts/api-examples.yaml)   <- shared examples & overrides
+ *     + code sample DB (src/scripts/api-code-samples.v2.yaml by default)
  *     + structural transforms (hoist $defs, prune)
  *   = ./.openapi-docs.yaml
  *
@@ -29,6 +30,8 @@ type JsonObject = Record<string, any>;
 
 const SOURCE_SPEC = process.env.API_SOURCE_SPEC || './openapi-public-doc.yaml';
 const PATCH_DB = process.env.API_PATCH_DB || './src/scripts/api-examples.yaml';
+const CODE_SAMPLES_PATCH_DB =
+  process.env.API_CODE_SAMPLES_PATCH_DB || './src/scripts/api-code-samples.v2.yaml';
 const DRAFT_DB = process.env.API_DRAFT_DB || './src/scripts/api-examples.draft.yaml';
 const OUTPUT_SPEC = process.env.API_OUTPUT_SPEC || './.openapi-docs.yaml';
 
@@ -93,9 +96,13 @@ function main() {
   }
 
   const spec = yaml.load(readFileSync(SOURCE_SPEC, 'utf8')) as JsonObject;
-  const db = loadPatchDb(PATCH_DB);
+  const dbs = [
+    { path: PATCH_DB, db: loadPatchDb(PATCH_DB) },
+    { path: CODE_SAMPLES_PATCH_DB, db: loadPatchDb(CODE_SAMPLES_PATCH_DB) },
+  ];
+  const patches = dbs.flatMap(({ db }) => db.patches);
 
-  const { applied, ignored, orphans } = applyPatches(spec, db.patches);
+  const { applied, ignored, orphans } = applyPatches(spec, patches);
   const { renamed } = applyTagRenames(spec);
   const { moved } = applyTagOrder(spec);
   const { removed } = removeDeprecatedWorkflowRoutingAliases(spec);
@@ -111,7 +118,9 @@ function main() {
   console.log('Build OpenAPI for docs');
   console.log('─'.repeat(60));
   console.log(`Source:    ${SOURCE_SPEC}`);
-  console.log(`Patch DB:  ${PATCH_DB} (${db.patches.length} entries)`);
+  for (const { path, db } of dbs) {
+    console.log(`Patch DB:  ${path} (${db.patches.length} entries)`);
+  }
   console.log(`Output:    ${OUTPUT_SPEC}${flags.check ? ' [check only]' : ''}`);
   console.log('');
   console.log(`Patches applied:   ${applied}`);

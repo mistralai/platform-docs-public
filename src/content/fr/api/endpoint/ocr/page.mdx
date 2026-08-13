@@ -38,7 +38,8 @@ import {
   SectionTitle,
   Tag,
   TagDescription,
-  TagTitle
+  TagTitle,
+  SDKVersionCodeSample
 } from "@/app/[locale]/(api)/components/speakeasy";
 
 <Tag slot="tag">
@@ -126,29 +127,38 @@ Python
 
 </CodeSampleTab>
 
-<SectionContent slot="content" id="operation-ocr_v1_ocr_post_code-samples_python">
+<SectionContent
+  slot="content"
+  id="operation-ocr_v1_ocr_post_code-samples_python"
+>
 
+<SDKVersionCodeSample>
+<div data-version="v2">
 <CodeSample>
 
 ```python
+from mistralai.client import Mistral
 import os
-from mistralai import Mistral
 
-client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+with Mistral(
+    api_key=os.getenv("MISTRAL_API_KEY", ""),
+) as mistral:
+    ocr_response = mistral.ocr.process(
+        model="mistral-ocr-latest",
+        document={
+            "type": "document_url",
+            "document_url": "https://arxiv.org/pdf/2201.04234",
+        },
+    )
 
-ocr_response = client.ocr.process(
-    model="mistral-ocr-latest",
-    document={
-        "type": "document_url",
-        "document_url": "https://arxiv.org/pdf/2201.04234",
-    },
-)
-
-print(ocr_response.pages[0].markdown)
+    print(ocr_response.pages[0].markdown)
 
 ```
 
 </CodeSample>
+</div>
+
+</SDKVersionCodeSample>
 
 </SectionContent>
 
@@ -454,7 +464,7 @@ _Valeur par défaut:_ `false`
   slot="entry"
   id="confidence_scores_granularity"
   headingId="operation-ocr_v1_ocr_post_request_confidence_scores_granularity"
-  typeInfo={{"label":"enum","linkedLabel":"enum","children":[{"label":"\"word\"","linkedLabel":"\"word\"","children":[],"breakoutSubTypes":{}},{"label":"\"page\"","linkedLabel":"\"page\"","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeInfo={{"label":"enum","linkedLabel":"enum","children":[{"label":"\"word\"","linkedLabel":"\"word\"","children":[],"breakoutSubTypes":{}},{"label":"\"page\"","linkedLabel":"\"page\"","children":[],"breakoutSubTypes":{}},{"label":"\"block\"","linkedLabel":"\"block\"","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
   typeAnnotations={[]}
   hasExpandableContent={true}
   expandByDefault={false}
@@ -468,7 +478,7 @@ _Valeur par défaut:_ `false`
 
 <ExpandablePropertyDescription slot="description">
 
-Granularité des scores de confiance : « page » (agrégé uniquement), « word » (scores par mot). Par défaut à None (aucun score de confiance) pour maintenir une charge utile de réponse réduite.
+Granularité des scores de confiance : 'page' (agrégat uniquement), 'word' (scores par mot), ou 'block' (scores par bloc). Par défaut à None (pas de scores de confiance) pour garder la taille de la réponse petite.
 
 </ExpandablePropertyDescription>
 
@@ -1113,7 +1123,7 @@ Invite facultative pour guider le modèle dans l'extraction de la sortie structu
 
 <ExpandablePropertyDescription slot="description">
 
-Extrait le pied de page dans le champ `footer` de la réponse et le supprime du contenu Markdown
+Extraire le pied de page dans le champ `footer` de la réponse et le supprimer du contenu markdown
 
 </ExpandablePropertyDescription>
 
@@ -1143,7 +1153,7 @@ _Valeur par défaut:_ `false`
 
 <ExpandablePropertyDescription slot="description">
 
-Extrait l'en-tête de page dans le champ `header` de la réponse et le supprime du contenu Markdown
+Extraire l'en-tête de page dans le champ `header` de la réponse et le supprimer du contenu markdown
 
 </ExpandablePropertyDescription>
 
@@ -1221,7 +1231,7 @@ Hauteur et largeur minimales de l'image à extraire
 
 <ExpandablePropertyDescription slot="description">
 
-Renvoie des boîtes englobantes au niveau du paragraphe pour tous les blocs de contenu dans la réponse
+Retourner les boîtes de délimitation au niveau des paragraphes pour tous les blocs de contenu dans la réponse
 
 </ExpandablePropertyDescription>
 
@@ -1600,7 +1610,7 @@ Liste des informations OCR pour les pages.
 
 <ExpandablePropertyDescription slot="description">
 
-Boîtes englobantes au niveau du paragraphe pour tous les blocs de contenu dans l'ordre de lecture (renseignées lorsque include_blocks est défini sur True)
+Boîtes de délimitation au niveau des paragraphes pour tous les blocs de contenu dans l'ordre de lecture (rempli lorsque include_blocks est à True)
 
 </ExpandablePropertyDescription>
 
@@ -1663,6 +1673,143 @@ Boîtes englobantes au niveau du paragraphe pour tous les blocs de contenu dans 
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRTextBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRTextBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtextblock_content"
   parentId="pages_OCRPageObject_blocks_OCRTextBlock"
@@ -1680,7 +1827,7 @@ Boîtes englobantes au niveau du paragraphe pour tous les blocs de contenu dans 
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -1830,6 +1977,143 @@ _Valeur par défaut:_ `"text"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRListBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRListBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRListBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrlistblock_content"
   parentId="pages_OCRPageObject_blocks_OCRListBlock"
@@ -1847,7 +2131,7 @@ _Valeur par défaut:_ `"text"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -1997,6 +2281,143 @@ _Valeur par défaut:_ `"list"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRImageBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRImageBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRImageBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrimageblock_content"
   parentId="pages_OCRPageObject_blocks_OCRImageBlock"
@@ -2014,7 +2435,7 @@ _Valeur par défaut:_ `"list"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -2189,6 +2610,143 @@ _Valeur par défaut:_ `"image"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRTableBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTableBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRTableBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtableblock_content"
   parentId="pages_OCRPageObject_blocks_OCRTableBlock"
@@ -2206,7 +2764,7 @@ _Valeur par défaut:_ `"image"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -2241,7 +2799,7 @@ Example content.
 
 <ExpandablePropertyDescription slot="description">
 
-Référence l'entrée correspondante dans OCRPageObject.tables, lorsque les tableaux sont extraits
+Fait référence à l'entrée correspondante dans OCRPageObject.tables, lorsque les tableaux sont extraits
 
 </ExpandablePropertyDescription>
 
@@ -2381,6 +2939,143 @@ _Valeur par défaut:_ `"table"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRTitleBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRTitleBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRTitleBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrtitleblock_content"
   parentId="pages_OCRPageObject_blocks_OCRTitleBlock"
@@ -2398,7 +3093,7 @@ _Valeur par défaut:_ `"table"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -2548,6 +3243,143 @@ _Valeur par défaut:_ `"title"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCREquationBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCREquationBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCREquationBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrequationblock_content"
   parentId="pages_OCRPageObject_blocks_OCREquationBlock"
@@ -2565,7 +3397,7 @@ _Valeur par défaut:_ `"title"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -2715,6 +3547,143 @@ _Valeur par défaut:_ `"equation"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRCaptionBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRCaptionBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRCaptionBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcaptionblock_content"
   parentId="pages_OCRPageObject_blocks_OCRCaptionBlock"
@@ -2732,7 +3701,7 @@ _Valeur par défaut:_ `"equation"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -2882,6 +3851,143 @@ _Valeur par défaut:_ `"caption"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRCodeBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRCodeBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRCodeBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrcodeblock_content"
   parentId="pages_OCRPageObject_blocks_OCRCodeBlock"
@@ -2899,7 +4005,7 @@ _Valeur par défaut:_ `"caption"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -3049,6 +4155,143 @@ _Valeur par défaut:_ `"code"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRReferencesBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRReferencesBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRReferencesBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrreferencesblock_content"
   parentId="pages_OCRPageObject_blocks_OCRReferencesBlock"
@@ -3066,7 +4309,7 @@ _Valeur par défaut:_ `"code"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -3216,6 +4459,143 @@ _Valeur par défaut:_ `"references"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRAsideTextBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRAsideTextBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRAsideTextBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrasidetextblock_content"
   parentId="pages_OCRPageObject_blocks_OCRAsideTextBlock"
@@ -3233,7 +4613,7 @@ _Valeur par défaut:_ `"references"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -3383,6 +4763,143 @@ _Valeur par défaut:_ `"aside_text"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRHeaderBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRHeaderBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRHeaderBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrheaderblock_content"
   parentId="pages_OCRPageObject_blocks_OCRHeaderBlock"
@@ -3400,7 +4917,7 @@ _Valeur par défaut:_ `"aside_text"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -3550,6 +5067,143 @@ _Valeur par défaut:_ `"header"`
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRFooterBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRFooterBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRFooterBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrfooterblock_content"
   parentId="pages_OCRPageObject_blocks_OCRFooterBlock"
@@ -3567,7 +5221,7 @@ _Valeur par défaut:_ `"header"`
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -3723,6 +5377,143 @@ Région de signature. ``content`` est le nom transcrit lorsqu'il est lisible, si
 
 <ExpandableProperty
   slot="entry"
+  id="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores"
+  parentId="pages_OCRPageObject_blocks_OCRSignatureBlock"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"OCRBlockConfidenceScores","linkedLabel":"<a href=\"#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores\">OCRBlockConfidenceScores</a>","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### confidence_scores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandablePropertyDescription>
+
+<ExpandablePropertyBreakouts slot="breakouts">
+
+<ExpandableBreakout
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores"
+  parentId="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores"
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandableBreakoutTitle slot="title">
+
+#### OCRBlockConfidenceScores \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores\}
+
+</ExpandableBreakoutTitle>
+
+<ExpandableBreakoutDescription slot="description">
+
+Scores de confiance par bloc, calculés par mot à partir des logprobs du modèle.
+
+Tous les champs sont à ``None`` lorsque le bloc n'a pas pu être évalué.
+Les champs individuels sont à ``None`` lorsque ce signal est absent — par exemple, un bloc contenant uniquement une image n'a pas de légende, donc les scores de contenu sont à ``None``.
+
+</ExpandableBreakoutDescription>
+
+<ExpandableBreakoutProperties slot="properties">
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores_average_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### average_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores_average_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance moyenne sur les tokens de contenu (légende) du bloc. None lorsque le bloc n'a pas de contenu textuel (par exemple, une entrée uniquement image).
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores_block_type_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### block_type_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores_block_type_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance dans le type de bloc (par exemple, 'text', 'title', 'table'). None lorsque l'entrée n'avait pas de type de bloc ou que la portée du type de bloc n'a pas pu être localisée.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
+  id="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores_minimum_content_confidence_score"
+  headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score"
+  parentId="pages_OCRPageObject_blocks_OCRSignatureBlock_confidence_scores_OCRBlockConfidenceScores"
+  typeInfo={{"label":"union","linkedLabel":"union","children":[{"label":"number","linkedLabel":"number","children":[],"breakoutSubTypes":{}},{"label":"null","linkedLabel":"null","children":[],"breakoutSubTypes":{}}],"breakoutSubTypes":{}}}
+  typeAnnotations={[]}
+  hasExpandableContent={true}
+  expandByDefault={false}
+>
+
+<ExpandablePropertyTitle slot="title">
+
+##### minimum_content_confidence_score \{#operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_confidence_scores_ocrblockconfidencescores_minimum_content_confidence_score\}
+
+</ExpandablePropertyTitle>
+
+<ExpandablePropertyDescription slot="description">
+
+Confiance minimale par mot dans le contenu du bloc. None lorsque le bloc n'a pas de contenu textuel.
+
+</ExpandablePropertyDescription>
+
+</ExpandableProperty>
+
+</ExpandableBreakoutProperties>
+
+</ExpandableBreakout>
+
+</ExpandablePropertyBreakouts>
+
+</ExpandableProperty>
+
+<ExpandableProperty
+  slot="entry"
   id="pages_OCRPageObject_blocks_OCRSignatureBlock_content"
   headingId="operation-ocr_v1_ocr_post_responses_200_application-json_pages_ocrpageobject_blocks_ocrsignatureblock_content"
   parentId="pages_OCRPageObject_blocks_OCRSignatureBlock"
@@ -3740,7 +5531,7 @@ Région de signature. ``content`` est le nom transcrit lorsqu'il est lisible, si
 
 <ExpandablePropertyDescription slot="description">
 
-Contenu texte/Markdown/HTML de ce bloc
+Contenu texte/markdown/html de ce bloc
 
 </ExpandablePropertyDescription>
 
@@ -3859,10 +5650,9 @@ _Valeur par défaut:_ `"signature"`
 Scores de confiance pour une page OCR à différentes granularités.
 
 Remarque sur les statistiques au niveau de la page :
-- Pour la granularité 'page' : la moyenne/minimum sont calculés à partir de exp(logprob) par token.
-- Pour la granularité 'word' : la moyenne/minimum sont calculés à partir de la confiance par mot,
-  où la confiance de chaque mot est exp(moyenne(token_logprobs)) — une moyenne géométrique
-  sur les sous-tokens du mot.
+- Pour la granularité 'page' et 'block' : la moyenne/minimum sont calculés à partir de exp(logprob) par token. Ni ``word_confidence_scores`` ni ``token_scores`` ne sont remplis. Les scores par bloc sont attachés aux blocs de la réponse séparément pour la granularité 'block'.
+- Pour la granularité 'word' : la moyenne/minimum sont calculés à partir de la confiance par mot, où la confiance de chaque mot est exp(moyenne(token_logprobs)) — une moyenne géométrique sur les sous-tokens du mot. ``word_confidence_scores`` est rempli.
+- Pour la granularité 'token' (interne) : la moyenne/minimum sont calculés à partir de ``token_scores`` ; ``token_scores`` est rempli.
 
 </ExpandablePropertyDescription>
 
@@ -3888,10 +5678,9 @@ Remarque sur les statistiques au niveau de la page :
 Scores de confiance pour une page OCR à différentes granularités.
 
 Remarque sur les statistiques au niveau de la page :
-- Pour la granularité 'page' : la moyenne/minimum sont calculés à partir de exp(logprob) par token.
-- Pour la granularité 'word' : la moyenne/minimum sont calculés à partir de la confiance par mot,
-  où la confiance de chaque mot est exp(moyenne(token_logprobs)) — une moyenne géométrique
-  sur les sous-tokens du mot.
+- Pour la granularité 'page' et 'block' : la moyenne/minimum sont calculés à partir de exp(logprob) par token. Ni ``word_confidence_scores`` ni ``token_scores`` ne sont remplis. Les scores par bloc sont attachés aux blocs de la réponse séparément pour la granularité 'block'.
+- Pour la granularité 'word' : la moyenne/minimum sont calculés à partir de la confiance par mot, où la confiance de chaque mot est exp(moyenne(token_logprobs)) — une moyenne géométrique sur les sous-tokens du mot. ``word_confidence_scores`` est rempli.
+- Pour la granularité 'token' (interne) : la moyenne/minimum sont calculés à partir de ``token_scores`` ; ``token_scores`` est rempli.
 
 </ExpandableBreakoutDescription>
 

@@ -1,6 +1,6 @@
 import { StaticModel } from '../schema';
 export default {
-  name: 'OCR 4',
+  name: 'OCR 4.0',
   describe: (l) => ({
     description: l.text(`Our latest OCR service powering our Document AI stack, with native paragraph-level bounding box extraction and structural block labels.`, { context: 'Full description of an AI model' }),
     shortDescription: l.text(`Our latest OCR service with paragraph-level bounding boxes and structural block labels.`, { context: 'Short description of an AI model' }),
@@ -9,7 +9,7 @@ export default {
   slugAliases: ['ocr'],
   releaseDate: '2026-06-23',
   version: '4.0',
-  frontier: true,
+  frontier: false,
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-ocr',
@@ -33,14 +33,14 @@ export default {
 
     ]
   },
-  identifiers: { apiNames: ['mistral-ocr-4-0', 'mistral-ocr-4', 'mistral-ocr-latest'] },
+  identifiers: { apiNames: ['mistral-ocr-4-0'] },
   capabilities: {
     input: ['image', 'document'],
     output: ['text', 'image'],
     features: ['bbox-extraction', 'ocr', 'annotations-structured-ocr', 'batching'],
 
   },
-  metadata: {},
+  metadata: { replacement: 'OCR 4.1' },
   playground: 'https://console.mistral.ai/build/document-ai/ocr-playground',
   legacy: false,
 } as const satisfies StaticModel;

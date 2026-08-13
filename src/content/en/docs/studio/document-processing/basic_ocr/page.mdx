@@ -18,9 +18,9 @@ import OCRWithPDFUploadedTab from './ocr_with_pdf_uploaded_tab/_page.mdx';
 import OCRWithConfidenceScoresTab from './ocr_with_confidence_scores_tab/_page.mdx';
 import OCRWithBlocksTab from './ocr_with_blocks_tab/_page.mdx';
 
-# Document AI - OCR Processor 
+# Document AI OCR processor
 
-Mistral Document AI API comes with a Document OCR (Optical Character Recognition) processor, powered by our latest OCR model `mistral-ocr-latest`, which enables you to extract text and structured content from PDF documents. 
+Use the Document AI OCR processor to extract text and structured content from PDF documents and images. The `mistral-ocr-latest` alias points to our latest OCR model.
 
 <Image
   url={['/img/basic_ocr_graph.png', '/img/basic_ocr_graph_dark.png']}
@@ -29,46 +29,42 @@ Mistral Document AI API comes with a Document OCR (Optical Character Recognition
   centered
 />
 
-<SectionTab as="h1" sectionId="before-you-start">Before You Start</SectionTab>
+<SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
 
-### Key Features
+### Key features
 
-- **Extracts text** in content while maintaining document structure and hierarchy.
-- Preserves formatting like headers, paragraphs, lists and tables.
-  - **Table formatting** can be toggled between `null`, `markdown` and `html` via the `table_format` parameter.
-    - `null`: Tables are returned inline as markdown within the extracted page.
-    - `markdown`: Tables are returned as markdown tables separately.
-    - `html`: Tables are returned as html tables separately.
-- Option to **extract headers and footers** via the `extract_header` and the `extract_footer` parameter, when used, the headers and footers content will be provided in the `header` and `footer` fields. By default, headers and footers are considered as part of the main content output.
-- Option to extract **paragraph-level bounding boxes and structural block labels** via the `include_blocks` parameter. When enabled, each page contains a `blocks` array listing every block (text, title, list, table, image, equation, caption, code, references, aside_text, header, footer, signature) in reading order with its bounding box and content.
-- Returns results in markdown format for easy parsing and rendering.
-- Handles complex layouts including multi-column text and mixed content and returns hyperlinks when available.
-- Provides **confidence scores** for extracted content at word or page granularity via the `confidence_scores_granularity` parameter.
-- Processes documents at scale with high accuracy
-- **Multilingual**: strong performance across 40+ languages. See the full [supported languages](/resources/languages#ocr) list.
-- Supports multiple document formats including:
-    - `image_url`: png, jpeg/jpg, avif and more...
-    - `document_url`: pdf, pptx, docx and more...
-    - For a non-exaustive more comprehensive list, visit our [FAQ](#faq).
+- **Text extraction** preserves the document structure and hierarchy.
+- **Table formatting** supports `null`, `markdown`, and `html` values through the `table_format` parameter.
+  - `null`: Returns tables inline as Markdown within the extracted page.
+  - `markdown`: Returns tables separately as Markdown tables.
+  - `html`: Returns tables separately as HTML tables.
+- **Header and footer extraction** uses the `extract_header` and `extract_footer` parameters. When you use them, the response includes header and footer content in the `header` and `footer` fields. By default, OCR treats headers and footers as part of the main content.
+- **Block extraction** uses the `include_blocks` parameter. When enabled, each page contains a `blocks` array with paragraph-level bounding boxes, structural block labels, and extracted content in reading order.
+- **Confidence scores** are available for extracted content at page, block, or word granularity through the `confidence_scores_granularity` parameter.
+- **Multilingual OCR** performs strongly across more than 40 languages. For the full list, see [supported languages](/resources/languages#ocr).
+- **Document formats** include:
+  - `image_url`: PNG, JPEG/JPG, AVIF, and other image formats.
+  - `document_url`: PDF, PPTX, DOCX, and other document formats.
+  - For more supported formats, see the [FAQ](#faq).
 
-Learn more about our API [here](https://docs.mistral.ai/api/endpoint/ocr).
+For endpoint details, see the [OCR API reference](https://docs.mistral.ai/api/endpoint/ocr).
 
 :::info
 Table formatting as well as header and footer extraction is only available for OCR 2512 or newer.
-Block extraction via `include_blocks` is only available for OCR 4 (`mistral-ocr-4-0`) or newer.
+Block extraction via `include_blocks` is only available for OCR 4 or newer.
 :::
 
-The OCR processor returns the extracted **text content**, **images bboxes** and metadata about the document structure, making it easy to work with the recognized content programmatically.
+The OCR processor returns extracted text, image bounding boxes, and document-structure metadata.
 
-<SectionTab as="h1" sectionId="ocr-images-and-pdfs">OCR with Images and PDFs</SectionTab>
+<SectionTab as="h1" sectionId="ocr-images-and-pdfs">OCR with images and PDFs</SectionTab>
 
-### OCR your Documents
+### Process your documents
 
-We provide different methods to OCR your documents. You can either OCR a **PDF** or an **Image**.
+Use OCR with PDFs and images.
 
 <SectionTab as="h2" variant="secondary" sectionId="ocr-pdfs">PDFs</SectionTab>
 
-Among the PDF methods, you can use a **public available URL**, a **base64 encoded PDF** or by **uploading a PDF in our Cloud**.
+For PDFs, pass a publicly available URL, pass a Base64-encoded PDF, or upload a PDF file.
 
 <ExplorerTabs id="pdfs">
     <ExplorerTab value="pdf-url" label="OCR with a PDF Url">
@@ -82,7 +78,7 @@ Among the PDF methods, you can use a **public available URL**, a **base64 encode
     </ExplorerTab>
 </ExplorerTabs>
 
-The output will be a JSON object containing the extracted text content, images bboxes, metadata and other information about the document structure.
+The output is a JSON object that contains the extracted text, image bounding boxes, metadata, and other document-structure information.
 
 ```py
 {
@@ -96,8 +92,8 @@ The output will be a JSON object containing the extracted text content, images b
       "header": str|null, # Header content when using `extract_header=True`
       "footer": str|null, # Footer content when using `extract_footer=True`
       "dimensions": dict, # The dimensions of the page
-      "confidence_scores": dict|null, # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
-      "blocks": list|null # Paragraph-level bounding boxes with block labels when using `include_blocks=True`
+      "confidence_scores": dict|null, # Page confidence scores when `confidence_scores_granularity` is set (contains `word_confidence_scores` only for word granularity)
+      "blocks": list|null # Paragraph-level bounding boxes with block labels when using `include_blocks=True`; each block includes `confidence_scores` only for block granularity
     }
   ],
   "model": str, # The model used for the OCR
@@ -107,16 +103,16 @@ The output will be a JSON object containing the extracted text content, images b
 ```
 
 :::note
-When extracting images and tables they will be replaced with placeholders, such as:
+When OCR extracts images and tables, the Markdown output uses placeholders such as:
 - `![img-0.jpeg](img-0.jpeg)`
 - `[tbl-3.html](tbl-3.html)`
 
-You can map them to the actual images and tables by using the `images` and `tables` fields.
+Use the `images` and `tables` fields to map each placeholder to the extracted image or table.
 :::
 
 <SectionTab as="h2" variant="secondary" sectionId="ocr-images">Images</SectionTab>
 
-To perform OCR on an image, you can either pass a URL to the image or directly use a Base64 encoded image.
+For images, pass an image URL or a Base64-encoded image.
 
 <ExplorerTabs id="images">
     <ExplorerTab value="with-image-url" label="OCR with an Image URL">
@@ -127,7 +123,7 @@ To perform OCR on an image, you can either pass a URL to the image or directly u
     </ExplorerTab>
 </ExplorerTabs>
 
-The output will be a JSON object containing the extracted text content, images bboxes, metadata and other information about the document structure.
+The output is a JSON object that contains the extracted text, image bounding boxes, metadata, and other document-structure information.
 
 ```py
 {
@@ -141,8 +137,8 @@ The output will be a JSON object containing the extracted text content, images b
       "header": str|null, # Header content when using `extract_header=True`
       "footer": str|null, # Footer content when using `extract_footer=True`
       "dimensions": dict, # The dimensions of the page
-      "confidence_scores": dict|null, # Confidence scores when `confidence_scores_granularity` is set (contains `average_page_confidence_score`, `minimum_page_confidence_score`, and `word_confidence_scores` for word granularity)
-      "blocks": list|null # Paragraph-level bounding boxes with block labels when using `include_blocks=True`
+      "confidence_scores": dict|null, # Page confidence scores when `confidence_scores_granularity` is set (contains `word_confidence_scores` only for word granularity)
+      "blocks": list|null # Paragraph-level bounding boxes with block labels when using `include_blocks=True`; each block includes `confidence_scores` only for block granularity
     }
   ],
   "model": str, # The model used for the OCR
@@ -152,20 +148,27 @@ The output will be a JSON object containing the extracted text content, images b
 ```
 
 :::note
-When extracting images and tables they will be replaced with placeholders, such as:
+When OCR extracts images and tables, the Markdown output uses placeholders such as:
 - `![img-0.jpeg](img-0.jpeg)`
 - `[tbl-3.html](tbl-3.html)`
 
-You can map them to the actual images and tables by using the `images` and `tables` fields.
+Use the `images` and `tables` fields to map each placeholder to the extracted image or table.
 :::
 
-<SectionTab as="h1" sectionId="block-extraction">Block Extraction</SectionTab>
+<SectionTab as="h1" sectionId="block-extraction">Block extraction</SectionTab>
 
-### Extract Structural Blocks with Bounding Boxes
+### Extract structural blocks with bounding boxes
 
 Set `include_blocks=True` to receive a `blocks` array on each page. Each block describes a single content region with its label (`type`), bounding box coordinates, and the extracted content. Blocks are returned in **reading order**.
 
-Each block shares the following fields: `type`, `top_left_x`, `top_left_y`, `bottom_right_x`, `bottom_right_y`, and `content`.
+Each block includes `type`, `top_left_x`, `top_left_y`, `bottom_right_x`, `bottom_right_y`, and `content`.
+
+When `confidence_scores_granularity` is set to `"block"`, each block also includes `confidence_scores` with:
+- `average_content_confidence_score`: Average confidence score for the extracted block content.
+- `minimum_content_confidence_score`: Lowest confidence score in the extracted block content.
+- `block_type_confidence_score`: Confidence score for the detected block type.
+
+Content confidence scores can be `null` for blocks without textual content, such as image blocks.
 
 <details>
 <summary><b>Available block types</b></summary>
@@ -195,18 +198,19 @@ Each block shares the following fields: `type`, `top_left_x`, `top_left_y`, `bot
 </ExplorerTabs>
 
 :::info
-Block extraction is only available for OCR 4 (`mistral-ocr-4-0`) or newer. Older models accept the parameter but return an empty array.
+Block extraction is only available for OCR 4 or newer. Older models accept the parameter but return an empty array.
 :::
 
-<SectionTab as="h1" sectionId="confidence-scores">Confidence Scores</SectionTab>
+<SectionTab as="h1" sectionId="confidence-scores">Confidence scores</SectionTab>
 
-### Extract Confidence Scores
+### Extract confidence scores
 
 The OCR processor can return confidence scores for extracted content to help you assess recognition quality. Use the `confidence_scores_granularity` parameter to control the level of detail:
 
 | Value | Description |
 | --- | --- |
 | `"page"` | Returns a `confidence_scores` object on each page with aggregate statistics (`average_page_confidence_score`, `minimum_page_confidence_score`). |
+| `"block"` | Returns everything from `"page"`, plus `confidence_scores` on each block when `include_blocks` is set to `true`. |
 | `"word"` | Returns everything from `"page"`, plus a `word_confidence_scores` array with per-word confidence values on each page and each table entry. |
 
 <ExplorerTabs id="confidence-scores">
@@ -215,13 +219,13 @@ The OCR processor can return confidence scores for extracted content to help you
   </ExplorerTab>
 </ExplorerTabs>
 
-<SectionTab as="h1" sectionId="ocr-at-scale">OCR at Scale</SectionTab>
+<SectionTab as="h1" sectionId="ocr-at-scale">OCR at scale</SectionTab>
 
-When performing OCR at scale, we recommend using our [Batch Inference service](/studio/batch-processing), this allows you to process large amounts of documents in parallel while being more cost-effective than using the OCR API directly. We also support [Annotations](annotations) for structured outputs and other features.
+For high-volume OCR workloads, use the [Batch Inference service](/studio/batch-processing) to process documents in parallel. For structured outputs, use [Annotations](annotations).
 
 <SectionTab as="h1" sectionId="cookbooks">Cookbooks</SectionTab>
 
-For more information and guides on how to make use of OCR, we have the following cookbooks:
+For more OCR examples, see these cookbooks:
 - [Tool Use](/resources/cookbooks/mistral-ocr-tool_usage)
 - [Batch OCR](/resources/cookbooks/mistral-ocr-batch_ocr)
 
@@ -229,10 +233,10 @@ For more information and guides on how to make use of OCR, we have the following
 
 <Faq>
   <FaqItem question="Are there any limits regarding the OCR API?">
-    Yes, there are certain limitations for the OCR API. Uploaded document files must not exceed 50 MB in size and should be no longer than 1,000 pages.
+    Yes. Uploaded document files must be 50 MB or less and contain 1,000 pages or fewer.
   </FaqItem>
   <FaqItem question="What document types are supported?">
-Our Document AI OCR Processor supports a vast range of document and image types. Below you can find a non-exhaustive list of the supported formats:
+The Document AI OCR processor supports the following document and image formats:
 | Documents                          | Images               |
 |------------------------------------|----------------------|
 | **PDF** (.pdf)                     | **JPEG** (.jpg, .jpeg)|

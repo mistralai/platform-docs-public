@@ -554,7 +554,9 @@ declare module "@lingo.dev/react" {
     "Our latest moderation model with 128k context window and jailbreaking detection.": { context: "Short description of an AI model" };
     "Our latest moderation model with 128k context window and jailbreaking detection. Strong performance on complex multilingual data including long multi-turn conversations.": { context: "Full description of an AI model" };
     "Our latest OCR service powering our Document AI stack, with native paragraph-level bounding box extraction and structural block labels.": { context: "Full description of an AI model" };
+    "Our latest OCR service powering our Document AI stack, with native paragraph-level bounding box extraction, structural block labels, and block-level confidence scores.": { context: "Full description of an AI model" };
     "Our latest OCR service with paragraph-level bounding boxes and structural block labels.": { context: "Short description of an AI model" };
+    "Our latest OCR service with paragraph-level bounding boxes, structural block labels, and block-level confidence scores.": { context: "Short description of an AI model" };
     "Our moderation service that enables our users to detect harmful text content": { context: "Full description of an AI model" };
     "Our moderation service that enables our users to detect harmful text content.": { context: "Short description of an AI model" };
     "Our OCR service powering our Document AI stack that enables our users to extract interleaved text and images": { context: "Full description of an AI model" };

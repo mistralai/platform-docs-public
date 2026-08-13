@@ -41,6 +41,7 @@ export const PRICING_TABLES: PricingTableGroup[] = [
     description: l =>
       l.text('Models built for specific tasks such as vision, OCR, and audio.', { context: 'Description for specialized model pricing table' }),
     slugs: [
+      'ocr-4-1',
       'ocr-4-0',
       'voxtral-mini-transcribe-26-02',
       'voxtral-tts-26-03',

@@ -38,7 +38,7 @@ export default {
     features: [],
 
   },
-  metadata: {deprecationDate: '2025-12-02', retirementDate: '2025-12-31', replacement: 'OCR 4'},
+  metadata: {deprecationDate: '2025-12-02', retirementDate: '2025-12-31', replacement: 'OCR 4.1'},
   playground: '',
   legacy: true,
 } as const satisfies StaticModel;

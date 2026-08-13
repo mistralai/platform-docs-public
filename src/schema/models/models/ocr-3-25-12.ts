@@ -39,7 +39,7 @@ export default {
     features: ['ocr', 'annotations-structured-ocr', 'batching'],
 
   },
-  metadata: { replacement: 'OCR 4' },
+  metadata: { replacement: 'OCR 4.1' },
   playground: 'https://console.mistral.ai/build/document-ai/ocr-playground',
   legacy: false,
 } as const satisfies StaticModel;

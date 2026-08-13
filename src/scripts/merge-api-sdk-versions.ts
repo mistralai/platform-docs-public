@@ -2,22 +2,22 @@
  * Merges V1 and V2 Python SDK code samples into the generated API reference pages.
  *
  * This script runs after `docs-md` has generated pages for both:
- *   - V2 Python (main output: src/app/(api)/api/)
+ *   - V2 Python (main output: src/content/en/api/)
  *   - V1 Python (temp output: src/app/(api)/api-v1-temp/)
  *
- * For each page that has a Python code sample, it wraps the V2 code alongside
- * the V1 code inside a <SDKVersionCodeSample> component so users can toggle
- * between SDK versions.
+ * For each page that has a Python code sample, it wraps the V2 code inside a
+ * <SDKVersionCodeSample> component. If the V1 SDK build has a matching sample,
+ * the wrapper includes both V1 and V2; otherwise it shows a V2-only tab so the
+ * SDK version remains explicit without inventing V1 support.
  */
 
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import glob from 'fast-glob';
 
-const V2_DIR = process.env.V2_DIR || './src/app/(api)/api';
+const V2_DIR = process.env.V2_DIR || './src/content/en/api';
 const V1_TEMP_DIR = process.env.V1_TEMP_DIR || './src/app/(api)/api-v1-temp';
-// Escaped versions for glob patterns (parentheses are special in glob)
-const V2_GLOB = process.env.V2_GLOB || './src/app/\\(api\\)/api/**/*.mdx';
+const V2_GLOB = process.env.V2_GLOB || './src/content/en/api/**/*.mdx';
 const IMPORT_NAME = 'SDKVersionCodeSample';
 
 /**
@@ -49,14 +49,14 @@ function extractPythonSections(content: string): Map<string, string> {
  */
 function addImport(content: string): string {
   const importRe =
-    /import \{([\s\S]*?)\} from "@\/app\/\(api\)\/components\/speakeasy";/;
+    /import \{([\s\S]*?)\} from "(@\/app\/(?:\[locale\]\/)?\(api\)\/components\/speakeasy)";/;
   const match = importRe.exec(content);
   if (!match || match[1].includes(IMPORT_NAME)) return content;
 
   const updated = match[1].trimEnd() + `,\n  ${IMPORT_NAME}`;
   return content.replace(
     match[0],
-    `import {${updated}\n} from "@/app/(api)/components/speakeasy";`
+    `import {${updated}\n} from "${match[2]}";`
   );
 }
 
@@ -66,8 +66,8 @@ function addImport(content: string): string {
 function replacePythonSection(
   content: string,
   id: string,
-  v1Code: string,
-  v2Code: string
+  v2Code: string,
+  v1Code?: string
 ): string {
   // Escape the id for use in a regex
   const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -75,6 +75,17 @@ function replacePythonSection(
   const sectionRe = new RegExp(
     `<SectionContent\\s[^>]*id="${escapedId}"[^>]*>\\s*\\n\\s*<CodeSample>\\s*\\n\\s*\`\`\`python\\s*\\n([\\s\\S]*?)\`\`\`\\s*\\n\\s*<\\/CodeSample>\\s*\\n\\s*<\\/SectionContent>`
   );
+
+  const v1Block = v1Code
+    ? `<div data-version="v1">
+<CodeSample>
+
+\`\`\`python
+${v1Code}\`\`\`
+
+</CodeSample>
+</div>`
+    : '';
 
   const replacement = `<SectionContent
   slot="content"
@@ -90,14 +101,7 @@ ${v2Code}\`\`\`
 
 </CodeSample>
 </div>
-<div data-version="v1">
-<CodeSample>
-
-\`\`\`python
-${v1Code}\`\`\`
-
-</CodeSample>
-</div>
+${v1Block}
 </SDKVersionCodeSample>
 
 </SectionContent>`;
@@ -106,56 +110,56 @@ ${v1Code}\`\`\`
 }
 
 async function main() {
-  if (!existsSync(V1_TEMP_DIR)) {
-    console.error(
-      `V1 temp directory not found: ${V1_TEMP_DIR}\nRun: pnpm docs-md -c speakeasy.v1.config.mjs first.`
-    );
-    process.exit(1);
-  }
-
+  const hasV1TempDir = existsSync(V1_TEMP_DIR);
   const v2Pages = await glob(V2_GLOB);
-  let mergedCount = 0;
+  let mergedPageCount = 0;
+  let v1v2SectionCount = 0;
+  let v2OnlySectionCount = 0;
   let skippedCount = 0;
 
   for (const v2PagePath of v2Pages) {
     const relativePath = v2PagePath.replace(V2_DIR, '');
     const v1PagePath = join(V1_TEMP_DIR, relativePath);
 
-    if (!existsSync(v1PagePath)) {
-      skippedCount++;
-      continue;
-    }
-
     const v2Content = readFileSync(v2PagePath, 'utf-8');
-    const v1Content = readFileSync(v1PagePath, 'utf-8');
-
-    const v1CodeMap = extractPythonSections(v1Content);
-    if (v1CodeMap.size === 0) {
+    const v2CodeMap = extractPythonSections(v2Content);
+    if (v2CodeMap.size === 0) {
       skippedCount++;
       continue;
     }
 
-    // Also extract V2 sections to get their current code
-    const v2CodeMap = extractPythonSections(v2Content);
+    const v1CodeMap = hasV1TempDir && existsSync(v1PagePath)
+      ? extractPythonSections(readFileSync(v1PagePath, 'utf-8'))
+      : new Map<string, string>();
 
     let merged = v2Content;
-    for (const [id, v1Code] of v1CodeMap.entries()) {
-      const v2Code = v2CodeMap.get(id);
-      if (!v2Code) continue;
-      merged = replacePythonSection(merged, id, v1Code, v2Code);
+    let changed = false;
+    for (const [id, v2Code] of v2CodeMap.entries()) {
+      const v1Code = v1CodeMap.get(id);
+      merged = replacePythonSection(merged, id, v2Code, v1Code);
+      changed = true;
+      if (v1Code) v1v2SectionCount++;
+      else v2OnlySectionCount++;
+    }
+
+    if (!changed) {
+      skippedCount++;
+      continue;
     }
 
     merged = addImport(merged);
     writeFileSync(v2PagePath, merged);
-    mergedCount++;
+    mergedPageCount++;
   }
 
   console.log(
-    `✓ Merged ${mergedCount} pages with V1/V2 Python tabs (${skippedCount} skipped)`
+    `✓ Wrapped ${mergedPageCount} pages with SDK version tabs (${v1v2SectionCount} V1/V2 samples, ${v2OnlySectionCount} V2-only samples, ${skippedCount} skipped)`
   );
 
-  rmSync(V1_TEMP_DIR, { recursive: true, force: true });
-  console.log('✓ Cleaned up temp directory');
+  if (hasV1TempDir) {
+    rmSync(V1_TEMP_DIR, { recursive: true, force: true });
+    console.log('✓ Cleaned up temp directory');
+  }
 }
 
 main().catch(err => {

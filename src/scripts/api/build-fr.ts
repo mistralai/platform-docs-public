@@ -148,6 +148,11 @@ function main() {
   run('post-process MDX (fr)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/postprocess-mdx.ts'], {
     API_MDX_POSTPROCESS_GLOB: FR_MDX_GLOB,
   });
+  run('wrap SDK version tabs (fr)', 'pnpm', ['exec', 'tsx', 'src/scripts/merge-api-sdk-versions.ts'], {
+    V2_DIR: FR_PAGE_OUT_DIR,
+    V2_GLOB: FR_MDX_GLOB,
+    V1_TEMP_DIR: './src/app/(api)/api-v1-temp-fr',
+  });
 
   // Localize the tag-name-derived labels (sidebar + page H1) that docs-md leaves
   // in English. Needs the Mistral API, so skip in offline --stub mode.

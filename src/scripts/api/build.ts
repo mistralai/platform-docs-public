@@ -1,10 +1,11 @@
 /**
  * End-to-end orchestrator for generating the API reference docs.
  *
- *   1. apply patches    -> .openapi-docs.yaml
- *   2. docs-md (V2)     -> src/app/(api)/api/**
- *   3. docs-md (V1)     -> src/app/(api)/api-v1-temp/**
- *   4. merge SDK tabs   -> src/app/(api)/api/** (V1+V2 wrapped)
+ *   1. apply V2 patches -> .openapi-docs.yaml
+ *   2. docs-md (V2)     -> src/content/en/api/**
+ *   3. apply V1 patches -> .openapi-docs.v1.yaml
+ *   4. docs-md (V1)     -> src/app/(api)/api-v1-temp/**
+ *   5. merge SDK tabs   -> src/content/en/api/** (V1+V2 wrapped)
  *
  * Replaces the legacy `pnpm build-api-docs` chain.
  *
@@ -23,6 +24,8 @@ import { rmSync } from 'node:fs';
 
 // Mirror speakeasy.config.mjs so the purge targets the dir docs-md writes to.
 const PAGE_OUT_DIR = process.env.API_PAGE_OUT_DIR || './src/content/en/api';
+const V2_SPEC = './.openapi-docs.yaml';
+const V1_SPEC = './.openapi-docs.v1.yaml';
 
 type CliFlags = {
   skipV1: boolean;
@@ -78,7 +81,10 @@ function main() {
   const flags = parseArgs(process.argv.slice(2));
 
   if (!flags.skipApply) {
-    step('apply patches', 'pnpm', ['exec', 'tsx', 'src/scripts/api/apply.ts']);
+    step('apply patches (V2)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/apply.ts'], {
+      API_OUTPUT_SPEC: V2_SPEC,
+      API_CODE_SAMPLES_PATCH_DB: './src/scripts/api-code-samples.v2.yaml',
+    });
   }
 
   if (flags.clean) {
@@ -86,7 +92,7 @@ function main() {
   }
 
   step('docs-md (V2)', 'pnpm', ['exec', 'docs-md'], {
-    SPEAKEASY_OPENAPI_YAML: './.openapi-docs.yaml',
+    SPEAKEASY_OPENAPI_YAML: V2_SPEC,
   });
 
   step('post-process MDX (V2)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/postprocess-mdx.ts']);
@@ -96,8 +102,14 @@ function main() {
   }
 
   if (!flags.skipV1) {
+    if (!flags.skipApply) {
+      step('apply patches (V1)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/apply.ts'], {
+        API_OUTPUT_SPEC: V1_SPEC,
+        API_CODE_SAMPLES_PATCH_DB: './src/scripts/api-code-samples.v1.yaml',
+      });
+    }
     step('docs-md (V1)', 'pnpm', ['exec', 'docs-md', '-c', 'speakeasy.v1.config.mjs'], {
-      SPEAKEASY_OPENAPI_YAML: './.openapi-docs.yaml',
+      SPEAKEASY_OPENAPI_YAML: V1_SPEC,
     });
     step('merge SDK versions', 'pnpm', ['exec', 'tsx', 'src/scripts/merge-api-sdk-versions.ts']);
   }

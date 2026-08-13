@@ -207,7 +207,7 @@ function getModelGroups(items: Model[]): ModelGroup[] {
       'ocr-models',
       'OCR models',
       'Models for document understanding, text extraction, and structured OCR outputs.',
-      ['ocr-4-0', 'ocr-3-25-12', 'ocr-2-25-05', 'ocr-25-03']
+      ['ocr-4-1', 'ocr-4-0', 'ocr-3-25-12', 'ocr-2-25-05', 'ocr-25-03']
     ),
     specialistGroup(
       'audio-models',

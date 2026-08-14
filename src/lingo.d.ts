@@ -436,7 +436,7 @@ declare module "@lingo.dev/react" {
     "Latest models": { context: "Heading for the latest models section on the home page" | "Heading for the newest AI models" | "Heading for the latest models section on the Inference landing page" };
     "Learn {cookbookTitle} with practical examples and code snippets using Mistral AI's LLMs.": { values: { cookbookTitle: string | number }; context: "Meta description for a developer cookbook" };
     "Learn how to deploy and use Mistral AI's Large Language Models with our comprehensive documentation, guides, and tutorials.": { context: "Meta description for the documentation home page" };
-    "Learn more": { context: "Button to open the full AI model page" };
+    "Learn more": { context: "Button to open the full AI model page" | "Link to learn more about the batch pricing mode" | "Link to learn more about the priority pricing mode" };
     "Learn more about this model": { context: "Link to the full AI model page" };
     "Legal": { context: "Label for AI model legal terms" };
     "LEGAL": { context: "Footer heading for legal information" };
@@ -842,5 +842,7 @@ declare module "@lingo.dev/react" {
     "Find material for implementation, troubleshooting, and migration work.": { context: "Intro text for Resources landing page cards" };
     "Latest cookbooks": { context: "Heading for the latest cookbooks section on the Resources landing page" };
     "Use recent examples to learn implementation patterns and adapt them to your project.": { context: "Intro text for the latest cookbooks section on the Resources landing page" };
+    "Batching allows you to run asynchronous inference on large inputs in parallel, reducing compute costs while running large workloads at a 50% discount.": { context: "Tooltip explaining the batch pricing mode" };
+    "Priority Tier offers consistent performance for realtime applications. Dedicated priority queues shield your requests from general traffic bursts for faster, more predictable response times (TTFT).": { context: "Tooltip explaining the priority pricing mode" };
   }
 }

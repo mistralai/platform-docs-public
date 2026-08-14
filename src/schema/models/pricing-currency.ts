@@ -2,7 +2,7 @@ import type { ModelPricing } from './schema';
 
 export type PricingCurrency = 'eur' | 'usd';
 
-export const DEFAULT_PRICING_CURRENCY: PricingCurrency = 'eur';
+export const DEFAULT_PRICING_CURRENCY: PricingCurrency = 'usd';
 
 export function pricingCurrencySymbol(currency: PricingCurrency): string {
   return currency === 'eur' ? '€' : '$';

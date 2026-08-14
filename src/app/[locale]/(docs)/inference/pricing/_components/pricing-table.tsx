@@ -52,17 +52,36 @@ const MODES: {
   label: (l: ReturnType<typeof useLingo>) => string;
   factor: number;
   suffix: (l: ReturnType<typeof useLingo>) => string;
-  tooltip?: string;
+  tooltip?: (l: ReturnType<typeof useLingo>) => React.ReactNode;
 }[] = [
   { value: 'standard', label: l => l.text('Standard', { context: 'Standard pricing mode label' }), factor: 1, suffix: () => '' },
-  { value: 'batch', label: l => l.text('Batch', { context: 'Topic label for batch API processing' }), factor: BATCH_FACTOR, suffix: l => ` · ${l.text('Batch', { context: 'Topic label for batch API processing' })} (-50%)` },
+  {
+    value: 'batch',
+    label: l => l.text('Batch', { context: 'Topic label for batch API processing' }),
+    factor: BATCH_FACTOR,
+    suffix: l => ` · ${l.text('Batch', { context: 'Topic label for batch API processing' })} (-50%)`,
+    tooltip: l => (
+      <>
+        {l.text('Batching allows you to run asynchronous inference on large inputs in parallel, reducing compute costs while running large workloads at a 50% discount.', { context: 'Tooltip explaining the batch pricing mode' })}{' '}
+        <Link href="/studio/batch-processing" className="text-primary-soft underline-offset-2 hover:underline">
+          {l.text('Learn more', { context: 'Link to learn more about the batch pricing mode' })}
+        </Link>
+      </>
+    ),
+  },
   {
     value: 'priority',
     label: l => l.text('Priority', { context: 'Priority pricing mode label' }),
     factor: PRIORITY_FACTOR,
     suffix: l => ` · ${l.text('Priority', { context: 'Priority pricing mode label' })} (+75%)`,
-    tooltip:
-      'Priority Tier offers consistent performance for realtime applications. Dedicated priority queues shield your requests from general traffic bursts for faster, more predictable response times (TTFT).',
+    tooltip: l => (
+      <>
+        {l.text('Priority Tier offers consistent performance for realtime applications. Dedicated priority queues shield your requests from general traffic bursts for faster, more predictable response times (TTFT).', { context: 'Tooltip explaining the priority pricing mode' })}{' '}
+        <Link href="/inference/priority-tier" className="text-primary-soft underline-offset-2 hover:underline">
+          {l.text('Learn more', { context: 'Link to learn more about the priority pricing mode' })}
+        </Link>
+      </>
+    ),
   },
 ];
 
@@ -231,7 +250,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
   const sharedDenominator =
     denominators.size === 1 ? [...denominators][0] : undefined;
 
-  const suffix = modeSuffix(mode, l) + (regional ? ` · ${l.text('Regional inference', { context: 'Link text to the regional inference documentation' })} (+10%)` : '');
+  const suffix = modeSuffix(mode, l);
   const showCurrencyToggle = rows.some(row => pricingHasEur(row.model.pricing));
 
   return (
@@ -252,7 +271,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
               checked={regional}
               onCheckedChange={checked => setRegional(checked === true)}
             />
-            {l.text('Regional inference', { context: 'Link text to the regional inference documentation' })}
+            {l.text('Regional inference', { context: 'Link text to the regional inference documentation' })}{regional ? ' (+10%)' : ''}
           </Label>
           <div
             role="group"
@@ -268,7 +287,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
                 variant={active ? 'secondary' : 'ghost'}
                 onClick={() => setMode(m.value)}
                 aria-pressed={active}
-                className="font-mono uppercase"
+                className="font-mono uppercase cursor-pointer"
               >
                 {m.label(l)}
               </Button>
@@ -277,7 +296,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
               <Tooltip key={m.value}>
                 <TooltipTrigger asChild>{button}</TooltipTrigger>
                 <TooltipContent className="max-w-xs text-left">
-                  {m.tooltip}
+                  {m.tooltip(l)}
                 </TooltipContent>
               </Tooltip>
             ) : (

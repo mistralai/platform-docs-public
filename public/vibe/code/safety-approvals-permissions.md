@@ -36,9 +36,16 @@ Use one of the built-in agents below. To switch, set a default, or create your o
 
 A project can ship its own Vibe configuration (like agents, skills, MCP servers, and tool permissions) in a `.vibe/` directory at the repository root. Because that configuration **changes how Vibe behaves**, Vibe will only load it from directories **you have explicitly trusted**.
 
+Trustable content includes any of the following in the directory or its ancestors:
+
+- A `.vibe/` directory (configuration, agents, skills, prompts, hooks, and tools)
+- An `.agents/` directory (Agent Skills standard skills)
+- An `AGENTS.md` file (project-level agent instructions)
+
 How it works:
 
-- When you start an interactive session in a directory that contains trustable files (such as `.vibe/config.toml`) and trust state is unknown, Vibe asks whether to trust the directory.
+- When you start an interactive session in a directory that contains trustable content and trust state is unknown, Vibe asks whether to trust the directory.
+- The trust dialog lists the trustable files it detected and flags any risks (such as MCP servers or tool permissions that grant broad access). It proposes the git repository root as the trust target when the directory is inside a git repo
 - Trusted directories are remembered in `~/.vibe/trusted_folders.toml`.
 - If you decline or have not yet trusted a directory, project-level configuration is ignored and Vibe prints a warning. User-level configuration in `~/.vibe/` still applies.
 

@@ -10,7 +10,7 @@ interface PricingCurrencyToggleProps {
   className?: string;
 }
 
-const CURRENCIES: PricingCurrency[] = ['eur', 'usd'];
+const CURRENCIES: PricingCurrency[] = ['usd', 'eur'];
 
 export function PricingCurrencyToggle({
   value,
@@ -32,7 +32,7 @@ export function PricingCurrencyToggle({
             variant={active ? 'secondary' : 'ghost'}
             onClick={() => onValueChange(currency)}
             aria-pressed={active}
-            className="font-mono uppercase"
+            className="font-mono uppercase cursor-pointer"
           >
             {currency.toUpperCase()}
           </Button>

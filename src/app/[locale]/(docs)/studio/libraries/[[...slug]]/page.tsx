@@ -11,8 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; slug?: string[] }>;
 }) {
-  const { locale } = (await params) as { locale: Locale };
-  await permanentRedirect('/studio/search/libraries', locale);
+  const { locale, slug } = (await params) as { locale: Locale; slug?: string[] };
+  const sub = slug && slug.length > 0 ? `/${slug.join('/')}` : '';
+  await permanentRedirect(`/studio/search/libraries${sub}`, locale);
 }

@@ -343,7 +343,7 @@ const sidebarTreeData = (
             ...takeChildrenByHref('/studio/search'),
             sectionLabel('Process'),
             takeByHref('/studio/document-processing'),
-            takeByHref('/studio/audio'),
+            takeByHref('/studio/audio/overview'),
             takeByHref('/studio/batch-processing'),
             sectionLabel('APIs'),
             takeByHref('/studio/knowledge-rag'),

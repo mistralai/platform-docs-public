@@ -140,6 +140,9 @@ const isGettingStartedSlug = (slug: string[]) =>
 const isResourcesSlug = (slug: string[]) =>
   slug.length === 1 && slug[0] === 'resources';
 
+const isStudioSlug = (slug: string[]) =>
+  slug.length === 1 && slug[0] === 'studio';
+
 const shouldShowOverviewChild = (item: SidebarItem) =>
   item.type === 'category' &&
   item.slug.length === 1 &&
@@ -302,6 +305,56 @@ const sidebarTreeData = (
             0,
             categoryChildren.length,
             ...groupedResources
+          );
+        }
+
+        if (isStudioSlug(item.slug)) {
+          const sectionLabel = (label: string): SideBarTreeNode => ({
+            label,
+            categoryPath: `/studio#${label.toLowerCase().replace(/\s+/g, '-')}`,
+            children: [],
+            pagination: { prev: undefined, next: undefined },
+            clickable: false,
+            isSectionLabel: true,
+          });
+
+          const takeByHref = (href: string): SideBarTreeNode | null => {
+            const index = categoryChildren.findIndex(child => child.href === href);
+            if (index === -1) return null;
+            return categoryChildren.splice(index, 1)[0] ?? null;
+          };
+
+          // Flatten a category: remove it from categoryChildren and return
+          // its children so they can be inlined under a section label.
+          const takeChildrenByHref = (href: string): SideBarTreeNode[] => {
+            const index = categoryChildren.findIndex(child => child.href === href);
+            if (index === -1) return [];
+            const node = categoryChildren.splice(index, 1)[0];
+            return node?.children ?? [];
+          };
+
+          const groupedStudio = [
+            sectionLabel('Build'),
+            takeByHref('/studio/conversations'),
+            takeByHref('/studio/agents'),
+            takeByHref('/studio/connectors'),
+            takeByHref('/studio/workflows'),
+            sectionLabel('Search'),
+            ...takeChildrenByHref('/studio/search'),
+            sectionLabel('Process'),
+            takeByHref('/studio/document-processing'),
+            takeByHref('/studio/audio'),
+            takeByHref('/studio/batch-processing'),
+            sectionLabel('APIs'),
+            takeByHref('/studio/knowledge-rag'),
+            takeByHref('/studio/safety-moderation'),
+            ...categoryChildren,
+          ].filter(Boolean) as SideBarTreeNode[];
+
+          categoryChildren.splice(
+            0,
+            categoryChildren.length,
+            ...groupedStudio
           );
         }
 

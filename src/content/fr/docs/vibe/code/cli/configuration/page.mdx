@@ -40,7 +40,7 @@ Vous pouvez également ouvrir le menu de configuration depuis une session avec l
 Par défaut, la CLI stocke sa configuration et son état dans `~/.vibe/`. Modifiez l’emplacement avec la variable d’environnement `VIBE_HOME` :
 
 ```bash
-export VIBE_HOME="/chemin/vers/votre/dossier/vibe/personnalisé"
+export VIBE_HOME="/path/to/custom/vibe/home"
 ```
 
 `VIBE_HOME` détermine l’emplacement des éléments suivants :
@@ -58,7 +58,7 @@ export VIBE_HOME="/chemin/vers/votre/dossier/vibe/personnalisé"
 Utilisez `--workdir` pour pointer la CLI vers un projet qui n’est pas le dossier courant :
 
 ```bash
-vibe --workdir /chemin/vers/projet
+vibe --workdir /path/to/project
 ```
 
 Utilisez `--add-dir` pour donner à la CLI un accès en lecture à un autre dossier, le temps d’une session.
@@ -79,10 +79,27 @@ Ce réglage ne concerne que les sessions interactives. En mode programmatique, l
 
 <SectionTab as="h3" variant="secondary" sectionId="providers-models">Fournisseurs et modèles</SectionTab>
 
-Définissez les préréglages de fournisseurs, de modèles, et le modèle actif :
+Définissez les préréglages de fournisseurs, les préréglages de modèles et le modèle actif.
+
+Les modèles conversationnels suivants sont disponibles via l'API de Mistral (la Plateforme). Utilisez l'**ID du modèle** comme valeur `name` dans un bloc `[[models]]`, ou transmettez-le directement avec `--model` :
+
+| Modèle | ID du modèle | Usage recommandé |
+|---|---|---|
+| Mistral Medium 3.5 (recommandé) | `mistral-medium-latest` | Raisonnement et code de référence |
+| Z.ai GLM 5.2 | `zai-glm-5-2` | Raisonnement avancé et code |
+| Mistral Large 3 | `mistral-large-latest` | Tâches complexes, contexte étendu |
+| Mistral Small 4 | `mistral-small-latest` | Usage général rapide et économique |
+| Codestral | `codestral-latest` | Génération et complétion de code |
+| Ministral 3 14B | `ministral-14b-latest` | Modèle edge équilibré |
+| Ministral 3 8B | `ministral-8b-latest` | Modèle edge léger |
+| Ministral 3 3B | `ministral-3b-latest` | Modèle edge le plus compact |
+
+Vous pouvez aussi fixer une version précise en remplaçant `-latest` par un suffixe de date (par exemple, `mistral-medium-3-5` ou `codestral-2508`). Consultez la [présentation des modèles](/models) pour voir toutes les versions disponibles.
+
+Pour utiliser un modèle via un fournisseur tiers comme OpenRouter, définissez un fournisseur personnalisé et un préréglage de modèle :
 
 ```toml
-active_model = "devstral-openrouter"
+active_model = "codestral-openrouter"
 
 [[providers]]
 name = "openrouter"
@@ -92,9 +109,9 @@ api_style = "openai"
 backend = "generic"
 
 [[models]]
-name = "mistralai/devstral-2512:free"
+name = "mistralai/codestral"
 provider = "openrouter"
-alias = "devstral-openrouter"
+alias = "codestral-openrouter"
 ```
 
 Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles).
@@ -108,7 +125,7 @@ Ajoutez des serveurs Model Context Protocol sous `mcp_servers`. Voir [Serveurs M
 Activez, désactivez ou ajoutez des chemins de Skills :
 
 ```toml
-skill_paths = ["/chemin/vers/Skills/personnalisées"]
+skill_paths = ["/path/to/custom/skills"]
 enabled_skills = ["code-review", "test-*"]
 disabled_skills = ["experimental-*"]
 ```
@@ -155,7 +172,8 @@ enable_telemetry = true
 
 Lorsque le même paramètre est défini à plusieurs endroits, la CLI les applique dans cet ordre (**priorité décroissante**) :
 
-1. **Options en ligne de commande** (par exemple, `--agent`, `--workdir`).
-2. **Variables d’environnement** (par exemple, `MISTRAL_API_KEY`, `VIBE_HOME`).
-3. **Projet** `./.vibe/config.toml`.
-4. **Utilisateur** `~/.vibe/config.toml`.
+1. **Configuration Admin**, si votre organisation en impose une. Consultez [Configuration Admin](/vibe/code/cli/admin-config).
+2. **Options en ligne de commande** (par exemple, `--agent`, `--workdir`).
+3. **Variables d’environnement** (par exemple, `MISTRAL_API_KEY`, `VIBE_HOME`).
+4. **Projet** `./.vibe/config.toml`.
+5. **Utilisateur** `~/.vibe/config.toml`.

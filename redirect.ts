@@ -75,7 +75,7 @@ const rawRedirects: RedirectRule[] = [
   { source: "/agents/tools/built-in/websearch", destination: "/studio/agents/agent-tools/websearch", permanent: true },
   { source: "/agents/tools/built-in/code_interpreter", destination: "/studio/agents/agent-tools/code_interpreter", permanent: true },
   { source: "/agents/tools/built-in/image_generation", destination: "/studio/agents/agent-tools/image_generation", permanent: true },
-  { source: "/agents/tools/built-in/document_library", destination: "/studio/knowledge-rag/libraries#connecting-libraries-to-agents", permanent: true },
+  { source: "/agents/tools/built-in/document_library", destination: "/studio/search/libraries#connecting-libraries-to-agents", permanent: true },
   { source: "/agents/tools/mcp", destination: "/studio/connectors", permanent: true },
   { source: "/agents/tools/function_calling", destination: "/studio/agents/agent-tools/function-calling", permanent: true },
   { source: "/agents/handoffs", destination: "/studio/agents/handoffs", permanent: true },

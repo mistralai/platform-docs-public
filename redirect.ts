@@ -1078,6 +1078,13 @@ const rawRedirects: RedirectRule[] = [
     destination: "/inference/model-selection-guide",
     permanent: true,
   },
+  // ============================================================================
+  // SEARCH REGROUPING REDIRECTS — old paths moved under /studio/search/
+  // ============================================================================
+  { source: "/studio/search-toolkit", destination: "/studio/search/search-toolkit", permanent: true },
+  { source: "/studio/search-toolkit/:path*", destination: "/studio/search/search-toolkit/:path*", permanent: true },
+  { source: "/studio/libraries", destination: "/studio/search/libraries", permanent: true },
+  { source: "/studio/libraries/:path*", destination: "/studio/search/libraries/:path*", permanent: true },
 ];
 
 // Locale-prefix every rule for target locales so e.g. /fr/old redirects to

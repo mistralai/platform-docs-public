@@ -1,0 +1,78 @@
+---
+title: Configuration Admin
+sidebar_position: 12
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Configuration Admin
+
+La configuration Admin, aussi appelée **configuration gérée**, permet aux administrateurs d’organisation et d’espace de travail d’imposer les paramètres de Vibe Code CLI de manière centralisée. Elle est définie une fois côté Mistral et appliquée automatiquement à chaque CLI de l’organisation ou de l’espace de travail.
+
+Contrairement à `config.toml`, elle ne se trouve pas sur la machine de l’utilisateur. La CLI la récupère en HTTP au démarrage, la conserve **uniquement en mémoire** et ne l’écrit jamais sur disque.
+
+<SectionTab as="h2" sectionId="how-it-works">Fonctionnement</SectionTab>
+
+1. Un administrateur rédige une configuration TOML sous **configuration gérée des clients Vibe Code** dans le [gestionnaire des paramètres](https://admin.mistral.ai/vibe/preferences).
+2. Au démarrage, et lors de `/reload`, la CLI appelle l’endpoint managed-config avec votre clé API Mistral.
+3. Si la configuration est activée, ses valeurs s’appliquent par-dessus tous les autres paramètres.
+
+<SectionTab as="h2" sectionId="precedence">Priorité</SectionTab>
+
+La configuration Admin est la couche **la plus prioritaire**. Elle remplace tout le reste, y compris les options de ligne de commande, les variables d’environnement et les deux fichiers `config.toml`, projet et utilisateur :
+
+```
+admin config  >  CLI flags  >  env vars  >  project config.toml  >  user config.toml
+```
+
+Cette priorité sert de mécanisme d’application : tout paramètre défini par un administrateur ne peut pas être modifié localement.
+
+<SectionTab as="h2" sectionId="what-can-be-set">Ce que les administrateurs peuvent définir</SectionTab>
+
+La configuration Admin accepte la plupart des mêmes clés que [`config.toml`](/vibe/code/cli/configuration), par exemple :
+
+- Modèle actif, modèles et providers.
+- Serveur MCP.
+- Connecteurs, ainsi que les outils, agents et skills activés ou désactivés.
+- Interrupteurs de télémétrie, de mise à jour automatique et de notifications.
+
+```toml
+active_model = "mistral-large-latest"
+enable_auto_update = false
+disabled_tools = ["shell"]
+
+[[providers]]
+name = "mistral"
+api_base = "https://api.mistral.ai"
+api_key_env_var = "MISTRAL_API_KEY"
+```
+
+<SectionTab as="h2" sectionId="enterprise-defaults">Imposer les valeurs par défaut de l’entreprise</SectionTab>
+
+Un cas d’usage courant consiste à fournir à toute l’organisation des modèles prêts à l’emploi dès le départ. Au lieu de laisser chaque utilisateur configurer manuellement les fournisseurs et les modèles, les Admin livrent une fois le modèle et le fournisseur appropriés, pointés vers votre endpoint d’entreprise avec le bon backend, l’URL de base et les en-têtes corrects. Les utilisateurs obtiennent une configuration fonctionnelle au premier lancement, sans rien avoir à configurer.
+
+```toml
+active_model = "mistral-large-enterprise"
+
+[[providers]]
+name = "acme-enterprise"
+backend = "mistral"
+api_base = "https://mistral.acme.internal/v1"
+api_key_env_var = "ACME_MISTRAL_API_KEY"
+api_style = "openai"
+region = "eu-west-1"
+
+[providers.extra_headers]
+"x-acme-tenant" = "engineering"
+
+[[models]]
+name = "mistral-large-2411"
+provider = "acme-enterprise"
+alias = "mistral-large-enterprise"
+```
+
+Ici, le modèle `mistral-large-2411` est accessible via le fournisseur `acme-enterprise`, exposé aux utilisateurs sous l’alias `mistral-large-enterprise`, défini comme modèle actif. L’identifiant est toujours fourni localement via la variable d’environnement `ACME_MISTRAL_API_KEY`.
+
+<SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
+
+La configuration Admin ne contient jamais de secrets en clair. Les champs d’identifiants doivent référencer une variable d’environnement, par exemple `api_key_env_var = "MISTRAL_API_KEY"`, jamais la clé elle-même. Les clés API, tokens ou mots de passe en clair sont rejetés par le serveur.

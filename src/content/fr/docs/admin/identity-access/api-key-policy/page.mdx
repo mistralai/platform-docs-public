@@ -1,0 +1,97 @@
+---
+title: Politique d'expiration des clés API
+hidden: true
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Politique d'expiration des clés API
+
+Cette page s'adresse aux Organization Admins et aux Workspace Admins qui doivent comprendre les politiques d'expiration des clés API. Utilisez-la pour confirmer ce que la politique contrôle, comment les limites Organization et Workspace interagissent, et ce qui arrive aux clés API existantes.
+
+:::info
+Les politiques d'expiration des clés API sont **désactivées par défaut**. Un Organization Admin doit activer une politique avant que la création de clés soit restreinte.
+:::
+
+<SectionTab as="h1" sectionId="policy-scope">Ce que la politique contrôle</SectionTab>
+
+Une politique d'expiration des clés API définit une durée de validité maximale, en jours, pour les nouvelles clés API. Lorsqu'une politique est active, les nouvelles clés API ne peuvent pas être créées au-delà de la limite configurée.
+
+:::note
+La politique s'applique uniquement lors de la création d'une clé. Les clés existantes, y compris les clés sans date d'expiration, ne sont pas modifiées, raccourcies, révoquées ou expirées par un changement de politique.
+:::
+
+Les contrôles de politique s'exécutent côté serveur pour chaque chemin de création, y compris l'`Admin Panel`, Studio et l'API. Les contrôles côté client, comme le sélecteur de date, guident les utilisateurs, mais la validation côté serveur est la source de l'application de la politique.
+
+<SectionTab as="h1" sectionId="configure-policy">Définir ou modifier une politique</SectionTab>
+
+Les Organization Admins peuvent définir la politique Organization depuis <AppLink href="https://admin.mistral.ai/organization/api-keys" path={["Admin Panel", "API", "API Keys"]} />. Sélectionnez `Edit` à côté de `API key expiration policy`, choisissez la durée de validité maximale, puis sélectionnez `Save`.
+
+Les Workspace Admins peuvent définir une politique Workspace depuis <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />. Ouvrez le Workspace, allez dans l'onglet `API keys`, puis définissez un maximum Workspace.
+
+La gestion d'une politique nécessite l'autorisation `Manage API key policy` au niveau Organization ou Workspace correspondant.
+
+<SectionTab as="h1" sectionId="policy-hierarchy">Comment les limites Organization et Workspace interagissent</SectionTab>
+
+La politique Organization définit le plafond. Les Workspace Admins peuvent définir un maximum plus strict et plus court pour leur Workspace, mais ils ne peuvent pas définir un maximum supérieur à la limite Organization.
+
+Par exemple, si le maximum Organization est de 90 jours, un Workspace Admin peut définir un maximum Workspace de 30 ou 60 jours, mais pas de 120 jours. Si seule la politique Organization est définie, les Workspaces héritent de ce maximum.
+
+:::tip
+Lorsque les deux niveaux ont une politique, le **maximum le plus court** s'applique aux nouvelles clés API.
+:::
+
+<SectionTab as="h1" sectionId="existing-keys">Ce qui arrive aux clés existantes</SectionTab>
+
+Les clés existantes ne sont pas affectées. Une politique s'applique uniquement aux nouvelles clés, donc les intégrations actuelles continuent de fonctionner sauf si vous révoquez une clé ou si la clé atteint sa date d'expiration initiale.
+
+Il n'y a pas de délai de mise en conformité pour les clés existantes qui ne correspondent pas à une nouvelle politique. Pour faire entrer une clé existante dans la politique, créez une clé de remplacement avec une date d'expiration conforme, migrez votre intégration, puis révoquez l'ancienne clé.
+
+<SectionTab as="h1" sectionId="audit-logs">Journalisation des changements de politique</SectionTab>
+
+Les créations, mises à jour et suppressions de politique sont enregistrées dans l'Enterprise Audit Log avec les valeurs avant et après et l'admin qui a effectué le changement. Consultez [Journaux d'audit](/admin/monitor-comply/audit-logs/overview).
+
+<SectionTab as="h1" sectionId="faq">Questions fréquentes</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="default-state">La politique est-elle activée par défaut?</SectionTab>
+
+Non. La politique est désactivée par défaut. Un Organization Admin doit l'activer avant que les nouvelles clés API doivent respecter une durée de validité maximale.
+
+<SectionTab as="h2" variant="secondary" sectionId="policy-owners">Qui peut configurer la politique?</SectionTab>
+
+Les Organization Admins peuvent définir ou modifier la politique Organization. Les Workspace Admins peuvent définir une politique Workspace égale ou plus stricte que le maximum Organization.
+
+<SectionTab as="h2" variant="secondary" sectionId="missing-expiration">Que se passe-t-il si je crée une clé sans date d'expiration?</SectionTab>
+
+Si une politique est active, la clé est créée avec la date d'expiration la plus tardive autorisée par la politique. Par exemple, si le maximum est de 90 jours, une clé créée sans date d'expiration expire dans 90 jours.
+
+Si aucune politique ne s'applique, vous pouvez créer une clé sans date d'expiration.
+
+<SectionTab as="h2" variant="secondary" sectionId="expiration-too-late">Que se passe-t-il si je définis une date d'expiration au-delà du maximum?</SectionTab>
+
+La clé est créée avec la date d'expiration la plus tardive autorisée par la politique. Choisissez une date comprise dans la durée de validité maximale configurée si vous voulez que la clé expire plus tôt.
+
+<SectionTab as="h2" variant="secondary" sectionId="creation-paths">La politique s'applique-t-elle aux clés créées via l'API et via l'interface utilisateur?</SectionTab>
+
+Oui. Les contrôles de politique s'exécutent côté serveur pour chaque chemin de création, y compris l'`Admin Panel`, Studio et l'API.
+
+<SectionTab as="h2" variant="secondary" sectionId="date-picker">Qu'est-ce qui change dans le sélecteur de date?</SectionTab>
+
+Lorsqu'une politique est active, le sélecteur de date autorise uniquement les dates comprises dans la plage autorisée. Les dates au-delà du maximum sont désactivées et l'option sans expiration n'est pas disponible.
+
+<SectionTab as="h2" variant="secondary" sectionId="workspace-limit-above-org-limit">Que se passe-t-il si la limite Organization est inférieure à une limite Workspace?</SectionTab>
+
+Le maximum Organization devient le plafond effectif pour les nouvelles clés API. Les Workspace Admins peuvent toujours définir des limites plus strictes, mais ils ne peuvent pas dépasser le maximum Organization.
+
+<SectionTab as="h2" variant="secondary" sectionId="product-specific-limits">Puis-je définir des limites différentes pour différents produits?</SectionTab>
+
+Non. La politique s'applique uniformément aux produits dans l'Organization ou le Workspace, y compris les clés Studio et Vibe Code.
+
+<SectionTab as="h2" variant="secondary" sectionId="expiration-clamped">Pourquoi la date d'expiration est-elle différente de celle demandée?</SectionTab>
+
+Vérifiez si un Organization Admin a défini une politique Organization. Si la date demandée est absente ou dépasse le maximum, nous définissons la clé sur la date d'expiration autorisée la plus tardive. Les Workspace Admins peuvent ne pas avoir de visibilité sur les paramètres au niveau Organization.
+
+<SectionTab as="h2" variant="secondary" sectionId="workspace-limit-blocked">Pourquoi ne puis-je pas définir une limite Workspace supérieure à la limite Organization?</SectionTab>
+
+La politique Organization est le plafond. Les limites Workspace peuvent être plus strictes, mais elles ne peuvent pas dépasser le maximum Organization. Contactez votre Organization Admin si vous avez besoin d'une limite plus élevée.

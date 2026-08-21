@@ -1,0 +1,179 @@
+---
+id: prompt-registry-in-chat
+title: Utiliser les prompts dans les chat completions
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Utiliser les prompts dans les chat completions
+
+Le [registre de prompts](/api/#tag/beta.prompts) vous permet de stocker, de versionner et de gérer vos prompts de manière centralisée dans Studio. Ce guide explique comment récupérer un prompt enregistré et l’utiliser comme message système dans une chat completion.
+
+<SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
+
+Récupérez le prompt par nom ou par ID, extrayez son contenu, puis transmettez-le comme message système.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+prompt = client.beta.prompts.get(prompt_id="coding-assistant")
+system_content = prompt.definition.content
+
+response = client.chat.complete(
+    model="mistral-large-latest",
+    messages=[
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": "Help me debug this function."},
+    ],
+)
+print(response.choices[0].message.content)
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+prompt = client.beta.prompts.get(prompt_id="coding-assistant")
+system_content = prompt.definition.content
+
+response = client.chat.complete(
+    model="mistral-large-latest",
+    messages=[
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": "Help me debug this function."},
+    ],
+)
+print(response.choices[0].message.content)
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from '@mistralai/mistralai';
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const prompt = await client.beta.prompts.get({ promptId: 'coding-assistant' });
+const systemContent = prompt.definition?.content ?? '';
+
+const response = await client.chat.complete({
+  model: 'mistral-large-latest',
+  messages: [
+    { role: 'system', content: systemContent },
+    { role: 'user', content: 'Help me debug this function.' },
+  ],
+});
+console.log(response.choices[0].message.content);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="template-variables">Variables de modèle</SectionTab>
+
+Les prompts peuvent contenir des emplacements réservés `{{variable}}`. Remplacez-les avant de transmettre le contenu au chat completion.
+
+Par exemple, un prompt stocké sous cette forme :
+
+```text
+You are a coding assistant. You specialise in {{language}}.
+```
+
+Peut être utilisé comme ceci :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+prompt = client.beta.prompts.get(prompt_id="coding-assistant")
+system_content = prompt.definition.content.replace("{{language}}", "Python")
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+prompt = client.beta.prompts.get(prompt_id="coding-assistant")
+system_content = prompt.definition.content.replace("{{language}}", "Python")
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const prompt = await client.beta.prompts.get({ promptId: 'coding-assistant' });
+const systemContent = (prompt.definition?.content ?? '').replace('{{language}}', 'Python');
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="pinning-a-version">Épingler une version</SectionTab>
+
+Par défaut, `get` renvoie la dernière version d'un prompt. Épinglez une version ou un alias spécifique pour éviter que le comportement en production ne change lorsqu'un prompt est mis à jour.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+    <Tabs groupId="sdk-version">
+      <TabItem value="v1" label="V1" default>
+
+```python
+# Pin by version number
+prompt = client.beta.prompts.get(prompt_id="coding-assistant", version=3)
+
+# Pin by alias
+prompt = client.beta.prompts.get(prompt_id="coding-assistant", alias="production")
+```
+
+      </TabItem>
+      <TabItem value="v2" label="V2">
+
+```python
+# Pin by version number
+prompt = client.beta.prompts.get(prompt_id="coding-assistant", version=3)
+
+# Pin by alias
+prompt = client.beta.prompts.get(prompt_id="coding-assistant", alias="production")
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// Pin by version number
+const prompt = await client.beta.prompts.get({ promptId: 'coding-assistant', version: 3 });
+
+// Pin by alias
+const prompt = await client.beta.prompts.get({ promptId: 'coding-assistant', alias: 'production' });
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+Utilisez des alias nommés comme `production` ou `staging` pour dissocier votre code des numéros de version. Vous pouvez modifier la version vers laquelle pointe un alias depuis Studio, sans changer votre application.
+:::

@@ -34,16 +34,9 @@ Quand **une clé est fournie**, plusieurs activités différentes qui utilisent 
 
 ```python
 import mistralai.workflows as workflows
-from mistralai.client import Mistral
+from mistralai.workflows.client import get_mistral_client
 from mistralai.workflows import Depends
 from pydantic import BaseModel
-
-def get_mistral_client() -> Mistral:
-    """Creates a shared chat completion client with rate limiting"""
-    client = Mistral(
-        api_key="your_api_key",
-    )
-    return client
 
 class CompletionParams(BaseModel):
     model: str
@@ -52,16 +45,18 @@ class CompletionParams(BaseModel):
 @workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=100))
 async def generate_chat_response(
     params: CompletionParams,
-    client: Mistral = Depends(get_mistral_client)
+    client = Depends(get_mistral_client)
 ) -> dict:
     """Generates a chat response using a shared client"""
-    # This activity can be called from multiple workflows
-    # but will share the same rate limit across all of them
     return await client.chat.complete_async(model=params.model, messages=params.messages)
 ```
 
   </TabItem>
 </Tabs>
+
+:::tip
+`get_mistral_client` est la fabrique intégrée au SDK Workflows pour créer un client Mistral correctement configuré dans les activités. Il gère automatiquement l'authentification, la télémétrie et les métadonnées d'observabilité. Consultez [Client Mistral](/studio/workflows/building-workflows/mistral_client) pour plus de détails.
+:::
 
 **Comportement&nbsp;:** Tous les workflows appelant `generate_chat_response` partagent la même limite de 100 exécutions/seconde. Si le workflow A effectue 60 appels et le workflow B 50 appels dans la même seconde, ils consomment le même quota.
 
@@ -78,10 +73,10 @@ Chaque clé de limitation distincte entraîne la création d’un worker Tempro
 Chaque worker interne ouvre 5 pollers workflows et 5 pollers activités. Avec de nombreuses clés différentes, le nombre total de pollers augmente rapidement&nbsp;:
 
 | Clés distinctes | Workers internes | Nombre total de pollers |
-|-----------------|-----------------|------------------------|
-| 0               | 2               | 20                     |
-| 5               | 7               | 70                     |
-| 12              | 14              | 140                    |
+|--------------------------|-----------------|---------------|
+| 0 | 2 | 20 |
+| 5 | 7 | 70 |
+| 12 | 14 | 140 |
 
 Si le total dépasse le quota de pollers concurrents de votre namespace, vous verrez&nbsp;:
 
@@ -95,7 +90,7 @@ Réduisez au maximum le nombre de clés distinctes. Les activités utilisant la 
   <TabItem value="python" label="Python">
 
 ```python
-# ❌ À éviter — chaque clé unique ajoute un worker interne
+# ❌ Avoid — each unique key creates an extra internal worker
 @workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="ocr"))
 async def run_ocr(params: OcrParams) -> OcrResult: ...
 
@@ -103,7 +98,7 @@ async def run_ocr(params: OcrParams) -> OcrResult: ...
 async def classify_document(params: ClassifyParams) -> ClassifyResult: ...
 
 
-# ✅ Préférer — partager une seule clé pour les activités sur la même ressource
+# ✅ Prefer — share one key across activities that hit the same resource
 @workflows.activity(rate_limit=workflows.RateLimit(time_window_in_sec=1, max_execution=10, key="document_pipeline"))
 async def run_ocr(params: OcrParams) -> OcrResult: ...
 

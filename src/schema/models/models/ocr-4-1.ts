@@ -12,7 +12,7 @@ export default {
   class: 'Specialist',
   type: 'Premier',
   legalButton: 'https://legal.mistral.ai/ai-governance/models/mistral-ocr',
-  status: 'PublicPreview',
+  status: 'GA',
   avatar: { icon: 'ocr', backgroundColor: 'red' },
   weights: [],
   bloglink: null,

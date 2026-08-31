@@ -1,0 +1,102 @@
+---
+title: Comptes de service
+sidebar_position: 6
+description: Donnez à une charge de travail sa propre identité non humaine dans un espace de travail, avec ses propres rôles et ses propres identifiants.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+
+# Comptes de service
+
+Un compte de service est une identité non humaine, rattachée à un espace de travail, qu'une charge de travail (par exemple un worker de workflow) utilise pour s'authentifier auprès de la plateforme Mistral. C'est un principal à part entière : il possède un nom, des rôles et ses propres identifiants, et n'est rattaché à aucune personne.
+
+Exécuter une charge de travail sous un compte de service plutôt qu'avec la clé API d'un membre de l'équipe présente deux avantages :
+
+- la charge de travail continue de fonctionner lorsque la clé de cette personne est renouvelée, ou lorsqu'elle quitte l'entreprise ;
+- les journaux d'audit et les déploiements sécurisés désignent la charge de travail, et non une personne.
+
+:::note
+Utilisez un compte de service pour l'authentification **de machine à machine**, par exemple un worker de workflow s'exécutant dans votre cluster. Utilisez une [clé API personnelle](/admin/identity-access/api-keys) pour l'usage interactif, les scripts et le développement.
+:::
+
+<SectionTab as="h1" sectionId="how-authentication-works">Comment une charge de travail s'authentifie</SectionTab>
+
+Un compte de service ne peut pas s'authentifier seul. Il lui faut au moins un identifiant, et il en existe deux types.
+
+| Identifiant | Fonctionnement | Quand l'utiliser |
+| --- | --- | --- |
+| **Fédération d'identité de charge de travail** | La charge de travail présente un jeton de courte durée signé par un émetteur de confiance. La plateforme le vérifie à l'aide de la clé publique de l'émetteur. Aucun secret stocké. | Une charge de travail s'exécutant dans un cluster Kubernetes ou derrière un autre émetteur OIDC. |
+| **Clé API** | Une clé à longue durée de vie détenue par le compte de service. | Un worker s'exécutant en dehors de Kubernetes. |
+
+Les deux se gèrent au même endroit : ouvrez le compte de service et cliquez sur **Add new authentication**. La fédération d'identité de charge de travail a sa propre configuration, décrite dans [Fédération d'identité de charge de travail](/admin/identity-access/workload-identity). L'ajout d'une clé API est décrit dans [Ajouter une clé API](#add-api-key).
+
+<SectionTab as="h1" sectionId="create-service-account">Créer un compte de service</SectionTab>
+
+Un administrateur d'espace de travail crée le compte de service.
+
+1. Ouvrez <AppLink href="https://admin.mistral.ai" path={["Admin Console", "Workspace", "Service accounts"]} />.
+2. Cliquez sur **Create service account**.
+3. Saisissez un **Name** (unique dans l'espace de travail) et une **Description** facultative.
+4. Cliquez sur **Create**.
+
+| Champ | Obligatoire | Notes |
+| --- | --- | --- |
+| **Name** | Oui | Lisible, unique dans l'espace de travail. Jusqu'à 255 caractères. |
+| **Description** | Non | Texte libre pour indiquer l'usage du compte de service. |
+
+<SectionTab as="h1" sectionId="roles">Rôles</SectionTab>
+
+Un nouveau compte de service dispose du rôle d'espace de travail `workflow_executor`, qui permet à son worker d'enregistrer et d'exécuter des workflows. Accordez en plus le rôle **Developer** lorsque la charge de travail doit appeler la plateforme au-delà de l'exécution de workflows.
+
+Gérez cela depuis la section **Roles** du compte de service. Consultez [Rôles et permissions](/admin/identity-access/roles-permissions).
+
+<SectionTab as="h1" sectionId="add-api-key">Ajouter une clé API</SectionTab>
+
+Une clé API détenue par un compte de service s'authentifie en tant que ce compte de service et hérite de ses rôles.
+
+1. Ouvrez le compte de service et cliquez sur **Add new authentication**.
+2. Dans la boîte de dialogue **Add credential**, choisissez **API key**.
+3. Saisissez éventuellement un **Name** pour identifier la clé par la suite.
+4. Définissez éventuellement une **Expiration**. Laissez le champ vide pour une clé sans expiration.
+5. Cliquez sur **Create API key**.
+
+La clé n'est affichée qu'une seule fois, à sa création. Copiez-la et conservez-la dans votre gestionnaire de secrets : vous ne pourrez pas la récupérer ensuite.
+
+| Champ | Obligatoire | Notes |
+| --- | --- | --- |
+| **Name** | Non | Un libellé pour identifier la clé par la suite. |
+| **Expiration** | Non | Le dernier jour de validité de la clé. Votre organisation peut imposer une durée de vie maximale. |
+
+:::note
+La clé est limitée à l'espace de travail du compte de service et aux connecteurs partagés uniquement. Vous ne pouvez pas la déplacer vers un autre espace de travail.
+:::
+
+:::warning
+Une clé API est un secret permanent : toute personne qui la détient peut agir en tant que compte de service jusqu'à ce que la clé soit supprimée ou expire. Privilégiez la [fédération d'identité de charge de travail](/admin/identity-access/workload-identity) lorsque votre charge de travail peut présenter un jeton signé par un émetteur.
+:::
+
+<SectionTab as="h1" sectionId="manage">Gérer les identifiants</SectionTab>
+
+Les deux types d'identifiants sont répertoriés à des endroits différents.
+
+- **Les identifiants d'identité de charge de travail** figurent dans la liste **Credentials** du compte de service, avec leur sujet, leur émetteur de confiance et leur expiration. Consultez [Gérer et renouveler](/admin/identity-access/workload-identity#manage-rotate).
+- **Les clés API** figurent dans la section [Clés API](/admin/identity-access/api-keys) de l'espace de travail, aux côtés des clés détenues par des personnes. La colonne **Principal** indique le compte de service propriétaire ainsi qu'un badge **Service account**.
+
+Supprimer un compte de service retire l'identité et ses identifiants : toute charge de travail qui les utilise cesse alors de s'authentifier.
+
+<SectionTab as="h1" sectionId="hardened-deployments">Comptes de service et déploiements sécurisés</SectionTab>
+
+Un [déploiement sécurisé](/studio/workflows/managing-workflows-in-production/hardened_deployments) restreint les principaux autorisés à enregistrer des workflows. Vous pouvez y associer un compte de service ; renouveler les identifiants d'identité de charge de travail de ce compte ne nécessite alors aucune modification du déploiement.
+
+Une clé API s'associe séparément, en tant que clé API. Si votre worker s'authentifie avec la clé API d'un compte de service, ajoutez également cette clé au déploiement sécurisé.
+
+<SectionTab as="h1" sectionId="related">Ressources associées</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/admin/identity-access/workload-identity" title="Fédération d'identité de charge de travail" />
+  <LinkCard href="/admin/identity-access/roles-permissions" title="Rôles et permissions" />
+  <LinkCard href="/admin/identity-access/api-keys" title="Clés API" />
+  <LinkCard href="/studio/workflows/managing-workflows-in-production/hardened_deployments" title="Déploiements sécurisés" />
+</UsefullLinkContainer>

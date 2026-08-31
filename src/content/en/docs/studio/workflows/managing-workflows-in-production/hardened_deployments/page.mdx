@@ -8,7 +8,12 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Hardened deployments
 
-A **hardened deployment** is a standard [deployment](/studio/workflows/managing-workflows-in-production/deployments) with restricted workflow registration. Only a predefined set of API keys can register workflows in a hardened deployment. A deployment becomes hardened as soon as at least one API key is associated with it.
+A **hardened deployment** is a standard [deployment](/studio/workflows/managing-workflows-in-production/deployments) with restricted workflow registration. Only a predefined set of API keys and service accounts can register workflows in a hardened deployment. A deployment becomes hardened as soon as at least one of them is associated with it.
+
+What you associate determines what rotation requires:
+
+- A [service account](/admin/identity-access/service-accounts) is a **principal**. Associating it trusts the workloads that authenticate as it through [workload identity federation](/admin/identity-access/workload-identity), so you can rotate those credentials without changing the hardened deployment.
+- An [API key](/admin/identity-access/api-keys) is a **credential**, not a principal. Associating it trusts only that specific key; other keys belonging to the same owner do **not** work. When you rotate the key, add the new key to the deployment.
 
 <SectionTab as="h1" sectionId="the-problem">The problem</SectionTab>
 
@@ -20,7 +25,7 @@ This non-determinism poses risks for production environments, where reliability 
 
 <SectionTab as="h1" sectionId="how-hardened-deployments-work">How hardened deployments work</SectionTab>
 
-Workspace and organization admins manage hardened deployments through the **Settings** panel in the Mistral console. A deployment becomes hardened when at least one API key is associated with it. From that point, only those registered API keys can register workflows on that deployment.
+Workspace and organization admins manage hardened deployments through the **Settings** panel in the Mistral console. A deployment becomes hardened when at least one API key or service account is associated with it. From that point, only those registered API keys and service accounts can register workflows on that deployment.
 
 :::info
 On-behalf-of workflows **require** a hardened deployment. They cannot be registered in a non-hardened deployment. See [On-behalf-of workflows](/studio/workflows/building-workflows/on_behalf_of) for details.
@@ -28,7 +33,7 @@ On-behalf-of workflows **require** a hardened deployment. They cannot be registe
 
 <SectionTab as="h1" sectionId="benefits">Benefits</SectionTab>
 
-- **Reliable production deployments**: Admins designate a production deployment as hardened, ensuring only trusted API keys can register workflows. This prevents misconfigurations (such as a wrong deployment name) from breaking production workflows.
+- **Reliable production deployments**: Admins designate a production deployment as hardened, ensuring only trusted API keys and service accounts can register workflows. This prevents misconfigurations (such as a wrong deployment name) from breaking production workflows.
 - **Controlled OBO workflow registration**: OBO workflows cannot be registered in non-hardened deployments, ensuring sensitive workflows are validated by trusted admins before use.
 - **Restricted unauthorized registration**: Unless an attacker compromises an admin account, they cannot register malicious OBO workflows in hardened deployments.
 
@@ -39,13 +44,15 @@ Once a deployment is created (upon registration of its first worker), an admin c
 Admins can:
 
 - View all current hardened deployments
-- Add credentials (API key names and owners) to a deployment
-- Remove credentials from a deployment
+- Add API keys or service accounts to a deployment
+- Remove them from a deployment
 
-A deployment can have multiple credentials to support key rotation or multi-worker setups.
+To associate one, click **Add hardened deployment**, select the **Deployment**, then pick from the **Credential** list. That list is split into two sections, **API keys** and **Service accounts**, and you can select several at once.
+
+A deployment can have multiple entries to support multiple workers or key rotation. Rotating a service account's workload identity credentials needs no change here, because the service account itself is trusted. Rotating an API key means adding the new key, because only that specific key is trusted.
 
 :::tip
-Manage your API keys in the [API keys](/admin/identity-access/api-keys) section of the admin panel.
+Manage your API keys in the [API keys](/admin/identity-access/api-keys) section of the admin panel, and machine identities in [Service accounts](/admin/identity-access/service-accounts). The API keys section shows a **Principal** column, so you can tell a service account's key from a person's.
 :::
 
 <SectionTab as="h1" sectionId="registering-an-obo-workflow">Registering an OBO workflow</SectionTab>

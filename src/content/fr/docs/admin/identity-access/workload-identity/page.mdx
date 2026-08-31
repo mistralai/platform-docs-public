@@ -1,0 +1,161 @@
+---
+title: Fédération d'identité de charge de travail
+sidebar_position: 7
+description: Permettez à une charge de travail de s'authentifier en tant que compte de service avec des jetons de courte durée signés par votre propre cluster, plutôt qu'avec un secret stocké.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
+
+# Fédération d'identité de charge de travail
+
+La fédération d'identité de charge de travail permet à une charge de travail de s'authentifier en tant que [compte de service](/admin/identity-access/service-accounts) à l'aide d'un jeton que sa propre infrastructure signe et renouvelle. La plateforme approuve l'émetteur, vérifie le jeton et le résout vers le compte de service. Aucun élément à longue durée de vie n'est stocké dans l'environnement de la charge de travail.
+
+C'est la méthode recommandée pour authentifier un worker de workflow s'exécutant dans votre propre cluster Kubernetes. Pour une charge de travail qui ne peut pas présenter de jeton signé par un émetteur, donnez plutôt une [clé API](/admin/identity-access/service-accounts#add-api-key) au compte de service.
+
+<SectionTab as="h1" sectionId="how-setup-works">Déroulement de la configuration</SectionTab>
+
+La configuration se déroule dans l'ordre suivant.
+
+1. Un **administrateur d'organisation** [enregistre votre cluster comme émetteur de confiance](#register-trusted-issuer), une fois par fournisseur OIDC externe ou cluster Kubernetes.
+2. Un **administrateur d'espace de travail** [crée le compte de service](/admin/identity-access/service-accounts#create-service-account) dans Mistral.
+3. Vous [créez le compte de service Kubernetes correspondant](#set-up-k8s-sa) dans votre cluster. C'est l'identité de la charge de travail.
+4. L'administrateur d'espace de travail [ajoute un identifiant d'identité de charge de travail](#add-credential), prouvant que votre charge de travail possède cette identité.
+5. Vous [déployez le worker](#deploy-worker) avec un jeton projeté afin qu'il s'authentifie automatiquement.
+
+:::note
+Un même émetteur de confiance peut valider les jetons de plusieurs identifiants, et un même compte de service peut être autorisé par plusieurs identifiants.
+:::
+
+<SectionTab as="h1" sectionId="key-concepts">Concepts clés</SectionTab>
+
+| Concept | Description | Qui le gère |
+| --- | --- | --- |
+| **Émetteur de confiance** | Un émetteur OIDC préapprouvé, généralement un cluster Kubernetes, dont la plateforme approuve les jetons signés. | Administrateur d'organisation |
+| **Sujet** | L'identifiant de la charge de travail au sein de cet émetteur, par exemple `system:serviceaccount:<namespace>:<name>`. | Vous, dans votre cluster |
+| **Identifiant** | Le lien qui permet à une charge de travail ayant un sujet donné de s'authentifier en tant que compte de service. | Administrateur d'espace de travail |
+| **Preuve de possession** | Un jeton fraîchement signé qui prouve que vous contrôlez le sujet, avant la création de l'identifiant. | Administrateur d'espace de travail |
+
+<SectionTab as="h1" sectionId="register-trusted-issuer">Enregistrer un émetteur de confiance</SectionTab>
+
+Un administrateur d'organisation enregistre chaque cluster qui exécutera vos charges de travail. Effectuez cette opération une fois par cluster.
+
+1. Ouvrez <AppLink href="https://admin.mistral.ai" path={["Admin Console", "Organization", "Trusted issuers"]} />.
+2. Cliquez sur **Register new trusted issuer**.
+3. Renseignez les champs suivants.
+4. Cliquez sur **Register**.
+
+| Champ | Obligatoire | Notes |
+| --- | --- | --- |
+| **Name** | Oui | Un libellé lisible, par exemple `gcp-production`. |
+| **Issuer URL** | Oui | L'URL de l'émetteur OIDC du cluster, la valeur attendue de la revendication `iss` de ses jetons. |
+| **JWKS URI** | Non | L'emplacement où la plateforme récupère les clés de signature. Laissez vide pour la découverte automatique via OIDC. La plupart des clusters n'ont besoin d'aucune valeur ici. |
+
+:::warning
+Une URL d'émetteur ne peut être enregistrée qu'**une seule fois par organisation**. Enregistrer à nouveau la même URL renvoie une erreur.
+:::
+
+<SectionTab as="h1" sectionId="set-up-k8s-sa">Configurer le compte de service Kubernetes</SectionTab>
+
+Créez un compte de service Kubernetes pour la charge de travail. C'est l'identité que présente la charge de travail, et il doit exister avant que vous n'ajoutiez l'identifiant.
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: example-worker
+  namespace: workflows
+# sujet -> system:serviceaccount:workflows:example-worker
+```
+
+<SectionTab as="h1" sectionId="add-credential">Ajouter un identifiant d'identité de charge de travail</SectionTab>
+
+L'identifiant enregistre le sujet autorisé à s'authentifier en tant que compte de service. Vous ne saisissez pas ce sujet : la plateforme le lit dans un jeton que l'émetteur de confiance a signé pour cette charge de travail, ce qui prouve que vous la contrôlez.
+
+1. Ouvrez le compte de service et cliquez sur **Add new authentication**.
+2. Dans la boîte de dialogue **Add credential**, choisissez **Workload identity federation**.
+3. Sélectionnez un **Trusted issuer** parmi ceux enregistrés par votre organisation.
+4. Cliquez sur **Create registration**. La plateforme génère une **Audience** à usage unique, de la forme `mistral-auth:<nonce>`. Copiez-la.
+5. Forgez un jeton pour votre charge de travail portant cette audience. Dépliez **Using Kubernetes?** pour copier une commande prête à l'emploi, puis remplacez le nom du compte de service et le namespace :
+
+```bash
+kubectl create token example-worker -n workflows \
+  --audience="mistral-auth:<nonce>" \
+  --duration=10m
+```
+
+6. Collez le résultat dans **Proof token**.
+7. Définissez éventuellement une **Expiration**. Laissez le champ vide pour un identifiant sans expiration.
+8. Cliquez sur **Create credential**.
+
+La plateforme vérifie la signature de l'émetteur et compare l'audience à celle de l'enregistrement. Le sujet de l'identifiant est repris du jeton vérifié : il correspond donc toujours à la charge de travail qui a réellement produit la preuve.
+
+:::note
+L'audience est aléatoire et non devinable, et elle ne sert qu'une seule fois, pour enregistrer l'identifiant. Seule une personne capable d'exécuter la charge de travail peut forger un jeton portant cette audience. À l'exécution, le worker s'authentifie avec l'audience `api-gateway`.
+:::
+
+:::warning
+Le jeton que vous forgez est de courte durée. Forgez-le et soumettez-le dans sa période de validité, sinon la plateforme le rejette.
+:::
+
+<SectionTab as="h1" sectionId="deploy-worker">Déployer le worker</SectionTab>
+
+Exécutez le worker en tant que compte de service Kubernetes que vous avez créé, et fournissez-lui un **jeton de compte de service projeté** : un JWT que le cluster signe et que le kubelet renouvelle sur le disque avant son expiration. À l'exécution, le jeton utilise l'audience `api-gateway`.
+
+Faites pointer le worker vers le fichier du jeton avec `MISTRAL_SA_TOKEN_PATH`, et ne définissez pas de clé API : sa présence l'emporte sur le jeton du compte de service.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-worker
+  namespace: workflows
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: example-worker }
+  template:
+    metadata:
+      labels: { app: example-worker }
+    spec:
+      serviceAccountName: example-worker
+      containers:
+        - name: worker
+          image: <your-worker-image>
+          env:
+            - name: MISTRAL_SA_TOKEN_PATH
+              value: /var/run/secrets/mistral-sa/token
+            - name: MISTRAL_CLIENT_SERVER_URL
+              value: https://api.mistral.ai
+          volumeMounts:
+            - name: mistral-sa-token
+              mountPath: /var/run/secrets/mistral-sa
+              readOnly: true
+      volumes:
+        - name: mistral-sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 600
+                  audience: api-gateway
+```
+
+<SectionTab as="h1" sectionId="manage-rotate">Gérer et renouveler</SectionTab>
+
+La liste **Credentials** d'un compte de service affiche ses identifiants d'identité de charge de travail, avec le sujet, l'émetteur de confiance et l'expiration.
+
+- **Renouvelez** un identifiant en en ajoutant un nouveau puis en supprimant l'ancien. Les deux peuvent rester actifs pendant le chevauchement, de sorte que le worker continue de s'authentifier.
+- **Supprimez** un identifiant pour empêcher cette charge de travail de s'authentifier en tant que compte de service.
+
+Renouveler un identifiant d'identité de charge de travail ne modifie pas le compte de service lui-même : un [déploiement sécurisé](/studio/workflows/managing-workflows-in-production/hardened_deployments) qui approuve ce compte de service n'a donc pas besoin d'être mis à jour.
+
+<SectionTab as="h1" sectionId="related">Ressources associées</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/admin/identity-access/service-accounts" title="Comptes de service" />
+  <LinkCard href="/admin/identity-access/roles-permissions" title="Rôles et permissions" />
+  <LinkCard href="/studio/workflows/managing-workflows-in-production/hardened_deployments" title="Déploiements sécurisés" />
+  <LinkCard href="/admin/monitor-comply/audit-logs/reference" title="Référence des journaux d'audit" />
+</UsefullLinkContainer>

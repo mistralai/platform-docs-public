@@ -8,7 +8,12 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Déploiements sécurisés
 
-Un **déploiement sécurisé** est un [déploiement](/studio/workflows/managing-workflows-in-production/deployments) classique dont l'enregistrement des workflows est restreint. Seul un ensemble prédéfini de clés API peut enregistrer des workflows dans un déploiement sécurisé. Dès qu'au moins une clé API est associée à un déploiement, celui-ci devient sécurisé.
+Un **déploiement sécurisé** est un [déploiement](/studio/workflows/managing-workflows-in-production/deployments) classique dont l'enregistrement des workflows est restreint. Seul un ensemble prédéfini de clés API et de comptes de service peut enregistrer des workflows dans un déploiement sécurisé. Dès qu'au moins l'un d'eux est associé à un déploiement, celui-ci devient sécurisé.
+
+Ce que vous associez détermine ce que la rotation implique :
+
+- Un [compte de service](/admin/identity-access/service-accounts) est un **principal**. L'associer approuve les charges de travail qui s'authentifient en tant que ce compte via la [fédération d'identité de charge de travail](/admin/identity-access/workload-identity) : vous pouvez donc renouveler ces identifiants sans modifier le déploiement sécurisé.
+- Une [clé API](/admin/identity-access/api-keys) est un **identifiant**, pas un principal. L'associer n'approuve que cette clé précise ; les autres clés appartenant au même propriétaire ne fonctionnent **pas**. Lorsque vous renouvelez la clé, ajoutez la nouvelle clé au déploiement.
 
 <SectionTab as="h1" sectionId="the-problem">Problème</SectionTab>
 
@@ -20,7 +25,7 @@ Les [workflows « on-behalf-of » (OBO)](/studio/workflows/building-workflows/on
 
 <SectionTab as="h1" sectionId="how-hardened-deployments-work">Fonctionnement des déploiements sécurisés</SectionTab>
 
-Les administrateurs d'espace de travail et d'organisation gèrent les déploiements sécurisés via le panneau **Paramètres** de la console Mistral. Un déploiement devient sécurisé dès qu'au moins une clé API y est associée. À partir de ce moment, seules les clés API autorisées peuvent enregistrer des workflows dans ce déploiement.
+Les administrateurs d'espace de travail et d'organisation gèrent les déploiements sécurisés via le panneau **Paramètres** de la console Mistral. Un déploiement devient sécurisé dès qu'au moins une clé API ou un compte de service y est associé. À partir de ce moment, seuls les clés API et comptes de service enregistrés peuvent enregistrer des workflows dans ce déploiement.
 
 :::info
 Les workflows « on-behalf-of » **nécessitent** un déploiement sécurisé. Ils ne peuvent pas être enregistrés dans un déploiement non sécurisé. Consultez [Workflows on-behalf-of](/studio/workflows/building-workflows/on_behalf_of) pour en savoir plus.
@@ -28,7 +33,7 @@ Les workflows « on-behalf-of » **nécessitent** un déploiement sécurisé. Il
 
 <SectionTab as="h1" sectionId="benefits">Avantages</SectionTab>
 
-- **Déploiements de production fiables** : les administrateurs peuvent sécuriser un déploiement de production pour garantir que seuls des détenteurs de clés API de confiance peuvent y enregistrer des workflows. Cela évite par exemple qu'une erreur dans le nom du déploiement perturbe la production.
+- **Déploiements de production fiables** : les administrateurs peuvent sécuriser un déploiement de production pour garantir que seuls des clés API et comptes de service de confiance peuvent y enregistrer des workflows. Cela évite par exemple qu'une erreur dans le nom du déploiement perturbe la production.
 - **Contrôle de l'enregistrement des workflows OBO** : les workflows OBO ne peuvent pas être enregistrés dans des déploiements non sécurisés, ce qui garantit que les workflows sensibles sont d'abord validés par des administrateurs de confiance.
 - **Enregistrement non autorisé limité** : sauf en cas de compromission d'un compte administrateur, il n'est pas possible d'enregistrer des workflows OBO malveillants dans des déploiements sécurisés.
 
@@ -39,13 +44,15 @@ Une fois le déploiement créé, c'est-à-dire lors de l'enregistrement de son p
 Les administrateurs peuvent :
 
 - Consulter la liste des déploiements sécurisés existants
-- Ajouter des clés API autorisées à un déploiement
-- Supprimer des clés API autorisées d'un déploiement
+- Ajouter des clés API ou des comptes de service à un déploiement
+- Les retirer d'un déploiement
 
-Un déploiement peut disposer de plusieurs clés API autorisées, par exemple pour permettre la rotation des clés ou l'utilisation de plusieurs workers.
+Pour en associer un, cliquez sur **Add hardened deployment**, sélectionnez le **Deployment**, puis faites votre choix dans la liste **Credential**. Cette liste est divisée en deux sections, **API keys** et **Service accounts**, et vous pouvez en sélectionner plusieurs à la fois.
+
+Un déploiement peut comporter plusieurs entrées afin de prendre en charge plusieurs workers ou la rotation des clés. Renouveler les identifiants d'identité de charge de travail d'un compte de service ne nécessite aucune modification ici, car le compte de service lui-même est approuvé. Renouveler une clé API implique d'ajouter la nouvelle clé, car seule cette clé précise est approuvée.
 
 :::tip
-Gérez vos clés API dans la section [Clés API](/admin/identity-access/api-keys) du panneau d'administration.
+Gérez vos clés API dans la section [Clés API](/admin/identity-access/api-keys) du panneau d'administration, et les identités machine dans [Comptes de service](/admin/identity-access/service-accounts). La section Clés API comporte une colonne **Principal**, qui vous permet de distinguer la clé d'un compte de service de celle d'une personne.
 :::
 
 <SectionTab as="h1" sectionId="registering-an-obo-workflow">Enregistrer un workflow OBO</SectionTab>

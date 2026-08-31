@@ -1,0 +1,101 @@
+---
+id: mistral-client
+title: Client Mistral
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Client Mistral
+
+`get_mistral_client()` renvoie un [client SDK Mistral](/getting-started/clients) standard, préconfiguré avec des hooks tenant compte des workflows. Il gère automatiquement l’authentification, la télémétrie et les métadonnées d’observabilité.
+
+:::warning
+Utilisez toujours `get_mistral_client()` dans les activités plutôt que de construire directement `Mistral(api_key=...)`. Un client standard ne collecte pas la télémétrie propre au workflow, n’injecte pas les métadonnées d’observabilité et ne prend pas en charge les identifiants on-behalf-of.
+:::
+
+<SectionTab as="h1" sectionId="quick-start">Démarrage rapide</SectionTab>
+
+```python
+# ❌ Don't — misses telemetry, observability metadata, and proper auth
+from mistralai import Mistral
+
+client = Mistral(api_key="your_api_key")
+```
+
+```python
+# ✅ Do — automatically configured for workflows
+from mistralai.workflows.client import get_mistral_client
+
+client = get_mistral_client()
+```
+
+<SectionTab as="h1" sectionId="what-it-adds">Ce qu’il ajoute</SectionTab>
+
+| Fonctionnalité | Description |
+|---------|-------------|
+| **Télémétrie** | Collecte la télémétrie de l’API Mistral pour vos traces de workflow |
+| **Métadonnées d’observabilité** | Ajoute des métadonnées de workflow avec les ID d’exécution et d’activité pour le traçage du workflow |
+| **Identifiants on-behalf-of** | Lorsque `use_executor_credentials=True`, appelle l’API Mistral en tant qu’utilisateur déclencheur plutôt qu’en tant que worker |
+| **Authentification automatique** | Sélectionne l’identifiant approprié pour votre déploiement — clé API, fichier de token de compte de service ou clé explicite |
+
+<SectionTab as="h1" sectionId="telemetry">Télémétrie</SectionTab>
+
+Lorsque le fournisseur OpenTelemetry du workflow est activé, `get_mistral_client()` garantit que les appels à l’API Mistral apparaissent automatiquement dans vos traces de workflow.
+
+Si la télémétrie est désactivée dans la configuration du worker, le branchement est ignoré sans message. Consultez [Observabilité](/studio/workflows/observability) pour plus de détails sur la télémétrie.
+
+<SectionTab as="h1" sectionId="observability-metadata">Métadonnées d’observabilité</SectionTab>
+
+Chaque requête HTTP sortante reçoit un en-tête JSON `x-metadata` contenant :
+
+| Champ | Description |
+|-------|-------------|
+| `execution_id` | ID d’exécution du workflow |
+| `run_id` | ID du run du workflow |
+| `task_id` | ID de l’activité |
+| `attempt` | Numéro de la tentative de réessai |
+
+Ces métadonnées lient chaque appel API à l’exécution exacte du workflow et à la tentative d’activité correspondante.
+
+
+<SectionTab as="h1" sectionId="on-behalf-of-credentials">Identifiants on-behalf-of</SectionTab>
+
+Dans les [workflows on-behalf-of](/studio/workflows/building-workflows/on_behalf_of), vous pouvez appeler l’API Mistral en tant qu’utilisateur déclencheur plutôt qu’en tant que worker.
+
+<SectionTab as="h1" sectionId="automatic-authentication">Authentification automatique</SectionTab>
+
+`get_mistral_client()` gère automatiquement l’authentification. Il sélectionne les identifiants dans l’ordre suivant :
+
+1. **Argument explicite `api_key`** — si vous passez `get_mistral_client(api_key="...")`, cette clé est utilisée directement.
+2. **Fichier de token de compte de service** — si `MISTRAL_SA_TOKEN_PATH` est défini, l'authentification par compte de service est utilisée à la place de `MISTRAL_API_KEY`.
+3. **Variable d’environnement `MISTRAL_API_KEY`** — utilisée comme clé API statique lorsqu’aucun des éléments ci-dessus n’est défini.
+
+Dans la plupart des cas, vous pouvez appeler `get_mistral_client()` sans argument — le token approprié est résolu automatiquement à partir de votre environnement.
+
+<SectionTab as="h1" sectionId="using-with-dependency-injection">Utilisation avec l’injection de dépendances</SectionTab>
+
+`get_mistral_client` fonctionne comme un fournisseur `Depends()`. Le worker l’initialise une fois au démarrage et réutilise le même client pour toutes les exécutions d’activité :
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from mistralai.workflows.client import get_mistral_client
+from mistralai.workflows import Depends
+
+@workflows.activity()
+async def summarize(text: str, client = Depends(get_mistral_client)) -> str:
+    response = await client.chat.complete_async(
+        model="mistral-large-latest",
+        messages=[{"role": "user", "content": f"Summarize:\n\n{text}"}],
+    )
+    return response.choices[0].message.content
+```
+
+  </TabItem>
+</Tabs>
+
+Pour en savoir plus sur le modèle `Depends()` et le cycle de vie du fournisseur, consultez [Injection de dépendances](/studio/workflows/building-workflows/dependency_injection).

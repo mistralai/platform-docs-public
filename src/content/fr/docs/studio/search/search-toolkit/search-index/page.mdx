@@ -9,111 +9,14 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Index de recherche
 
-Les backends de stockage conservent les fragments traités et permettent une recherche efficace dans votre collection de documents. Les magasins de vecteurs permettent une recherche sémantique en stockant les plombages de fragments et en trouvant des vecteurs similaires.
+Les backends de stockage conservent les fragments traités et permettent de rechercher efficacement dans votre collection de documents. Les stockages vectoriels assurent la recherche sémantique en enregistrant les embeddings des fragments et en trouvant des vecteurs similaires.
 
-<SectionTab as="h2" sectionId="available-vector-stores">Magasins de vecteurs disponibles</SectionTab>
+<SectionTab as="h2" sectionId="available-vector-stores">Backends disponibles</SectionTab>
 
-| Magasin de vecteurs | Usage |
-|--------------|---------|
-| **[Index de recherche Vespa](#vespa-search-index)** | Base de données vectorielle évolutive avec gestion de schéma et déploiement |
-| **[Magasins de vecteurs personnalisés](#custom-vector-stores)** | Backend de stockage personnalisé |
+| Backend | Usage |
+|---------|-------|
+| **[Vespa](search-index/vespa)** | Base de données vectorielle avec gestion des schémas, classement, clustering et réplication |
+| **[Postgres](search-index/postgres)** | PostgreSQL avec `pgvector` et `pg_textsearch` pour la recherche dense et hybride |
+| **[Stockages vectoriels personnalisés](search-index/custom-vector-stores)** | Implémenter votre propre backend de stockage |
 
-<SectionTab as="h1" sectionId="vespa-search-index">Index de recherche Vespa</SectionTab>
-
-Utilisez Vespa comme magasin de vecteurs dans les pipelines d'ingestion et de récupération de Search Toolkit. Vespa offre une recherche vectorielle évolutive avec gestion de schéma, classement et clusterisation prête pour la production.
-
-:::info
-**Prérequis** : vous devez avoir une **application Vespa en cours d’exécution** avant de vous Connecter avec cet index de recherche. Consultez **[Gérer et déployer Vespa](vespa)** pour définir des schémas et déployer votre application au préalable.
-:::
-
-**Fonctions** :
-- Recherche vectorielle évolutive optimisée de manière native avec l’indexation HNSW
-- Recherche textuelle BM25 pour un classement hybride
-- Classement multi-phases avec Fonctions de notation personnalisées
-- Prête pour la production avec prise en charge de la mise en cluster et de la réplication
-
-**Installation** :
-```bash
-uv add "mistralai-search-toolkit[vespa]"
-```
-
-### Prérequis
-
-Avant d’utiliser Vespa comme index de recherche :
-
-1. **Définissez votre application** — Créez des schémas avec des champs et des profils de classement à l’aide de migrations Python
-2. **Déployez Vespa** — Exécutez `mistral-vespa migrate` pour déployer votre application
-3. **Obtenez l’endpoint** — Notez l’endpoint de requête Vespa (par exemple `http://localhost:8080`)
-
-Consultez **[Gérer et déployer Vespa](vespa)** pour des instructions de configuration complètes.
-
-### Guide de démarrage rapide
-
-Configurer Vespa comme magasin de vecteurs :
-
-```python
-from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
-from vespa_app import app
-
-collection_name = "my_collection"
-config = VespaClientConfig(
-    endpoint="http://localhost:8080",
-)
-
-vector_store = app.get_search_index(config, collection_name=collection_name)
-```
-
-Utilisation dans un pipeline d’ingestion :
-
-```python
-from mistralai.search.toolkit.ingestion.pipelines import Pipeline
-
-pipeline = Pipeline(
-    loader=loader,
-    extractor=extractor,
-    text_splitter=splitter,
-    embedder=embedder,
-    stores=vector_store,
-)
-
-num_chunks = await pipeline.run(documents=["doc1.pdf", "doc2.pdf"])
-```
-
-Utilisation dans un pipeline de récupération :
-
-```python
-from mistralai.search.toolkit.retrieval import QueryEngine
-from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
-
-embedder = MistralEmbedder(client=mistral_client)
-query_engine = QueryEngine(
-    retriever=VectorRetriever(client=vector_store, embedder=embedder),
-)
-
-result = await query_engine.search(query="What is RAG?", top_k=5)
-```
-
-Pour une configuration complète, la conception de schémas et les opérations, consultez **[Gérer et déployer Vespa](vespa)**.
-
-<SectionTab as="h1" sectionId="custom-vector-stores">Magasins de vecteurs personnalisés</SectionTab>
-
-Implémentez des backends de stockage personnalisés en sous-classant `VectorStoreIndex` (ou `KeywordStoreIndex` pour la recherche par mots-clés) et en implémentant ses trois méthodes :
-
-```python
-from mistralai.search.toolkit.context import IngestContext, RetrievalContext
-from mistralai.search.toolkit.search import VectorStoreIndex, VectorSearchQuery, SearchResult
-from mistralai.search.toolkit.document import Document
-
-class MyVectorStore(VectorStoreIndex):
-    async def index_document(self, document: Document, context: IngestContext = IngestContext()) -> None:
-        # Store the document and its chunks
-        pass
-
-    async def search(self, query: VectorSearchQuery, context: RetrievalContext = RetrievalContext()) -> list[SearchResult]:
-        # Search and return results
-        pass
-
-    async def delete_document(self, doc_id: str, context: IngestContext = IngestContext()) -> None:
-        # Delete a document by ID
-        pass
-```
+Les deux backends intégrés implémentent le protocole `VectorStoreIndex` et utilisent donc les mêmes interfaces de pipeline d’ingestion et de récupération. Leur provisionnement, leur gestion des schémas et leur gestion du périmètre des requêtes diffèrent. Consultez la page de chaque backend pour plus de détails.

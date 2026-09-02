@@ -11,107 +11,12 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 Storage backends persist processed chunks and enable efficient search across your document collection. Vector stores enable semantic search by storing chunk embeddings and finding similar vectors.
 
-<SectionTab as="h2" sectionId="available-vector-stores">Available vector stores</SectionTab>
+<SectionTab as="h2" sectionId="available-vector-stores">Available backends</SectionTab>
 
-| Vector Store | Purpose |
-|--------------|---------|
-| **[Vespa search index](#vespa-search-index)** | Vector database with schema management and deployment |
-| **[Custom vector stores](#custom-vector-stores)** | Custom storage backend |
+| Backend | Purpose |
+|---------|---------|
+| **[Vespa](search-index/vespa)** | Vector database with schema management, ranking, clustering, and replication |
+| **[Postgres](search-index/postgres)** | PostgreSQL with `pgvector` and `pg_textsearch` for dense and hybrid search |
+| **[Custom vector stores](search-index/custom-vector-stores)** | Implement your own storage backend |
 
-<SectionTab as="h1" sectionId="vespa-search-index">Vespa search index</SectionTab>
-
-Use Vespa as a vector store in Search Toolkit ingestion and retrieval pipelines. Vespa provides vector search with schema management, ranking, clustering, and replication.
-
-:::info
-Requirement: You must have a running Vespa application before connecting with this search index. See [Manage and deploy Vespa](vespa) to define schemas and deploy your application first.
-:::
-
-**Features**:
-- Vector search with HNSW indexing
-- BM25 text search for hybrid ranking
-- Multi-phase ranking with custom scoring functions
-- Clustering and replication support
-
-**Installation**:
-```bash
-uv add "mistralai-search-toolkit[vespa]"
-```
-
-### Prerequisites
-
-Before using Vespa as a search index:
-
-1. **Define your application**: create schemas with fields and ranking profiles using Python migrations.
-2. **Deploy Vespa**: run `mistral-vespa migrate` to deploy your application.
-3. **Get the endpoint**: note the Vespa query endpoint, such as `http://localhost:8080`.
-
-For complete setup instructions, see [Manage and deploy Vespa](vespa).
-
-### Configure Vespa as a vector store
-
-```python
-from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
-from vespa_app import app
-
-collection_name = "my_collection"
-config = VespaClientConfig(
-    endpoint="http://localhost:8080",
-)
-
-vector_store = app.get_search_index(config, collection_name=collection_name)
-```
-
-Use in an ingestion pipeline:
-
-```python
-from mistralai.search.toolkit.ingestion.pipelines import Pipeline
-
-pipeline = Pipeline(
-    loader=loader,
-    extractor=extractor,
-    text_splitter=splitter,
-    embedder=embedder,
-    stores=vector_store,
-)
-
-num_chunks = await pipeline.run(documents=["doc1.pdf", "doc2.pdf"])
-```
-
-Use in a retrieval pipeline:
-
-```python
-from mistralai.search.toolkit.retrieval import QueryEngine
-from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
-
-embedder = MistralEmbedder(client=mistral_client)
-query_engine = QueryEngine(
-    retriever=VectorRetriever(client=vector_store, embedder=embedder),
-)
-
-result = await query_engine.search(query="What is RAG?", top_k=5)
-```
-
-For setup instructions, schema design, and operations, see [Manage and deploy Vespa](vespa).
-
-<SectionTab as="h1" sectionId="custom-vector-stores">Custom vector stores</SectionTab>
-
-Implement custom storage backends by subclassing `VectorStoreIndex` (or `KeywordStoreIndex` for keyword search) and implementing its three methods:
-
-```python
-from mistralai.search.toolkit.context import IngestContext, RetrievalContext
-from mistralai.search.toolkit.search import VectorStoreIndex, VectorSearchQuery, SearchResult
-from mistralai.search.toolkit.document import Document
-
-class MyVectorStore(VectorStoreIndex):
-    async def index_document(self, document: Document, context: IngestContext = IngestContext()) -> None:
-        # Store the document and its chunks
-        pass
-
-    async def search(self, query: VectorSearchQuery, context: RetrievalContext = RetrievalContext()) -> list[SearchResult]:
-        # Search and return results
-        pass
-
-    async def delete_document(self, doc_id: str, context: IngestContext = IngestContext()) -> None:
-        # Delete a document by ID
-        pass
-```
+Both built-in backends implement the `VectorStoreIndex` protocol, so they use the same ingestion and retrieval pipeline interfaces. Their provisioning, schema management, and query-scoping behavior differ. See each backend's page for details.

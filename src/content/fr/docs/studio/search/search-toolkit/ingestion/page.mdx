@@ -15,7 +15,7 @@ Un **DocumentExtractor** convertit ce `File` en un `Document` structuré. Il ana
 
 Un **TextSplitter** divise le `Document` en objets `DocumentChunk` plus petits. La stratégie et la taille des fragments influencent directement la qualité de la recherche.
 
-Un **ChunkEnricher** optionnel ajoute des métadonnées à chaque fragment avant l’indexation, par exemple un résumé généré par modèle ou des balises d’entités.
+Les étapes facultatives de `DocumentProcessor` (comme un `ChunkEnricher` ou un `SummaryEnricher`) ajoutent des métadonnées à chaque fragment avant l’indexation, par exemple un résumé généré par un LLM ou des tags d’entités.
 
 Un **Embedder** convertit chaque fragment en un vecteur, et le **magasin** conserve à la fois le vecteur et le texte brut pour permettre la recherche.
 
@@ -26,15 +26,17 @@ Un **Embedder** convertit chaque fragment en un vecteur, et le **magasin** conse
 ```python
 from mistralai.search.toolkit.ingestion.pipelines import Pipeline
 from mistralai.client import Mistral
-from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
+from mistralai.search.toolkit.embedding import MistralEmbedder, MODEL_1024_EMBEDDING
 from mistralai.search.toolkit.ingestion.extractors import PlainTextExtractor
 from mistralai.search.toolkit.ingestion.loaders import FilesystemFileLoader
 from mistralai.search.toolkit.ingestion.text_splitters import CharacterTextSplitter
-from mistralai.search.toolkit.ingestion.enrichers import SummaryEnricher
+from mistralai.search.toolkit.ingestion.enrichment import SummaryEnricher
+from mistralai.search.toolkit.llm import MistralChat, LLMConfig
 from mistralai.search.toolkit.plugins.vespa import VespaClientConfig
 from vespa_app import app
 
 mistral_client = Mistral(api_key="...")
+llm = MistralChat(client=mistral_client, config=LLMConfig(model="mistral-small-latest"))
 
 collection_name = "my_collection"
 config = VespaClientConfig(
@@ -47,7 +49,7 @@ pipeline = Pipeline(
     loader=FilesystemFileLoader(),
     extractor=PlainTextExtractor(),
     text_splitter=CharacterTextSplitter(chunk_size=512),
-    chunk_enrichers=[SummaryEnricher(client=mistral_client)],
+    processors=[SummaryEnricher(llm_provider=llm)],
     embedder=MistralEmbedder(client=mistral_client, model_name=MODEL_1024_EMBEDDING),
     stores=vector_store,
 )
@@ -65,16 +67,17 @@ Pour les collections de documents volumineuses, activez les points de contrôle 
 
 ```python
 from mistralai.search.toolkit.ingestion.progress import create_tqdm_progress_callback
-from mistralai.search.toolkit.ingestion.enrichers import SummaryEnricher
+from mistralai.search.toolkit.ingestion.enrichment import SummaryEnricher
+from mistralai.search.toolkit.storage import FilesystemStorage
 
 pipeline = Pipeline(
     loader=FilesystemFileLoader(),
     extractor=extractor,
     text_splitter=splitter,
-    chunk_enrichers=[SummaryEnricher(client=mistral_client)],
+    processors=[SummaryEnricher(llm_provider=llm)],
     embedder=embedder,
     stores=vector_store,
-    checkpoint_dir="./checkpoints",
+    checkpoint_store=lambda: FilesystemStorage("./checkpoints"),
 )
 
 num_chunks = await pipeline.run(

@@ -357,7 +357,12 @@ const rawRedirects: RedirectRule[] = [
   },
   {
     source: "/le-chat/knowledge-integrations/connectors/knowledge-connectors",
-    destination: "/vibe/work/connectors/knowledge-connectors",
+    destination: "/vibe/work/connectors",
+    permanent: true,
+  },
+  {
+    source: "/vibe/work/connectors/knowledge-connectors",
+    destination: "/vibe/work/connectors",
     permanent: true,
   },
   {
@@ -1083,6 +1088,21 @@ const rawRedirects: RedirectRule[] = [
   // ============================================================================
   { source: "/studio/search-toolkit", destination: "/studio/search/search-toolkit", permanent: true },
   { source: "/studio/search-toolkit/:path*", destination: "/studio/search/search-toolkit/:path*", permanent: true },
+  {
+    source: "/studio/search/search-toolkit/document-model",
+    destination: "/studio/search/search-toolkit/concepts/document-model",
+    permanent: true,
+  },
+  {
+    source: "/studio/search/search-toolkit/vespa",
+    destination: "/studio/search/search-toolkit/search-index/vespa",
+    permanent: true,
+  },
+  {
+    source: "/studio/search/search-toolkit/vespa/:path*",
+    destination: "/studio/search/search-toolkit/search-index/vespa/:path*",
+    permanent: true,
+  },
   { source: "/studio/libraries", destination: "/studio/search/libraries", permanent: true },
   { source: "/studio/libraries/:path*", destination: "/studio/search/libraries/:path*", permanent: true },
 ];

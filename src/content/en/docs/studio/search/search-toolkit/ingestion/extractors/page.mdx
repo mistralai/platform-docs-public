@@ -9,13 +9,15 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 Document extractors extract content from a `File` into a `Document` object that can be processed later. Different file types require different extraction logic. PDFs can be extracted through OCR, while Excel files require tabular extraction.
 
-All built-in extractors stamp `file.source_id` onto the produced `Document` and its chunks, and the document ID is computed deterministically from it. See the [Document model](/studio/search/search-toolkit/document-model) for details.
+All built-in extractors stamp `file.source_id` onto the produced `Document` and its chunks, and the document ID is computed deterministically from it. See the [Document model](/studio/search/search-toolkit/concepts/document-model) for details.
 
 <SectionTab as="h2" sectionId="available-document-extractors">Available document extractors</SectionTab>
 
 | Extractor | File types |
 |-----------|-----------|
 | **[Mistral OCR Extractor](#mistral-ocr-extractor)** | PDF, DOCX, PPTX, ODT |
+| **[PyMuPDF Extractor](#pymupdf-extractor)** | PDF, EPUB (and DOCX, PPTX, DOC, PPT, HWP, HWPX with Pro) |
+| **[Smart PDF Extractor](#smart-pdf-extractor)** | PDF |
 | **[Mistral Audio Transcription Extractor](#mistral-audio-transcription-extractor)** | MP3, WAV, M4A, FLAC, OGG |
 | **[Plain Text Extractor](#plain-text-extractor)** | TXT, MD, CSV, JS, PY (and other text/code files) |
 | **[HTML Extractor](#html-extractor)** | HTML, HTM |
@@ -82,6 +84,117 @@ document = await extractor.extract(file)
 - Configurable page extraction (specific pages or page ranges)
 - Table format customization (markdown or HTML)
 - Large file handling with automatic splitting
+
+<SectionTab as="h1" sectionId="pymupdf-extractor">PyMuPDF Extractor</SectionTab>
+
+`PyMuPDFExtractor` extracts text and metadata from a document's native text layer in-process via the PyMuPDF (`fitz`) C library. No API call or network round-trip is required, and there is no per-page billing — cost is local CPU only. Use it for PDFs and other files that already carry an extractable text layer.
+
+It does **not** perform OCR: scanned or image-only documents produce empty output. Use `MistralOCRExtractor` for those, or `SmartPDFExtractor` to route between the two automatically. Embedded images and bounding-box annotations are not returned. Document metadata (title, author, subject, dates) is surfaced from the document's built-in metadata dict.
+
+**Installation**:
+
+```bash
+uv add "mistralai-search-toolkit[extractor-pymupdf]"
+```
+
+A PyMuPDF Pro license unlocks DOCX, PPTX, DOC, PPT, HWP, and HWPX in addition to PDF and EPUB.
+
+**Example**:
+
+```python
+from mistralai.search.toolkit.ingestion.extractors import PyMuPDFExtractor
+
+extractor = PyMuPDFExtractor(
+    pymupdf_pro_license_key="your-license-key",  # Optional
+    content_type="application/pdf",               # Optional; inferred from the file otherwise
+)
+document = await extractor.extract(file)
+```
+
+**Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `pymupdf_pro_license_key` | `str \| None` | `None` | PyMuPDF Pro license key. Unlocks DOCX, PPTX, DOC, PPT, HWP, and HWPX. |
+| `content_type` | `str \| None` | `None` | MIME type hint passed to PyMuPDF as the file type. Leave unset to let PyMuPDF infer it. |
+
+<SectionTab as="h1" sectionId="smart-pdf-extractor">Smart PDF Extractor</SectionTab>
+
+`SmartPDFExtractor` routes each PDF between local extraction and OCR based on the quality of its text layer. Most Office-exported PDFs carry a native text layer and do not need the expensive OCR route; scanned documents do. `SmartPDFExtractor` decides per document which delegate to use.
+
+The extractor runs local extraction to completion and judges the finished document rather than a leading-pages sample. The local route is `PyMuPDFExtractor`; the OCR route is any `DocumentExtractor` you inject, so an air-gapped or gateway-fronted deployment can supply a self-hosted engine in place of `MistralOCRExtractor`. The chosen delegate's document is returned unchanged — its own type, `extractor_type`, and metadata are preserved, so a caller that receives a `PyMuPDFDocument` gets the richer metadata PyMuPDF surfaces.
+
+PDF only: any other input is rejected.
+
+**Installation**: No extra of its own, but the local delegate needs the PyMuPDF extra and the OCR delegate needs its own:
+
+```bash
+uv add "mistralai-search-toolkit[extractor-pymupdf]"
+```
+
+**Example**:
+
+```python
+import os
+
+from mistralai.client import Mistral
+from mistralai.search.toolkit.ingestion.extractors import (
+    MistralOCRExtractor,
+    PyMuPDFExtractor,
+    SmartPDFExtractor,
+)
+
+ocr_extractor = MistralOCRExtractor(
+    client=Mistral(api_key=os.environ["MISTRAL_API_KEY"]),
+)
+extractor = SmartPDFExtractor(
+    pymupdf_extractor=PyMuPDFExtractor(content_type="application/pdf"),
+    ocr_extractor=ocr_extractor,
+    min_chars_per_page=200.0,  # Default; below this, route to OCR
+)
+document = await extractor.extract(file)
+```
+
+**Parameters**:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `pymupdf_extractor` | `PyMuPDFExtractor` | *(required)* | Local extractor. Construct it with `content_type="application/pdf"` or leave it unset; a delegate configured for another format fails on first use. |
+| `ocr_extractor` | `DocumentExtractor` | *(required)* | OCR delegate for scanned documents and whenever local bytes are unavailable. Any `DocumentExtractor` is accepted, not only `MistralOCRExtractor`. It receives the file as it arrived, so `file.raw` may be empty and the delegate must resolve the bytes itself. |
+| `min_chars_per_page` | `float` | `200.0` | Mean extractable characters per page at or above which the local result is accepted. Below it, the document routes to OCR. A line of prose is 70–90 characters, so a lower threshold risks accepting stamped scans (Bates numbers, "page 3 of 40") as text-bearing. Misrouting a scan indexes it empty and silently; misrouting a text document only costs an OCR call, so the default leans conservative. |
+| `bytes_loader` | `Callable[[File], bytes \| Awaitable[bytes]] \| None` | `None` | Resolves the file's bytes when `file.raw` is empty. Required for the local route in deployments that pass documents by reference: `PyMuPDFExtractor` reads `file.raw` and nothing else, so without a loader every such document routes to OCR. The loaded bytes are used for the local attempt only — the OCR delegate always receives the file as it arrived. |
+
+**Routing**:
+
+1. If `force_route` is set to `ocr` on the context, skip the assessment and use OCR.
+2. Otherwise load local bytes. If they are unavailable and `force_route` is `pymupdf`, raise. If they are unavailable otherwise, route to OCR.
+3. Run local extraction. If it fails and `force_route` is `pymupdf`, raise. If it fails otherwise, fall back to OCR.
+4. Measure the finished document. If `force_route` is `pymupdf` or the mean chars/page meets `min_chars_per_page`, return the local document. Otherwise route to OCR.
+
+A loader failure returns `None` rather than propagating: OCR resolves the file from `file.path` without `raw`, so the document is still extracted rather than dropped over an infrastructure fault the fallback is immune to. When OCR is reached and fails, the error propagates — the branches that reach it have already established that no usable local text exists.
+
+**Forcing a route**: Subclass `IngestContext` and add a `smart_pdf_options` field to override routing per request. A single nullable `force_route` (rather than a pair of booleans) keeps the contradictory "both true" state unrepresentable.
+
+```python
+from mistralai.search.toolkit.context import IngestContext
+from mistralai.search.toolkit.ingestion.extractors.smart_pdf import (
+    PdfRoute,
+    SmartPDFExtractorRuntimeOptions,
+)
+
+class SmartPDFContext(IngestContext):
+    smart_pdf_options: SmartPDFExtractorRuntimeOptions
+
+# Skip the assessment and use a specific delegate
+context = SmartPDFContext(
+    smart_pdf_options=SmartPDFExtractorRuntimeOptions(force_route=PdfRoute.OCR),
+)
+document = await extractor.extract(file, context=context)
+```
+
+`force_route` accepts `PdfRoute.PYMUPDF` ("pymupdf"), `PdfRoute.OCR` ("ocr"), or `None` to assess the document.
+
+**Known gap**: The verdict measures how much text a PDF yields, not whether that text is legible. A PDF whose text layer is CID-encoded with no `ToUnicode` map, or is positioned glyph-by-glyph with no space characters, clears any character-count threshold and indexes as silent garbage. Detecting that needs a validated legibility heuristic and is not attempted here.
 
 <SectionTab as="h1" sectionId="mistral-audio-transcription-extractor">Mistral Audio Transcription Extractor</SectionTab>
 

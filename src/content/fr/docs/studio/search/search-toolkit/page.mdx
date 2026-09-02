@@ -35,7 +35,7 @@ Les LLM ne sont pas formés sur vos données privées. Pour ancrer leurs répons
 
 <SectionTab as="h1" sectionId="architecture">Architecture</SectionTab>
 
-**L’ingestion** transforme les documents bruts en fragments recherchés. Un **FileLoader** lit les octets bruts depuis une source, un **DocumentExtractor** les convertit en document structuré, un **TextSplitter** les divise en fragments, un **ChunkEnricher** optionnel ajoute des métadonnées, et un **Embedder** produit des vecteurs pour indexation dans une base vectorielle.
+L’**ingestion** transforme des documents bruts en fragments exploitables pour la recherche. Un `FileLoader` lit les octets bruts depuis une source, un `DocumentExtractor` les convertit en document structuré, un `TextSplitter` le divise en fragments, des étapes `DocumentProcessor` facultatives (comme un `ChunkEnricher` ou un `SummaryEnricher`) ajoutent des métadonnées, et un `Embedder` produit des vecteurs pour les indexer dans une base vectorielle.
 
 **La récupération** trouve les fragments pertinents pour une requête donnée. Un **prétraitement de requête** optionnel reformule ou étend la requête, un **Retriever** recherche dans l’index vectoriel, et un **Reranker** optionnel réévalue les résultats avant de les retourner.
 
@@ -46,12 +46,12 @@ Les deux workflows sont orchestrés par des classes de haut niveau (`Pipeline` p
 | Composant | Options intégrées |
 |-----------|-----------------|
 | **Chargeurs de fichiers** | `FilesystemFileLoader`, chargeurs personnalisés |
-| **Extracteurs** | `MistralOCRExtractor`, `PlainTextExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor` |
-| **Séparateurs de texte** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `SeparatorTextSplitter` |
+| **Extracteurs** | `MistralOCRExtractor`, `SmartPDFExtractor`, `PlainTextExtractor`, `PyMuPDFExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `EmailWithAttachmentsExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor`, `MistralAudioTranscriptionExtractor` |
+| **Séparateurs de texte** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `ParagraphTokenTextSplitter`, `MarkdownTokenTextSplitter`, `SeparatorTextSplitter` |
 | **Enrichisseurs** | `SummaryEnricher`, `ChunkEnricher` personnalisé |
 | **Embedders** | `MistralEmbedder`, `Embedder` personnalisé |
-| **Stockage** | Vespa ou base vectorielle personnalisée |
-| **Récupérateurs** | `VectorRetriever` |
+| **Stockage** | Vespa, Postgres (pgvector) ou stockage vectoriel personnalisé |
+| **Récupérateurs** | `VectorRetriever`, `KeywordRetriever` avec un `KeywordStoreIndex` personnalisé |
 | **Reclasseurs** | `LLMReRanker`, `CrossEncoderReRanker`, `RRFRanker` |
 | **Prétraitement** | `LLMQueryRewriter`, `LLMQueryExtension` |
 | **Mise en cache** | `SemanticCache` avec `InMemoryCacheBackend` |
@@ -76,6 +76,8 @@ Les extras optionnels ajoutent des fonctionnalités spécialisées :
 | `text-splitter-langchain` | Stratégies supplémentaires de séparation de texte via LangChain |
 | `storage-gcs` | Intégration avec Google Cloud Storage |
 | `storage-azure` | Intégration avec Azure Blob Storage |
+| `storage-s3` | Intégration Amazon S3 |
+| `language-detection-fasttext` | Détection de la langue via fastText |
 | `all` | Tous les extras optionnels |
 
 Installez les extras avec le package principal :
@@ -95,7 +97,8 @@ Nécessite **Python 3.12+**. Nous recommandons d’utiliser [uv](https://docs.as
 <SectionTab as="h1" sectionId="next-steps">Prochaines étapes</SectionTab>
 
 - **[Guide de démarrage](/studio/search/search-toolkit/quickstart)** : créez votre premier pipeline d’ingestion et de récupération de bout en bout.
-- **[Modèle de document](/studio/search/search-toolkit/document-model)** : comprenez `Document`, `DocumentChunk` et l’identifiant qui les relie.
+- **[Modèle de document](/studio/search/search-toolkit/concepts/document-model)** : comprenez `Document`, `DocumentChunk` et l’identifiant qui les relie.
+- **[Modèle d'embedding](/studio/search/search-toolkit/concepts/embedding-model)** : comprenez comment le schéma décrit les vecteurs d'embedding, indépendamment de l'embedder.
 - **[Index de recherche](/studio/search/search-toolkit/search-index)** : configurez votre base vectorielle.
 - **[Ingestion](/studio/search/search-toolkit/ingestion)** : chargez, extrayez, découpez en fragments, enrichissez et indexez vos documents.
 - **[Récupération](/studio/search/search-toolkit/retrieval)** : configurez la recherche vectorielle avec reclassement optionnel.

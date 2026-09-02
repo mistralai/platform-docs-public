@@ -1,0 +1,232 @@
+---
+title: Postgres
+description: Declare collections, manage the database, and run dense and hybrid search on PostgreSQL with pgvector.
+sidebar_position: 2
+sidebar_label: Postgres
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Postgres
+
+Use PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) and [pg_textsearch](https://github.com/timescale/pg_textsearch) extensions as a Search Toolkit backend. `PostgresStoreIndex` implements `VectorStoreIndex`, `NavigableIndex`, and `PatchableIndex`, so it uses the same pipeline interfaces as the Vespa backend. Provisioning, schema management, and query scoping differ between the backends.
+
+The plugin is a separate package:
+
+```bash
+uv add mistralai-search-toolkit-plugins-postgres
+```
+
+:::warning[Tenant isolation]
+The Postgres backend doesn't derive tenant filters from `IngestContext` or `RetrievalContext`. Use a separate collection for each tenant or apply filtering before the store. See [Context-based filtering limitations](#no-context-derived-filtering).
+:::
+
+<SectionTab as="h1" sectionId="overview">How the Postgres backend works</SectionTab>
+
+Three objects make up the Postgres backend:
+
+- **`PostgresCollectionSchema`**: declares the document model, embedding model, and PostgreSQL schema for a collection. The store reads this declaration instead of reflecting the database schema.
+- **`PostgresApp`**: resolves a declared collection to a live store through `get_search_index(config, collection)`. It provides `create_schema` for deployments without a migration chain. Use a migration tool such as Alembic or Flyway to evolve other deployments.
+- **`PostgresStoreIndex`**: implements dense and hybrid search, indexing, deletion, navigation, and partial updates. Pass it to the same `Pipeline` and `QueryEngine` interfaces as the Vespa backend.
+
+Provision the extensions, declare the collection, connect to PostgreSQL, create the table, and then run searches. Use `create_schema` or the [`mistral-postgres` CLI](#cli) to create the table.
+
+<SectionTab as="h1" sectionId="requirements">Requirements</SectionTab>
+
+The target database must have two extensions installed before you create a collection table:
+
+- [`vector`](https://github.com/pgvector/pgvector): provides HNSW indexing over embeddings.
+- [`pg_textsearch`](https://github.com/timescale/pg_textsearch): provides the BM25 access method for hybrid search. Add it to `shared_preload_libraries` before the server starts. `CREATE EXTENSION` fails until the server restarts with the library preloaded.
+
+Install both extensions once per database with a privileged role:
+
+```sql
+CREATE EXTENSION vector;
+CREATE EXTENSION pg_textsearch;
+```
+
+The plugin never runs `CREATE EXTENSION`. On managed Postgres (RDS, Cloud SQL) that statement needs privileges a least-privilege application role is not expected to hold, so provisioning belongs to whoever manages the database. `PostgresApp.create_schema` verifies both before attempting any DDL, raising `MissingVectorExtensionError` or `MissingBM25AccessMethodError` when one is absent.
+
+<SectionTab as="h1" sectionId="declaring-a-collection">Declare a collection</SectionTab>
+
+A collection is declared in code with `PostgresCollectionSchema`. `embedding_model` takes the same `EmbeddingModel` / `MistralEmbeddingPreset` as the Vespa schema (see [Embedding model](/studio/search/search-toolkit/concepts/embedding-model)):
+
+```python
+from mistralai.search.toolkit.document import Document
+from mistralai.search.toolkit.embedding import MistralEmbeddingPreset
+from mistralai.search.toolkit.plugins.postgres import PostgresApp, PostgresCollectionSchema
+
+DOCS = PostgresCollectionSchema(
+    collection_name="docs",
+    document_type=Document,
+    embedding_model=MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024,
+)
+app = PostgresApp([DOCS])
+```
+
+| Field | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `collection_name` | `str` | *(required)* | Collection (and table) name |
+| `document_type` | `type[Document]` | *(required)* | Your `Document` subclass |
+| `embedding_model` | `EmbeddingModel \| MistralEmbeddingPreset` | *(required)* | Embedding model (dimensions, dtype, distance metric) applied to the embedding column |
+| `db_schema` | `str \| None` | `None` | PostgreSQL schema that contains the table. `None` uses the connection's default. |
+| `hnsw_m` | `int` | `16` | HNSW `m` parameter |
+| `hnsw_ef_construction` | `int` | `64` | HNSW `ef_construction` parameter |
+| `text_search_config` | `str` | `"english"` | PostgreSQL text search configuration for the `content` BM25 index |
+
+`PostgresCollectionSchema` is the only thing the store is told about the collection: it builds the table, declares the metric to rank with, and resolves the document model's custom fields to its columns. Nothing is reflected from the database, and no column name is inferred by convention.
+
+### Custom columns
+
+Custom fields on your `Document` subclass map to table columns. They are unbounded unless the model asks for a length ceiling:
+
+```python
+from typing import Annotated
+
+from mistralai.search.toolkit.document import Document
+from mistralai.search.toolkit.plugins.postgres import PostgresColumn
+
+
+class MyDoc(Document):
+    section: Annotated[str | None, PostgresColumn(max_length=120)] = None
+```
+
+<SectionTab as="h1" sectionId="connecting">Connecting</SectionTab>
+
+`PostgresApp.get_search_index` accepts either a `PostgresConnectionConfig` or a SQLAlchemy `AsyncEngine`, and returns a `PostgresStoreIndex`:
+
+```python
+from mistralai.search.toolkit.plugins.postgres import PostgresConnectionConfig
+
+config = PostgresConnectionConfig(dsn="postgresql://user:pw@localhost:5432/db")
+
+await app.create_schema(config, "docs")  # idempotent; verifies the extensions first
+store = app.get_search_index(config, "docs")  # -> PostgresStoreIndex
+```
+
+### Connection forms
+
+`PostgresConnectionConfig` takes a DSN:
+
+```python
+PostgresConnectionConfig(dsn="postgresql://user:pw@localhost:5432/db")
+```
+
+or parts:
+
+```python
+PostgresConnectionConfig(host="localhost", port=5432, database="db", user="user", password="pw")
+```
+
+### TLS
+
+Managed PostgreSQL services provide a DSN with `?sslmode=require` or a stricter mode. Pass it unchanged. The configuration removes `sslmode` from the URL and passes the translated value to the asyncpg driver:
+
+```python
+PostgresConnectionConfig(dsn="postgresql://user:pw@host:5432/db?sslmode=require")
+```
+
+The parts form takes the mode directly via `ssl=` (an explicit `ssl=` also overrides one embedded in a DSN):
+
+```python
+PostgresConnectionConfig(host="host", database="db", user="user", ssl="verify-full")
+```
+
+<SectionTab as="h1" sectionId="creating-the-table">Creating the table</SectionTab>
+
+The table must exist before the store can use it. How it gets created depends on your migration setup:
+
+- **No migration chain**: `PostgresApp.create_schema(config, collection)` creates the table and indexes directly. This idempotent method verifies the extensions first.
+- **Alembic**: add the collection's table to the chain's `target_metadata` with `PostgresCollectionSchema.to_table()`, then let autogenerate write the revision. This approach keeps one migration order for the database.
+- **Other migration tools**: generate the `CREATE TABLE` and `CREATE INDEX` statements with the [`mistral-postgres` CLI](#cli), then apply them with Flyway, Liquibase, or a raw `.sql` migration.
+
+<SectionTab as="h1" sectionId="cli">`mistral-postgres` CLI</SectionTab>
+
+The plugin ships a single-command CLI that prints the `CREATE TABLE` and `CREATE INDEX` statements for a declared collection, for applying with whatever migration tool the project uses:
+
+```bash
+mistral-postgres ddl myapp.search:DOCS_COLLECTION
+```
+
+The `module:attribute` argument identifies a declared `PostgresCollectionSchema`. The module must be importable, as it must be for an Alembic `env.py`. The output comes from the same `to_table()` definition that the store uses, so it describes the table that the store queries. It doesn't include `CREATE EXTENSION`; provision the extensions separately as described in [Requirements](#requirements).
+
+Use `render_ddl(collection)` to generate equivalent DDL from a script.
+
+<SectionTab as="h1" sectionId="search">Search</SectionTab>
+
+### Dense search
+
+A `VectorSearchQuery` with only an `embedding` runs the HNSW retriever:
+
+```python
+from mistralai.search.toolkit.search import VectorSearchQuery
+
+results = await store.search(
+    VectorSearchQuery(embedding=vec, top_k=10)
+)
+```
+
+### Hybrid search
+
+A `VectorSearchQuery` that contains both `query` and `embedding` runs both retrievers without extra configuration:
+
+```python
+results = await store.search(
+    VectorSearchQuery(query="quarterly revenue", embedding=vec, top_k=10)
+)
+```
+
+Every collection's table carries a BM25 index over `content` (built by `pg_textsearch`). The two retrievers are combined by **weighted reciprocal rank fusion**:
+
+```text
+score = w_vector / (k + rank_vector) + w_text / (k + rank_text)
+```
+
+Tune the fusion per query with `PostgresSearchQuery`:
+
+```python
+from mistralai.search.toolkit.plugins.postgres import PostgresSearchQuery
+
+results = await store.search(
+    PostgresSearchQuery(
+        query="quarterly revenue",
+        embedding=vec,
+        vector_weight=1.0,
+        text_weight=2.0,  # favour the lexical half
+        rrf_k=60,  # lower sharpens the top of each list
+    )
+)
+```
+
+| Field | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `vector_weight` | `float` | `1.0` | Weight of the vector retriever's contribution to the fused ranking |
+| `text_weight` | `float` | `1.0` | Weight of the BM25 retriever's contribution |
+| `rrf_k` | `int` | `4` | Reciprocal rank fusion smoothing constant; lower sharpens the top of each list |
+
+Only the ratio between the weights affects ranking, so `1.0/1.0` and `0.5/0.5` are equivalent. Choose weights based on your corpus. You can set `text_weight` for each query.
+
+### Search dials
+
+Search also honors `exclude_ids` and `max_candidates`. The backend maps `max_candidates` to `hnsw.ef_search` for each query and accepts values from `1` to `1000`. If the value is lower than `top_k`, the backend raises it to `top_k`.
+
+<SectionTab as="h1" sectionId="notes">Fallbacks and limitations</SectionTab>
+
+### When the lexical index is not usable
+
+On its first hybrid query, the store checks whether lexical ranking is available. If the BM25 index is missing or `INVALID`, or if `pg_textsearch` isn't installed, the store returns vector results instead of failing. Each downgraded query logs at the `ERROR` level with the collection name and suggested fix. `PostgresStoreIndex.lexical_ranking_resolved` reports `True`, `False`, or `None` before the first hybrid query. The result is cached for the lifetime of the process.
+
+### No context-derived filtering
+
+`IngestContext` and `RetrievalContext` are accepted by every entry point, but the backend only propagates them. **The Postgres backend doesn't derive query scope from these contexts.** Unlike the Vespa backend, it doesn't apply `group_id` or `yql_filter` for tenant isolation. Every query can see the full collection. Isolate each tenant in a separate collection and table, or apply filtering before the store.
+
+### pgvector versions
+
+We recommend pgvector **0.8 or later**. Earlier versions support all features except complete `exclude_ids` result sets. HNSW applies filters after retrieval, so excluded rows aren't replaced and a filtered search can return fewer than `top_k` results. Version 0.8 added `hnsw.iterative_scan`, which the store enables for these queries. On an earlier server, the store logs one warning and can return fewer results instead of failing.
+
+<SectionTab as="h1" sectionId="see-also">See also</SectionTab>
+
+- **[Search index](/studio/search/search-toolkit/search-index)**: how the Postgres backend fits into the search index.
+- **[Embedding model](/studio/search/search-toolkit/concepts/embedding-model)**: the `embedding_model` argument to `PostgresCollectionSchema`.
+- **[Document model](/studio/search/search-toolkit/concepts/document-model)**: the `Document` / `DocumentChunk` types a collection is built from.
+- **[Vespa](/studio/search/search-toolkit/search-index/vespa)**: the other search backend, for when you need clustering and replication.

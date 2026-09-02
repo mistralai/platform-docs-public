@@ -43,14 +43,33 @@ Un administrateur d'espace de travail crée le compte de service.
 
 | Champ | Obligatoire | Notes |
 | --- | --- | --- |
-| **Name** | Oui | Lisible, unique dans l'espace de travail. Jusqu'à 255 caractères. |
-| **Description** | Non | Texte libre pour indiquer l'usage du compte de service. |
+| **Name** | Oui | Un slug, unique dans l'espace de travail : une lettre minuscule suivie de lettres minuscules, de chiffres ou de traits d'union, 2 à 63 caractères (par exemple `prod-worker`). Une saisie en casse mixte est convertie en minuscules. Il ne peut pas être modifié après la création. |
+| **Description** | Non | Texte libre pour indiquer l'usage du compte de service. Jusqu'à 4096 caractères. |
 
 <SectionTab as="h1" sectionId="roles">Rôles</SectionTab>
 
-Un nouveau compte de service dispose du rôle d'espace de travail `workflow_executor`, qui permet à son worker d'enregistrer et d'exécuter des workflows. Accordez en plus le rôle **Developer** lorsque la charge de travail doit appeler la plateforme au-delà de l'exécution de workflows.
+Un nouveau compte de service ne dispose d'aucun rôle par défaut. Un administrateur de l'espace de travail lui accorde un ou plusieurs rôles après sa création ; tant qu'il n'en possède aucun, il ne peut rien faire sur la plateforme.
 
-Gérez cela depuis la section **Roles** du compte de service. Consultez [Rôles et permissions](/admin/identity-access/roles-permissions).
+Les rôles attribuables à ce jour incluent, par exemple :
+
+- **`workflow_executor`** — accès programmatique à l'API, sans AI Studio ni gestion des identifiants. Permet à un worker d'enregistrer et d'exécuter des workflows.
+- **Developer** (`dev`) — tout ce que permet `workflow_executor`, plus l'accès à AI Studio et la gestion des identifiants.
+
+**Dans l'Admin Console**
+
+Ouvrez le compte de service, allez dans sa section **Roles** et sélectionnez un ou plusieurs rôles. Les modifications s'appliquent immédiatement.
+
+**Avec l'API**
+
+`PUT /v1/service-accounts/<SERVICE_ACCOUNT_ID>/roles` remplace les rôles du compte par ceux que vous passez dans `role_ids`. Il s'agit d'un remplacement complet : tout rôle détenu par le compte mais absent de la liste est révoqué, et un tableau vide supprime tous les rôles. Chaque entrée est un UUID de rôle ; récupérez les rôles attribuables et leurs UUID via `GET /v1/service-accounts/assignable-roles`.
+
+```bash
+curl -X PUT https://api.mistral.ai/v1/service-accounts/<SERVICE_ACCOUNT_ID>/roles \
+  -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{"role_ids": ["<ROLE_UUID>"]}'
+```
+
+Consultez [Rôles et permissions](/admin/identity-access/roles-permissions).
 
 <SectionTab as="h1" sectionId="add-api-key">Ajouter une clé API</SectionTab>
 

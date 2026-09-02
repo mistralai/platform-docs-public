@@ -43,14 +43,33 @@ A workspace admin creates the service account.
 
 | Field | Required | Notes |
 | --- | --- | --- |
-| **Name** | Yes | Human-readable, unique within the workspace. Up to 255 characters. |
-| **Description** | No | Free text to record what the service account is for. |
+| **Name** | Yes | A slug, unique within the workspace: a lowercase letter followed by lowercase letters, digits, or hyphens, 2–63 characters (for example `prod-worker`). Mixed-case input is lowercased. It cannot be changed after creation. |
+| **Description** | No | Free text to record what the service account is for. Up to 4096 characters. |
 
 <SectionTab as="h1" sectionId="roles">Roles</SectionTab>
 
-A new service account holds the `workflow_executor` workspace role, which lets its worker register and run workflows. Grant the **Developer** role in addition when the workload needs to call the platform beyond workflow execution.
+A new service account has no role by default. A workspace admin grants it one or more roles after creating it, and until it holds at least one it cannot act on the platform.
 
-Manage this from the **Roles** section of the service account. See [Roles and permissions](/admin/identity-access/roles-permissions).
+The roles you can assign today include, for example:
+
+- **`workflow_executor`** — programmatic API access without AI Studio or credential management. Lets a worker register and run workflows.
+- **Developer** (`dev`) — everything `workflow_executor` allows, plus AI Studio access and credential management.
+
+**In the Admin Console**
+
+Open the service account, go to its **Roles** section, and select one or more roles. Changes apply immediately.
+
+**With the API**
+
+`PUT /v1/service-accounts/<SERVICE_ACCOUNT_ID>/roles` replaces the account's roles with the ones you pass in `role_ids`. This is a full replacement: any role the account holds that is absent from the list is revoked, and an empty array clears every role. Each entry is a role UUID; fetch the assignable roles and their UUIDs from `GET /v1/service-accounts/assignable-roles`.
+
+```bash
+curl -X PUT https://api.mistral.ai/v1/service-accounts/<SERVICE_ACCOUNT_ID>/roles \
+  -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{"role_ids": ["<ROLE_UUID>"]}'
+```
+
+See [Roles and permissions](/admin/identity-access/roles-permissions).
 
 <SectionTab as="h1" sectionId="add-api-key">Add an API key</SectionTab>
 

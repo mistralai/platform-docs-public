@@ -282,6 +282,7 @@ const sidebarTreeData = (
             sectionLabel('Build'),
             apiReferenceItem,
             takeByHref('/resources/sdks'),
+            takeByHref('/resources/mcp'),
             takeByHref('/resources/languages'),
             takeByHref('/resources/cookbooks'),
             takeByHref('/resources/migration-guides'),

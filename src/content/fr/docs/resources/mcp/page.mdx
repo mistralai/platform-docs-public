@@ -1,0 +1,156 @@
+---
+id: mcp
+title: MCP
+sidebar_position: 2
+description: Connectez n’importe quel client MCP à Mistral Studio avec votre clé API.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { AppLink } from '@/components/common/app-link';
+
+# MCP
+
+Le serveur MCP de Mistral connecte un agent IA à votre espace de travail Studio via le [Model Context Protocol](https://modelcontextprotocol.io). Il expose votre espace de travail sous forme d’outils MCP et authentifie chaque requête avec votre clé API Mistral.
+
+Utilisez-le depuis l’environnement où votre agent s’exécute : une CLI de développement, un IDE, un assistant de bureau ou votre propre application.
+
+| | |
+|---|---|
+| **Endpoint** | `https://api.mistral.ai/mcp` |
+| **Transport** | Streamable HTTP |
+| **Authentification** | `Authorization: Bearer <MISTRAL_API_KEY>` |
+
+<SectionTab as="h2" sectionId="before-you-begin">Avant de commencer</SectionTab>
+
+- Une [clé API](/admin/identity-access/api-keys) Mistral. Les clés sont propres à un espace de travail : l’agent dispose donc de l’accès déjà associé à cette clé.
+- Un client MCP qui prend en charge le transport HTTP streamable et les en-têtes de requête statiques.
+
+Exportez la clé dans l’environnement qui lance votre client :
+
+```bash
+export MISTRAL_API_KEY="your_api_key"
+```
+
+<SectionTab as="h2" sectionId="connect">Connecter un client</SectionTab>
+
+<ExplorerTabs>
+<ExplorerTab value="vibe" label="Vibe Code CLI" default>
+
+```bash
+vibe mcp add mistralai \
+  --url https://api.mistral.ai/mcp \
+  --transport streamable-http \
+  --api-key-env MISTRAL_API_KEY
+```
+
+Cette commande écrit l’entrée dans `~/.vibe/config.toml`:
+
+```toml
+[[mcp_servers]]
+name = "mistralai"
+transport = "streamable-http"
+url = "https://api.mistral.ai/mcp"
+
+[mcp_servers.auth]
+type = "static"
+api_key_env = "MISTRAL_API_KEY"
+```
+
+La configuration stocke le nom de la variable, et l’environnement contient la clé. Exécutez `/mcp mistralai` dans une session pour lister les outils. Consultez [Serveurs MCP](/vibe/code/cli/mcp-servers) pour les autorisations et le filtrage des outils.
+
+</ExplorerTab>
+<ExplorerTab value="claude-code" label="Claude Code">
+
+```bash
+claude mcp add --transport http mistral https://api.mistral.ai/mcp \
+  --header 'Authorization: Bearer ${MISTRAL_API_KEY}'
+```
+
+Exécutez `/mcp` pour vérifier la connexion.
+
+</ExplorerTab>
+<ExplorerTab value="codex" label="Codex">
+
+```bash
+codex mcp add mistral \
+  --url https://api.mistral.ai/mcp \
+  --bearer-token-env-var MISTRAL_API_KEY
+```
+
+Cette commande écrit l’entrée dans `~/.codex/config.toml` :
+
+```toml
+[mcp_servers.mistral]
+url = "https://api.mistral.ai/mcp"
+bearer_token_env_var = "MISTRAL_API_KEY"
+```
+
+Exécutez `codex mcp list` pour vérifier la connexion.
+
+</ExplorerTab>
+<ExplorerTab value="json" label="Autres clients">
+
+Les clients comme Cursor lisent un bloc JSON :
+
+```json
+{
+  "mcpServers": {
+    "mistral": {
+      "type": "http",
+      "url": "https://api.mistral.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${MISTRAL_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Chaque client a son propre chemin de configuration et ses propres règles pour interpréter `${...}`. Consultez sa documentation, puis rechargez le client et ouvrez sa liste d’outils pour vérifier la connexion.
+
+</ExplorerTab>
+<ExplorerTab value="curl" label="curl">
+
+Interrogez l’endpoint pour confirmer que la clé fonctionne. Le serveur répond avec un flux Server-Sent Events :
+
+```bash
+curl https://api.mistral.ai/mcp \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list",
+    "params": {}
+  }'
+```
+
+</ExplorerTab>
+</ExplorerTabs>
+
+<SectionTab as="h2" sectionId="tools">Ce que le serveur expose</SectionTab>
+
+**Skills**, les ensembles d’instructions réutilisables que vous gérez dans <AppLink href="https://console.mistral.ai/build/skills" app="studio">Skills</AppLink>. Un agent parcourt le catalogue de l’espace de travail, lit un Skill et les fichiers associés, crée une nouvelle version de Skill, modifie son partage ou le supprime. Un Skill écrit depuis votre éditeur apparaît dans Studio, et un Skill écrit dans Studio est disponible pour l’agent.
+
+Skills est la première fonctionnalité disponible. D’autres suivront. Le serveur liste les outils disponibles pour votre clé : demandez à votre client sa liste d’outils, ou appelez `tools/list`. Chaque outil décrit ses propres arguments.
+
+<SectionTab as="h2" sectionId="permissions">Accès et autorisations</SectionTab>
+
+Chaque appel utilise les autorisations de votre clé API.
+
+Certains outils écrivent des données : ils ajoutent des versions de Skill, modifient le partage et suppriment des Skills. Configurez l’approbation par outil dans votre client pour vérifier ces appels avant leur exécution.
+
+<SectionTab as="h2" sectionId="troubleshooting">Résolution des problèmes</SectionTab>
+
+| Problème | Cause | Solution |
+|---|---|---|
+| `401 {"detail":"Invalid API Key"}` | La clé est absente, mal saisie ou révoquée. | Exportez la variable dans l’environnement qui lance votre client, puis vérifiez que la clé est active dans la console. |
+| Un appel d’outil renvoie une erreur d’autorisation. | L’opération nécessite un accès supplémentaire à l’espace de travail. | Demandez l’accès correspondant à un Admin de l’espace de travail, puis réessayez. |
+
+<SectionTab as="h2" sectionId="next-steps">Et après</SectionTab>
+
+- [Créer un Skill dans Studio](/getting-started/quickstarts/studio/create-skill) pour donner à l’agent un élément sur lequel travailler.
+- [Serveurs MCP dans la CLI Vibe Code](/vibe/code/cli/mcp-servers) pour les autorisations par outil et le filtrage.
+- [Clés API](/admin/identity-access/api-keys) pour créer et renouveler la clé utilisée pour la connexion.

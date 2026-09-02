@@ -70,7 +70,9 @@ Controls the LLM request for summary generation.
 | `model` | `str` | `"mistral-small-latest"` | Model to use for summarization |
 | `prompt` | `str` | `"Summarize the document in less than 5 lines."` | Summarization prompt |
 | `max_tokens` | `int` | `256` | Maximum tokens in the summary |
-| `truncate_at` | `int \| None` | `32768` | Truncate document content before sending to LLM |
+| `max_chars_per_call` | `int \| None` | `32768` | Char budget per LLM call; content above this is truncated or map-reduced (see `overflow_strategy`) |
+| `overflow_strategy` | `OverflowStrategy` | `OverflowStrategy.TRUNCATE` | `TRUNCATE` cuts to `max_chars_per_call`; `MAP_REDUCE` splits into parts, summarizes each, then merges |
+| `map_concurrency` | `int` | `10` | Max concurrent map-phase LLM calls (map-reduce only) |
 | `temperature` | `float \| None` | `0.6` | LLM temperature |
 
 **SummaryRequestOptions**:
@@ -86,7 +88,7 @@ Controls how the summary is injected into the pipeline output.
 
 <SectionTab as="h1" sectionId="creating-custom-enrichers">Creating custom enrichers</SectionTab>
 
-Implement the `ChunkEnricher` interface to add custom metadata:
+Implement the `ChunkEnricher` interface to add custom metadata. `ChunkEnricher` is a `DocumentProcessor`: implement `enrich_chunk` to transform a single chunk, and `process` fans it out over the document's chunks:
 
 ```python
 from mistralai.search.toolkit.context import IngestContext
@@ -96,20 +98,15 @@ from mistralai.search.toolkit.document import DocumentChunk, Document
 class EntityTagger(ChunkEnricher):
     """Add entity tags to chunks."""
 
-    async def enrich_chunks(
+    async def enrich_chunk(
         self,
-        chunks: list[DocumentChunk],
         document: Document,
-        concurrency: int = 10,
+        chunk: DocumentChunk,
         context: IngestContext = IngestContext(),
-    ) -> tuple[list[DocumentChunk], Document]:
-        enriched = []
-        for chunk in chunks:
-            entities = await self._extract_entities(chunk.content)
-            updated_metadata = chunk.metadata.model_copy(update={"entities": entities})
-            enriched.append(chunk.model_copy(update={"metadata": updated_metadata}))
-
-        return enriched, document
+    ) -> DocumentChunk:
+        entities = await self._extract_entities(chunk.content)
+        updated_metadata = chunk.metadata.model_copy(update={"entities": entities})
+        return chunk.model_copy(update={"metadata": updated_metadata})
 
     async def _extract_entities(self, text: str) -> list[str]:
         entities = []
@@ -117,18 +114,17 @@ class EntityTagger(ChunkEnricher):
         return entities
 
 enricher = EntityTagger()
-enriched_chunks, document = await enricher.enrich_chunks(chunks, document)
+enriched_document = await enricher.process(document)
 
-for chunk in enriched_chunks:
+for chunk in enriched_document.chunks:
     print(f"Entities: {chunk.metadata.get('entities', [])}")
 ```
 
 ### Batch enrichment patterns
 
-For performance with many chunks, use concurrency and batch external API calls:
+`ChunkEnricher.process` already fans `enrich_chunk` out over the document's chunks with a bounded worker pool (`concurrency`, default 10). For external API calls, keep that work inside `enrich_chunk`:
 
 ```python
-import asyncio
 from mistralai.search.toolkit.context import IngestContext
 from mistralai.search.toolkit.ingestion.enrichment import ChunkEnricher
 from mistralai.search.toolkit.document import DocumentChunk, Document
@@ -136,27 +132,19 @@ from mistralai.search.toolkit.document import DocumentChunk, Document
 class BatchEnricher(ChunkEnricher):
     """Batch API calls for efficiency."""
 
-    async def enrich_chunks(
+    def __init__(self) -> None:
+        super().__init__(concurrency=20)  # raise the worker-pool size for external calls
+
+    async def enrich_chunk(
         self,
-        chunks: list[DocumentChunk],
         document: Document,
-        concurrency: int = 10,
+        chunk: DocumentChunk,
         context: IngestContext = IngestContext(),
-    ) -> tuple[list[DocumentChunk], Document]:
-        # Use concurrency limit for external API calls
-        semaphore = asyncio.Semaphore(concurrency)
-
-        async def enrich_one(chunk: DocumentChunk) -> DocumentChunk:
-            async with semaphore:
-                metadata = await self._fetch_metadata(chunk.content)
-                return chunk.model_copy(
-                    update={"metadata": chunk.metadata.model_copy(update=metadata)}
-                )
-
-        enriched = await asyncio.gather(
-            *[enrich_one(c) for c in chunks]
+    ) -> DocumentChunk:
+        metadata = await self._fetch_metadata(chunk.content)
+        return chunk.model_copy(
+            update={"metadata": chunk.metadata.model_copy(update=metadata)}
         )
-        return enriched, document
 
     async def _fetch_metadata(self, text: str) -> dict:
         # Call external API with batching/retries
@@ -174,7 +162,7 @@ pipeline = Pipeline(
     text_splitter=splitter,
     embedder=embedder,
     stores=vector_store,
-    chunk_enrichers=[
+    processors=[
         SummaryEnricher(llm_provider=llm),
         EntityTagger(),
         CustomMetadataEnricher(),

@@ -4,28 +4,77 @@ sidebar_position: 12
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
 
 # Admin config
 
-Admin config (also called **managed config**) lets organization and workspace admins enforce Vibe Code CLI settings centrally. It is defined once on the Mistral side and applied automatically to every CLI in the org or workspace.
+Admin config, also called **managed config**, lets Organization and Workspace administrators distribute Vibe Code CLI settings to all users. You define it once in the Admin Panel, and the CLI applies it to users in the Organization or Workspace. Use it to distribute models, providers, MCP servers, and tool policies without requiring users to edit `config.toml`.
 
-Unlike `config.toml`, it does not live on the user's machine. The CLI fetches it over HTTP at startup, keeps it **in memory only**, and never writes it to disk.
+:::info
+Admin config is a **distribution mechanism, not a security control**. It applies settings by default and shows them in `/config`, but users who control their local CLI environment can bypass them. Don't use admin config to restrict access to tools or models.
+:::
+
+Unlike `config.toml`, admin config doesn't live on the user's machine. The CLI fetches it over HTTP at startup, keeps it **in memory only**, and never writes it to disk.
+
+Admin config is available at two scopes:
+
+- **Organization level**: configure it in <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />. It applies to all users in the Organization.
+- **Workspace level**: open <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />, select a Workspace, and open `Settings`. This configuration can override or block specific Organization-level settings.
+
+The server merges the Organization and Workspace configurations. The client receives one resolved configuration.
+
+<SectionTab as="h2" sectionId="requirements">Minimum client versions</SectionTab>
+
+Support for admin config starts with these client versions:
+
+| Client | Minimum version |
+|---|---|
+| **Vibe Code CLI** | `2.24.2` |
+| **VS Code extension** | `1.16` |
+
+Earlier clients don't request admin config or apply its settings. Upgrade every client before you distribute an admin config.
 
 <SectionTab as="h2" sectionId="how-it-works">How it works</SectionTab>
 
-1. An admin authors a TOML config under **Vibe Code Clients managed config** in the [settings manager](https://admin.mistral.ai/vibe/preferences).
-2. On startup (and on `/reload`), the CLI calls the managed-config endpoint with your Mistral API key.
-3. If the config is enabled, its values are applied on top of every other setting.
+1. In <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />, enter a TOML configuration under `Vibe Code Clients managed config`.
+2. At startup and after `/reload`, the CLI calls the managed-config endpoint with the user's Mistral API key.
+3. If admin config is enabled, its values take precedence over every other configuration source.
+
+<SectionTab as="h2" sectionId="permissions">Permissions</SectionTab>
+
+Managing admin config requires the `manage_code_config` role-based access control (RBAC) permission at the Organization scope. Organization administrators can delegate admin config management without granting full administrator access.
+
+<SectionTab as="h2" sectionId="enable">Enable the feature</SectionTab>
+
+Admin config is **disabled by default**, and Mistral must enable it for your Organization. Contact your account team to request activation.
+
+:::warning
+We recommend validating your configuration in a test Organization before distributing it to all users.
+:::
+
+<SectionTab as="h2" sectionId="deployment">Activation by deployment type</SectionTab>
+
+The activation process depends on the deployment type:
+
+| Deployment | How to activate |
+|---|---|
+| **Serverless** | Contact your account team to enable the feature flag. |
+| **Dedicated (private cloud)** | Contact your account team. Mistral enables the feature flag when available or sets its value in the deployment configuration. |
+| **Self-hosted** | Contact your account team to request activation through the Helm chart. This option is available on request. |
+
+:::info
+**Dedicated and self-hosted deployments** require `/whoami` to return the correct Vibe and API domains. See [Troubleshooting](#troubleshooting) for validation steps.
+:::
 
 <SectionTab as="h2" sectionId="precedence">Precedence</SectionTab>
 
-Admin config is the **highest-priority** layer. It overrides everything, including command-line flags, environment variables, and both project and user `config.toml`:
+Admin config is the **highest-priority** layer. It takes precedence over command-line flags, environment variables, and both project and user `config.toml`:
 
-```
+```text
 admin config  >  CLI flags  >  env vars  >  project config.toml  >  user config.toml
 ```
 
-This precedence is the enforcement mechanism: any setting an admin sets cannot be changed locally.
+This precedence means the admin-provided values take effect for users by default, without them needing to update their own `config.toml`.
 
 <SectionTab as="h2" sectionId="what-can-be-set">What admins can set</SectionTab>
 
@@ -76,3 +125,66 @@ Here the model `mistral-large-2411` is served through the `acme-enterprise` prov
 <SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
 
 Admin config never contains literal secrets. Credential fields must reference an environment variable (for example, `api_key_env_var = "MISTRAL_API_KEY"`), never the key itself. Literal API keys, tokens, or passwords are rejected on the server.
+
+<SectionTab as="h2" sectionId="user-experience">What users see</SectionTab>
+
+When admin config is active, users in the Vibe Code CLI notice the following:
+
+- Admin-managed settings in `/config` appear dim with a `⚿` lock glyph and list `your administrator` as the origin. A legend at the bottom of the screen reads `⚿ Settings are managed by your organization`.
+- Admin-managed fields are read-only in `/config`. Attempts to edit or reset them have no effect.
+- The model picker is an exception. If a user switches models while `active_model` is admin-managed, a warning explains that the administrator controls the setting.
+- Users see admin-managed markers only when they open `/config`. There is no startup banner or global indicator.
+- The CLI fetches admin config in the background at the start of each session. It keeps the configuration in memory and never writes it to the local `config.toml`.
+- If a network or server error prevents the fetch, the session continues without admin config. The CLI logs the failure at debug level and doesn't show a warning.
+
+<SectionTab as="h2" sectionId="disable">Stop applying admin config</SectionTab>
+
+Disabling the feature flag only hides the admin UI. Clients continue to fetch and apply the saved configuration.
+
+To stop applying admin config, **submit an empty configuration** before you disable the feature flag. This prevents a stale configuration from being applied to user sessions.
+
+<SectionTab as="h2" sectionId="troubleshooting">Troubleshoot dedicated and self-hosted deployments</SectionTab>
+
+If users in dedicated or self-hosted deployments don't receive admin config, check the endpoints and domain values.
+
+<SectionTab as="h3" variant="secondary" sectionId="check-endpoints">Check endpoint access</SectionTab>
+
+The client needs to reach two authenticated endpoints:
+
+- `<console_base_url>/api/vibe/whoami` returns the tenant's Vibe and API domains in `vibe_base` and `api_base`.
+- `<vibe_base_url>/api/v1/code/managed-config` returns the admin config response. The client derives `vibe_base_url` from the `vibe_base` value returned by `/whoami`.
+
+Set the URLs for the user's deployment, make sure `MISTRAL_API_KEY` is available in the environment, and run both requests from the user's environment:
+
+```bash
+CONSOLE_BASE_URL="https://console.mistral.ai"
+VIBE_BASE_URL="https://chat.mistral.ai"
+
+curl --silent --show-error --fail-with-body \
+  --header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  "${CONSOLE_BASE_URL}/api/vibe/whoami"
+
+curl --silent --show-error --fail-with-body \
+  --header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  "${VIBE_BASE_URL}/api/v1/code/managed-config"
+```
+
+For dedicated and self-hosted deployments, replace both URL values with the deployment's console and Vibe origins.
+
+- If either request fails to connect, check the deployment's DNS, TLS, and network configuration. Contact your account team or Mistral support if the endpoint remains unavailable.
+- If either request returns `401` or `403`, verify the user's API key and access.
+- If both requests return a successful HTTP status, continue with the domain checks.
+
+<SectionTab as="h3" variant="secondary" sectionId="check-domains">Check the `/whoami` domains</SectionTab>
+
+The `/whoami` response must contain the expected `vibe_base` and `api_base` origins. The client stores a valid `vibe_base` value as `vibe_base_url` in the user's `config.toml` and uses it to build the managed-config URL.
+
+If `/whoami` returns an incorrect domain, contact Mistral support to correct the server configuration. If the response is correct but the client doesn't fetch admin config, investigate the Vibe Code client.
+
+<SectionTab as="h3" variant="secondary" sectionId="deployment-fixes">Apply fixes for your deployment type</SectionTab>
+
+| Deployment | How fixes are delivered |
+|---|---|
+| **Serverless** | Mistral includes the fix in a platform release. |
+| **Dedicated** | Request a redeployment of the dedicated instance. |
+| **Self-hosted** | Update to a self-hosted release. For critical issues, contact Mistral support to discuss a hotfix. |

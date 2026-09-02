@@ -11,13 +11,96 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 Toutes les modifications notables apportées à Search Toolkit sont documentées ici.
 
+<SectionTab as="h2" sectionId="0-0-13">0.0.13</SectionTab>
+
+**Modifications incompatibles**
+
+_Modèle d’embedding du schéma_
+
+- `create_schema()` et `create_default_schema()` acceptent désormais `embedding_model` (`EmbeddingModel` ou `MistralEmbeddingPreset`) à la place de `embedding_dimensions: int`. `embedding_dimensions` est déprécié. Fournir les deux paramètres lève une erreur `ValueError`.
+- `VespaSchemaDefinition.embedding_dimensions` est remplacé par `embedding_model: EmbeddingModel`, qui transmet le nom, les dimensions, le type de données et la métrique de distance à la couche de schéma. `VespaSearchIndex` expose désormais une propriété `embedding_model`.
+
+**Améliorations**
+
+- Ajout d’un backend de recherche Postgres (`mistralai-search-toolkit-plugins-postgres`) en complément de Vespa. Il prend en charge la recherche dense et hybride, la navigation et les mises à jour partielles. Les extensions `vector` et `pg_textsearch` doivent être provisionnées dans la base de données cible.
+- Ajout de l’abstraction `EmbeddingModel` comme source de vérité pour la configuration vectorielle. Elle comprend `MistralEmbeddingModel`, `CustomEmbeddingModel`, les presets `MistralEmbeddingPreset`, `VectorDType`, `DistanceMetric` et le protocole `VectorConfig`.
+- `SmartPDFExtractor` et `LegacyOfficeExtractor` acceptent tout `DocumentExtractor` comme délégué OCR. Un déploiement sans accès à l’API Mistral peut ainsi fournir son propre moteur.
+- Ajout d’une extraction PDF orientée texte, activée avec `pdf_min_chars_per_page`. Elle est désactivée par défaut.
+- Propagation de `exclude_ids` dans la couche de récupération. `CachedQueryEngine.search` transmet ce paramètre et ignore le cache lorsque des exclusions sont définies.
+- SharePoint : ajout des URL de documents externes aux résultats de recherche et du filtrage par chemin ou identifiant externe avec `document_url`, `document_path` et `document_external_id`.
+
+**Corrections de bugs**
+
+- Mise à jour de `markdownify` vers `>=1.0.0,<2` et adaptation du convertisseur personnalisé à l’API 1.x.
+
+<SectionTab as="h2" sectionId="0-0-12">0.0.12</SectionTab>
+
+**Modifications incompatibles**
+
+_Sérialisation des checkpoints_
+
+- Un nouveau module `document/serialization.py` introduit un `DocumentTypeRegistry` et des identifiants de type stables, afin que les classes de documents puissent faire un aller-retour via un service externe en toute sécurité.
+
+*Autres*
+
+- Mise à jour de `mistralai` vers `>=2.9.1,<2.10`.
+
+**Améliorations**
+
+- Ajout de `MistralClientConfig` et de `build_mistral_client()` pour centraliser la création des clients du SDK Mistral pour des pipelines complets.
+- Ajout de `SmartPDFExtractor`, qui choisit automatiquement entre PyMuPDF et Mistral OCR pour les PDF qui disposent déjà d’une couche de texte.
+- Ajout de `EmailWithAttachmentsExtractor`, qui intègre le texte des pièces jointes dans le Markdown de l’e-mail parent sous une section `## Attachments`.
+- Amélioration du signalement des erreurs liées aux problèmes d’ingestion.
+
+**Corrections de bugs**
+
+- Les échecs d’ingestion déterministes sont désormais détectés plus rapidement.
+
+**Maintenance**
+
+- Mise à jour de `dynaconf`, de `>=3.2.11` à `>=3.3.4`.
+- Renommage du module `mistralai.search.toolkit.embedders` en `mistralai.search.toolkit.embedding`. Une couche de compatibilité `embedders`, rétrocompatible, réexporte les symboles publics et émet un `DeprecationWarning`.
+
+<SectionTab as="h2" sectionId="0-0-11">0.0.11</SectionTab>
+
+**Améliorations**
+
+- Pour l’ingestion, les checkpoints d’extraction (enregistrement d’instantanés entre les étapes pour accélérer les nouvelles tentatives) sont désormais une capacité indépendante du backend. `Pipeline(checkpoint_store=...)` accepte n’importe quel backend `ObjectStorage` et enregistre des checkpoints entre les étapes d’ingestion.
+- Introduction d’un protocole `DocumentProcessor` pour l’ingestion, qui unifie `TextSplitter`, `Embedder` et `ChunkEnricher`.
+- Ajout de la synthèse map-reduce pour les documents longs : `SummarizeRequestConfig` avec `overflow_strategy: OverflowStrategy.MAP_REDUCE` peut découper un document, synthétiser ses différentes parties et les fusionner dans une synthèse finale.
+- Ajout de fonctionnalités OCR v4 : intégration directe des tableaux Markdown dans les fragments de page, scores de confiance par fragment et prise en charge de base des bounding boxes.
+
+**Corrections de bugs**
+
+- Nettoyage des points de code Unicode non valides (substituts isolés) dans le contenu extrait
+
+**Maintenance**
+
+- Mise à jour de la contrainte `mistralai`, de `<2.7` à `<2.9`.
+- Mise à jour de `pypdf`, de 6.13.3 à 6.14.2.
+
+<SectionTab as="h2" sectionId="0-0-10">0.0.10</SectionTab>
+
+**Améliorations**
+
+- Ajout de la prise en charge de l’API batch d’embeddings pour l’ingestion : `MistralEmbedder.run_batch_embedding_job()` peut être utilisé pour réduire les coûts d’embedding sur les tâches d’ingestion volumineuses.
+- Ajout du découpage en fragments tenant compte des en-têtes pour l’ingestion : nouveaux splitters `ParagraphTokenTextSplitter` et `MarkdownTokenTextSplitter`.
+
+**Corrections de bugs**
+
+- Correction de `TokenTextSplitter`, qui signalait des offsets incorrects pour le contenu répété.
+
+**Maintenance**
+
+- Assouplissement de la contrainte `mistralai` du toolkit à `>=2.5.0,<2.7`.
+
 <SectionTab as="h2" sectionId="0-0-9">0.0.9</SectionTab>
 
 **Modifications incompatibles**
 
 *modèle de document*
 
-Search Toolkit utilise désormais un modèle de document unifié construit autour de `Document` et `DocumentChunk`, avec une identité déterministe dérivée d’un `source_id` et d’un `locator`. Consultez la page [Modèle de document](/studio/search/search-toolkit/document-model) pour plus de détails.
+Search Toolkit utilise désormais un modèle de document unifié construit autour de `Document` et `DocumentChunk`, avec une identité déterministe dérivée d’un `source_id` et d’un `locator`. Consultez la page [Modèle de document](/studio/search/search-toolkit/concepts/document-model) pour plus de détails.
 
 - Les extracteurs produisent désormais des objets `DocumentChunk` directement ; la représentation séparée de *page* a été supprimée.
 - Les identifiants `Document.id` et `DocumentChunk.id` sont désormais calculés de manière déterministe à partir de `source_id` (et de `locator` pour les fragments), ce qui rend l’indexation idempotente. Le champ `id` explicite sur `File` et `document_id` sur `DocumentChunk` ont été supprimés.
@@ -32,7 +115,7 @@ Vespa indexe désormais un fragment par document via le nouveau mode d’indexat
 - L’API d’indexation est divisée en une base `VespaSearchIndex` et un `SingleDocumentSearchIndex` dédié ; le modèle à document unique est obsolète au profit de `DOCUMENT_PER_CHUNK`.
 - Le champ `id_field` du schéma est obsolète et n’est plus autorisé pour les index `DOCUMENT_PER_CHUNK`.
 
-*Autres*
+_Autre_
 
 - Le module `indices` a été renommé en `search`. Mettez à jour les imports en conséquence.
 

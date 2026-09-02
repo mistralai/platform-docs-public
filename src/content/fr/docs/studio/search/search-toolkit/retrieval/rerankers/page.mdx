@@ -12,8 +12,8 @@ import { SectionTab } from '@/components/layout/section-tab';
 Les classeurs appliquent un système de notation plus sophistiqué pour améliorer la qualité du classement. La récupération initiale est rapide mais approximative ; les classeurs utilisent des modèles ou une logique plus approfondis pour affiner les résultats.
 
 Search Toolkit propose des classeurs dans deux catégories :
-- **`ReRanker`** — agit sur une seule liste de résultats (LLMReRanker, CrossEncoderReRanker)
-- **`GroupedRanker`** — agit sur plusieurs groupes de résultats (RRFRanker pour la fusion)
+- **`ReRanker`** : agit sur une seule liste de résultats (LLMReRanker, CrossEncoderReRanker)
+- **`GroupedRanker`** : agit sur plusieurs groupes de résultats (RRFRanker pour la fusion)
 
 Plusieurs classeurs peuvent être enchaînés dans la liste `QueryEngine.rerankers` et sont appliqués séquentiellement.
 
@@ -68,8 +68,7 @@ result = await query_engine.search(query="What is RAG?", top_k=10)
 | Option | Type | Valeur par défaut | Objectif |
 |--------|------|---------|---------|
 | `llm_provider` | LLMProvider | Obligatoire | Modèle de langage à utiliser pour la notation (MistralChat, etc.) |
-| `top_k` | int | 10 | Nombre de résultats à retourner après bouclage |
-| `batch_size` | int | 10 | Taille du batch pour la notation par le modèle de langage |
+| `top_k` | int \| None | `None` | Nombre de résultats à renvoyer après le reranking (`None` renvoie tout) |
 
 **Fonctionnement** :
 1. Le modèle de langage reçoit la requête et les fragments récupérés
@@ -100,7 +99,7 @@ result = await query_engine.search(query="...", top_k=10)
 
 <SectionTab as="h1" sectionId="cross-encoder-reranker">Cross-Encoder ReRanker</SectionTab>
 
-Utilise un modèle cross-encoder hébergé optimisé pour le reclacement. Plus rapide que le reclagement par modèle de langage mais nécessite un serveur de modèle dédié.
+Utilise un modèle cross-encoder hébergé et optimisé pour le reclassement. Cette méthode est plus rapide que le reclassement par modèle de langage, mais nécessite un serveur de modèle dédié.
 
 **Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
 
@@ -130,13 +129,13 @@ result = await query_engine.search(query="What is RAG?", top_k=10)
 |--------|------|---------|---------|
 | `base_url` | str | Obligatoire | URL du service cross-encoder |
 | `model` | str | Obligatoire | Identifiant du modèle sur le service |
-| `top_k` | int | 10 | Nombre de résultats à retourner |
-| `timeout` | int | 30 | Délai d’expiration de la requête en secondes |
+| `top_k` | int \| None | `None` | Nombre de résultats à renvoyer (`None` renvoie tout) |
+| `timeout` | float | 300.0 | Délai d’expiration de la requête en secondes |
 
 **Modèles populaires** :
-- `cross-encoder/ms-marco-MiniLM-L-6-v2` — Rapide, polyvalent
-- `cross-encoder/ms-marco-TinyBERT-L-2-v2` — Léger, latence faible
-- `cross-encoder/qnli-distilroberta-base` — Correspondance question-réponse
+- `cross-encoder/ms-marco-MiniLM-L-6-v2` : Rapide, polyvalent
+- `cross-encoder/ms-marco-TinyBERT-L-2-v2` : Léger, latence faible
+- `cross-encoder/qnli-distilroberta-base` : Correspondance question-réponse
 
 **Quand l’utiliser** :
 - Besoin de reclagement mais souhaitent éviter les coûts du modèle de langage
@@ -213,11 +212,11 @@ Reciprocal Rank Fusion (RRF) combine les résultats de plusieurs récupérateurs
 
 **Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
 
-**Exemple** — plusieurs récupérateurs vectoriels avec des profils de requête différents :
+**Exemple** : plusieurs récupérateurs vectoriels avec des profils de requête différents :
 
 ```python
 from mistralai.client import Mistral
-from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
+from mistralai.search.toolkit.embedding import MistralEmbedder, MODEL_1024_EMBEDDING
 from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever
 from mistralai.search.toolkit.retrieval.rerankers import RRFRanker
 from mistralai.search.toolkit.retrieval import QueryEngine
@@ -273,7 +272,7 @@ RRFRanker(rrf_k=100, top_k=10)  # Higher k, flattens differences
 - Combinaison de plusieurs stratégies de récupération sur le même index (vecteurs denses, recherche hybride, etc.)
 - Résultats provenant de plusieurs sources avec des scores non comparables
 - Aucune contrainte de modèle ou de coût supplémentaire
-- Fusion robuste qui ne nécessite pas de normalisation des scores
+- Fusion qui ne nécessite pas de normalisation des scores
 
 <SectionTab as="h1" sectionId="chaining-rerankers">Enchaînement des classeurs</SectionTab>
 
@@ -307,6 +306,6 @@ result = await query_engine.search(query="...", top_k=10)
 
 <SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
 
-- [Présentation de la récupération](../retrieval) — Architecture du pipeline de récupération
-- [Récupérateurs](retrievers) — Recherche vectorielle et récupérateurs personnalisés
-- [Prétraitement des requêtes](preprocessing) — Améliorer les requêtes avant récupération
+- [Présentation de la récupération](../retrieval) : Architecture du pipeline de récupération
+- [Récupérateurs](retrievers) : Recherche vectorielle et récupérateurs personnalisés
+- [Prétraitement des requêtes](preprocessing) : Améliorer les requêtes avant récupération

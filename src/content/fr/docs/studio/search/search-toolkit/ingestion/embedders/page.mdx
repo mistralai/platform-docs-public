@@ -17,7 +17,7 @@ Tous les embedders implémentent la classe de base abstraite `Embedder`, qui fou
 
 | Méthode | Signature | Description |
 |--------|-----------|-------------|
-| `embed` | `(texts: list[str]) -> EmbeddingResult` | Méthode principale — plonger un batch de chaînes de caractères. |
+| `embed` | `(texts: list[str]) -> EmbeddingResult` | Méthode principale : générer les embeddings d’un lot de chaînes de caractères. |
 | `embed_chunks` | `(chunks: list[DocumentChunk]) -> list[DocumentChunk]` | Plonger des fragments et renvoyer des copies avec les plongements définis. |
 | `embed_query` | `(text: str) -> list[float]` | Plonger une seule chaîne de caractères et renvoyer le vecteur. |
 
@@ -45,7 +45,7 @@ Utilisez l’API d’embedding de Mistral pour vectoriser du texte.
 
 ```python
 from mistralai.client import Mistral
-from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
+from mistralai.search.toolkit.embedding import MistralEmbedder, MODEL_1024_EMBEDDING
 
 client = Mistral(api_key="your-api-key")
 embedder = MistralEmbedder(
@@ -64,18 +64,18 @@ embedded_chunks = await embedder.embed_chunks(chunks)
 
 **Constantes de modèle d'embedding** :
 
-Utilisez ces constantes prédéfinies lors de la configuration de `MistralEmbedder`. Associez toujours le paramètre `embedding_dimensions` dans votre schéma Vespa aux dimensions de sortie du modèle.
+Utilisez ces constantes prédéfinies lors de la configuration de `MistralEmbedder`. Les dimensions doivent correspondre à l'`embedding_model` défini dans le schéma de votre index. Associez chaque constante au `MistralEmbeddingPreset` correspondant (voir [Modèles d'embedding](/studio/search/search-toolkit/concepts/embedding-model)).
 
-| Constante | Nom du modèle | Dimensions | Recommandé pour |
-|----------|-----------|-----------|----------|
-| `MODEL_1024_EMBEDDING` | `"mistral-embed"` | 1024 | Par défaut pour les pipelines Search Toolkit (correspond au schéma Vespa `embedding_dimensions=1024`) |
-| `MODEL_256_EMBEDDING` | `"mistral-embed-dim256-2510"` | 256 | Environnements à faible latence et contrainte mémoire |
-| `MODEL_128_EMBEDDING` | `"mistral-embed-dim128-2510"` | 128 | Dimensions minimales (retour par défaut) |
+| Constante | Nom du modèle | Dimensions | Preset correspondant | Recommandé pour |
+|----------|-----------|-----------|-----------------|----------|
+| `MODEL_1024_EMBEDDING` | `"mistral-embed"` | 1024 | `MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024` | Valeur par défaut pour les pipelines Search Toolkit |
+| `MODEL_256_EMBEDDING` | `"mistral-embed-dim256-2510"` | 256 | `MistralEmbeddingPreset.MISTRAL_EMBED_DIM_256` | Environnements à faible latence et contrainte mémoire |
+| `MODEL_128_EMBEDDING` | `"mistral-embed-dim128-2510"` | 128 | `MistralEmbeddingPreset.MISTRAL_EMBED_DIM_128` | Dimensions minimales (retour par défaut) |
 
 **Importation et utilisation** :
 
 ```python
-from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING, MODEL_256_EMBEDDING, MODEL_128_EMBEDDING
+from mistralai.search.toolkit.embedding import MistralEmbedder, MODEL_1024_EMBEDDING, MODEL_256_EMBEDDING, MODEL_128_EMBEDDING
 
 # Use MODEL_1024_EMBEDDING for Search Toolkit pipelines
 embedder = MistralEmbedder(client=client, model_name=MODEL_1024_EMBEDDING)
@@ -104,7 +104,7 @@ Implémentez la classe de base `Embedder` avec une seule méthode `embed` :
 
 ```python
 from mistralai.search.toolkit.context import RetrievalContext
-from mistralai.search.toolkit.embedders import Embedder, EmbeddingResult
+from mistralai.search.toolkit.embedding import Embedder, EmbeddingResult
 
 
 class MyEmbedder(Embedder):
@@ -117,3 +117,5 @@ class MyEmbedder(Embedder):
 ```
 
 Les méthodes `embed_chunks` et `embed_query` sont héritées automatiquement.
+
+Lorsque vous utilisez un embedder personnalisé, déclarez un `CustomEmbeddingModel` dans le schéma de votre index avec les mêmes dimensions, le même type de données et la même métrique de distance. Le schéma décrit l'index, tandis que l'embedder produit les vecteurs. Ils doivent utiliser la même forme de vecteur. Consultez [Modèles d'embedding](/studio/search/search-toolkit/concepts/embedding-model) pour distinguer `MistralEmbeddingModel` et `CustomEmbeddingModel`.

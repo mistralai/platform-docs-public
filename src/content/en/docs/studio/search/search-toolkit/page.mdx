@@ -35,7 +35,7 @@ LLMs are not trained on your private data. To ground their answers in your docum
 
 <SectionTab as="h1" sectionId="architecture">Architecture</SectionTab>
 
-**Ingestion** transforms raw documents into searchable chunks. A `FileLoader` reads raw bytes from a source, a `DocumentExtractor` converts them into a structured document, a `TextSplitter` divides it into chunks, an optional `ChunkEnricher` adds metadata, and an `Embedder` produces vectors for indexing into a vector store.
+**Ingestion** transforms raw documents into searchable chunks. A `FileLoader` reads raw bytes from a source, a `DocumentExtractor` converts them into a structured document, a `TextSplitter` divides it into chunks, optional `DocumentProcessor` stages (such as a `ChunkEnricher` or `SummaryEnricher`) add metadata, and an `Embedder` produces vectors for indexing into a vector store.
 
 **Retrieval** finds relevant chunks for a given query. An optional query preprocessor rewrites or expands the query, a `Retriever` searches the vector index, and an optional `Reranker` re-scores the results before returning them.
 
@@ -46,12 +46,12 @@ Both workflows are orchestrated by high-level classes (`Pipeline` for ingestion,
 | Component | Built-in options |
 |-----------|-----------------|
 | **File loaders** | `FilesystemFileLoader`, custom loaders |
-| **Extractors** | `MistralOCRExtractor`, `PlainTextExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor` |
-| **Text splitters** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `SeparatorTextSplitter` |
+| **Extractors** | `MistralOCRExtractor`, `SmartPDFExtractor`, `PlainTextExtractor`, `PyMuPDFExtractor`, `HTMLExtractor`, `SpreadsheetExtractor`, `EmailExtractor`, `EmailWithAttachmentsExtractor`, `NumbersExtractor`, `LegacyOfficeExtractor`, `MistralAudioTranscriptionExtractor` |
+| **Text splitters** | `CharacterTextSplitter`, `TokenTextSplitter`, `MarkdownTextSplitter`, `ParagraphTokenTextSplitter`, `MarkdownTokenTextSplitter`, `SeparatorTextSplitter` |
 | **Enrichers** | `SummaryEnricher`, custom `ChunkEnricher` |
 | **Embedders** | `MistralEmbedder`, custom `Embedder` |
-| **Storage** | Vespa or custom vector store |
-| **Retrievers** | `VectorRetriever` |
+| **Storage** | Vespa, Postgres (pgvector), or custom vector store |
+| **Retrievers** | `VectorRetriever`, `KeywordRetriever` with a custom `KeywordStoreIndex` |
 | **Rerankers** | `LLMReRanker`, `CrossEncoderReRanker`, `RRFRanker` |
 | **Preprocessing** | `LLMQueryRewriter`, `LLMQueryExtension` |
 | **Caching** | `SemanticCache` with `InMemoryCacheBackend` |
@@ -76,6 +76,8 @@ Optional extras add specialized functionality:
 | `text-splitter-langchain` | Additional text splitting strategies via LangChain |
 | `storage-gcs` | Google Cloud Storage integration |
 | `storage-azure` | Azure Blob Storage integration |
+| `storage-s3` | Amazon S3 integration |
+| `language-detection-fasttext` | Language detection via fastText |
 | `all` | All optional extras |
 
 Install extras with the core package:
@@ -95,7 +97,8 @@ Requires **Python 3.12+**. We recommend using [uv](https://docs.astral.sh/uv/) f
 <SectionTab as="h1" sectionId="next-steps">Next steps</SectionTab>
 
 - **[Quickstart](/studio/search/search-toolkit/quickstart)**: build your first ingestion and retrieval pipeline end to end.
-- **[Document model](/studio/search/search-toolkit/document-model)**: understand `Document`, `DocumentChunk`, and the identity that ties them together.
+- **[Document model](/studio/search/search-toolkit/concepts/document-model)**: understand `Document`, `DocumentChunk`, and the identity that ties them together.
+- **[Embedding model](/studio/search/search-toolkit/concepts/embedding-model)**: understand how the schema describes embedding vectors, separately from the embedder.
 - **[Search index](/studio/search/search-toolkit/search-index)**: set up your vector store.
 - **[Ingestion](/studio/search/search-toolkit/ingestion)**: load, extract, chunk, enrich, and index your documents.
 - **[Retrieval](/studio/search/search-toolkit/retrieval)**: configure vector search with optional reranking.

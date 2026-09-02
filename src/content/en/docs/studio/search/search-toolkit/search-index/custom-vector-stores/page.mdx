@@ -1,0 +1,95 @@
+---
+title: Custom vector stores
+description: Implement your own storage backend for Search Toolkit.
+sidebar_position: 3
+sidebar_label: Custom vector stores
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Custom vector stores
+
+Implement a custom storage backend by subclassing `VectorStoreIndex` (or `KeywordStoreIndex` for keyword search) and implementing its three methods:
+
+```python
+from mistralai.search.toolkit.context import IngestContext, RetrievalContext
+from mistralai.search.toolkit.search import VectorStoreIndex, VectorSearchQuery, SearchResult
+from mistralai.search.toolkit.document import Document
+
+class MyVectorStore(VectorStoreIndex):
+    async def index_document(self, document: Document, context: IngestContext = IngestContext()) -> None:
+        # Store the document and its chunks
+        pass
+
+    async def search(self, query: VectorSearchQuery, context: RetrievalContext = RetrievalContext()) -> list[SearchResult]:
+        # Search and return results
+        pass
+
+    async def delete_document(self, doc_id: str, context: IngestContext = IngestContext()) -> None:
+        # Delete a document by ID
+        pass
+```
+
+Once the store implements `VectorStoreIndex`, pass it to the same `Pipeline` and `QueryEngine` as the built-in backends.
+
+<SectionTab as="h1" sectionId="agentic-operations">Optional agentic operations</SectionTab>
+
+Beyond indexing and search, a backend can expose positional navigation by implementing the optional, `@runtime_checkable` `NavigableIndex` protocol. A store that doesn't implement the protocol doesn't advertise the capability, and callers gate access with `isinstance`.
+
+### `NavigableIndex`
+
+These methods provide positional navigation over a chunk-per-document index. An agent can move to adjacent chunks, read a span, fetch a chunk by ID, and search within a source. In agentic `open` and `navigate` loops, the model keeps only an opaque `chunk_id` from a search result, and the server resolves its position.
+
+```python
+from mistralai.search.toolkit.search import NavigableIndex, NavigationDirection, GrepMode
+
+class MyVectorStore(VectorStoreIndex):  # also implements NavigableIndex
+    async def navigate(self, source_id, start_offset, end_offset, direction, *, top_k=1, content_type=..., context=...):
+        # Adjacent chunks in the requested direction (NEXT / PREVIOUS)
+        ...
+
+    async def read(self, source_id, start_offset, end_offset, *, content_type=..., top_k=20, context=...):
+        # Chunks whose span falls within [start_offset, end_offset)
+        ...
+
+    async def get_chunk(self, chunk_id, *, context=...):
+        # Resolve a chunk_id to its SearchResult (or None)
+        ...
+
+    async def grep(self, source_id, pattern, *, mode=GrepMode.PHRASE, content_type=..., top_k=5, context=...):
+        # Lexical match within a single source (no vector ranking)
+        ...
+```
+
+Callers check the capability rather than catching `NotImplementedError`:
+
+```python
+from mistralai.search.toolkit.search import NavigableIndex
+
+if isinstance(store, NavigableIndex):
+    results = await store.get_chunk(chunk_id)
+```
+
+Offsets follow the `[start, end)` half-open convention used by `DocumentChunk`. `read` and `navigate` raise `SourceNotFoundError` when `source_id` does not match any existing source, and return an empty list when a request reaches a source boundary.
+
+<SectionTab as="h1" sectionId="partial-updates">Optional partial updates</SectionTab>
+
+A backend can also expose partial updates without a full re-index by implementing the optional `PatchableIndex` protocol. This protocol can change one metadata value or one chunk's embedding without chunking and indexing the full document again. Implement `patch_chunk` and `patch_document`:
+
+```python
+from mistralai.search.toolkit.search import PatchableIndex
+
+class MyVectorStore(VectorStoreIndex):  # also implements PatchableIndex
+    async def patch_chunk(self, chunk_id, patch, *, context=...):
+        ...
+
+    async def patch_document(self, document_id, patch, *, context=...):
+        ...
+```
+
+`ChunkPatch` and `DocumentPatch` (from `mistralai.search.toolkit.search`) describe the fields to reassign or the metadata keys to merge; a metadata key set to `None` is removed.
+
+<SectionTab as="h1" sectionId="see-also">See also</SectionTab>
+
+- **[Search index](/studio/search/search-toolkit/search-index)**: the built-in backends.
+- **[Vespa](/studio/search/search-toolkit/search-index/vespa)** and **[Postgres](/studio/search/search-toolkit/search-index/postgres)**: the built-in implementations, useful as reference for your own.

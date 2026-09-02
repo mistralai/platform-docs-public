@@ -1,0 +1,302 @@
+---
+title: Référence des helpers de migration
+sidebar_position: 8
+sidebar_label: Helpers de migration
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+Référence des helpers utilisés dans les [migrations](migrations). Tous les helpers sont importés depuis `mistralai.search.toolkit.plugins.vespa.migration` et appelés depuis la méthode `migrate()` d'une migration.
+
+```python
+from mistralai.search.toolkit.plugins.vespa.migration import (
+    VespaMigration,
+    set_app_name,
+    create_schema,
+    add_field,
+    add_query_profiles,
+)
+```
+
+<SectionTab as="h2" sectionId="application-configuration">Configuration de l'application</SectionTab>
+
+### `set_app_name`
+
+```python
+def set_app_name(app_name: str) -> None
+```
+
+Définissez le nom de l'application pour l'exécution de la migration. Obligatoire dans la première migration. Ne doit contenir que des lettres minuscules (`a-z`).
+
+### `set_content_id`
+
+```python
+def set_content_id(content_id: str) -> None
+```
+
+Remplacez l'id du cluster de contenu utilisé dans `services.xml` (par défaut, le nom de l'application). Utilisez cette option lorsque le cluster déployé a été créé à l'origine avec un id différent. Sinon, Vespa traite un changement de nom comme une suppression suivie d'une recréation, ce qui détruit tous les documents stockés.
+
+### `allow_schema_removal`
+
+```python
+def allow_schema_removal(until: str) -> None
+```
+
+Indiquez qu'une migration supprime intentionnellement un ou plusieurs schémas. Vespa rejette les suppressions de schémas par défaut pour protéger les données ; cette opération écrit un fichier `validation-overrides.xml` qui autorise la suppression jusqu'à `until` (une date ISO `"YYYY-MM-DD"`). Choisissez une date une ou deux semaines après votre fenêtre de déploiement.
+
+### `set_distribute_across_groups`
+
+```python
+def set_distribute_across_groups(value: bool) -> None
+```
+
+:::warning
+**Obsolète.** Hook de compatibilité pour l'autodécouverte Kubernetes. Pour les nouveaux déploiements, définissez explicitement les groupes dans le fichier de topologie.
+:::
+
+<SectionTab as="h2" sectionId="creating-schemas">Créer des schémas</SectionTab>
+
+### `create_schema`
+
+```python
+def create_schema(
+    name: str,
+    mode: SearchMode,
+    indexing_mode: IndexingMode,
+    embedding_model: EmbeddingModel | MistralEmbeddingPreset | None = None,
+    embedding_dimensions: int | None = None,
+    fields: list[FieldDefinition] | None = None,
+    custom_functions: list[FunctionWithInputs] | None = None,
+    default_query_profile_name: str | None = None,
+    top_chunks: int | None = None,
+    id_field: str | None = None,
+    content_cluster: str = "content",
+) -> None
+```
+
+Créez un schéma avec un mode d'indexation explicite. C'est la méthode recommandée pour définir un schéma.
+
+| Paramètre | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `name` | `str` | *(obligatoire)* | Nom du type de document (lettres minuscules et traits de soulignement uniquement) |
+| `mode` | `SearchMode` | *(obligatoire)* | `INDEX` ou `STREAMING` |
+| `indexing_mode` | `IndexingMode` | *(obligatoire)* | Disposition du document : `DOCUMENT_PER_CHUNK` (recommandé) ou `SINGLE_DOCUMENT` (hérité, obsolète) |
+| `embedding_model` | `EmbeddingModel \| MistralEmbeddingPreset \| None` | `None` | Modèle d'embedding (dimensions, type de données, métrique de distance) appliqué à tous les champs d'embedding. Obligatoire sauf si vous fournissez le paramètre déprécié `embedding_dimensions`. Transmettez un preset pour utiliser ses valeurs par défaut, ou un `MistralEmbeddingModel` ou `CustomEmbeddingModel`. Consultez [Modèles d'embedding](#embedding-models). |
+| `embedding_dimensions` | `int \| None` | `None` | **Obsolète.** Utilisez plutôt `embedding_model`. Si ce paramètre est défini, construit un `CustomEmbeddingModel(name="unknown")` avec ce nombre de dimensions. Passer à la fois `embedding_model` et `embedding_dimensions` lève `ValueError` |
+| `fields` | `list[FieldDefinition] \| None` | `None` | Champs ajoutés aux valeurs par défaut du mode d'indexation. Avec `DOCUMENT_PER_CHUNK`, les champs standard de fragment sont injectés automatiquement ; `SINGLE_DOCUMENT` nécessite au moins un champ |
+| `custom_functions` | `list[FunctionWithInputs] \| None` | `None` | Fonctions de classement personnalisées (voir [Gérer le classement](query-profiles)) |
+| `default_query_profile_name` | `str \| None` | `None` | Nom du profil de requête généré automatiquement. Par défaut, utilise le nom du schéma |
+| `top_chunks` | `int \| None` | `None` | `SINGLE_DOCUMENT` uniquement. Nombre de fragments principaux à sélectionner. Rejeté avec `DOCUMENT_PER_CHUNK`. |
+| `id_field` | `str \| None` | `None` | `SINGLE_DOCUMENT` uniquement. Obsolète. Rejeté avec `DOCUMENT_PER_CHUNK` (l'identité du fragment est toujours `id`). |
+| `content_cluster` | `str` | `"content"` | Cluster de contenu Vespa qui contient les documents de ce schéma |
+
+### `create_default_schema`
+
+:::warning
+**Obsolète**. Supprimé avant la version 1.0.0. Le helper hérité pour les schémas `SINGLE_DOCUMENT` prend `schema_version` et `additional_fields` au lieu de `indexing_mode` et `fields`. Utilisez plutôt `create_schema(..., indexing_mode=...)`.
+:::
+
+<SectionTab as="h2" sectionId="enums">Énumérations</SectionTab>
+
+Les deux sont importées depuis `mistralai.search.toolkit.plugins.vespa.app.schemas.app`.
+
+### `SearchMode`
+
+| Valeur | Description |
+|---|---|
+| `SearchMode.INDEX` | Recherche indexée traditionnelle : BM25, ANN/HNSW, classement en deux phases |
+| `SearchMode.STREAMING` | Recherche en streaming : plus proche voisin exact, filtrage par attribut, classement en une seule phase |
+
+### `IndexingMode`
+
+| Valeur | Description |
+|---|---|
+| `IndexingMode.DOCUMENT_PER_CHUNK` | **Recommandé.** Un document Vespa par fragment, adressable individuellement par son id déterministe |
+| `IndexingMode.SINGLE_DOCUMENT` | Hérité : un document Vespa par source, fragments regroupés sous forme de tableaux. **Obsolète**. Supprimé avant la version 1.0.0. |
+
+<SectionTab as="h2" sectionId="field-types">Types de champs</SectionTab>
+
+Les champs sont déclarés avec `FieldDefinition`, importé depuis `mistralai.search.toolkit.plugins.vespa.app.schemas.app`, puis passés à `create_schema(fields=[...])` ou `add_field(...)`. Définissez `multi_dimensional=True` (lorsque c'est pris en charge) pour transformer un champ en tableau.
+
+| Type de champ | Objectif | Utilisé dans la correspondance des requêtes | Génère des fonctions de classement |
+|---|---|---|---|
+| `EmbeddingField` | Embeddings vectoriels pour la recherche sémantique | Oui (ANN/HNSW) | Distance, similarité cosinus |
+| `TextField` | Texte pour la recherche par mots-clés/BM25 | Oui | BM25, correspondance de champ |
+| `StringField` | Métadonnées stockées, non utilisées pour la correspondance | Non | Aucune |
+| `TimestampField` | Classement basé sur le temps | Non | Fraîcheur, récence |
+| `CountField` | Valeur numérique utilisée pour le classement | Non | Normalisation, boost |
+| `IntField` | Entier stocké, non classé | Non | Aucune |
+| `BoolField` | Booléen stocké, non classé | Non | Aucune |
+| `LanguageField` | Étiquette de langue par document (RFC 3066) | Non (filtre) | Aucune |
+
+### `EmbeddingField`
+
+```python
+FieldDefinition.EmbeddingField(name: str, multi_dimensional: bool = False)
+```
+
+Embeddings vectoriels indexés avec HNSW. La dimension du tenseur et la métrique de distance sont dérivées du `embedding_model` du schéma. Définissez `multi_dimensional=True` pour un tableau d'embeddings (par exemple par fragment).
+
+### `TextField`
+
+```python
+FieldDefinition.TextField(
+    name: str,
+    multi_dimensional: bool = False,
+    summary: SummaryDefinition = SummaryDefinition(),
+)
+```
+
+Texte tokenisé comparé à la requête utilisateur (BM25). Inclus dans le fieldset par défaut. `summary` contrôle le rendu du champ dans les résultats.
+
+### `StringField`
+
+```python
+FieldDefinition.StringField(
+    name: str,
+    multi_dimensional: bool = False,
+    fast_search: bool = False,
+    match: MatchDefinition | None = None,
+    summary: SummaryDefinition | None = SummaryDefinition(),
+    attribute: bool = True,
+)
+```
+
+Métadonnées stockées qui ne sont **pas** comparées à la requête (à utiliser pour les filtres, ids, tags). `fast_search` construit un index d'attribut dédié (plus de mémoire/CPU, recherches plus rapides) ; `match` définit un schéma de correspondance explicite ; `attribute=False` exclut la valeur des attributs en mémoire.
+
+### `TimestampField`
+
+```python
+FieldDefinition.TimestampField(name: str, type: Literal["long", "int"] = "long")
+```
+
+Timestamp numérique utilisé pour les fonctions de classement par fraîcheur et récence.
+
+### `CountField`
+
+```python
+FieldDefinition.CountField(name: str)
+```
+
+Compteur entier qui génère des fonctions de classement de normalisation et de boost. Pour un entier sur lequel vous ne voulez **pas** classer, utilisez `IntField`.
+
+### `IntField`
+
+```python
+FieldDefinition.IntField(
+    name: str,
+    multi_dimensional: bool = False,
+    summary: SummaryDefinition = SummaryDefinition(),
+)
+```
+
+Entier stocké, non utilisé pour le classement ni pour la correspondance.
+
+### `BoolField`
+
+```python
+FieldDefinition.BoolField(name: str, fast_search: bool = False)
+```
+
+Booléen stocké, non utilisé pour le classement ni pour la correspondance. Définissez `fast_search=True` pour émettre `attribute { fast-search }`, ce qui permet d'utiliser le champ dans le filtrage au moment de la requête (par exemple un indicateur `is_public`).
+
+### `LanguageField`
+
+```python
+FieldDefinition.LanguageField(name: str = "language")
+```
+
+Définit la langue du document (une étiquette RFC 3066) et crée un index afin que les documents puissent être filtrés par langue.
+
+<SectionTab as="h2" sectionId="evolving-schemas">Faire évoluer les schémas</SectionTab>
+
+Ajoutez des éléments à un schéma existant dans une migration ultérieure. Chaque appel lève `ValueError` si le schéma nommé n'existe pas.
+
+### `add_field`
+
+```python
+def add_field(schema_name: str, field: FieldDefinition) -> None
+```
+
+Ajoutez un seul champ à un schéma existant.
+
+### `add_custom_functions`
+
+```python
+def add_custom_functions(schema_name: str, functions: list[FunctionWithInputs]) -> None
+```
+
+Ajoutez des fonctions de classement personnalisées à un schéma existant.
+
+### `add_query_profiles`
+
+```python
+def add_query_profiles(query_profiles: list[QueryProfile]) -> None
+```
+
+Ajoutez ou mettez à jour des profils de requête sur l'application. Voir [Gérer le classement](query-profiles).
+
+### `add_schema_rank_profiles`
+
+```python
+def add_schema_rank_profiles(schema_name: str, rank_profiles: list[Path]) -> None
+```
+
+Joignez des fichiers de profil de classement personnalisés à un schéma.
+
+### `add_schema_model_files`
+
+```python
+def add_schema_model_files(schema_name: str, model_files: list[Path]) -> None
+```
+
+Joignez des fichiers de modèle ML à un schéma.
+
+### `add_schema_custom_document_summary`
+
+```python
+def add_schema_custom_document_summary(schema_name: str, custom_document_summary: DocumentSummary) -> None
+```
+
+Joignez un résumé de document personnalisé à un schéma.
+
+<SectionTab as="h2" sectionId="vespamigration">`VespaMigration`</SectionTab>
+
+Classe de base de chaque migration. Créez-en une sous-classe et implémentez `migrate()`, en appelant les helpers ci-dessus :
+
+```python
+from mistralai.search.toolkit.embedding import MistralEmbeddingPreset
+from mistralai.search.toolkit.plugins.vespa.app.schemas.app import IndexingMode, SearchMode
+from mistralai.search.toolkit.plugins.vespa.migration import VespaMigration, create_schema, set_app_name
+
+
+class InitialSchema(VespaMigration):
+    def migrate(self) -> None:
+        set_app_name("myapp")
+        create_schema(
+            name="articles",
+            mode=SearchMode.INDEX,
+            embedding_model=MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024,
+            indexing_mode=IndexingMode.DOCUMENT_PER_CHUNK,
+        )
+```
+
+<SectionTab as="h2" sectionId="embedding-models">Modèles d'embedding</SectionTab>
+
+`create_schema(embedding_model=...)` accepte un `EmbeddingModel` qui décrit les dimensions, le type de données et la métrique de distance des vecteurs stockés dans l’index. Transmettez un `MistralEmbeddingPreset` pour utiliser ses valeurs par défaut, ou directement un `MistralEmbeddingModel` ou `CustomEmbeddingModel`.
+
+```python
+from mistralai.search.toolkit.embedding import MistralEmbeddingPreset
+
+create_schema(
+    ...,
+    embedding_model=MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024,  # built for you
+)
+```
+
+Pour la distinction entre `MistralEmbeddingModel` et `CustomEmbeddingModel`, les presets et la relation entre le modèle de schéma et l'embedder de votre pipeline, voir [Modèle d'embedding](/studio/search/search-toolkit/concepts/embedding-model).
+
+<SectionTab as="h2" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Gérer le schéma](migrations)** : créer et faire évoluer des schémas avec ces helpers
+- **[Anatomie d'une application Vespa](anatomy)** : concepts : schémas, champs, classement, profils de requête
+- **[Gérer le classement](query-profiles)** : profils de requête et configuration du classement

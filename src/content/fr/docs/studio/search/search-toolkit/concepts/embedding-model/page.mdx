@@ -1,0 +1,108 @@
+---
+title: Modèle d'embedding
+description: Comment Search Toolkit décrit les dimensions, le type de données et la métrique de distance des vecteurs séparément de l'embedder qui les produit.
+sidebar_position: 2
+sidebar_label: Modèle d'embedding
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Modèle d'embedding
+
+Un `EmbeddingModel` décrit les dimensions, le type de données et la métrique de distance des vecteurs stockés dans un index. La couche de schéma l’utilise comme source de vérité pour dimensionner les tenseurs d'embedding et choisir la métrique de classement, indépendamment de l'embedder qui produit les vecteurs à l'exécution.
+
+L'embedder que vous transmettez au `Pipeline` (voir [Embedders](/studio/search/search-toolkit/ingestion/embedders)) produit les vecteurs, tandis que l'`EmbeddingModel` du schéma décrit l'index. Les deux doivent utiliser les mêmes dimensions.
+
+<SectionTab as="h1" sectionId="flavors">Mistral ou personnalisé</SectionTab>
+
+Deux variantes existent, distinguées par `type` :
+
+- **`MistralEmbeddingModel`** : un modèle accessible via la **Mistral Embedding API**. Utilisez ce type pour instancier un `MistralEmbedder`. Search Toolkit valide les dimensions par rapport aux presets connus. Une dimension qui ne correspond pas au nom du modèle lève une erreur `DimensionMismatchError`. Transmettez un `MistralEmbeddingPreset` à `create_schema` pour utiliser ses valeurs par défaut, ou construisez-le explicitement pour remplacer le type de données ou la métrique de distance :
+
+  ```python
+  from mistralai.search.toolkit.embedding import (
+      DistanceMetric,
+      MistralEmbeddingModel,
+      MistralEmbeddingPreset,
+      VectorDType,
+  )
+
+  # Pass a preset directly to create_schema (dimensions and metric filled in)
+  from mistralai.search.toolkit.plugins.vespa.migration import create_schema
+
+  create_schema(
+      ...,
+      embedding_model=MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024,
+  )
+
+  # Build explicitly to override the dtype or distance metric
+  model = MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024.build_embedding_model(
+      dtype=VectorDType.FLOAT16,
+      distance_metric=DistanceMetric.INNER_PRODUCT,
+  )
+
+  # Construct directly (dimensions must match the known preset for that name)
+  model = MistralEmbeddingModel(name="mistral-embed", dimensions=1024)
+  ```
+
+- **`CustomEmbeddingModel`** : tout modèle d'embedding **non** accessible via la Mistral Embedding API, par exemple un modèle tiers ou auto-hébergé. Utilisez ce type avec votre propre implémentation de `Embedder`. Vous définissez les dimensions, le type de données et la métrique de distance. Search Toolkit n’applique aucune validation de preset :
+
+  ```python
+  from mistralai.search.toolkit.embedding import CustomEmbeddingModel, DistanceMetric, VectorDType
+
+  model = CustomEmbeddingModel(
+      name="my-provider/text-embedding-3-small",
+      dimensions=1536,
+      dtype=VectorDType.FLOAT32,
+      distance_metric=DistanceMetric.COSINE,
+  )
+  ```
+
+L'union discriminée est exposée sous le nom `EmbeddingModel`, qui accepte l'une ou l'autre variante.
+
+<SectionTab as="h1" sectionId="presets">Presets</SectionTab>
+
+`MistralEmbeddingPreset` énumère les modèles d'embedding Mistral pris en charge et contient, pour chacun, son nom complet, ses dimensions et sa métrique de distance par défaut :
+
+| Preset | Nom complet du modèle | Dimensions | Métrique de distance |
+|--------|-----------------|------------|-----------------|
+| `MISTRAL_EMBED_DIM_1024` | `"mistral-embed"` | 1024 | `COSINE` |
+| `MISTRAL_EMBED_DIM_256` | `"mistral-embed-dim256-2510"` | 256 | `COSINE` |
+| `MISTRAL_EMBED_DIM_128` | `"mistral-embed-dim128-2510"` | 128 | `COSINE` |
+
+Résolvez un preset à partir d'un nom de modèle avec `MistralEmbeddingPreset.from_name("mistral-embed")`.
+
+Associez chaque preset à la constante `MistralEmbedder` correspondante sur le pipeline :
+
+| Preset de schéma | Constante d'embedder |
+|---------------|-------------------|
+| `MISTRAL_EMBED_DIM_1024` | `MODEL_1024_EMBEDDING` |
+| `MISTRAL_EMBED_DIM_256` | `MODEL_256_EMBEDDING` |
+| `MISTRAL_EMBED_DIM_128` | `MODEL_128_EMBEDDING` |
+
+<SectionTab as="h1" sectionId="vector-config">Configuration vectorielle</SectionTab>
+
+Chaque `EmbeddingModel` contient trois champs de configuration vectorielle, également disponibles via le protocole `VectorConfig` :
+
+| Champ | Type | Valeur par défaut | Rôle |
+|--------|------|---------|---------|
+| `dimensions` | `int` | *(obligatoire)* | Dimensionnalité vectorielle ; doit être `>= 1` |
+| `dtype` | `VectorDType` | `FLOAT32` | `FLOAT32` ou `FLOAT16` |
+| `distance_metric` | `DistanceMetric` | `COSINE` | `COSINE`, `INNER_PRODUCT` ou `L2` |
+
+La couche de schéma utilise ces champs pour dimensionner le tenseur d'embedding et sélectionner la métrique de classement (par exemple, similarité cosinus ou produit scalaire).
+
+<SectionTab as="h1" sectionId="schema-vs-embedder">Schéma ou embedder</SectionTab>
+
+L'`EmbeddingModel` du schéma décrit l'index, tandis que l'embedder que vous transmettez au `Pipeline` produit les vecteurs lors des requêtes et de l'ingestion. Ces deux composants ont des rôles distincts et doivent utiliser les mêmes dimensions :
+
+- Un `MistralEmbeddingModel` dans le schéma s'associe à un `MistralEmbedder` avec la constante `MODEL_*_EMBEDDING` correspondante.
+- Un `CustomEmbeddingModel` dans le schéma s'associe à un `Embedder` personnalisé.
+
+Gardez les dimensions synchronisées. Le schéma rejette les vecteurs dont la taille est incorrecte.
+
+<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Embedders](/studio/search/search-toolkit/ingestion/embedders)** : le côté exécution qui produit les vecteurs.
+- **[Index de recherche](/studio/search/search-toolkit/search-index)** : l'emplacement du schéma et du modèle d'embedding.
+- **[Assistants de migration](/studio/search/search-toolkit/search-index/vespa/migration-helpers)** : référence `create_schema(embedding_model=...)`.

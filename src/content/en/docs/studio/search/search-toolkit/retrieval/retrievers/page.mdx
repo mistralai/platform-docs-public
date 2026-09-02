@@ -9,13 +9,15 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Retrievers
 
-Retrievers execute the search against your index. Search Toolkit provides vector (semantic) retrievers for semantic search over your documents.
+Retrievers execute the search against your index. Search Toolkit provides vector (semantic) and keyword (BM25) retrievers, which you can combine for hybrid search.
 
 <SectionTab as="h2" sectionId="available-retrievers">Available retrievers</SectionTab>
 
 | Retriever | Purpose |
 |-----------|---------|
 | **[Vector Retriever](#vector-retriever)** | Semantic search using embeddings |
+| **[Keyword Retriever](#keyword-retriever)** | BM25 / keyword search |
+| **[Hybrid search](#hybrid-search)** | Combine vector and keyword retrievers |
 | **[Custom Retrievers](#custom-retrievers)** | Custom search logic |
 
 <SectionTab as="h1" sectionId="vector-retriever">Vector Retriever</SectionTab>
@@ -47,26 +49,68 @@ results = await retriever.retrieve(
 | `client` | VectorStoreIndex | Required | Vector store to search |
 | `embedder` | Embedder | Required | Embedder for query vectorization |
 
-**Filtering**:
-
-Filter by metadata to narrow results:
-
-```python
-results = await retriever.retrieve(
-    query="machine learning",
-    top_k=10,
-    filter={"category": "tutorials", "year": 2024},  # Depends on store support
-)
-```
-
-:::info
-Filtering support depends on your vector store backend. Vespa supports metadata filtering natively.
-:::
-
 **When to use**:
 - General semantic search across your documents
 - Finding conceptually similar content
 - Handling synonyms and paraphrasing naturally
+
+<SectionTab as="h1" sectionId="keyword-retriever">Keyword Retriever</SectionTab>
+
+Performs keyword search against a `KeywordStoreIndex`. It finds chunks that share terms with the query and ranks them by lexical relevance.
+
+:::info
+The built-in Vespa and Postgres backends don't implement `KeywordStoreIndex`. Use `KeywordRetriever` with a custom keyword store. For hybrid search with a built-in backend, use `VectorRetriever`; it sends both the query text and embedding to the backend.
+:::
+
+**Installation**: Core library (no extra required)
+
+**Example**:
+
+```python
+from mistralai.search.toolkit.retrieval.retrievers import KeywordRetriever
+
+retriever = KeywordRetriever(
+    client=keyword_store,  # Custom KeywordStoreIndex implementation
+)
+
+results = await retriever.retrieve(
+    query="quarterly revenue report",
+    top_k=10,
+)
+```
+
+**Configuration options**:
+
+| Option | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `client` | KeywordStoreIndex | Required | Keyword store to search |
+
+**When to use**:
+- Exact-term matching (names, identifiers, error codes)
+- Queries where lexical relevance matters more than semantics
+- As one arm of a hybrid search (see below)
+
+<SectionTab as="h1" sectionId="hybrid-search">Hybrid search</SectionTab>
+
+If you have separate vector and custom keyword stores, run both retrievers and fuse their results. Pass the retrievers to `QueryEngine` and combine them with a fusion reranker such as `RRFRanker`:
+
+```python
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever, KeywordRetriever
+from mistralai.search.toolkit.retrieval.rerankers import RRFRanker
+
+query_engine = QueryEngine(
+    retriever=[
+        VectorRetriever(client=vector_store, embedder=embedder),
+        KeywordRetriever(client=keyword_store),
+    ],
+    rerankers=[RRFRanker(rrf_k=60, top_k=10)],
+)
+
+result = await query_engine.search(query="What is RAG?", top_k=10)
+```
+
+See [Rerankers](rerankers) for RRF and other fusion strategies.
 
 <SectionTab as="h1" sectionId="custom-retrievers">Custom retrievers</SectionTab>
 

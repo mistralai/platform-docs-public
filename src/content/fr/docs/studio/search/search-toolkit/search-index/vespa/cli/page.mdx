@@ -1,0 +1,136 @@
+---
+title: Référence CLI
+sidebar_position: 7
+sidebar_label: Référence CLI
+---
+import { SectionTab } from '@/components/layout/section-tab';
+
+La CLI `mistral-vespa` gère le cycle de vie de l’application Vespa, de la génération des migrations au déploiement et aux tests.
+
+:::tip
+Exécutez `uv run mistral-vespa --help` pour afficher la liste complète des commandes et options disponibles.
+:::
+
+<SectionTab as="h2" sectionId="generate-migration">`generate-migration`</SectionTab>
+
+Créez un squelette de migration horodaté.
+
+```bash
+uv run mistral-vespa generate-migration <name> [--app-dir <path>]
+```
+
+| Argument/option | Valeur par défaut | Description |
+|---|---|---|
+| `name` | requis | Nom de la migration, utilisé pour le nom de fichier et le squelette de classe |
+| `--app-dir` | `./vespa_app` | Répertoire racine de l’application Vespa |
+
+<SectionTab as="h2" sectionId="migrate">`migrate`</SectionTab>
+
+Construisez l’application à partir des migrations et déployez-la. Les déploiements sur nœud unique (localhost) et Kubernetes sont pris en charge.
+
+```bash
+uv run mistral-vespa migrate [--app-dir <path>] [flags]
+```
+
+| Option | Valeur par défaut | Description |
+|---|---|---|
+| `--app-dir` | `./vespa_app` | Répertoire racine de l’application Vespa |
+| `--dry-run` | `false` | Prévisualiser les modifications sans les appliquer |
+| `--config-server` | auto | URL du serveur de configuration (host:port). Valeur par défaut : `http://localhost:19071` en local, ou URL du service dans le cluster pour K8s |
+| `--query-port` | `8080` | Port de requête côté hôte à interroger après le déploiement |
+
+**Options Kubernetes** (dépréciées) : utilisez `generate-topology` pour produire un fichier de topologie, puis transmettez-le avec `--topology-file`.
+
+| Option | Valeur par défaut | Description |
+|---|---|---|
+| `--k8s-namespace` | Sans objet | Namespace Kubernetes (requis avec `--k8s-instance`) |
+| `--k8s-instance` | Sans objet | Instance Kubernetes (requise avec `--k8s-namespace`) |
+| `--k8s-context` | Sans objet | Contexte Kubernetes. Nécessite `--k8s-namespace`, `--k8s-instance` et `--config-server` |
+
+**Exemples :**
+
+```bash
+# Local Docker
+uv run mistral-vespa migrate --config-server http://localhost:19071
+
+# Kubernetes (in-cluster, e.g. CI)
+uv run mistral-vespa migrate \
+  --k8s-namespace my-project \
+  --k8s-instance vespa
+
+# Kubernetes (workstation, with kubectl port-forward)
+uv run mistral-vespa migrate \
+  --k8s-namespace my-project \
+  --k8s-instance vespa \
+  --k8s-context staging \
+  --config-server http://localhost:19071
+```
+
+<SectionTab as="h2" sectionId="generate">`generate`</SectionTab>
+
+Écrivez les fichiers du package d’application sur le disque à partir des migrations, pour inspection ou validation CI. Non utilisé pour le déploiement.
+
+```bash
+uv run mistral-vespa generate --path <output-dir> [--app-dir <path>]
+```
+
+| Option | Valeur par défaut | Description |
+|---|---|---|
+| `--path` | requis | Répertoire où écrire les fichiers du package d’application |
+| `--app-dir` | `./vespa_app` | Répertoire racine de l’application Vespa |
+
+**Structure de sortie :**
+
+```text
+<output-dir>/
+├── schemas/
+│   └── <document_type>.sd
+└── search/
+    └── query-profiles/
+        ├── <query_profile_name>.xml
+        └── types/root.xml
+```
+
+<SectionTab as="h2" sectionId="bruno">`bruno`</SectionTab>
+
+Générez les fichiers de test d’API Bruno à partir des migrations.
+
+```bash
+uv run mistral-vespa bruno --query-url <url> --document-url <url> [--app-dir <path>]
+```
+
+| Option | Valeur par défaut | Description |
+|---|---|---|
+| `--query-url` | requis | URL de l’endpoint de requête Vespa |
+| `--document-url` | requis | URL de l’endpoint document/feed Vespa |
+| `--app-dir` | `./vespa_app` | Répertoire racine de l’application Vespa |
+
+<SectionTab as="h2" sectionId="local-up">`local up`</SectionTab>
+
+Démarrez un conteneur Vespa local via Docker.
+
+```bash
+uv run mistral-vespa local up [--query-port <port>] [--config-port <port>] [--name <name>]
+```
+
+| Option | Valeur par défaut | Description |
+|---|---|---|
+| `--query-port` | `8080` | Port hôte mappé à la requête Vespa |
+| `--config-port` | `19071` | Port hôte mappé au serveur de configuration Vespa |
+| `--name` | `vespa` | Nom du conteneur Docker |
+
+<SectionTab as="h2" sectionId="local-down">`local down`</SectionTab>
+
+Arrêtez le conteneur Vespa local et supprimez les volumes.
+
+```bash
+uv run mistral-vespa local down [--name <name>]
+```
+
+<SectionTab as="h2" sectionId="local-status">`local status`</SectionTab>
+
+Vérifiez si le conteneur Vespa local est en cours d’exécution.
+
+```bash
+uv run mistral-vespa local status [--name <name>]
+```

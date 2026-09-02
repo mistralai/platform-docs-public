@@ -9,13 +9,15 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Récupérateurs
 
-Les récupérateurs exécutent la recherche dans votre index. Search Toolkit propose des récupérateurs vectoriels (sémantiques) pour effectuer des recherches sémantiques dans vos documents.
+Les retrievers exécutent la recherche sur votre index. Search Toolkit fournit des retrievers vectoriels (sémantiques) et par mots-clés (BM25), que vous pouvez combiner pour une recherche hybride.
 
 <SectionTab as="h2" sectionId="available-retrievers">Récupérateurs disponibles</SectionTab>
 
 | Récupérateur | Usage |
 |-----------|---------|
 | **[Récupérateur vectoriel](#vector-retriever)** | Recherche sémantique à l’aide d’embeddings |
+| **[Retriever par mots-clés](#keyword-retriever)** | Recherche BM25 / par mots-clés |
+| **[Recherche hybride](#hybrid-search)** | Combiner des retrievers vectoriels et par mots-clés |
 | **[Récupérateurs personnalisés](#custom-retrievers)** | Logique de recherche personnalisée |
 
 <SectionTab as="h1" sectionId="vector-retriever">Récupérateur vectoriel</SectionTab>
@@ -47,26 +49,68 @@ results = await retriever.retrieve(
 | `client` | VectorStoreIndex | Obligatoire | Stockage vectoriel à rechercher |
 | `embedder` | Embedder | Obligatoire | Embedder pour la vectorisation des requêtes |
 
-**Filtrage** :
-
-Filtrez par métadonnées pour affiner les résultats :
-
-```python
-results = await retriever.retrieve(
-    query="machine learning",
-    top_k=10,
-    filter={"category": "tutorials", "year": 2024},  # Depends on store support
-)
-```
-
-:::info
-La prise en charge du filtrage dépend de votre backend de stockage vectoriel. Vespa prend en charge le filtrage par métadonnées nativement.
-:::
-
 **Quand l’utiliser** :
 - Recherche sémantique générale dans vos documents
 - Trouver du contenu similaire sur le plan conceptuel
 - Gestion naturelle des synonymes et des reformulations
+
+<SectionTab as="h1" sectionId="keyword-retriever">Retriever par mots-clés</SectionTab>
+
+Effectue une recherche par mots-clés dans un `KeywordStoreIndex`. Ce retriever trouve les fragments qui partagent des termes avec la requête et les classe par pertinence lexicale.
+
+:::info
+Les backends Vespa et Postgres intégrés n’implémentent pas `KeywordStoreIndex`. Utilisez `KeywordRetriever` avec un stockage de mots-clés personnalisé. Pour une recherche hybride avec un backend intégré, utilisez `VectorRetriever` ; il transmet le texte et l’embedding de la requête au backend.
+:::
+
+**Installation** : Bibliothèque principale (aucune dépendance supplémentaire requise)
+
+**Exemple** :
+
+```python
+from mistralai.search.toolkit.retrieval.retrievers import KeywordRetriever
+
+retriever = KeywordRetriever(
+    client=keyword_store,  # Custom KeywordStoreIndex implementation
+)
+
+results = await retriever.retrieve(
+    query="quarterly revenue report",
+    top_k=10,
+)
+```
+
+**Options de configuration** :
+
+| Option | Type | Valeur par défaut | Usage |
+|--------|------|---------|---------|
+| `client` | KeywordStoreIndex | Obligatoire | Stockage de mots-clés à interroger |
+
+**Quand l’utiliser** :
+- Correspondance de termes exacts (noms, identifiants, codes d’erreur)
+- Requêtes où la pertinence lexicale compte plus que la sémantique
+- Comme l’un des composants d’une recherche hybride (voir ci-dessous)
+
+<SectionTab as="h1" sectionId="hybrid-search">Recherche hybride</SectionTab>
+
+Si vous disposez de stockages vectoriels et de mots-clés personnalisés distincts, exécutez les deux retrievers et fusionnez leurs résultats. Transmettez les retrievers à `QueryEngine` et combinez-les avec un reranker de fusion comme `RRFRanker` :
+
+```python
+from mistralai.search.toolkit.retrieval import QueryEngine
+from mistralai.search.toolkit.retrieval.retrievers import VectorRetriever, KeywordRetriever
+from mistralai.search.toolkit.retrieval.rerankers import RRFRanker
+
+query_engine = QueryEngine(
+    retriever=[
+        VectorRetriever(client=vector_store, embedder=embedder),
+        KeywordRetriever(client=keyword_store),
+    ],
+    rerankers=[RRFRanker(rrf_k=60, top_k=10)],
+)
+
+result = await query_engine.search(query="What is RAG?", top_k=10)
+```
+
+Consultez [Rerankers](rerankers) pour RRF et d’autres stratégies de fusion.
 
 <SectionTab as="h1" sectionId="custom-retrievers">Récupérateurs personnalisés</SectionTab>
 
@@ -118,6 +162,6 @@ query_engine = QueryEngine(retriever=CustomRetriever())
 
 <SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
 
-- [Présentation de la récupération](../retrieval) — Architecture du pipeline de récupération
-- [Réorganisateurs](rerankers) — Réévaluez les résultats pour un meilleur classement
-- [Prétraitement des requêtes](preprocessing) — Améliorez les requêtes avant la récupération
+- [Présentation de la récupération](../retrieval) : Architecture du pipeline de récupération
+- [Réorganisateurs](rerankers) : Réévaluez les résultats pour un meilleur classement
+- [Prétraitement des requêtes](preprocessing) : Améliorez les requêtes avant la récupération

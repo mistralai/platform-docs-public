@@ -45,7 +45,7 @@ Use Mistral's embedding API for vectorizing text.
 
 ```python
 from mistralai.client import Mistral
-from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING
+from mistralai.search.toolkit.embedding import MistralEmbedder, MODEL_1024_EMBEDDING
 
 client = Mistral(api_key="your-api-key")
 embedder = MistralEmbedder(
@@ -64,18 +64,18 @@ embedded_chunks = await embedder.embed_chunks(chunks)
 
 **Embedding model constants**:
 
-Use these pre-defined constants when configuring `MistralEmbedder`. Always match the `embedding_dimensions` parameter in your Vespa schema to the model's output dimensions.
+Use these predefined constants when configuring `MistralEmbedder`. The dimensions must match the `embedding_model` set on your index schema. Pair each constant with the matching `MistralEmbeddingPreset` (see [Embedding models](/studio/search/search-toolkit/concepts/embedding-model)).
 
-| Constant | Model Name | Dimensions | Best for |
-|----------|-----------|-----------|----------|
-| `MODEL_1024_EMBEDDING` | `"mistral-embed"` | 1024 | Default for Search Toolkit pipelines (matches Vespa schema `embedding_dimensions=1024`) |
-| `MODEL_256_EMBEDDING` | `"mistral-embed-dim256-2510"` | 256 | Low-latency, memory-constrained environments |
-| `MODEL_128_EMBEDDING` | `"mistral-embed-dim128-2510"` | 128 | Minimum dimensions (default fallback) |
+| Constant | Model Name | Dimensions | Matching preset | Best for |
+|----------|-----------|-----------|-----------------|----------|
+| `MODEL_1024_EMBEDDING` | `"mistral-embed"` | 1024 | `MistralEmbeddingPreset.MISTRAL_EMBED_DIM_1024` | Default for Search Toolkit pipelines |
+| `MODEL_256_EMBEDDING` | `"mistral-embed-dim256-2510"` | 256 | `MistralEmbeddingPreset.MISTRAL_EMBED_DIM_256` | Low-latency, memory-constrained environments |
+| `MODEL_128_EMBEDDING` | `"mistral-embed-dim128-2510"` | 128 | `MistralEmbeddingPreset.MISTRAL_EMBED_DIM_128` | Minimum dimensions (default fallback) |
 
 **Import and usage**:
 
 ```python
-from mistralai.search.toolkit.embedders import MistralEmbedder, MODEL_1024_EMBEDDING, MODEL_256_EMBEDDING, MODEL_128_EMBEDDING
+from mistralai.search.toolkit.embedding import MistralEmbedder, MODEL_1024_EMBEDDING, MODEL_256_EMBEDDING, MODEL_128_EMBEDDING
 
 # Use MODEL_1024_EMBEDDING for Search Toolkit pipelines
 embedder = MistralEmbedder(client=client, model_name=MODEL_1024_EMBEDDING)
@@ -104,7 +104,7 @@ Implement the `Embedder` base class with a single `embed` method:
 
 ```python
 from mistralai.search.toolkit.context import RetrievalContext
-from mistralai.search.toolkit.embedders import Embedder, EmbeddingResult
+from mistralai.search.toolkit.embedding import Embedder, EmbeddingResult
 
 
 class MyEmbedder(Embedder):
@@ -117,3 +117,5 @@ class MyEmbedder(Embedder):
 ```
 
 `embed_chunks` and `embed_query` are inherited automatically.
+
+When you use a custom embedder, declare a `CustomEmbeddingModel` on your index schema with matching dimensions, data type, and distance metric. The schema describes the index, while the embedder produces the vectors. They must agree on the vector shape. See [Embedding models](/studio/search/search-toolkit/concepts/embedding-model) for the distinction between `MistralEmbeddingModel` and `CustomEmbeddingModel`.

@@ -4,28 +4,77 @@ sidebar_position: 12
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
 
 # Configuration Admin
 
-La configuration Admin, aussi appelée **configuration gérée**, permet aux administrateurs d’organisation et d’espace de travail d’imposer les paramètres de Vibe Code CLI de manière centralisée. Elle est définie une fois côté Mistral et appliquée automatiquement à chaque CLI de l’organisation ou de l’espace de travail.
+La configuration administrateur, aussi appelée **configuration gérée**, permet aux administrateurs d'Organization et de Workspace de distribuer les paramètres de Vibe Code CLI à tous les utilisateurs. Vous la définissez une fois dans l'Admin Panel, puis la CLI l'applique aux utilisateurs de l'Organization ou du Workspace. Utilisez-la pour distribuer des modèles, des fournisseurs, des serveurs MCP et des politiques d'outils sans demander aux utilisateurs de modifier `config.toml`.
 
-Contrairement à `config.toml`, elle ne se trouve pas sur la machine de l’utilisateur. La CLI la récupère en HTTP au démarrage, la conserve **uniquement en mémoire** et ne l’écrit jamais sur disque.
+:::info
+La configuration administrateur est un **mécanisme de distribution, pas un contrôle de sécurité**. Elle applique des paramètres par défaut et les affiche dans `/config`, mais les utilisateurs qui contrôlent leur environnement CLI local peuvent les contourner. N'utilisez pas la configuration administrateur pour restreindre l'accès aux outils ou aux modèles.
+:::
+
+Contrairement à `config.toml`, la configuration administrateur ne se trouve pas sur la machine de l'utilisateur. La CLI la récupère en HTTP au démarrage, la conserve **uniquement en mémoire** et ne l'écrit jamais sur disque.
+
+La configuration administrateur est disponible à deux niveaux :
+
+- **Niveau Organization** : configurez-la dans <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />. Elle s'applique à tous les utilisateurs de l'Organization.
+- **Niveau Workspace** : ouvrez <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />, sélectionnez un Workspace, puis ouvrez `Settings`. Cette configuration peut remplacer ou bloquer des paramètres définis au niveau de l'Organization.
+
+Le serveur fusionne les configurations de l'Organization et du Workspace. Le client reçoit une seule configuration résolue.
+
+<SectionTab as="h2" sectionId="requirements">Versions minimales des clients</SectionTab>
+
+La prise en charge de la configuration administrateur commence avec les versions suivantes :
+
+| Client | Version minimale |
+|---|---|
+| **Vibe Code CLI** | `2.24.2` |
+| **Extension VS Code** | `1.16` |
+
+Les versions antérieures ne demandent pas la configuration administrateur et n'appliquent pas ses paramètres. Mettez à niveau tous les clients avant de distribuer une configuration administrateur.
 
 <SectionTab as="h2" sectionId="how-it-works">Fonctionnement</SectionTab>
 
-1. Un administrateur rédige une configuration TOML sous **configuration gérée des clients Vibe Code** dans le [gestionnaire des paramètres](https://admin.mistral.ai/vibe/preferences).
-2. Au démarrage, et lors de `/reload`, la CLI appelle l’endpoint managed-config avec votre clé API Mistral.
-3. Si la configuration est activée, ses valeurs s’appliquent par-dessus tous les autres paramètres.
+1. Dans <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />, saisissez une configuration TOML sous `Vibe Code Clients managed config`.
+2. Au démarrage et après `/reload`, la CLI appelle l'endpoint de configuration gérée avec la clé API Mistral de l'utilisateur.
+3. Si la configuration administrateur est activée, ses valeurs sont prioritaires sur toutes les autres sources de configuration.
+
+<SectionTab as="h2" sectionId="permissions">Autorisations</SectionTab>
+
+La gestion de la configuration administrateur nécessite l'autorisation de contrôle d'accès basé sur les rôles (RBAC) `manage_code_config` au niveau de l'Organization. Les administrateurs d'Organization peuvent déléguer cette gestion sans accorder un accès administrateur complet.
+
+<SectionTab as="h2" sectionId="enable">Activer la fonctionnalité</SectionTab>
+
+La configuration administrateur est **désactivée par défaut** et Mistral doit l'activer pour votre Organization. Contactez votre équipe de compte pour demander l'activation.
+
+:::warning
+Nous vous recommandons de valider votre configuration dans une Organization de test avant de la distribuer à tous les utilisateurs.
+:::
+
+<SectionTab as="h2" sectionId="deployment">Activation par type de déploiement</SectionTab>
+
+Le processus d'activation dépend du type de déploiement :
+
+| Déploiement | Mode d'activation |
+|---|---|
+| **Serverless** | Contactez votre équipe de compte pour activer l'option. |
+| **Dédié (cloud privé)** | Contactez votre équipe de compte. Mistral active l'option lorsqu'elle est disponible ou définit sa valeur dans la configuration du déploiement. |
+| **Auto-hébergé** | Contactez votre équipe de compte pour demander l'activation dans le chart Helm. Cette option est disponible sur demande. |
+
+:::info
+Les déploiements **dédiés et auto-hébergés** nécessitent que `/whoami` renvoie les domaines Vibe et API corrects. Consultez la section [Dépanner les déploiements dédiés et auto-hébergés](#troubleshooting) pour les étapes de validation.
+:::
 
 <SectionTab as="h2" sectionId="precedence">Priorité</SectionTab>
 
-La configuration Admin est la couche **la plus prioritaire**. Elle remplace tout le reste, y compris les options de ligne de commande, les variables d’environnement et les deux fichiers `config.toml`, projet et utilisateur :
+La configuration administrateur est la couche **prioritaire**. Elle prévaut sur les options de ligne de commande, les variables d'environnement, ainsi que les deux fichiers `config.toml`, celui du projet et celui de l'utilisateur :
 
-```
+```text
 admin config  >  CLI flags  >  env vars  >  project config.toml  >  user config.toml
 ```
 
-Cette priorité sert de mécanisme d’application : tout paramètre défini par un administrateur ne peut pas être modifié localement.
+Cette priorité signifie que les valeurs fournies par l'administrateur s'appliquent aux utilisateurs par défaut, sans qu'ils aient à mettre à jour leur propre `config.toml`.
 
 <SectionTab as="h2" sectionId="what-can-be-set">Ce que les administrateurs peuvent définir</SectionTab>
 
@@ -76,3 +125,66 @@ Ici, le modèle `mistral-large-2411` est accessible via le fournisseur `acme-ent
 <SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
 
 La configuration Admin ne contient jamais de secrets en clair. Les champs d’identifiants doivent référencer une variable d’environnement, par exemple `api_key_env_var = "MISTRAL_API_KEY"`, jamais la clé elle-même. Les clés API, tokens ou mots de passe en clair sont rejetés par le serveur.
+
+<SectionTab as="h2" sectionId="user-experience">Ce que voient les utilisateurs</SectionTab>
+
+Lorsque la configuration administrateur est active, les utilisateurs de Vibe Code CLI voient les éléments suivants :
+
+- Les paramètres gérés par un administrateur dans `/config` apparaissent grisés avec le glyphe de verrouillage `⚿` et indiquent `your administrator` comme origine. Une légende en bas de l'écran affiche `⚿ Settings are managed by your organization`.
+- Les champs gérés par un administrateur sont en lecture seule dans `/config`. Les tentatives de modification ou de réinitialisation n'ont aucun effet.
+- Le sélecteur de modèle constitue une exception. Si un utilisateur change de modèle alors que `active_model` est géré par un administrateur, un avertissement indique que l'administrateur contrôle ce paramètre.
+- Les utilisateurs voient les marqueurs de gestion uniquement lorsqu'ils ouvrent `/config`. Aucune bannière ni aucun indicateur global ne s'affiche au démarrage.
+- La CLI récupère la configuration administrateur en arrière-plan au début de chaque session. Elle la conserve en mémoire et ne l'écrit jamais dans le fichier `config.toml` local.
+- Si une erreur réseau ou serveur empêche la récupération, la session continue sans configuration administrateur. La CLI journalise l'échec au niveau debug et n'affiche aucun avertissement.
+
+<SectionTab as="h2" sectionId="disable">Arrêter d'appliquer la configuration administrateur</SectionTab>
+
+La désactivation de l'option masque uniquement l'interface d'administration. Les clients continuent de récupérer et d'appliquer la configuration enregistrée.
+
+Pour arrêter d'appliquer la configuration administrateur, **envoyez une configuration vide** avant de désactiver l'option. Cette opération empêche l'application d'une configuration obsolète aux sessions des utilisateurs.
+
+<SectionTab as="h2" sectionId="troubleshooting">Dépanner les déploiements dédiés et auto-hébergés</SectionTab>
+
+Si les utilisateurs de déploiements dédiés ou auto-hébergés ne reçoivent pas la configuration administrateur, vérifiez les endpoints et les domaines.
+
+<SectionTab as="h3" variant="secondary" sectionId="check-endpoints">Vérifier l'accès aux endpoints</SectionTab>
+
+Le client doit accéder à deux endpoints authentifiés :
+
+- `<console_base_url>/api/vibe/whoami` renvoie les domaines Vibe et API du tenant dans `vibe_base` et `api_base`.
+- `<vibe_base_url>/api/v1/code/managed-config` renvoie la réponse de configuration administrateur. Le client déduit `vibe_base_url` de la valeur `vibe_base` renvoyée par `/whoami`.
+
+Définissez les URL du déploiement de l'utilisateur, vérifiez que `MISTRAL_API_KEY` est disponible dans l'environnement, puis exécutez les deux requêtes depuis cet environnement :
+
+```bash
+CONSOLE_BASE_URL="https://console.mistral.ai"
+VIBE_BASE_URL="https://chat.mistral.ai"
+
+curl --silent --show-error --fail-with-body \
+  --header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  "${CONSOLE_BASE_URL}/api/vibe/whoami"
+
+curl --silent --show-error --fail-with-body \
+  --header "Authorization: Bearer ${MISTRAL_API_KEY}" \
+  "${VIBE_BASE_URL}/api/v1/code/managed-config"
+```
+
+Pour les déploiements dédiés et auto-hébergés, remplacez les deux URL par les origines de la console et de Vibe propres au déploiement.
+
+- Si une requête ne peut pas se connecter, vérifiez la configuration DNS, TLS et réseau du déploiement. Contactez votre équipe de compte ou le support Mistral si l'endpoint reste indisponible.
+- Si une requête renvoie `401` ou `403`, vérifiez la clé API et l'accès de l'utilisateur.
+- Si les deux requêtes renvoient un code HTTP de succès, vérifiez les domaines.
+
+<SectionTab as="h3" variant="secondary" sectionId="check-domains">Vérifier les domaines de `/whoami`</SectionTab>
+
+La réponse de `/whoami` doit contenir les origines `vibe_base` et `api_base` attendues. Le client enregistre une valeur `vibe_base` valide sous `vibe_base_url` dans le fichier `config.toml` de l'utilisateur. Il l'utilise pour construire l'URL de configuration gérée.
+
+Si `/whoami` renvoie un domaine incorrect, contactez le support Mistral pour corriger la configuration du serveur. Si la réponse est correcte mais que le client ne récupère pas la configuration administrateur, examinez le client Vibe Code.
+
+<SectionTab as="h3" variant="secondary" sectionId="deployment-fixes">Appliquer les correctifs selon le type de déploiement</SectionTab>
+
+| Déploiement | Mode de livraison des correctifs |
+|---|---|
+| **Serverless** | Mistral inclut le correctif dans une version de la plateforme. |
+| **Dédié** | Demandez un redéploiement de l'instance dédiée. |
+| **Auto-hébergé** | Effectuez la mise à jour vers une version auto-hébergée. Pour un problème critique, contactez le support Mistral afin de discuter d'un correctif. |

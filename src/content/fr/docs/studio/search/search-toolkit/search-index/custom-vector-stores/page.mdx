@@ -1,0 +1,95 @@
+---
+title: Stockages vectoriels personnalisés
+description: Implémentez votre propre backend de stockage pour Search Toolkit.
+sidebar_position: 3
+sidebar_label: Stockages vectoriels personnalisés
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Stockages vectoriels personnalisés
+
+Implémentez un backend de stockage personnalisé en créant une sous-classe de `VectorStoreIndex` (ou de `KeywordStoreIndex` pour la recherche par mot-clé) et en implémentant ses trois méthodes :
+
+```python
+from mistralai.search.toolkit.context import IngestContext, RetrievalContext
+from mistralai.search.toolkit.search import VectorStoreIndex, VectorSearchQuery, SearchResult
+from mistralai.search.toolkit.document import Document
+
+class MyVectorStore(VectorStoreIndex):
+    async def index_document(self, document: Document, context: IngestContext = IngestContext()) -> None:
+        # Store the document and its chunks
+        pass
+
+    async def search(self, query: VectorSearchQuery, context: RetrievalContext = RetrievalContext()) -> list[SearchResult]:
+        # Search and return results
+        pass
+
+    async def delete_document(self, doc_id: str, context: IngestContext = IngestContext()) -> None:
+        # Delete a document by ID
+        pass
+```
+
+Une fois que le store implémente `VectorStoreIndex`, transmettez-le au même `Pipeline` et au même `QueryEngine` que les backends intégrés.
+
+<SectionTab as="h1" sectionId="agentic-operations">Opérations agentiques facultatives</SectionTab>
+
+Au-delà de l’indexation et de la recherche, un backend peut exposer une navigation positionnelle en implémentant le protocole facultatif `@runtime_checkable` `NavigableIndex`. C’est **opt-in** : un store qui ne l’implémente pas n’annonce tout simplement pas cette capacité, et les appelants conditionnent l’accès avec `isinstance`.
+
+### `NavigableIndex`
+
+Ces méthodes assurent la navigation positionnelle dans un index qui associe un fragment à chaque document. Un agent peut passer aux fragments adjacents, lire un intervalle, récupérer un fragment par ID et rechercher dans une source. Dans les boucles agentiques `open` et `navigate`, le modèle conserve uniquement un `chunk_id` opaque issu d’un résultat de recherche, puis le serveur résout sa position.
+
+```python
+from mistralai.search.toolkit.search import NavigableIndex, NavigationDirection, GrepMode
+
+class MyVectorStore(VectorStoreIndex):  # also implements NavigableIndex
+    async def navigate(self, source_id, start_offset, end_offset, direction, *, top_k=1, content_type=..., context=...):
+        # Adjacent chunks in the requested direction (NEXT / PREVIOUS)
+        ...
+
+    async def read(self, source_id, start_offset, end_offset, *, content_type=..., top_k=20, context=...):
+        # Chunks whose span falls within [start_offset, end_offset)
+        ...
+
+    async def get_chunk(self, chunk_id, *, context=...):
+        # Resolve a chunk_id to its SearchResult (or None)
+        ...
+
+    async def grep(self, source_id, pattern, *, mode=GrepMode.PHRASE, content_type=..., top_k=5, context=...):
+        # Lexical match within a single source (no vector ranking)
+        ...
+```
+
+Les appelants vérifient la capacité au lieu d’intercepter `NotImplementedError` :
+
+```python
+from mistralai.search.toolkit.search import NavigableIndex
+
+if isinstance(store, NavigableIndex):
+    results = await store.get_chunk(chunk_id)
+```
+
+Les offsets suivent la convention semi-ouverte `[start, end)` utilisée par `DocumentChunk`. read et navigate lèvent `SourceNotFoundError` lorsque `source_id` ne correspond à aucune source existante, et renvoient une liste vide lorsqu’une requête atteint la limite d’une source.
+
+<SectionTab as="h1" sectionId="partial-updates">Mises à jour partielles facultatives</SectionTab>
+
+Un backend peut aussi exposer des mises à jour partielles sans réindexation complète en implémentant le protocole facultatif `PatchableIndex`. Ce protocole peut modifier une valeur de métadonnées ou l’embedding d’un fragment sans redécouper et réindexer le document complet. Implémentez `patch_chunk` et `patch_document` :
+
+```python
+from mistralai.search.toolkit.search import PatchableIndex
+
+class MyVectorStore(VectorStoreIndex):  # also implements PatchableIndex
+    async def patch_chunk(self, chunk_id, patch, *, context=...):
+        ...
+
+    async def patch_document(self, document_id, patch, *, context=...):
+        ...
+```
+
+`ChunkPatch` et `DocumentPatch` (depuis `mistralai.search.toolkit.search`) décrivent les champs à réattribuer ou les clés de métadonnées à fusionner ; une clé de métadonnées définie sur `None` est supprimée.
+
+<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
+
+- **[Index de recherche](/studio/search/search-toolkit/search-index)** : les backends intégrés.
+- **[Vespa](/studio/search/search-toolkit/search-index/vespa)** et **[Postgres](/studio/search/search-toolkit/search-index/postgres)** : les implémentations intégrées, utiles comme référence pour les vôtres.

@@ -54,7 +54,7 @@ export function ModelCard({
       <Link
         href={modelUrl}
         className={cn(
-          'relative group flex flex-col justify-between gap-4 bg-model rounded px-4 py-3 lg:aspect-[1.5] overflow-hidden',
+          'relative group flex flex-col justify-between gap-4 bg-model rounded px-4 py-3  h-full',
           'ring ring-model ring-offset-4 ring-offset-background',
           className
         )}
@@ -68,7 +68,7 @@ export function ModelCard({
             alt={`${model.name} icon`}
             width={64}
             height={64}
-            className={cn('size-full', model.avatar?.icon === 'zai-glm' && 'scale-[0.85]')}
+            className={cn('lg:size-10 xl:size-full', model.avatar?.icon === 'zai-glm' && 'scale-[0.85]')}
           />
         </div>
         {showParameters && (

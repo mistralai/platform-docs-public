@@ -1,0 +1,113 @@
+name: Publish tagged docs
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  create_pr_on_public:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate caller ref
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "push" && "$REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            exit 0
+          fi
+
+          echo "Unsupported invocation: event=$EVENT_NAME ref=$REF" >&2
+          exit 1
+
+      - name: Request public docs Warden token
+        id: warden
+        env:
+          X_PRIVATE_ACCESS_STAGING: ${{ secrets.X_PRIVATE_ACCESS_STAGING }}
+        run: |
+          set -euo pipefail
+
+          OIDC_TOKEN=$(curl --fail --silent --show-error --location \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://warden.globalaegis.net" \
+            | jq -er '.value')
+
+          WARDEN_HEADERS=(
+            -H "Authorization: Bearer $OIDC_TOKEN"
+            -H "Content-Type: application/json"
+            -H "Accept: text/plain"
+          )
+          if [[ -n "${X_PRIVATE_ACCESS_STAGING:-}" ]]; then
+            WARDEN_HEADERS+=( -H "X-Private-Access: $X_PRIVATE_ACCESS_STAGING" )
+          fi
+
+          TOKEN=$(curl --fail-with-body --silent --show-error --location \
+            --request POST https://warden.globalaegis.net/token \
+            "${WARDEN_HEADERS[@]}" \
+            --data '{"type":"github","repository":"platform-docs-public","perms":["contents:write","pull_requests:write"]}')
+
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          token: ${{ steps.warden.outputs.token }}
+          fetch-depth: 0
+          submodules: true
+
+      - name: Pull public updates
+        env:
+          GITHUB_TOKEN: ${{ steps.warden.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "mayo@mistral.ai"
+
+          git remote add public https://github.com/mistralai/platform-docs-public.git
+          git remote update
+          git status
+
+          git merge public/main --no-commit --no-ff --no-edit --allow-unrelated-histories
+
+          if ! git diff-index --cached --quiet HEAD; then
+            git commit -m "Update from public repo"
+            git push origin "${{ github.ref }}"
+          else
+            echo "No changes to apply"
+          fi
+
+      - name: Push to public repo
+        env:
+          GITHUB_TOKEN: ${{ steps.warden.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          git checkout public/main
+          git checkout -b "doc/${{ github.ref_name }}"
+
+          echo "${{ github.ref_name }}" > version.txt
+
+          git add .
+          git commit -m "Bump version file"
+
+          git diff "doc/${{ github.ref_name }}" "${{ github.ref_name }}" --binary --ignore-submodules=none -- . ':!.github' > changes.diff
+          git apply changes.diff
+
+          git add .
+          git commit -m "Update version to ${{ github.ref_name }}"
+
+          git push public "doc/${{ github.ref_name }}"
+
+          gh pr create \
+            --title "Update docs to ${{ github.ref_name }}" \
+            --body "This PR was automatically created by a GitHub Action" \
+            --base main \
+            --head "doc/${{ github.ref_name }}" \
+            --repo mistralai/platform-docs-public

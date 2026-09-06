@@ -6,18 +6,17 @@ slug: overview
 
 # Self-Deployment
 
-Mistral AI models can be **self-deployed on your own infrastructure** through various
-inference engines. We recommend using [vLLM](https://vllm.readthedocs.io/), a
+Mistral AI models support **self-deployment on your own infrastructure** through various
+inference engines:
+- [vLLM](https://vllm.readthedocs.io/) (recommended). A
 highly-optimized Python-only serving framework which can expose an OpenAI-compatible
 API.
+- [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM).
+- [TGI](https://huggingface.co/docs/text-generation-inference/index).
 
-Other inference engine alternatives include
-[TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) and
-[TGI](https://huggingface.co/docs/text-generation-inference/index).
-
-You can also leverage specific tools to facilitate infrastructure management, such as
+To simplify infrastructure management, consider tools like
 [SkyPilot](https://skypilot.readthedocs.io) or [Cerebrium](https://www.cerebrium.ai).
 
 :::tip
-For full-stack enterprise deployment, from efficient model inference to team management, we recommend [reaching out to us](https://mistral.ai/contact).
+For full-stack enterprise deployment, from efficient model inference to team management, [reach out to us](https://mistral.ai/contact).
 :::

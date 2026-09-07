@@ -1,0 +1,116 @@
+---
+title: Référence de configuration
+sidebar_position: 3.5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Référence de configuration
+
+Index exhaustif de toutes les clés acceptées par `config.toml` et les fichiers de définition d’agents. Les clés sont regroupées par section, chacune renvoyant à la page qui explique le concept en détail. Utilisez cette page comme aide-mémoire, et [Configuration](/vibe/code/cli/configuration) pour comprendre le fonctionnement du fichier.
+
+<SectionTab as="h2" sectionId="top-level">Clés de premier niveau</SectionTab>
+
+Toutes les clés se trouvent à la racine de `config.toml` sauf indication contraire.
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `default_agent` | string |  | Agent interactif par défaut, par exemple `"plan"`. Ignoré en mode programmatique, qui revient à `auto-approve`. Voir [Agents](/vibe/code/cli/agents) |
+| `active_model` | string |  | Alias de modèle actuellement utilisé. Défini sur un `alias` de `[[models]]` ou un ID de modèle intégré |
+| `log_interactions` | boolean | `true` | Active la journalisation des sessions. Requis pour `--continue` / `--resume`. Voir [Travailler avec la CLI](/vibe/code/cli/work-with-cli#resume) |
+| `skill_paths` | array&lt;string&gt; |  | Répertoires supplémentaires où découvrir des skills. Voir [Skills](/vibe/code/cli/skills) |
+| `enabled_skills` | array&lt;string&gt; |  | Liste d’autorisation de motifs de noms de skills (exact, glob ou `re:` regex). Si non vide, seuls les skills correspondants se chargent |
+| `disabled_skills` | array&lt;string&gt; |  | Liste d’exclusion de motifs de noms de skills, appliquée quand `enabled_skills` est vide |
+| `enabled_tools` | array&lt;string&gt; |  | Liste d’autorisation de motifs de noms d’outils. Voir [Sécurité, approbations et permissions](/vibe/code/safety-approvals-permissions#tool-permissions) |
+| `disabled_tools` | array&lt;string&gt; |  | Liste d’exclusion de motifs de noms d’outils |
+| `enable_auto_update` | boolean | `true` | Vérifie et installe les nouvelles versions en arrière-plan |
+| `enable_notifications` | boolean | `true` | Notifications système quand une tâche longue se termine ou qu’une saisie est requise |
+| `enable_telemetry` | boolean | `true` | Envoie de la télémétrie anonyme d’usage et d’erreurs à Mistral. Désactivez pour un usage hors ligne uniquement |
+| `[[providers]]` | table array |  | Préréglages de fournisseurs. Champs listés ci-dessous. Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles) |
+| `[[models]]` | table array |  | Préréglages de modèles. Champs listés ci-dessous. Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles) |
+| `[[mcp_servers]]` | table array |  | Définitions de serveurs MCP. Champs listés ci-dessous. Voir [Serveurs MCP](/vibe/code/cli/mcp-servers) |
+
+<SectionTab as="h2" sectionId="providers">Fournisseurs (`[[providers]]`)</SectionTab>
+
+Une table `[[providers]]` par préréglage de fournisseur.
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `name` | string | Requis | Identifiant du préréglage de fournisseur, référencé par un `provider` de `[[models]]` |
+| `api_base` | string |  | URL de base de l’API du fournisseur |
+| `api_key_env_var` | string |  | Nom de la variable d’environnement contenant la clé d’API. Les secrets doivent utiliser cette forme dans la config admin |
+| `api_style` | string |  | Style d’API, par exemple `"openai"` |
+| `backend` | string |  | Type de backend, par exemple `"generic"` ou `"mistral"` |
+| `region` | string |  | Région, par exemple `"eu-west-1"`. Configurations d’entreprise uniquement |
+| `[providers.extra_headers]` | table |  | Sous-table d’en-têtes HTTP supplémentaires, par exemple `"x-acme-tenant" = "engineering"` |
+
+<SectionTab as="h2" sectionId="models">Modèles (`[[models]]`)</SectionTab>
+
+Une table `[[models]]` par préréglage de modèle.
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `name` | string | Requis | ID du modèle, par exemple `mistral-medium-latest` |
+| `provider` | string | Requis | Référence un `name` de `[[providers]]` |
+| `alias` | string |  | Alias local utilisé par `active_model` |
+| `temperature` | number |  | Température d’échantillonnage, par exemple `0.2` |
+| `input_price` | number |  | Coût indicatif par entrée, utilisé par `--max-price` |
+| `output_price` | number |  | Coût indicatif par sortie, utilisé par `--max-price` |
+
+<SectionTab as="h2" sectionId="mcp-servers">Serveurs MCP (`[[mcp_servers]]`)</SectionTab>
+
+Une table `[[mcp_servers]]` par serveur. Les champs requis dépendent du `transport` (`http`, `streamable-http` ou `stdio`).
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `name` | string | Requis | Alias court ; préfixe les noms d’outils de ce serveur |
+| `transport` | string | Requis | Un parmi `http`, `streamable-http` ou `stdio` |
+| `url` | string |  | URL de base pour les transports HTTP |
+| `command` | string |  | Commande pour le transport stdio |
+| `args` | array&lt;string&gt; |  | Arguments pour le transport stdio |
+| `headers` | table |  | En-têtes HTTP supplémentaires pour les transports HTTP |
+| `env` | table |  | Variables d’environnement passées au processus stdio |
+| `api_key_env` | string |  | Variable d’environnement contenant la clé d’API. Distinct du champ `api_key_env_var` des fournisseurs |
+| `api_key_header` | string |  | Nom de l’en-tête à définir avec la clé d’API |
+| `api_key_format` | string |  | Chaîne de format, par exemple `"Bearer {token}"` |
+| `startup_timeout_sec` | number |  | Secondes d’attente pour le démarrage du serveur |
+| `tool_timeout_sec` | number |  | Secondes d’attente pour l’exécution d’un appel d’outil |
+
+<SectionTab as="h2" sectionId="tool-permissions">Permissions par outil (`[tools.<tool_name>]`)</SectionTab>
+
+`<tool_name>` est un outil intégré (`read_file`, `bash`, etc.) ou un outil MCP nommé `{server_name}_{tool_name}`. Un bloc par outil.
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `permission` | string |  | `"always"` pour autoriser automatiquement l’outil, `"ask"` pour demander avant usage |
+| `allow` | array&lt;string&gt; |  | `bash` uniquement. Liste d’autorisation de commandes, par exemple `["git status", "pnpm test"]` |
+| `deny` | array&lt;string&gt; |  | `bash` uniquement. Liste d’exclusion de commandes, par exemple `["rm -rf *"]` |
+
+<SectionTab as="h2" sectionId="agent-files">Fichiers de définition d’agents</SectionTab>
+
+Ces clés se trouvent dans `~/.vibe/agents/<name>.toml` ou `./.vibe/agents/<name>.toml`, **pas dans `config.toml`**. Elles définissent des agents et sous-agents personnalisés. La plupart des clés de premier niveau ci-dessus (`active_model`, `enabled_tools`, `disabled_tools`, blocs `[tools.*]`) peuvent aussi être définies dans un fichier d’agent pour surcharger la configuration globale de cet agent.
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `agent_type` | string | Requis | `"agent"` (utilisateur, sélectionnable via `--agent`) ou `"subagent"` (délégation uniquement) |
+| `display_name` | string |  | Libellé lisible par l’utilisateur |
+| `description` | string |  | Description en texte libre |
+| `safety` | string |  | Indicateur visuel : `safe`, `neutral`, `destructive` ou `yolo`. Change uniquement la couleur de bordure de l’entrée ; n’applique aucune permission |
+| `system_prompt_id` | string |  | Pointe vers un fichier de prompt dans `~/.vibe/prompts/` |
+| `active_model` | string |  | Alias de modèle pour cet agent (même clé que la config globale) |
+| `enabled_tools` | array&lt;string&gt; |  | Liste d’autorisation d’outils pour cet agent |
+| `disabled_tools` | array&lt;string&gt; |  | Liste d’exclusion d’outils pour cet agent |
+
+Voir [Agents](/vibe/code/cli/agents) pour les agents intégrés et des exemples complets.
+
+<SectionTab as="h2" sectionId="environment-variables">Variables d’environnement</SectionTab>
+
+Ce ne sont pas des clés de `config.toml`, mais elles font partie du modèle de configuration. Elles se situent au niveau de précédence 3 (variables d’environnement).
+
+| Variable | Rôle |
+|---|---|
+| `VIBE_HOME` | Surcharge le répertoire racine `~/.vibe/` pour tout l’état (config, prompts, agents, skills, journaux) |
+| `MISTRAL_API_KEY` | Clé d’API Mistral principale |
+| `<PROVIDER>_API_KEY` | Clé d’API référencée par un `api_key_env_var` de `[[providers]]` (par exemple `OPENROUTER_API_KEY`) |
+
+Voir [Précédence de configuration](/vibe/code/cli/configuration#precedence) et [Config admin](/vibe/code/cli/admin-config) pour comprendre comment ces couches se combinent.

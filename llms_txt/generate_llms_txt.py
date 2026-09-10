@@ -9,12 +9,12 @@ import yaml
 import requests
 import re
 from pathlib import Path
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 # Configuration
 REPO_NAME = "."  # Current directory since we're IN the repo
-DOCS_PATH = "static/docs"
-DOCS_BASE_URL = "https://docs.mistral.ai/docs"
+DOCS_PATH = "src/content/en/docs"
+DOCS_BASE_URL = "https://docs.mistral.ai"
 API_BASE_URL = "https://docs.mistral.ai/api/"
 OPENAPI_URL = "https://raw.githubusercontent.com/mistralai/platform-docs-public/main/openapi.yaml"
 
@@ -116,18 +116,34 @@ def clean_content(content, for_summary=False):
     
     return content.strip()
 
+def is_routable_page(file_path, docs_dir):
+    """True if <file_path> is a publicly routable docs page.
+
+    Mirrors the Next.js route collector: the page file must be named
+    ``page.mdx`` and no ancestor directory may start with ``_`` or be a
+    dynamic segment like ``[slug]``.
+    """
+    parts = Path(file_path).relative_to(docs_dir).parts
+    if parts[-1] != "page.mdx":
+        return False
+    for part in parts[:-1]:
+        if part.startswith("_") or (part.startswith("[") and part.endswith("]")):
+            return False
+    return True
+
 def path_to_url(file_path, include_md_extension=False):
-    """Convert local file path to docs.mistral.ai URL"""
-    # Remove repo name and static/docs prefix
-    relative_path = str(file_path).replace(f"{REPO_NAME}/", "")
-    relative_path = relative_path.replace(f"{DOCS_PATH}/", "")
-    # Remove .md or .mdx extension
-    relative_path = re.sub(r'\.(md|mdx)$', '', relative_path)
-    # Return URL with or without .md extension
-    if include_md_extension:
-        return f"{DOCS_BASE_URL}/{relative_path}.md"
-    else:
-        return f"{DOCS_BASE_URL}/{relative_path}"
+    """Convert a <slug>/page.mdx path to its docs.mistral.ai URL.
+
+    Pages live at <docs_root>/<slug>/page.mdx and resolve at
+    https://docs.mistral.ai/<slug> (the default locale has no URL prefix).
+    ``include_md_extension`` is kept for call-site compatibility but ignored:
+    ``.md``-suffixed URLs no longer resolve on the Next.js site.
+    """
+    rel = Path(file_path).relative_to(Path(REPO_NAME) / DOCS_PATH)
+    slug = rel.parent.as_posix()
+    if slug == ".":
+        slug = ""
+    return f"{DOCS_BASE_URL}/{slug}" if slug else DOCS_BASE_URL
 
 def get_mistral_client():
     """Initialize Mistral client"""
@@ -176,12 +192,13 @@ def process_markdown_files(mode="full", client=None):
         print(f"❌ Docs directory not found: {docs_dir}")
         return docs
     
-    # Get all .md and .mdx files recursively
-    md_files = list(docs_dir.rglob("*.md")) + list(docs_dir.rglob("*.mdx"))
-    
+    # Pages are <slug>/page.mdx; collect only routable pages (this skips
+    # partials like _page.mdx/_meta.md and underscore-prefixed guide dirs).
+    md_files = [f for f in docs_dir.rglob("page.mdx") if is_routable_page(f, docs_dir)]
+
     # Filter out changelog and stories files
     md_files = [f for f in md_files if not any(skip in str(f).lower() for skip in ['changelog', 'stories', 'story', 'robots'])]
-    
+
     md_files.sort()  # Sort for consistent output
     
     print(f"📚 Found {len(md_files)} documentation files")

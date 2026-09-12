@@ -1,0 +1,110 @@
+# Deploy the docs site to Cloudflare Pages.
+#
+# Layered pipeline (build -> deploy) so failures stay isolated and a failed
+# deploy never triggers a full rebuild: the build job uploads the Pages output
+# as an artifact and the deploy job reuses it.
+#
+# Caching: pnpm store (dependency install) and .next/cache (Next.js compile,
+# the bulk of the build time).
+#
+# Endpoint variables (src/lib/constants.ts) are injected at build time from
+# repo variables when set, otherwise the code's production defaults apply 1:1.
+# No repo code is modified by this workflow.
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site (next-on-pages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          submodules: recursive
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          # Version is read from the packageManager field in package.json
+          cache: true
+          cache_dependency_path: pnpm-lock.yaml
+
+      - name: Setup Node
+        uses: actions/setup-node@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          node-version: 20
+
+      - name: Cache Next.js build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('src/**', 'next.config.ts', 'redirect.ts', 'rewrite.ts') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            nextjs-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          # Endpoint variables are replaced here, uniformly, before deployment.
+          # Values come from repo variables (Settings -> Variables -> Actions)
+          # when defined; otherwise the production defaults baked into
+          # src/lib/constants.ts apply unchanged.
+          NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL || 'https://docs.mistral.ai' }}
+          MISTRAL_CHAT_URL: ${{ vars.MISTRAL_CHAT_URL || 'https://chat.mistral.ai/chat' }}
+          MISTRAL_STUDIO_URL: ${{ vars.MISTRAL_STUDIO_URL || 'https://console.mistral.ai/home' }}
+          MISTRAL_CONSOLE_URL: ${{ vars.MISTRAL_CONSOLE_URL || 'https://console.mistral.ai' }}
+        run: pnpm cf:build
+
+      - name: Upload Pages output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cloudflare-pages-output
+          path: .vercel/output/static
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download Pages output
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cloudflare-pages-output
+          path: .vercel/output/static
+
+      - name: Ensure Pages project exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if npx --yes wrangler@latest pages project list | grep -q "platform-docs"; then
+            echo "Pages project 'platform-docs' already exists"
+          else
+            npx --yes wrangler@latest pages project create platform-docs --production-branch=main
+          fi
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .vercel/output/static --project-name=platform-docs --branch=main --commit-dirty=true

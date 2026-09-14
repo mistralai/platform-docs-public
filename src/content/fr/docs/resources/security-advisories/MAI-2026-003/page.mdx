@@ -1,0 +1,76 @@
+---
+id: MAI-2026-003
+title: Vulnérabilités des autorisations shell dans Mistral Vibe
+sidebar_label: MAI-2026-003
+sidebar_position: 3
+description: Avis de sécurité concernant des vulnérabilités des autorisations shell affectant Mistral Vibe.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Vulnérabilités des autorisations shell dans Mistral Vibe
+
+- **Référence :** MAI-2026-003
+- **Publication :** En attente de publication
+- **Mis à jour :** 2026-09-14
+- **Gravité :** À confirmer avant publication
+- **Statut :** Brouillon pour relecture ; correctifs disponibles dans la version 2.25.4
+
+<SectionTab as="h2" sectionId="issue-description">Description du problème</SectionTab>
+
+Mistral Vibe **2.25.4**, publié le **12 septembre 2026**, inclut des correctifs pour six vulnérabilités signalées dans les vérifications des autorisations shell (CVE-2026-87983 à CVE-2026-87988).
+
+Dans les versions affectées, Vibe pouvait exécuter des commandes shell spécialement conçues sans la demande d’approbation attendue, car les vérifications d’autorisations ne tenaient pas compte de toutes les syntaxes de commande, options ou chemins de fichiers. Des instructions malveillantes dans du contenu traité par l’agent pouvaient provoquer l’émission de ces commandes.
+
+<SectionTab as="h2" sectionId="impact">Impact</SectionTab>
+
+Selon la vulnérabilité, une commande pouvait s’exécuter sans l’approbation attendue et :
+
+- Lire des fichiers en dehors de l’espace de travail, y compris des identifiants accessibles et du code source.
+- Créer ou écraser des fichiers en dehors de l’espace de travail.
+- Exécuter du code avec les autorisations de l’utilisateur qui exécute Vibe.
+
+L’impact dépend des fichiers, des identifiants et des autorisations système disponibles pour le processus Vibe.
+
+<SectionTab as="h2" sectionId="affected-versions-product">Versions affectées / produit</SectionTab>
+
+**Produit :** la CLI Mistral Vibe (`mistral-vibe`), y compris ses implémentations héritée et gérée des autorisations shell.
+
+Les versions antérieures à **2.25.4** peuvent être affectées par une ou plusieurs de ces vulnérabilités. Les versions d’introduction ci-dessous suivent les avis de HiddenLayer ; les versions corrigées reflètent l’historique des versions vérifié.
+
+| Vulnérabilité | Versions affectées | Version corrigée |
+|---|---|---|
+| CVE-2026-87983 : chemins absolus entre guillemets | De 2.6.0 à 2.19.1 exclue | 2.19.1 |
+| CVE-2026-87984 : cibles de redirection shell | De 1.3.4 à 2.25.4 exclue | 2.25.4 |
+| CVE-2026-87985 : arguments entre guillemets ANSI-C | De 2.9.0 à 2.25.4 exclue | 2.25.4 |
+| CVE-2026-87986 : analyse incomplète des commandes | De 1.3.4 à 2.25.4 exclue | 2.25.4 |
+| CVE-2026-87987 : affectations d’environnement | De 2.6.0 à 2.25.4 exclue | 2.25.4 |
+| CVE-2026-87988 : lacunes dans la liste d’autorisation des commandes et la validation des chemins | Introduite dans la version 2.15.0 ; correctifs partiels dans les versions 2.20.0 et 2.23.0. Les contournements signalés par option de commande subsistent jusqu’à la version 2.25.3 incluse. | 2.25.4 pour les variantes signalées restantes |
+
+Pour CVE-2026-87988, [2.20.0](https://github.com/mistralai/mistral-vibe/releases/tag/v2.20.0) a ajouté des vérifications de chemin standard à l’implémentation shell héritée ; [2.23.0](https://github.com/mistralai/mistral-vibe/releases/tag/v2.23.0) a étendu cette couverture au shell géré. La version 2.25.4 corrige les contournements restants signalés par option de commande.
+
+<SectionTab as="h2" sectionId="indicators-of-compromise">Indicateurs de compromission</SectionTab>
+
+Une version affectée indique une exposition, pas une preuve de compromission. Vérifiez la version installée avec :
+
+```bash
+vibe --version
+```
+
+Les exemples publiés sont des preuves de concept, et non une charge utile malveillante unique associée à un hash, un domaine ou un nom de fichier fiable à détecter. Si une exploitation est suspectée, examinez les enregistrements d’appels d’outils Vibe disponibles et la télémétrie des endpoints pour repérer les accès à des fichiers, les modifications de fichiers ou les processus shell inattendus associés à une session Vibe.
+
+Les redirections, les affectations d’environnement et les arguments entre guillemets peuvent aussi apparaître dans des commandes légitimes ; leur présence seule ne prouve pas une exploitation.
+
+<SectionTab as="h2" sectionId="remediation">Correction</SectionTab>
+
+1. Passez à **Mistral Vibe 2.25.4 ou version ultérieure** avec votre méthode d’installation actuelle.
+2. Redémarrez les sessions Vibe en cours et confirmez la version mise à jour avec `vibe --version`.
+3. Gardez les vérifications d’autorisations activées lorsque des demandes d’approbation sont requises. Les modes d’approbation automatique contournent volontairement ces contrôles.
+4. Si une enquête identifie une activité non autorisée, conservez les preuves disponibles et renouvelez les identifiants potentiellement exposés.
+
+[Notes de version et téléchargements](https://github.com/mistralai/mistral-vibe/releases/tag/v2.25.4)
+
+<SectionTab as="h2" sectionId="changelog">Changelog</SectionTab>
+
+- **12 septembre 2026 :** Mistral a pris connaissance des avis CVE publiés et a publié la version 2.25.4 le même jour, avec les correctifs précédents et la correction des contournements restants signalés.
+- **11 septembre 2026 :** HiddenLayer a publié les six avis CVE.

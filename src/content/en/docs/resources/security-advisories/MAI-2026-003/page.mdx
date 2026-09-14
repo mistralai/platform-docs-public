@@ -1,0 +1,76 @@
+---
+id: MAI-2026-003
+title: Mistral Vibe shell permission vulnerabilities
+sidebar_label: MAI-2026-003
+sidebar_position: 3
+description: Security advisory for shell permission vulnerabilities affecting Mistral Vibe.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Mistral Vibe shell permission vulnerabilities
+
+- **Reference:** MAI-2026-003
+- **Published:** Pending publication
+- **Updated:** 2026-09-14
+- **Severity:** To be confirmed before publication
+- **Status:** Draft for review; fixes available in version 2.25.4
+
+<SectionTab as="h2" sectionId="issue-description">Issue description</SectionTab>
+
+Mistral Vibe **2.25.4**, released on **12 September 2026**, includes fixes for six reported vulnerabilities in shell permission checks (CVE-2026-87983 through CVE-2026-87988).
+
+In affected versions, Vibe could execute specially crafted shell commands without the expected approval prompt because the permission checks did not account for all command syntax, options or file paths. Malicious instructions in content processed by the agent could cause such commands to be issued.
+
+<SectionTab as="h2" sectionId="impact">Impact</SectionTab>
+
+Depending on the vulnerability, a command could run without the expected approval and:
+
+- Read files outside the workspace, including accessible credentials and source code.
+- Create or overwrite files outside the workspace.
+- Execute code with the permissions of the user running Vibe.
+
+The impact depends on the files, credentials and system permissions available to the Vibe process.
+
+<SectionTab as="h2" sectionId="affected-versions-product">Affected versions / product</SectionTab>
+
+**Product:** Mistral Vibe CLI (`mistral-vibe`), including its legacy and managed shell permission implementations.
+
+Versions before **2.25.4** may be affected by one or more of these vulnerabilities. The introduction versions below follow HiddenLayer's advisories; the fixed versions reflect the verified release history.
+
+| Vulnerability | Affected versions | Fixed version |
+|---|---|---|
+| CVE-2026-87983: quoted absolute paths | 2.6.0 up to, but excluding, 2.19.1 | 2.19.1 |
+| CVE-2026-87984: shell redirection targets | 1.3.4 up to, but excluding, 2.25.4 | 2.25.4 |
+| CVE-2026-87985: ANSI-C quoted arguments | 2.9.0 up to, but excluding, 2.25.4 | 2.25.4 |
+| CVE-2026-87986: incomplete command parsing | 1.3.4 up to, but excluding, 2.25.4 | 2.25.4 |
+| CVE-2026-87987: environment assignments | 2.6.0 up to, but excluding, 2.25.4 | 2.25.4 |
+| CVE-2026-87988: command allowlist and path-validation gaps | Introduced in 2.15.0; partial fixes in 2.20.0 and 2.23.0. Reported command-option bypasses remain through 2.25.3. | 2.25.4 for the remaining reported variants |
+
+For CVE-2026-87988, [2.20.0](https://github.com/mistralai/mistral-vibe/releases/tag/v2.20.0) added ordinary path checks to the legacy shell implementation; [2.23.0](https://github.com/mistralai/mistral-vibe/releases/tag/v2.23.0) extended that coverage to the managed shell. Version 2.25.4 addresses the remaining reported command-option bypasses.
+
+<SectionTab as="h2" sectionId="indicators-of-compromise">Indicators of compromise</SectionTab>
+
+An affected version indicates exposure, not proof of compromise. Check the installed version with:
+
+```bash
+vibe --version
+```
+
+The published examples are proofs of concept, not a single malware payload with a reliable hash, domain or filename to detect. If exploitation is suspected, review available Vibe tool-call records and endpoint telemetry for unexpected file access, file changes or shell processes associated with a Vibe session.
+
+Redirections, environment assignments and quoted arguments can also appear in legitimate commands; their presence alone does not establish exploitation.
+
+<SectionTab as="h2" sectionId="remediation">Remediation</SectionTab>
+
+1. Upgrade to **Mistral Vibe 2.25.4 or later** using your existing installation method.
+2. Restart running Vibe sessions and confirm the updated version with `vibe --version`.
+3. Keep permission checks enabled when approval prompts are required. Automatic approval modes intentionally bypass these controls.
+4. If an investigation identifies unauthorized activity, preserve the available evidence and rotate potentially exposed credentials.
+
+[Release notes and downloads](https://github.com/mistralai/mistral-vibe/releases/tag/v2.25.4)
+
+<SectionTab as="h2" sectionId="changelog">Changelog</SectionTab>
+
+- **12 September 2026:** Mistral became aware of the published CVE advisories and released version 2.25.4 the same day, including earlier fixes and addressing the remaining reported bypasses.
+- **11 September 2026:** HiddenLayer published the six CVE advisories.

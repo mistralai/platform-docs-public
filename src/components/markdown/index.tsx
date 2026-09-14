@@ -4,6 +4,7 @@
 // Admonition; client MDX renderers import from ./base.
 import * as React from 'react';
 import Admonition from '@/components/common/admonition';
+import CommunityPlugin from '@/components/common/community-plugin';
 import type { MDXComponents } from 'mdx/types';
 import { baseComponents } from './base';
 import { Tag } from './tag';
@@ -14,6 +15,9 @@ const allComponents = {
   ...baseComponents,
   Admonition: ({ children, ...props }: { children?: React.ReactNode }) => {
     return <Admonition {...props}>{children}</Admonition>;
+  },
+  CommunityPlugin: ({ children }: { children?: React.ReactNode }) => {
+    return <CommunityPlugin>{children}</CommunityPlugin>;
   },
   Tag,
 };

@@ -74,8 +74,8 @@ declare module "@lingo.dev/react" {
     "Actively participate in community discussions and help fellow developers with Mistral AI questions.": { context: "Description of a Mistral ambassador responsibility" };
     "Inference & Models": { context: "Top navigation label for inference and models docs" };
     "USAGE": { context: "Section heading for model usage examples" };
-    "Send a request to the Chat Completions API with the": { context: "Intro before GLM 5.2 model name in onboarding examples" };
-    "model name.": { context: "Intro after GLM 5.2 model name in onboarding examples" };
+    "Send a request to the Chat Completions API with the": { context: "Intro before GLM 5.3 model name in onboarding examples" };
+    "model name.": { context: "Intro after GLM 5.3 model name in onboarding examples" };
     "Regional inference": { context: "Link text to the regional inference documentation" | "Title of the Inference landing card linking to regional inference" };
     "Generalist models": { context: "Heading for generalist AI models" };
     "OCR models": { context: "Heading for OCR model family" };
@@ -336,11 +336,14 @@ declare module "@lingo.dev/react" {
     "Evaluation": { context: "Name of a Mistral platform feature" | "Topic label for model evaluation and benchmarking" };
     "Event Participation": { context: "Responsibility of a Mistral ambassador" };
     "Everyone": { context: "Short audience label for the Vibe product" };
-    "For details about regional endpoint behavior, see": { context: "Intro text before the Regional Inference link on the GLM 5.2 model card" };
+    "For details about regional endpoint behavior, see": { context: "Intro text before the Regional Inference link on the GLM 5.3 model card" };
+    "GLM 5.3 is available through the global endpoint and the EU regional endpoint. It is not available through the US regional endpoint yet.": { context: "Regional availability note for GLM 5.3" };
     "GLM 5.2 is available through the global endpoint and the EU regional endpoint. It is not available through the US regional endpoint yet.": { context: "Regional availability note for GLM 5.2" };
     "Regional Inference": { context: "Link text to the Regional Inference documentation" };
-    "Regional availability": { context: "Heading for a GLM 5.2 regional availability callout on the model card" };
+    "Regional availability": { context: "Heading for a GLM 5.3 regional availability callout on the model card" };
+    "Send a request to the Chat Completions API with the `zai-glm-5-3` model name.": { context: "Intro for a GLM 5.3 curl onboarding example" };
     "Send a request to the Chat Completions API with the `zai-glm-5-2` model name.": { context: "Intro for a GLM 5.2 curl onboarding example" };
+    "Use GLM 5.3": { context: "Heading for a GLM 5.3 curl onboarding example" };
     "Use GLM 5.2": { context: "Heading for a GLM 5.2 curl onboarding example" };
     "Examples": { context: "Heading for code examples" };
     "Experimental, fast moving, and may offer lower QoS.": { context: "Tooltip explaining the Labs AI model tier" };

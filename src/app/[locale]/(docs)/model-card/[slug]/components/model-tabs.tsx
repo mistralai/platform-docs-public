@@ -40,7 +40,7 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 	if (modelHasWeights) {
 		tabs.push({ value: "weights", label: l.text("WEIGHTS", { context: "Section heading for downloadable model weights" }) });
 	}
-	if (model.usageExample === 'zai-glm-5-2') {
+	if (model.usageExample === 'zai-glm-5-2' || model.usageExample === 'zai-glm-5-3') {
 		tabs.push({ value: 'usage', label: l.text('USAGE', { context: 'Section heading for model usage examples' }) });
 	}
 
@@ -111,25 +111,27 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 				</TabsContent>
 			)}
 
-			{model.usageExample === 'zai-glm-5-2' && (
+			{(model.usageExample === 'zai-glm-5-2' || model.usageExample === 'zai-glm-5-3') && (
 				<TabsContent value="usage" className="mt-8">
-					<ZaiGlmUsageExample l={l} />
+					<ZaiGlmUsageExample l={l} usageExample={model.usageExample} />
 				</TabsContent>
 			)}
 		</Tabs>
 	);
 }
 
-const ZaiGlmUsageExample = ({ l }: { l: Lingo }) => (
+const ZaiGlmUsageExample = ({ l, usageExample }: { l: Lingo; usageExample: 'zai-glm-5-2' | 'zai-glm-5-3' }) => (
 	<div className="space-y-8">
 		<div className="space-y-4">
 			<SectionTab as="h2" variant="secondary" sectionId="regional-availability">
-				{l.text('Regional availability', { context: 'Heading for a GLM 5.2 regional availability callout on the model card' })}
+				{l.text('Regional availability', { context: 'Heading for a GLM 5.3 regional availability callout on the model card' })}
 			</SectionTab>
-			<Admonition type="info" title={l.text('Regional availability', { context: 'Heading for a GLM 5.2 regional availability callout on the model card' })} hideType>
+			<Admonition type="info" title={l.text('Regional availability', { context: 'Heading for a GLM 5.3 regional availability callout on the model card' })} hideType>
 				<p>
-					{l.text('GLM 5.2 is available through the global endpoint and the EU regional endpoint. It is not available through the US regional endpoint yet.', { context: 'Regional availability note for GLM 5.2' })}{' '}
-					{l.text('For details about regional endpoint behavior, see', { context: 'Intro text before the Regional Inference link on the GLM 5.2 model card' })}{' '}
+					{usageExample === 'zai-glm-5-2'
+					? l.text('GLM 5.2 is available through the global endpoint and the EU regional endpoint. It is not available through the US regional endpoint yet.', { context: 'Regional availability note for GLM 5.2' })
+					: l.text('GLM 5.3 is available through the global endpoint and the EU regional endpoint. It is not available through the US regional endpoint yet.', { context: 'Regional availability note for GLM 5.3' })}{' '}
+					{l.text('For details about regional endpoint behavior, see', { context: 'Intro text before the Regional Inference link on the GLM 5.3 model card' })}{' '}
 					<Link href="/inference/regional-inference" className="underline underline-offset-2">
 						{l.text('Regional inference', { context: 'Link text to the regional inference documentation' })}
 					</Link>
@@ -138,13 +140,15 @@ const ZaiGlmUsageExample = ({ l }: { l: Lingo }) => (
 			</Admonition>
 		</div>
 		<div className="space-y-4">
-			<SectionTab as="h2" variant="secondary" sectionId="use-glm-5-2">
-				{l.text('Use GLM 5.2', { context: 'Heading for a GLM 5.2 curl onboarding example' })}
+			<SectionTab as="h2" variant="secondary" sectionId={`use-${usageExample}`}>
+				{usageExample === 'zai-glm-5-2'
+					? l.text('Use GLM 5.2', { context: 'Heading for a GLM 5.2 curl onboarding example' })
+					: l.text('Use GLM 5.3', { context: 'Heading for a GLM 5.3 curl onboarding example' })}
 			</SectionTab>
 			<p className="text-muted-foreground">
-				{l.text('Send a request to the Chat Completions API with the', { context: 'Intro before GLM 5.2 model name in onboarding examples' })}{' '}
-				<code className="relative mx-1 bg-background !text-[0.765em] ring-1 ring-offset-1 ring-offset-background ring-border font-mono inline-flex items-center justify-center gap-2 rounded text-xs font-semibold text-foreground px-1">zai-glm-5-2</code>{' '}
-				{l.text('model name.', { context: 'Intro after GLM 5.2 model name in onboarding examples' })}
+				{l.text('Send a request to the Chat Completions API with the', { context: 'Intro before GLM 5.3 model name in onboarding examples' })}{' '}
+				<code className="relative mx-1 bg-background !text-[0.765em] ring-1 ring-offset-1 ring-offset-background ring-border font-mono inline-flex items-center justify-center gap-2 rounded text-xs font-semibold text-foreground px-1">{usageExample}</code>{' '}
+				{l.text('model name.', { context: 'Intro after GLM 5.3 model name in onboarding examples' })}
 			</p>
 			<CodeTabs groupId="language">
 				<TabItem value="python" label="Python">
@@ -154,7 +158,7 @@ from mistralai.client import Mistral
 client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
 response = client.chat.complete(
-    model="zai-glm-5-2",
+    model="${usageExample}",
     messages=[
         {
             "role": "user",
@@ -171,7 +175,7 @@ print(response.choices[0].message.content)`}</CodeBlock>
 const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
 
 const response = await client.chat.complete({
-  model: 'zai-glm-5-2',
+  model: '${usageExample}',
   messages: [
     {
       role: 'user',
@@ -187,7 +191,7 @@ console.log(response.choices[0].message.content);`}</CodeBlock>
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $MISTRAL_API_KEY" \
   -d '{
-    "model": "zai-glm-5-2",
+    "model": "${usageExample}",
     "messages": [
       {
         "role": "user",

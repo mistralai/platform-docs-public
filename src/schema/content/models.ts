@@ -3,14 +3,14 @@ import { ModelSlug } from '@/schema/models';
 export const FEATURED_MODEL_NAMES: ModelSlug[] = [
   'mistral-medium-3-5-26-04',
   'ocr-4-1',
-  'zai-glm-5-2',
+  'zai-glm-5-3',
   'mistral-small-4-0-26-03',
   'voxtral-mini-transcribe-26-02',
   'voxtral-mini-transcribe-realtime-26-02',
 ];
 
 export const LATEST_MODEL_NAMES: ModelSlug[] = [
-  'zai-glm-5-2',
+  'zai-glm-5-3',
   'mistral-medium-3-5-26-04',
   'mistral-small-4-0-26-03',
   'voxtral-mini-transcribe-realtime-26-02',
@@ -21,7 +21,7 @@ export const LATEST_MODEL_NAMES: ModelSlug[] = [
 export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
   'mistral-medium-3-5-26-04',
   'ocr-4-1',
-  'zai-glm-5-2',
+  'zai-glm-5-3',
   'mistral-small-4-0-26-03',
   'voxtral-mini-transcribe-26-02',
   'voxtral-mini-transcribe-realtime-26-02',
@@ -35,7 +35,7 @@ export const FEATURED_MODELS_COLOR_OVERRIDES = [
 ];
 
 export const DEFAULT_BENCHMARK_MODELS: ModelSlug[] = [
-  'zai-glm-5-2',
+  'zai-glm-5-3',
   'mistral-medium-3-5-26-04',
   'ocr-4-1',
 ];

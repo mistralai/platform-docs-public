@@ -1,0 +1,55 @@
+import { StaticModel } from '../schema';
+
+export default {
+  name: 'Z.ai GLM 5.3',
+  describe: (l) => ({
+    description: l.text('A third-party open source text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.', { context: 'Full description of an AI model' }),
+    shortDescription: l.text('A third-party open source text model from Z.ai with a 1M-token context window.', { context: 'Short description of an AI model' }),
+  }),
+  slug: 'zai-glm-5-3',
+  releaseDate: '2026-09-15',
+  version: '5.3',
+  frontier: true,
+  class: 'Generalist',
+  type: 'Open',
+  legalButton: null,
+  status: 'PublicPreview',
+  avatar: { icon: 'zai-glm', backgroundColor: 'gray' },
+  weights: [],
+  bloglink: 'https://z.ai/blog/glm-5.3',
+  paperlink: null,
+  externalLinks: [{ href: 'https://huggingface.co/zai-org/GLM-5.3', label: 'Hugging Face' }],
+  tags: ['third-party'],
+  pricingLayout: 'stacked',
+  performanceMaxStars: 5.0,
+  usageExample: 'zai-glm-5-3',
+  contextLength: '1M',
+  outputTokenLimit: '128k',
+  ratings: {
+    speed: 5.0,
+    performance: 5.0,
+    input: 4.0,
+    output: 2.0,
+  },
+  pricing: {
+    type: 'custom',
+    free: false,
+    input: [
+      { type: 'range', price: 1.4, priceEur: 1.19, denominator: '/M Tokens', label: 'Input' },
+      { type: 'range', price: 0.14, priceEur: 0.119, denominator: '/M Tokens', label: 'Cached input' },
+    ],
+    output: [
+      { type: 'range', price: 4.4, priceEur: 3.74, denominator: '/M Tokens', label: 'Output' },
+    ],
+  },
+  identifiers: { apiNames: ['zai-glm-5-3', 'zai-glm-5', 'zai-glm-latest'] },
+  capabilities: {
+    input: ['text'],
+    output: ['reasoning', 'text'],
+    features: ['chat-completions', 'function-calling', 'structured-outputs', 'predicted-outputs', 'prefix', 'batching'],
+  },
+  relatedModels: ['Mistral Medium 3.5', 'Mistral Large 3'],
+  metadata: {},
+  playground: undefined,
+  legacy: false,
+} as const satisfies StaticModel;

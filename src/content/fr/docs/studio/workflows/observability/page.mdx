@@ -42,7 +42,18 @@ async def process_emails(params: ActivityParams) -> ActivityResult:
 
 <SectionTab as="h2" variant="secondary" sectionId="trace-sampling">Échantillonnage des traces</SectionTab>
 
-Par défaut, toutes les traces sont exportées (le worker échantillonne à un taux de 100 %). Pour contrôler l'échantillonnage, transmettez un en-tête `traceparent` au point d'entrée de votre workflow (ou à la périphérie de l'API) : le worker utilise un échantillonneur basé sur le parent, il respecte donc la décision d'échantillonnage en amont. Cela vous permet de forcer l'échantillonnage (activation/désactivation) et de propager la trace parente de manière cohérente.
+Par défaut, toutes les traces sont exportées (le worker échantillonne à un taux de 100 %). Pour définir l’ID de trace ou contrôler l’échantillonnage d’une exécution, transmettez un `traceparent` dans le Corps de texte de votre requête d’exécution. Le worker utilise un échantillonneur basé sur le parent ; il suit donc votre décision d’échantillonnage.
+
+```json
+{
+  "input": { "...": "..." },
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+}
+```
+
+Nos SDK le font pour vous. Ils se chargent d'envoyer le traceparent du span actuel à chaque Appel Exécuter.
+
+**L’utilisation de `traceparent` comme en-tête HTTP est dépréciée.** Cette méthode fonctionne encore pour l’instant, mais les en-têtes peuvent être réécrits en transit ; la valeur que vous envoyez peut donc être différente de celle que nous recevons. Utilisez plutôt le paramètre Corps de texte.
 
 <SectionTab as="h2" variant="secondary" sectionId="fetching-workflow-traces">Récupération des traces de workflow</SectionTab>
 

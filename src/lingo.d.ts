@@ -60,8 +60,8 @@ declare module "@lingo.dev/react" {
     "A specialized model designed for creative writing and dynamic character interaction.": { context: "Short description of an AI model" };
     "A state-of-the-art, open-weight, general-purpose multimodal model.": { context: "Short description of an AI model" };
     "A technique that improves factual accuracy by retrieving relevant documents from an external knowledge base and including them in the prompt context. Reduces hallucinations and enables models to answer from proprietary or up-to-date data.": { context: "Definition of the RAG glossary term" };
-    "A third-party open source text model from Z.ai with a 1M-token context window.": { context: "Short description of an AI model" };
-    "A third-party open source text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.": { context: "Full description of an AI model" };
+    "A third-party open weight text model from Z.ai with a 1M-token context window.": { context: "Short description of an AI model" };
+    "A third-party open weight text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.": { context: "Full description of an AI model" };
     "A tiny and efficient model offering best-in-class text and vision capabilities. ": { context: "Short description of an AI model" };
     "A visual lab to experiment with system prompts, user messages, and generation parameters (like Temperature and Top-P). Test prompts side-by-side across different Mistral models instantly.": { context: "Detailed description of the Playground feature" };
     "Ability to dedicate time regularly to ambassador activities and community engagement.": { context: "Description of a requirement for joining the Mistral ambassador program" };

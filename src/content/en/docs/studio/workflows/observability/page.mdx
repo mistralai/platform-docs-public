@@ -42,7 +42,18 @@ async def process_emails(params: ActivityParams) -> ActivityResult:
 
 <SectionTab as="h2" variant="secondary" sectionId="trace-sampling">Trace sampling</SectionTab>
 
-By default, all traces are exported (the worker samples at a 100% rate). To control sampling, pass a `traceparent` header at your workflow entry point (or API edge): the worker uses a parent-based sampler, so it honors the upstream sampling decision. This lets you force sampling on or off and propagate the parent trace consistently.
+By default, all traces are exported (the worker samples at a 100% rate). To set the trace ID or control sampling for an execution, pass a `traceparent` in the body of your execute request. The worker uses a parent-based sampler, so it follows your sampling decision.
+
+```json
+{
+  "input": { "...": "..." },
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+}
+```
+
+Our SDKs do this for you. They send the traceparent of the current span on every execute call.
+
+**Passing `traceparent` as an HTTP header is deprecated.** It still works for now, but headers can be rewritten in transit, so the value you send may not be the one we receive. Use the body parameter instead.
 
 <SectionTab as="h2" variant="secondary" sectionId="fetching-workflow-traces">Fetching workflow traces</SectionTab>
 

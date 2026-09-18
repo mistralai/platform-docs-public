@@ -1,0 +1,135 @@
+---
+id: search-keys
+title: Search keys
+sidebar_position: 15
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Search Keys
+
+Search keys are key/value pairs attached to an execution so it's easier to find later. They're extracted from the workflow input or attached mid-run, and stored as execution metadata. Filter executions by their search keys with `GET /v1/workflows/runs` or in the **Executions** view in Studio.
+
+:::warning
+Search key values are stored unencrypted so they can be searched. Do not index sensitive fields.
+:::
+
+<SectionTab as="h1" sectionId="indexing-input">Indexing fields from the workflow input</SectionTab>
+
+Pass a list of dot paths in `search_keys` to `@workflows.workflow.define` to extract values from the entrypoint input at the start of every run. The paths are validated at worker startup.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+
+class OrderInput(BaseModel):
+    order_id: str
+    customer_tier: str
+
+
+@workflows.workflow.define(
+    name="order_processor",
+    search_keys=["order_id", "customer_tier"],
+)
+class OrderProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, params: OrderInput) -> str:
+        return f"Processed {params.order_id}"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="path-roots">Path roots</SectionTab>
+
+Where a path starts depends on the entrypoint signature:
+
+| Entrypoint | Root | Example |
+|------------|------|---------|
+| Single `BaseModel` parameter | The model's fields | `order_id`, `customer_tier` |
+| Multiple parameters | The parameter names | `payload.order_id`, `context.tenant` |
+| Single scalar parameter | The parameter name | `city` |
+
+With a single `BaseModel` parameter, the parameter's type is the input model, so paths skip the parameter name and start at its fields. With multiple parameters, the SDK generates a wrapper model whose fields are the parameters, so every path starts with a parameter name.
+
+```python
+@workflows.workflow.define(
+    name="order_processor_multi",
+    search_keys=["payload.order_id", "context.tenant"],
+)
+class MultiParamProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, payload: OrderInput, context: TenantContext) -> str:
+        return f"Processed {payload.order_id} for {context.tenant}"
+```
+
+Fields with a default use that default when the caller omits them. A path must resolve to a scalar value (including a union of scalars or `Optional[scalar]`). Paths can traverse model attributes but not list indices or dictionary keys.
+
+<SectionTab as="h1" sectionId="indexing-mid-run">Attaching values mid-run</SectionTab>
+
+Values that only exist after work has happened (for example, a tier fetched from an activity, or a batch ID derived from state) can be attached with `workflows.workflow.add_search_keys`, callable from a workflow body or an activity.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+
+@workflows.workflow.define(name="enriched_processor")
+class EnrichedProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, params: OrderInput) -> str:
+        customer = await fetch_customer(params.order_id)
+        await workflows.workflow.add_search_keys({"customer.tier": customer.tier})
+        return f"Processed {params.order_id}"
+```
+
+  </TabItem>
+</Tabs>
+
+Awaiting `add_search_keys` confirms the values are persisted. Keys already set on the execution are overwritten, and a `None` value stores the key as null: present but unset.
+
+Keys can also be removed with `workflows.workflow.delete_search_keys`, which frees their slots in the 20-key budget. It's idempotent: keys the execution doesn't hold are ignored.
+
+```python
+await workflows.workflow.delete_search_keys(["customer.tier"])
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="key-rules">Key rules</SectionTab>
+
+The same rules apply to declared paths and `add_search_keys`:
+
+- Keys must be non-empty, contain no `:`, not end in `==`, have no whitespace padding, not start with the reserved `internal.` prefix, and be at most 256 characters.
+- Values are coerced to strings: enums use their value, booleans are lowercased, dates and datetimes use ISO 8601, everything else uses `str()`.
+- Values over 8192 characters are truncated.
+- An execution holds at most 20 keys in total, and `add_search_keys` accepts at most 20 keys per call.
+
+<SectionTab as="h2" variant="secondary" sectionId="failure-behavior">Failure behavior</SectionTab>
+
+Storage failures never fail the execution: the SDK makes 3 attempts on transient errors (5xx, 429, 408, timeouts), then logs a warning and continues. Permanent rejections are logged at error level and dropped — a server deploy can produce these fleet-wide mid-run. At the 20-key cap, new keys are dropped; the server response reports dropped and truncated keys.
+
+Invalid keys (empty, containing `:`, ending in `==`, using the `internal.` prefix, over 256 characters, or more than 20 keys in one call) raise a non-retryable error and fail the execution. An unexpected in-process error during storage, such as a value the SDK can't coerce, fails the execution the same way. Both are code bugs that fail identically on every run, so prefer literal keys over keys built from untrusted data.
+
+<SectionTab as="h1" sectionId="querying">Querying</SectionTab>
+
+Filter runs with the repeated `search_key` query parameter on `GET /v1/workflows/runs`. Each entry matches an exact key, entries are AND'd together, and at most 3 entries are allowed per request:
+
+| Entry | Matches |
+|-------|---------|
+| `key:value` | executions where the value is similar to `value` (fuzzy) |
+| `key==:value` | executions where the value equals `value` byte-for-byte |
+| `key` | executions that have the key set at all |
+| `key==` | executions where the key is set to null |
+
+```bash
+curl -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  "https://api.mistral.ai/v1/workflows/runs?search_key=order_id:12345&search_key=customer_tier==:premium"
+```
+
+For the full parameter list, see the [List Runs](/api/endpoint/workflows/runs) reference.

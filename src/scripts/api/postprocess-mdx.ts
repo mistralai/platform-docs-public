@@ -9,6 +9,12 @@
  *   - docs-md escapes braces in all MDX text, including inline code spans. That
  *     turns examples like `{ "type": "text" }` into `\{ "type": "text" \}`.
  *     Undo that only inside inline code spans.
+ *   - Uppercase placeholder tokens in spec prose (e.g. `<NAME>` in
+ *     `'secret:workspace:<NAME>'`) are copied into MDX verbatim, where MDX
+ *     parses them as JSX tags and the build fails with "Expected a closing
+ *     tag". Escape them to HTML entities outside fenced code blocks and
+ *     inline code spans (real JSX component tags always contain lowercase,
+ *     so an all-caps `<TOKEN>` is always spec prose).
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -135,10 +141,42 @@ function unescapeInlineCodeBraces(content: string): { content: string; count: nu
   return { content: updated, count };
 }
 
+// MDX parses `<NAME>` as an unclosed JSX tag; real component tags always
+// contain lowercase. Escape all-caps `<TOKEN>` prose placeholders to entities,
+// leaving fenced code blocks and inline code spans untouched.
+function escapeUppercasePlaceholderTags(content: string): { content: string; count: number } {
+  let count = 0;
+  const uppercaseTagRe = /<([A-Z][A-Z_]*)>/g;
+  const escapeSegment = (segment: string): string =>
+    segment.replace(uppercaseTagRe, (match, tag: string) => {
+      count += 1;
+      return `&lt;${tag}&gt;`;
+    });
+
+  let inFence = false;
+  const updated = content
+    .split('\n')
+    .map(line => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      if (inFence) return line;
+      // Apply only outside inline code spans (`...`).
+      const parts = line.split('`');
+      return parts
+        .map((part, i) => (i % 2 === 0 ? escapeSegment(part) : part))
+        .join('`');
+    })
+    .join('\n');
+  return { content: updated, count };
+}
+
 async function main() {
   const files = await glob(PAGE_GLOB);
   let total = 0;
   let inlineCodeBraceTotal = 0;
+  let placeholderTagTotal = 0;
   let changed = 0;
 
   for (const file of files) {
@@ -151,16 +189,18 @@ async function main() {
     // "Section must have exactly one title child, not 0".
     const fileResult = injectFileDescription(original);
     const inlineCodeResult = unescapeInlineCodeBraces(fileResult.content);
-    if (inlineCodeResult.content !== original) {
-      writeFileSync(file, inlineCodeResult.content);
+    const placeholderResult = escapeUppercasePlaceholderTags(inlineCodeResult.content);
+    if (placeholderResult.content !== original) {
+      writeFileSync(file, placeholderResult.content);
       changed += 1;
       total += fileResult.count;
       inlineCodeBraceTotal += inlineCodeResult.count;
+      placeholderTagTotal += placeholderResult.count;
     }
   }
 
   console.log(
-    `Post-processed MDX: injected ${total} file description(s), unescaped ${inlineCodeBraceTotal} inline-code brace(s) across ${changed} file(s)`
+    `Post-processed MDX: injected ${total} file description(s), unescaped ${inlineCodeBraceTotal} inline-code brace(s), escaped ${placeholderTagTotal} uppercase placeholder tag(s) across ${changed} file(s)`
   );
 }
 

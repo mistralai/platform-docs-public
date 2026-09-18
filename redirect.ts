@@ -1121,7 +1121,19 @@ const localeAwareLegacyRedirects = rawRedirects.map(rule => ({
     : `${LOCALE_PREFIX}${rule.destination}`,
 }));
 
+// The default locale (en) is served without a URL prefix, so every /en/*
+// URL is a legacy link from before the language URL change (e.g. marketing
+// emails linking /en/studio-api/audio/overview). Strip the prefix with a
+// permanent redirect; the resulting path then resolves through the rules
+// below (e.g. /studio-api/:path* -> /studio/:path*). These rules must stay
+// out of the locale-prefixed map above so they are never rewritten to /fr/en/*.
+const defaultLocaleStripRedirects: RedirectRule[] = [
+  { source: "/en", destination: "/", permanent: true },
+  { source: "/en/:path*", destination: "/:path*", permanent: true },
+];
+
 export const redirects = [
+  ...defaultLocaleStripRedirects,
   ...rawRedirects,
   ...localeAwareLegacyRedirects,
 ];

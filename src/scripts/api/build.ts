@@ -83,7 +83,6 @@ function main() {
   if (!flags.skipApply) {
     step('apply patches (V2)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/apply.ts'], {
       API_OUTPUT_SPEC: V2_SPEC,
-      API_CODE_SAMPLES_PATCH_DB: './src/scripts/api-code-samples.v2.yaml',
     });
   }
 
@@ -105,7 +104,6 @@ function main() {
     if (!flags.skipApply) {
       step('apply patches (V1)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/apply.ts'], {
         API_OUTPUT_SPEC: V1_SPEC,
-        API_CODE_SAMPLES_PATCH_DB: './src/scripts/api-code-samples.v1.yaml',
       });
     }
     step('docs-md (V1)', 'pnpm', ['exec', 'docs-md', '-c', 'speakeasy.v1.config.mjs'], {

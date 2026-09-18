@@ -1,0 +1,135 @@
+---
+id: search-keys
+title: Clés de recherche
+sidebar_position: 15
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Clés de recherche
+
+Les clés de recherche sont des paires clé/valeur attachées à une exécution pour la retrouver plus facilement. Elles sont extraites de l’entrée du workflow ou ajoutées en cours d’exécution, et stockées sous forme de métadonnées d’exécution. Filtrez les exécutions par leurs clés de recherche avec `GET /v1/workflows/runs` ou dans la vue **Exécutions** de Studio.
+
+:::warning
+Les valeurs des clés de recherche sont stockées non chiffrées afin de pouvoir être recherchées. Ne les utilisez pas pour indexer des champs sensibles.
+:::
+
+<SectionTab as="h1" sectionId="indexing-input">Indexation des champs à partir de l’entrée du workflow</SectionTab>
+
+Transmettez une liste de chemins en notation pointée dans `search_keys` à `@workflows.workflow.define` pour extraire des valeurs de l’entrée du point d’entrée au début de chaque exécution. Les chemins sont validés au démarrage du worker.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+from pydantic import BaseModel
+
+
+class OrderInput(BaseModel):
+    order_id: str
+    customer_tier: str
+
+
+@workflows.workflow.define(
+    name="order_processor",
+    search_keys=["order_id", "customer_tier"],
+)
+class OrderProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, params: OrderInput) -> str:
+        return f"Processed {params.order_id}"
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" variant="secondary" sectionId="path-roots">Racines des chemins</SectionTab>
+
+L’endroit où un chemin commence dépend de la signature du point d’entrée :
+
+| Point d’entrée | Racine | Exemple |
+|------------|------|---------|
+| Paramètre `BaseModel` unique | Les champs du modèle | `order_id`, `customer_tier` |
+| Paramètres multiples | Les noms des paramètres | `payload.order_id`, `context.tenant` |
+| Paramètre scalaire unique | Le nom du paramètre | `city` |
+
+Avec un paramètre `BaseModel` unique, le type du paramètre est le modèle d’entrée, donc les chemins ignorent le nom du paramètre et commencent par ses champs. Avec plusieurs paramètres, le SDK génère un modèle wrapper dont les champs sont les paramètres, donc chaque chemin commence par un nom de paramètre.
+
+```python
+@workflows.workflow.define(
+    name="order_processor_multi",
+    search_keys=["payload.order_id", "context.tenant"],
+)
+class MultiParamProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, payload: OrderInput, context: TenantContext) -> str:
+        return f"Processed {payload.order_id} for {context.tenant}"
+```
+
+Les champs avec une valeur par défaut utilisent cette valeur par défaut lorsque l’appelant les omet.
+
+<SectionTab as="h1" sectionId="indexing-mid-run">Attachement de valeurs en cours d’exécution</SectionTab>
+
+Les valeurs qui n’existent qu’après l’exécution de certaines tâches (par exemple, un niveau récupéré depuis une activité, un ID de batch dérivé de l’état) peuvent être attachées avec `workflows.workflow.add_search_keys`, appelable depuis le corps d’un workflow ou depuis une activité.
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+import mistralai.workflows as workflows
+
+
+@workflows.workflow.define(name="enriched_processor")
+class EnrichedProcessor:
+    @workflows.workflow.entrypoint
+    async def run(self, params: OrderInput) -> str:
+        customer = await fetch_customer(params.order_id)
+        await workflows.workflow.add_search_keys({"customer.tier": customer.tier})
+        return f"Processed {params.order_id}"
+```
+
+  </TabItem>
+</Tabs>
+
+Attendre `add_search_keys` confirme que les valeurs sont persistées.
+
+Les clés peuvent également être supprimées avec `workflows.workflow.delete_search_keys`, ce qui libère leurs emplacements dans le budget de 20 clés. Cette opération est idempotente : les clés que l’exécution ne possède pas sont ignorées.
+
+```python
+await workflows.workflow.delete_search_keys(["customer.tier"])
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="key-rules">Règles des clés</SectionTab>
+
+Les mêmes règles s’appliquent aux chemins déclarés et à `add_search_keys` :
+
+- Les clés ne doivent pas être vides, ne doivent pas contenir de `:` , ne doivent pas se terminer par `==`, ne doivent pas avoir d’espaces de remplissage, ne doivent pas commencer par le préfixe réservé `internal.` et ne doivent pas dépasser 256 caractères.
+- Les valeurs sont converties en chaînes de caractères : les énumérations utilisent leur valeur, les booléens sont en minuscules, les dates et heures utilisent le format ISO 8601, tout le reste utilise `str()`.
+- Les valeurs dépassant 8192 caractères sont tronquées.
+- Une exécution peut contenir au maximum 20 clés au total, et `add_search_keys` accepte au maximum 20 clés par appel.
+
+<SectionTab as="h2" variant="secondary" sectionId="failure-behavior">Comportement en cas d’échec</SectionTab>
+
+Les échecs de stockage ne font jamais échouer l’exécution : le SDK effectue 3 tentatives en cas d’erreurs temporaires (5xx, 429, 408, délais d’attente), puis enregistre un avertissement et continue. Les rejets permanents sont enregistrés au niveau erreur et ignorés : un déploiement serveur peut produire ces erreurs à l’échelle de la flotte en cours d’exécution. À la limite de 20 clés, les nouvelles clés sont ignorées ; la réponse du serveur signale les clés ignorées et tronquées.
+
+Les clés invalides (vides, contenant `:` , se terminant par `==`, utilisant le préfixe `internal.` , dépassant 256 caractères ou plus de 20 clés dans un seul appel) génèrent une erreur non réessayable et font échouer l’exécution. Une erreur inattendue en cours de traitement pendant le stockage, comme une valeur que le SDK ne peut pas convertir, fait échouer l’exécution de la même manière. Ces deux cas sont des bogues de code qui échouent de manière identique à chaque exécution, donc privilégiez les clés littérales plutôt que les clés construites à partir de données non fiables.
+
+<SectionTab as="h1" sectionId="querying">Requêtes</SectionTab>
+
+Filtrez les exécutions avec le paramètre de requête `search_key` répété sur `GET /v1/workflows/runs`. Chaque entrée correspond à une clé exacte, les entrées sont combinées avec un ET, et au maximum 3 entrées sont autorisées par requête :
+
+| Entrée | Correspondances |
+|-------|---------|
+| `clé:valeur` | exécutions où la valeur est similaire à `valeur` (recherche floue) |
+| `clé==:valeur` | exécutions où la valeur est égale à `valeur` octet par octet |
+| `clé` | exécutions où la clé est définie |
+| `clé==` | exécutions où la clé est définie comme nulle |
+
+```bash
+curl -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  "https://api.mistral.ai/v1/workflows/runs?search_key=order_id:12345&search_key=customer_tier==:premium"
+```
+
+Pour la liste complète des paramètres, voir la référence [List Runs](/api/endpoint/workflows/runs).

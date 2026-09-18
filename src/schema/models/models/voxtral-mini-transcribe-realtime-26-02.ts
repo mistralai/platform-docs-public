@@ -47,7 +47,7 @@ export default {
       
     ]
   },
-  identifiers: { apiNames: ['voxtral-mini-transcribe-realtime-2602', 'voxtral-mini-transcribe-realtime-latest'] },
+  identifiers: { apiNames: ['voxtral-mini-transcribe-realtime-2602', 'voxtral-mini-realtime-latest'] },
   capabilities: {
     input: ['audio'],
     output: ['text'],

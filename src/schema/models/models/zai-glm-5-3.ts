@@ -3,8 +3,8 @@ import { StaticModel } from '../schema';
 export default {
   name: 'Z.ai GLM 5.3',
   describe: (l) => ({
-    description: l.text('A third-party open source text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.', { context: 'Full description of an AI model' }),
-    shortDescription: l.text('A third-party open source text model from Z.ai with a 1M-token context window.', { context: 'Short description of an AI model' }),
+    description: l.text('A third-party open weight text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.', { context: 'Full description of an AI model' }),
+    shortDescription: l.text('A third-party open weight text model from Z.ai with a 1M-token context window.', { context: 'Short description of an AI model' }),
   }),
   slug: 'zai-glm-5-3',
   releaseDate: '2026-09-15',

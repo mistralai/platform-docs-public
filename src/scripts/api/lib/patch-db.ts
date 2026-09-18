@@ -10,6 +10,10 @@
  *       reason?: <free-form string>           # why ignored / context
  *       note?: <free-form string, e.g. "edited 2025-01-15">
  *       source?: <"user" | "heuristic" | "migrated"> (informational)
+ *       originalSha?: <sha256 of the upstream value this patch overwrote>
+ *                    # recorded via `pnpm api:apply --record-shas`; lets apply
+ *                    # report redundancy (upstream adopted the fix) and drift
+ *                    # (upstream changed underneath the patch)
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -24,6 +28,9 @@ export type Patch = {
   reason?: string;
   note?: string;
   source?: 'user' | 'heuristic' | 'migrated';
+  // SHA-256 (canonical JSON) of the upstream value this patch overwrote,
+  // recorded via `pnpm api:apply --record-shas`.
+  originalSha?: string;
   // Audit metadata (only present in drafts; informational)
   severity?: Severity;
   detectionReason?: DetectionReason;

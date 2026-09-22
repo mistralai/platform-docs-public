@@ -1,21 +1,11 @@
 'use client';
-
-import * as React from 'react';
 import { cn } from '@/lib/utils';
-import {
-  DEFAULT_PRICING_CURRENCY,
-  ModelPricing,
-  priceForCurrency,
-  PricingCurrency,
-  pricingCurrencySymbol,
-  pricingHasEur,
-} from '@/schema/models';
+import { ModelPricing } from '@/schema/models';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { PricingCurrencyToggle } from '@/components/model/pricing-currency-toggle';
 import { useLingo } from '@lingo.dev/react';
 import type { Locale } from '@/i18n/config';
 
@@ -36,17 +26,14 @@ export function PriceValue({
   label,
   unit,
   tooltip,
-  currency,
   orientation = 'column',
 }: {
   value: number;
   label: string;
   unit?: string;
   tooltip?: string;
-  currency: PricingCurrency;
   orientation?: 'column' | 'row';
 }) {
-  const currencySymbol = pricingCurrencySymbol(currency);
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -59,7 +46,7 @@ export function PriceValue({
           )}
         >
           <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
-            {currencySymbol}{formatPriceValue(value)}
+            ${formatPriceValue(value)}
           </span>
           <p className="text-xs leading-tight uppercase text-foreground/30 font-mono font-semibold">
             {label}
@@ -74,8 +61,6 @@ export function PriceValue({
 
 export function Price({ pricing, className, layout = 'default' }: PriceProps) {
   const l = useLingo();
-  const [currency, setCurrency] = React.useState<PricingCurrency>(DEFAULT_PRICING_CURRENCY);
-  const showCurrencyToggle = pricingHasEur(pricing);
   const inputCostLabel = l.text('Input Cost', { context: 'Tooltip label for input token price' });
   const outputCostLabel = l.text('Output Cost', { context: 'Tooltip label for output token price' });
 
@@ -98,10 +83,10 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
     }
 
     if (pricing.type === 'flat') {
-      const price = priceForCurrency(pricing.price, pricing.priceEur, currency);
+      const price = pricing.price;
       return (
         <span className="text-primary-soft text-lg font-semibold font-mono uppercase leading-[1]">
-          {pricingCurrencySymbol(currency)}{formatPriceValue(price)}
+          ${formatPriceValue(price)}
         </span>
       );
     }
@@ -113,22 +98,20 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
             {pricing.input.map((input, i) => (
               <PriceValue
                 key={`input-${input.denominator}-${i}`}
-                value={priceForCurrency(input.price, input.priceEur, currency)}
+                value={input.price}
                 tooltip={input.label ?? inputCostLabel}
                 label={input.label ?? input.denominator}
                 unit={input.label ? input.denominator : undefined}
-                currency={currency}
                 orientation="row"
               />
             ))}
             {pricing.output.map((output, i) => (
               <PriceValue
                 key={`output-${output.denominator}-${i}`}
-                value={priceForCurrency(output.price, output.priceEur, currency)}
+                value={output.price}
                 tooltip={output.label ?? outputCostLabel}
                 label={output.label ?? output.denominator}
                 unit={output.label ? output.denominator : undefined}
-                currency={currency}
                 orientation="row"
               />
             ))}
@@ -142,16 +125,14 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
         {pricing.type === 'range' ? (
           <>
             <PriceValue
-              value={priceForCurrency(pricing.input, pricing.inputEur, currency)}
+              value={pricing.input}
               tooltip={inputCostLabel}
               label={pricing.denominator}
-              currency={currency}
             />
             <PriceValue
-              value={priceForCurrency(pricing.output, pricing.outputEur, currency)}
+              value={pricing.output}
               tooltip={outputCostLabel}
               label={pricing.denominator}
-              currency={currency}
             />
           </>
         ) : (
@@ -160,10 +141,9 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
               {pricing.input.map((input, i) => (
                 <PriceValue
                   key={`${input.denominator}-${i}`}
-                  value={priceForCurrency(input.price, input.priceEur, currency)}
+                  value={input.price}
                   tooltip={inputCostLabel}
                   label={input.denominator}
-                  currency={currency}
                 />
               ))}
             </div>
@@ -171,10 +151,9 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
               {pricing.output.map((output, i) => (
                 <PriceValue
                   key={`${output.denominator}-${i}`}
-                  value={priceForCurrency(output.price, output.priceEur, currency)}
+                  value={output.price}
                   tooltip={outputCostLabel}
                   label={output.denominator}
-                  currency={currency}
                 />
               ))}
             </div>
@@ -186,13 +165,6 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      {showCurrencyToggle && (
-        <PricingCurrencyToggle
-          value={currency}
-          onValueChange={setCurrency}
-          className="w-fit self-start"
-        />
-      )}
       {renderContent()}
     </div>
   );

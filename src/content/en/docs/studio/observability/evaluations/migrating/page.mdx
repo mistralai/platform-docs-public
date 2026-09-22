@@ -1,0 +1,95 @@
+---
+id: observability_evaluations_migrating
+title: Migration guide and changelog
+sidebar_position: 8
+sidebar_label: Changelog
+---
+
+# Migration guide and changelog
+
+This page lists changes per version — breaking changes (with exactly what to update) and notable additions. Versions are those published to PyPI as [`mistralai-evaluations`](https://pypi.org/project/mistralai-evaluations/).
+
+## 0.8.2
+
+Maintenance release — no API or behavior changes from 0.8.1. Nothing to update.
+
+## 0.8.1
+
+**Declarative run-level statistics.** An evaluator can now declare exactly which run-level statistics it exposes, via a new `statistics` list of `Statistic` factories, each with an optional `goal`. `avg`, `sum`, `min`, `max`, `std`, `count`, and arbitrary `percentile(p)` are built in. See [Configure statistics](/studio/observability/evaluations/statistics).
+
+**New, non-breaking:** omitting `statistics` keeps the historical behavior (numeric evaluators still expose `avg`, `min`, `max`, `std`, `count`). You only opt in when you want a specific set.
+
+```python
+# Total failures with a goal, and latency percentiles (first entry is the headline value)
+Evaluator(
+    name="failures",
+    scorer=failure_scorer,  # returns numeric 0 or 1
+    statistics=[Statistic.sum(goal=Goal.lte(0))],
+)
+Evaluator(
+    name="latency_ms",
+    scorer=latency_ms,
+    statistics=[
+        Statistic.percentile(95, goal=Goal.lte(500)),
+        Statistic.percentile(50),
+        Statistic.percentile(75),
+    ],
+)
+```
+
+**Breaking — numeric statistics result shape.** `NumericStatistics` gained an ordered, subset-capable `values: list[StatisticValue]` (each `{id, value}`, for example `p95`, `p50`) and a `sample_count`. The legacy `avg` / `min` / `max` / `std` / `count` members are **retained as a deprecated compatibility projection** but are now **optional** (`None` on an empty numeric sample). Read declared statistics from `values`; do not assume `avg`/`min`/`max`/`std` exist.
+
+```python
+# Before
+stat = run.statistics["latency_ms"]
+p = stat.avg  # always a float
+
+# After
+from mistralai.evaluations import NumericStatistics
+from mistralai.evaluations.statistics import effective_statistic_values
+
+stat = run.statistics["latency_ms"]
+if isinstance(stat, NumericStatistics):
+    for value in effective_statistic_values(stat):  # authoritative, ordered; headline first
+        print(value.id, value.value)
+```
+
+`aggregate_goal` still works when `statistics` is omitted, and (during deprecation) when it targets a declared statistic that has no goal of its own. Prefer attaching the goal to the statistic: `Statistic.avg(goal=Goal.gte(0.8))`.
+
+## 0.8.0
+
+**Breaking:** `evaluation.rescore()` now takes `run_id` (a string) instead of `run`. The method only ever needed the id — it always re-fetches the persisted run from the backend as the source of truth — so the `EvaluationRun | str` argument is replaced by a plain `run_id: str`.
+
+```python
+# Before (0.7.x)
+await client.evaluation.rescore(
+    run=run,  # an EvaluationRun or a run id string
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+)
+
+# After (0.8.0)
+await client.evaluation.rescore(
+    run_id=run.run_id,  # the id of a persisted run
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+)
+```
+
+If you passed a run id string, rename the keyword: `rescore(run=my_id)` → `rescore(run_id=my_id)`.
+
+## 0.7.2
+
+**New, non-breaking:** two-step scoring — persist a run with `evaluation.run(evaluators=[])`, then [`evaluation.rescore(...)`](/studio/observability/evaluations/advanced-guides/rescoring) to score or re-score it without re-running the task.
+
+## Package renamed: `mistralai-observability` → `mistralai-evaluations`
+
+If you used the SDK under its earlier name during the private preview, the distribution and its import namespace were renamed. There are **no API changes** — only the package name and import path. Update your dependency to `mistralai-evaluations` and your imports:
+
+```python
+# Before
+from mistralai.observability import Evaluation, Evaluator, Project
+
+# After
+from mistralai.evaluations import Evaluation, Evaluator, Project
+```
+
+The rename landed in `mistralai-evaluations` **0.7.0**, which is API-identical to the last `mistralai-observability` release, **0.6.0** — moving from one to the other is a pure rename.

@@ -2,6 +2,7 @@
 id: observability_evaluations_goals
 title: Définir des objectifs
 sidebar_position: 4
+sidebar_label: Objectifs
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
@@ -12,6 +13,8 @@ import { Faq, FaqItem } from '@/components/common/faq';
 
 Les objectifs vous permettent de définir des critères de réussite/échec pour les scores des évaluateurs. Lorsqu’un objectif est défini, le SDK affiche les verdicts `PASS` ou `FAIL` dans la sortie du terminal à côté de chaque score.
 
+Un objectif est un **point de contrôle** binaire réussite/échec. Le sens favorable (et la façon dont les scores sont normalisés) relève de la sémantique de la métrique que vous définissez sur l’`Evaluator` lui-même — voir [Direction et normalisation](#direction-and-normalization) ci-dessous.
+
 <SectionTab as="h1" sectionId="goal-types">Types d’objectifs</SectionTab>
 
 | Méthode | Signification |
@@ -19,17 +22,13 @@ Les objectifs vous permettent de définir des critères de réussite/échec pour
 | `Goal.gte(0,8)` | Le score doit être `>= 0,8` |
 | `Goal.lte(0,1)` | Le score doit être `<= 0,1` |
 | `Goal.between(0,2, 0,8)` | Le score doit être dans l’intervalle `[0,2, 0,8]` |
-| `Goal.higher_is_better()` | Indication de direction uniquement, pas de seuil |
-| `Goal.lower_is_better()` | Indication de direction uniquement, pas de seuil |
-
-Les objectifs de direction uniquement (`higher_is_better`, `lower_is_better`) ne produisent pas de verdicts `PASS`/`FAIL`. Ils servent de métadonnées pour les vues de comparaison dans Studio.
 
 Toutes les méthodes d’objectif acceptent un paramètre `metric` optionnel (`"avg"`, `"min"`, `"max"`, `"std"`) pour cibler une statistique spécifique au lieu de la moyenne par défaut.
 
 <SectionTab as="h1" sectionId="basic-usage">Utilisation de base</SectionTab>
 
 ```python
-from mistralai.observability import Evaluator, Goal
+from mistralai.evaluations import Evaluator, Goal
 
 Evaluator(
     name="accuracy",
@@ -63,10 +62,10 @@ Lorsque vous appelez `run.show()` :
 
 <SectionTab as="h1" sectionId="goals-on-run-evaluators">Objectifs sur les évaluateurs d’exécution</SectionTab>
 
-[Les évaluateurs d’exécution](../evaluations/run-evaluators) prennent également en charge les objectifs :
+[Les évaluateurs d’exécution](/studio/observability/evaluations/advanced-guides/run-evaluators) prennent également en charge les objectifs :
 
 ```python
-from mistralai.observability import RunEvaluator, Goal
+from mistralai.evaluations import RunEvaluator, Goal
 
 RunEvaluator(
     name="f1",
@@ -76,13 +75,40 @@ RunEvaluator(
 )
 ```
 
+<SectionTab as="h1" sectionId="direction-and-normalization">Direction et normalisation</SectionTab>
+
+Un objectif ne contrôle que la réussite ou l’échec. Pour indiquer le sens favorable et l’échelle d’une métrique, définissez ces champs sur l’`Evaluator` :
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `direction` | `"maximize"` \| `"minimize"` | Sens dans lequel la valeur est meilleure. Déduit de l’objectif quand il n’est pas défini (`gte` → `maximize`, `lte` → `minimize`, sinon `maximize`). |
+| `min_value` / `max_value` | `float` | Fenêtre de normalisation min-max. Définissez les deux ou aucun des deux ; `min_value` doit être `< max_value`. |
+| `weight` | `float` | Pression d’optimisation (par défaut `1.0`). Définissez `weight=0` pour faire de la métrique une contrainte pure : son objectif continue de contrôler la réussite, mais elle est exclue de l’objectif d’[optimisation](/studio/observability/evaluations/optimization). |
+
+```python
+Evaluator(
+    name="latency_ms",
+    description="End-to-end response time in milliseconds.",
+    scorer=latency_scorer,
+    goal=Goal.lte(1000),     # gate + infers direction="minimize"
+    min_value=200,
+    max_value=2000,          # 850 ms normalizes to ~0.64 (lower is better)
+)
+
+Evaluator(
+    name="accuracy",
+    description="1 if the expected answer appears in the output.",
+    scorer=accuracy_scorer,  # no goal → direction defaults to "maximize", window to [0, 1]
+)
+```
+
 <SectionTab as="h1" sectionId="full-example">Exemple complet</SectionTab>
 
 ```python
 import asyncio
 import os
 
-from mistralai.observability import (
+from mistralai.evaluations import (
     Evaluation, Evaluator, Goal, Mistral, Project,
     RunEvaluator, RunEvaluatorContext, ScorerContext, System, TaskContext,
 )

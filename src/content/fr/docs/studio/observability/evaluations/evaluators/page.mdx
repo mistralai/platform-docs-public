@@ -1,0 +1,163 @@
+---
+id: observability_evaluators
+title: Évaluateurs
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+
+# Évaluateurs
+
+Un évaluateur attribue un score à chaque enregistrement d'une exécution. Il associe un nom à une **fonction de scoring** — une fonction qui reçoit un [`ScorerContext`](/studio/observability/evaluations/advanced-guides/context-objects) et renvoie un score — avec une description facultative et un [goal](/studio/observability/evaluations/goals).
+
+```python
+from mistralai.evaluations import Evaluator, Goal
+
+Evaluator(
+    name="accuracy",
+    description="1 if the expected answer appears in the output.",
+    scorer=accuracy_scorer,
+    goal=Goal.gte(0.8),
+)
+```
+
+Une fonction de scoring peut être de deux types :
+
+- **À base de règles** — une fonction simple qui calcule un score à partir de la sortie. Elle est déterministe, rapide et gratuite.
+- **LLM comme juge** — une fonction qui appelle un modèle pour noter la sortie. Utilisez-la pour les critères difficiles à exprimer en code, comme l'utilité, l'exactitude factuelle ou le ton.
+
+Les deux sont simplement des fonctions. Une même exécution peut donc en contenir n'importe quelle combinaison. Voir [Plusieurs évaluateurs](/studio/observability/evaluations/advanced-guides/multiple-evaluators) pour en exécuter plusieurs à la fois.
+
+<SectionTab as="h1" sectionId="rule-based-scorers">Fonctions de scoring à base de règles</SectionTab>
+
+Une fonction de scoring à base de règles renvoie un nombre (ou un `str`/`bool` pour les scores catégoriels) calculé directement à partir de l'enregistrement et de la sortie :
+
+```python
+from mistralai.evaluations import ScorerContext
+
+def contains_expected(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+```
+
+Les scores numériques produisent des statistiques numériques (avg, min, max, std, count) ; les scores `str`/`bool` produisent des distributions de fréquence et un mode. Voir [Configurer les statistiques](/studio/observability/evaluations/statistics).
+
+<SectionTab as="h1" sectionId="llm-as-judge">Fonctions de scoring LLM comme juge</SectionTab>
+
+Pour utiliser un modèle comme juge, appelez l'API Mistral dans votre fonction de scoring et renvoyez un score numérique :
+
+```python
+from mistralai.evaluations import ScorerContext
+
+JUDGE_PROMPT = """You are a strict grader. Given a user prompt and a model answer,
+respond with a single integer between 0 and 5 (higher is better) measuring how helpful and on-topic
+the answer is. Respond with only the integer, no other text.
+
+User prompt: {prompt}
+Model answer: {answer}
+"""
+
+def llm_judge(ctx: ScorerContext) -> int:
+    response = client.chat.complete(
+        model="mistral-large-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": JUDGE_PROMPT.format(
+                    prompt=ctx.input_record["prompt"], answer=ctx.output
+                ),
+            }
+        ],
+        temperature=0,
+    )
+    raw = str(response.choices[0].message.content).strip()
+    try:
+        return int(raw[0])
+    except (ValueError, IndexError):
+        return 0
+```
+
+Utilisez-la dans un évaluateur comme n'importe quelle autre fonction de scoring :
+
+```python
+from mistralai.evaluations import Evaluator, Goal
+
+Evaluator(
+    name="helpfulness",
+    description="LLM judge: helpfulness score from 0 to 5.",
+    scorer=llm_judge,
+    goal=Goal.gte(3.5),
+)
+```
+
+<SectionTab as="h1" sectionId="structured-output">Sortie structurée avec Score</SectionTab>
+
+Pour obtenir un retour plus riche, renvoyez un objet `Score` avec une valeur et une justification. La justification est stockée avec le score dans Studio :
+
+```python
+from pydantic import BaseModel
+from mistralai.evaluations import ScorerContext, Score
+
+class RecallJudgment(BaseModel):
+    score: float
+    comment: str
+
+async def recall_scorer(ctx: ScorerContext) -> Score:
+    completion = await client.chat.parse_async(
+        model="mistral-large-latest",
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    f"Evaluate recall between 0.0 and 1.0.\n\n"
+                    f"Expected: {ctx.input_record['expected']}\n"
+                    f"Got: {ctx.output}\n\n"
+                    f"Provide a score and a short comment."
+                ),
+            }
+        ],
+        response_format=RecallJudgment,
+    )
+    judgment = completion.choices[0].message.parsed
+    return Score(value=judgment.score, rationale=judgment.comment)
+```
+
+<SectionTab as="h1" sectionId="reducing-variance">Réduire la variance des juges</SectionTab>
+
+Les juges LLM peuvent produire du bruit. Définissez `num_scores` sur l'évaluateur pour noter chaque génération plusieurs fois et faire la moyenne des résultats :
+
+```python
+Evaluator(
+    name="recall",
+    description="LLM judge: recall score (0.0 to 1.0).",
+    scorer=recall_scorer,
+    num_scores=3,  # scored 3 times per generation, results are averaged
+)
+```
+
+<SectionTab as="h1" sectionId="writing-judge-instructions">Rédiger de bonnes instructions pour les juges</SectionTab>
+
+Rédigez vos prompts de juge avec soin :
+
+- **Soyez précis.** Évitez les critères vagues : décrivez exactement à quoi ressemble une bonne réponse pour votre cas d'utilisation.
+- **Ne supposez pas** que le juge connaît votre contexte. Définissez explicitement ce que « bon » signifie.
+- **Utilisez des exemples limites** : *« Un score de 3 signifie que la réponse répond partiellement à la question, mais omet un détail clé. »*
+- **Gardez une température basse** (par exemple, `temperature=0`) pour obtenir des jugements plus déterministes.
+- **Testez sur un petit échantillon** avant d'utiliser un juge dans une grande exécution d'évaluation. Repérez les incohérences tôt.
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Comment choisir entre une fonction de scoring à base de règles et un juge LLM ?">
+  Utilisez le scoring à base de règles dès que possible : il est déterministe, rapide et peu coûteux. Utilisez un juge LLM lorsque le critère de qualité ne peut pas être exprimé en code, comme le ton, la cohérence ou une exactitude factuelle nuancée.
+  </FaqItem>
+  <FaqItem question="Mon juge donne des scores incohérents sur des entrées similaires">
+  Le prompt est probablement trop vague. Ajoutez des critères explicites et des exemples limites concrets. Essayez un modèle plus performant. Exécutez la même entrée plusieurs fois et définissez `num_scores` pour lisser le bruit.
+  </FaqItem>
+  <FaqItem question="Le juge renvoie des erreurs de parsing ou des valeurs hors limites">
+  Utilisez une sortie structurée (`response_format`) avec un modèle Pydantic pour forcer une sortie valide. Ajoutez un try/except autour de la logique de parsing pour renvoyer un score de secours plutôt que de provoquer un plantage.
+  </FaqItem>
+  <FaqItem question="Puis-je réutiliser le même évaluateur sur plusieurs exécutions ?">
+  Oui. Un évaluateur est une fonction associée à un nom. Réutilisez-le sur autant d'exécutions que nécessaire. Si vous modifiez un prompt de juge entre deux exécutions, les scores ne seront pas directement comparables.
+  </FaqItem>
+</Faq>

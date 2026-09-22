@@ -20,7 +20,7 @@ Une exécution typique d’évaluation peut impliquer des centaines, voire des m
 import asyncio
 import os
 
-from mistralai.observability import (
+from mistralai.evaluations import (
     Evaluation, Evaluator, Mistral, ScorerContext, System, TaskContext,
 )
 
@@ -96,3 +96,28 @@ result = await client.evaluation.retry_failed_records(
 4. Si l’exécution initiale utilisait `run_evaluators`, leurs scores sont recalculés avec les données mises à jour.
 
 L’exécution initiale dans Studio est mise à jour en place. Aucune exécution en double, aucune intervention manuelle.
+
+<SectionTab as="h1" sectionId="api-reference">Référence API</SectionTab>
+
+`client.evaluation.retry_failed_records(...)` accepte les paramètres suivants :
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | **Obligatoire.** ID de l'exécution contenant les enregistrements en échec. |
+| `dataset` | `Sequence[Mapping[str, Any]]` | **Obligatoire.** Même dataset que celui utilisé dans l'exécution d'origine. |
+| `task` | `TaskFunction` | **Obligatoire.** Fonction de tâche (peut être une version corrigée). |
+| `evaluators` | `list[Evaluator]` | **Obligatoire.** Évaluateurs à utiliser pour recalculer les scores. |
+| `run_evaluators` | `list[RunEvaluator]` | Évaluateurs au niveau de l'exécution à recalculer après correction. |
+| `num_generations` | `int` | Nombre de générations par enregistrement (par défaut : `1`). |
+| `system` | `System` | Paramètres système à injecter dans la tâche. |
+| `max_concurrency` | `int` | Nombre maximal de tâches simultanées (par défaut : `10`). |
+| `upload_batch_size` | `int` | Taille du batch pour télécharger les résultats corrigés (par défaut : `10`). |
+
+Cette méthode renvoie un `RetryFailedRecordsResult` :
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `run_id` | `str` | ID de l'exécution qui a été relancée. |
+| `retried_count` | `int` | Nombre d'enregistrements qui ont été relancés. |
+| `patched_count` | `int` | Nombre d'enregistrements corrigés avec succès. |
+| `run_scores_recomputed` | `bool` | Indique si les scores au niveau de l'exécution ont été recalculés. |

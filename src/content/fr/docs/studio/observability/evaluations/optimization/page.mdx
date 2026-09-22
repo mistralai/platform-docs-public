@@ -1,0 +1,295 @@
+---
+id: observability_evaluations_optimization
+title: Optimiser les prompts et les paramètres
+sidebar_position: 6
+sidebar_label: Optimisation
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Optimiser les prompts et les paramètres
+
+L'optimisation transforme une évaluation en recherche : au lieu de mesurer un seul prompt ou un ensemble de paramètres système, le SDK explore automatiquement ses variantes et renvoie la meilleure configuration trouvée, évaluée avec les mêmes évaluateurs que vous utilisez déjà.
+
+Vous conservez votre `dataset`, votre `task` et vos `evaluators`. Vous indiquez quels paramètres peuvent changer, vous choisissez une stratégie de recherche, puis vous appelez `client.evaluation.optimize()`.
+
+```
+Dataset  →  Task  →  Evaluators  →  Optimizer  →  Best parameters
+```
+
+:::info
+L'optimisation nécessite `mistralai-evaluations` **0.6.0+**. Comme le reste des évaluations hors ligne, elle est disponible uniquement pour les organisations du plan Enterprise.
+:::
+
+<SectionTab as="h1" sectionId="mental-model">Modèle mental</SectionTab>
+
+- **Espace de recherche** — les paramètres que l'optimiseur peut modifier (un prompt système, une température, un seuil), déclarés avec des emplacements `Tunable` dans un `TunableSystem`.
+- **Score** — ce qu'un évaluateur renvoie pour un candidat : un nombre par enregistrement, plus sa moyenne au niveau de l'exécution, exactement comme dans `evaluation.run()`.
+- **Objectif** — le nombre unique, à maximiser, que l'optimiseur cherche à augmenter. Il est dérivé des scores de vos évaluateurs : la [direction](/studio/observability/evaluations/goals#direction-and-normalization) de chaque évaluateur définit le sens d'amélioration, puis les scores sont combinés en un seul objectif. Un seuil [`Goal`](/studio/observability/evaluations/goals) agit aussi comme un **seuil de passage** : un candidat qui ne l'atteint pas ne peut pas gagner.
+- **Candidat** — un ensemble concret de paramètres système que l'optimiseur teste (les emplacements `Tunable` remplis avec des valeurs spécifiques). Chaque candidat correspond à une vraie exécution d'évaluation, visible dans Studio.
+- **Optimiseur** — la stratégie de recherche qui propose de nouveaux candidats à partir des résultats des candidats précédents. Deux optimiseurs sont intégrés : `SimpleOptimizer` et `GEPA`.
+
+<SectionTab as="h1" sectionId="declaring-a-search-space">Déclarer un espace de recherche</SectionTab>
+
+Un `TunableSystem` a la même structure que le [`System`](/studio/observability/evaluations/system-params) que vous passez à `evaluation.run()`, mais chaque paramètre peut être entouré de `Tunable(...)` pour indiquer qu'il est optimisable. Les valeurs simples restent fixes.
+
+```python
+from mistralai.evaluations import Tunable, TunableSystem
+
+system = TunableSystem(
+    name="candidate",
+    params={
+        "instruction": Tunable("Summarize the text."),  # optimized
+        "model": "mistral-small-latest",                # fixed
+        "temperature": Tunable(0.7, bounds=(0.0, 1.0)), # optimized, clamped to [0, 1]
+    },
+)
+```
+
+- La valeur **seed** (l'argument passé à `Tunable`) définit le point de départ de la recherche : elle devient la baseline (génération `0`).
+- `bounds=(low, high)` contraint les emplacements numériques ; les propositions sont bornées à cette plage.
+- Votre tâche lit chaque emplacement depuis `ctx.system.params`, exactement comme avec `evaluation.run()`. Pendant la recherche, le SDK matérialise les valeurs de chaque candidat avant d'appeler votre tâche. Ainsi, `ctx.system.params["instruction"]` contient toujours le candidat en cours d'évaluation.
+
+Au moins un emplacement `Tunable` est requis. Sinon, il n'y a rien à explorer.
+
+<SectionTab as="h1" sectionId="a-first-optimization">Une première optimisation</SectionTab>
+
+Cet exemple optimise une instruction de résumé avec deux évaluateurs qui tirent dans des directions opposées : `coverage` (conserver les faits clés) et `conciseness` (compresser fortement). L'optimiseur doit faire évoluer une instruction qui équilibre les deux.
+
+```python
+import asyncio
+import os
+from typing import TypedDict
+
+from mistralai.evaluations import (
+    GEPA,
+    Evaluation,
+    Evaluator,
+    Mistral,
+    Project,
+    Score,
+    ScorerContext,
+    TaskContext,
+    Tunable,
+    TunableSystem,
+)
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+
+class Item(TypedDict):
+    text: str
+    facts: list[str]  # key facts a faithful summary must preserve
+
+
+dataset: list[Item] = [
+    {"text": "The Eiffel Tower was designed by Gustave Eiffel and completed in 1889 in Paris. "
+             "Standing 330 metres tall, it was the world's tallest structure for 41 years.",
+     "facts": ["Gustave Eiffel", "1889", "330", "Paris"]},
+    # ... more records
+]
+
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["instruction"])},
+            {"role": "user", "content": ctx.input_record["text"]},
+        ],
+    )
+    return str(response.choices[0].message.content)
+
+
+def coverage(ctx: ScorerContext) -> Score:
+    facts = ctx.input_record["facts"]
+    raw = str(ctx.output).lower()
+    hits = [f for f in facts if f.lower() in raw]
+    value = len(hits) / len(facts) if facts else 1.0
+    return Score(value=value, rationale=f"{len(hits)}/{len(facts)} facts kept")
+
+
+def conciseness(ctx: ScorerContext) -> Score:
+    source_words = len(str(ctx.input_record["text"]).split())
+    summary_words = len(str(ctx.output).split())
+    ratio = summary_words / source_words if source_words else 1.0
+    value = max(0.0, min(1.0, (0.6 - ratio) / 0.4))  # full marks at <=20% of source
+    return Score(value=value, rationale=f"{summary_words}/{source_words} words")
+
+
+async def main():
+    result = await client.evaluation.optimize(
+        project=Project(name="Summarization"),
+        evaluation=Evaluation(name="Summary Prompt Optimization"),
+        dataset=dataset,
+        task=task,
+        evaluators=[
+            # no goal, no explicit direction → direction defaults to "maximize"
+            Evaluator(name="coverage", scorer=coverage),
+            Evaluator(name="conciseness", scorer=conciseness),
+        ],
+        system=TunableSystem(
+            name="candidate",
+            params={
+                "instruction": Tunable("Summarize the text."),  # optimized
+                "model": "mistral-small-latest",                # fixed
+            },
+        ),
+        algo=GEPA(iterations=8, pareto_size=3, minibatch_size=5, holdout=0.2),
+        steer="Summaries drop the key numbers from the source — keep them.",
+        tags=["optimization"],
+    )
+
+    result.show()
+    if result.winner is not None:
+        print("Best instruction:", result.winner.system["instruction"])
+
+
+asyncio.run(main())
+```
+
+Chaque candidat est une exécution d'évaluation normale : filtrez-les dans Studio avec le tag `optimization:*` ajouté par le SDK, puis utilisez **Comparer** pour examiner la trajectoire.
+
+<SectionTab as="h1" sectionId="steering-the-optimizer">Orienter l'optimiseur</SectionTab>
+
+Les évaluateurs indiquent à l'optimiseur *comment* il est noté ; `steer` lui indique *quel problème vous essayez de corriger* — la raison pour laquelle vous avez lancé l'exécution. C'est du texte libre, et le mutateur réflexif par défaut le lit lorsqu'il diagnostique les échecs. Les réécritures ciblent donc votre intention, au lieu de se limiter à ce que les scores font ressortir :
+
+```python
+steer="Reduce hallucinations when the retrieved context doesn't contain the answer."
+```
+
+`steer` ne change jamais l'objectif ni les seuils de passage, qui restent dérivés des [goals](/studio/observability/evaluations/goals) de vos évaluateurs ; il oriente seulement le diagnostic du mutateur par défaut. Il est aussi enregistré dans l'optimisation et affiché dans Studio. Il est limité à **4 000 caractères** : c'est un énoncé d'objectif, pas un emplacement pour coller un document entier.
+
+<SectionTab as="h1" sectionId="choosing-an-optimizer">Choisir un optimiseur</SectionTab>
+
+De l'extérieur, les deux optimiseurs fonctionnent de la même manière : vous en passez un avec `algo=` et vous récupérez le même `OptimizeResult`. Ils diffèrent par leur façon de rechercher.
+
+<SectionTab as="h2" variant="secondary" sectionId="simpleoptimizer">SimpleOptimizer (ascension gloutonne)</SectionTab>
+
+Il part de la seed puis, à chaque tour, réfléchit aux enregistrements les moins bien notés du meilleur candidat courant et propose une réécriture. Il conserve la réécriture uniquement si elle dépasse le meilleur candidat courant sur **tout l'ensemble de données**. La trajectoire se lit comme une ascension simple : génération 0, génération 1, génération 2…
+
+```python
+from mistralai.evaluations import SimpleOptimizer
+
+algo = SimpleOptimizer(
+    iterations=5,   # rewrites to try
+    patience=3,     # stop after this many consecutive non-improvements
+    reflection_model="mistral-small-latest",
+    mutation_model="mistral-large-latest",  # defaults to reflection_model
+)
+```
+
+Utilisez-le si vous voulez une baseline simple et lisible, avec un petit ensemble de données. Comme il valide sur le même ensemble que celui qu'il optimise, il est plus glouton et peut surapprendre ou rester bloqué dans un optimum local.
+
+<SectionTab as="h2" variant="secondary" sectionId="gepa">GEPA (recherche réflexive basée sur Pareto)</SectionTab>
+
+Un optimiseur multi-objectif plus robuste. Il découpe votre ensemble de données en trois rôles et conserve une **frontière de Pareto** : une archive de candidats qui sont les meilleurs sur des enregistrements *différents*, plutôt qu'un seul champion.
+
+```python
+from mistralai.evaluations import GEPA
+
+algo = GEPA(
+    iterations=8,        # mutation attempts (search budget)
+    pareto_size=3,       # fixed validation set used to accept/reject candidates
+    minibatch_size=5,    # fresh examples drawn each iteration for reflection
+    holdout=0.2,         # fraction reserved for the final baseline-vs-winner number
+    patience=3,          # stop after this many consecutive rejected children
+    random_seed=42,      # reproducible split / sampling / selection
+    reflection_model="mistral-small-latest",
+    mutation_model="mistral-large-latest",
+)
+```
+
+Les trois découpages :
+
+- **D_pareto** — un ensemble de validation fixe, le référentiel commun sur lequel chaque candidat est noté.
+- **D_feedback** — un pool depuis lequel un nouveau minibatch est tiré à chaque itération ; l'optimiseur réfléchit aux échecs observés ici pour proposer le candidat suivant.
+- **Holdout** — un ensemble optionnel jamais vu, utilisé seulement à la fin pour mesurer honnêtement l'amélioration du gagnant par rapport à la baseline, sans biais de sélection. Définissez `holdout=0` pour le désactiver, ce qui est utile sur les petits ensembles de données où chaque exemple compte.
+
+Utilisez GEPA pour les problèmes multi-objectifs, les grands ensembles de données ou chaque fois que vous voulez que le holdout limite le surapprentissage.
+
+:::tip Commencez petit, puis passez à l'échelle
+Commencez avec `SimpleOptimizer` et quelques `iterations` pour vérifier que votre tâche et vos évaluateurs se comportent correctement, puis passez à `GEPA` pour l'exécution réelle. Un `reflection_model` peu coûteux avec un `mutation_model` plus fort constitue un bon choix par défaut : diagnostic peu coûteux, réécritures plus ambitieuses.
+:::
+
+<SectionTab as="h1" sectionId="direction-weights-gates">Direction, poids et seuils de passage</SectionTab>
+
+Deux éléments orientent l'optimiseur, et ils se trouvent à des endroits différents :
+
+- **Direction** désigne la sémantique de la métrique sur l'[`Evaluator`](/studio/observability/evaluations/goals#direction-and-normalization) (`direction="maximize"` / `"minimize"`). Si elle n'est pas définie, elle est déduite du goal (`gte` → maximiser, `lte` → minimiser). `weight` et `min_value`/`max_value` (fenêtre de normalisation) se trouvent aussi ici. Un évaluateur avec `weight=0` est une contrainte pure, exclue de l'objectif.
+- **Seuil** — le [`Goal`](/studio/observability/evaluations/goals) d'un évaluateur (`Goal.gte(0.6)`, `Goal.lte(0.1)`, `Goal.between(...)`) agit comme un **seuil de passage** : un candidat qui enfreint un seuil ne peut pas gagner uniquement grâce à son score agrégé. Les candidats qui passent les seuils sont toujours classés devant ceux qui les enfreignent.
+
+```python
+evaluators=[
+    Evaluator(name="coverage", scorer=coverage, goal=Goal.gte(0.6)),       # must keep facts
+    Evaluator(name="conciseness", scorer=conciseness, goal=Goal.gte(0.4)), # must compress
+]
+```
+
+C'est ainsi que vous encodez « ne pas sacrifier la factualité pour gagner en concision ». Un plancher strict est une *contrainte*, pas un vote plus fort : c'est pourquoi il s'agit d'un `goal`, pas d'un `weight`. Une moyenne pondérée peut être détournée (un résumé vide `"."` peut obtenir un score élevé en concision tout en échouant sur l'exactitude), mais un seuil de passage classe les candidats qui le respectent devant ceux qui l'enfreignent avant de comparer la moyenne.
+
+:::caution Lorsqu'aucun candidat ne passe les seuils
+Un candidat ne *gagne* (`verdict == "success"`) que s'il franchit tous les seuils de passage. Si aucun candidat n'y parvient, il n'y a pas de gagnant : le résultat est `best_attempt` (un candidat dépasse la baseline mais échoue encore sur un seuil, exposé sous `result.best_attempt`) ou `no_change`. Un seuil non respecté ne se fait jamais passer pour une victoire.
+:::
+
+<SectionTab as="h1" sectionId="reading-the-result">Lire le résultat</SectionTab>
+
+`optimize()` renvoie un `OptimizeResult` :
+
+```python
+result = await client.evaluation.optimize(...)
+
+result.show()          # prints the winner (or best attempt) + full trajectory to the terminal
+
+result.verdict         # "success" | "best_attempt" | "no_change"
+result.summary         # one-line human summary, e.g. "0.50 → 0.72  (+0.22, +44%, success)"
+
+# On "success", the winner (else None); on "best_attempt", the closest try that beat the baseline
+best = result.winner or result.best_attempt
+if best is not None:
+    best.system        # {"instruction": "...", "model": "..."} — the full config
+    best.score         # aggregate objective
+    best.gain          # absolute delta vs baseline (+ best.gain_pct)
+    best.scores        # per-evaluator breakdown: value, distribution, goal
+    best.run_url       # link to the run in Studio
+
+result.baseline.score  # the seed's score (baseline/winner scored on the same held-out set)
+
+# Every candidate explored, in generation order
+for c in result.trajectory:
+    print(c.gen, c.score, c.gate, c.changed)
+```
+
+Comme la baseline, le gagnant et la meilleure tentative sont notés sur le même ensemble tenu à l'écart, le `gain` rapporté est fiable : ce n'est pas un artefact dû au fait que la recherche aurait choisi une configuration chanceuse.
+
+<SectionTab as="h1" sectionId="rate-limits">Limites de débit et nouvelles tentatives</SectionTab>
+
+Les optimisations déclenchent de nombreux appels de modèle : un candidat correspond à une exécution d'évaluation complète, et chaque génération ajoute les appels de diagnostic et de réécriture du mutateur réflexif. Sous charge, vous pouvez donc rencontrer des erreurs `429 Too Many Requests`. Réduire `max_concurrency` aide, mais ne les élimine pas : les limites de débit s'appliquent à l'ensemble du compte.
+
+Votre `task` et vos scorers appellent le modèle via **votre** client `Mistral`. C'est donc à ce niveau qu'il faut les rendre résilients : le SDK ne relance pas silencieusement les appels pour vous. Configurez les nouvelles tentatives une seule fois sur le client, et chaque complétion effectuée par votre tâche ou votre scorer appliquera un backoff et réessaiera les erreurs transitoires (`429`, `500`, `502`, `503`, `504`) :
+
+```python
+from mistralai.client.utils import BackoffStrategy, RetryConfig
+from mistralai.evaluations import Mistral
+
+client = Mistral(
+    api_key="…",
+    retry_config=RetryConfig(
+        strategy="backoff",
+        backoff=BackoffStrategy(
+            initial_interval=1_000,   # 1s, then 2s, 4s… (jitter added by the SDK)
+            max_interval=30_000,      # cap each wait at 30s
+            exponent=2.0,
+            max_elapsed_time=60_000,  # give up after ~60s so a call fails cleanly instead of hanging
+        ),
+        retry_connection_errors=False,
+    ),
+)
+```
+
+Le SDK réessaie déjà ses **propres** appels de modèle internes (le mutateur réflexif de l'optimiseur). Une erreur 429 transitoire à ce niveau n'interrompt donc pas toute l'optimisation. Vous devez seulement gérer les appels de votre `task` et de vos scorers.
+
+<SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
+
+- [Définir des goals](/studio/observability/evaluations/goals) — les directions et les seuils qui pilotent l'objectif.
+- [Configurer les paramètres système](/studio/observability/evaluations/system-params) — le modèle `System` sur lequel l'espace de recherche est construit.

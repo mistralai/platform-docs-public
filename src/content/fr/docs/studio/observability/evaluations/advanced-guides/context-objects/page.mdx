@@ -1,0 +1,107 @@
+---
+id: observability_evaluations_context_objects
+title: Utiliser des objets de contexte
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Utiliser des objets de contexte
+
+Les tâches, les fonctions de scoring et les callbacks de métadonnées reçoivent leurs entrées via des **objets de contexte** : des modèles Pydantic typés qui regroupent toutes les données disponibles dans un seul paramètre. Cette page sert de référence pour chaque type de contexte.
+
+<SectionTab as="h1" sectionId="taskcontext">TaskContext</SectionTab>
+
+Une fonction de tâche reçoit un `TaskContext` avec l’enregistrement d’entrée, la configuration système et les métadonnées d’exécution :
+
+```python
+from mistralai.evaluations import TaskContext
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `input_record` | `dict[str, Any]` | L’enregistrement actuel de l’ensemble de données |
+| `system` | `System \| None` | Configuration système provenant de `evaluation.run(system=...)` |
+| `metadata` | `dict[str, Any] \| None` | Métadonnées d’exécution provenant de `evaluation.run(metadata=...)` |
+
+<SectionTab as="h1" sectionId="scorercontext">ScorerContext</SectionTab>
+
+Une fonction de scoring reçoit un `ScorerContext` avec l’enregistrement d’entrée et la sortie de la tâche :
+
+```python
+from mistralai.evaluations import ScorerContext
+
+def accuracy_scorer(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `input_record` | `dict[str, Any]` | L’enregistrement actuel de l’ensemble de données |
+| `output` | `Any` | La sortie de la tâche pour cette génération |
+| `system` | `System \| None` | Configuration système provenant de `evaluation.run(system=...)` |
+| `metadata` | `dict[str, Any] \| None` | Métadonnées d’exécution provenant de `evaluation.run(metadata=...)` |
+
+<SectionTab as="h1" sectionId="runevaluatorcontext">RunEvaluatorContext</SectionTab>
+
+Les [évaluateurs d’exécution](/studio/observability/evaluations/advanced-guides/run-evaluators) reçoivent tous les enregistrements et les statistiques agrégées une fois l’exécution terminée :
+
+```python
+from mistralai.evaluations import RunEvaluatorContext
+
+def accuracy_gate(ctx: RunEvaluatorContext):
+    return ctx.statistics["accuracy"].avg >= 0.8
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `records` | `list[RunEvaluatorRecord]` | Tous les enregistrements traités avec leurs scores |
+| `statistics` | `dict[str, EvaluatorStatistics]` | Statistiques agrégées par évaluateur |
+| `metadata` | `dict[str, JsonValue]` | Métadonnées d’exécution |
+| `system` | `System \| None` | Configuration système provenant de `evaluation.run(system=...)` |
+
+Utilisez `get_score(record, "evaluator_name")` pour accéder au score d’un évaluateur spécifique pour un enregistrement donné.
+
+<SectionTab as="h1" sectionId="recordmetadatacontext">RecordMetadataContext</SectionTab>
+
+Un callback `record_metadata` reçoit un `RecordMetadataContext` une fois que la tâche et les fonctions de scoring d’un enregistrement sont terminées. Le dictionnaire renvoyé est stocké dans les métadonnées de l’enregistrement dans Studio :
+
+```python
+from mistralai.evaluations import RecordMetadataContext
+
+def record_metadata(ctx: RecordMetadataContext) -> dict:
+    return {"output_len": len(str(ctx.record.generations[0].output))}
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `input_record` | `dict[str, Any]` | L’enregistrement actuel de l’ensemble de données |
+| `record` | `EvaluationRunRecord` | L’enregistrement traité, avec ses générations et ses scores |
+| `system` | `System \| None` | Configuration système provenant de `evaluation.run(system=...)` |
+| `metadata` | `dict[str, JsonValue]` | Métadonnées d’exécution |
+
+<SectionTab as="h1" sectionId="runmetadatacontext">RunMetadataContext</SectionTab>
+
+Un callback `metadata` (lorsqu’une fonction est passée au lieu d’un dictionnaire) reçoit un `RunMetadataContext` une fois tous les enregistrements scorés. Le dictionnaire renvoyé est fusionné avec les métadonnées d’exécution :
+
+```python
+from mistralai.evaluations import RunMetadataContext
+
+def run_metadata(ctx: RunMetadataContext) -> dict:
+    return {"num_records": len(ctx.records)}
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `records` | `list[RunEvaluatorRecord]` | Tous les enregistrements traités avec leurs scores |
+| `statistics` | `dict[str, EvaluatorStatistics]` | Statistiques agrégées par évaluateur |
+| `run_scores` | `dict[str, Score]` | Scores des évaluateurs au niveau de l’exécution |
+| `metadata` | `dict[str, JsonValue]` | Métadonnées d’exécution |
+| `system` | `System \| None` | Configuration système provenant de `evaluation.run(system=...) |

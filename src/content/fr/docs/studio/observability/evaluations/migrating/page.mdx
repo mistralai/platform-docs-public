@@ -1,0 +1,95 @@
+---
+id: observability_evaluations_migrating
+title: Guide de migration et changelog
+sidebar_position: 8
+sidebar_label: Changelog
+---
+
+# Guide de migration et changelog
+
+Cette page liste les modifications par version — ruptures de compatibilité (avec les éléments exacts à mettre à jour) et ajouts notables. Les versions sont celles publiées sur PyPI sous [`mistralai-evaluations`](https://pypi.org/project/mistralai-evaluations/).
+
+## 0.8.2
+
+Version de maintenance — aucune modification de l’API ni du comportement par rapport à la version 0.8.1. Rien à mettre à jour.
+
+## 0.8.1
+
+**Statistiques déclaratives au niveau du run.** Un évaluateur peut désormais déclarer précisément les statistiques au niveau du run qu’il expose, avec une nouvelle liste `statistics` de fabriques `Statistic`, chacune avec un `goal` facultatif. Les fonctions `avg`, `sum`, `min`, `max`, `std`, `count` et `percentile(p)` arbitraire sont intégrées. Voir [Configurer les statistiques](/studio/observability/evaluations/statistics).
+
+**Nouveau, sans rupture de compatibilité :** omettre `statistics` conserve le comportement historique (les évaluateurs numériques exposent toujours `avg`, `min`, `max`, `std`, `count`). Vous ne l’utilisez que lorsque vous voulez un ensemble précis.
+
+```python
+# Total failures with a goal, and latency percentiles (first entry is the headline value)
+Evaluator(
+    name="failures",
+    scorer=failure_scorer,  # returns numeric 0 or 1
+    statistics=[Statistic.sum(goal=Goal.lte(0))],
+)
+Evaluator(
+    name="latency_ms",
+    scorer=latency_ms,
+    statistics=[
+        Statistic.percentile(95, goal=Goal.lte(500)),
+        Statistic.percentile(50),
+        Statistic.percentile(75),
+    ],
+)
+```
+
+**Rupture de compatibilité — structure du résultat des statistiques numériques.** `NumericStatistics` dispose désormais d’un `values: list[StatisticValue]` ordonné et compatible avec les sous-ensembles (chaque élément est au format `{id, value}`, par exemple `p95`, `p50`) ainsi que d’un `sample_count`. Les anciens membres `avg` / `min` / `max` / `std` / `count` sont **conservés comme projection de compatibilité dépréciée**, mais sont désormais **facultatifs** (`None` lorsque l’échantillon numérique est vide). Récupérez les statistiques déclarées dans `values` ; ne supposez pas que `avg`/`min`/`max`/`std` existent.
+
+```python
+# Before
+stat = run.statistics["latency_ms"]
+p = stat.avg  # always a float
+
+# After
+from mistralai.evaluations import NumericStatistics
+from mistralai.evaluations.statistics import effective_statistic_values
+
+stat = run.statistics["latency_ms"]
+if isinstance(stat, NumericStatistics):
+    for value in effective_statistic_values(stat):  # authoritative, ordered; headline first
+        print(value.id, value.value)
+```
+
+`aggregate_goal` fonctionne toujours lorsque `statistics` est omis et, pendant la période de dépréciation, lorsqu’il cible une statistique déclarée qui n’a pas son propre objectif. Préférez associer l’objectif à la statistique : `Statistic.avg(goal=Goal.gte(0.8))`.
+
+## 0.8.0
+
+**Rupture de compatibilité :** `evaluation.rescore()` accepte désormais `run_id` (une chaîne) au lieu de `run`. La méthode n’avait besoin que de l’identifiant — elle récupère toujours à nouveau le run persisté depuis le backend comme source de vérité — l’argument `EvaluationRun | str` est donc remplacé par un simple `run_id: str`.
+
+```python
+# Before (0.7.x)
+await client.evaluation.rescore(
+    run=run,  # an EvaluationRun or a run id string
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+)
+
+# After (0.8.0)
+await client.evaluation.rescore(
+    run_id=run.run_id,  # the id of a persisted run
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+)
+```
+
+Si vous passiez une chaîne d’identifiant de run, renommez l’argument nommé : `rescore(run=my_id)` → `rescore(run_id=my_id)`.
+
+## 0.7.2
+
+**Nouveau, sans rupture de compatibilité :** scoring en deux étapes — persistez un run avec `evaluation.run(evaluators=[])`, puis utilisez [`evaluation.rescore(...)`](/studio/observability/evaluations/advanced-guides/rescoring) pour lui attribuer un score ou recalculer son score, sans relancer la tâche.
+
+## Package renommé : `mistralai-observability` → `mistralai-evaluations`
+
+Si vous utilisiez le SDK sous son ancien nom pendant la preview privée, la distribution et son espace de noms d’import ont été renommés. Il n’y a **aucune modification de l’API** — seuls le nom du package et le chemin d’import changent. Mettez à jour votre dépendance vers `mistralai-evaluations` et vos imports :
+
+```python
+# Before
+from mistralai.observability import Evaluation, Evaluator, Project
+
+# After
+from mistralai.evaluations import Evaluation, Evaluator, Project
+```
+
+Le renommage est arrivé dans `mistralai-evaluations` **0.7.0**, qui est identique côté API à la dernière version de `mistralai-observability`, **0.6.0** — passer de l’un à l’autre revient à un simple renommage.

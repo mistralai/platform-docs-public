@@ -1,0 +1,60 @@
+---
+id: observability_evaluations_local_mode
+title: Itérer en local
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Itérer en local
+
+Définissez `local=True` pour exécuter les évaluations sans envoyer les résultats à Studio. C’est utile pour itérer rapidement pendant le développement.
+
+<SectionTab as="h1" sectionId="usage">Utilisation</SectionTab>
+
+```python
+run = await client.evaluation.run(
+    dataset=dataset,
+    task=task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+    local=True,
+)
+run.show(level="records")
+```
+
+En mode local :
+- Aucune donnée n’est envoyée à Studio.
+- Vous n’avez pas besoin de spécifier `project` ou `evaluation`.
+- Les résultats sont disponibles uniquement dans votre Terminal ou au format JSON.
+
+<SectionTab as="h1" sectionId="recommended-workflow">workflow recommandé</SectionTab>
+
+1. **Itérer en local** : définissez `local=True` et ajustez votre tâche et vos évaluateurs jusqu’à obtenir des résultats corrects.
+2. **Envoyer vers Studio** : supprimez `local=True` (ou définissez `local=False`) et ajoutez `project` et `evaluation` pour suivre les résultats dans le temps.
+
+```python
+# Step 1: iterate locally
+run = await client.evaluation.run(
+    dataset=dataset,
+    task=task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+    local=True,
+)
+
+# Step 2: happy with results, push to Studio
+run = await client.evaluation.run(
+    project=Project(name="My Project"),
+    evaluation=Evaluation(name="My Eval"),
+    dataset=dataset,
+    task=task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+)
+```
+
+<SectionTab as="h1" sectionId="json-export">Export JSON</SectionTab>
+
+Exportez les résultats au format JSON pour un traitement ultérieur :
+
+```python
+run.show(mode="json", level="records")
+```

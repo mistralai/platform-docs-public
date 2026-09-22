@@ -11,6 +11,38 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 All notable changes to Search Toolkit are documented here.
 
+<SectionTab as="h2" sectionId="0-0-14">0.0.14</SectionTab>
+
+**Breaking changes**
+
+_Embedding model defaults and types_
+
+- The default [`VectorDType`](/studio/search/search-toolkit/concepts/embedding-model#vector-config) on [`MistralEmbeddingModel`](/studio/search/search-toolkit/concepts/embedding-model), `CustomEmbeddingModel`, and `MistralEmbeddingPreset` switched from `FLOAT32` to `FLOAT16`, matching the storage-efficient default of the `halfvec` convention used by the Postgres plugin. Existing deployed Vespa apps that relied on the float32 default are pinned to `FLOAT32` to preserve their behavior; new apps, cookbooks, and plugin preset resolution adopt `FLOAT16`.
+- [`MistralEmbeddingModel`](/studio/search/search-toolkit/concepts/embedding-model) and `CustomEmbeddingModel` dimensions are now capped at `4096`, enforced at the model rather than by each consumer that interpolates the value into pgvector DDL. Values above `4096` raise at construction.
+- Added `EmbeddingModelType` (`MISTRAL` / `CUSTOM`) as the `StrEnum` discriminator for the `EmbeddingModel` union, so downstream consumers reference the union variant without a local duplicate.
+
+_Index protocols_
+
+- The three index base classes `StoreIndex`, `KeywordStoreIndex`, and `VectorStoreIndex` are now `@runtime_checkable` Protocols, matching the style of `NavigableIndex`, `VersionedIndex`, and `PatchableIndex`. Any structurally-conforming class is accepted, not just explicit subclasses. `VectorStoreIndex` gained an `embedding_model: EmbeddingModel` attribute as the structural marker that distinguishes vector stores from keyword stores under `isinstance` checks; on `VespaSearchIndex` and `PostgresStoreIndex` the read-only `@property` became a writeable instance attribute sourced from the same place.
+
+**Improvements**
+
+- [`PyMuPDFExtractor`](/studio/search/search-toolkit/ingestion/extractors) gained an opt-in `extract_tables=True` that renders detected tables as markdown, so a corpus with ruled financial tables keeps them without moving to OCR. Tables are appended to (not substituted into) the page text, and detection failures fall back to plain text for that page. Off by default.
+- Classified ingestion errors for retryability: deterministic input failures are now terminal instead of being retried, and provider 4xx no longer exhausts the batch retry budget. New terminal exceptions `UnsupportedContentError`, `MissingDependencyError`, and `HtmlConversionError` declare `is_retryable = False`; `OcrProviderException` reads `status_code` from its cause and treats 4xx as terminal (429 and 5xx remain retryable). Bare `ValueError` exceptions raised for unsupported content in the mimetype registry, email attachment, legacy office, and Mistral OCR paths now surface as `UnsupportedContentError`.
+- [`Pipeline.run`](/studio/search/search-toolkit/ingestion#pipeline) accepts `Sequence` and `Iterator` inputs (lists, tuples, generators), not only lists.
+- `RoutedPipeline` exposes a read-only `pipelines` property returning a `MappingProxyType` over its protocol-to-pipeline dict, so callers can inspect routed pipelines without reaching into private state.
+- Vespa: the ANN candidate count is configurable. `max_candidates` forwards to the Vespa `targetHits` on the document-per-chunk query builder; unset preserves the existing `1000` default, and explicit values pass through unclamped. See [Manage ranking](/studio/search/search-toolkit/search-index/vespa/query-profiles).
+- Vespa: [`VespaSearchIndex`](/studio/search/search-toolkit/search-index/vespa/anatomy) exposes a public async `aclose` so callers can close the index without touching the private client.
+- [`MistralEmbedder`](/studio/search/search-toolkit/ingestion/embedders#mistral-embedder) skips tokenizer instantiation on the query path and caches the tokenizer process-wide via `lru_cache`, reducing query latency and per-instance cold-start cost. The ingestion (queued) path is unchanged.
+- The Postgres plugin is installable as an extra: `mistralai-search-toolkit[postgres]`, and included in the `all` extra. See the [Postgres](/studio/search/search-toolkit/search-index/postgres) page.
+- `FilesystemStorage.list_objects(prefix=...)` lists under a prefix without scanning the whole store, turning a previously quadratic per-container listing into a flat-cost operation.
+- A typed `EmbeddingSizeMismatchError(IndexingError)` carries `expected` / `actual` widths and the offending `chunk_id`. Both Vespa indexes validate each chunk's embedding width against the schema's `embedding_dimensions` before any write, so a misconfigured feed fails fast—on the per-chunk index, before the destructive delete-then-insert.
+
+**Bugfixes**
+
+- [`EmailWithAttachmentsExtractor`](/studio/search/search-toolkit/ingestion/extractors) filters oversized EML and MSG attachments out of the extracted list before recursive dispatch, bounding retained memory for the returned list, recursive extraction, and rendering.
+- The `register-index` path now sends `embedding_dimensions` instead of storing `NULL`, so the dimensions badge shows correctly. Existing indexes are repaired on their next registration; the Vespa plugin now requires `mistralai>=2.10.0,<3`.
+
 <SectionTab as="h2" sectionId="0-0-13">0.0.13</SectionTab>
 
 **Breaking changes**

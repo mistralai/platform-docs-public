@@ -1,0 +1,148 @@
+---
+id: observability_evaluations_rescoring
+title: Rescore persisted runs
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Rescore persisted runs
+
+An expensive task execution should be produced once and scored as many times as you like. `evaluation.rescore()` scores the outputs already persisted in Studio **without re-running the task** — useful when the generations are costly (agent rollouts, long tool chains) but you want to iterate on your scorers.
+
+<SectionTab as="h1" sectionId="two-layers">Two layers: execution and scoring</SectionTab>
+
+Think of a persisted run as two layers:
+
+1. **Execution artifact** — input records, task outputs, system configuration, and errors. Produced once.
+2. **Scoring layer** — evaluator definitions, generation scores, run scores, statistics, and goals. Can be added or replaced later.
+
+`run()` produces both. `rescore()` only touches the scoring layer. (`update_run()` stays a lightweight metadata patch — it does not score.)
+
+<SectionTab as="h1" sectionId="task-only-runs">Task-only runs</SectionTab>
+
+To produce the execution artifact without scoring it, pass an empty evaluator list. `evaluators` stays **required**, so an empty list is an explicit opt-in — omitting it is still an error.
+
+```python
+run = await client.evaluation.run(
+    evaluation=Evaluation(name="My Eval"),
+    dataset=dataset,
+    task=task,
+    evaluators=[],
+)
+```
+
+This executes and persists the task outputs with no scores. `run_evaluators` still work with an empty `evaluators` list — a run evaluator may aggregate outputs, errors, metadata, latency, or cost without depending on generation-level scores.
+
+<SectionTab as="h1" sectionId="rescoring">Rescoring</SectionTab>
+
+```python
+result = await client.evaluation.rescore(
+    run_id=run.run_id,  # the id of a persisted run
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+    run_evaluators=[RunEvaluator(name="latency_p95", scorer=p95)],
+)
+```
+
+`rescore()` returns a `RescoreResult` — an operational receipt, not the run itself. It carries `run_id`, `scored_generation_count`, `run_scores_recomputed`, and `potentially_stale_run_evaluators`. Re-fetch the run (or open the Studio UI) for the updated scores and statistics.
+
+`rescore()` uses the persisted run as the source of truth. It:
+
+- fetches the persisted inputs, outputs, and current scores;
+- never invokes the task;
+- runs the supplied generation evaluators against the persisted generations and persists the scores;
+- runs the supplied run evaluators after generation scores are persisted;
+- recomputes statistics and goals from the persisted scores.
+
+Passing an `EvaluationRun` is a convenience for its id; the SDK always refreshes the persisted records before scoring.
+
+<SectionTab as="h1" sectionId="add-and-replace">Add and replace semantics</SectionTab>
+
+`rescore()` has **patch semantics** — it changes only the evaluators you supply:
+
+- A previously unknown evaluator name **adds** its definition and scores.
+- An existing evaluator name at the same level **replaces** its definition and its complete score set.
+- Re-uploading the same scores is idempotent — retries never duplicate score rows.
+
+Changing an evaluator between generation-level and run-level is rejected.
+
+<SectionTab as="h1" sectionId="reading-persisted-metadata">Reading persisted metadata during rescore</SectionTab>
+
+Context-style scorers receive the persisted record and generation metadata via `ScorerContext.record_metadata` and `ScorerContext.generation_metadata`. This lets a task-only run capture durable grading artifacts while the (possibly ephemeral) environment is still alive, and a later `rescore()` grade against them — even after the original sandbox is gone.
+
+```python
+async def capture_grading_artifacts(ctx: RecordMetadataContext):
+    result = AgentResult.model_validate(ctx.record.generations[0].output)
+    return {"patch": await export_patch(result.environment)}
+
+# Task-only run: materialize grading inputs while the environment is alive.
+run = await client.evaluation.run(
+    dataset=dataset,
+    task=execute_agent,
+    evaluators=[],
+    record_metadata=capture_grading_artifacts,
+)
+
+# Later — the sandbox may be long gone — score against the persisted artifacts.
+def tests_pass(ctx: ScorerContext):
+    return Score(value=grade_patch(ctx.record_metadata["patch"]))
+
+result = await client.evaluation.rescore(
+    run_id=run.run_id, evaluators=[Evaluator(name="tests_pass", scorer=tests_pass)]
+)
+```
+
+`record_metadata` / `generation_metadata` are empty during the initial `run()` (record metadata is derived after scoring) and populated once `rescore()` hydrates the persisted run.
+
+<SectionTab as="h1" sectionId="stale-run-evaluators">Potentially stale run-evaluator scores</SectionTab>
+
+Run-evaluator functions are not persisted and their dependency on generation scores is opaque, so `rescore()` cannot know whether a run evaluator you did **not** recompute is now stale.
+
+When generation scores change and one or more persisted run-evaluator scores are not recomputed in the same call, `rescore()`:
+
+- emits a typed `StaleRunEvaluatorWarning`;
+- returns those names on `result.potentially_stale_run_evaluators`.
+
+Pass the affected run evaluators through `run_evaluators=` to recompute them and silence the warning.
+
+```python
+import warnings
+from mistralai.evaluations import StaleRunEvaluatorWarning
+
+with warnings.catch_warnings():
+    warnings.simplefilter("error", StaleRunEvaluatorWarning)
+    result = await client.evaluation.rescore(
+        run_id=run.run_id,
+        evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+        run_evaluators=[RunEvaluator(name="pass_rate", scorer=pass_rate)],
+    )
+```
+
+No warning is emitted when only run evaluators are rescored, when no persisted run-evaluator scores exist, or when every persisted run evaluator is supplied.
+
+<SectionTab as="h1" sectionId="api-reference">API reference</SectionTab>
+
+`client.evaluation.rescore(...)` takes the following parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | **Required.** The id of a persisted run. |
+| `evaluators` | `list[Evaluator]` | Generation evaluators to add or replace (default: `[]`). |
+| `run_evaluators` | `list[RunEvaluator]` | Run-level evaluators to add or replace (default: `[]`). |
+| `upload_batch_size` | `int` | Generations per score-upload batch (default: `10`). |
+| `max_concurrency` | `int` | Maximum concurrent scoring (default: `10`). |
+
+At least one of `evaluators` or `run_evaluators` must be non-empty.
+
+It returns a `RescoreResult`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `run_id` | `str` | ID of the rescored run. |
+| `scored_generation_count` | `int` | Number of generations whose scores were uploaded. |
+| `run_scores_recomputed` | `list[str]` | Run evaluators that were recomputed. |
+| `potentially_stale_run_evaluators` | `list[str]` | Persisted run evaluators that may now be stale (also raised as `StaleRunEvaluatorWarning`). |
+
+<SectionTab as="h1" sectionId="see-also">See also</SectionTab>
+
+- [Retry failed records](/studio/observability/evaluations/advanced-guides/retry-failed-records) to re-run only the records that failed.

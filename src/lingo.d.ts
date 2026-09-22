@@ -55,7 +55,10 @@ declare module "@lingo.dev/react" {
     "A powerfull model with open weights under a MRL license.": { context: "Short description of an AI model" };
     "A prototype model, designed to be brief and concise.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "A response delivery mode where tokens are sent as they are generated rather than as a single complete response. Reduces perceived latency in interactive applications such as chat interfaces.": { context: "Definition of the Streaming glossary term" };
-    "A secure Python sandbox available inside Vibe (Chat mode for Python, with a TypeScript code environment in Work mode). Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.": { context: "Detailed description of the Code Interpreter feature" };
+    "A legacy Python sandbox from the Chat tab, still available to some Enterprise organizations during the migration window. Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.": { context: "Detailed description of the Code Interpreter feature" };
+    "A native Python sandbox in Vibe Work, available on paid plans. Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.": { context: "Detailed description of the Code Interpreter feature" };
+    "A native code sandbox in Vibe Work, available on paid plans. Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.": { context: "Detailed description of the Code Interpreter feature" };
+    "A native Python and TypeScript sandbox in Vibe Work, available on paid plans. Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.": { context: "Detailed description of the Code Interpreter feature" };
     "A small efficient and powerfull 24B open model for personal or commercial use.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "A specialized model designed for creative writing and dynamic character interaction.": { context: "Short description of an AI model" };
     "A state-of-the-art, open-weight, general-purpose multimodal model.": { context: "Short description of an AI model" };
@@ -136,7 +139,7 @@ declare module "@lingo.dev/react" {
     "Alternative": { context: "Table heading for the replacement AI model" };
     "Ambassadors": { context: "Footer link to the Mistral ambassador community" | "Footer link to the Mistral ambassador program" | "Heading for the Mistral ambassador program" | "Title of the Resources landing card linking to the ambassador program" };
     "Ambassadors will receive early invites and access to our events and will have a dedicated channel on Discord and Slack to engage with Mistral team members and fellow Ambassadors.": { context: "Description of a Mistral ambassador program benefit" };
-    "An AI assistant configured with specific instructions, tools, and an optional knowledge base. Agents behave consistently across conversations and can be shared across a team. In Vibe, the equivalent feature in Work is called a Skill. Agents are still available in Chat (Vibe's legacy mode), and can be built programmatically via the Agents API in Studio.": { context: "Definition of the Agent glossary term" };
+    "An AI assistant configured with specific instructions, tools, and an optional knowledge base. Agents behave consistently across conversations and can be shared across a team. In Vibe, the equivalent feature in Work is called a Skill. The legacy Chat tab is gone for most users, so use Skills in Work instead. Agents can also be built programmatically via the Agents API in Studio.": { context: "Definition of the Agent glossary term" };
     "An efficient audio input model, pre-trained and optimized for live transcription purposes only.": { context: "Full description of an AI model" };
     "An efficient audio input model, pre-trained and optimized for live transcription purposes.": { context: "Short description of an AI model" };
     "An efficient audio input model, pre-trained and optimized for transcription purposes only.": { context: "Full description of an AI model" };
@@ -474,9 +477,9 @@ declare module "@lingo.dev/react" {
     "Mistral Docs": { context: "Site name used in documentation page titles" };
     "Mistral Large 3, is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 41B active parameters and 675B total parameters.": { context: "Full description of an AI model" };
     "Mistral's coding mode. CLI, VS Code extension, and remote web sessions to write code with an agent.": { context: "Description of the Vibe Code card on the developers overview" };
-    "Mistral's unified agent. Runs in three modes: Work (productivity in the web and mobile chat UI at chat.mistral.ai), Code (CLI, VS Code extension, or remote web sessions at code.mistral.ai), and Chat (turn-based mode that preserves legacy Le Chat features such as Agents, Think mode, Deep Research, Code Interpreter, and Memories).": { context: "Definition of the Vibe glossary term" };
-    "Mistral's unified agent. Work mode for chat-driven productivity, Code mode for the terminal and editor, Chat mode for quick conversations.": { context: "Description of the Vibe product" };
-    "Mistral's unified agent. Work mode for productivity in the chat UI, Code mode for the terminal and editor, Chat mode for quick conversations.": { context: "Description of the Vibe product" };
+    "Mistral's unified agent. Runs in two modes: Work (the unified chat and work experience in the web and mobile apps at chat.mistral.ai) and Code (CLI, VS Code extension, or remote web sessions at code.mistral.ai). Legacy Chat features such as Agents and Memories have equivalents in Work, and the legacy Chat tab remains available only to some Enterprise organizations during the migration window.": { context: "Definition of the Vibe glossary term" };
+    "Mistral's unified agent. Work mode for the unified chat and work experience, Code mode for the terminal and editor.": { context: "Description of the Vibe product" };
+    "Mistral's unified agent. Work mode for conversations and productivity in the web and mobile apps, Code mode for the terminal and editor.": { context: "Description of the Vibe product" };
     "Mobile Menu": { context: "Screen-reader-only title for the mobile navigation dialog" };
     "Mobile Menu Links": { context: "Screen-reader-only description for the mobile navigation dialog" };
     "Modalities": { context: "Label for supported input and output types" };
@@ -642,6 +645,8 @@ declare module "@lingo.dev/react" {
     "Run benchmark pipelines against deployments or complex system prompts to objectively measure accuracy, performance, and detect regressions over time.": { context: "Detailed description of the Evaluation feature" };
     "Run Mistral Vibe offline with locally deployed models. Keep your code on your machine with no data leaving your environment, while retaining full agent capabilities.": { context: "Detailed description of the Local Mode feature" };
     "Run Python natively in chat": { context: "Short description of the Code Interpreter feature" };
+    "Run code natively in Work": { context: "Short description of the Code Interpreter feature" };
+    "Run Python and TypeScript in Work": { context: "Short description of the Code Interpreter feature" };
     "Run your first Vibe Work task": { context: "Quickstart title about running a first Vibe Work task" };
     "Running a trained model to generate a response. Calling the API is running inference, as distinct from training, which modifies model weights.": { context: "Definition of the Inference glossary term" };
     "SaaS (Studio)": { context: "Name of the SaaS deployment option for Mistral Studio" };

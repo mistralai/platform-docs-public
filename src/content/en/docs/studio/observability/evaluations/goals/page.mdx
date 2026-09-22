@@ -2,6 +2,7 @@
 id: observability_evaluations_goals
 title: Set goals
 sidebar_position: 4
+sidebar_label: Goals
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
@@ -12,6 +13,8 @@ import { Faq, FaqItem } from '@/components/common/faq';
 
 Goals let you define pass/fail criteria on evaluator scores. When a goal is set, the SDK displays `PASS` or `FAIL` verdicts in the terminal output alongside each score.
 
+A goal is a pure pass/fail **gate**. Which way is *better* (and how scores are normalized) is metric semantics you set on the `Evaluator` itself — see [Direction and normalization](#direction-and-normalization) below.
+
 <SectionTab as="h1" sectionId="goal-types">Goal types</SectionTab>
 
 | Method | Meaning |
@@ -19,17 +22,13 @@ Goals let you define pass/fail criteria on evaluator scores. When a goal is set,
 | `Goal.gte(0.8)` | Score must be `>= 0.8` |
 | `Goal.lte(0.1)` | Score must be `<= 0.1` |
 | `Goal.between(0.2, 0.8)` | Score must be in `[0.2, 0.8]` |
-| `Goal.higher_is_better()` | Direction hint only, no threshold |
-| `Goal.lower_is_better()` | Direction hint only, no threshold |
-
-Direction-only goals (`higher_is_better`, `lower_is_better`) don't produce `PASS`/`FAIL` verdicts. They're metadata for comparison views in Studio.
 
 All goal methods accept an optional `metric` parameter (`"avg"`, `"min"`, `"max"`, `"std"`) to target a specific statistic instead of the default average.
 
 <SectionTab as="h1" sectionId="basic-usage">Basic usage</SectionTab>
 
 ```python
-from mistralai.observability import Evaluator, Goal
+from mistralai.evaluations import Evaluator, Goal
 
 Evaluator(
     name="accuracy",
@@ -63,10 +62,10 @@ When you call `run.show()`:
 
 <SectionTab as="h1" sectionId="goals-on-run-evaluators">Goals on run evaluators</SectionTab>
 
-[Run evaluators](../evaluations/run-evaluators) also support goals:
+[Run evaluators](/studio/observability/evaluations/advanced-guides/run-evaluators) also support goals:
 
 ```python
-from mistralai.observability import RunEvaluator, Goal
+from mistralai.evaluations import RunEvaluator, Goal
 
 RunEvaluator(
     name="f1",
@@ -76,13 +75,40 @@ RunEvaluator(
 )
 ```
 
+<SectionTab as="h1" sectionId="direction-and-normalization">Direction and normalization</SectionTab>
+
+A goal only gates pass/fail. To express which way is better and the scale a metric lives on, set these fields on the `Evaluator`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `direction` | `"maximize"` \| `"minimize"` | Which way is better. Inferred from the goal when unset (`gte` → `maximize`, `lte` → `minimize`, otherwise `maximize`). |
+| `min_value` / `max_value` | `float` | Min-max normalization window. Set both or neither; `min_value` must be `< max_value`. |
+| `weight` | `float` | Optimization pressure (default `1.0`). Set `weight=0` to make the metric a pure constraint: its goal still gates, but it is excluded from the [optimization](/studio/observability/evaluations/optimization) objective. |
+
+```python
+Evaluator(
+    name="latency_ms",
+    description="End-to-end response time in milliseconds.",
+    scorer=latency_scorer,
+    goal=Goal.lte(1000),     # gate + infers direction="minimize"
+    min_value=200,
+    max_value=2000,          # 850 ms normalizes to ~0.64 (lower is better)
+)
+
+Evaluator(
+    name="accuracy",
+    description="1 if the expected answer appears in the output.",
+    scorer=accuracy_scorer,  # no goal → direction defaults to "maximize", window to [0, 1]
+)
+```
+
 <SectionTab as="h1" sectionId="full-example">Full example</SectionTab>
 
 ```python
 import asyncio
 import os
 
-from mistralai.observability import (
+from mistralai.evaluations import (
     Evaluation, Evaluator, Goal, Mistral, Project,
     RunEvaluator, RunEvaluatorContext, ScorerContext, System, TaskContext,
 )

@@ -1,0 +1,148 @@
+---
+id: observability_evaluations_rescoring
+title: Réévaluer les runs persistés
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Réévaluer les runs persistés
+
+Une exécution de tâche coûteuse doit être produite une seule fois, puis notée autant de fois que nécessaire. `evaluation.rescore()` note les sorties déjà persistées dans Studio **sans réexécuter la tâche** — utile lorsque les générations coûtent cher (rollouts d'agent, longues chaînes d'outils), mais que vous voulez itérer sur vos scorers.
+
+<SectionTab as="h1" sectionId="two-layers">Deux couches : exécution et scoring</SectionTab>
+
+Considérez un run persisté comme deux couches :
+
+1. **Artefact d'exécution** — enregistrements d'entrée, sorties de tâche, configuration système et erreurs. Produit une seule fois.
+2. **Couche de scoring** — définitions d'évaluateurs, scores de génération, scores de run, statistiques et objectifs. Peut être ajoutée ou remplacée plus tard.
+
+`run()` produit les deux. `rescore()` ne touche qu'à la couche de scoring. (`update_run()` reste un patch de métadonnées léger — il ne note pas.)
+
+<SectionTab as="h1" sectionId="task-only-runs">Runs sans scoring</SectionTab>
+
+Pour produire l'artefact d'exécution sans le noter, passez une liste d'évaluateurs vide. `evaluators` reste **obligatoire** : une liste vide est donc un choix explicite. L'omettre reste une erreur.
+
+```python
+run = await client.evaluation.run(
+    evaluation=Evaluation(name="My Eval"),
+    dataset=dataset,
+    task=task,
+    evaluators=[],
+)
+```
+
+Cela exécute et persiste les sorties de tâche sans scores. `run_evaluators` fonctionne toujours avec une liste `evaluators` vide : un évaluateur de run peut agréger des sorties, des erreurs, des métadonnées, la latence ou le coût sans dépendre des scores au niveau génération.
+
+<SectionTab as="h1" sectionId="rescoring">Réévaluation</SectionTab>
+
+```python
+result = await client.evaluation.rescore(
+    run_id=run.run_id,  # the id of a persisted run
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+    run_evaluators=[RunEvaluator(name="latency_p95", scorer=p95)],
+)
+```
+
+`rescore()` renvoie un `RescoreResult` — un reçu opérationnel, pas le run lui-même. Il contient `run_id`, `scored_generation_count`, `run_scores_recomputed` et `potentially_stale_run_evaluators`. Récupérez à nouveau le run (ou ouvrez l'interface Studio) pour voir les scores et statistiques mis à jour.
+
+`rescore()` utilise le run persisté comme source de vérité. Il :
+
+- récupère les entrées, les sorties et les scores actuels persistés ;
+- n'appelle jamais la tâche ;
+- exécute les évaluateurs de génération fournis sur les générations persistées et persiste les scores ;
+- exécute les évaluateurs de run fournis après la persistance des scores de génération ;
+- recalcule les statistiques et les objectifs à partir des scores persistés.
+
+Passer un `EvaluationRun` sert de raccourci pour son id ; le SDK actualise toujours les enregistrements persistés avant le scoring.
+
+<SectionTab as="h1" sectionId="add-and-replace">Sémantique d'ajout et de remplacement</SectionTab>
+
+`rescore()` a une **sémantique de patch** : il modifie uniquement les évaluateurs que vous fournissez.
+
+- Un nom d'évaluateur auparavant inconnu **ajoute** sa définition et ses scores.
+- Un nom d'évaluateur existant au même niveau **remplace** sa définition et son ensemble complet de scores.
+- Télécharger à nouveau les mêmes scores est idempotent — les nouvelles tentatives ne dupliquent jamais les lignes de score.
+
+Transformer un évaluateur de niveau génération en évaluateur de niveau run, ou l'inverse, est rejeté.
+
+<SectionTab as="h1" sectionId="reading-persisted-metadata">Lire les métadonnées persistées pendant la réévaluation</SectionTab>
+
+Les scorers de type contexte reçoivent l'enregistrement persisté et les métadonnées de génération via `ScorerContext.record_metadata` et `ScorerContext.generation_metadata`. Cela permet à un run sans scoring de capturer des artefacts de notation durables pendant que l'environnement, parfois éphémère, existe encore, puis à un `rescore()` ultérieur de les utiliser pour la notation — même après la disparition de la sandbox d'origine.
+
+```python
+async def capture_grading_artifacts(ctx: RecordMetadataContext):
+    result = AgentResult.model_validate(ctx.record.generations[0].output)
+    return {"patch": await export_patch(result.environment)}
+
+# Task-only run: materialize grading inputs while the environment is alive.
+run = await client.evaluation.run(
+    dataset=dataset,
+    task=execute_agent,
+    evaluators=[],
+    record_metadata=capture_grading_artifacts,
+)
+
+# Later — the sandbox may be long gone — score against the persisted artifacts.
+def tests_pass(ctx: ScorerContext):
+    return Score(value=grade_patch(ctx.record_metadata["patch"]))
+
+result = await client.evaluation.rescore(
+    run_id=run.run_id, evaluators=[Evaluator(name="tests_pass", scorer=tests_pass)]
+)
+```
+
+`record_metadata` / `generation_metadata` sont vides lors du `run()` initial (les métadonnées d'enregistrement sont dérivées après le scoring), puis renseignées une fois que `rescore()` hydrate le run persisté.
+
+<SectionTab as="h1" sectionId="stale-run-evaluators">Scores d'évaluateurs de run potentiellement obsolètes</SectionTab>
+
+Les fonctions d'évaluateur de run ne sont pas persistées et leur dépendance aux scores de génération est opaque. `rescore()` ne peut donc pas savoir si un évaluateur de run que vous n'avez **pas** recalculé est désormais obsolète.
+
+Lorsque les scores de génération changent et qu'un ou plusieurs scores d'évaluateur de run persistés ne sont pas recalculés dans le même appel, `rescore()` :
+
+- émet un `StaleRunEvaluatorWarning` typé ;
+- renvoie ces noms dans `result.potentially_stale_run_evaluators`.
+
+Passez les évaluateurs de run concernés via `run_evaluators=` pour les recalculer et supprimer l'avertissement.
+
+```python
+import warnings
+from mistralai.evaluations import StaleRunEvaluatorWarning
+
+with warnings.catch_warnings():
+    warnings.simplefilter("error", StaleRunEvaluatorWarning)
+    result = await client.evaluation.rescore(
+        run_id=run.run_id,
+        evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+        run_evaluators=[RunEvaluator(name="pass_rate", scorer=pass_rate)],
+    )
+```
+
+Aucun avertissement n'est émis lorsque seuls des évaluateurs de run sont réévalués, lorsqu'aucun score d'évaluateur de run persisté n'existe ou lorsque chaque évaluateur de run persisté est fourni.
+
+<SectionTab as="h1" sectionId="api-reference">Référence API</SectionTab>
+
+`client.evaluation.rescore(...)` prend les paramètres suivants :
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | **Obligatoire.** L'identifiant d'un run persisté. |
+| `evaluators` | `list[Evaluator]` | Évaluateurs de génération à ajouter ou remplacer (par défaut : `[]`). |
+| `run_evaluators` | `list[RunEvaluator]` | Évaluateurs de niveau run à ajouter ou remplacer (par défaut : `[]`). |
+| `upload_batch_size` | `int` | Générations par batch de téléchargement des scores (par défaut : `10`). |
+| `max_concurrency` | `int` | Nombre maximal d'opérations de scoring concurrentes (par défaut : `10`). |
+
+Au moins l'un des paramètres `evaluators` ou `run_evaluators` doit être non vide.
+
+Elle renvoie un `RescoreResult` :
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `run_id` | `str` | ID du run réévalué. |
+| `scored_generation_count` | `int` | Nombre de générations dont les scores ont été téléchargés. |
+| `run_scores_recomputed` | `list[str]` | Évaluateurs de run qui ont été recalculés. |
+| `potentially_stale_run_evaluators` | `list[str]` | Évaluateurs de run persistés qui peuvent désormais être obsolètes (également émis sous forme de `StaleRunEvaluatorWarning`). |
+
+<SectionTab as="h1" sectionId="see-also">Voir aussi</SectionTab>
+
+- [Relancer les enregistrements en échec](/studio/observability/evaluations/advanced-guides/retry-failed-records) pour réexécuter uniquement les enregistrements qui ont échoué.

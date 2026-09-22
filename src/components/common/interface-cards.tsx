@@ -20,7 +20,7 @@ export function InterfaceCards() {
             hoverBorder: 'hover:border-[#FA500F]/50',
             hoverText: 'group-hover:text-[#FA500F]',
             activeBorder: 'border-[#FA500F]/50',
-            description: l.text("Mistral's unified agent. Work mode for chat-driven productivity, Code mode for the terminal and editor, Chat mode for quick conversations.", { context: 'Description of the Vibe product' }),
+            description: l.text("Mistral's unified agent. Work mode for the unified chat and work experience, Code mode for the terminal and editor.", { context: 'Description of the Vibe product' }),
             href: 'https://chat.mistral.ai',
             ctaText: l.text('Open Vibe', { context: 'Call to open Vibe' }),
         },

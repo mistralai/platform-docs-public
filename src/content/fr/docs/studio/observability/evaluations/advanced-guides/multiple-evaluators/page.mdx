@@ -1,0 +1,73 @@
+---
+id: observability_evaluations_multiple_evaluators
+title: Plusieurs évaluateurs
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Plusieurs évaluateurs
+
+Une exécution peut contenir autant d'évaluateurs que nécessaire — transmettez-les sous forme de liste à `evaluators`. Le SDK exécute chacun d'eux et calcule ses statistiques indépendamment, afin que chaque métrique apparaisse séparément dans Studio.
+
+<SectionTab as="h1" sectionId="multiple-scorers-in-one-run">Plusieurs scorers dans une même exécution</SectionTab>
+
+```python
+import asyncio
+import os
+
+from mistralai.evaluations import Evaluation, Evaluator, Mistral, ScorerContext, TaskContext
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+def contains_expected(ctx: ScorerContext) -> int:
+    return 1 if ctx.input_record["expected"] in str(ctx.output).lower() else 0
+
+def is_short(ctx: ScorerContext) -> int:
+    return 1 if len(str(ctx.output)) < 80 else 0
+
+def starts_capitalized(ctx: ScorerContext) -> int:
+    text = str(ctx.output).strip()
+    return 1 if text and text[0].isupper() else 0
+
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model="mistral-small-latest",
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+
+async def main():
+    run = await client.evaluation.run(
+        evaluation=Evaluation(name="Multi-metric eval"),
+        dataset=dataset,
+        task=task,
+        evaluators=[
+            Evaluator(name="contains_expected", description="1 if expected substring is in the output.", scorer=contains_expected),
+            Evaluator(name="is_short", description="1 if the output is under 80 characters.", scorer=is_short),
+            Evaluator(name="starts_capitalized", description="1 if the output starts with an uppercase letter.", scorer=starts_capitalized),
+        ],
+    )
+    run.show(level="run")
+
+asyncio.run(main())
+```
+
+<SectionTab as="h1" sectionId="mixing-rule-based-and-llm-judges">Associer des règles et des juges LLM</SectionTab>
+
+Les scorers sont des fonctions. Les vérifications fondées sur des règles et les [juges LLM](/studio/observability/evaluations/evaluators#llm-as-judge) peuvent donc coexister dans la même exécution :
+
+```python
+evaluators=[
+    Evaluator(name="exact_match", description="1 if output matches expected exactly.", scorer=exact_match_scorer),
+    Evaluator(name="llm_quality", description="LLM judge quality score (0 to 5).", scorer=llm_judge, num_scores=3),
+    Evaluator(name="response_length", description="Character count of the output.", scorer=length_scorer),
+]
+```
+
+<SectionTab as="h1" sectionId="per-evaluator-goals-and-statistics">Objectifs et statistiques par évaluateur</SectionTab>
+
+Chaque évaluateur possède sa propre configuration — rien n'est partagé ni fusionné entre eux :
+
+- **Objectifs** : définissez un seuil de réussite ou d'échec indépendant par évaluateur (par exemple `goal=Goal.gte(0.8)` pour l'un, `goal=Goal.lte(500)` pour un autre). Consultez [Définir des objectifs](/studio/observability/evaluations/goals).
+- **Statistiques** : chaque évaluateur expose ses propres statistiques au niveau de l'exécution, et vous pouvez déclarer précisément lesquelles. Les scores non numériques obtiennent des distributions de fréquence et un mode au lieu de réductions numériques. Consultez [Configurer les statistiques](/studio/observability/evaluations/statistics).

@@ -11,10 +11,10 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Évaluations hors ligne
 
-Le SDK d’évaluation (`mistralai-observability`) vous permet d’exécuter des évaluations hors ligne sur vos pipelines LLM en quelques lignes de code Python. Définissez un jeu de données, une tâche et des évaluateurs pour obtenir des résultats dans votre terminal et dans Studio.
+Le SDK d’évaluation (`mistralai-evaluations`) vous permet d’exécuter des évaluations hors ligne sur vos pipelines LLM en quelques lignes de Python. Définissez un ensemble de données, une tâche et des fonctions de scoring pour obtenir les résultats dans votre terminal et dans Studio.
 
 :::info
-Les évaluations hors ligne sont réservées **aux organisations de niveau Enterprise**. Contactez votre représentant Mistral pour obtenir l’accès au package `mistralai-observability`.
+Les évaluations hors ligne sont disponibles uniquement pour les **organisations avec le plan Enterprise**. Contactez votre représentant Mistral pour les activer pour votre organisation.
 :::
 
 Le SDK repose sur un modèle mental simple :
@@ -30,33 +30,26 @@ Dataset  →  Task  →  Evaluators  →  Results
 
 <SectionTab as="h1" sectionId="installation">Installation</SectionTab>
 
-**Prérequis** : Python 3.12 ou version ultérieure, [uv](https://docs.astral.sh/uv/) et une clé API Mistral.
+**Prérequis :** Python 3.12+ et une clé API Mistral.
 
-Après avoir reçu votre jeton d’autorisation de Mistral, configurez vos identifiants :
+Installez le package depuis PyPI :
 
-```bash
-export UV_INDEX_CLOUDSMITH_USERNAME=token
-export UV_INDEX_CLOUDSMITH_PASSWORD=<your-entitlement-token>
-```
-
-Ajoutez le package et le dépôt privé Mistral à votre fichier `pyproject.toml` :
-
-```toml
-[project]
-name = "my-eval-project"
-version = "0.1.0"
-dependencies = ["mistralai-observability"]
-
-[[tool.uv.index]]
-name = "cloudsmith"
-url = "https://dl.cloudsmith.io/basic/mistral-ai/sdk-distribution/python/simple/"
-```
-
-Puis installez-le :
+<Tabs>
+  <TabItem value="pip" label="pip">
 
 ```bash
-uv sync
+pip install mistralai-evaluations
 ```
+
+  </TabItem>
+  <TabItem value="uv" label="uv">
+
+```bash
+uv add mistralai-evaluations
+```
+
+  </TabItem>
+</Tabs>
 
 Définiasez votre clé API :
 
@@ -72,7 +65,7 @@ Créez un fichier `eval.py` :
 import asyncio
 import os
 
-from mistralai.observability import (
+from mistralai.evaluations import (
     Evaluation, Evaluator, Goal, Mistral, Project, ScorerContext, System, TaskContext,
 )
 
@@ -134,10 +127,10 @@ Les résultats s’affichent dans votre terminal et sont téléchargés vers Stu
 <ExplorerTabs id="concepts">
   <ExplorerTab value="task" label="Tâche">
 
-Une tâche est une fonction asynchrone (ou synchrone) qui reçoit un `TaskContext` et retourne une sortie. C’est le code que vous souhaitez évaluer :
+Une tâche est une fonction asynchrone (ou synchrone) qui reçoit un `TaskContext` et renvoie une sortie. C’est le code que vous voulez évaluer :
 
 ```python
-from mistralai.observability import TaskContext
+from mistralai.evaluations import TaskContext
 
 async def task(ctx: TaskContext) -> str:
     response = await client.chat.complete_async(
@@ -150,79 +143,79 @@ async def task(ctx: TaskContext) -> str:
     return str(response.choices[0].message.content)
 ```
 
-La tâche peut retourner n’importe quel type : chaînes de caractères, modèles Pydantic ou dictionnaires. Le SDK sérialise la sortie pour le téléchargement.
+La tâche peut renvoyer n’importe quel type : chaînes de caractères, modèles Pydantic ou dictionnaires. Le SDK sérialise la sortie pour le téléchargement.
 
-`TaskContext` vous donne un accès typé à `ctx.input_record` (l’enregistrement du jeu de données en cours), `ctx.system` (la configuration `System` de `evaluation.run()`) et `ctx.metadata` (métadonnées d’exécution).
+`TaskContext` vous donne un accès typé à `ctx.input_record` (l’enregistrement courant de l’ensemble de données), `ctx.system` (la configuration `System` de `evaluation.run()`) et `ctx.metadata` (les métadonnées d’exécution).
 
   </ExplorerTab>
   <ExplorerTab value="evaluators" label="Évaluateurs">
 
-Un évaluateur comprend un nom, une description facultative et une fonction de notation. La fonction de notation reçoit un `ScorerContext` et retourne un score :
+Un évaluateur a un nom, une description facultative et une fonction de scoring. Cette fonction reçoit un `ScorerContext` et renvoie un score :
 
 ```python
-from mistralai.observability import Evaluator, Goal, ScorerContext
+from mistralai.evaluations import Evaluator, Goal, ScorerContext
 
 def accuracy_scorer(ctx: ScorerContext) -> int:
     return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
 
 evaluator = Evaluator(
     name="accuracy",
-    description="1 si la réponse attendue apparaît dans la sortie.",
+    description="1 if expected answer appears in the output.",
     scorer=accuracy_scorer,
     goal=Goal.gte(0.8),
 )
 ```
 
-`ScorerContext` vous donne `ctx.input_record` (l’enregistrement du jeu de données en cours), `ctx.output` (la sortie de la tâche pour cette génération) et `ctx.system` (la configuration `System`).
+`ScorerContext` vous donne accès à `ctx.input_record` (l’enregistrement courant de l’ensemble de données), `ctx.output` (la sortie de la tâche pour cette génération) et `ctx.system` (la configuration `System`).
 
-Vous pouvez utiliser autant d’évaluateurs que nécessaire dans une seule exécution. Le SDK calcule automatiquement les statistiques (moyenne, minimum, maximum, écart-type) par évaluateur.
+Vous pouvez empiler autant d’évaluateurs que nécessaire dans une seule exécution. Le SDK calcule automatiquement les statistiques (moyenne, min, max, écart type) par évaluateur.
 
   </ExplorerTab>
   <ExplorerTab value="system" label="Système">
 
-`System` externalise votre configuration de tâche afin que chaque exécution enregistre les paramètres qui ont produit ses résultats :
+`System` externalise la configuration de votre tâche afin que chaque exécution enregistre les paramètres qui ont produit ses résultats :
 
 ```python
-from mistralai.observability import System
+from mistralai.evaluations import System
 
 system = System(name="mistral-small-t0", params={
     "model": "mistral-small-latest",
     "temperature": 0,
-    "system_prompt": "Répondez de manière concise en une phrase.",
+    "system_prompt": "Answer concisely in one sentence.",
 })
 ```
 
-`params` est libre : incluez le modèle, la température, le prompt système, le nombre maximal de tokens, les définitions d’outils ou tout autre paramètre qui influence votre tâche.
+`params` est libre : ajoutez le modèle, la température, le prompt système, le nombre maximal de tokens, les définitions d’outils ou tout autre paramètre qui pilote votre tâche.
 
 Dans Studio, chaque exécution affiche sa configuration `System`, ce qui vous permet de comparer les exécutions côte à côte.
 
 :::tip Comparer les configurations
-Exécutez la même évaluation avec différents objets `System` pour comparer les versions de modèles ou les variantes de prompts sans modifier votre code de tâche.
+Exécutez la même évaluation avec différents objets `System` pour comparer des versions de modèle ou des variantes de prompt sans modifier le code de votre tâche.
 :::
 
   </ExplorerTab>
   <ExplorerTab value="goals" label="Objectifs">
 
-Les objectifs vous permettent de définir des critères de succès/échec pour les scores des évaluateurs. Lorsqu’un objectif est défini, le SDK affiche les verdicts RÉUSSITE/ÉCHEC dans la sortie du terminal :
+Les objectifs vous permettent de définir des critères de réussite ou d’échec sur les scores des évaluateurs. Lorsqu’un objectif est défini, le SDK affiche les verdicts `PASS` ou `FAIL` dans la sortie du terminal :
 
 ```python
-from mistralai.observability import Goal
+from mistralai.evaluations import Goal
 
 Evaluator(
     name="accuracy",
     scorer=accuracy_scorer,
-    goal=Goal.gte(0.8),           # chaque enregistrement doit obtenir un score >= 0,8
-    aggregate_goal=Goal.gte(0.9), # la moyenne globale doit être >= 0,9
+    goal=Goal.gte(0.8),           # each record must score >= 0.8
+    aggregate_goal=Goal.gte(0.9), # overall average must be >= 0.9
 )
 ```
 
 | Objectif | Signification |
-|----------|---------------|
+|------|---------|
 | `Goal.gte(0.8)` | Le score doit être `>= 0.8` |
 | `Goal.lte(0.1)` | Le score doit être `<= 0.1` |
-| `Goal.between(0.2, 0.8)` | Le score doit être dans [0,2, 0,8] |
-| `Goal.higher_is_better()` | Indication de direction uniquement, pas de seuil |
-| `Goal.lower_is_better()` | Indication de direction uniquement, pas de seuil |
+| `Goal.between(0.2, 0.8)` | Le score doit être compris entre 0,2 et 0,8 |
+
+Un objectif est un seuil de réussite ou d’échec. Le sens dans lequel un score est *meilleur* (et la normalisation des scores) dépend de la sémantique de la métrique que vous définissez sur l’`Evaluator` via `direction`, `min_value` et `max_value`. Consultez [Définir des objectifs](/studio/observability/evaluations/goals) pour plus de détails.
 
   </ExplorerTab>
 </ExplorerTabs>
@@ -311,35 +304,48 @@ L’interface de Studio propose quatre façons d’explorer les résultats :
 
 Les valeurs des cellules s’affichent automatiquement en fonction de leur type : texte brut, objets JSON et tableaux de conversations LLM bénéficient chacun de leur propre format d’affichage.
 
-<SectionTab as="h1" sectionId="guides">Guides</SectionTab>
+<SectionTab as="h1" sectionId="guides">Explorer les documents</SectionTab>
 
-- [Juges](./evaluations/judges) : utilisez des évaluateurs basés sur LLM pour des critères qui ne peuvent pas être capturés par des fonctions basées sur des règles.
-- [Jeux de données](./evaluations/datasets) : structurez vos cas de test sous forme d’enregistrements Python typés.
-- [Utiliser les objets contexte](./evaluations/context-objects) : référence pour `TaskContext`, `ScorerContext` et `RunEvaluatorContext`.
-- [Définir des objectifs](./evaluations/goals) : définissez des seuils de réussite/échec et des indications de direction sur les scores des évaluateurs.
-- [Configurer les paramètres système](./evaluations/system-params) : externalisez la configuration des tâches pour une comparaison côte à côte dans Studio.
-- [Combiner les évaluateurs](./evaluations/multiple-evaluators) : combinez des évaluateurs basés sur des règles et des évaluateurs basés sur des LLM en une seule exécution.
-- [Utiliser les évaluateurs au niveau des exécutions](./evaluations/run-evaluators) : métriques agrégées (F1, portails personnalisés) calculées après que tous les enregistrements ont été notés.
-- [Itérer en local](./evaluations/local-mode) : itérez sans télécharger les résultats vers Studio.
-- [Réduire la variance avec plusieurs générations](./evaluations/num-generations) : réduisez la variance en exécutant chaque enregistrement N fois.
-- [Réessayer les enregistrements en échec](./evaluations/retry-failed-records) : réexécutez uniquement les enregistrements en erreur, corrigez les résultats en place.
+Travaillez les briques de base dans l’ordre où vous les utilisez pour construire une évaluation :
+
+- [Jeux de données](/studio/observability/evaluations/datasets) : structurez vos cas de test sous forme d’enregistrements Python typés.
+- [Configurer les paramètres système](/studio/observability/evaluations/system-params) : externalisez la configuration des tâches pour une comparaison côte à côte dans Studio.
+- [Évaluateurs](/studio/observability/evaluations/evaluators) : définissez des fonctions de notation pour chaque métrique — fonctions basées sur des règles ou LLM-as-judge.
+- [Définir des objectifs](/studio/observability/evaluations/goals) : définissez des seuils de réussite ou d’échec, ainsi que la direction et la normalisation sur les évaluateurs.
+- [Configurer les statistiques](/studio/observability/evaluations/statistics) : choisissez les valeurs au niveau de l’exécution (moyennes, totaux, percentiles) qu’un évaluateur expose.
+- [Optimiser les prompts et paramètres](/studio/observability/evaluations/optimization) : recherchez automatiquement de meilleurs prompts et paramètres système.
+
+**Guides avancés :**
+
+- [Utiliser les objets de contexte](/studio/observability/evaluations/advanced-guides/context-objects) : `TaskContext`, `ScorerContext` et les références des contextes de métadonnées.
+- [Évaluateurs multiples](/studio/observability/evaluations/advanced-guides/multiple-evaluators) : exécutez plusieurs scorers en une seule exécution, avec une combinaison de juges fondés sur des règles et de juges LLM.
+- [Utiliser les évaluateurs au niveau des exécutions](/studio/observability/evaluations/advanced-guides/run-evaluators) : métriques agrégées (F1, portails personnalisés) calculées après que tous les enregistrements ont été notés.
+- [Itérer en local](/studio/observability/evaluations/advanced-guides/local-mode) : itérez sans télécharger les résultats vers Studio.
+- [Réduire la variance avec plusieurs générations](/studio/observability/evaluations/advanced-guides/num-generations) : réduisez la variance en exécutant chaque enregistrement N fois.
+- [Réessayer les enregistrements en échec](/studio/observability/evaluations/advanced-guides/retry-failed-records) : réexécutez uniquement les enregistrements en erreur, corrigez les résultats en place.
+- [Renoter les exécutions enregistrées](/studio/observability/evaluations/advanced-guides/rescoring) : itérez sur les fonctions de scoring sans réexécuter la tâche.
+
+**Références :**
+
+- [Référence API](/studio/observability/evaluations/api-reference) : `evaluation.run()` et les types principaux.
+- [Guide de migration et changelog](/studio/observability/evaluations/migrating) : modifications et mises à jour incompatibles par version.
 
 <SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
 
 <Faq>
   <FaqItem question="Quelle version de Python est requise ?">
-  Python 3.12 ou version ultérieure est requis. Le package utilise `uv` pour la gestion des dépendances.
+  Python 3.12 ou version ultérieure est requis.
   </FaqItem>
   <FaqItem question="Puis-je utiliser des fonctions synchrones pour les tâches et les évaluateurs ?">
   Oui. Les fonctions synchrones et asynchrones fonctionnent pour les tâches et les évaluateurs. Le SDK détecte automatiquement le style que vous utilisez.
   </FaqItem>
   <FaqItem question="Comment utiliser un LLM en tant que juge ?">
-  Un évaluateur est une fonction : appelez l’API Mistral à l’intérieur de votre évaluateur et retournez un score numérique. Consultez [Juges](./evaluations/judges) pour des exemples détaillés, y compris la sortie structurée et la réduction de la variance.
+  Un évaluateur est une fonction : appelez l’API Mistral dans votre fonction de notation et renvoyez un score numérique. Consultez [Évaluateurs → LLM-as-judge](/studio/observability/evaluations/evaluators#llm-as-judge) pour des exemples détaillés incluant une sortie structurée et la réduction de la variance.
   </FaqItem>
   <FaqItem question="Puis-je exécuter plusieurs évaluateurs en une seule exécution ?">
-  Oui. Passez une liste à `evaluators`. Le SDK les exécute tous et calcule les statistiques indépendamment pour chaque évaluateur. Consultez [Combiner les évaluateurs](./evaluations/multiple-evaluators) pour plus de détails.
+  Oui. Transmettez une liste à `evaluators`. Le SDK les exécute tous et calcule des statistiques indépendamment pour chaque évaluateur. Consultez [Évaluateurs multiples](/studio/observability/evaluations/advanced-guides/multiple-evaluators) pour plus de détails.
   </FaqItem>
   <FaqItem question="Comment comparer deux versions de modèle ?">
-  Exécutez la même évaluation deux fois, chaque fois avec un objet `System` différent. Studio affiche les exécutions côte à côte avec leurs configurations système. Consultez [Configurer les paramètres système](./evaluations/system-params) pour plus de détails.
+  Exécutez la même évaluation deux fois, chaque fois avec un objet `System` différent. Studio affiche les exécutions côte à côte avec leurs configurations système. Consultez [Configurer les paramètres système](/studio/observability/evaluations/system-params) pour plus de détails.
   </FaqItem>
 </Faq>

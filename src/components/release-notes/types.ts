@@ -5,7 +5,8 @@ export type ReleaseNoteType =
   | 'Deprecation'
   | 'Security'
   | 'Other'
-  | 'Amélioration';
+  | 'Amélioration'
+  | 'Fonctionnalité';
 
 export type ReleaseNoteAvailability = string;
 

@@ -43,7 +43,7 @@ export function getGlossaryData(l: Lingo): GlossaryTerm[] {
     return [
         {
             term: l.text('Agent', { context: 'Glossary term for an AI agent' }),
-            definition: l.text("An AI assistant configured with specific instructions, tools, and an optional knowledge base. Agents behave consistently across conversations and can be shared across a team. In Vibe, the equivalent feature in Work is called a Skill. Agents are still available in Chat (Vibe's legacy mode), and can be built programmatically via the Agents API in Studio.", { context: 'Definition of the Agent glossary term' }),
+            definition: l.text("An AI assistant configured with specific instructions, tools, and an optional knowledge base. Agents behave consistently across conversations and can be shared across a team. In Vibe, the equivalent feature in Work is called a Skill. The legacy Chat tab is gone for most users, so use Skills in Work instead. Agents can also be built programmatically via the Agents API in Studio.", { context: 'Definition of the Agent glossary term' }),
             categories: categories(['vibe', 'api'], l),
         },
         {
@@ -164,7 +164,7 @@ export function getGlossaryData(l: Lingo): GlossaryTerm[] {
         },
         {
             term: l.text('Vibe', { context: "Glossary term for Mistral's unified agent" }),
-            definition: l.text("Mistral's unified agent. Runs in three modes: Work (productivity in the web and mobile chat UI at chat.mistral.ai), Code (CLI, VS Code extension, or remote web sessions at code.mistral.ai), and Chat (turn-based mode that preserves legacy Le Chat features such as Agents, Think mode, Deep Research, Code Interpreter, and Memories).", { context: 'Definition of the Vibe glossary term' }),
+            definition: l.text("Mistral's unified agent. Runs in two modes: Work (the unified chat and work experience in the web and mobile apps at chat.mistral.ai) and Code (CLI, VS Code extension, or remote web sessions at code.mistral.ai). Legacy Chat features such as Agents and Memories have equivalents in Work, and the legacy Chat tab remains available only to some Enterprise organizations during the migration window.", { context: 'Definition of the Vibe glossary term' }),
             categories: categories(['vibe'], l),
         },
         {

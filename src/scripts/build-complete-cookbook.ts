@@ -77,6 +77,15 @@ async function main() {
         getFirstCommitDate(cookbook.path),
       ]);
 
+      if (
+        !contentData.content?.trim() ||
+        !contentData.contentWithoutTitle?.trim()
+      ) {
+        throw new Error(
+          `Cannot build cookbook ${cookbook.path}: source is missing, empty, or has no body. Check cookbooks.config.json and the static/cookbooks submodule revision.`
+        );
+      }
+
       const slug = generateCookbookSlug(cookbook.path);
       const title =
         cookbook.title || contentData.title || contentData.titleFromSlug;

@@ -11,10 +11,10 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Offline evaluations
 
-The Evaluation SDK (`mistralai-observability`) lets you run offline evaluations on your LLM pipelines in a few lines of Python. Define a dataset, a task, and scorers to get results in your terminal and in Studio.
+The Evaluation SDK (`mistralai-evaluations`) lets you run offline evaluations on your LLM pipelines in a few lines of Python. Define a dataset, a task, and scorers to get results in your terminal and in Studio.
 
 :::info
-Offline evaluations are available to **Enterprise-tier organizations** only. Contact your Mistral representative to get access to the `mistralai-observability` package.
+Offline evaluations are available to **Enterprise-tier organizations** only. Contact your Mistral representative to enable them for your organization.
 :::
 
 The SDK follows a simple mental model:
@@ -30,33 +30,26 @@ Dataset  →  Task  →  Evaluators  →  Results
 
 <SectionTab as="h1" sectionId="installation">Installation</SectionTab>
 
-**Prerequisites:** Python 3.12+, [uv](https://docs.astral.sh/uv/), and a Mistral API key.
+**Prerequisites:** Python 3.12+ and a Mistral API key.
 
-After you receive your entitlement token from Mistral, configure your credentials:
+Install the package from PyPI:
 
-```bash
-export UV_INDEX_CLOUDSMITH_USERNAME=token
-export UV_INDEX_CLOUDSMITH_PASSWORD=<your-entitlement-token>
-```
-
-Add the package and the Mistral private repository to your `pyproject.toml`:
-
-```toml
-[project]
-name = "my-eval-project"
-version = "0.1.0"
-dependencies = ["mistralai-observability"]
-
-[[tool.uv.index]]
-name = "cloudsmith"
-url = "https://dl.cloudsmith.io/basic/mistral-ai/sdk-distribution/python/simple/"
-```
-
-Then install:
+<Tabs>
+  <TabItem value="pip" label="pip">
 
 ```bash
-uv sync
+pip install mistralai-evaluations
 ```
+
+  </TabItem>
+  <TabItem value="uv" label="uv">
+
+```bash
+uv add mistralai-evaluations
+```
+
+  </TabItem>
+</Tabs>
 
 Set your API key:
 
@@ -72,7 +65,7 @@ Create an `eval.py` file:
 import asyncio
 import os
 
-from mistralai.observability import (
+from mistralai.evaluations import (
     Evaluation, Evaluator, Goal, Mistral, Project, ScorerContext, System, TaskContext,
 )
 
@@ -137,7 +130,7 @@ Results are printed in your terminal and uploaded to Studio under **Observabilit
 A task is an async (or sync) function that receives a `TaskContext` and returns an output. This is the code you want to evaluate:
 
 ```python
-from mistralai.observability import TaskContext
+from mistralai.evaluations import TaskContext
 
 async def task(ctx: TaskContext) -> str:
     response = await client.chat.complete_async(
@@ -160,7 +153,7 @@ The task can return any type: strings, Pydantic models, or dicts. The SDK serial
 An evaluator has a name, an optional description, and a scorer function. The scorer receives a `ScorerContext` and returns a score:
 
 ```python
-from mistralai.observability import Evaluator, Goal, ScorerContext
+from mistralai.evaluations import Evaluator, Goal, ScorerContext
 
 def accuracy_scorer(ctx: ScorerContext) -> int:
     return 1 if ctx.input_record["expected"].lower() in str(ctx.output).lower() else 0
@@ -183,7 +176,7 @@ You can stack as many evaluators as you need in a single run. The SDK computes s
 `System` externalizes your task configuration so each run records which settings produced its results:
 
 ```python
-from mistralai.observability import System
+from mistralai.evaluations import System
 
 system = System(name="mistral-small-t0", params={
     "model": "mistral-small-latest",
@@ -206,7 +199,7 @@ Run the same evaluation with different `System` objects to compare model version
 Goals let you define pass/fail criteria on evaluator scores. When a goal is set, the SDK displays `PASS` or `FAIL` verdicts in the terminal output:
 
 ```python
-from mistralai.observability import Goal
+from mistralai.evaluations import Goal
 
 Evaluator(
     name="accuracy",
@@ -221,8 +214,8 @@ Evaluator(
 | `Goal.gte(0.8)` | Score must be `>= 0.8` |
 | `Goal.lte(0.1)` | Score must be `<= 0.1` |
 | `Goal.between(0.2, 0.8)` | Score must be in [0.2, 0.8] |
-| `Goal.higher_is_better()` | Direction hint only, no threshold |
-| `Goal.lower_is_better()` | Direction hint only, no threshold |
+
+A goal is a pass/fail gate. Which direction is *better* (and how scores are normalized) is metric semantics you set on the `Evaluator` via `direction`, `min_value`, and `max_value`. See [Set goals](/studio/observability/evaluations/goals) for details.
 
   </ExplorerTab>
 </ExplorerTabs>
@@ -311,35 +304,48 @@ The Studio UI gives you four ways to explore results:
 
 Cell values render automatically based on type: plain text, JSON objects, and LLM conversation arrays each get their own display format.
 
-<SectionTab as="h1" sectionId="guides">Guides</SectionTab>
+<SectionTab as="h1" sectionId="guides">Explore the docs</SectionTab>
 
-- [Judges](./evaluations/judges): use LLM-based scorers for criteria that rule-based functions can't capture.
-- [Datasets](./evaluations/datasets): structure your test cases as typed Python records.
-- [Use context objects](./evaluations/context-objects): `TaskContext`, `ScorerContext`, and `RunEvaluatorContext` reference.
-- [Set goals](./evaluations/goals): define pass/fail thresholds and direction hints on evaluator scores.
-- [Configure system params](./evaluations/system-params): externalize task configuration for side-by-side comparison in Studio.
-- [Combine evaluators](./evaluations/multiple-evaluators): combine rule-based and LLM-based scorers in a single run.
-- [Use run-level evaluators](./evaluations/run-evaluators): aggregate metrics (F1, custom gates) computed after all records are scored.
-- [Iterate locally](./evaluations/local-mode): iterate without uploading results to Studio.
-- [Reduce variance with multiple generations](./evaluations/num-generations): reduce variance by running each record N times.
-- [Retry failed records](./evaluations/retry-failed-records): rerun only the records that errored, patch results in place.
+Work through the building blocks in the order you use them to build an evaluation:
+
+- [Datasets](/studio/observability/evaluations/datasets): structure your test cases as typed Python records.
+- [Configure system params](/studio/observability/evaluations/system-params): externalize task configuration for side-by-side comparison in Studio.
+- [Evaluators](/studio/observability/evaluations/evaluators): define scorers for each metric — rule-based functions or LLM-as-judge.
+- [Set goals](/studio/observability/evaluations/goals): define pass/fail thresholds and set direction and normalization on evaluators.
+- [Configure statistics](/studio/observability/evaluations/statistics): choose which run-level values (averages, totals, percentiles) an evaluator exposes.
+- [Optimize prompts and parameters](/studio/observability/evaluations/optimization): automatically search for better prompts and system params.
+
+**Advanced guides:**
+
+- [Use context objects](/studio/observability/evaluations/advanced-guides/context-objects): `TaskContext`, `ScorerContext`, and the metadata contexts reference.
+- [Multiple evaluators](/studio/observability/evaluations/advanced-guides/multiple-evaluators): run many scorers in one run, including a mix of rule-based and LLM judges.
+- [Use run-level evaluators](/studio/observability/evaluations/advanced-guides/run-evaluators): aggregate metrics (F1, custom gates) computed after all records are scored.
+- [Iterate locally](/studio/observability/evaluations/advanced-guides/local-mode): iterate without uploading results to Studio.
+- [Reduce variance with multiple generations](/studio/observability/evaluations/advanced-guides/num-generations): reduce variance by running each record N times.
+- [Retry failed records](/studio/observability/evaluations/advanced-guides/retry-failed-records): rerun only the records that errored, patch results in place.
+- [Rescore persisted runs](/studio/observability/evaluations/advanced-guides/rescoring): iterate on scorers without re-running the task.
+
+**Reference:**
+
+- [API reference](/studio/observability/evaluations/api-reference): `evaluation.run()` and the core types.
+- [Migration guide and changelog](/studio/observability/evaluations/migrating): changes and breaking updates per version.
 
 <SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
 
 <Faq>
   <FaqItem question="What Python version is required?">
-  Python 3.12 or later is required. The package uses `uv` for dependency management.
+  Python 3.12 or later is required.
   </FaqItem>
   <FaqItem question="Can I use synchronous functions for tasks and scorers?">
   Yes. Both async and sync functions work for tasks and scorers. The SDK detects which style you're using automatically.
   </FaqItem>
   <FaqItem question="How do I use an LLM as a judge?">
-  An evaluator is a function: call the Mistral API inside your scorer and return a numeric score. See [Judges](./evaluations/judges) for detailed examples including structured output and variance reduction.
+  An evaluator is a function: call the Mistral API inside your scorer and return a numeric score. See [Evaluators → LLM-as-judge](/studio/observability/evaluations/evaluators#llm-as-judge) for detailed examples including structured output and variance reduction.
   </FaqItem>
   <FaqItem question="Can I run multiple evaluators in a single run?">
-  Yes. Pass a list to `evaluators`. The SDK runs all of them and computes statistics independently per evaluator. See [Combine evaluators](./evaluations/multiple-evaluators) for details.
+  Yes. Pass a list to `evaluators`. The SDK runs all of them and computes statistics independently per evaluator. See [Multiple evaluators](/studio/observability/evaluations/advanced-guides/multiple-evaluators) for details.
   </FaqItem>
   <FaqItem question="How do I compare two model versions?">
-  Run the same evaluation twice, each time with a different `System` object. Studio displays the runs side by side with their system configs. See [Configure system params](./evaluations/system-params) for details.
+  Run the same evaluation twice, each time with a different `System` object. Studio displays the runs side by side with their system configs. See [Configure system params](/studio/observability/evaluations/system-params) for details.
   </FaqItem>
 </Faq>

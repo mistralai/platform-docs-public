@@ -9,11 +9,11 @@ import { Tabs, TabItem } from '@/components/common/multi-codeblock';
 
 # Formulaires et confirmations
 
-Les workflows conversationnels peuvent demander à l'utilisateur une entrée structurée : champs typés avec validation, choix unique ou multiple, téléchargement de fichiers, confirmations accepter/refuser. Utilisez `FormInput` pour les formulaires complets et `ConfirmationInput` / `AcceptDeclineConfirmation` pour les invites en un clic.
+Les workflows conversationnels peuvent demander à l’utilisateur une entrée structurée : champs typés avec validation, options à choix unique ou multiple, téléchargements de fichiers, confirmations accepter/refuser. Utilisez `FormInput` pour les formulaires complets et `ConfirmationInput` / `AcceptDeclineConfirmation` pour les prompts en un clic.
 
 <SectionTab as="h1" sectionId="structured-form-inputs">Entrées de formulaire structurées</SectionTab>
 
-Pour les workflows nécessitant une entrée structurée avec champs typés, validation et rendu d'UI personnalisé, utilisez `FormInput` plutôt que `ChatInput` :
+Pour les workflows qui nécessitent une entrée de formulaire structurée avec des champs typés, une validation et un rendu d’interface personnalisé, utilisez `FormInput` plutôt que `ChatInput` :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -90,25 +90,25 @@ class ExpenseSubmissionWorkflow(workflows.InteractiveWorkflow):
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_structured-form-input_expense-form.png"
-    alt="Un champ de formulaire structuré affiché dans Vibe Work."
+    alt="Une entrée de formulaire structurée affichée dans Vibe Work."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Un champ de formulaire structuré affiché dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Une entrée de formulaire structurée affichée dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="field-types">Types de champs</SectionTab>
 
 | Type de champ      | Description      | Propriétés                                                                                        |
 | --------------- | ---------------- | ------------------------------------------------------------------------------------------------- |
-| `TextField`     | Champ texte       | `description`, `pattern` (regex optionnelle), `prefilled_value`                                      |
-| `NumberField`   | Champ numérique    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum`, `prefilled_value`   |
-| `DateTimeField` | Sélecteur de date/heure | `description`, `prefilled_value` (chaîne de date/heure au format ISO 8601)                                       |
-| `DateField`     | Sélecteur de date      | `description`, `prefilled_value` (chaîne de date au format ISO 8601)                                           |
-| `SingleChoice`  | Liste déroulante/unique choix  | `options` (liste de tuples ou chaînes), `description`, `prefilled_value`                            |
-| `MultiChoice`   | Choix multiples     | `options` (liste de tuples ou chaînes), `description`, `prefilled_value`                            |
-| `FileField`     | Téléchargement de fichier | `description`, `multiple` (par défaut `False`), `include_metadata` (par défaut `False`)                  |
+| `TextField`     | Entrée de texte       | `description`, `pattern` (regex facultative), `prefilled_value`, `error_message`                     |
+| `NumberField`   | Entrée numérique    | `description`, `minimum`, `maximum`, `exclusive_minimum`, `exclusive_maximum`, `prefilled_value`   |
+| `DateTimeField` | Sélecteur de date et d’heure | `description`, `prefilled_value` (chaîne de date et heure ISO 8601)                                       |
+| `DateField`     | Sélecteur de date      | `description`, `prefilled_value` (chaîne de date ISO 8601)                                           |
+| `SingleChoice`  | Menu déroulant/sélecteur  | `options` (liste de tuples ou de chaînes), `description`, `prefilled_value`                            |
+| `MultiChoice`   | Sélection multiple     | `options` (liste de tuples ou de chaînes), `description`, `prefilled_value`                            |
+| `FileField`     | Téléchargement de fichier | `description`, `multiple` (`False` par défaut), `include_metadata` (`False` par défaut)                  |
 
-Tous les types de champs (sauf `FileField`) prennent en charge un paramètre optionnel `prefilled_value`. Il s'agit **uniquement d'une indication UI** : il préremplit le champ de formulaire mais ne le rend pas optionnel. La valeur doit toujours être explicitement soumise par l'utilisateur. Les valeurs préremplies non valides (hors limites, motif non correspondant, option inconnue) sont ignorées silencieusement.
+Tous les types de champs, sauf `FileField`, prennent en charge un paramètre facultatif `prefilled_value`. Il s’agit uniquement d’une **indication d’interface** : elle préremplit le champ du formulaire, mais ne le rend pas facultatif. La valeur doit toujours être envoyée explicitement par l’utilisateur. Les valeurs préremplies non valides (hors limites, qui ne correspondent pas au motif, option inconnue) sont ignorées silencieusement.
 
 <SectionTab as="h2" variant="secondary" sectionId="textfield">TextField</SectionTab>
 
@@ -121,18 +121,27 @@ email: str = TextField(
     description="Email address",
     pattern=r"^[\w.-]+@[\w.-]+\.\w+$",  # Optional regex validation
 )
+booking: str = TextField(
+    description="Booking reference",
+    pattern=r"^00\d{8}$",
+    error_message="Booking reference must be 00 followed by 8 digits.",
+)
 ```
 
   </TabItem>
 </Tabs>
 
+Par défaut, une valeur qui ne respecte pas `pattern` est rejetée avec un message généré qui affiche la regex à l’utilisateur, par exemple `^00\d{8}$`. Définissez `error_message` pour le remplacer par un libellé exploitable par l’utilisateur. Le message sert uniquement à l’affichage : il ne modifie pas ce que le champ accepte. Contrairement au message généré, il s’affiche tel qu’il est écrit, sans adaptation à la langue de l’utilisateur.
+
+`error_message` remplace aussi la regex affichée dans l’indication sous le champ.
+
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_text-field.png"
-    alt="Un champ texte affiché dans Vibe Work."
+    alt="Un champ de texte affiché dans Vibe Work."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Champ texte dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Champ de texte dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="numberfield">NumberField</SectionTab>
@@ -186,10 +195,10 @@ scheduled_at: datetime = DateTimeField(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_datetime-field.png"
-    alt="Un champ de sélection de date/heure affiché dans Vibe Work."
+    alt="Un champ de sélection de date et d’heure affiché dans Vibe Work."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Champ date/heure dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Champ date-heure dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="datefield">DateField</SectionTab>
@@ -248,12 +257,12 @@ status: str = SingleChoice(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_single-choice-field_priority.png"
-    alt="Une liste déroulante à choix unique affichée dans Vibe Work, avec des options de priorité."
+    alt="Un menu déroulant à choix unique affiché dans Vibe Work, avec des options de priorité."
     centered
   />
   <Image
     url="/img/conversational_workflows/conversational-workflow_single-choice-field_status.png"
-    alt="Une liste déroulante à choix unique affichée dans Vibe Work, avec des options de statut."
+    alt="Un menu déroulant à choix unique affiché dans Vibe Work, avec des options de statut."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Champ à choix unique dans Vibe Work.</legend>
@@ -289,15 +298,15 @@ colors: list[str] = MultiChoice(
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_multi-choice-field_tags.png"
-    alt="Un champ à choix multiples affiché dans Vibe Work, avec des options de tags."
+    alt="Un champ à choix multiple affiché dans Vibe Work, avec des options de tags."
     centered
   />
   <Image
     url="/img/conversational_workflows/conversational-workflow_multi-choice-field_colors.png"
-    alt="Un champ à choix multiples affiché dans Vibe Work, avec des options de couleurs."
+    alt="Un champ à choix multiple affiché dans Vibe Work, avec des options de couleur."
     centered
   />
-  <legend className="text-sm text-gray-500 text-center italic">Champ à choix multiples dans Vibe Work.</legend>
+  <legend className="text-sm text-gray-500 text-center italic">Champ à choix multiple dans Vibe Work.</legend>
 </figure>
 
 <SectionTab as="h2" variant="secondary" sectionId="filefield">FileField</SectionTab>
@@ -334,29 +343,29 @@ attachments: list[FileWithMetadataValue] = FileField(
   />
   <Image
     url="/img/conversational_workflows/conversational-workflow_file-field_attachements.png"
-    alt="Un champ de téléchargement de fichiers multiples affiché dans Vibe Work, avec les fichiers joints."
+    alt="Un champ de téléchargement de plusieurs fichiers affiché dans Vibe Work, avec les fichiers joints."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Champ de téléchargement de fichier dans Vibe Work.</legend>
 </figure>
 
-Par défaut, le workflow reçoit des URL (chaînes) pointant vers les fichiers téléchargés par l'utilisateur. Avec `include_metadata=True`, il reçoit des objets `FileWithMetadataValue` à la place :
+Par défaut, le workflow reçoit des URL (chaînes) qui pointent vers les fichiers téléchargés par l’utilisateur. Avec `include_metadata=True`, il reçoit plutôt des objets `FileWithMetadataValue` :
 
 | Champ          | Type             | Obligatoire | Description                     |
 | -------------- | ---------------- | -------- | ------------------------------- |
-| `filename`     | `str`            | Oui      | Nom de fichier original               |
+| `filename`     | `str`            | Oui      | Nom Original du fichier               |
 | `url`          | `str`            | Oui      | URL signée pour télécharger le fichier |
 | `content_type` | `str`            | Oui      | Type MIME du fichier           |
 
-Ces URL peuvent expirer : si votre workflow a besoin d’un accès à long terme aux fichiers, il est responsable de leur stockage ailleurs.
+Ces URL peuvent expirer. Si votre workflow doit accéder aux fichiers sur le long terme, il doit donc les stocker ailleurs.
 
 <SectionTab as="h1" sectionId="confirmation-inputs">Entrées de confirmation</SectionTab>
 
-Pour les workflows nécessitant une confirmation simple par choix unique avec validation directe, utilisez `ConfirmationInput` ou `AcceptDeclineConfirmation`. Ces aides créent un formulaire à un seul champ où la sélection d’une option soumet immédiatement le formulaire.
+Pour les workflows qui nécessitent une confirmation simple à choix unique avec soumission directe, utilisez `ConfirmationInput` ou `AcceptDeclineConfirmation`. Ces helpers créent un formulaire à champ unique où la sélection d’une option soumet immédiatement le formulaire.
 
 <SectionTab as="h2" variant="secondary" sectionId="confirmationinput">ConfirmationInput</SectionTab>
 
-`ConfirmationInput` propose une liste d’options devant être affichées sous forme de boutons. La sélection d’une option doit soumettre immédiatement le formulaire :
+`ConfirmationInput` fournit une liste d’options à afficher sous forme de boutons. La sélection d’une option doit soumettre immédiatement le formulaire :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -400,7 +409,7 @@ class TypeSelectionWorkflow(workflows.InteractiveWorkflow):
 <figure>
   <Image
     url="/img/conversational_workflows/conversational-workflow_confirmation.png"
-    alt="Une entrée de confirmation affichée dans Vibe Work, avec des boutons pour chaque option."
+    alt="Une entrée de confirmation affichée dans Vibe Work, avec un bouton pour chaque option."
     centered
   />
   <legend className="text-sm text-gray-500 text-center italic">Entrée de confirmation dans Vibe Work.</legend>
@@ -408,14 +417,14 @@ class TypeSelectionWorkflow(workflows.InteractiveWorkflow):
 
 | Propriété      | Type                                   | Description                                                  |
 | ------------- | -------------------------------------- | ------------------------------------------------------------ |
-| `options`     | `list[tuple[str, str]]` ou `list[str]` | Liste d’options sous forme de tuples `(valeur, libellé)` ou de chaînes simples |
+| `options`     | `list[tuple[str, str]]` ou `list[str]` | Liste d’options sous forme de tuples `(value, label)` ou de chaînes simples |
 | `description` | `str`                                  | Description affichée au-dessus des options                          |
 
-L’objet retourné contient une propriété `choice` avec la valeur de l’option sélectionnée.
+L’objet renvoyé possède une propriété `choice` qui contient la valeur de l’option sélectionnée.
 
 <SectionTab as="h2" variant="secondary" sectionId="acceptdeclineconfirmation">AcceptDeclineConfirmation</SectionTab>
 
-`AcceptDeclineConfirmation` est une confirmation spécialisée avec deux options : accepter et refuser. Les clients peuvent l’afficher comme une interface de validation standard avec des raccourcis clavier pour des réponses rapides :
+`AcceptDeclineConfirmation` est une confirmation spécialisée avec deux options : accepter et refuser. Les clients peuvent l’afficher comme une interface de validation standard avec des raccourcis clavier pour répondre rapidement :
 
 <Tabs>
   <TabItem value="python" label="Python">
@@ -466,10 +475,10 @@ class ApprovalWorkflow(workflows.InteractiveWorkflow):
 | Propriété        | Type  | Description                         |
 | --------------- | ----- | ----------------------------------- |
 | `description`   | `str` | Description affichée au-dessus des boutons |
-| `accept_label`  | `str` | Libellé du bouton Accepter         |
-| `decline_label` | `str` | Libellé du bouton Refuser        |
+| `accept_label`  | `str` | Libellé du bouton d’acceptation         |
+| `decline_label` | `str` | Libellé du bouton de refus        |
 
-Utilisez la fonction auxiliaire `is_accepted()` pour vérifier si l’utilisateur a accepté ou refusé :
+Utilisez la fonction helper `is_accepted()` pour vérifier si l’utilisateur a accepté ou refusé :
 
 <Tabs>
   <TabItem value="python" label="Python">

@@ -1,0 +1,149 @@
+---
+id: observability_evaluations_statistics
+title: Configurer les statistiques
+sidebar_position: 5
+sidebar_label: Statistiques
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Configurer les statistiques
+
+Les statistiques sont des valeurs au niveau de l’exécution qu’un évaluateur expose à partir de ses scores numériques par enregistrement : une moyenne, un total, un percentile. Elles apparaissent dans l’en-tête du tableau des exécutions, peuvent être représentées dans le temps et associées à un objectif.
+
+Par défaut, un évaluateur calcule l’ensemble historique (`avg`, `min`, `max`, `std`, `count`). Déclarez `statistics` si vous voulez un autre ensemble : un nombre total d’échecs, des percentiles de latence ou aucune statistique.
+
+Chaque statistique déclarée est une déclaration sérialisable comprise par le SDK, le backend et Studio. Elle peut donc être recalculée après filtrage ou réévaluation, représentée dans un graphique, comparée et contrôlée par un objectif.
+
+<SectionTab as="h1" sectionId="quick-example">Exemple rapide</SectionTab>
+
+```python
+from mistralai.evaluations import Evaluator, Goal, Statistic
+
+Evaluator(
+    name="latency_ms",
+    description="End-to-end response time in milliseconds.",
+    scorer=latency_scorer,
+    statistics=[
+        Statistic.percentile(95, goal=Goal.lte(500)),
+        Statistic.percentile(50),
+        Statistic.percentile(75),
+    ],
+)
+```
+
+<SectionTab as="h1" sectionId="the-factories">Les factories</SectionTab>
+
+La factory `Statistic` déclare chaque réduction intégrée :
+
+| Méthode | Signification | ID |
+|--------|---------|----|
+| `Statistic.avg()` | Moyenne arithmétique des scores numériques | `avg` |
+| `Statistic.sum()` | Somme des scores numériques (par exemple, un nombre total d’échecs) | `sum` |
+| `Statistic.min()` | Plus petit score numérique | `min` |
+| `Statistic.max()` | Plus grand score numérique | `max` |
+| `Statistic.std()` | Écart type de la population | `std` |
+| `Statistic.count()` | Nombre de scores numériques réussis et non nuls | `count` |
+| `Statistic.percentile(p)` | Le percentile `p`, `0 <= p <= 100` | `p50`, `p95`, `p99.9`, … |
+
+Chaque ID est **canonique et stable** : `avg`, `sum`, `min`, `max`, `std`, `count` et `p{p}` pour les percentiles (`p50`, `p95`). Les ID servent à référencer une statistique dans le SDK, la payload d’exécution et l’interface. Ils ne changent donc jamais une fois déclarés. Une médiane correspond à `Statistic.percentile(50)` — il n’existe pas de factory distincte pour elle.
+
+Il n’existe volontairement pas de réduction `rate` : un taux correspond à `avg` sur des scores 0/1.
+
+<SectionTab as="h1" sectionId="omission-vs-explicit">Omission ou liste explicite</SectionTab>
+
+Le champ `statistics` a deux modes :
+
+- **Omis** (par défaut) — le comportement historique est conservé. Studio détecte le type de score et, pour les scores numériques, expose l’ensemble par défaut `avg`, `min`, `max`, `std`, `count`.
+- **Une liste explicite** — fait autorité. Seules ces statistiques sont calculées et exposées, dans l’ordre indiqué, sans ajout de valeurs par défaut implicites. Une liste vide `statistics=[]` signifie que l’évaluateur n’expose **aucune** statistique au niveau de l’exécution.
+
+La **première** entrée de la liste effective est la statistique *principale* de l’évaluateur : la valeur unique affichée dans l’en-tête du tableau des exécutions pour une présentation compacte. Il s’agit d’une convention d’affichage, pas d’une option persistée.
+
+<SectionTab as="h1" sectionId="examples">Exemples</SectionTab>
+
+<SectionTab as="h2" variant="secondary" sectionId="default-set">Ensemble par défaut (omission)</SectionTab>
+
+Omettre `statistics` conserve l’ensemble par défaut :
+
+```python
+Evaluator(name="quality", scorer=quality_scorer)
+# exposes avg, min, max, std, count — avg is the headline
+```
+
+<SectionTab as="h2" variant="secondary" sectionId="total-failures">Total des échecs</SectionTab>
+
+Un évaluateur dont la fonction de scoring renvoie `0`/`1` par enregistrement, expose uniquement le nombre total d’échecs et impose un seuil à zéro :
+
+```python
+from mistralai.evaluations import Evaluator, Goal, Statistic
+
+Evaluator(
+    name="failures",
+    description="1 when the record failed, 0 otherwise.",
+    scorer=failure_scorer,  # returns numeric 0 or 1
+    statistics=[Statistic.sum(goal=Goal.lte(0))],
+)
+```
+
+`sum` additionne les scores 0/1, et son objectif fait échouer l’exécution si un enregistrement a échoué.
+
+<SectionTab as="h2" variant="secondary" sectionId="latency-percentiles">Percentiles de latence</SectionTab>
+
+```python
+from mistralai.evaluations import Evaluator, Goal, Statistic
+
+Evaluator(
+    name="latency_ms",
+    description="End-to-end response time in milliseconds.",
+    scorer=latency_scorer,
+    statistics=[
+        Statistic.percentile(95, goal=Goal.lte(500)),
+        Statistic.percentile(50),
+        Statistic.percentile(75),
+    ],
+)
+```
+
+Cela expose exactement `p50`, `p75` et `p95` — pas de `avg`, `min`, `max`, `std` ni `count`. Comme `p95` est en premier, il devient la statistique principale affichée dans l’en-tête du tableau des exécutions, et son `Goal.lte(500)` fait échouer l’exécution lorsque la latence au 95e percentile dépasse 500 ms.
+
+<SectionTab as="h1" sectionId="statistic-level-goals">Objectifs au niveau des statistiques</SectionTab>
+
+Un objectif associé à une statistique cible cette statistique — à la fois au niveau de l’enregistrement et de l’agrégation de l’exécution. C’est la méthode recommandée pour contrôler une exécution et remplacer `aggregate_goal` :
+
+```python
+# Recommended
+Evaluator(
+    name="accuracy",
+    scorer=accuracy_scorer,
+    statistics=[Statistic.avg(goal=Goal.gte(0.9))],
+)
+
+# Deprecated — prefer a statistic-level goal
+Evaluator(
+    name="accuracy",
+    scorer=accuracy_scorer,
+    aggregate_goal=Goal.gte(0.9),
+)
+```
+
+Un objectif au niveau d’une statistique ne porte jamais son propre `metric` : la cible est la statistique à laquelle il est associé. (Seul le chemin obsolète `aggregate_goal` utilise `metric` pour nommer une statistique.)
+
+<SectionTab as="h1" sectionId="scores-must-be-numeric">Les scores doivent être numériques 0/1, pas booléens</SectionTab>
+
+Les statistiques sont des réductions numériques. Un évaluateur qui contrôle la réussite ou l’échec doit émettre la valeur numérique `0` ou `1`, **pas** `True`/`False`. Les booléens sont classés comme des valeurs *catégorielles*. Une fonction de scoring qui renvoie un booléen produit donc des statistiques catégorielles (fréquences et mode), et aucune des réductions numériques ci-dessus ne s’applique.
+
+```python
+def failure_scorer(ctx) -> int:
+    return 1 if failed(ctx) else 0   # numeric — correct
+
+def failure_scorer(ctx) -> bool:
+    return failed(ctx)               # boolean — categorical, no sum/percentile
+```
+
+<SectionTab as="h1" sectionId="percentile-algorithm">L’algorithme de percentile</SectionTab>
+
+`Statistic.percentile(p)` utilise l’algorithme Hyndman-Fan **type-7** (valeur par défaut de NumPy). Pour des scores triés `x` de longueur `n` et un rang `h = (n - 1) * p / 100`, le résultat interpole linéairement entre `x[floor(h)]` et `x[ceil(h)]` ; un score unique renvoie ce score. Le même algorithme s’exécute dans le SDK Python, le SDK TypeScript et le backend. Les mêmes scores produisent donc toujours la même valeur.
+
+<SectionTab as="h1" sectionId="empty-samples">Échantillons vides</SectionTab>
+
+Lorsqu’aucun score numérique réussi n’alimente le calcul, un `count` déclaré vaut `0` et toutes les autres statistiques déclarées valent `null` (non évaluables). Un ensemble de données vide ne peut donc jamais satisfaire par accident un objectif comme `Statistic.sum(goal=Goal.lte(0))`.

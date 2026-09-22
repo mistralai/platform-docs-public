@@ -347,6 +347,8 @@ const sidebarTreeData = (
             takeByHref('/studio/document-processing'),
             takeByHref('/studio/audio/overview'),
             takeByHref('/studio/batch-processing'),
+            sectionLabel('Monitor'),
+            takeByHref('/studio/observability'),
             sectionLabel('Safety & utilities'),
             takeByHref('/studio/knowledge-rag'),
             takeByHref('/studio/safety-moderation'),

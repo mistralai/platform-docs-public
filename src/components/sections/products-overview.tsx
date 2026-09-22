@@ -15,7 +15,7 @@ export function ProductsOverview({ showCta = false, showHeader = true }: { local
   const PRODUCT_SECTIONS = [
     {
       title: 'Vibe',
-      description: l.text("Mistral's unified agent. Work mode for productivity in the chat UI, Code mode for the terminal and editor, Chat mode for quick conversations.", { context: 'Description of the Vibe product' }),
+      description: l.text("Mistral's unified agent. Work mode for conversations and productivity in the web and mobile apps, Code mode for the terminal and editor.", { context: 'Description of the Vibe product' }),
       logo: PRODUCT_LOGOS['vibe'],
       href: '/vibe',
       color: PRODUCT_COLORS['vibe'],

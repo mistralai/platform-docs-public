@@ -56,8 +56,8 @@ export function getPlatformFeaturesData(l: Lingo): PlatformFeature[] {
         {
             id: 'le-chat-code-interpreter',
             name: l.text('Code Interpreter', { context: 'Name of a Mistral platform feature' }),
-            shortDescription: l.text('Run Python natively in chat', { context: 'Short description of the Code Interpreter feature' }),
-            description: l.text('A secure Python sandbox available inside Vibe (Chat mode for Python, with a TypeScript code environment in Work mode). Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.', { context: 'Detailed description of the Code Interpreter feature' }),
+            shortDescription: l.text('Run Python and TypeScript in Work', { context: 'Short description of the Code Interpreter feature' }),
+            description: l.text('A native Python and TypeScript sandbox in Vibe Work, available on paid plans. Upload datasets to explore data, generate charts, and automate data transformations without leaving your browser.', { context: 'Detailed description of the Code Interpreter feature' }),
             tags: [
                 l.text('Python', { context: 'Keyword tag for the Code Interpreter feature' }),
                 l.text('Data', { context: 'Keyword tag for the Code Interpreter feature' }),

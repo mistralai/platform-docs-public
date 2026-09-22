@@ -1,0 +1,175 @@
+---
+id: observability_evaluations_api_reference
+title: Référence API
+sidebar_position: 9
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Référence API
+
+Référence des types principaux de l'Evaluation SDK et du point d'entrée principal `evaluation.run()`. Pour la référence au niveau méthode des opérations avancées, consultez [Réessayer les enregistrements en échec](/studio/observability/evaluations/advanced-guides/retry-failed-records), [Réévaluer les runs persistés](/studio/observability/evaluations/advanced-guides/rescoring) et [Optimiser les prompts et les paramètres](/studio/observability/evaluations/optimization).
+
+<SectionTab as="h1" sectionId="evaluation-run">evaluation.run()</SectionTab>
+
+Point d'entrée principal pour exécuter des évaluations.
+
+```python
+run = await client.evaluation.run(
+    dataset=...,
+    task=...,
+    evaluators=...,
+    # optional parameters below
+)
+```
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `dataset` | `Sequence[Mapping[str, Any]]` | **obligatoire** | Liste des enregistrements d'entrée (10 000 maximum par run). |
+| `task` | `TaskFunction` | **obligatoire** | Fonction asynchrone ou synchrone `(ctx: TaskContext) -> output`. |
+| `evaluators` | `list[Evaluator]` | **obligatoire** | Évaluateurs par enregistrement. |
+| `run_evaluators` | `list[RunEvaluator]` | `[]` | Évaluateurs au niveau du run (exécutés après tous les enregistrements). |
+| `project` | `Project` | `None` | Projet dans lequel enregistrer (créé s'il n'existe pas). |
+| `evaluation` | `Evaluation` | `None` | Évaluation dans laquelle enregistrer (créée si elle n'existe pas). |
+| `name` | `str` | `None` | Nom du run. |
+| `description` | `str` | `None` | Description du run. |
+| `metadata` | `dict` | `{}` | Métadonnées clé-valeur personnalisées. |
+| `tags` | `list[str]` | `[]` | Tags pour filtrer dans Studio. |
+| `num_generations` | `int` | `1` | Nombre d'exécutions de la tâche par enregistrement d'entrée. |
+| `local` | `bool` | `False` | Si `True`, ignore le téléchargement vers Studio. |
+| `system` | `System` | `None` | Configuration système transmise à la tâche et aux scorers via les objets de contexte. |
+| `upload_batch_size` | `int` | `10` | Taille de batch pour les téléchargements en streaming (500 maximum). |
+| `max_concurrency` | `int` | `10` | Nombre maximal d'enregistrements traités simultanément. |
+
+Il renvoie un `EvaluationRun` :
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `records` | `list[EvaluationRunRecord]` | Tous les enregistrements traités. |
+| `statistics` | `dict[str, Statistics]` | Statistiques agrégées par évaluateur. |
+| `run_scores` | `dict[str, Any]` | Résultats des évaluateurs au niveau du run. |
+
+| Méthode | Description |
+|--------|-------------|
+| `run.show(mode, level)` | Affiche les résultats. `mode` : `"text"` (par défaut), `"json"`. `level` : `"run"` (par défaut), `"records"`, `"generations"`, `"scores"`. |
+
+<SectionTab as="h1" sectionId="project">Projet</SectionTab>
+
+Un projet regroupe des évaluations liées. Vous pouvez le voir comme un dossier, par exemple « Chatbot QA » ou « RAG Pipeline ».
+
+```python
+Project(name="My Project")       # create or get by name
+Project(slug="my-project")       # get by slug
+```
+
+Vous devez fournir au moins `name` ou `slug`. Si le projet n'existe pas encore, il est créé automatiquement.
+
+<SectionTab as="h1" sectionId="evaluation">Évaluation</SectionTab>
+
+Une évaluation est un test nommé que vous exécutez de façon répétée dans le temps, par exemple « Précision sur les prompts French ». Chaque appel à `evaluation.run()` crée un nouveau **run** sous cette évaluation, ce qui vous permet de suivre l'évolution des scores d'un run à l'autre.
+
+```python
+Evaluation(name="My Eval")       # create or get by name
+Evaluation(slug="my-eval")       # get by slug
+```
+
+Vous devez fournir au moins `name` ou `slug`. Si l'évaluation n'existe pas encore, elle est créée automatiquement sous le projet indiqué.
+
+<SectionTab as="h1" sectionId="evaluator">Évaluateur</SectionTab>
+
+Un évaluateur définit la manière de noter chaque enregistrement individuel. Il associe un nom à une fonction de scoring qui reçoit un `ScorerContext` et renvoie un score.
+
+```python
+Evaluator(
+    name="accuracy",
+    scorer=my_scorer,
+    description="Optional description",
+    tags=["tag1"],
+    num_scores=1,
+    goal=Goal.gte(0.8),
+)
+```
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | **obligatoire** | Nom unique de l'évaluateur. |
+| `scorer` | `ScoreFunction` | **obligatoire** | `(ctx: ScorerContext) -> value` ou `Score`. |
+| `description` | `str` | `None` | Description affichée dans Studio au survol. |
+| `tags` | `list[str]` | `[]` | Tags. |
+| `num_scores` | `int` | `1` | Nombre de passes de scoring par génération (résultats moyennés — utile avec des juges LLM bruités). |
+| `goal` | `GoalSpec` | `None` | Objectif de réussite/échec par génération (par exemple, `Goal.gte(0.8)`). |
+| `direction` | `"maximize"` \| `"minimize"` | `None` | Indique le sens considéré comme meilleur. Déduit de l'objectif lorsqu'il n'est pas défini. |
+| `min_value` / `max_value` | `float` | `None` | Fenêtre de normalisation min-max (définissez les deux valeurs ou aucune). |
+| `weight` | `float` | `1.0` | Pression d'optimisation ; `0` transforme la métrique en contrainte pure. |
+| `statistics` | `list[StatisticSpec]` | `None` | Statistiques au niveau du run à exposer. Consultez [Configurer les statistiques](/studio/observability/evaluations/statistics). |
+| `aggregate_goal` | `GoalSpec` | `None` | Obsolète — préférez un objectif au niveau de la statistique. Objectif au niveau du run évalué par rapport au score moyen. |
+
+Un scorer peut renvoyer :
+
+- `int` ou `float` — score numérique (statistiques : avg, min, max, std, count).
+- `str` ou `bool` — score catégoriel (statistiques : fréquences, mode).
+- `Score(value=..., rationale=..., metadata=...)` — score riche avec une explication et des données supplémentaires.
+
+<SectionTab as="h1" sectionId="runevaluator">RunEvaluator</SectionTab>
+
+Un évaluateur de run opère sur le **jeu complet de résultats** après le traitement de tous les enregistrements. Utilisez-le pour les métriques agrégées qui ne peuvent pas être exprimées par enregistrement, comme le score F1, les portes de réussite/échec globales ou l'analyse entre enregistrements.
+
+```python
+RunEvaluator(
+    name="accuracy_gate",
+    scorer=my_run_scorer,
+)
+```
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | **obligatoire** | Nom unique. |
+| `scorer` | `RunEvaluatorFunction` | **obligatoire** | `(ctx: RunEvaluatorContext) -> value` ou `Score`. |
+| `description` | `str` | `None` | Description. |
+| `tags` | `list[str]` | `[]` | Tags. |
+| `goal` | `GoalSpec` | `None` | Objectif de réussite/échec pour le score au niveau du run (par exemple, `Goal.gte(0.85)`). |
+
+Le scorer reçoit un `RunEvaluatorContext` qui donne accès à tous les enregistrements, à leurs scores, aux statistiques agrégées et à la configuration système. Consultez le [guide des évaluateurs de run](/studio/observability/evaluations/advanced-guides/run-evaluators) pour des exemples.
+
+<SectionTab as="h1" sectionId="goal">Objectif</SectionTab>
+
+Fabrique de spécifications d'objectif. Consultez [Définir des objectifs](/studio/observability/evaluations/goals) pour le guide complet.
+
+```python
+from mistralai.evaluations import Goal
+
+Goal.gte(0.8)             # gate: score >= 0.8
+Goal.lte(0.1)             # gate: score <= 0.1
+Goal.between(0.2, 0.8)    # gate: 0.2 <= score <= 0.8
+```
+
+Un `Goal` est uniquement une porte. Pour déclarer le sens considéré comme meilleur, définissez `direction="maximize"` / `"minimize"` sur l'évaluateur. Cette valeur est aussi déduite d'un objectif `gte`/`lte`.
+
+<SectionTab as="h1" sectionId="system">Système</SectionTab>
+
+Un système capture la configuration qui pilote votre tâche : nom du modèle, température, prompt système, définitions d'outils, etc. Enregistrer ces éléments comme paramètres, plutôt que les coder en dur, les rend visibles dans Studio et vous permet de comparer les runs entre différentes configurations. Consultez [Configurer les paramètres système](/studio/observability/evaluations/system-params) pour plus de détails.
+
+```python
+from mistralai.evaluations import System
+
+system = System(name="small-t0", params={"model": "mistral-small-latest", "temperature": 0})
+```
+
+Lorsque `system` est fourni, il est disponible via `ctx.system` dans les tâches et les scorers :
+
+```python
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        temperature=float(ctx.system.params["temperature"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+```
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | **obligatoire** | Nom du système (affiché dans Studio). |
+| `params` | `dict[str, Any]` | `{}` | Configuration clé-valeur libre transmise à la tâche. |
+
+Consultez [Utiliser les objets de contexte](/studio/observability/evaluations/advanced-guides/context-objects) pour la référence complète du contexte.

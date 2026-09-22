@@ -1,0 +1,175 @@
+---
+id: observability_evaluations_api_reference
+title: API reference
+sidebar_position: 9
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# API reference
+
+Reference for the Evaluation SDK's core types and the main `evaluation.run()` entry point. For the method-level reference of the advanced operations, see [Retry failed records](/studio/observability/evaluations/advanced-guides/retry-failed-records), [Rescore persisted runs](/studio/observability/evaluations/advanced-guides/rescoring), and [Optimize prompts and parameters](/studio/observability/evaluations/optimization).
+
+<SectionTab as="h1" sectionId="evaluation-run">evaluation.run()</SectionTab>
+
+The main entry point for running evaluations.
+
+```python
+run = await client.evaluation.run(
+    dataset=...,
+    task=...,
+    evaluators=...,
+    # optional parameters below
+)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset` | `Sequence[Mapping[str, Any]]` | **required** | List of input records (max 10,000 per run). |
+| `task` | `TaskFunction` | **required** | Async or sync function `(ctx: TaskContext) -> output`. |
+| `evaluators` | `list[Evaluator]` | **required** | Per-record evaluators. |
+| `run_evaluators` | `list[RunEvaluator]` | `[]` | Run-level evaluators (executed after all records). |
+| `project` | `Project` | `None` | Project to save to (created if it doesn't exist). |
+| `evaluation` | `Evaluation` | `None` | Evaluation to save to (created if it doesn't exist). |
+| `name` | `str` | `None` | Run name. |
+| `description` | `str` | `None` | Run description. |
+| `metadata` | `dict` | `{}` | Custom key-value metadata. |
+| `tags` | `list[str]` | `[]` | Tags for filtering in Studio. |
+| `num_generations` | `int` | `1` | Number of task executions per input record. |
+| `local` | `bool` | `False` | If `True`, skip upload to Studio. |
+| `system` | `System` | `None` | System config passed to the task and scorers via context objects. |
+| `upload_batch_size` | `int` | `10` | Batch size for streaming uploads (max 500). |
+| `max_concurrency` | `int` | `10` | Maximum concurrent record processing. |
+
+It returns an `EvaluationRun`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `records` | `list[EvaluationRunRecord]` | All processed records. |
+| `statistics` | `dict[str, Statistics]` | Per-evaluator aggregate statistics. |
+| `run_scores` | `dict[str, Any]` | Run-level evaluator results. |
+
+| Method | Description |
+|--------|-------------|
+| `run.show(mode, level)` | Display results. `mode`: `"text"` (default), `"json"`. `level`: `"run"` (default), `"records"`, `"generations"`, `"scores"`. |
+
+<SectionTab as="h1" sectionId="project">Project</SectionTab>
+
+A project groups related evaluations together. Think of it as a folder — for example, "Chatbot QA" or "RAG Pipeline".
+
+```python
+Project(name="My Project")       # create or get by name
+Project(slug="my-project")       # get by slug
+```
+
+At least one of `name` or `slug` must be provided. If the project doesn't exist yet, it is created automatically.
+
+<SectionTab as="h1" sectionId="evaluation">Evaluation</SectionTab>
+
+An evaluation is a named test you run repeatedly over time — for example, "Accuracy on French prompts". Each call to `evaluation.run()` creates a new **run** under it, so you can track how scores evolve across runs.
+
+```python
+Evaluation(name="My Eval")       # create or get by name
+Evaluation(slug="my-eval")       # get by slug
+```
+
+At least one of `name` or `slug` must be provided. If the evaluation doesn't exist yet, it is created automatically under the given project.
+
+<SectionTab as="h1" sectionId="evaluator">Evaluator</SectionTab>
+
+An evaluator defines how to score each individual record. It pairs a name with a scorer function that receives a `ScorerContext` and returns a score.
+
+```python
+Evaluator(
+    name="accuracy",
+    scorer=my_scorer,
+    description="Optional description",
+    tags=["tag1"],
+    num_scores=1,
+    goal=Goal.gte(0.8),
+)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | **required** | Unique evaluator name. |
+| `scorer` | `ScoreFunction` | **required** | `(ctx: ScorerContext) -> value` or `Score`. |
+| `description` | `str` | `None` | Description shown in Studio on hover. |
+| `tags` | `list[str]` | `[]` | Tags. |
+| `num_scores` | `int` | `1` | Number of scoring passes per generation (results averaged — useful for noisy LLM judges). |
+| `goal` | `GoalSpec` | `None` | Per-generation pass/fail goal (for example, `Goal.gte(0.8)`). |
+| `direction` | `"maximize"` \| `"minimize"` | `None` | Which way is better. Inferred from the goal when unset. |
+| `min_value` / `max_value` | `float` | `None` | Min-max normalization window (set both or neither). |
+| `weight` | `float` | `1.0` | Optimization pressure; `0` makes the metric a pure constraint. |
+| `statistics` | `list[StatisticSpec]` | `None` | Which run-level statistics to expose. See [Configure statistics](/studio/observability/evaluations/statistics). |
+| `aggregate_goal` | `GoalSpec` | `None` | Deprecated — prefer a statistic-level goal. Run-level goal evaluated against the average score. |
+
+A scorer can return:
+
+- `int` or `float` — numeric score (statistics: avg, min, max, std, count).
+- `str` or `bool` — categorical score (statistics: frequencies, mode).
+- `Score(value=..., rationale=..., metadata=...)` — rich score with an explanation and extra data.
+
+<SectionTab as="h1" sectionId="runevaluator">RunEvaluator</SectionTab>
+
+A run evaluator operates on the **full set of results** after all records have been processed. Use it for aggregate metrics that can't be expressed per-record — like F1 score, global pass/fail gates, or cross-record analysis.
+
+```python
+RunEvaluator(
+    name="accuracy_gate",
+    scorer=my_run_scorer,
+)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | **required** | Unique name. |
+| `scorer` | `RunEvaluatorFunction` | **required** | `(ctx: RunEvaluatorContext) -> value` or `Score`. |
+| `description` | `str` | `None` | Description. |
+| `tags` | `list[str]` | `[]` | Tags. |
+| `goal` | `GoalSpec` | `None` | Pass/fail goal for the run-level score (for example, `Goal.gte(0.85)`). |
+
+The scorer receives a `RunEvaluatorContext` with access to all records, their scores, aggregate statistics, and system config. See the [run evaluators guide](/studio/observability/evaluations/advanced-guides/run-evaluators) for examples.
+
+<SectionTab as="h1" sectionId="goal">Goal</SectionTab>
+
+Factory for creating goal specifications. See [Set goals](/studio/observability/evaluations/goals) for the full guide.
+
+```python
+from mistralai.evaluations import Goal
+
+Goal.gte(0.8)             # gate: score >= 0.8
+Goal.lte(0.1)             # gate: score <= 0.1
+Goal.between(0.2, 0.8)    # gate: 0.2 <= score <= 0.8
+```
+
+A `Goal` is only a gate. To declare which way is better, set `direction="maximize"` / `"minimize"` on the evaluator (it is also inferred from a `gte`/`lte` goal).
+
+<SectionTab as="h1" sectionId="system">System</SectionTab>
+
+A system captures the configuration that drives your task — model name, temperature, system prompt, tool definitions, and so on. Storing these as params (instead of hardcoding them) makes them visible in Studio so you can compare runs across different configs. See [Configure system params](/studio/observability/evaluations/system-params) for details.
+
+```python
+from mistralai.evaluations import System
+
+system = System(name="small-t0", params={"model": "mistral-small-latest", "temperature": 0})
+```
+
+When `system` is provided, it is available via `ctx.system` in tasks and scorers:
+
+```python
+async def task(ctx: TaskContext) -> str:
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        temperature=float(ctx.system.params["temperature"]),
+        messages=[{"role": "user", "content": ctx.input_record["prompt"]}],
+    )
+    return str(response.choices[0].message.content)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `str` | **required** | System name (shown in Studio). |
+| `params` | `dict[str, Any]` | `{}` | Free-form key-value config passed to the task. |
+
+See [Use context objects](/studio/observability/evaluations/advanced-guides/context-objects) for the full context reference.

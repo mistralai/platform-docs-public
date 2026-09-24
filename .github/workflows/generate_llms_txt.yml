@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  id-token: write
 
 jobs:
   generate-docs:
@@ -31,11 +32,40 @@ jobs:
       - name: Generate llms.txt & llms-full.txt
         run: python llms_txt/generate_llms_txt.py
 
+      - name: Request public docs Warden token
+        id: warden
+        env:
+          X_PRIVATE_ACCESS_STAGING: ${{ secrets.X_PRIVATE_ACCESS_STAGING }}
+        run: |
+          set -euo pipefail
+
+          OIDC_TOKEN=$(curl --fail --silent --show-error --location \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://warden.globalaegis.net" \
+            | jq -er '.value')
+
+          WARDEN_HEADERS=(
+            -H "Authorization: Bearer $OIDC_TOKEN"
+            -H "Content-Type: application/json"
+            -H "Accept: text/plain"
+          )
+          if [[ -n "${X_PRIVATE_ACCESS_STAGING:-}" ]]; then
+            WARDEN_HEADERS+=( -H "X-Private-Access: $X_PRIVATE_ACCESS_STAGING" )
+          fi
+
+          TOKEN=$(curl --fail-with-body --silent --show-error --location \
+            --request POST https://warden.globalaegis.net/token \
+            "${WARDEN_HEADERS[@]}" \
+            --data '{"type":"github","repository":"platform-docs-public","perms":["contents:write","pull_requests:write"]}')
+
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
       # PR for all changes produced above
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
         with:
-          token: ${{ secrets.PUBLIC_DOCS_WRITE_TOKEN }}
+          token: ${{ steps.warden.outputs.token }}
           branch: auto/docs-update
           title: "Auto-update llms.txt & llms-full.txt"
           body: |

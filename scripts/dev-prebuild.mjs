@@ -173,5 +173,25 @@ if (!isCurrent(rawMdxStamp, rawMdxStamp, rawMdxFingerprint)) {
   console.log('▸ rawmdx:export   skipped (up to date)');
 }
 
+// --- llms:generate ---
+// Output: public/llms.txt + public/llms-full.txt (build-time derived artifacts).
+const llmsStamp = path.join(ROOT, 'public', '.llms-built');
+const llmsScriptFingerprint = fingerprint(
+  [path.join(ROOT, 'src', 'scripts', 'generate-llms-txt.ts')],
+  TS_EXTS
+);
+const llmsFingerprint = fingerprint(
+  [path.join(ROOT, 'src', 'content', 'en', 'docs')],
+  ['.md', '.mdx'],
+  [`llms:${llmsScriptFingerprint}`]
+);
+
+if (!isCurrent(llmsStamp, llmsStamp, llmsFingerprint)) {
+  run('llms:generate', 'pnpm -s llms:generate');
+  writeStamp(llmsStamp, llmsFingerprint);
+} else {
+  console.log('▸ llms:generate   skipped (up to date)');
+}
+
 // --- release assets ---
 run('copy-release-assets', 'pnpm -s copy-release-assets');

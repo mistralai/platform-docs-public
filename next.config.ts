@@ -106,6 +106,10 @@ const nextConfig: NextConfig = {
 						value: "1; mode=block",
 					},
 					{
+						key: "Link",
+						value: '</llms.txt>; rel="describedby"',
+					},
+					{
 						key: "Content-Security-Policy",
 						value: getCspHeaderValue(),
 					},

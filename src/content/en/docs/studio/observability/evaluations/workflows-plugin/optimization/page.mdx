@@ -1,0 +1,172 @@
+---
+id: observability_evaluations_workflows_plugin_optimization
+title: Optimize prompts and parameters in a workflow
+sidebar_label: Optimization
+sidebar_position: 3
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Optimize prompts and parameters in a workflow
+
+`evaluation.optimize()` runs the [optimizer](/studio/observability/evaluations/optimization) inside a workflow. It searches over the `Tunable` slots of a `TunableSystem`, runs each candidate as a tracked evaluation run, and returns the best configuration with the full trajectory.
+
+The API mirrors the SDK's `client.evaluation.optimize()`: same `TunableSystem`, same `SimpleOptimizer` and `GEPA` algorithms, same result shape. Read the [SDK guide](/studio/observability/evaluations/optimization) first for the mental model, the algorithms, and how directions, weights, and goals drive the objective. This page covers what changes in a workflow: your task and scorers run as activities, and so do the mutation and per-candidate scoring.
+
+<SectionTab as="h1" sectionId="full-example">A full optimization workflow</SectionTab>
+
+Call `evaluation.optimize()` from a `@workflow.entrypoint`. The task and scorers are regular `@evaluation.task` and `@evaluation.scorer` functions that read every slot from `ctx.system.params`:
+
+```python
+from mistralai.workflows import workflow
+from mistralai.workflows.client import get_mistral_client
+from mistralai.workflows.plugins.evaluations import GEPA, Tunable, TunableSystem, evaluation
+from mistralai.workflows.plugins.evaluations.types import (
+    Evaluation, Evaluator, Goal, Project, Score, ScorerContext, TaskContext,
+)
+
+dataset = [
+    {
+        "text": "The Eiffel Tower was designed by Gustave Eiffel and completed in 1889 in Paris. "
+                "Standing 330 metres tall, it was the world's tallest structure for 41 years.",
+        "facts": ["Gustave Eiffel", "1889", "330", "Paris"],
+    },
+    # ... more records
+]
+
+@evaluation.task
+async def summarize(ctx: TaskContext) -> str:
+    client = get_mistral_client()
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        temperature=0,
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["instruction"])},
+            {"role": "user", "content": str(ctx.input_record["text"])},
+        ],
+    )
+    return str(response.choices[0].message.content or "")
+
+@evaluation.scorer
+async def coverage(ctx: ScorerContext) -> Score:
+    facts = ctx.input_record["facts"]
+    hits = [f for f in facts if f.lower() in str(ctx.output).lower()]
+    return Score(value=len(hits) / len(facts), rationale=f"{len(hits)}/{len(facts)} facts kept")
+
+@evaluation.scorer
+async def conciseness(ctx: ScorerContext) -> Score:
+    ratio = len(str(ctx.output).split()) / len(str(ctx.input_record["text"]).split())
+    return Score(value=max(0.0, min(1.0, (0.75 - ratio) / 0.45)))
+
+@workflow.define(name="optimize-summary-prompt")
+class OptimizeSummaryPrompt:
+    @workflow.entrypoint
+    async def run(self) -> dict:
+        result = await evaluation.optimize(
+            project=Project(name="Summarization"),
+            evaluation=Evaluation(name="Summary prompt optimization"),
+            steer="preserve every key fact from the source while compressing to the target length",
+            system=TunableSystem(
+                name="candidate",
+                params={
+                    "instruction": Tunable("Summarize the text."),  # optimized
+                    "model": "mistral-small-latest",                # fixed
+                },
+            ),
+            dataset=dataset,
+            task=summarize,
+            evaluators=[
+                Evaluator(name="coverage", scorer=coverage, goal=Goal.gte(0.6)),
+                Evaluator(name="conciseness", scorer=conciseness, goal=Goal.gte(0.4)),
+            ],
+            algo=GEPA(iterations=8, pareto_size=3, minibatch_size=5, holdout=0.2, random_seed=42),
+            tags=["optimization"],
+        )
+        return result.model_dump()
+```
+
+Swap `GEPA(...)` for `SimpleOptimizer(iterations=4, patience=2)` to use the greedy baseline. The rest of the call is identical.
+
+<SectionTab as="h1" sectionId="launch-and-read">Launch the workflow and read the result</SectionTab>
+
+An optimization can run longer than the synchronous wait window, so start the execution without waiting and poll for completion. The workflow returns the `OptimizeResult` as a dict: validate it back to use its fields and `show()`:
+
+```python
+import os
+
+from mistralai.client import Mistral
+from mistralai.workflows.plugins.evaluations import OptimizeResult
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+started = await client.workflows.execute_workflow_async(
+    workflow_identifier="optimize-summary-prompt",
+    input={},
+    wait_for_result=False,
+)
+response = await client.workflows.wait_for_workflow_completion_async(
+    started.execution_id,
+    polling_interval=5,
+    max_attempts=240,
+)
+
+payload = response.result or {}
+result = OptimizeResult.model_validate(payload.get("result", payload))
+
+result.show()
+if result.winner is not None:
+    print("Best instruction:", result.winner.system["instruction"])
+```
+
+The result has the same fields and verdicts (`success`, `best_attempt`, `no_change`) as in the SDK. See [Reading the result](/studio/observability/evaluations/optimization#reading-the-result).
+
+<SectionTab as="h1" sectionId="in-studio">The optimization in Studio</SectionTab>
+
+The plugin records the search in Studio as an optimization:
+
+- A `running` optimization is created before the search starts, tagged with the workflow execution for cross-linking.
+- Every candidate run is linked to the optimization when it's created.
+- When the search ends, the optimization gets its final status and outcome: verdict, summary, and baseline and best scores.
+
+The optimization URL is logged when the optimization is created and when it finishes, and returned as `result.optimization_url`.
+
+`name` and `description` are optional. When you omit them, they're generated from `steer`. When the search finds a winner or a best attempt, Studio also shows a short summary of what changed between the baseline and the winning parameters, and why.
+
+<SectionTab as="h1" sectionId="limits">Limits</SectionTab>
+
+- **No local mode.** Scoring each candidate reads its run back from Studio, so `local=True` raises a `ValueError`. Use the SDK's `client.evaluation.optimize(local=True)` to iterate locally.
+- **Run evaluators don't drive selection.** `run_evaluators` are recorded on each candidate's run, but only the per-record `evaluators` define the objective and the gates.
+- **Inline datasets only.** `dataset` takes a list of records.
+
+<SectionTab as="h1" sectionId="custom-mutators">Custom mutators</SectionTab>
+
+By default, the optimizer proposes candidates with a reflective LLM mutator that runs as an activity. To replace it, pass your own mutator to the algorithm's `mutator` argument, as an `@evaluation.mutator` activity:
+
+```python
+from mistralai.workflows.plugins.evaluations import GEPA, MutatorProposal, MutatorRequest, evaluation
+
+@evaluation.mutator
+async def rewrite_instruction(request: MutatorRequest) -> MutatorProposal:
+    new_instruction = await propose_rewrite(request.current["instruction"], request.failures, request.steer)
+    return MutatorProposal(
+        changed={"instruction": new_instruction},
+        hypothesis="Name each fact type explicitly to stop the model from dropping dates.",
+    )
+
+algo = GEPA(iterations=8, mutator=rewrite_instruction)
+```
+
+A mutator can also be a workflow: pass the `@workflow.define` class or its name to `mutator`. Its entrypoint receives the `MutatorRequest` and returns a `MutatorProposal`.
+
+`MutatorRequest` carries:
+
+| Field | Description |
+|-------|-------------|
+| `current` | The parent candidate's tunable values |
+| `tunables` | The spec of each tunable slot (seed and bounds) |
+| `objectives` | Each evaluator's name, description, direction, and target |
+| `failures` | The worst records, with their input, output, score, and rationales |
+| `history` | The candidates already tried, with their scores |
+| `steer` | The `steer` passed to `optimize()`, if any |
+
+`MutatorProposal` carries `changed` (new values for some or all tunable slots) and an optional `hypothesis`. `steer` is recorded on the optimization whether or not your mutator uses it.

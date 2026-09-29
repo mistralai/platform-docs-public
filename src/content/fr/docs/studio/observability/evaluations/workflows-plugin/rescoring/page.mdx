@@ -1,0 +1,66 @@
+---
+id: observability_evaluations_workflows_plugin_rescoring
+title: Rescorer les exécutions persistées d'un workflow
+sidebar_label: Rescoring
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Rescorer les exécutions persistées d'un workflow
+
+`evaluation.rescore()` évalue les sorties déjà persistées dans Studio **sans réexécuter la tâche**, vos scorers s'exécutant en tant qu'activités. Produisez une exécution de tâche coûteuse une seule fois, puis itérez sur vos scorers autant de fois que nécessaire.
+
+La sémantique est identique à celle de `client.evaluation.rescore()` du SDK. Consultez [Rescore persisted runs](/studio/observability/evaluations/advanced-guides/rescoring) pour le modèle complet. L'exécution persistée dans Studio est la source de vérité, pas l'historique du workflow.
+
+<SectionTab as="h1" sectionId="task-only-runs">Exécutions de tâche seules</SectionTab>
+
+Pour persister les sorties de tâche sans les évaluer, passez une liste d'évaluateurs vide. `evaluators` reste obligatoire, donc la liste vide est un opt-in explicite :
+
+```python
+result = await evaluation.run(
+    project=Project(name="Support agent"),
+    evaluation=Evaluation(name="Agent rollouts"),
+    dataset=dataset,
+    task=run_agent,
+    evaluators=[],
+)
+```
+
+Les `run_evaluators` fonctionnent toujours sans évaluateurs : un run evaluator peut agréger les sorties, les erreurs, la latence ou le coût.
+
+<SectionTab as="h1" sectionId="rescore">Rescorer une exécution</SectionTab>
+
+```python
+result = await evaluation.rescore(
+    run_id=run_id,
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+    run_evaluators=[RunEvaluator(name="pass_rate", scorer=pass_rate)],
+)
+```
+
+`rescore()` :
+
+1. Charge l'exécution persistée et ses enregistrements : les entrées et les sorties de tâche.
+2. Exécute les scorers sur les sorties persistées, en tant qu'activités.
+3. Persiste les nouveaux scores, puis recalcule les statistiques et les objectifs.
+4. Exécute les run evaluators sur les enregistrements mis à jour.
+
+Les scorers et les run evaluators doivent être décorés avec `@evaluation.scorer` et `@evaluation.run_scorer`, comme dans `run()`. Passez au moins un evaluator ou un run evaluator.
+
+<SectionTab as="h1" sectionId="add-and-replace">Ajouter et remplacer</SectionTab>
+
+`rescore()` ne modifie que les évaluateurs que vous passez. Un évaluateur portant un nouveau nom est ajouté ; un évaluateur portant un nom existant est remplacé, définition et scores. Le téléchargement des scores est idempotent, donc les retries d'activité ne dupliquent jamais les scores.
+
+Si les scores de génération changent alors qu'un run evaluator persisté n'est pas recalculé dans le même appel, son nom est journalisé et renvoyé dans `result.potentially_stale_run_evaluators`. Passez ces run evaluators à `run_evaluators` pour les recalculer.
+
+<SectionTab as="h1" sectionId="api-reference">Référence API</SectionTab>
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `run_id` | `str` | **obligatoire** | ID d'une exécution persistée |
+| `evaluators` | `list[Evaluator] \| None` | `None` | Évaluateurs à ajouter ou remplacer |
+| `run_evaluators` | `list[RunEvaluator] \| None` | `None` | Run evaluators à ajouter, remplacer ou recalculer |
+| `max_concurrency` | `int` | `10` | Nombre maximal de générations évaluées simultanément |
+
+Renvoie un `EvalResult`, avec `potentially_stale_run_evaluators` défini le cas échéant.

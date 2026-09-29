@@ -23,7 +23,7 @@ The SDK follows a simple mental model:
 Dataset  →  Task  →  Evaluators  →  Results
 ```
 
-- **Dataset**: a list of input records (dicts) with your test cases.
+- **Dataset**: a list of input records (dicts) with your test cases, or a Studio dataset.
 - **Task**: an async or sync function that receives a `TaskContext` and produces an output.
 - **Evaluators**: functions that receive a `ScorerContext` and score each output.
 - **Results**: statistics and per-record scores, displayed in the terminal and uploaded to Studio.
@@ -145,6 +145,10 @@ async def task(ctx: TaskContext) -> str:
 
 The task can return any type: strings, Pydantic models, or dicts. The SDK serializes the output for upload.
 
+:::caution[Prefer async tasks for long-running work]
+A sync task runs on the event loop, which also sends the run's heartbeat to Studio. A sync call that blocks for several minutes starves the heartbeat, and Studio can then mark a live run as cancelled. Use an async task, or offload blocking work with `await asyncio.to_thread(...)`.
+:::
+
 `TaskContext` gives you typed access to `ctx.input_record` (the current dataset record), `ctx.system` (the `System` config from `evaluation.run()`), and `ctx.metadata` (run metadata).
 
   </ExplorerTab>
@@ -189,7 +193,7 @@ system = System(name="mistral-small-t0", params={
 
 In Studio, each run shows its `System` config, so you can compare runs side by side.
 
-:::tip Compare configurations
+:::tip[Compare configurations]
 Run the same evaluation with different `System` objects to compare model versions or prompt variants without changing your task code.
 :::
 
@@ -308,7 +312,7 @@ Cell values render automatically based on type: plain text, JSON objects, and LL
 
 Work through the building blocks in the order you use them to build an evaluation:
 
-- [Datasets](/studio/observability/evaluations/datasets): structure your test cases as typed Python records.
+- [Datasets](/studio/observability/evaluations/datasets): structure your test cases as typed Python records, or use a Studio dataset.
 - [Configure system params](/studio/observability/evaluations/system-params): externalize task configuration for side-by-side comparison in Studio.
 - [Evaluators](/studio/observability/evaluations/evaluators): define scorers for each metric — rule-based functions or LLM-as-judge.
 - [Set goals](/studio/observability/evaluations/goals): define pass/fail thresholds and set direction and normalization on evaluators.
@@ -325,10 +329,14 @@ Work through the building blocks in the order you use them to build an evaluatio
 - [Retry failed records](/studio/observability/evaluations/advanced-guides/retry-failed-records): rerun only the records that errored, patch results in place.
 - [Rescore persisted runs](/studio/observability/evaluations/advanced-guides/rescoring): iterate on scorers without re-running the task.
 
+**Run in Mistral Workflows:**
+
+- [Workflow evaluation plugin](/studio/observability/evaluations/workflows-plugin): run the same evaluations inside a workflow, with parallel Temporal activities and automatic retries.
+
 **Reference:**
 
 - [API reference](/studio/observability/evaluations/api-reference): `evaluation.run()` and the core types.
-- [Migration guide and changelog](/studio/observability/evaluations/migrating): changes and breaking updates per version.
+- [Release history on PyPI](https://pypi.org/project/mistralai-evaluations/#history): changes per version.
 
 <SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
 
@@ -337,7 +345,7 @@ Work through the building blocks in the order you use them to build an evaluatio
   Python 3.12 or later is required.
   </FaqItem>
   <FaqItem question="Can I use synchronous functions for tasks and scorers?">
-  Yes. Both async and sync functions work for tasks and scorers. The SDK detects which style you're using automatically.
+  Yes. Both async and sync functions work for tasks and scorers. The SDK detects which style you're using automatically. For long-running tasks, prefer async: a sync task that blocks for several minutes can get a live run marked as cancelled.
   </FaqItem>
   <FaqItem question="How do I use an LLM as a judge?">
   An evaluator is a function: call the Mistral API inside your scorer and return a numeric score. See [Evaluators → LLM-as-judge](/studio/observability/evaluations/evaluators#llm-as-judge) for detailed examples including structured output and variance reduction.

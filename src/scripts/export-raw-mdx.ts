@@ -1,15 +1,14 @@
 import path from 'path';
 import { readdir, mkdir, readFile, writeFile, unlink, rm } from 'fs/promises';
 import { isDocsRouteHidden } from '@/lib/content/hidden';
+import {
+  cleanupContent,
+  removeAllImports,
+  resolveAndInlineMdxImports,
+} from '@/lib/content/inline-mdx-imports';
 
 const DOCS_ROOT = path.join(process.cwd(), 'src', 'content', 'en', 'docs');
 const OUT_ROOT = path.join(process.cwd(), 'public');
-
-interface MdxImport {
-  name: string;
-  importPath: string;
-  fullStatement: string;
-}
 
 async function ensureDirectoryExists(directoryPath: string): Promise<void> {
   await mkdir(directoryPath, { recursive: true });
@@ -82,76 +81,6 @@ async function listMdxFiles(
     }
   }
   return files;
-}
-
-function parseMdxImports(content: string): MdxImport[] {
-  const imports: MdxImport[] = [];
-  const importRegex =
-    /^import\s+(\w+)\s+from\s+['"]([^'"]+\.mdx)['"]\s*;?\s*$/gm;
-  let match;
-  while ((match = importRegex.exec(content)) !== null) {
-    imports.push({
-      name: match[1],
-      importPath: match[2],
-      fullStatement: match[0],
-    });
-  }
-  return imports;
-}
-
-function removeAllImports(content: string): string {
-  return content.replace(/^import\s+.*?from\s+['"][^'"]+['"]\s*;?\s*$/gm, '');
-}
-
-function cleanupContent(content: string): string {
-  let result = content.replace(/^\s*\n/gm, '\n');
-  result = result.replace(/\n{3,}/g, '\n\n');
-  result = result.trim();
-  return result;
-}
-
-async function resolveAndInlineMdxImports(
-  content: string,
-  currentFileDir: string,
-  visited: Set<string> = new Set()
-): Promise<string> {
-  const mdxImports = parseMdxImports(content);
-  if (mdxImports.length === 0) {
-    return content;
-  }
-  let result = content;
-  for (const imp of mdxImports) {
-    const resolvedPath = path.resolve(currentFileDir, imp.importPath);
-    if (visited.has(resolvedPath)) {
-      result = result.replace(imp.fullStatement, '');
-      continue;
-    }
-    visited.add(resolvedPath);
-    let importedContent = '';
-    try {
-      importedContent = await readFile(resolvedPath, 'utf8');
-    } catch {
-      result = result.replace(imp.fullStatement, '');
-      continue;
-    }
-    const importedDir = path.dirname(resolvedPath);
-    importedContent = await resolveAndInlineMdxImports(
-      importedContent,
-      importedDir,
-      visited
-    );
-    importedContent = removeAllImports(importedContent);
-    importedContent = cleanupContent(importedContent);
-    result = result.replace(imp.fullStatement, '');
-    const selfClosingRegex = new RegExp(`<${imp.name}\\s*/>`, 'g');
-    const openCloseRegex = new RegExp(
-      `<${imp.name}\\s*>\\s*</${imp.name}>`,
-      'g'
-    );
-    result = result.replace(selfClosingRegex, importedContent);
-    result = result.replace(openCloseRegex, importedContent);
-  }
-  return result;
 }
 
 async function processFile(sourcePath: string): Promise<string> {

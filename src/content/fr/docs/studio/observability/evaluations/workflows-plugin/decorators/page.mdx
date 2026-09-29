@@ -1,0 +1,100 @@
+---
+id: observability_evaluations_workflows_plugin_decorators
+title: Decorators
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Decorators
+
+Chaque fonction que vous transmettez au plugin s'exécute comme une activité Temporal. Un decorator marque la fonction pour le plugin et définit le comportement de son activité : timeout, tentatives et concurrence. `evaluation.run()` rejette toute tâche, scorer, évaluateur de run ou callback de métadonnées non décoré·e.
+
+Utilisez le decorator seul, ou appelez-le pour remplacer les valeurs par défaut :
+
+```python
+from datetime import timedelta
+
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import Score, ScorerContext, TaskContext
+
+@evaluation.task(execution_timeout=timedelta(minutes=30), max_concurrency=10)
+async def slow_task(ctx: TaskContext) -> str: ...
+
+@evaluation.scorer
+async def accuracy(ctx: ScorerContext) -> Score: ...
+```
+
+<SectionTab as="h1" sectionId="task">@evaluation.task</SectionTab>
+
+Marque la fonction qui produit un output pour chaque record. Elle reçoit un [`TaskContext`](/studio/observability/evaluations/advanced-guides/context-objects#taskcontext).
+
+| Paramètre | Par défaut | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 2 minutes | Temps maximal pour une exécution |
+| `retry_policy_max_attempts` | `2` | Nombre maximal de tentatives en cas d'échec |
+| `max_concurrency` | `5` | Nombre maximal d'exécutions de tâches simultanées |
+
+Avec [multiple generations](/studio/observability/evaluations/advanced-guides/num-generations), `max_concurrency` est un budget total réparti entre les records et les generations : plus de generations par record signifie moins de records en cours, et non plus d'appels simultanés.
+
+<SectionTab as="h1" sectionId="scorer">@evaluation.scorer</SectionTab>
+
+Marque un scorer transmis à un `Evaluator`. Il reçoit un [`ScorerContext`](/studio/observability/evaluations/advanced-guides/context-objects#scorercontext) et renvoie un `Score` ou un nombre.
+
+| Paramètre | Par défaut | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 1 minute | Temps maximal pour une exécution |
+| `retry_policy_max_attempts` | `2` | Nombre maximal de tentatives en cas d'échec |
+| `max_concurrency` | `5` | Nombre maximal de scorers exécutés simultanément pour chaque record |
+
+Quand un run comporte plusieurs évaluateurs, c'est le `max_concurrency` le plus faible parmi leurs scorers qui s'applique. Un scorer qui échoue encore après ses tentatives enregistre un score d'erreur pour ce record ; le run continue.
+
+<SectionTab as="h1" sectionId="run-scorer">@evaluation.run_scorer</SectionTab>
+
+Marque un scorer transmis à un `RunEvaluator`. Il s'exécute une seule fois, après le traitement de tous les records, et reçoit un [`RunEvaluatorContext`](/studio/observability/evaluations/advanced-guides/context-objects#runevaluatorcontext).
+
+| Paramètre | Par défaut | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 1 minute | Temps maximal pour une exécution |
+| `retry_policy_max_attempts` | `2` | Nombre maximal de tentatives en cas d'échec |
+
+Quand les résultats sont téléchargés dans Studio, la lecture des records en retour ajoute jusqu'à 10 minutes à ce timeout. Voir [Run evaluators](/studio/observability/evaluations/workflows-plugin#run-evaluators).
+
+<SectionTab as="h1" sectionId="metadata-callbacks">Callbacks de métadonnées</SectionTab>
+
+Les callbacks de métadonnées stockent des informations dérivées des outputs des tâches ou des scores sur les records et sur le run dans Studio.
+
+`@evaluation.record_metadata` s'exécute une fois par record, après sa tâche et ses scorers. Il reçoit un [`RecordMetadataContext`](/studio/observability/evaluations/advanced-guides/context-objects#recordmetadatacontext), et le dict renvoyé est stocké dans les métadonnées du record. Transmettez-le à `record_metadata` :
+
+```python
+from mistralai.workflows.plugins.evaluations.types import RecordMetadataContext
+
+@evaluation.record_metadata
+async def output_length(ctx: RecordMetadataContext) -> dict:
+    return {"output_len": len(str(ctx.record.generations[0].output))}
+
+result = await evaluation.run(..., record_metadata=output_length)
+```
+
+`@evaluation.run_metadata` s'exécute une seule fois, après l'ensemble du run. Il reçoit un [`RunMetadataContext`](/studio/observability/evaluations/advanced-guides/context-objects#runmetadatacontext), et le dict renvoyé est ajouté aux métadonnées du run. Transmettez-le à `metadata` à la place d'un dict statique :
+
+```python
+from mistralai.workflows.plugins.evaluations.types import RunMetadataContext
+
+@evaluation.run_metadata
+async def record_count(ctx: RunMetadataContext) -> dict:
+    return {"num_records": len(ctx.records)}
+
+result = await evaluation.run(..., metadata=record_count)
+```
+
+Les deux callbacks acceptent `execution_timeout` (par défaut 1 minute) et `retry_policy_max_attempts` (par défaut `2`). `@evaluation.record_metadata` accepte aussi `max_concurrency` (par défaut `5`).
+
+<SectionTab as="h1" sectionId="mutator">@evaluation.mutator</SectionTab>
+
+Marque un mutator personnalisé qui remplace le mutator réflexif par défaut de l'optimiseur. Voir [Custom mutators](/studio/observability/evaluations/workflows-plugin/optimization#custom-mutators).
+
+| Paramètre | Par défaut | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 2 minutes | Temps maximal pour une mutation |
+| `retry_policy_max_attempts` | `2` | Nombre maximal de tentatives en cas d'échec |

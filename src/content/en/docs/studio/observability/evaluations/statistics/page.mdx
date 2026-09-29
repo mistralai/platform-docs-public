@@ -9,7 +9,7 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Configure statistics
 
-Statistics are the run-level values an evaluator exposes from its per-record numeric scores: an average, a total, a percentile. They are what you see in the run table header, chart over time, and target with a goal.
+Statistics are the run-level values an evaluator exposes from its per-record scores: an average, a total, a percentile, or a classification metric such as F1. They are what you see in the run table header, chart over time, and target with a goal.
 
 By default an evaluator computes the historical set (`avg`, `min`, `max`, `std`, `count`). Declare `statistics` when you want a different set: a total number of failures, latency percentiles, or nothing at all.
 
@@ -106,6 +106,64 @@ Evaluator(
 
 This exposes exactly `p50`, `p75`, and `p95` — no `avg`, `min`, `max`, `std`, or `count`. Because it is first, `p95` is the headline statistic shown in the run table header, and its `Goal.lte(500)` fails the run when the 95th percentile latency exceeds 500 ms.
 
+<SectionTab as="h1" sectionId="classification">Classification statistics</SectionTab>
+
+`precision`, `recall`, and `f1` come from a confusion matrix over `(expected, predicted)` label pairs, so they need **two** labels per record. The predicted label is the score `value`. The expected label is read from the score `metadata`, under `expected_key` (default `"expected"`).
+
+| Method | Meaning | Id |
+|--------|---------|----|
+| `Statistic.precision(...)` | Precision (positive predictive value) | `precision`, `precision_macro`, … |
+| `Statistic.recall(...)` | Recall (true positive rate) | `recall`, `recall_micro`, … |
+| `Statistic.f1(...)` | F1, the harmonic mean of precision and recall | `f1`, `f1_weighted`, … |
+
+Each factory takes **exactly one** of:
+
+- `positive_label`: a binary metric, computed against that one class.
+- `average`: a multi-class metric, averaged with `"macro"`, `"micro"`, or `"weighted"`.
+
+Both modes also accept optional `expected_key`, `labels`, and `goal` arguments.
+
+<SectionTab as="h2" variant="secondary" sectionId="binary-classification">Binary</SectionTab>
+
+```python
+from mistralai.evaluations import Evaluator, Score, Statistic
+
+def scorer(ctx) -> Score:
+    # value: the model's prediction; metadata["expected"]: the ground-truth label
+    return Score(value=ctx.output, metadata={"expected": ctx.input_record["expected"]})
+
+Evaluator(
+    name="spam_classifier",
+    scorer=scorer,
+    statistics=[
+        Statistic.f1(positive_label="spam"),  # headline
+        Statistic.precision(positive_label="spam"),
+        Statistic.recall(positive_label="spam"),
+    ],
+)
+```
+
+The labels are categorical scores, so the evaluator also gets the prediction frequencies. Studio shows the metrics next to the confusion matrix they were computed from, and sums the matrices across runs to aggregate the metrics in the run list.
+
+<SectionTab as="h2" variant="secondary" sectionId="multi-class">Multi-class</SectionTab>
+
+```python
+statistics=[
+    Statistic.f1(average="macro"),            # id: f1_macro
+    Statistic.precision(average="weighted"),  # id: precision_weighted
+    Statistic.recall(average="micro"),        # id: recall_micro
+]
+```
+
+`macro` and `weighted` averages depend on which classes are present. Pass `labels` to pin the set of classes, for example `Statistic.f1(average="macro", labels=["fr", "en", "de"])`, so the value stays comparable when a filter removes every record of a class.
+
+<SectionTab as="h2" variant="secondary" sectionId="undefined-metrics">Undefined metrics and missing labels</SectionTab>
+
+- A metric is `null` (shown as `-`) when its denominator is zero, for example precision when the model never predicts the positive class.
+- A score without an expected label in its metadata can't enter the confusion matrix. It's excluded from the metrics and counted in `excluded_count`, shown in Studio next to the number of scored records.
+
+For accuracy, you don't need a classification statistic: score `1` when the prediction matches the expected label and `0` otherwise, then declare `Statistic.avg()`.
+
 <SectionTab as="h1" sectionId="statistic-level-goals">Statistic-level goals</SectionTab>
 
 A goal attached to a statistic targets that statistic — at both the record and the run aggregation scope. This is the recommended way to gate a run and the replacement for `aggregate_goal`:
@@ -130,7 +188,7 @@ A statistic-level goal never carries its own `metric`: the target is the statist
 
 <SectionTab as="h1" sectionId="scores-must-be-numeric">Scores must be numeric 0/1, not booleans</SectionTab>
 
-Statistics are numeric reductions. An evaluator that gates on pass/fail must emit numeric `0` or `1`, **not** `True`/`False`. Booleans are classified as *categorical* values, so a boolean-returning scorer produces categorical statistics (frequencies and mode) and none of the numeric reductions above apply.
+The numeric reductions need numeric scores. An evaluator that gates on pass/fail must emit numeric `0` or `1`, **not** `True`/`False`. Booleans are classified as *categorical* values, so a boolean-returning scorer produces categorical statistics (frequencies and mode) and none of the numeric reductions above apply.
 
 ```python
 def failure_scorer(ctx) -> int:

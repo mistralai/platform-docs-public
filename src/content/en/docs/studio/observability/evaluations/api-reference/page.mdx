@@ -25,12 +25,12 @@ run = await client.evaluation.run(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `dataset` | `Sequence[Mapping[str, Any]]` | **required** | List of input records (max 10,000 per run). |
+| `dataset` | `Sequence[Mapping[str, Any]] \| Dataset` | **required** | Inline input records, or a [Studio dataset](#dataset) (max 10,000 records per run). |
 | `task` | `TaskFunction` | **required** | Async or sync function `(ctx: TaskContext) -> output`. |
 | `evaluators` | `list[Evaluator]` | **required** | Per-record evaluators. |
 | `run_evaluators` | `list[RunEvaluator]` | `[]` | Run-level evaluators (executed after all records). |
-| `project` | `Project` | `None` | Project to save to (created if it doesn't exist). |
-| `evaluation` | `Evaluation` | `None` | Evaluation to save to (created if it doesn't exist). |
+| `project` | `Project` | `None` | Project to save to (created if it doesn't exist and is selected by name). |
+| `evaluation` | `Evaluation` | `None` | Evaluation to save to (created if it doesn't exist and is selected by name). |
 | `name` | `str` | `None` | Run name. |
 | `description` | `str` | `None` | Run description. |
 | `metadata` | `dict` | `{}` | Custom key-value metadata. |
@@ -48,6 +48,9 @@ It returns an `EvaluationRun`:
 | `records` | `list[EvaluationRunRecord]` | All processed records. |
 | `statistics` | `dict[str, Statistics]` | Per-evaluator aggregate statistics. |
 | `run_scores` | `dict[str, Any]` | Run-level evaluator results. |
+| `status` | `str \| None` | Run lifecycle status: `"pending"`, `"running"`, `"completed"`, `"failed"`, or `"cancelled"`. |
+
+`run()` marks the run `"running"` while it executes, then `"completed"`. If the run raises, it's marked `"failed"`; if it's interrupted, `"cancelled"`. While the run executes, the SDK sends a heartbeat to Studio, so a run whose process dies is marked `"cancelled"` instead of staying in progress.
 
 | Method | Description |
 |--------|-------------|
@@ -62,7 +65,20 @@ Project(name="My Project")       # create or get by name
 Project(slug="my-project")       # get by slug
 ```
 
-At least one of `name` or `slug` must be provided. If the project doesn't exist yet, it is created automatically.
+At least one of `name` or `slug` must be provided. A project selected by name is created if it doesn't exist; a project selected by slug must already exist.
+
+<SectionTab as="h1" sectionId="dataset">Dataset</SectionTab>
+
+Selects a Studio dataset by slug or UUID. The SDK fetches its records before the run starts. See [Use a Studio dataset](/studio/observability/evaluations/datasets#studio-datasets).
+
+```python
+from mistralai.evaluations import Dataset
+
+Dataset(slug="customer-support-golden-set")
+Dataset(id="018f879d-20cd-7e9f-a1bc-2f4f08b6f170")
+```
+
+Exactly one of `id` and `slug` must be provided, and `id` must be a valid UUID. The dataset must already exist: selecting it by slug never creates it.
 
 <SectionTab as="h1" sectionId="evaluation">Evaluation</SectionTab>
 
@@ -73,7 +89,7 @@ Evaluation(name="My Eval")       # create or get by name
 Evaluation(slug="my-eval")       # get by slug
 ```
 
-At least one of `name` or `slug` must be provided. If the evaluation doesn't exist yet, it is created automatically under the given project.
+At least one of `name` or `slug` must be provided. An evaluation selected by name is created under the given project if it doesn't exist; an evaluation selected by slug must already exist.
 
 <SectionTab as="h1" sectionId="evaluator">Evaluator</SectionTab>
 

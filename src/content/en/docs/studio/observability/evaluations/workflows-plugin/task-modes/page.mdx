@@ -1,0 +1,85 @@
+---
+id: observability_evaluations_workflows_plugin_task_modes
+title: Task modes
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Task modes
+
+The `task` parameter of `evaluation.run()` accepts three kinds of values. Each one fans out the dataset differently.
+
+| Mode | Value | Fan-out | Best for |
+|------|-------|---------|----------|
+| Activity | `@evaluation.task` function | One activity per record | Single LLM call or short pipeline |
+| Workflow class | `@workflow.define` class | One child workflow per record | Multi-step tasks in the same codebase |
+| Workflow name | `str` | One child workflow per record | Tasks deployed separately |
+
+<SectionTab as="h1" sectionId="activity">Activity task</SectionTab>
+
+Decorate an async function with `@evaluation.task`. The plugin runs it as a Temporal activity for each record, with the timeout, retries, and concurrency set on the [decorator](/studio/observability/evaluations/workflows-plugin/decorators):
+
+```python
+from mistralai.workflows.client import get_mistral_client
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import TaskContext
+
+@evaluation.task
+async def summarize(ctx: TaskContext) -> str:
+    client = get_mistral_client()
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["text"]}],
+    )
+    return str(response.choices[0].message.content)
+```
+
+The task can return any JSON-serializable value: strings, dicts, or Pydantic models.
+
+<SectionTab as="h1" sectionId="workflow-class">Workflow class</SectionTab>
+
+Pass a class decorated with `@workflow.define` when the task is itself a multi-step workflow. The plugin starts it as a child workflow for each record.
+
+The entrypoint receives a **serialized `TaskContext`** (`input_record`, `system`, and `metadata`), not the record itself. Validate it into a `TaskContext` to get typed access:
+
+```python
+from mistralai.workflows import workflow
+from mistralai.workflows.plugins.evaluations.types import TaskContext
+
+@workflow.define(name="research-task")
+class ResearchTask:
+    @workflow.entrypoint
+    async def run(self, params: dict) -> str:
+        ctx = TaskContext.model_validate(params)
+        sources = await search(ctx.input_record["question"])
+        return await write_answer(ctx.input_record["question"], sources)
+
+result = await evaluation.run(
+    dataset=dataset,
+    task=ResearchTask,
+    evaluators=[...],
+)
+```
+
+<SectionTab as="h1" sectionId="workflow-name">Workflow name</SectionTab>
+
+Pass the name of a workflow as a string when the task is deployed separately and its class isn't available in your codebase. The target workflow receives the same serialized `TaskContext`:
+
+```python
+result = await evaluation.run(
+    dataset=dataset,
+    task="research-task",
+    evaluators=[...],
+)
+```
+
+<SectionTab as="h1" sectionId="workflow-limits">Limits of workflow tasks</SectionTab>
+
+Workflow tasks don't go through `@evaluation.task`, so its options don't apply:
+
+- **Timeout**: a workflow class uses its own execution timeout. A workflow name gets 10 minutes per record.
+- **Retries**: the child workflow isn't retried. A failed record is recorded as an error.
+- **Concurrency**: up to 5 records run at once.
+
+Scorers run as activities in all three modes, with the options set on `@evaluation.scorer`.

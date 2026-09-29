@@ -23,7 +23,7 @@ Le SDK repose sur un modèle mental simple :
 Dataset  →  Task  →  Evaluators  →  Results
 ```
 
-- **Jeu de données** : une liste d’enregistrements d’entrée (dictionnaires) contenant vos cas de test.
+- **Ensemble de données** : une liste d'enregistrements d'entrée (dicts) avec vos cas de test, ou un ensemble de données Studio.
 - **Tâche** : une fonction asynchrone ou synchrone qui reçoit un `TaskContext` et produit une sortie.
 - **Évaluateurs** : des fonctions qui reçoivent un `ScorerContext` et notent chaque sortie.
 - **Résultats** : des statistiques et des notes par enregistrement, affichés dans le terminal et téléchargés vers Studio.
@@ -127,7 +127,7 @@ Les résultats s’affichent dans votre terminal et sont téléchargés vers Stu
 <ExplorerTabs id="concepts">
   <ExplorerTab value="task" label="Tâche">
 
-Une tâche est une fonction asynchrone (ou synchrone) qui reçoit un `TaskContext` et renvoie une sortie. C’est le code que vous voulez évaluer :
+Une tâche est une fonction async (ou sync) qui reçoit un `TaskContext` et renvoie une sortie. C'est le code que vous voulez évaluer :
 
 ```python
 from mistralai.evaluations import TaskContext
@@ -143,9 +143,13 @@ async def task(ctx: TaskContext) -> str:
     return str(response.choices[0].message.content)
 ```
 
-La tâche peut renvoyer n’importe quel type : chaînes de caractères, modèles Pydantic ou dictionnaires. Le SDK sérialise la sortie pour le téléchargement.
+La tâche peut renvoyer n'importe quel type : chaînes de caractères, modèles Pydantic ou dicts. Le SDK sérialise la sortie pour le téléchargement.
 
-`TaskContext` vous donne un accès typé à `ctx.input_record` (l’enregistrement courant de l’ensemble de données), `ctx.system` (la configuration `System` de `evaluation.run()`) et `ctx.metadata` (les métadonnées d’exécution).
+:::caution[Préférez les tâches async pour les traitements longs]
+Une tâche sync s'exécute sur l'event loop, qui envoie aussi le heartbeat de l'exécution à Studio. Un appel sync qui bloque pendant plusieurs minutes prive le heartbeat, et Studio peut alors marquer une exécution en cours comme annulée. Utilisez une tâche async, ou déléguez les traitements bloquants avec `await asyncio.to_thread(...)`.
+:::
+
+`TaskContext` vous donne un accès typé à `ctx.input_record` (l'enregistrement courant de l'ensemble de données), `ctx.system` (la config `System` de `evaluation.run()`) et `ctx.metadata` (les métadonnées de l'exécution).
 
   </ExplorerTab>
   <ExplorerTab value="evaluators" label="Évaluateurs">
@@ -173,7 +177,7 @@ Vous pouvez empiler autant d’évaluateurs que nécessaire dans une seule exéc
   </ExplorerTab>
   <ExplorerTab value="system" label="Système">
 
-`System` externalise la configuration de votre tâche afin que chaque exécution enregistre les paramètres qui ont produit ses résultats :
+`System` externalise la configuration de votre tâche afin que chaque exécution enregistre les réglages qui ont produit ses résultats :
 
 ```python
 from mistralai.evaluations import System
@@ -185,12 +189,12 @@ system = System(name="mistral-small-t0", params={
 })
 ```
 
-`params` est libre : ajoutez le modèle, la température, le prompt système, le nombre maximal de tokens, les définitions d’outils ou tout autre paramètre qui pilote votre tâche.
+`params` est libre : incluez le modèle, la température, le prompt système, le nombre maximal de tokens, les définitions d'outils ou tout autre réglage qui pilote votre tâche.
 
-Dans Studio, chaque exécution affiche sa configuration `System`, ce qui vous permet de comparer les exécutions côte à côte.
+Dans Studio, chaque exécution affiche sa config `System`, ce qui permet de comparer des exécutions côte à côte.
 
-:::tip Comparer les configurations
-Exécutez la même évaluation avec différents objets `System` pour comparer des versions de modèle ou des variantes de prompt sans modifier le code de votre tâche.
+:::tip[Comparer des configurations]
+Exécutez la même évaluation avec différents objets `System` pour comparer des versions de modèles ou des variantes de prompts sans modifier le code de votre tâche.
 :::
 
   </ExplorerTab>
@@ -308,7 +312,7 @@ Les valeurs des cellules s’affichent automatiquement en fonction de leur type�
 
 Travaillez les briques de base dans l’ordre où vous les utilisez pour construire une évaluation :
 
-- [Jeux de données](/studio/observability/evaluations/datasets) : structurez vos cas de test sous forme d’enregistrements Python typés.
+- [Les ensembles de données](/studio/observability/evaluations/datasets) : structurez vos cas de test sous forme d'enregistrements Python typés, ou utilisez un ensemble de données Studio.
 - [Configurer les paramètres système](/studio/observability/evaluations/system-params) : externalisez la configuration des tâches pour une comparaison côte à côte dans Studio.
 - [Évaluateurs](/studio/observability/evaluations/evaluators) : définissez des fonctions de notation pour chaque métrique — fonctions basées sur des règles ou LLM-as-judge.
 - [Définir des objectifs](/studio/observability/evaluations/goals) : définissez des seuils de réussite ou d’échec, ainsi que la direction et la normalisation sur les évaluateurs.
@@ -325,10 +329,14 @@ Travaillez les briques de base dans l’ordre où vous les utilisez pour constru
 - [Réessayer les enregistrements en échec](/studio/observability/evaluations/advanced-guides/retry-failed-records) : réexécutez uniquement les enregistrements en erreur, corrigez les résultats en place.
 - [Renoter les exécutions enregistrées](/studio/observability/evaluations/advanced-guides/rescoring) : itérez sur les fonctions de scoring sans réexécuter la tâche.
 
+**Exécuter dans Mistral Workflows** :
+
+- [Plugin d'évaluation de workflow](/studio/observability/evaluations/workflows-plugin) : exécutez les mêmes évaluations dans un workflow, avec des activités Temporal parallèles et des relances automatiques.
+
 **Références :**
 
 - [Référence API](/studio/observability/evaluations/api-reference) : `evaluation.run()` et les types principaux.
-- [Guide de migration et changelog](/studio/observability/evaluations/migrating) : modifications et mises à jour incompatibles par version.
+- [Historique des versions sur PyPI](https://pypi.org/project/mistralai-evaluations/#history) : modifications par version.
 
 <SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
 
@@ -337,7 +345,7 @@ Travaillez les briques de base dans l’ordre où vous les utilisez pour constru
   Python 3.12 ou version ultérieure est requis.
   </FaqItem>
   <FaqItem question="Puis-je utiliser des fonctions synchrones pour les tâches et les évaluateurs ?">
-  Oui. Les fonctions synchrones et asynchrones fonctionnent pour les tâches et les évaluateurs. Le SDK détecte automatiquement le style que vous utilisez.
+  Oui. Les fonctions async et sync fonctionnent toutes les deux pour les tâches et les scorers. Le SDK détecte automatiquement le style utilisé. Pour les tâches longues, préférez async : une tâche sync qui bloque pendant plusieurs minutes peut entraîner le marquage d'une exécution en cours comme annulée.
   </FaqItem>
   <FaqItem question="Comment utiliser un LLM en tant que juge ?">
   Un évaluateur est une fonction : appelez l’API Mistral dans votre fonction de notation et renvoyez un score numérique. Consultez [Évaluateurs → LLM-as-judge](/studio/observability/evaluations/evaluators#llm-as-judge) pour des exemples détaillés incluant une sortie structurée et la réduction de la variance.

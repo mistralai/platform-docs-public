@@ -116,7 +116,6 @@ export async function getSidebar(
     const mergedMeta = mergeFileMetadata(pageData.metadata, metaMdData.metadata);
     const isHidden =
       shouldHideCategory(name) ||
-      shouldHideSidebarRoute(slug) ||
       isHiddenFlag(categoryMeta.hidden) ||
       isHiddenFlag(mergedMeta?.hidden);
 
@@ -159,10 +158,7 @@ export async function getSidebar(
 
     // 2) Leaf: if we have a page -> file item with toc (metadata merged with _meta.md if present)
     if (hasPage) {
-      if (
-        !options.includeHidden &&
-        (shouldHideCategory(name) || shouldHideSidebarRoute(slug))
-      ) {
+      if (!options.includeHidden && shouldHideCategory(name)) {
         continue;
       }
       const mergedMeta = mergeFileMetadata(
@@ -612,13 +608,6 @@ function isDynamicRoute(path: string): boolean {
 function shouldHideCategory(dirName: string): boolean {
   const HIDDEN_DIRS = new Set(['model-cards', 'clients']);
   return HIDDEN_DIRS.has(dirName);
-}
-
-function shouldHideSidebarRoute(slug: string[]): boolean {
-  const HIDDEN_ROUTES = new Set([
-    'studio-api/connectors/playground',
-  ]);
-  return HIDDEN_ROUTES.has(slug.join('/'));
 }
 
 function processTemplateTOC(

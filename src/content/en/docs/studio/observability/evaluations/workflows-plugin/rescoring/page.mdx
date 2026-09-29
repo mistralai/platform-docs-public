@@ -1,0 +1,66 @@
+---
+id: observability_evaluations_workflows_plugin_rescoring
+title: Rescore persisted runs in a workflow
+sidebar_label: Rescoring
+sidebar_position: 4
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Rescore persisted runs in a workflow
+
+`evaluation.rescore()` scores the outputs already persisted in Studio **without re-running the task**, with your scorers running as activities. Produce an expensive task execution once, then iterate on your scorers as many times as you need.
+
+The semantics are the same as the SDK's `client.evaluation.rescore()`. See [Rescore persisted runs](/studio/observability/evaluations/advanced-guides/rescoring) for the full model. The persisted run in Studio is the source of truth, not the workflow history.
+
+<SectionTab as="h1" sectionId="task-only-runs">Task-only runs</SectionTab>
+
+To persist task outputs without scoring them, pass an empty evaluator list. `evaluators` stays required, so the empty list is an explicit opt-in:
+
+```python
+result = await evaluation.run(
+    project=Project(name="Support agent"),
+    evaluation=Evaluation(name="Agent rollouts"),
+    dataset=dataset,
+    task=run_agent,
+    evaluators=[],
+)
+```
+
+`run_evaluators` still work with no evaluators: a run evaluator can aggregate outputs, errors, latency, or cost.
+
+<SectionTab as="h1" sectionId="rescore">Rescore a run</SectionTab>
+
+```python
+result = await evaluation.rescore(
+    run_id=run_id,
+    evaluators=[Evaluator(name="accuracy", scorer=accuracy_v2)],
+    run_evaluators=[RunEvaluator(name="pass_rate", scorer=pass_rate)],
+)
+```
+
+`rescore()`:
+
+1. Loads the persisted run and its records: inputs and task outputs.
+2. Runs the scorers against the persisted outputs, as activities.
+3. Persists the new scores, then recomputes statistics and goals.
+4. Runs the run evaluators over the updated records.
+
+Scorers and run evaluators must be decorated with `@evaluation.scorer` and `@evaluation.run_scorer`, as in `run()`. Pass at least one evaluator or run evaluator.
+
+<SectionTab as="h1" sectionId="add-and-replace">Add and replace</SectionTab>
+
+`rescore()` only changes the evaluators you pass. An evaluator with a new name is added; an evaluator with an existing name is replaced, definition and scores. Score uploads are idempotent, so activity retries never duplicate scores.
+
+If generation scores change while a persisted run evaluator isn't recomputed in the same call, its name is logged and returned in `result.potentially_stale_run_evaluators`. Pass those run evaluators to `run_evaluators` to recompute them.
+
+<SectionTab as="h1" sectionId="api-reference">API reference</SectionTab>
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `run_id` | `str` | **required** | ID of a persisted run |
+| `evaluators` | `list[Evaluator] \| None` | `None` | Evaluators to add or replace |
+| `run_evaluators` | `list[RunEvaluator] \| None` | `None` | Run evaluators to add, replace, or recompute |
+| `max_concurrency` | `int` | `10` | Maximum generations scored at once |
+
+Returns an `EvalResult`, with `potentially_stale_run_evaluators` set when relevant.

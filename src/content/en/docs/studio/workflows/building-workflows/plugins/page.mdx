@@ -92,51 +92,23 @@ class SummarizeWorkflow:
 
 For full documentation on `Agent`, `Runner`, sessions, MCP, and multi-agent handoffs, see the [Durable Agents guide](durable_agents).
 
-<SectionTab as="h2" variant="secondary" sectionId="webhook-plugin">Webhook Plugin</SectionTab>
 
-**Package:** `mistralai-workflows-plugins-webhook`
+<SectionTab as="h2" variant="secondary" sectionId="evaluation-plugin">Evaluation Plugin</SectionTab>
 
-Provides HTTP/webhook routing and fan-out for building event-driven workflows. Use it to receive webhooks from external services (GitHub, Slack, Linear, etc.) and route them to running workflow instances.
+**Package:** `mistralai-workflows-plugins-evaluations`
+
+Runs [offline evaluations](/studio/observability/evaluations) inside a workflow. Each record runs in its own child workflow, with the task and scorers as parallel activities, and results upload to Studio.
 
 **Key components:**
 
 | Component | Description |
 |-----------|-------------|
-| `HTTPRouterWorkflow` | Base class for webhook router workflows |
-| `RouteDispatcher` | Dispatches incoming HTTP requests to handler methods |
-| `SearchableWorkflow` | Mixin to expose search attributes for workflow targeting |
-| `post` | Decorator to register a method as an HTTP POST handler |
-| `SearchAttribute` | Key/value pair used to target running workflow instances |
-| `search_workflow_execution_ids` | Find running workflow instance IDs matching search attributes |
-| `send_signal` | Fan out a signal to multiple workflow instances |
-| `WebhookFanOutResult` | Result of `send_signal` (list of target IDs and dispatched count) |
-| `HTTPRequest` / `HTTPResponse` | Request and response types |
+| `evaluation.run` | Run an evaluation over a dataset |
+| `evaluation.rescore` | Score a persisted run again without re-running the task |
+| `evaluation.optimize` | Search for better prompts and parameters |
+| `evaluation.task` / `evaluation.scorer` | Decorators that turn a task and its scorers into activities |
 
-Provider-specific helpers (experimental) are available under `webhook.github`, `webhook.slack`, and `webhook.linear`.
-
-**Example:**
-
-<Tabs>
-  <TabItem value="python" label="Python">
-
-```python
-from mistralai.workflows import workflow
-from mistralai.workflows.plugins.webhook import (
-    HTTPRouterWorkflow,
-    HTTPRequest,
-    HTTPResponse,
-    post,
-)
-
-@workflow.define(name="my-webhook-router")
-class MyWebhookRouter(HTTPRouterWorkflow):
-    @post("/")
-    async def handle(self, request: HTTPRequest) -> HTTPResponse:
-        return HTTPResponse(status_code=200, body={"ok": True})
-```
-
-  </TabItem>
-</Tabs>
+For the full guide, see [Workflow evaluation plugin](/studio/observability/evaluations/workflows-plugin).
 
 <SectionTab as="h1" sectionId="installation">Installation</SectionTab>
 
@@ -148,7 +120,7 @@ Install the plugins you need alongside the main SDK:
 ```bash
 pip install mistralai-workflows
 pip install mistralai-workflows-plugins-mistralai
-pip install mistralai-workflows-plugins-webhook
+pip install mistralai-workflows-plugins-evaluations
 ```
 
   </TabItem>

@@ -117,4 +117,9 @@ describe("existing redirect rules keep working", () => {
     expect(resolveRedirect("/fr/studio-api/audio/overview")).toBe("/fr/studio/audio/overview");
     expect(resolveRedirect("/fr/capabilities/audio")).toBe("/fr/studio/audio/overview");
   });
+
+  it("redirects the legacy Connectors Playground URL to the Debugger", () => {
+    expect(resolveRedirect("/studio/connectors/playground")).toBe("/studio/connectors/debugger");
+    expect(resolveRedirect("/fr/studio/connectors/playground")).toBe("/fr/studio/connectors/debugger");
+  });
 });

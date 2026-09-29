@@ -1,0 +1,133 @@
+---
+id: observability_evaluations_workflows_plugin_api_reference
+title: Référence API du plugin d'évaluation de workflow
+sidebar_label: Référence API
+sidebar_position: 6
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Référence API du plugin d'évaluation de workflow
+
+Référence de `evaluation.run()`, son résultat et les imports du plugin. Le plugin réutilise les types du SDK : consultez la [référence API du SDK](/studio/observability/evaluations/api-reference) pour `Project`, `Evaluation`, `Evaluator`, `RunEvaluator`, `Goal` et `System`. Pour les autres méthodes, consultez [Décorateurs](/studio/observability/evaluations/workflows-plugin/decorators), [Optimisation](/studio/observability/evaluations/workflows-plugin/optimization), [Rescoring](/studio/observability/evaluations/workflows-plugin/rescoring) et [Blocs de construction](/studio/observability/evaluations/workflows-plugin/building-blocks).
+
+<SectionTab as="h1" sectionId="evaluation-run">evaluation.run()</SectionTab>
+
+Exécute une évaluation depuis un workflow. Appelez-le depuis un `@workflow.entrypoint`.
+
+```python
+from mistralai.workflows.plugins.evaluations import evaluation
+
+result = await evaluation.run(
+    dataset=...,
+    task=...,
+    evaluators=...,
+    # optional parameters below
+)
+```
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `dataset` | `Sequence[Mapping[str, Any]]` | **obligatoire** | Liste d'enregistrements en entrée. |
+| `task` | fonction, classe ou `str` | **obligatoire** | Fonction `@evaluation.task`, classe `@workflow.define` ou nom du workflow. Voir [Modes de tâche](/studio/observability/evaluations/workflows-plugin/task-modes). |
+| `evaluators` | `list[Evaluator]` | **obligatoire** | Évaluateurs par enregistrement. Leurs scorers doivent être décorés avec `@evaluation.scorer`. Passez `[]` pour une exécution sans évaluateurs. |
+| `run_evaluators` | `list[RunEvaluator] \| None` | `None` | Évaluateurs au niveau de l'exécution. Leurs scorers doivent être décorés avec `@evaluation.run_scorer`. |
+| `project` | `Project \| None` | `None` | Projet dans lequel enregistrer (créé s'il n'existe pas). |
+| `evaluation` | `Evaluation \| None` | `None` | Évaluation dans laquelle enregistrer (créée si elle n'existe pas). |
+| `name` | `str \| None` | `None` | Nom de l'exécution. |
+| `description` | `str \| None` | `None` | Description de l'exécution. |
+| `tags` | `list[str] \| None` | `None` | Tags pour le filtrage dans Studio. |
+| `metadata` | `dict \| None` | `None` | Métadonnées statiques de l'exécution, ou un callback `@evaluation.run_metadata`. |
+| `record_metadata` | fonction \| `None` | `None` | Callback `@evaluation.record_metadata`, exécuté une fois par enregistrement. |
+| `system` | `System \| None` | `None` | Configuration système transmise à la tâche et aux scorers via les objets de contexte. |
+| `num_generations` | `int` | `1` | Exécutions de la tâche par enregistrement, de 1 à 100. |
+| `local` | `bool` | `False` | Si `True`, ignore tout appel à Studio. |
+
+La concurrence, les délais d'attente et les tentatives se définissent sur les [décorateurs](/studio/observability/evaluations/workflows-plugin/decorators), pas sur `run()`.
+
+La fonction renvoie un `EvalResult` :
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `run_id` | `str` | Identifiant de l'exécution, ou `"local"` en mode local. |
+| `run_url` | `str \| None` | Lien vers l'exécution dans Studio. `None` en mode local. |
+| `statistics` | `dict[str, EvaluatorStatistics]` | Statistiques agrégées par évaluateur. |
+| `run_scores` | `dict[str, Score]` | Scores des évaluateurs au niveau de l'exécution, par nom d'évaluateur. |
+| `potentially_stale_run_evaluators` | `list[str]` | Défini uniquement par `rescore()`. Voir [Rescoring](/studio/observability/evaluations/workflows-plugin/rescoring#add-and-replace). |
+
+`EvalResult` est un modèle Pydantic : renvoyez `result.model_dump()` depuis votre workflow pour l'exposer en sortie du workflow.
+
+<SectionTab as="h2" variant="secondary" sectionId="execution-flow">Flux d'exécution</SectionTab>
+
+1. **Initialisation** : crée le projet, l'évaluation et l'exécution dans Studio, et marque l'exécution comme en cours.
+2. **Fan-out** : démarre un workflow enfant par enregistrement.
+3. **Par enregistrement** : télécharge l'enregistrement en entrée, exécute la tâche et ses scorers pour chaque génération, exécute le callback `record_metadata`, puis télécharge l'enregistrement en sortie.
+4. **Statistiques** : agrège les scores par évaluateur.
+5. **Évaluateurs d'exécution** : exécute les évaluateurs au niveau de l'exécution et télécharge leurs scores.
+6. **Métadonnées d'exécution** : exécute le callback `run_metadata` et met à jour l'exécution.
+7. **Fin** : marque l'exécution comme terminée ou échouée.
+
+Pendant l'exécution, le workflow envoie un signal de vie à Studio. Si le worker s'arrête, ou si le workflow est annulé ou interrompu, Studio marque l'exécution comme annulée au lieu de la laisser en cours.
+
+Une tâche ou un scorer en échec est enregistré comme erreur sur son enregistrement ; les autres enregistrements continuent.
+
+<SectionTab as="h1" sectionId="imports">Imports</SectionTab>
+
+Importez les types depuis `mistralai.workflows.plugins.evaluations.types`. Ce module réexporte uniquement des types du SDK : vous pouvez donc l'importer sans risque depuis du code de workflow s'exécutant dans la sandbox Temporal :
+
+```python
+from mistralai.workflows.plugins.evaluations.types import (
+    Evaluation,             # Evaluation identifier (name or slug)
+    Evaluator,              # Per-record evaluator
+    Goal,                   # Pass/fail gate: gte, lte, between
+    Project,                # Project identifier (name or slug)
+    RecordMetadataContext,  # Context for @evaluation.record_metadata
+    RunEvaluator,           # Run-level evaluator
+    RunEvaluatorContext,    # Context for @evaluation.run_scorer
+    RunMetadataContext,     # Context for @evaluation.run_metadata
+    Score,                  # Scorer return type
+    ScorerContext,          # Context for @evaluation.scorer
+    Statistic,              # Run-level statistic factories
+    System,                 # System config (name + params)
+    TaskContext,            # Context for @evaluation.task
+    Tunable,                # Optimizable parameter slot
+    TunableSystem,          # Search space for optimization
+)
+```
+
+L'espace de noms `evaluation` et les types d'optimisation proviennent de la racine du package :
+
+```python
+from mistralai.workflows.plugins.evaluations import (
+    evaluation,         # run, rescore, optimize, building blocks, and decorators
+    EvalResult,         # Result of run() and rescore()
+    GEPA,               # Pareto-based reflective optimizer
+    SimpleOptimizer,    # Greedy hill-climb optimizer
+    OptimizeResult,     # Result of optimize()
+    OptimizeCandidate,  # One candidate in the trajectory
+    OptimizeVariant,    # Baseline, winner, or best attempt
+    MutatorRequest,     # Input of a custom mutator
+    MutatorProposal,    # Output of a custom mutator
+)
+```
+
+<SectionTab as="h1" sectionId="optimize">evaluation.optimize()</SectionTab>
+
+Mêmes paramètres que la fonction `client.evaluation.optimize()` du SDK, hormis ceux qui ne s'appliquent pas dans un workflow. Consultez [Optimiser les prompts et les paramètres](/studio/observability/evaluations/optimization) pour les paramètres et algorithmes partagés, et [Optimisation](/studio/observability/evaluations/workflows-plugin/optimization) pour les spécificités du workflow.
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `system` | `TunableSystem` | **obligatoire** | L'espace de recherche. Doit contenir au moins un slot `Tunable`. |
+| `dataset` | `list[dict[str, Any]]` | **obligatoire** | Enregistrements en entrée. |
+| `task` | fonction, classe ou `str` | **obligatoire** | Identique à `run()`. |
+| `evaluators` | `list[Evaluator]` | **obligatoire** | Évaluateurs par enregistrement. Ils définissent l'objectif et les seuils. |
+| `algo` | `SimpleOptimizer \| GEPA` | **obligatoire** | La stratégie de recherche. |
+| `run_evaluators` | `list[RunEvaluator] \| None` | `None` | Enregistrés sur l'exécution de chaque candidat. Ils n'influencent pas la sélection. |
+| `project` | `Project \| None` | `None` | Projet dans lequel enregistrer. |
+| `evaluation` | `Evaluation \| None` | `None` | Évaluation dans laquelle enregistrer. |
+| `steer` | `str \| None` | `None` | Objectif formulé en langage naturel pour le mutateur, jusqu'à 4 000 caractères. |
+| `name` | `str \| None` | `None` | Nom de l'optimisation. Généré à partir de `steer` en cas d'omission. |
+| `description` | `str \| None` | `None` | Description de l'optimisation. Générée à partir de `steer` en cas d'omission. |
+| `tags` | `list[str] \| None` | `None` | Tags pour le filtrage dans Studio. |
+| `metadata` | `dict[str, Any] \| None` | `None` | Métadonnées attachées à l'exécution de chaque candidat. |
+| `local` | `bool` | `False` | Non pris en charge : lève une `ValueError`. |

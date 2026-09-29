@@ -1,0 +1,215 @@
+---
+id: observability_evaluations_workflows_plugin
+title: Workflow evaluation plugin
+sidebar_label: Workflows plugin
+sidebar_position: 8
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Workflow evaluation plugin
+
+The Workflow evaluation plugin (`mistralai-workflows-plugins-evaluations`) runs offline evaluations inside [Mistral Workflows](/studio/workflows/getting-started/overview). It exposes the same `evaluation.run()` API as the [Evaluation SDK](/studio/observability/evaluations), but splits task execution and scoring into parallel Temporal activities.
+
+:::info
+Offline evaluations are available to **Enterprise-tier organizations** only. Contact your Mistral representative to enable them for your organization.
+:::
+
+The plugin follows the same mental model as the SDK:
+
+```
+Dataset  →  Task  →  Evaluators  →  Results
+```
+
+Instead of running everything in one process, the plugin fans out each record as a child workflow that runs the task, then the scorers. Results are uploaded to Studio as the records complete.
+
+<SectionTab as="h1" sectionId="sdk-or-plugin">SDK or plugin?</SectionTab>
+
+| | Evaluation SDK | Workflow evaluation plugin |
+|---|---|---|
+| **Runs in** | Any Python script or notebook | A Mistral Workflow |
+| **Parallelism** | `asyncio` in one process | Temporal activities across workers |
+| **Retries** | [`retry_failed_records()`](/studio/observability/evaluations/advanced-guides/retry-failed-records) after the run | Automatic, per task and per scorer |
+| **Failure isolation** | Errors are recorded per record | Each record runs in its own child workflow |
+| **Best for** | Fast iteration, notebooks, CI scripts | Large datasets, long-running or multi-step tasks, scheduled evaluations |
+
+Both write to the same projects, evaluations, and runs in Studio, and share the same primitives: `Evaluator`, `Goal`, `Statistic`, `System`, and `TunableSystem`.
+
+<SectionTab as="h1" sectionId="installation">Installation</SectionTab>
+
+**Prerequisites:** Python 3.12+, a Mistral API key, and a working Workflows project. If you don't have one yet, follow [Workflows installation](/studio/workflows/getting-started/installation) and [Your first workflow](/studio/workflows/getting-started/your_first_workflow).
+
+Add the plugin to your Workflows project from PyPI:
+
+<Tabs>
+  <TabItem value="pip" label="pip">
+
+```bash
+pip install mistralai-workflows-plugins-evaluations
+```
+
+  </TabItem>
+  <TabItem value="uv" label="uv">
+
+```bash
+uv add mistralai-workflows-plugins-evaluations
+```
+
+  </TabItem>
+</Tabs>
+
+The plugin pulls in the Evaluation SDK (`mistralai-evaluations`) as a dependency. You don't need to register anything on the worker: it discovers installed plugins at startup and registers the evaluation activities and child workflows automatically.
+
+The worker uses its own Mistral credentials to upload results to Studio. Make sure `MISTRAL_API_KEY` is set in the worker's environment:
+
+```bash
+export MISTRAL_API_KEY=<your-api-key>
+```
+
+<SectionTab as="h1" sectionId="quickstart">Quickstart</SectionTab>
+
+Create a `src/workflows/language_detection_eval.py` file in your Workflows project:
+
+```python
+from mistralai.workflows import workflow
+from mistralai.workflows.client import get_mistral_client
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import (
+    Evaluation, Evaluator, Goal, Project, Score, ScorerContext, System, TaskContext,
+)
+
+dataset = [
+    {"sentence": "Hello, how are you?", "groundtruth": "English"},
+    {"sentence": "Bonjour, comment ça va?", "groundtruth": "French"},
+    {"sentence": "Hola, ¿cómo estás?", "groundtruth": "Spanish"},
+]
+
+@evaluation.task
+async def detect_language(ctx: TaskContext) -> str:
+    client = get_mistral_client()
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[
+            {"role": "system", "content": str(ctx.system.params["system_prompt"])},
+            {"role": "user", "content": ctx.input_record["sentence"]},
+        ],
+    )
+    return str(response.choices[0].message.content)
+
+@evaluation.scorer
+async def accuracy(ctx: ScorerContext) -> Score:
+    match = ctx.input_record["groundtruth"].lower() == str(ctx.output).strip().lower()
+    return Score(value=1 if match else 0)
+
+@workflow.define(name="language-detection-eval")
+class LanguageDetectionEval:
+    @workflow.entrypoint
+    async def run(self) -> dict:
+        result = await evaluation.run(
+            project=Project(name="Language Detection"),
+            evaluation=Evaluation(name="Accuracy Eval"),
+            system=System(name="mistral-small", params={
+                "model": "mistral-small-latest",
+                "system_prompt": "What language is this sentence in? Reply with ONLY the language name.",
+            }),
+            dataset=dataset,
+            task=detect_language,
+            evaluators=[
+                Evaluator(
+                    name="accuracy",
+                    description="1 if the detected language matches the groundtruth, 0 otherwise.",
+                    scorer=accuracy,
+                    goal=Goal.gte(0.8),
+                ),
+            ],
+        )
+        return {"run_id": result.run_id, "run_url": result.run_url}
+```
+
+Restart your worker so it registers the new workflow, then trigger it like any other workflow — from the **Workflows** page in Studio, or with the Mistral SDK:
+
+```python
+from mistralai.client import Mistral
+
+client = Mistral(api_key="your_api_key")
+
+execution = client.workflows.execute_workflow(
+    workflow_identifier="language-detection-eval",
+    input={},
+)
+```
+
+The workflow returns the run ID and a link to the run. Results are available in Studio under **Observability > Evaluate > Evaluations**.
+
+<SectionTab as="h1" sectionId="differences-from-the-sdk">Differences from the SDK</SectionTab>
+
+The plugin reuses the SDK types, so everything in the [SDK guides](/studio/observability/evaluations#guides) applies — datasets, system params, evaluators, goals, statistics, and multiple generations. The differences come from running inside a workflow:
+
+- **Decorate every function.** Tasks use `@evaluation.task`, scorers `@evaluation.scorer`, and run evaluators `@evaluation.run_scorer`. Each one becomes a Temporal activity with its own timeout, retries, and concurrency. See [Decorators](/studio/observability/evaluations/workflows-plugin/decorators).
+- **Call `evaluation` from the plugin**, not `client.evaluation`. Import types from `mistralai.workflows.plugins.evaluations.types`: this module is safe to import inside the workflow sandbox.
+- **Tasks can be workflows.** Besides an activity, the task can be a workflow class or the name of a deployed workflow. See [Task modes](/studio/observability/evaluations/workflows-plugin/task-modes).
+- **Scorers return a `Score` or a number.** A plain number is wrapped in a `Score` automatically.
+- **`run()` returns an `EvalResult`** with `run_id`, `run_url`, `statistics`, and `run_scores`. It is serializable, so you can return it from the workflow. There is no `show()` method.
+- **Run evaluators read records back from Studio.** To stay under Temporal's payload limits, the run evaluator activity fetches the persisted records instead of receiving them from the workflow. See [Run evaluators](#run-evaluators).
+- **Inline datasets only, for now.** `dataset` takes a list of records: [Studio datasets](/studio/observability/evaluations/datasets#studio-datasets) (`Dataset`) and [classification statistics](/studio/observability/evaluations/statistics#classification) aren't supported by the plugin yet.
+- **Failures are retried by Temporal.** There is no `retry_failed_records()`: each task and scorer retries on its own, according to its decorator.
+
+<SectionTab as="h2" variant="secondary" sectionId="run-evaluators">Run evaluators</SectionTab>
+
+[Run-level evaluators](/studio/observability/evaluations/advanced-guides/run-evaluators) work as in the SDK, with a decorator:
+
+```python
+from mistralai.workflows.plugins.evaluations.types import RunEvaluator, RunEvaluatorContext, Score
+
+@evaluation.run_scorer
+async def mean_accuracy(ctx: RunEvaluatorContext) -> Score:
+    return Score(value=ctx.statistics["accuracy"].avg)
+
+result = await evaluation.run(
+    ...,
+    run_evaluators=[RunEvaluator(name="mean_accuracy", scorer=mean_accuracy)],
+)
+```
+
+When results are uploaded to Studio, the run evaluator activity receives the run ID and reads the persisted records back before calling your function. The same applies to `run_metadata` callbacks. As a consequence:
+
+- Records are listed in upload order, which can differ from the dataset order.
+- A record whose output failed to upload appears with no generations.
+- The function must be registered on the worker that runs the evaluation workflow.
+- Reading the records adds up to 10 minutes to the callback's timeout.
+
+In local mode, records are passed in memory.
+
+<SectionTab as="h2" variant="secondary" sectionId="local-mode">Local mode</SectionTab>
+
+`local=True` skips every call to Studio but keeps the same Temporal topology (child workflows and activities). You don't need a `project` or `evaluation`, `result.run_id` is `"local"`, and `result.run_url` is `None`. Statistics and run scores are still computed and returned. See [Iterate locally](/studio/observability/evaluations/advanced-guides/local-mode) for the recommended workflow.
+
+<SectionTab as="h1" sectionId="guides">Explore the docs</SectionTab>
+
+- [Task modes](/studio/observability/evaluations/workflows-plugin/task-modes): run the task as an activity, a workflow class, or a deployed workflow.
+- [Decorators](/studio/observability/evaluations/workflows-plugin/decorators): configure timeouts, retries, and concurrency, and attach metadata callbacks.
+- [Optimization](/studio/observability/evaluations/workflows-plugin/optimization): run the prompt and parameter optimizer as a workflow.
+- [Rescoring](/studio/observability/evaluations/workflows-plugin/rescoring): score persisted runs again without re-running the task.
+- [Building blocks](/studio/observability/evaluations/workflows-plugin/building-blocks): own the fan-out and call the setup, scoring, and upload steps yourself.
+- [API reference](/studio/observability/evaluations/workflows-plugin/api-reference): `evaluation.run()`, the decorators, and the plugin types.
+
+For release notes, see the [release history on PyPI](https://pypi.org/project/mistralai-workflows-plugins-evaluations/#history).
+
+<SectionTab as="h1" sectionId="faq">FAQ</SectionTab>
+
+<Faq>
+  <FaqItem question="Do I need to change my worker to use the plugin?">
+  No. Install the package in the worker's environment and restart it. The worker discovers the plugin at startup and registers its activities and child workflows.
+  </FaqItem>
+  <FaqItem question="Can I reuse my SDK scorers?">
+  Yes, the scorer signature is the same (`ScorerContext` in, score out). Make the function `async` and decorate it with `@evaluation.scorer`.
+  </FaqItem>
+  <FaqItem question="Why does my evaluation fail with a decoration error?">
+  `evaluation.run()` rejects any task, scorer, or run evaluator that isn't decorated. Add `@evaluation.task`, `@evaluation.scorer`, or `@evaluation.run_scorer` to the function named in the error.
+  </FaqItem>
+  <FaqItem question="How do I limit the load on the Mistral API?">
+  Set `max_concurrency` on the decorators: `@evaluation.task(max_concurrency=N)` limits the records processed in parallel, and `@evaluation.scorer(max_concurrency=N)` limits the scorers running at once for each record. See [Decorators](/studio/observability/evaluations/workflows-plugin/decorators).
+  </FaqItem>
+</Faq>

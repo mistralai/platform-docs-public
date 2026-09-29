@@ -15,6 +15,7 @@ import path from 'node:path';
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { parseFrontmatter } from '@/lib/content/parse-metadata';
 import { isDocsRouteHidden } from '@/lib/content/hidden';
+import { resolveAndInlineMdxImports } from '@/lib/content/inline-mdx-imports';
 
 const ROOT = process.cwd();
 const DOCS_ROOT = path.join(ROOT, 'src', 'content', 'en', 'docs');
@@ -114,8 +115,13 @@ async function buildEntries(): Promise<PageEntry[]> {
 
   const entries: PageEntry[] = [];
   for (const relativePath of relativePaths) {
-    const source = await readFile(path.join(DOCS_ROOT, relativePath), 'utf8');
+    const pagePath = path.join(DOCS_ROOT, relativePath);
+    const source = await readFile(pagePath, 'utf8');
     const { metadata, content } = parseFrontmatter(source);
+    const fullContent = await resolveAndInlineMdxImports(
+      content,
+      path.dirname(pagePath)
+    );
 
     const slug = path
       .dirname(relativePath)
@@ -141,7 +147,7 @@ async function buildEntries(): Promise<PageEntry[]> {
       description,
       url,
       section,
-      content: cleanFullContent(content),
+      content: cleanFullContent(fullContent),
     });
   }
   return entries;

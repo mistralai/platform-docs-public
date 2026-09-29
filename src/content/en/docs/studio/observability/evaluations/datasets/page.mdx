@@ -9,7 +9,7 @@ import { Faq, FaqItem } from '@/components/common/faq';
 
 # Datasets
 
-A dataset is the set of test cases that drives an offline evaluation. In the [Evaluation SDK](/studio/observability/evaluations#installation), a dataset is a **list of Python dicts** where each dict is an input record, and you define the keys to match what your task function expects.
+A dataset is the set of test cases that drives an offline evaluation. In the [Evaluation SDK](/studio/observability/evaluations#installation), a dataset is either a **list of Python dicts**, where each dict is an input record and you define the keys to match what your task function expects, or a [Studio dataset](#studio-datasets) that the SDK fetches for you.
 
 <SectionTab as="h1" sectionId="record-structure">Record structure</SectionTab>
 
@@ -35,11 +35,30 @@ def scorer(ctx: ScorerContext) -> int:
     return 1 if ctx.input_record["groundtruth"].lower() == str(ctx.output).lower() else 0
 ```
 
-<SectionTab as="h1" sectionId="fetch-from-studio">Fetch records from a Studio Dataset</SectionTab>
+<SectionTab as="h1" sectionId="studio-datasets">Use a Studio dataset</SectionTab>
 
-If you curate records in Studio, fetch them with the Mistral SDK and adapt each record's `payload` into the list of dicts expected by `evaluation.run()`.
+If you curate records in Studio, pass the dataset to `evaluation.run()` with `Dataset`, by slug or by ID. The SDK fetches every record before the run starts:
 
-For the language detection example, use Studio records shaped like this:
+```python
+from mistralai.evaluations import Dataset, Evaluation, Evaluator, Project
+
+run = await client.evaluation.run(
+    project=Project(name="Language Detection"),
+    evaluation=Evaluation(name="Managed Dataset Eval"),
+    dataset=Dataset(slug="language-detection-golden-set"),
+    task=task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+)
+```
+
+| Selector | Use it when |
+|----------|-------------|
+| `Dataset(slug="language-detection-golden-set")` | You want a readable, stable script. |
+| `Dataset(id="018f879d-20cd-7e9f-a1bc-2f4f08b6f170")` | You already have the dataset UUID. |
+
+Pass exactly one of `id` and `slug`. The dataset must already exist: selecting it by slug never creates it.
+
+Each record's `payload` becomes the input record, as is: `ctx.input_record` holds the same dict an equivalent inline record would. For the language detection example, use Studio records shaped like this:
 
 ```python
 payload = {"sentence": "Bonjour, comment ça va?", "groundtruth": "French"}
@@ -51,7 +70,19 @@ When importing those records from JSONL, wrap each payload in the Studio Dataset
 {"payload":{"sentence":"Bonjour, comment ça va?","groundtruth":"French"},"properties":{}}
 ```
 
-The list endpoint is paginated. This helper fetches every page and validates records into the same `LangItem` shape used by the evaluation:
+Record properties and source information aren't added to the input record. On runs saved to Studio, the run keeps the dataset ID, and each input record keeps the ID of the Studio record it came from.
+
+:::info[Studio datasets aren't snapshots]
+Each run reads the records that exist when it starts, up to 10,000. Later edits to the dataset affect future runs only. If records are added or removed while the SDK fetches them, the run fails before it starts instead of running on an inconsistent set.
+:::
+
+`Dataset` is accepted by `evaluation.run()`. [Optimization](/studio/observability/evaluations/optimization) and [Retry failed records](/studio/observability/evaluations/advanced-guides/retry-failed-records) take a list of records.
+
+<SectionTab as="h2" variant="secondary" sectionId="transform-records">Transform records before the run</SectionTab>
+
+When your Studio records don't match the shape your task expects, or when you need a list of records, for example to optimize, fetch and transform them yourself.
+
+Fetch the records with the Mistral SDK and adapt each record's `payload` yourself. The list endpoint is paginated. This helper fetches every page and validates records into a `LangItem` shape:
 
 ```python
 from typing import Any, TypedDict
@@ -108,7 +139,7 @@ async def fetch_eval_dataset(client: Mistral, dataset_id: str) -> list[LangItem]
     return dataset
 ```
 
-Then use the fetched records in an evaluation:
+Then pass the resulting list to `dataset`:
 
 ```python
 import asyncio
@@ -166,7 +197,7 @@ async def main():
 asyncio.run(main())
 ```
 
-If your task expects a different schema, transform each managed record explicitly in the same way: validate the fields you need from `record.payload`, then return the exact dict shape your task and scorers expect.
+Validate the fields you need from `record.payload`, then return the exact dict shape your task and scorers expect.
 
 <SectionTab as="h1" sectionId="type-safety">Type safety with TypedDict</SectionTab>
 
@@ -229,7 +260,7 @@ A dataset built around a single task or capability produces clearer signals than
 
 ### Version your datasets
 
-Freeze your dataset between runs if you want to track performance over time. Even small changes to records can make runs incomparable. Use meaningful names like `qa_baseline_2025_06` rather than `test_data`.
+Freeze your dataset between runs if you want to track performance over time. Even small changes to records can make runs incomparable. Studio datasets are mutable: each run reads their current records. Use meaningful names like `qa_baseline_2025_06` rather than `test_data`.
 
 ### Ground truth quality matters
 
@@ -237,7 +268,7 @@ Inaccurate or ambiguous ground truth produces noisy scores. If you use an LLM ju
 
 <SectionTab as="h1" sectionId="organizing-in-studio">Organizing in Studio</SectionTab>
 
-The Evaluation SDK organizes results using **Projects**, **Evaluations**, and **Runs** in Studio, not by the dataset itself. Pass your dataset directly to `evaluation.run()`:
+The Evaluation SDK organizes results using **Projects**, **Evaluations**, and **Runs** in Studio, not by the dataset itself. Pass your dataset to `evaluation.run()`:
 
 ```python
 from mistralai.evaluations import Evaluation, Project
@@ -245,7 +276,7 @@ from mistralai.evaluations import Evaluation, Project
 run = await client.evaluation.run(
     project=Project(name="Language Detection"),
     evaluation=Evaluation(name="Accuracy Eval"),
-    dataset=dataset,  # your list of dicts
+    dataset=dataset,  # your list of dicts, or a Dataset
     task=task,
     evaluators=[...],
 )
@@ -265,13 +296,13 @@ run = await client.evaluation.run(
 
 <Faq>
   <FaqItem question="How large can my dataset be?">
-  There is no hard limit enforced by the SDK. In practice, keep datasets small enough to run during iteration. Use `local=True` to test on a subset before a full run.
+  A run accepts up to 10,000 records. In practice, keep datasets small enough to run during iteration. Use `local=True` to test on a subset before a full run.
   </FaqItem>
   <FaqItem question="Can I pass a Studio Dataset ID directly to evaluation.run()?">
-  Not currently. `evaluation.run()` expects records in memory. Fetch records from Studio first, transform them into your evaluation record shape, then pass the resulting list to `dataset`.
+  Yes. Pass `dataset=Dataset(id=...)` or `dataset=Dataset(slug=...)`. See [Use a Studio dataset](#studio-datasets).
   </FaqItem>
   <FaqItem question="Can I load records from a file?">
-  Yes. Load any file format (JSONL, CSV, and other formats) into a list of dicts before passing to `evaluation.run()`. The SDK only requires a Python list.
+  Yes. Load any file format (JSONL, CSV, and other formats) into a list of dicts before passing to `evaluation.run()`.
   </FaqItem>
   <FaqItem question="My scores are noisy. Is it the dataset or the scorer?">
   Start with the dataset. Inspect low-scoring records: are the inputs ambiguous? Is the ground truth accurate? Fix the dataset first, then tune the scorer or judge instructions.

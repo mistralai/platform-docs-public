@@ -9,7 +9,7 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Configurer les statistiques
 
-Les statistiques sont des valeurs au niveau de l’exécution qu’un évaluateur expose à partir de ses scores numériques par enregistrement : une moyenne, un total, un percentile. Elles apparaissent dans l’en-tête du tableau des exécutions, peuvent être représentées dans le temps et associées à un objectif.
+Les statistiques sont les valeurs au niveau de l'exécution qu'un évaluateur expose à partir de ses scores par enregistrement : une moyenne, un total, un percentile ou une métrique de classification telle que le F1. Ce sont celles que vous voyez dans l'en-tête du tableau d'exécutions, dans les graphiques au fil du temps, et que vous ciblez avec un objectif.
 
 Par défaut, un évaluateur calcule l’ensemble historique (`avg`, `min`, `max`, `std`, `count`). Déclarez `statistics` si vous voulez un autre ensemble : un nombre total d’échecs, des percentiles de latence ou aucune statistique.
 
@@ -106,6 +106,64 @@ Evaluator(
 
 Cela expose exactement `p50`, `p75` et `p95` — pas de `avg`, `min`, `max`, `std` ni `count`. Comme `p95` est en premier, il devient la statistique principale affichée dans l’en-tête du tableau des exécutions, et son `Goal.lte(500)` fait échouer l’exécution lorsque la latence au 95e percentile dépasse 500 ms.
 
+<SectionTab as="h1" sectionId="classification">Statistiques de classification</SectionTab>
+
+`precision`, `recall` et `f1` proviennent d'une matrice de confusion sur les paires d'étiquettes `(expected, predicted)`, ils nécessitent donc **deux** étiquettes par enregistrement. L'étiquette prédite est la `value` du score. L'étiquette attendue est lue dans les `metadata` du score, sous `expected_key` (par défaut `"expected"`).
+
+| Méthode | Signification | ID |
+|--------|---------|----|
+| `Statistic.precision(...)` | Précision (valeur prédictive positive) | `precision`, `precision_macro`, … |
+| `Statistic.recall(...)` | Rappel (taux de vrais positifs) | `recall`, `recall_micro`, … |
+| `Statistic.f1(...)` | F1, la moyenne harmonique de la précision et du rappel | `f1`, `f1_weighted`, … |
+
+Chaque fabrique prend **exactement un** des arguments suivants :
+
+- `positive_label` : une métrique binaire, calculée par rapport à cette seule classe.
+- `average` : une métrique multi-classes, moyennée avec `"macro"`, `"micro"` ou `"weighted"`.
+
+Les deux modes acceptent également les arguments optionnels `expected_key`, `labels` et `goal`.
+
+<SectionTab as="h2" variant="secondary" sectionId="binary-classification">Binaire</SectionTab>
+
+```python
+from mistralai.evaluations import Evaluator, Score, Statistic
+
+def scorer(ctx) -> Score:
+    # value: the model's prediction; metadata["expected"]: the ground-truth label
+    return Score(value=ctx.output, metadata={"expected": ctx.input_record["expected"]})
+
+Evaluator(
+    name="spam_classifier",
+    scorer=scorer,
+    statistics=[
+        Statistic.f1(positive_label="spam"),  # headline
+        Statistic.precision(positive_label="spam"),
+        Statistic.recall(positive_label="spam"),
+    ],
+)
+```
+
+Les étiquettes sont des scores catégoriels, donc l'évaluateur obtient aussi les fréquences de prédiction. Studio affiche les métriques à côté de la matrice de confusion à partir de laquelle elles ont été calculées, et additionne les matrices entre les exécutions pour agréger les métriques dans la liste des exécutions.
+
+<SectionTab as="h2" variant="secondary" sectionId="multi-class">Multi-classes</SectionTab>
+
+```python
+statistics=[
+    Statistic.f1(average="macro"),            # id: f1_macro
+    Statistic.precision(average="weighted"),  # id: precision_weighted
+    Statistic.recall(average="micro"),        # id: recall_micro
+]
+```
+
+Les moyennes `macro` et `weighted` dépendent des classes présentes. Passez `labels` pour fixer l'ensemble des classes, par exemple `Statistic.f1(average="macro", labels=["fr", "en", "de"])`, afin que la valeur reste comparable quand un filtre retire tous les enregistrements d'une classe.
+
+<SectionTab as="h2" variant="secondary" sectionId="undefined-metrics">Métriques non définies et étiquettes manquantes</SectionTab>
+
+- Une métrique est `null` (affichée comme `-`) quand son dénominateur est nul, par exemple la précision quand le modèle ne prédit jamais la classe positive.
+- Un score sans étiquette attendue dans ses métadonnées ne peut pas entrer dans la matrice de confusion. Il est exclu des métriques et compté dans `excluded_count`, affiché dans Studio à côté du nombre d'enregistrements scorés.
+
+Pour l'exactitude, vous n'avez pas besoin d'une statistique de classification : attribuez un score de `1` quand la prédiction correspond à l'étiquette attendue et `0` sinon, puis déclarez `Statistic.avg()`.
+
 <SectionTab as="h1" sectionId="statistic-level-goals">Objectifs au niveau des statistiques</SectionTab>
 
 Un objectif associé à une statistique cible cette statistique — à la fois au niveau de l’enregistrement et de l’agrégation de l’exécution. C’est la méthode recommandée pour contrôler une exécution et remplacer `aggregate_goal` :
@@ -130,7 +188,7 @@ Un objectif au niveau d’une statistique ne porte jamais son propre `metric` :
 
 <SectionTab as="h1" sectionId="scores-must-be-numeric">Les scores doivent être numériques 0/1, pas booléens</SectionTab>
 
-Les statistiques sont des réductions numériques. Un évaluateur qui contrôle la réussite ou l’échec doit émettre la valeur numérique `0` ou `1`, **pas** `True`/`False`. Les booléens sont classés comme des valeurs *catégorielles*. Une fonction de scoring qui renvoie un booléen produit donc des statistiques catégorielles (fréquences et mode), et aucune des réductions numériques ci-dessus ne s’applique.
+Les réductions numériques nécessitent des scores numériques. Un évaluateur qui se base sur réussite/échec doit émettre `0` ou `1` numériques, **pas** `True`/`False`. Les booléens sont classés comme valeurs *catégorielles*, donc un scorer qui renvoie un booléen produit des statistiques catégorielles (fréquences et mode) et aucune des réductions numériques ci-dessus ne s'applique.
 
 ```python
 def failure_scorer(ctx) -> int:

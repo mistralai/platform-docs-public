@@ -592,6 +592,11 @@ const rawRedirects: RedirectRule[] = [
     permanent: true,
   },
   {
+    source: "/studio/connectors/playground",
+    destination: "/studio/connectors/debugger",
+    permanent: true,
+  },
+  {
     source: "/studio/knowledge-rag/connectors/debugger",
     destination: "/studio/connectors/debugger",
     permanent: true,

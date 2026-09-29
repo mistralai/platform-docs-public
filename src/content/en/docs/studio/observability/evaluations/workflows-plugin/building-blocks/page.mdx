@@ -1,0 +1,110 @@
+---
+id: observability_evaluations_workflows_plugin_building_blocks
+title: Building blocks
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Building blocks
+
+When your workflow already manages its own fan-out, for example with custom child workflow orchestration, call the steps of `evaluation.run()` yourself instead. You keep full control over execution and still get the results in Studio.
+
+The building blocks map to what `evaluation.run()` does internally:
+
+```
+setup()  →  upload_inputs()  →  [your fan-out]  →  score()  →  upload()
+```
+
+`evaluation.run()` uploads each record from its own child workflow. With the building blocks, you own the fan-out, so you choose how many records each `upload()` call sends.
+
+<SectionTab as="h1" sectionId="example">Example</SectionTab>
+
+```python
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import (
+    Evaluation, Evaluator, Project, Score, ScorerContext, System,
+)
+
+@evaluation.scorer
+async def conciseness(ctx: ScorerContext) -> Score:
+    ratio = len(str(ctx.output)) / max(len(ctx.input_record["text"]), 1)
+    return Score(value=round(1.0 - ratio, 2))
+
+evaluators = [Evaluator(name="conciseness", scorer=conciseness)]
+
+# 1. Create the run in Studio
+setup = await evaluation.setup(
+    evaluator_names=["conciseness"],
+    project=Project(name="Summarization"),
+    evaluation=Evaluation(name="Summary quality"),
+    system=System(name="small", params={"model": "mistral-small-latest"}),
+)
+
+# 2. Upload the input records
+input_ids = await evaluation.upload_inputs(run_id=setup["run_id"], dataset=dataset)
+
+# 3. Produce the outputs with your own fan-out
+outputs = await my_custom_fan_out(dataset)
+
+# 4. Score the outputs
+scores = await evaluation.score(dataset=dataset, outputs=outputs, evaluators=evaluators)
+
+# 5. Upload the outputs and scores
+await evaluation.upload(
+    run_id=setup["run_id"],
+    evaluator_name_to_id=setup["evaluator_name_to_id"],
+    input_record_ids=input_ids,
+    outputs=outputs,
+    scores=scores,
+)
+```
+
+<SectionTab as="h1" sectionId="setup">evaluation.setup()</SectionTab>
+
+Creates the run in Studio. Returns a dict with `run_id`, `run_url`, `evaluator_name_to_id`, and `run_evaluator_name_to_id`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `evaluator_names` | `list[str]` | **required** | Names of the evaluators |
+| `run_evaluator_names` | `list[str] \| None` | `None` | Names of the run evaluators |
+| `project` | `Project \| None` | `None` | Project to create or attach to |
+| `evaluation` | `Evaluation \| None` | `None` | Evaluation to create or attach to |
+| `name` | `str \| None` | `None` | Run name |
+| `description` | `str \| None` | `None` | Run description |
+| `tags` | `list[str] \| None` | `None` | Tags for filtering in Studio |
+| `metadata` | `dict[str, Any] \| None` | `None` | Metadata attached to the run |
+| `system` | `System \| None` | `None` | System config recorded on the run |
+| `num_generations` | `int` | `1` | Generations per record, up to 100. Each record you upload must carry this many generations, or Studio treats it as incomplete. |
+
+<SectionTab as="h1" sectionId="upload-inputs">evaluation.upload_inputs()</SectionTab>
+
+Uploads the input records. Returns the list of input record IDs.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | Run ID from `setup()` |
+| `dataset` | `Sequence[Mapping[str, Any]]` | The input records |
+
+<SectionTab as="h1" sectionId="score">evaluation.score()</SectionTab>
+
+Scores the outputs, one per record. Returns a list of score dicts, one per record. Every scorer must be decorated with `@evaluation.scorer`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `dataset` | `Sequence[Mapping[str, Any]]` | The input records |
+| `outputs` | `list[Any]` | The task outputs, one per record |
+| `evaluators` | `list[Evaluator]` | The evaluators to run |
+
+<SectionTab as="h1" sectionId="upload">evaluation.upload()</SectionTab>
+
+Uploads the outputs and scores to Studio.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | Run ID from `setup()` |
+| `evaluator_name_to_id` | `dict[str, str]` | Mapping returned by `setup()` |
+| `input_record_ids` | `list[str]` | IDs returned by `upload_inputs()` |
+| `outputs` | `list[Any] \| None` | Task outputs, one per record. Use for single-generation runs. |
+| `scores` | `list[dict] \| None` | Score dicts from `score()`. Use with `outputs`. |
+| `generations` | `list[list[dict]] \| None` | For multi-generation runs: for each record, a list of generations, each a dict with `output`, `scores` (evaluator name to score dict), and an optional `error`. |

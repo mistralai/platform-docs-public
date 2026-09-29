@@ -1,0 +1,100 @@
+---
+id: observability_evaluations_workflows_plugin_decorators
+title: Decorators
+sidebar_position: 2
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Decorators
+
+Every function you pass to the plugin runs as a Temporal activity. A decorator marks the function for the plugin and sets how its activity runs: timeout, retries, and concurrency. `evaluation.run()` rejects any undecorated task, scorer, run evaluator, or metadata callback.
+
+Use a decorator bare, or call it to override the defaults:
+
+```python
+from datetime import timedelta
+
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import Score, ScorerContext, TaskContext
+
+@evaluation.task(execution_timeout=timedelta(minutes=30), max_concurrency=10)
+async def slow_task(ctx: TaskContext) -> str: ...
+
+@evaluation.scorer
+async def accuracy(ctx: ScorerContext) -> Score: ...
+```
+
+<SectionTab as="h1" sectionId="task">@evaluation.task</SectionTab>
+
+Marks the function that produces an output for each record. It receives a [`TaskContext`](/studio/observability/evaluations/advanced-guides/context-objects#taskcontext).
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 2 minutes | Maximum time for one execution |
+| `retry_policy_max_attempts` | `2` | Maximum attempts on failure |
+| `max_concurrency` | `5` | Maximum task executions running at once |
+
+With [multiple generations](/studio/observability/evaluations/advanced-guides/num-generations), `max_concurrency` is a total budget across records and generations: more generations per record means fewer records in flight, not more calls at once.
+
+<SectionTab as="h1" sectionId="scorer">@evaluation.scorer</SectionTab>
+
+Marks a scorer passed to an `Evaluator`. It receives a [`ScorerContext`](/studio/observability/evaluations/advanced-guides/context-objects#scorercontext) and returns a `Score` or a number.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 1 minute | Maximum time for one execution |
+| `retry_policy_max_attempts` | `2` | Maximum attempts on failure |
+| `max_concurrency` | `5` | Maximum scorers running at once for each record |
+
+When a run has several evaluators, the lowest `max_concurrency` among their scorers applies. A scorer that still fails after its retries records an error score for that record; the run continues.
+
+<SectionTab as="h1" sectionId="run-scorer">@evaluation.run_scorer</SectionTab>
+
+Marks a scorer passed to a `RunEvaluator`. It runs once, after all records complete, and receives a [`RunEvaluatorContext`](/studio/observability/evaluations/advanced-guides/context-objects#runevaluatorcontext).
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 1 minute | Maximum time for one execution |
+| `retry_policy_max_attempts` | `2` | Maximum attempts on failure |
+
+When results are uploaded to Studio, reading the records back adds up to 10 minutes to this timeout. See [Run evaluators](/studio/observability/evaluations/workflows-plugin#run-evaluators).
+
+<SectionTab as="h1" sectionId="metadata-callbacks">Metadata callbacks</SectionTab>
+
+Metadata callbacks store information derived from task outputs or scores on the records and the run in Studio.
+
+`@evaluation.record_metadata` runs once per record, after its task and scorers. It receives a [`RecordMetadataContext`](/studio/observability/evaluations/advanced-guides/context-objects#recordmetadatacontext), and the returned dict is stored on the record's metadata. Pass it to `record_metadata`:
+
+```python
+from mistralai.workflows.plugins.evaluations.types import RecordMetadataContext
+
+@evaluation.record_metadata
+async def output_length(ctx: RecordMetadataContext) -> dict:
+    return {"output_len": len(str(ctx.record.generations[0].output))}
+
+result = await evaluation.run(..., record_metadata=output_length)
+```
+
+`@evaluation.run_metadata` runs once, after the whole run. It receives a [`RunMetadataContext`](/studio/observability/evaluations/advanced-guides/context-objects#runmetadatacontext), and the returned dict is added to the run's metadata. Pass it to `metadata` instead of a static dict:
+
+```python
+from mistralai.workflows.plugins.evaluations.types import RunMetadataContext
+
+@evaluation.run_metadata
+async def record_count(ctx: RunMetadataContext) -> dict:
+    return {"num_records": len(ctx.records)}
+
+result = await evaluation.run(..., metadata=record_count)
+```
+
+Both callbacks accept `execution_timeout` (default 1 minute) and `retry_policy_max_attempts` (default `2`). `@evaluation.record_metadata` also accepts `max_concurrency` (default `5`).
+
+<SectionTab as="h1" sectionId="mutator">@evaluation.mutator</SectionTab>
+
+Marks a custom mutator that replaces the optimizer's default reflective mutator. See [Custom mutators](/studio/observability/evaluations/workflows-plugin/optimization#custom-mutators).
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `execution_timeout` | 2 minutes | Maximum time for one mutation |
+| `retry_policy_max_attempts` | `2` | Maximum attempts on failure |

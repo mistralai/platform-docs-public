@@ -1,0 +1,85 @@
+---
+id: observability_evaluations_workflows_plugin_task_modes
+title: Modes de tâche
+sidebar_position: 1
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Modes de tâche
+
+Le paramètre `task` de `evaluation.run()` accepte trois types de valeurs. Chacun répartit les données de façon différente.
+
+| Mode | Valeur | Répartition | Adapté à |
+|------|-------|---------|----------|
+| Activité | Fonction `@evaluation.task` | Une activité par enregistrement | Appel LLM unique ou pipeline court |
+| Classe de workflow | Classe `@workflow.define` | Un workflow enfant par enregistrement | Tâches multi-étapes dans le même code |
+| Nom de workflow | `str` | Un workflow enfant par enregistrement | Tâches déployées séparément |
+
+<SectionTab as="h1" sectionId="activity">Tâche Activité</SectionTab>
+
+Décorez une fonction async avec `@evaluation.task`. Le plugin l'exécute comme une activité Temporal pour chaque enregistrement, avec le délai d'expiration, les tentatives et la concurrence définis sur le [decorator](/studio/observability/evaluations/workflows-plugin/decorators) :
+
+```python
+from mistralai.workflows.client import get_mistral_client
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import TaskContext
+
+@evaluation.task
+async def summarize(ctx: TaskContext) -> str:
+    client = get_mistral_client()
+    response = await client.chat.complete_async(
+        model=str(ctx.system.params["model"]),
+        messages=[{"role": "user", "content": ctx.input_record["text"]}],
+    )
+    return str(response.choices[0].message.content)
+```
+
+La tâche peut renvoyer toute valeur sérialisable en JSON : chaînes, dictionnaires ou modèles Pydantic.
+
+<SectionTab as="h1" sectionId="workflow-class">Classe de workflow</SectionTab>
+
+Passez une classe décorée avec `@workflow.define` quand la tâche est elle-même un workflow multi-étapes. Le plugin le démarre comme un workflow enfant pour chaque enregistrement.
+
+Le point d'entrée reçoit un **`TaskContext` sérialisé** (`input_record`, `system` et `metadata`), et non l'enregistrement lui-même. Validez-le en `TaskContext` pour obtenir un accès typé :
+
+```python
+from mistralai.workflows import workflow
+from mistralai.workflows.plugins.evaluations.types import TaskContext
+
+@workflow.define(name="research-task")
+class ResearchTask:
+    @workflow.entrypoint
+    async def run(self, params: dict) -> str:
+        ctx = TaskContext.model_validate(params)
+        sources = await search(ctx.input_record["question"])
+        return await write_answer(ctx.input_record["question"], sources)
+
+result = await evaluation.run(
+    dataset=dataset,
+    task=ResearchTask,
+    evaluators=[...],
+)
+```
+
+<SectionTab as="h1" sectionId="workflow-name">Nom de workflow</SectionTab>
+
+Passez le nom d'un workflow sous forme de chaîne quand la tâche est déployée séparément et que sa classe n'est pas disponible dans votre code. Le workflow cible reçoit le même `TaskContext` sérialisé :
+
+```python
+result = await evaluation.run(
+    dataset=dataset,
+    task="research-task",
+    evaluators=[...],
+)
+```
+
+<SectionTab as="h1" sectionId="workflow-limits">Limites des tâches de workflow</SectionTab>
+
+Les tâches de workflow ne passent pas par `@evaluation.task`, donc ses options ne s'appliquent pas :
+
+- **Délai d'expiration** : une classe de workflow utilise son propre délai d'exécution. Un nom de workflow obtient 10 minutes par enregistrement.
+- **Tentatives** : le workflow enfant n'est pas relancé. Un enregistrement en échec est consigné comme erreur.
+- **Concurrence** : jusqu'à 5 enregistrements s'exécutent simultanément.
+
+Les scorers s'exécutent comme des activités dans les trois modes, avec les options définies sur `@evaluation.scorer`.

@@ -9,7 +9,7 @@ import { Faq, FaqItem } from '@/components/common/faq';
 
 # Jeux de données
 
-Un jeu de données est un ensemble de cas de test qui pilotent une évaluation hors ligne. Dans le [SDK Evaluation](/studio/observability/evaluations#installation), un jeu de données est une **liste de dictionnaires Python** où chaque dictionnaire est un enregistrement d'entrée, et vous définissez les clés pour correspondre à ce que votre fonction de tâche attend.
+Un ensemble de données est l'ensemble de cas de test qui pilote une évaluation hors ligne. Dans l'[SDK d'évaluation](/studio/observability/evaluations#installation), un ensemble de données est soit une **liste de dicts Python**, où chaque dict est un enregistrement d'entrée et où vous définissez les clés pour correspondre à ce que votre fonction de tâche attend, soit un [ensemble de données Studio](#studio-datasets) que le SDK récupère pour vous.
 
 <SectionTab as="h1" sectionId="record-structure">Structure des enregistrements</SectionTab>
 
@@ -35,11 +35,30 @@ def scorer(ctx: ScorerContext) -> int:
     return 1 if ctx.input_record["groundtruth"].lower() == str(ctx.output).lower() else 0
 ```
 
-<SectionTab as="h1" sectionId="fetch-from-studio">Récupérer des enregistrements depuis un jeu de données Studio</SectionTab>
+<SectionTab as="h1" sectionId="studio-datasets">Utiliser un ensemble de données Studio</SectionTab>
 
-Si vous préparez des enregistrements dans Studio, récupérez-les avec le SDK Mistral et adaptez le `payload` de chaque enregistrement dans la liste de dictionnaires attendue par `evaluation.run()`.
+Si vous gérez vos enregistrements dans Studio, passez l'ensemble de données à `evaluation.run()` avec `Dataset`, par slug ou par ID. Le SDK récupère chaque enregistrement avant le démarrage de l'exécution :
 
-Pour l'exemple de détection de langue, utilisez des enregistrements Studio structurés comme suit :
+```python
+from mistralai.evaluations import Dataset, Evaluation, Evaluator, Project
+
+run = await client.evaluation.run(
+    project=Project(name="Language Detection"),
+    evaluation=Evaluation(name="Managed Dataset Eval"),
+    dataset=Dataset(slug="language-detection-golden-set"),
+    task=task,
+    evaluators=[Evaluator(name="accuracy", scorer=scorer)],
+)
+```
+
+| Sélecteur | Utilisez-le quand |
+|----------|-------------|
+| `Dataset(slug="language-detection-golden-set")` | Vous voulez un script lisible et stable. |
+| `Dataset(id="018f879d-20cd-7e9f-a1bc-2f4f08b6f170")` | Vous disposez déjà de l'UUID de l'ensemble de données. |
+
+Passez exactement un seul des deux : `id` ou `slug`. L'ensemble de données doit déjà exister : le sélectionner par slug ne le crée jamais.
+
+Le `payload` de chaque enregistrement devient l'enregistrement d'entrée, tel quel : `ctx.input_record` contient le même dict qu'un enregistrement en ligne équivalent. Pour l'exemple de détection de langue, utilisez des enregistrements Studio structurés ainsi :
 
 ```python
 payload = {"sentence": "Bonjour, comment ça va?", "groundtruth": "French"}
@@ -51,7 +70,19 @@ Lorsque vous importez ces enregistrements depuis JSONL, encapsulez chaque payloa
 {"payload":{"sentence":"Bonjour, comment ça va?","groundtruth":"French"},"properties":{}}
 ```
 
-L'endpoint de liste est paginé. Cet assistant récupère chaque page et valide les enregistrements dans la même forme `LangItem` que celle utilisée par l'évaluation :
+Les propriétés des enregistrements et les informations sur leur source ne sont pas ajoutées à l'enregistrement d'entrée. Sur les exécutions enregistrées dans Studio, l'exécution conserve l'ID de l'ensemble de données, et chaque enregistrement d'entrée conserve l'ID de l'enregistrement Studio dont il provient.
+
+:::info[Les ensembles de données Studio ne sont pas des instantanés]
+Chaque exécution lit les enregistrements qui existent au moment de son démarrage, jusqu'à 10 000. Les modifications ultérieures de l'ensemble de données n'affectent que les exécutions futures. Si des enregistrements sont ajoutés ou supprimés pendant que le SDK les récupère, l'exécution échoue avant de démarrer plutôt que de s'exécuter sur un ensemble incohérent.
+:::
+
+`Dataset` est accepté par `evaluation.run()`. [Optimization](/studio/observability/evaluations/optimization) et [Retry failed records](/studio/observability/evaluations/advanced-guides/retry-failed-records) prennent une liste d'enregistrements.
+
+<SectionTab as="h2" variant="secondary" sectionId="transform-records">Transformer les enregistrements avant l'exécution</SectionTab>
+
+Quand vos enregistrements Studio ne correspondent pas à la structure attendue par votre tâche, ou quand vous avez besoin d'une liste d'enregistrements, par exemple pour optimiser, récupérez-les et transformez-les vous-même.
+
+Récupérez les enregistrements avec le SDK Mistral et adaptez le `payload` de chaque enregistrement vous-même. L'endpoint de liste est paginé. Cet utilitaire récupère chaque page et valide les enregistrements sous la forme d'un `LangItem` :
 
 ```python
 from typing import Any, TypedDict
@@ -108,7 +139,7 @@ async def fetch_eval_dataset(client: Mistral, dataset_id: str) -> list[LangItem]
     return dataset
 ```
 
-Utilisez ensuite les enregistrements récupérés dans une évaluation :
+Passez ensuite la liste obtenue à `dataset` :
 
 ```python
 import asyncio
@@ -166,7 +197,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Si votre tâche attend un schéma différent, transformez explicitement chaque enregistrement géré de la même manière : validez les champs dont vous avez besoin depuis `record.payload`, puis renvoyez la forme exacte de dictionnaire attendue par votre tâche et vos scorers.
+Validez les champs dont vous avez besoin depuis `record.payload`, puis renvoyez la structure de dict exacte attendue par votre tâche et vos scorers.
 
 <SectionTab as="h1" sectionId="type-safety">Sécurité des types avec TypedDict</SectionTab>
 
@@ -229,7 +260,7 @@ Un jeu de données construit autour d'une seule tâche ou capacité produit des 
 
 ### Versionnez vos jeux de données
 
-Figez votre jeu de données entre les exécutions si vous souhaitez suivre les performances au fil du temps. Même de petites modifications aux enregistrements peuvent rendre les exécutions non comparables. Utilisez des noms explicites comme `qa_baseline_2025_06` plutôt que `test_data`.
+Figez votre ensemble de données entre les exécutions si vous voulez suivre les performances dans le temps. Même de petites modifications d'enregistrements peuvent rendre les exécutions incomparables. Les ensembles de données Studio sont modifiables : chaque exécution lit leurs enregistrements en l'état. Utilisez des noms explicites comme `qa_baseline_2025_06` plutôt que `test_data`.
 
 ### La qualité de la vérité de référence est cruciale
 
@@ -237,7 +268,7 @@ Une vérité terrain inexacte ou ambiguë produit des scores bruités. Si vous u
 
 <SectionTab as="h1" sectionId="organizing-in-studio">Organisation dans Studio</SectionTab>
 
-Le SDK Evaluation organise les résultats à l'aide de **Projets**, **Évaluations** et **Exécutions** dans Studio, et non en fonction du jeu de données lui-même. Passez votre jeu de données directement à `evaluation.run()` :
+Le SDK d'évaluation organise les résultats par **Projets**, **Évaluations** et **Exécutions** dans Studio, et non par l'ensemble de données lui-même. Passez votre ensemble de données à `evaluation.run()` :
 
 ```python
 from mistralai.evaluations import Evaluation, Project
@@ -245,7 +276,7 @@ from mistralai.evaluations import Evaluation, Project
 run = await client.evaluation.run(
     project=Project(name="Language Detection"),
     evaluation=Evaluation(name="Accuracy Eval"),
-    dataset=dataset,  # your list of dicts
+    dataset=dataset,  # your list of dicts, or a Dataset
     task=task,
     evaluators=[...],
 )
@@ -265,13 +296,13 @@ run = await client.evaluation.run(
 
 <Faq>
   <FaqItem question="Quelle taille peut avoir mon jeu de données ?">
-  Il n'y a pas de limite stricte imposée par le SDK. En pratique, gardez les jeux de données assez petits pour pouvoir être exécutés pendant les itérations. Utilisez `local=True` pour tester sur un sous-ensemble avant une exécution complète.
+  Une exécution accepte jusqu'à 10 000 enregistrements. En pratique, gardez des ensembles de données assez petits pour s'exécuter pendant l'itération. Utilisez `local=True` pour tester sur un sous-ensemble avant une exécution complète.
   </FaqItem>
   <FaqItem question="Puis-je transmettre directement un identifiant de jeu de données Studio à evaluation.run() ?">
-  Pas pour le moment. `evaluation.run()` attend des enregistrements en mémoire. Récupérez d'abord les enregistrements depuis Studio, transformez-les dans la forme d'enregistrement attendue par votre évaluation, puis transmettez la liste obtenue à `dataset`.
+  Oui. Passez `dataset=Dataset(id=...)` ou `dataset=Dataset(slug=...)`. Voir [Utiliser un ensemble de données Studio](#studio-datasets).
   </FaqItem>
   <FaqItem question="Puis-je charger des enregistrements à partir d'un fichier ?">
-  Oui. Chargez n'importe quel format de fichier (JSONL, CSV, etc.) dans une liste de dictionnaires avant de le passer à `evaluation.run()`. Le SDK exige simplement une liste Python.
+  Oui. Chargez n'importe quel format de fichier (JSONL, CSV et d'autres formats) dans une liste de dicts avant de le passer à `evaluation.run()`.
   </FaqItem>
   <FaqItem question="Mes notes sont bruitées. Est-ce dû au jeu de données ou au notateur ?">
   Commencez par le jeu de données. Inspectez les enregistrements mal notés : les entrées sont-elles ambiguës ? La vérité de référence est-elle exacte ? Corrigez d'abord le jeu de données, puis ajustez le notateur ou les instructions du juge.

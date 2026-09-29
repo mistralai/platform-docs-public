@@ -206,9 +206,16 @@ The three splits:
 - **D_feedback** — a pool from which a fresh minibatch is drawn each iteration; the optimizer reflects on failures here to propose the next candidate.
 - **Holdout** — an optional never-seen set used only at the end, to report an honest, selection-bias-free improvement of the winner over the baseline. Set `holdout=0` to disable (useful on small datasets where there is no room to spare).
 
+By default, GEPA partitions the dataset with `pareto_size` and `holdout`. To choose the partitions yourself, pass `split`:
+
+- **A record key**, for example `GEPA(split="split")`: each record's value under that key is `"feedback"`, `"pareto"`, or `"holdout"`. Records with a missing or unknown label are skipped with a warning.
+- **A callback** that returns the partitions. It must be deterministic and perform no I/O.
+
+Explicit partitions take precedence over `pareto_size`, `holdout`, and shuffling.
+
 Use GEPA for multi-objective problems, larger datasets, or whenever you want the holdout to guard against overfitting.
 
-:::tip Start small, then scale
+:::tip[Start small, then scale]
 Begin with `SimpleOptimizer` and a handful of `iterations` to confirm your task and evaluators behave, then switch to `GEPA` for the real run. A cheap `reflection_model` with a stronger `mutation_model` is a good default: cheap diagnosis, bold rewrites.
 :::
 
@@ -228,7 +235,7 @@ evaluators=[
 
 This is how you encode "don't sacrifice factuality to win on brevity." A hard floor is a *constraint*, not a bigger vote — that's why it's a `goal`, not a `weight`. A weighted mean can be gamed (an empty `"."` summary can score high on conciseness while failing accuracy), but a gate ranks gate-passers ahead of gate-violators before the mean is compared.
 
-:::caution When no candidate clears the gates
+:::caution[When no candidate clears the gates]
 A candidate only *wins* (`verdict == "success"`) if it clears every gate. If none does, there is no winner: the result is `best_attempt` (a candidate outscored the baseline but still fails a gate — surfaced as `result.best_attempt`) or `no_change`. A failing threshold never masquerades as a win.
 :::
 
@@ -261,6 +268,45 @@ for c in result.trajectory:
 ```
 
 Because the baseline, winner, and best attempt are scored on the same held-out set, the reported `gain` is honest — not an artifact of the search picking a lucky configuration.
+
+<SectionTab as="h1" sectionId="custom-mutators">Custom mutators</SectionTab>
+
+By default, both optimizers propose candidates with a reflective LLM mutator: it diagnoses the failures, then rewrites the tunable slots. To take full control over how candidates are proposed, pass your own async function as the algorithm's `mutator`:
+
+```python
+from mistralai.evaluations import GEPA
+from mistralai.evaluations.optimization import MutationRequest, MutationResult
+
+async def rewrite_instruction(request: MutationRequest) -> MutationResult:
+    failures = request.parent.failures  # worst records, with outputs, scores, and rationales
+    rewritten = await propose_rewrite(request.parent.overrides["instruction"], failures, request.steer)
+    return MutationResult(
+        overrides={"instruction": rewritten},
+        hypothesis="Name each fact type explicitly to stop the model from dropping dates.",
+    )
+
+result = await client.evaluation.optimize(
+    ...,
+    steer="Reduce hallucinations when the retrieved context doesn't contain the answer.",
+    algo=GEPA(iterations=8, mutator=rewrite_instruction),
+)
+```
+
+`SimpleOptimizer(mutator=...)` works the same way.
+
+`MutationRequest` carries:
+
+| Field | Description |
+|-------|-------------|
+| `parent` | The candidate being mutated: its `overrides` (current tunable values), scores, and `failures` |
+| `tunables` | The slots you can change |
+| `objectives` | What each evaluator measures, with its direction and target |
+| `history` | Prior attempts, with their overrides and scores |
+| `steer` | The `steer` passed to `optimize()`, if any |
+
+`MutationResult` carries `overrides` (the new values for some or all tunable slots) and an optional `hypothesis`, a one-line description of what the change tries, shown on the candidate in Studio.
+
+A custom mutator composes with `steer`: read `request.steer` to fold the goal into your own logic. `steer` is recorded on the optimization and shown in Studio whether or not your mutator uses it.
 
 <SectionTab as="h1" sectionId="rate-limits">Rate limits and retries</SectionTab>
 

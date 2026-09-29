@@ -206,10 +206,17 @@ Les trois découpages :
 - **D_feedback** — un pool depuis lequel un nouveau minibatch est tiré à chaque itération ; l'optimiseur réfléchit aux échecs observés ici pour proposer le candidat suivant.
 - **Holdout** — un ensemble optionnel jamais vu, utilisé seulement à la fin pour mesurer honnêtement l'amélioration du gagnant par rapport à la baseline, sans biais de sélection. Définissez `holdout=0` pour le désactiver, ce qui est utile sur les petits ensembles de données où chaque exemple compte.
 
+Par défaut, GEPA partitionne le jeu de données avec `pareto_size` et `holdout`. Pour choisir vous-même les partitions, passez `split` :
+
+- **Une clé d'enregistrement**, par exemple `GEPA(split="split")` : la valeur de chaque enregistrement sous cette clé est `"feedback"`, `"pareto"` ou `"holdout"`. Les enregistrements dont l'étiquette est absente ou inconnue sont ignorés avec un avertissement.
+- **Une fonction de rappel** qui renvoie les partitions. Elle doit être déterministe et ne faire aucune entrée/sortie.
+
+Les partitions explicites ont priorité sur `pareto_size`, `holdout` et le mélange.
+
 Utilisez GEPA pour les problèmes multi-objectifs, les grands ensembles de données ou chaque fois que vous voulez que le holdout limite le surapprentissage.
 
-:::tip Commencez petit, puis passez à l'échelle
-Commencez avec `SimpleOptimizer` et quelques `iterations` pour vérifier que votre tâche et vos évaluateurs se comportent correctement, puis passez à `GEPA` pour l'exécution réelle. Un `reflection_model` peu coûteux avec un `mutation_model` plus fort constitue un bon choix par défaut : diagnostic peu coûteux, réécritures plus ambitieuses.
+:::tip[Commencer petit, puis passer à l'échelle]
+Commencez avec `SimpleOptimizer` et quelques `iterations` pour vérifier que votre tâche et vos évaluateurs se comportent correctement, puis passez à `GEPA` pour l'exécution réelle. Un `reflection_model` économique associé à un `mutation_model` plus puissant est une bonne valeur par défaut : diagnostic à moindre coût, réécritures audacieuses.
 :::
 
 <SectionTab as="h1" sectionId="direction-weights-gates">Direction, poids et seuils de passage</SectionTab>
@@ -228,8 +235,8 @@ evaluators=[
 
 C'est ainsi que vous encodez « ne pas sacrifier la factualité pour gagner en concision ». Un plancher strict est une *contrainte*, pas un vote plus fort : c'est pourquoi il s'agit d'un `goal`, pas d'un `weight`. Une moyenne pondérée peut être détournée (un résumé vide `"."` peut obtenir un score élevé en concision tout en échouant sur l'exactitude), mais un seuil de passage classe les candidats qui le respectent devant ceux qui l'enfreignent avant de comparer la moyenne.
 
-:::caution Lorsqu'aucun candidat ne passe les seuils
-Un candidat ne *gagne* (`verdict == "success"`) que s'il franchit tous les seuils de passage. Si aucun candidat n'y parvient, il n'y a pas de gagnant : le résultat est `best_attempt` (un candidat dépasse la baseline mais échoue encore sur un seuil, exposé sous `result.best_attempt`) ou `no_change`. Un seuil non respecté ne se fait jamais passer pour une victoire.
+:::caution[Quand aucun candidat ne franchit les portes]
+Un candidat ne *gagne* (`verdict == "success"`) que s'il franchit toutes les portes. Si aucun n'y parvient, il n'y a pas de gagnant : le résultat est `best_attempt` (un candidat a surpassé la baseline mais échoue encore à une porte — exposé sous `result.best_attempt`) ou `no_change`. Un seuil non atteint ne se déguise jamais en victoire.
 :::
 
 <SectionTab as="h1" sectionId="reading-the-result">Lire le résultat</SectionTab>
@@ -261,6 +268,45 @@ for c in result.trajectory:
 ```
 
 Comme la baseline, le gagnant et la meilleure tentative sont notés sur le même ensemble tenu à l'écart, le `gain` rapporté est fiable : ce n'est pas un artefact dû au fait que la recherche aurait choisi une configuration chanceuse.
+
+<SectionTab as="h1" sectionId="custom-mutators">Mutateurs personnalisés</SectionTab>
+
+Par défaut, les deux optimiseurs proposent des candidats avec un mutateur LLM réflexif : il diagnostique les échecs, puis réécrit les emplacements paramétrables. Pour contrôler entièrement la façon dont les candidats sont proposés, passez votre propre fonction async comme `mutator` de l'algorithme :
+
+```python
+from mistralai.evaluations import GEPA
+from mistralai.evaluations.optimization import MutationRequest, MutationResult
+
+async def rewrite_instruction(request: MutationRequest) -> MutationResult:
+    failures = request.parent.failures  # worst records, with outputs, scores, and rationales
+    rewritten = await propose_rewrite(request.parent.overrides["instruction"], failures, request.steer)
+    return MutationResult(
+        overrides={"instruction": rewritten},
+        hypothesis="Name each fact type explicitly to stop the model from dropping dates.",
+    )
+
+result = await client.evaluation.optimize(
+    ...,
+    steer="Reduce hallucinations when the retrieved context doesn't contain the answer.",
+    algo=GEPA(iterations=8, mutator=rewrite_instruction),
+)
+```
+
+`SimpleOptimizer(mutator=...)` fonctionne de la même manière.
+
+`MutationRequest` contient :
+
+| Champ | Description |
+|-------|-------------|
+| `parent` | Le candidat en cours de mutation : ses `overrides` (valeurs paramétrables actuelles), ses scores et ses `failures` |
+| `tunables` | Les emplacements que vous pouvez modifier |
+| `objectives` | Ce que chaque évaluateur mesure, avec sa direction et sa cible |
+| `history` | Les tentatives précédentes, avec leurs overrides et leurs scores |
+| `steer` | Le `steer` passé à `optimize()`, le cas échéant |
+
+`MutationResult` contient `overrides` (les nouvelles valeurs de certains ou de tous les emplacements paramétrables) et un `hypothesis` facultatif, une description en une ligne de l'objectif du changement, affichée sur le candidat dans Studio.
+
+Un mutateur personnalisé se combine avec `steer` : lisez `request.steer` pour intégrer l'objectif dans votre propre logique. `steer` est enregistré sur l'optimisation et affiché dans Studio, que votre mutateur l'utilise ou non.
 
 <SectionTab as="h1" sectionId="rate-limits">Limites de débit et nouvelles tentatives</SectionTab>
 

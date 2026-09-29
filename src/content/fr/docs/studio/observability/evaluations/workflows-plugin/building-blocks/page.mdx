@@ -1,0 +1,110 @@
+---
+id: observability_evaluations_workflows_plugin_building_blocks
+title: Briques de base
+sidebar_position: 5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Briques de base
+
+Quand votre workflow gère déjà lui-même le fan-out, par exemple avec une orchestration personnalisée de workflows enfants, appelez vous-même les étapes de `evaluation.run()`. Vous gardez un contrôle total sur l'exécution et vous obtenez toujours les résultats dans Studio.
+
+Les briques de base correspondent à ce que `evaluation.run()` fait en interne :
+
+```
+setup()  →  upload_inputs()  →  [your fan-out]  →  score()  →  upload()
+```
+
+`evaluation.run()` télécharge chaque enregistrement depuis son propre workflow enfant. Avec les briques de base, c'est vous qui gérez le fan-out, donc vous choisissez le nombre d'enregistrements envoyés par chaque appel à `upload()`.
+
+<SectionTab as="h1" sectionId="example">Exemple</SectionTab>
+
+```python
+from mistralai.workflows.plugins.evaluations import evaluation
+from mistralai.workflows.plugins.evaluations.types import (
+    Evaluation, Evaluator, Project, Score, ScorerContext, System,
+)
+
+@evaluation.scorer
+async def conciseness(ctx: ScorerContext) -> Score:
+    ratio = len(str(ctx.output)) / max(len(ctx.input_record["text"]), 1)
+    return Score(value=round(1.0 - ratio, 2))
+
+evaluators = [Evaluator(name="conciseness", scorer=conciseness)]
+
+# 1. Create the run in Studio
+setup = await evaluation.setup(
+    evaluator_names=["conciseness"],
+    project=Project(name="Summarization"),
+    evaluation=Evaluation(name="Summary quality"),
+    system=System(name="small", params={"model": "mistral-small-latest"}),
+)
+
+# 2. Upload the input records
+input_ids = await evaluation.upload_inputs(run_id=setup["run_id"], dataset=dataset)
+
+# 3. Produce the outputs with your own fan-out
+outputs = await my_custom_fan_out(dataset)
+
+# 4. Score the outputs
+scores = await evaluation.score(dataset=dataset, outputs=outputs, evaluators=evaluators)
+
+# 5. Upload the outputs and scores
+await evaluation.upload(
+    run_id=setup["run_id"],
+    evaluator_name_to_id=setup["evaluator_name_to_id"],
+    input_record_ids=input_ids,
+    outputs=outputs,
+    scores=scores,
+)
+```
+
+<SectionTab as="h1" sectionId="setup">evaluation.setup()</SectionTab>
+
+Crée l'exécution dans Studio. Renvoie un dict avec `run_id`, `run_url`, `evaluator_name_to_id` et `run_evaluator_name_to_id`.
+
+| Paramètre | Type | Valeur par défaut | Description |
+|-----------|------|---------|-------------|
+| `evaluator_names` | `list[str]` | **requis** | Noms des évaluateurs |
+| `run_evaluator_names` | `list[str] \| None` | `None` | Noms des évaluateurs d'exécution |
+| `project` | `Project \| None` | `None` | Projet à créer ou auquel se rattacher |
+| `evaluation` | `Evaluation \| None` | `None` | Évaluation à créer ou à laquelle se rattacher |
+| `name` | `str \| None` | `None` | Nom de l'exécution |
+| `description` | `str \| None` | `None` | Description de l'exécution |
+| `tags` | `list[str] \| None` | `None` | Étiquettes pour le filtrage dans Studio |
+| `metadata` | `dict[str, Any] \| None` | `None` | Métadonnées associées à l'exécution |
+| `system` | `System \| None` | `None` | Configuration système enregistrée sur l'exécution |
+| `num_generations` | `int` | `1` | Générations par enregistrement, jusqu'à 100. Chaque enregistrement téléchargé doit contenir ce nombre de générations, sinon Studio le considère comme incomplet. |
+
+<SectionTab as="h1" sectionId="upload-inputs">evaluation.upload_inputs()</SectionTab>
+
+Télécharge les enregistrements d'entrée. Renvoie la liste des identifiants des enregistrements d'entrée.
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | Identifiant d'exécution renvoyé par `setup()` |
+| `dataset` | `Sequence[Mapping[str, Any]]` | Les enregistrements d'entrée |
+
+<SectionTab as="h1" sectionId="score">evaluation.score()</SectionTab>
+
+Évalue les sorties, une par enregistrement. Renvoie une liste de dicts de scores, un par enregistrement. Chaque scorer doit être décoré avec `@evaluation.scorer`.
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `dataset` | `Sequence[Mapping[str, Any]]` | Les enregistrements d'entrée |
+| `outputs` | `list[Any]` | Les sorties de la tâche, une par enregistrement |
+| `evaluators` | `list[Evaluator]` | Les évaluateurs à exécuter |
+
+<SectionTab as="h1" sectionId="upload">evaluation.upload()</SectionTab>
+
+Télécharge les sorties et les scores dans Studio.
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `run_id` | `str` | Identifiant d'exécution renvoyé par `setup()` |
+| `evaluator_name_to_id` | `dict[str, str]` | Mapping renvoyé par `setup()` |
+| `input_record_ids` | `list[str]` | Identifiants renvoyés par `upload_inputs()` |
+| `outputs` | `list[Any] \| None` | Sorties de la tâche, une par enregistrement. À utiliser pour les exécutions à génération unique. |
+| `scores` | `list[dict] \| None` | Dicts de scores issus de `score()`. À utiliser avec `outputs`. |
+| `generations` | `list[list[dict]] \| None` | Pour les exécutions multi-générations : pour chaque enregistrement, une liste de générations, chacune étant un dict avec `output`, `scores` (nom de l'évaluateur vers dict de score) et un `error` facultatif. |

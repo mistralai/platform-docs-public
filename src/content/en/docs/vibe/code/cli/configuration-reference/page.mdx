@@ -17,6 +17,9 @@ All keys live at the root of `config.toml` unless noted.
 |---|---|---|---|
 | `default_agent` | string |  | Default interactive agent, for example `"plan"`. Ignored in programmatic mode, which falls back to `auto-approve`. See [Agents](/vibe/code/cli/agents) |
 | `active_model` | string |  | Model alias currently in use. Set to a `[[models]]` `alias` or a built-in model ID |
+| `allowed_models` | array&lt;string&gt; |  | Allow-list of model name patterns (exact, glob, or `re:` regex), matched against the model names sent to the inference API, not their aliases. When non-empty, only matching models are selectable |
+| `compaction_model` | table |  | Model that summarizes the conversation during `/compact`. Defaults to the active model |
+| `vision_model` | table |  | Vision-capable model that describes attached images when the active model doesn't support images. Defaults to any vision-capable model on the provider of the active model. Set it to use a model from another provider |
 | `log_interactions` | boolean | `true` | Enables session logging. Required for `--continue` / `--resume`. See [Work with the CLI](/vibe/code/cli/work-with-cli#resume) |
 | `skill_paths` | array&lt;string&gt; |  | Extra directories to discover skills from. See [Skills](/vibe/code/cli/skills) |
 | `enabled_skills` | array&lt;string&gt; |  | Allow-list of skill name patterns (exact, glob, or `re:` regex). When non-empty, only matching skills load |
@@ -52,10 +55,17 @@ One `[[models]]` table per model preset.
 |---|---|---|---|
 | `name` | string | Required | Model ID, for example `mistral-medium-latest` |
 | `provider` | string | Required | References a `[[providers]]` `name` |
-| `alias` | string |  | Local alias used by `active_model` |
-| `temperature` | number |  | Sampling temperature, for example `0.2` |
-| `input_price` | number |  | Indicative per-input cost, fed to `--max-price` |
-| `output_price` | number |  | Indicative per-output cost, fed to `--max-price` |
+| `alias` | string | `name` | Local alias used by `active_model`. Defaults to `name` when omitted |
+| `display_name` | string | `alias` | Label shown in the model picker. Falls back to `alias` when unset |
+| `temperature` | number | `0.2` | Sampling temperature |
+| `input_price` | number |  | Per-million input token cost, used to cap costs in programmatic mode |
+| `output_price` | number |  | Per-million output token cost, used to cap costs in programmatic mode |
+| `cached_input_price` | number |  | Per-million cached input token cost. Omit to bill cached input at `input_price` |
+| `thinking` | string | `off` | Default thinking level for the model. One of the model's `thinking_levels` |
+| `thinking_levels` | array&lt;string&gt; |  | Thinking levels available for this model. Defaults to the five levels built into the CLI when omitted |
+| `supports_images` | boolean | `false` | Whether the model is vision-capable. When `true`, you can `@`-mention images |
+| `max_context_length` | number |  | Context window in tokens. Drives automatic compaction |
+| `auto_compact_threshold` | number |  | Token count that triggers automatic compaction. Overrides the default trigger, 80% of `max_context_length` |
 
 <SectionTab as="h2" sectionId="mcp-servers">MCP servers (`[[mcp_servers]]`)</SectionTab>
 

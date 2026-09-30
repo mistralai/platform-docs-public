@@ -17,6 +17,9 @@ Toutes les clés se trouvent à la racine de `config.toml` sauf indication contr
 |---|---|---|---|
 | `default_agent` | string |  | Agent interactif par défaut, par exemple `"plan"`. Ignoré en mode programmatique, qui revient à `auto-approve`. Voir [Agents](/vibe/code/cli/agents) |
 | `active_model` | string |  | Alias de modèle actuellement utilisé. Défini sur un `alias` de `[[models]]` ou un ID de modèle intégré |
+| `allowed_models` | array&lt;string&gt; |  | Liste d'autorisation de motifs de noms de modèles (correspondance exacte, glob ou regex `re:`), comparés aux noms des modèles envoyés à l'API d'inférence, et non à leurs alias. Si la liste n'est pas vide, seuls les modèles correspondants sont sélectionnables |
+| `compaction_model` | table |  | Modèle qui résume la conversation pendant `/compact`. Valeur par défaut : le modèle actif |
+| `vision_model` | table |  | Modèle compatible vision qui décrit les images jointes lorsque le modèle actif ne prend pas en charge les images. Utilise par défaut n'importe quel modèle compatible vision du fournisseur du modèle actif. Définissez-le pour utiliser un modèle d'un autre fournisseur |
 | `log_interactions` | boolean | `true` | Active la journalisation des sessions. Requis pour `--continue` / `--resume`. Voir [Travailler avec la CLI](/vibe/code/cli/work-with-cli#resume) |
 | `skill_paths` | array&lt;string&gt; |  | Répertoires supplémentaires où découvrir des skills. Voir [Skills](/vibe/code/cli/skills) |
 | `enabled_skills` | array&lt;string&gt; |  | Liste d’autorisation de motifs de noms de skills (exact, glob ou `re:` regex). Si non vide, seuls les skills correspondants se chargent |
@@ -52,10 +55,17 @@ Une table `[[models]]` par préréglage de modèle.
 |---|---|---|---|
 | `name` | string | Requis | ID du modèle, par exemple `mistral-medium-latest` |
 | `provider` | string | Requis | Référence un `name` de `[[providers]]` |
-| `alias` | string |  | Alias local utilisé par `active_model` |
-| `temperature` | number |  | Température d’échantillonnage, par exemple `0.2` |
-| `input_price` | number |  | Coût indicatif par entrée, utilisé par `--max-price` |
-| `output_price` | number |  | Coût indicatif par sortie, utilisé par `--max-price` |
+| `alias` | string | `name` | Alias local utilisé par `active_model`. En cas d'omission, la valeur par défaut est `name` |
+| `display_name` | string | `alias` | Libellé affiché dans le sélecteur de modèle. Prend la valeur `alias` si non renseigné |
+| `temperature` | number | `0.2` | Température d'échantillonnage |
+| `input_price` | number |  | Coût par million de tokens d'entrée, utilisé pour plafonner les coûts en mode programmatique |
+| `output_price` | number |  | Coût par million de tokens de sortie, utilisé pour plafonner les coûts en mode programmatique |
+| `cached_input_price` | number |  | Coût par million de tokens d'entrée mis en cache. Omettez-le pour facturer l'entrée mise en cache au tarif `input_price` |
+| `thinking` | string | `off` | Niveau de réflexion par défaut pour le modèle. L'un des `thinking_levels` du modèle |
+| `thinking_levels` | array&lt;string&gt; |  | Niveaux de Réflexion disponibles pour ce modèle. Utilise par défaut les cinq niveaux intégrés à la CLI en cas d'omission |
+| `supports_images` | booléen | `false` | Indique si le modèle est compatible vision. Si `true`, vous pouvez mentionner des images avec `@` |
+| `max_context_length` | number |  | Fenêtre de contexte en tokens. Détermine la compaction automatique |
+| `auto_compact_threshold` | number |  | Nombre de tokens qui déclenche la compaction automatique. Remplace le seuil de déclenchement par défaut, soit 80 % de `max_context_length` |
 
 <SectionTab as="h2" sectionId="mcp-servers">Serveurs MCP (`[[mcp_servers]]`)</SectionTab>
 

@@ -46,8 +46,6 @@ La gestion de la configuration administrateur nécessite l'autorisation de contr
 
 <SectionTab as="h2" sectionId="enable">Activer la fonctionnalité</SectionTab>
 
-La configuration administrateur est **désactivée par défaut** et Mistral doit l'activer pour votre Organization. Contactez votre équipe de compte pour demander l'activation.
-
 :::warning
 Nous vous recommandons de valider votre configuration dans une Organization de test avant de la distribuer à tous les utilisateurs.
 :::
@@ -58,7 +56,7 @@ Le processus d'activation dépend du type de déploiement :
 
 | Déploiement | Mode d'activation |
 |---|---|
-| **Serverless** | Contactez votre équipe de compte pour activer l'option. |
+| **Serverless** | Aucune activation n'est nécessaire. La fonctionnalité est disponible pour toutes les organisations. |
 | **Dédié (cloud privé)** | Contactez votre équipe de compte. Mistral active l'option lorsqu'elle est disponible ou définit sa valeur dans la configuration du déploiement. |
 | **Auto-hébergé** | Contactez votre équipe de compte pour demander l'activation dans le chart Helm. Cette option est disponible sur demande. |
 
@@ -120,7 +118,37 @@ provider = "acme-enterprise"
 alias = "mistral-large-enterprise"
 ```
 
-Ici, le modèle `mistral-large-2411` est accessible via le fournisseur `acme-enterprise`, exposé aux utilisateurs sous l’alias `mistral-large-enterprise`, défini comme modèle actif. L’identifiant est toujours fourni localement via la variable d’environnement `ACME_MISTRAL_API_KEY`.
+Ici, le modèle `mistral-large-2411` est accessible via le fournisseur `acme-enterprise`, exposé aux utilisateurs sous l'alias `mistral-large-enterprise`, défini comme modèle actif. Les identifiants sont toujours fournis localement via la variable d'environnement `ACME_MISTRAL_API_KEY`.
+
+<SectionTab as="h2" sectionId="restrict-models">Restreindre les modèles sélectionnables</SectionTab>
+
+Utilisez la clé de premier niveau `allowed_models` pour limiter les modèles que les utilisateurs peuvent sélectionner. Elle accepte une liste de motifs. Chaque motif correspond au nom canonique du modèle au niveau de l'API : le champ `name` d'un préréglage `[[models]]` ou l'identifiant d'un modèle intégré. Il s'agit du nom de modèle envoyé à l'API d'inférence : donner un `alias` différent à un modèle ne change donc pas les motifs qui correspondent.
+
+Les patterns prennent en charge trois modes de correspondance :
+
+| Type de motif | Exemple |
+|---|---|
+| Nom exact | `"mistral-large-latest"` |
+| Glob | `"mistral-vibe-cli-*"` |
+| Expression régulière, précédée de `re:` | `"re:^mistral-(large\|medium)-"` |
+
+Lorsque la liste contient au moins un pattern, seuls les modèles correspondants peuvent être sélectionnés dans le sélecteur de modèles. Cette restriction s'applique à la fois à la CLI Vibe Code et à l'extension VS Code. Une liste vide ou absente n'a aucun effet.
+
+```toml
+active_model = "mistral-large-enterprise"
+allowed_models = ["mistral-vibe-cli-*"]
+
+[[models]]
+name = "mistral-vibe-cli-latest"
+provider = "mistral"
+alias = "mistral-large-enterprise"
+```
+
+Combinez `allowed_models` avec les modèles que vous distribuez : livrez les préréglages `[[models]]` dont les utilisateurs ont besoin, et excluez tous les autres modèles.
+
+:::warning
+Chaque motif doit correspondre à au moins un nom de modèle distribué ou intégré. `allowed_models` restreint les modèles que les clients Vibe Code proposent et exécutent. Cette clé ne restreint pas l'accès à l'API : appliquez des contrôles d'accès au niveau du fournisseur ou de la clé API pour limiter les modèles qu'un utilisateur peut utiliser.
+:::
 
 <SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
 

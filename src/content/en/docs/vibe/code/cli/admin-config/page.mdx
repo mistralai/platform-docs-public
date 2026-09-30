@@ -46,8 +46,6 @@ Managing admin config requires the `manage_code_config` role-based access contro
 
 <SectionTab as="h2" sectionId="enable">Enable the feature</SectionTab>
 
-Admin config is **disabled by default**, and Mistral must enable it for your Organization. Contact your account team to request activation.
-
 :::warning
 We recommend validating your configuration in a test Organization before distributing it to all users.
 :::
@@ -58,7 +56,7 @@ The activation process depends on the deployment type:
 
 | Deployment | How to activate |
 |---|---|
-| **Serverless** | Contact your account team to enable the feature flag. |
+| **Serverless** | No activation needed. The feature is available to every Organization. |
 | **Dedicated (private cloud)** | Contact your account team. Mistral enables the feature flag when available or sets its value in the deployment configuration. |
 | **Self-hosted** | Contact your account team to request activation through the Helm chart. This option is available on request. |
 
@@ -120,7 +118,37 @@ provider = "acme-enterprise"
 alias = "mistral-large-enterprise"
 ```
 
-Here the model `mistral-large-2411` is served through the `acme-enterprise` provide, exposed to users under the alias `mistral-large-enterprise`, which is set as the active model. The credential is still supplied locally via the `ACME_MISTRAL_API_KEY` environment variable.
+Here the model `mistral-large-2411` is served through the `acme-enterprise` provider, exposed to users under the alias `mistral-large-enterprise`, which is set as the active model. The credential is still supplied locally via the `ACME_MISTRAL_API_KEY` environment variable.
+
+<SectionTab as="h2" sectionId="restrict-models">Restrict selectable models</SectionTab>
+
+Use the top-level `allowed_models` key to limit which models users can select. It takes a list of patterns. Each pattern matches the model's canonical API name: the `name` field of a `[[models]]` preset or a built-in model ID. This is the model name sent to the inference API, so giving a model a different `alias` doesn't change what patterns match.
+
+Patterns support three matching modes:
+
+| Pattern mode | Example |
+|---|---|
+| Exact name | `"mistral-large-latest"` |
+| Glob | `"mistral-vibe-cli-*"` |
+| Regular expression, prefixed with `re:` | `"re:^mistral-(large\|medium)-"` |
+
+When the list contains at least one pattern, only matching models are selectable in the model picker. This restriction applies to both the Vibe Code CLI and the VS Code extension. An empty or missing list has no effect.
+
+```toml
+active_model = "mistral-large-enterprise"
+allowed_models = ["mistral-vibe-cli-*"]
+
+[[models]]
+name = "mistral-vibe-cli-latest"
+provider = "mistral"
+alias = "mistral-large-enterprise"
+```
+
+Combine `allowed_models` with the models you distribute: ship the `[[models]]` presets users need, and filter out every other model.
+
+:::warning
+Every pattern must match at least one distributed or built-in model name. `allowed_models` restricts which models the Vibe Code clients offer and run. It doesn't restrict API access: enforce access at the provider or API key level to limit which models a user can reach.
+:::
 
 <SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
 

@@ -13,7 +13,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: null,
-  status: 'PublicPreview',
+  status: 'Deprecated',
   avatar: { icon: 'zai-glm', backgroundColor: 'gray' },
   weights: [],
   bloglink: 'https://z.ai/blog/glm-5.2',
@@ -49,7 +49,7 @@ export default {
     features: ['chat-completions', 'function-calling', 'structured-outputs', 'predicted-outputs', 'prefix', 'batching'],
   },
   relatedModels: ['Mistral Medium 3.5', 'Mistral Large 3'],
-  metadata: {},
+  metadata: {deprecationDate: '2026-09-29', retirementDate: '2026-10-31', replacement: 'Z.ai GLM 5.3'},
   playground: undefined,
-  legacy: false,
+  legacy: true,
 } as const satisfies StaticModel;

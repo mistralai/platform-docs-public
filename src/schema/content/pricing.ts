@@ -42,7 +42,6 @@ export const PRICING_TABLES: PricingTableGroup[] = [
       l.text('Models built for specific tasks such as vision, OCR, and audio.', { context: 'Description for specialized model pricing table' }),
     slugs: [
       'ocr-4-1',
-      'ocr-4-0',
       'voxtral-mini-transcribe-26-02',
       'voxtral-tts-26-03',
       'mistral-moderation-26-03',
@@ -63,12 +62,13 @@ export const PRICING_TABLES: PricingTableGroup[] = [
       'codestral-embed-25-05',
     ],
   },
-  {
-    id: 'labs',
-    title: l => l.text('Labs', { context: 'Heading for Labs model pricing table' }),
-    description: l => l.text('Research previews and experimental releases.', { context: 'Description for experimental model pricing table' }),
-    slugs: [
-      'leanstral-1-5',
-    ],
-  },
+  // Labs table hidden: no priced Labs model is currently available (Leanstral 1.5
+  // was deprecated on 2026-09-29). The pricing page renders empty groups, so
+  // uncomment this group and list the slugs when a Labs model is available again.
+  // {
+  //   id: 'labs',
+  //   title: l => l.text('Labs', { context: 'Heading for Labs model pricing table' }),
+  //   description: l => l.text('Research previews and experimental releases.', { context: 'Description for experimental model pricing table' }),
+  //   slugs: [],
+  // },
 ];

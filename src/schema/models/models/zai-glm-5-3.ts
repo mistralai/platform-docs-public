@@ -13,7 +13,7 @@ export default {
   class: 'Generalist',
   type: 'Open',
   legalButton: null,
-  status: 'PublicPreview',
+  status: 'GA',
   avatar: { icon: 'zai-glm', backgroundColor: 'gray' },
   weights: [],
   bloglink: 'https://z.ai/blog/glm-5.3',

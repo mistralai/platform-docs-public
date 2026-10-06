@@ -210,6 +210,7 @@ export interface ModelWeight {
   minRam?: string;
   active: string;
   contextSize: string;
+  visionEncoder?: string;
 }
 export interface ModelCapabilities {
   input: ModalityKey[];

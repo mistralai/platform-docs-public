@@ -114,6 +114,10 @@ declare module "@lingo.dev/react" {
     "No models to display.": { context: "Empty state for model pricing table" };
     "Input": { context: "Pricing table input token column heading" };
     "Cached input": { context: "Pricing table cached input token column heading" };
+    "Original price:": { context: "Screen reader prefix for the struck-through regular price of a model on sale" };
+    "Sale price:": { context: "Screen reader prefix for the temporary discounted price of a model on sale" };
+    "Sale price": { context: "Badge marking a model whose listed price is a temporary discount" };
+    "Temporary sale price. The struck-through amount is the original price.": { context: "Tooltip explaining the sale price badge in the model pricing table" };
     "Compare model capabilities": { context: "CTA heading for model comparison on models page" };
     "Use the model selection guide to match models to your task, latency, and cost targets.": { context: "CTA description for model comparison on models page" };
     "Compare models": { context: "CTA label linking to model selection guide" };
@@ -476,7 +480,7 @@ declare module "@lingo.dev/react" {
     "Mistral develops, or makes available, open-weight and commercial large language models. Explore the full lineup, compare benchmarks, and find the right model for your use case.": { context: "Introductory description of Mistral AI models" };
     "Mistral Docs": { context: "Site name used in documentation page titles" };
     "Mistral Large 3, is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 41B active parameters and 675B total parameters.": { context: "Full description of an AI model" };
-    "Mistral Large 4 is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 49B active parameters and 1.05T total parameters, and a 1.6B vision encoder.": { context: "Full description of an AI model" };
+    "Mistral Large 4 is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 52B active parameters and 1.05T total parameters, and a 1.6B vision encoder.": { context: "Full description of an AI model" };
     "Use Mistral Large 4": { context: "Heading for a Mistral Large 4 curl onboarding example" };
     "Launch pricing: 50% off for 2 weeks.": { context: "Tooltip explaining the launch discount on the model card price" };
     "Send a request to the Chat Completions API with the `mistral-large-4` model name.": { context: "Intro for a Mistral Large 4 curl onboarding example" };

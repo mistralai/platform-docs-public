@@ -22,6 +22,9 @@ interface WeightsTableProps {
 }
 
 export function WeightsTable({ weights, className }: WeightsTableProps) {
+  const hasTrillionParams = weights.some(w => w.parameters.includes('T'));
+  const paramsHeader = hasTrillionParams ? 'Parameters (T)' : 'Parameters (B)';
+
   return (
     <div className={cn('w-full', className)}>
       <Table>
@@ -30,8 +33,9 @@ export function WeightsTable({ weights, className }: WeightsTableProps) {
             {[
               'Weights',
               'License',
-              'Parameters (B)',
+              paramsHeader,
               'Active (B)',
+              'Vision Encoder (B)',
               '≈ GPU RAM at bf16 - fp4 (GB)',
               'Context Size (tokens)',
             ].map((header, i) => (
@@ -84,7 +88,7 @@ export function WeightsTable({ weights, className }: WeightsTableProps) {
                   )}
                 </div>
               </TableCell>
-              {['parameters', 'active', 'minGpuRam', 'contextSize'].map(
+              {['parameters', 'active', 'visionEncoder', 'minGpuRam', 'contextSize'].map(
                 (field, i) => (
                   <TableCell key={field} className="text-end">
                     <WeightsSwitchTableCellValue
@@ -115,7 +119,8 @@ const WeightsSwitchTableCellValue = ({
   if (isMinGpuRam(value)) {
     return <MinGpuRam minGpuRam={value as MinGpuRam} className={className} />;
   }
-  return <span className={cn(className)}>{value}</span>;
+  const displayValue = typeof value === 'string' ? value.replace('T', '') : value;
+  return <span className={cn(className)}>{displayValue}</span>;
 };
 
 const MinGpuRam = ({

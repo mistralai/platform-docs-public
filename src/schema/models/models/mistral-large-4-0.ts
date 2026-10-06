@@ -2,7 +2,7 @@ import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Large 4',
   describe: (l) => ({
-    description: l.text(`Mistral Large 4 is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 49B active parameters and 1.05T total parameters, and a 1.6B vision encoder.`, { context: 'Full description of an AI model' }),
+    description: l.text(`Mistral Large 4 is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 52B active parameters and 1.05T total parameters, and a 1.6B vision encoder.`, { context: 'Full description of an AI model' }),
     shortDescription: l.text(`A state-of-the-art, open-weight, general-purpose multimodal model.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'mistral-large-4-0',
@@ -28,8 +28,9 @@ export default {
         fp4: null,
         fp4_16: null,
       },
-      active: '49',
+      active: '52',
       contextSize: '1M',
+      visionEncoder: '1.6',
     }
   ],
   bloglink: null,
@@ -53,7 +54,7 @@ export default {
   identifiers: { apiNames: ['mistral-large-4', 'mistral-large-4-0'] },
   capabilities: {
     input: ['text', 'image'],
-    output: ['text'],
+    output: ['reasoning', 'text'],
     features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching', 'agents-conversations', 'connectors'],
 
   },

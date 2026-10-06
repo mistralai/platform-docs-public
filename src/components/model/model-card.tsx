@@ -56,6 +56,11 @@ export function ModelCard({
         className={cn(
           'relative group flex flex-col justify-between gap-4 bg-model rounded px-4 py-3  h-full',
           'ring ring-model ring-offset-4 ring-offset-background',
+          // Dark mode: dark text on the brand surface, lifted to OKLCH L >= 0.72 so text stays >= 4.5:1.
+          // Guarded by @supports: Safari < 18 implements an older relative color draft.
+          'dark:[--model-surface:oklch(from_var(--model-color)_max(l,0.72)_c_h)]',
+          'supports-[color:oklch(from_red_max(l,0.72)_c_h)]:dark:bg-(--model-surface)',
+          'supports-[color:oklch(from_red_max(l,0.72)_c_h)]:dark:ring-(--model-surface)',
           className
         )}
         style={cardStyle}
@@ -72,15 +77,15 @@ export function ModelCard({
           />
         </div>
         {showParameters && (
-          <div className="text-xs text-foreground relative z-10">
+          <div className="text-xs text-foreground dark:text-primary-soft-foreground relative z-10">
             {model.version}
           </div>
         )}
         <div className="flex flex-col gap-0.5 relative z-10">
-          <h3 className="font-bold text-xl text-foreground flex items-center gap-2">
+          <h3 className="font-bold text-xl text-foreground dark:text-primary-soft-foreground flex items-center gap-2">
             <span>{model.name}</span>
           </h3>
-          <p className="text-sm text-foreground/50 group-hover:text-foreground/70 line-clamp-2 text-ellipsis overflow-hidden">
+          <p className="text-sm text-foreground/50 group-hover:text-foreground/70 dark:text-primary-soft-foreground/85 dark:group-hover:text-primary-soft-foreground line-clamp-2 text-ellipsis overflow-hidden">
             {shortDescription || description}
           </p>
         </div>

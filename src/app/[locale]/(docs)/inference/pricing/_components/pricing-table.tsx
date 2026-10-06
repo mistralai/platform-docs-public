@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -38,7 +39,8 @@ const PRIORITY_FACTOR = 1.75;
 /** Regional inference adds 10% to every displayed price. */
 const REGIONAL_FACTOR = 1.1;
 
-type SidePrice = { price: number; denominator: string };
+/** `originalPrice` is set when `price` is a temporary sale price. */
+type SidePrice = { price: number; denominator: string; originalPrice?: number };
 type Mode = 'standard' | 'batch' | 'priority';
 
 const MODES: {
@@ -116,14 +118,17 @@ function getRawPrices(
         input: input && {
           price: input.price,
           denominator: input.denominator,
+          originalPrice: input.originalPrice,
         },
         cachedInput: cachedInput && {
           price: cachedInput.price,
           denominator: cachedInput.denominator,
+          originalPrice: cachedInput.originalPrice,
         },
         output: pricing.output[0] && {
           price: pricing.output[0].price,
           denominator: pricing.output[0].denominator,
+          originalPrice: pricing.output[0].originalPrice,
         },
       };
     }
@@ -161,12 +166,30 @@ function PricingRow({
   const { model, isFree, input, cachedInput, output } = row;
   const factor = modeFactor(mode) * (regional ? REGIONAL_FACTOR : 1);
   const modelUrl = getModelUrl(model);
+  const onSale = !isFree && [input, cachedInput, output].some(
+    side => side?.originalPrice !== undefined
+  );
 
   const renderPrice = (side?: SidePrice, extraFactor = 1) => {
     if (isFree) return l.text('Free', { context: 'Free price label' });
     if (!side) return '—';
     const value = `$${formatPriceValue(side.price * factor * extraFactor)}`;
-    return hideDenominator ? value : `${value} ${side.denominator}`;
+    const unit = hideDenominator ? '' : ` ${side.denominator}`;
+    if (side.originalPrice === undefined) return `${value}${unit}`;
+    const original = `$${formatPriceValue(side.originalPrice * factor * extraFactor)}`;
+    return (
+      <span className="inline-flex flex-col items-end md:flex-row md:items-baseline md:gap-x-1.5">
+        <del className="text-foreground/65 line-through">
+          <span className="sr-only">{l.text('Original price:', { context: 'Screen reader prefix for the struck-through regular price of a model on sale' })} </span>
+          {original}
+        </del>
+        <ins className="no-underline font-semibold">
+          <span className="sr-only">{l.text('Sale price:', { context: 'Screen reader prefix for the temporary discounted price of a model on sale' })} </span>
+          {value}
+        </ins>
+        {unit}
+      </span>
+    );
   };
 
   return (
@@ -182,6 +205,23 @@ function PricingRow({
           </Link>
         ) : (
           <span className="font-semibold text-foreground">{model.name}</span>
+        )}
+        {onSale && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                size="xs"
+                tabIndex={0}
+                className="relative mt-1 flex align-middle font-mono uppercase text-[11px] cursor-help md:mt-0 md:ml-3 md:inline-flex"
+              >
+                {l.text('Sale price', { context: 'Badge marking a model whose listed price is a temporary discount' })}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-left">
+              {l.text('Temporary sale price. The struck-through amount is the original price.', { context: 'Tooltip explaining the sale price badge in the model pricing table' })}
+            </TooltipContent>
+          </Tooltip>
         )}
       </TableCell>
       <TableCell

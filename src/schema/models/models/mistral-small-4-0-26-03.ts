@@ -53,7 +53,7 @@ export default {
   identifiers: { apiNames: ['mistral-small-2603', 'mistral-small-latest'] },
   capabilities: {
     input: ['text', 'image'],
-    output: ['text'],
+    output: ['reasoning', 'text'],
     features: ['chat-completions', 'function-calling', 'agents-conversations', 'connectors', 'structured-outputs', 'predicted-outputs', 'document-qna', 'prefix', 'batching'],
 
   },

@@ -33,8 +33,8 @@ export interface ModelPricingRange {
 export interface ModelPricingCustom {
   type: 'custom';
   free: boolean;
-  input: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string }[];
-  output: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string }[];
+  input: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string; originalPrice?: number }[];
+  output: { type: 'range' | 'flat'; price: number; denominator: PricingDenominator; label?: string; originalPrice?: number }[];
 }
 
 export type ModelPricing =
@@ -204,7 +204,7 @@ export interface ModelWeight {
   name: string;
   url: string | null;
   license?: string;
-  licenseUrl: string;
+  licenseUrl: string | null;
   parameters: string;
   minGpuRam: MinGpuRam;
   minRam?: string;
@@ -260,7 +260,7 @@ export interface ModelTemplate<
   tags?: ModelTag[];
   pricingLayout?: 'stacked';
   performanceMaxStars?: StarRating;
-  usageExample?: 'zai-glm-5-2' | 'zai-glm-5-3';
+  usageExample?: 'zai-glm-5-2' | 'zai-glm-5-3' | 'mistral-large-4-0';
   weights: ModelWeight[];
   contextLength?: string | undefined | null;
   outputTokenLimit?: string | undefined | null;

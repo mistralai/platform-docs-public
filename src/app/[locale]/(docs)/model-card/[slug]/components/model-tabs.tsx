@@ -40,7 +40,7 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 	if (modelHasWeights) {
 		tabs.push({ value: "weights", label: l.text("WEIGHTS", { context: "Section heading for downloadable model weights" }) });
 	}
-	if (model.usageExample === 'zai-glm-5-2' || model.usageExample === 'zai-glm-5-3') {
+	if (model.usageExample === 'zai-glm-5-2' || model.usageExample === 'zai-glm-5-3' || model.usageExample === 'mistral-large-4-0') {
 		tabs.push({ value: 'usage', label: l.text('USAGE', { context: 'Section heading for model usage examples' }) });
 	}
 
@@ -116,9 +116,81 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 					<ZaiGlmUsageExample l={l} usageExample={model.usageExample} />
 				</TabsContent>
 			)}
+		{model.usageExample === 'mistral-large-4-0' && (
+			<TabsContent value="usage" className="mt-8">
+				<MistralLarge4UsageExample l={l} />
+			</TabsContent>
+		)}
 		</Tabs>
 	);
 }
+
+const MistralLarge4UsageExample = ({ l }: { l: Lingo }) => (
+	<div className="space-y-4">
+		<SectionTab as="h2" variant="secondary" sectionId="use-mistral-large-4-0">
+			{l.text('Use Mistral Large 4', { context: 'Heading for a Mistral Large 4 curl onboarding example' })}
+		</SectionTab>
+		<p className="text-muted-foreground">
+			{l.text('Send a request to the Chat Completions API with the', { context: 'Intro before GLM 5.3 model name in onboarding examples' })}{' '}
+			<code className="relative mx-1 bg-background !text-[0.765em] ring-1 ring-offset-1 ring-offset-background ring-border font-mono inline-flex items-center justify-center gap-2 rounded text-xs font-semibold text-foreground px-1">mistral-large-4</code>{' '}
+			{l.text('model name.', { context: 'Intro after GLM 5.3 model name in onboarding examples' })}
+		</p>
+		<CodeTabs groupId="language">
+			<TabItem value="python" label="Python">
+				<CodeBlock language="python">{`import os
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.chat.complete(
+    model="mistral-large-4",
+    messages=[
+        {
+            "role": "user",
+            "content": "Write a Python function to merge two sorted linked lists into one sorted list.",
+        }
+    ],
+    reasoning_effort="high",
+)
+
+print(response.choices[0].message.content)`}</CodeBlock>
+			</TabItem>
+			<TabItem value="typescript" label="TypeScript">
+				<CodeBlock language="typescript">{`import { Mistral } from '@mistralai/mistralai';
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.chat.complete({
+  model: 'mistral-large-4',
+  messages: [
+    {
+      role: 'user',
+      content: 'Write a Python function to merge two sorted linked lists into one sorted list.',
+    },
+  ],
+  reasoning_effort: 'high',
+});
+
+console.log(response.choices[0].message.content);`}</CodeBlock>
+			</TabItem>
+			<TabItem value="curl" label="curl">
+				<CodeBlock language="bash">{`curl https://api.mistral.ai/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \\
+  -d '{
+    "model": "mistral-large-4",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a Python function to merge two sorted linked lists into one sorted list."
+      }
+    ],
+    "reasoning_effort": "high"
+  }'`}</CodeBlock>
+			</TabItem>
+		</CodeTabs>
+	</div>
+);
 
 const ZaiGlmUsageExample = ({ l, usageExample }: { l: Lingo; usageExample: 'zai-glm-5-2' | 'zai-glm-5-3' }) => (
 	<div className="space-y-8">

@@ -8,68 +8,100 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Déploiements sécurisés
 
-Un **déploiement sécurisé** est un [déploiement](/studio/workflows/managing-workflows-in-production/deployments) classique dont l'enregistrement des workflows est restreint. Seul un ensemble prédéfini de clés API et de comptes de service peut enregistrer des workflows dans un déploiement sécurisé. Dès qu'au moins l'un d'eux est associé à un déploiement, celui-ci devient sécurisé.
+Un **déploiement durci** est un [déploiement](/studio/workflows/managing-workflows-in-production/deployments) qui restreint l'enregistrement des workflows aux utilisateurs et aux comptes de service autorisés. Une entrée d'autorisation est appelée une **épingle**. Utilisez le durcissement pour contrôler quels workers peuvent enregistrer des workflows de production, en particulier les [workflows on-behalf-of (OBO)](/studio/workflows/building-workflows/on_behalf_of) qui agissent au nom de l'utilisateur qui déclenche une exécution.
 
-Ce que vous associez détermine ce que la rotation implique :
+Le durcissement est un paramètre explicite, indépendant du nombre d'épingles existantes. La suppression de la dernière épingle laisse un déploiement durci **fermé** : elle ne rouvre pas l'enregistrement. Cela évite que la suppression d'un accès n'accorde par erreur l'accès à tout le monde.
 
-- Un [compte de service](/admin/identity-access/service-accounts) est un **principal**. L'associer approuve les charges de travail qui s'authentifient en tant que ce compte via la [fédération d'identité de charge de travail](/admin/identity-access/workload-identity) : vous pouvez donc renouveler ces identifiants sans modifier le déploiement sécurisé.
-- Une [clé API](/admin/identity-access/api-keys) est un **identifiant**, pas un principal. L'associer n'approuve que cette clé précise ; les autres clés appartenant au même propriétaire ne fonctionnent **pas**. Lorsque vous renouvelez la clé, ajoutez la nouvelle clé au déploiement.
+<SectionTab as="h1" sectionId="the-problem">Pourquoi restreindre l'enregistrement ?</SectionTab>
 
-<SectionTab as="h1" sectionId="the-problem">Problème</SectionTab>
+Si des workers d'un même déploiement enregistrent différentes implémentations sous le même nom de workflow, vous ne pouvez pas prédire quelle implémentation traite une exécution. Un enregistrement accidentel ou non autorisé peut donc perturber les workflows de production.
 
-Le routage de l'exécution des workflows s'effectue au niveau du déploiement. Plusieurs workers peuvent enregistrer des workflows — y compris plusieurs versions d'un même workflow — dans un même déploiement. Dès que deux workflows différents sont enregistrés sous le même nom dans un déploiement, le routage devient **non déterministe**. Il n'est alors pas possible de prévoir quelle version sera exécutée pour un prompt donné.
+Les workflows OBO peuvent utiliser l'accès délégué aux ressources de l'utilisateur qui déclenche l'exécution, comme des fichiers et des connecteurs. Ils nécessitent un déploiement durci pour que seuls les principaux autorisés puissent enregistrer ces workflows.
 
-Ce comportement non déterministe présente des risques en production, où la fiabilité est essentielle. Une mauvaise configuration ou une réinscription accidentelle peut perturber les déploiements et compromettre l'intégrité des workflows.
+<SectionTab as="h1" sectionId="how-hardened-deployments-work">Principaux autorisés et permissions</SectionTab>
 
-Les [workflows « on-behalf-of » (OBO)](/studio/workflows/building-workflows/on_behalf_of) — qui s'exécutent sous l'identité de l'utilisateur déclencheur et accèdent à ses fichiers ou connecteurs personnels — sont particulièrement sensibles. Si l'enregistrement des workflows OBO n'est pas contrôlé, les ressources utilisateur risquent d'être exposées involontairement ou de façon malveillante.
+Les épingles autorisent une identité plutôt qu'un processus de worker particulier :
 
-<SectionTab as="h1" sectionId="how-hardened-deployments-work">Fonctionnement des déploiements sécurisés</SectionTab>
+- **Utilisateur :** autorise les clés API éligibles appartenant à cet utilisateur. Le renouvellement de la clé d'un utilisateur ne nécessite pas de modifier l'épingle d'utilisateur.
+- **Compte de service :** autorise les charges de travail qui s'authentifient en tant que ce [compte de service](/admin/identity-access/service-accounts), y compris via la [fédération d'identité de charge de travail](/admin/identity-access/workload-identity). Ses identifiants peuvent être renouvelés sans modifier l'épingle.
+- **Épingle de clé API d'utilisateur existante :** reste visible et supprimable pour des raisons de compatibilité, mais n'autorise que cette clé précise. Les autres clés appartenant au même utilisateur ne correspondent pas à une épingle de clé API ; utilisez une épingle d'utilisateur pour éviter des mises à jour lors du renouvellement des clés.
 
-Les administrateurs d'espace de travail et d'organisation gèrent les déploiements sécurisés via le panneau **Paramètres** de la console Mistral. Un déploiement devient sécurisé dès qu'au moins une clé API ou un compte de service y est associé. À partir de ce moment, seuls les clés API et comptes de service enregistrés peuvent enregistrer des workflows dans ce déploiement.
+Les clés API de compte de service ne peuvent pas être sélectionnées comme épingles. Épinglez plutôt le principal du compte de service, pour que l'autorisation suive l'identité du runtime plutôt qu'un identifiant remplaçable.
 
-:::info
-Les workflows « on-behalf-of » **nécessitent** un déploiement sécurisé. Ils ne peuvent pas être enregistrés dans un déploiement non sécurisé. Consultez [Workflows on-behalf-of](/studio/workflows/building-workflows/on_behalf_of) pour en savoir plus.
-:::
+Les propriétaires de déploiement et les administrateurs d'espace de travail peuvent gérer le durcissement et les épingles dans l'onglet **Paramètres** du déploiement dans Studio. La propriété permet à la personne qui exploite un déploiement d'effectuer des modifications courantes sans intervention d'un administrateur ; les administrateurs conservent les fonctions de récupération et de réattribution de la propriété. La propriété est distincte d'une épingle : être propriétaire ne suffit pas à autoriser l'enregistrement de workers.
 
-<SectionTab as="h1" sectionId="benefits">Avantages</SectionTab>
+Un utilisateur doit disposer de la permission `AccessWorkflows` dans l'espace de travail cible pour être propriétaire d'un déploiement, être épinglé ou revendiquer automatiquement un déploiement OBO local. Un utilisateur qui ne peut pas utiliser Workflows ne doit pas obtenir d'accès indirect par la propriété ou une épingle. Demandez à un administrateur d'espace de travail un rôle avec accès à Workflows si vous ne disposez pas de cette permission.
 
-- **Déploiements de production fiables** : les administrateurs peuvent sécuriser un déploiement de production pour garantir que seuls des clés API et comptes de service de confiance peuvent y enregistrer des workflows. Cela évite par exemple qu'une erreur dans le nom du déploiement perturbe la production.
-- **Contrôle de l'enregistrement des workflows OBO** : les workflows OBO ne peuvent pas être enregistrés dans des déploiements non sécurisés, ce qui garantit que les workflows sensibles sont d'abord validés par des administrateurs de confiance.
-- **Enregistrement non autorisé limité** : sauf en cas de compromission d'un compte administrateur, il n'est pas possible d'enregistrer des workflows OBO malveillants dans des déploiements sécurisés.
+<SectionTab as="h1" sectionId="registering-an-obo-workflow">Enregistrer votre premier workflow OBO local</SectionTab>
 
-<SectionTab as="h1" sectionId="managing-hardened-deployments">Gérer les déploiements sécurisés</SectionTab>
+Pour un utilisateur éligible, le premier enregistrement OBO local sous un nouveau nom de déploiement réussit sans qu'un administrateur prépare le déploiement :
 
-Une fois le déploiement créé, c'est-à-dire lors de l'enregistrement de son premier worker, un administrateur peut le sécuriser dans le panneau **Paramètres** de l'espace de travail, section **Déploiements sécurisés**.
+1. Utilisez une clé API appartenant à un utilisateur disposant de `AccessWorkflows` dans l'espace de travail cible.
+2. Configurez un [workflow OBO](/studio/workflows/building-workflows/on_behalf_of) et démarrez son worker avec un nouveau nom de déploiement.
+3. L'enregistrement crée le déploiement de manière atomique, vous désigne comme propriétaire, épingle votre principal d'utilisateur et active le durcissement.
+4. Ouvrez l'onglet **Paramètres** du déploiement dans Studio pour examiner ou ajouter des principaux autorisés avant que les membres de votre équipe ne le rejoignent.
 
-Les administrateurs peuvent :
+C'est le principal d'utilisateur qui est épinglé, et non la clé API : les clés éligibles du même utilisateur continuent donc de fonctionner après leur renouvellement. Cette revendication automatique ne s'applique qu'aux enregistrements OBO d'utilisateur : durcir chaque déploiement local partagé ordinaire pourrait permettre au premier worker d'exclure les membres de l'équipe.
 
-- Consulter la liste des déploiements sécurisés existants
-- Ajouter des clés API ou des comptes de service à un déploiement
-- Les retirer d'un déploiement
+Si le nom existe déjà, l'enregistrement ne prend pas le contrôle d'un déploiement sans propriétaire ni d'un déploiement appartenant à un autre utilisateur. Le durcissement automatique ne peut s'appliquer à un déploiement local existant que si vous en êtes déjà propriétaire, s'il n'est pas durci et ne comporte aucune épingle, et si aucun autre worker n'est actif. Un second utilisateur ne peut pas revendiquer un déploiement durci existant ; son propriétaire ou un administrateur d'espace de travail doit l'autoriser à le rejoindre.
 
-Pour en associer un, cliquez sur **Add hardened deployment**, sélectionnez le **Deployment**, puis faites votre choix dans la liste **Credential**. Cette liste est divisée en deux sections, **API keys** et **Service accounts**, et vous pouvez en sélectionner plusieurs à la fois.
+Les appelants s'authentifiant avec un compte de service ne bénéficient pas de la revendication automatique et ne peuvent pas devenir propriétaires via ce flux. Un compte de service épinglé peut toujours exécuter des workflows OBO : l'identité du runtime autorise l'enregistrement, tandis que l'identité de l'utilisateur qui déclenche l'exécution fournit l'accès délégué.
 
-Un déploiement peut comporter plusieurs entrées afin de prendre en charge plusieurs workers ou la rotation des clés. Renouveler les identifiants d'identité de charge de travail d'un compte de service ne nécessite aucune modification ici, car le compte de service lui-même est approuvé. Renouveler une clé API implique d'ajouter la nouvelle clé, car seule cette clé précise est approuvée.
+## Durcissement initial des déploiements gérés
 
-:::tip
-Gérez vos clés API dans la section [Clés API](/admin/identity-access/api-keys) du panneau d'administration, et les identités machine dans [Comptes de service](/admin/identity-access/service-accounts). La section Clés API comporte une colonne **Principal**, qui vous permet de distinguer la clé d'un compte de service de celle d'une personne.
-:::
+Les nouveaux déploiements gérés créés dans Studio sont durcis par défaut, avec une option de désabonnement explicite lors de la création. Abraxas épingle le compte de service du runtime d'Aeon parce que la plateforme connaît cette identité stable au moment de la création ; les identifiants du runtime peuvent ensuite être renouvelés sans modifier l'autorisation d'enregistrement.
 
-<SectionTab as="h1" sectionId="registering-an-obo-workflow">Enregistrer un workflow OBO</SectionTab>
+| Chemin de création | Durcissement initial | Épingle initiale |
+| --- | --- | --- |
+| Premier enregistrement OBO local d'un utilisateur éligible sous un nouveau nom | Automatique | L'utilisateur qui devient propriétaire |
+| Déploiement géré créé dans Studio | Activé par défaut, avec possibilité de désabonnement | Le compte de service du runtime géré |
+| Déploiement géré créé via d'autres clients | Les autres clients envoient actuellement `hardened: false` | Aucune épingle de durcissement automatique, sauf si le durcissement est demandé |
 
-La sécurisation du déploiement est une **condition préalable** à l'enregistrement d'un workflow OBO. Si vous tentez d'enregistrer un workflow OBO dans un nouveau déploiement, l'opération échoue, car les déploiements ne sont pas sécurisés par défaut. Le déploiement est toutefois préenregistré pendant cette étape.
+La valeur par défaut de Studio ne modifie pas celle de chaque client. Si vous vous désabonnez ou créez un déploiement géré non durci via un autre client, activez le durcissement avant d'enregistrer des workflows OBO.
 
-Le worker signale une erreur contenant un lien vers un modèle préconfiguré dans le panneau d'administration. Ce modèle permet à un administrateur d'espace de travail d'associer la bonne clé API au déploiement afin de le sécuriser. Une fois la clé API associée au déploiement, le réenregistrement du worker aboutit.
+<SectionTab as="h1" sectionId="managing-hardened-deployments">Gérer le durcissement dans Studio</SectionTab>
 
-1. Enregistrez le worker avec votre workflow OBO. L'enregistrement échoue, mais le déploiement est créé.
-2. Ouvrez le lien indiqué dans le message d'erreur. Il mène au panneau d'administration avec un modèle de sécurisation prérempli.
-3. Un administrateur d'espace de travail associe la clé API au déploiement.
-4. Réenregistrez le worker. Le workflow OBO s'enregistre avec succès.
+Ouvrez le déploiement dans Studio et sélectionnez son onglet **Paramètres**. Vous devez en être le propriétaire ou être administrateur d'espace de travail pour modifier le durcissement ou gérer les épingles.
 
-:::warning
-Seul un administrateur d'espace de travail peut associer une clé API à un déploiement. Si vous n'êtes pas administrateur, partagez le lien indiqué dans le message d'erreur avec votre administrateur d'espace de travail.
-:::
+### Activer le durcissement
 
-:::tip
-Pour plus de détails techniques sur l'activation du mode OBO et l'utilisation des identifiants utilisateur, consultez [Workflows on-behalf-of](/studio/workflows/building-workflows/on_behalf_of).
-:::
+1. Arrêtez les workers du déploiement. Pour un déploiement géré, arrêtez également le service géré.
+2. Attendez que le déploiement soit inactif.
+3. Activez le durcissement dans **Paramètres**.
+
+Abraxas sélectionne l'épingle initiale : le propriétaire pour un déploiement local, ou le compte de service du runtime d'Aeon pour un déploiement géré. Conserver cette décision dans Abraxas évite aux clients de reproduire la logique de sécurité qui distingue déploiements locaux et déploiements gérés. Si un déploiement local n'a pas de propriétaire, demandez d'abord à un administrateur d'espace de travail de désigner un utilisateur éligible.
+
+Le durcissement nécessite que le déploiement soit inactif, car modifier l'autorisation d'enregistrement n'arrête pas les workers qui y sont déjà actifs.
+
+### Ajouter ou supprimer des épingles
+
+Utilisez **Paramètres** pour autoriser des utilisateurs ou des comptes de service sur un déploiement durci. Plusieurs épingles permettent à plusieurs principaux autorisés d'enregistrer des workers sur le même déploiement. La suppression d'une épingle retire cette entrée d'autorisation ; la suppression de la dernière épingle laisse le durcissement activé et l'enregistrement fermé.
+
+### Désactiver le durcissement
+
+Désactivez le durcissement dans **Paramètres** uniquement lorsque vous souhaitez rouvrir l'enregistrement. Une requête réussie désactive le durcissement de manière atomique et supprime **toutes les épingles**, y compris celle du runtime géré, afin qu'un déploiement ouvert ne conserve aucun état d'autorisation obsolète susceptible de s'appliquer de façon inattendue plus tard.
+
+La désactivation du durcissement est refusée tant qu'**un workflow OBO est enregistré** sur le déploiement. Ces workflows nécessitent un enregistrement contrôlé pour protéger l'accès délégué de l'utilisateur. L'arrêt des workers ne suffit pas : supprimez les enregistrements OBO avant de réessayer.
+
+### Rapprochement automatique des épingles
+
+Les épingles d'utilisateur et de compte de service invalides font l'objet d'un rapprochement périodique. Une épingle n'est supprimée que lorsque la validation montre de façon concluante que le principal n'est plus éligible. Les défaillances de dépendances ou l'absence de contexte préservent l'épingle pour une tentative ultérieure, afin qu'un échec de validation temporaire ne révoque pas un accès de production fonctionnel.
+
+<SectionTab as="h1" sectionId="benefits">Garanties et limites de sécurité</SectionTab>
+
+Le durcissement limite l'enregistrement des workflows aux principaux que vous autorisez. Il ne valide pas le code soumis par un principal autorisé et ne remplace pas la protection des identifiants de ce principal.
+
+## Résoudre les problèmes d'enregistrement
+
+Les refus d'autorisation de déploiement incluent un lien direct vers l'onglet **Paramètres** du déploiement dans Studio. Ce lien sélectionne l'organisation, l'espace de travail et le déploiement concernés, afin que la personne qui corrige l'accès accède aux bons contrôles.
+
+| Problème | Cause | Que faire |
+| --- | --- | --- |
+| L'utilisateur ne peut pas revendiquer automatiquement le déploiement ni être ajouté comme propriétaire ou épingle | Permission `AccessWorkflows` manquante | Demandez à un administrateur d'espace de travail l'accès à Workflows dans l'espace de travail cible. |
+| L'accès à Workflows ne peut pas être vérifié | La vérification de la permission est temporairement indisponible | Réessayez l'enregistrement ; un contrôle échoué ne crée pas la revendication de l'utilisateur. |
+| L'enregistrement est refusé sur un déploiement durci | Le principal du worker ne correspond à aucune épingle, éventuellement parce que l'ensemble d'épingles est vide | Suivez le lien vers Paramètres et demandez au propriétaire ou à un administrateur d'espace de travail d'autoriser le principal, ou utilisez un autre nom de déploiement. |
+| L'enregistrement OBO est refusé sur un déploiement existant non durci | Le déploiement n'est pas éligible au durcissement automatique | Demandez à son propriétaire ou à un administrateur d'espace de travail de l'arrêter et d'activer le durcissement dans Paramètres, ou utilisez un nouveau nom de déploiement. |
+| Le durcissement est refusé tant que des workers sont actifs | L'autorisation d'enregistrement ne peut pas être modifiée en toute sécurité pendant leur activité | Arrêtez les workers, arrêtez le service géré le cas échéant, puis attendez l'inactivité avant de réessayer. |
+| La désactivation du durcissement est refusée | Des enregistrements de workflows OBO existent encore | Supprimez les enregistrements OBO avant de réessayer ; l'arrêt des workers ne suffit pas à les supprimer. |
+
+Pour le code des workflows et les identifiants délégués, poursuivez avec [Workflows on-behalf-of](/studio/workflows/building-workflows/on_behalf_of).

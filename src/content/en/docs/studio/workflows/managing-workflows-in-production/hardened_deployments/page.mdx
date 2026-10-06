@@ -8,68 +8,100 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Hardened deployments
 
-A **hardened deployment** is a standard [deployment](/studio/workflows/managing-workflows-in-production/deployments) with restricted workflow registration. Only a predefined set of API keys and service accounts can register workflows in a hardened deployment. A deployment becomes hardened as soon as at least one of them is associated with it.
+A **hardened deployment** is a [deployment](/studio/workflows/managing-workflows-in-production/deployments) that restricts workflow registration to authorized users and service accounts. An authorization entry is called a **pin**. Use hardening to control which workers can register production workflows, especially [on-behalf-of (OBO) workflows](/studio/workflows/building-workflows/on_behalf_of) that act as the user who triggers an execution.
 
-What you associate determines what rotation requires:
+Hardening is an explicit setting, independent of how many pins exist. Removing the last pin leaves a hardened deployment **closed**: it does not reopen registration. This prevents removing access from accidentally granting access to everyone.
 
-- A [service account](/admin/identity-access/service-accounts) is a **principal**. Associating it trusts the workloads that authenticate as it through [workload identity federation](/admin/identity-access/workload-identity), so you can rotate those credentials without changing the hardened deployment.
-- An [API key](/admin/identity-access/api-keys) is a **credential**, not a principal. Associating it trusts only that specific key; other keys belonging to the same owner do **not** work. When you rotate the key, add the new key to the deployment.
+<SectionTab as="h1" sectionId="the-problem">Why restrict registration?</SectionTab>
 
-<SectionTab as="h1" sectionId="the-problem">The problem</SectionTab>
+If workers in the same deployment register different implementations under the same workflow name, you cannot predict which implementation handles an execution. Accidental or unauthorized registration can therefore disrupt production workflows.
 
-Workflow execution routing occurs at the deployment level. Multiple workers can register workflows — and even multiple versions of the same workflow — within a single deployment. Once two different workflows are registered under the same name in a deployment, routing becomes **non-deterministic**. There is no way to predict which version will execute for a given input.
+OBO workflows can use delegated access to the triggering user's resources, such as files and connectors. They require a hardened deployment so that only authorized principals can register those workflows.
 
-This non-determinism poses risks for production environments, where reliability is critical. A misconfigured or accidental re-registration can disrupt deployments and compromise workflow integrity.
+<SectionTab as="h1" sectionId="how-hardened-deployments-work">Authorized principals and permissions</SectionTab>
 
-[On-behalf-of (OBO) workflows](/studio/workflows/building-workflows/on_behalf_of) — which execute under the identity of the triggering user and can access their personal files and connectors — introduce further sensitivity. Unrestricted registration of OBO workflows could expose user resources to unintended or malicious access.
+Pins authorize an identity rather than a particular worker process:
 
-<SectionTab as="h1" sectionId="how-hardened-deployments-work">How hardened deployments work</SectionTab>
+- **User:** authorizes eligible API keys belonging to that user. Rotating a user's key does not require changing the user pin.
+- **Service account:** authorizes workloads authenticating as that [service account](/admin/identity-access/service-accounts), including through [workload identity federation](/admin/identity-access/workload-identity). Its credentials can rotate without changing the pin.
+- **Existing user API-key pin:** remains visible and removable for compatibility, but authorizes only that specific key. Other keys belonging to the same user do not match an API-key pin; use a user pin to avoid updates when keys rotate.
 
-Workspace and organization admins manage hardened deployments through the **Settings** panel in the Mistral console. A deployment becomes hardened when at least one API key or service account is associated with it. From that point, only those registered API keys and service accounts can register workflows on that deployment.
+Service-account API keys cannot be selected as pins. Pin the service-account principal instead, so authorization follows the runtime identity rather than a replaceable credential.
 
-:::info
-On-behalf-of workflows **require** a hardened deployment. They cannot be registered in a non-hardened deployment. See [On-behalf-of workflows](/studio/workflows/building-workflows/on_behalf_of) for details.
-:::
+Deployment owners and workspace administrators can manage hardening and pins in the deployment's **Settings** tab in Studio. Ownership lets the person operating a deployment make routine changes without administrator intervention; administrators retain recovery and ownership-reassignment capabilities. Ownership is distinct from a pin: being an owner does not by itself authorize worker registration.
 
-<SectionTab as="h1" sectionId="benefits">Benefits</SectionTab>
+A user must have the `AccessWorkflows` permission in the target workspace to own a deployment, be pinned, or auto-claim a local OBO deployment. A user who cannot use Workflows must not gain access indirectly through ownership or a pin. Ask a workspace administrator for a role with Workflows access if you lack this permission.
 
-- **Reliable production deployments**: Admins designate a production deployment as hardened, ensuring only trusted API keys and service accounts can register workflows. This prevents misconfigurations (such as a wrong deployment name) from breaking production workflows.
-- **Controlled OBO workflow registration**: OBO workflows cannot be registered in non-hardened deployments, ensuring sensitive workflows are validated by trusted admins before use.
-- **Restricted unauthorized registration**: Unless an attacker compromises an admin account, they cannot register malicious OBO workflows in hardened deployments.
+<SectionTab as="h1" sectionId="registering-an-obo-workflow">Register your first local OBO workflow</SectionTab>
 
-<SectionTab as="h1" sectionId="managing-hardened-deployments">Managing hardened deployments</SectionTab>
+For an eligible user, the first local OBO registration under a new deployment name succeeds without an administrator preparing the deployment:
 
-Once a deployment is created (upon registration of its first worker), an admin can harden it through the workspace's **Settings** panel under the **Hardened Deployment** section.
+1. Use an API key belonging to a user with `AccessWorkflows` in the target workspace.
+2. Configure an [OBO workflow](/studio/workflows/building-workflows/on_behalf_of) and start its worker with a new deployment name.
+3. Registration atomically creates the deployment, assigns you as owner, pins your user principal, and enables hardening.
+4. Open the deployment's **Settings** tab in Studio to review or add authorized principals before teammates join it.
 
-Admins can:
+The user principal is pinned, not the API key, so eligible keys for the same user continue to work after rotation. This automatic claim applies only to OBO user registrations: hardening every ordinary shared local deployment could let the first worker lock out teammates.
 
-- View all current hardened deployments
-- Add API keys or service accounts to a deployment
-- Remove them from a deployment
+If the name already exists, registration does not take over an unowned deployment or one owned by another user. Automatic hardening can apply to an existing local deployment only if you already own it, it is unhardened with no pins, and no other worker is live. A second user cannot claim an existing hardened deployment; its owner or a workspace administrator must authorize them to join it.
 
-To associate one, click **Add hardened deployment**, select the **Deployment**, then pick from the **Credential** list. That list is split into two sections, **API keys** and **Service accounts**, and you can select several at once.
+Service-account callers are not auto-claimed and cannot become owners through this flow. A pinned service account can still run OBO workflows: the runtime's identity authorizes registration, while the triggering user's identity supplies the delegated access.
 
-A deployment can have multiple entries to support multiple workers or key rotation. Rotating a service account's workload identity credentials needs no change here, because the service account itself is trusted. Rotating an API key means adding the new key, because only that specific key is trusted.
+## Initial hardening for managed deployments
 
-:::tip
-Manage your API keys in the [API keys](/admin/identity-access/api-keys) section of the admin panel, and machine identities in [Service accounts](/admin/identity-access/service-accounts). The API keys section shows a **Principal** column, so you can tell a service account's key from a person's.
-:::
+New managed deployments created in Studio default to hardened, with an explicit opt-out during creation. Abraxas pins Aeon's runtime service account because the platform knows that stable identity at creation time; runtime credentials can then rotate without changing registration authorization.
 
-<SectionTab as="h1" sectionId="registering-an-obo-workflow">Registering an OBO workflow</SectionTab>
+| Creation path | Initial hardening | Initial pin |
+| --- | --- | --- |
+| Eligible user's first local OBO registration under a new name | Automatic | The user who becomes the owner |
+| Managed deployment created in Studio | Enabled by default, with an opt-out | The managed runtime's service account |
+| Managed deployment created through other clients | Other clients currently send `hardened: false` | No automatic hardening pin unless hardening is requested |
 
-Hardening a deployment is a **prerequisite** for registering an OBO workflow. If you attempt to register an OBO workflow in a new deployment, the registration will fail because the deployment is not hardened by default. However, the deployment is still pre-registered during this process.
+Studio's default does not change every client's default. If you opt out or create an unhardened managed deployment through another client, enable hardening before registering OBO workflows.
 
-The worker reports an error containing a link to a pre-configured template in the admin panel. This template lets a workspace admin harden the deployment with the correct credential. Once the admin associates the API key with the deployment, re-registering the worker will succeed.
+<SectionTab as="h1" sectionId="managing-hardened-deployments">Manage hardening in Studio</SectionTab>
 
-1. Register the worker with your OBO workflow. The registration fails, but the deployment is created.
-2. Open the link from the error message. It leads to the admin panel with a pre-filled hardening template.
-3. A workspace admin associates the API key with the deployment.
-4. The OBO workflow registers successfully.
+Open the deployment in Studio and select its **Settings** tab. You must be its owner or a workspace administrator to change hardening or manage pins.
 
-:::warning
-Only a workspace admin can associate an API key with a deployment. If you are not an admin, share the link from the error message with your workspace admin.
-:::
+### Enable hardening
 
-:::tip
-For the code-level details of enabling OBO mode and using user credentials, see [On-behalf-of workflows](/studio/workflows/building-workflows/on_behalf_of).
-:::
+1. Stop the deployment's workers. For a managed deployment, stop the managed service as well.
+2. Wait until the deployment is inactive.
+3. Enable hardening in **Settings**.
+
+Abraxas selects the initial pin: the owner for a local deployment, or Aeon's runtime service account for a managed deployment. Keeping this decision in Abraxas means clients do not need to reproduce local-versus-managed security logic. If a local deployment has no owner, ask a workspace administrator to assign an eligible user first.
+
+Hardening requires inactivity because changing registration authorization does not stop workers that are already active on the deployment.
+
+### Add or remove pins
+
+Use **Settings** to authorize users or service accounts for a hardened deployment. Multiple pins let several authorized principals register workers on the same deployment. Removing a pin removes that authorization entry; removing the final pin leaves hardening enabled and registration closed.
+
+### Disable hardening
+
+Disable hardening in **Settings** only when you intend to reopen registration. A successful request atomically disables hardening and deletes **every pin**, including the managed runtime's pin, so an open deployment retains no stale authorization state that might unexpectedly take effect later.
+
+Disabling hardening is rejected while **any OBO workflow is registered** on the deployment. Those workflows require controlled registration to protect delegated user access. Stopping workers alone is not enough: remove the OBO registrations before retrying.
+
+### Automatic pin reconciliation
+
+Invalid user and service-account pins are reconciled periodically. A pin is deleted only when validation conclusively shows that the principal is no longer eligible. Dependency failures or missing context preserve the pin for a later retry, so a temporary validation failure does not revoke working production access.
+
+<SectionTab as="h1" sectionId="benefits">Security guarantees and limits</SectionTab>
+
+Hardening limits workflow registration to the principals you authorize. It does not validate the code submitted by an authorized principal, and it does not replace protecting that principal's credentials.
+
+## Troubleshoot registration
+
+Deployment-authorization refusals include a direct link to the deployment's **Settings** tab in Studio. The link selects the relevant organization, workspace, and deployment so that the person fixing access reaches the right controls.
+
+| Problem | Cause | What to do |
+| --- | --- | --- |
+| User cannot auto-claim or be added as owner or pin | Missing `AccessWorkflows` permission | Ask a workspace administrator for Workflows access in the target workspace. |
+| Workflows access cannot be verified | The permission check is temporarily unavailable | Retry registration; a failed check does not create the user claim. |
+| Registration is refused on a hardened deployment | The worker's principal has no matching pin, possibly because the pin set is empty | Follow the Settings link and ask the owner or a workspace administrator to authorize the principal, or use a different deployment name. |
+| OBO registration is refused on an existing unhardened deployment | The deployment is not eligible for automatic hardening | Ask its owner or a workspace administrator to stop it and enable hardening in Settings, or use a new deployment name. |
+| Hardening is refused while workers are active | Registration authorization cannot be changed safely while workers are active | Stop the workers, stop the managed service if applicable, and wait for inactivity before retrying. |
+| Disabling hardening is refused | OBO workflow registrations still exist | Remove the OBO registrations before retrying; stopping workers alone does not remove them. |
+
+For workflow code and delegated credentials, continue with [On-behalf-of workflows](/studio/workflows/building-workflows/on_behalf_of).

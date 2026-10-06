@@ -1,0 +1,80 @@
+---
+id: visualizer
+title: Workflow visualizer
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Workflow visualizer
+
+The workflow visualizer displays your workflow as a graph in Studio. The worker builds the graph from your workflow code when it starts, so the graph is available before the first execution.
+
+<SectionTab as="h1" sectionId="what-it-provides">What it provides</SectionTab>
+
+The graph shows the following elements:
+
+- The entrypoint, and the activities and child workflows it calls.
+- Control flow: branches (`if`/`elif`/`else`), loops, parallel fan-outs (`asyncio.gather`), and error exits (`raise`).
+- Signal, update, and query handlers.
+- The connectors the workflow declares.
+- Short AI-generated summaries for each node, plus a summary of the whole workflow.
+
+Each deployment stores its own graph. When a worker registers a workflow again, the new graph replaces the previous one.
+
+To open the graph:
+
+1. Go to <AppLink href="https://console.mistral.ai/build/workflows" app="studio" path={["Workflows"]} />.
+2. Select a workflow.
+3. Open `Visualizer` from the menu.
+
+<SectionTab as="h1" sectionId="requirements">Requirements</SectionTab>
+
+The visualizer requires `mistralai-workflows` **3.15.0** or later on your workers:
+
+```bash
+uv add "mistralai-workflows>=3.15.0"
+```
+
+<SectionTab as="h1" sectionId="configuration">Configuring the visualizer</SectionTab>
+
+The visualizer is enabled by default. Configure it with environment variables on your workers:
+
+| Environment variable | Default | Effect |
+| --- | --- | --- |
+| `UPLOAD_GRAPH` | `true` | Builds and uploads the workflow graph when the worker starts. |
+| `GRAPH_SUMMARISE_ENABLED` | `true` | Generates AI summaries for the graph. Applies only when `UPLOAD_GRAPH` is `true`. |
+
+To disable the visualizer, set:
+
+```bash
+UPLOAD_GRAPH=false
+```
+
+The upload runs in the background after the worker registers its workflows. It doesn't delay the worker, and if it fails, the worker only logs a warning.
+
+<SectionTab as="h1" sectionId="data-sent-to-mistral">Data sent to Mistral</SectionTab>
+
+When the visualizer is enabled, each worker sends data derived from your workflow code to Mistral at startup. Workers don't send execution inputs or outputs.
+
+<SectionTab as="h2" variant="secondary" sectionId="graph-data">Graph</SectionTab>
+
+The graph contains the workflow's structure, not its source files:
+
+- Names of the workflow, activities, child workflows, handlers, and connectors.
+- Parameter names and type annotations.
+- The path of the source file that defines the workflow, and line positions for each node.
+- The edges between nodes.
+
+<SectionTab as="h2" variant="secondary" sectionId="summary-data">AI summaries</SectionTab>
+
+To generate summaries, the worker sends code snippets of the entrypoint, the activities defined in the workflow's file, and each node of the graph. We generate the summaries with Mistral models. Summaries aren't billed to your account.
+
+Before sending the snippets, the worker replaces every string literal with `'...'`, including docstrings and the literal parts of f-strings. As a result, credentials or other secrets stored as string constants in your code stay in your environment. Identifiers and comments are sent as written: don't put secrets in comments or identifiers.
+
+To send only the graph, without code snippets, disable summaries:
+
+```bash
+GRAPH_SUMMARISE_ENABLED=false
+```

@@ -15,6 +15,7 @@ export const AVATAR_ICONS = {
   moderation: '/assets/models/Moderation.svg',
   'mistral-7b': '/assets/models/Mistral_7B.svg',
   'mistral-large': '/assets/models/Mistral_Large_2.svg',
+  'mistral-large-4': '/assets/models/ML4-Lechonk.svg',
   'mistral-nemo': '/assets/models/Mistral_Nemo.svg',
   codestral: '/assets/models/Codestral.svg',
   devstral: '/assets/models/Devstral.svg',

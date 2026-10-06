@@ -1,0 +1,80 @@
+---
+id: visualizer
+title: Visualiseur de workflows
+sidebar_position: 7
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { AppLink } from '@/components/common/app-link';
+
+# Visualiseur de workflows
+
+Le visualiseur affiche votre workflow sous forme de graphe dans Studio. Au démarrage, le worker construit ce graphe à partir du code de votre workflow. Il est donc disponible avant la première exécution.
+
+<SectionTab as="h1" sectionId="what-it-provides">Fonctionnalités</SectionTab>
+
+Le graphe affiche les éléments suivants :
+
+- Le point d’entrée, les activités et les workflows enfants qu’il appelle.
+- Le flux de contrôle : les branches (`if`/`elif`/`else`), les boucles, les exécutions parallèles (`asyncio.gather`) et les sorties sur erreur (`raise`).
+- Les gestionnaires de signaux, de mises à jour et de requêtes.
+- Les connecteurs déclarés par le workflow.
+- De courts résumés générés par l’IA pour chaque nœud, ainsi qu’un résumé du workflow dans son ensemble.
+
+Chaque déploiement conserve son propre graphe. Lorsqu’un worker enregistre de nouveau un workflow, le nouveau graphe remplace le précédent.
+
+Pour ouvrir le graphe :
+
+1. Accédez à <AppLink href="https://console.mistral.ai/build/workflows" app="studio" path={["Workflows"]} />.
+2. Sélectionnez un workflow.
+3. Ouvrez `Visualizer` dans le menu.
+
+<SectionTab as="h1" sectionId="requirements">Prérequis</SectionTab>
+
+Le visualiseur nécessite la version **3.15.0** ou ultérieure de `mistralai-workflows` sur vos workers :
+
+```bash
+uv add "mistralai-workflows>=3.15.0"
+```
+
+<SectionTab as="h1" sectionId="configuration">Configuration du visualiseur</SectionTab>
+
+Le visualiseur est activé par défaut. Configurez-le avec des variables d'environnement sur vos workers :
+
+| Variable d’environnement | Valeur par défaut | Effet |
+| --- | --- | --- |
+| `UPLOAD_GRAPH` | `true` | Construit et télécharge le graphe du workflow au démarrage du worker. |
+| `GRAPH_SUMMARISE_ENABLED` | `true` | Génère des résumés IA pour le graphe. S'applique uniquement lorsque `UPLOAD_GRAPH` est `true`. |
+
+Pour désactiver le visualiseur, définissez :
+
+```bash
+UPLOAD_GRAPH=false
+```
+
+Le téléchargement s'exécute en arrière-plan une fois que le worker a enregistré ses workflows. Il ne retarde pas le worker et, en cas d'échec, le worker ne consigne qu'un avertissement.
+
+<SectionTab as="h1" sectionId="data-sent-to-mistral">Données envoyées à Mistral</SectionTab>
+
+Lorsque le Visualizer est activé, chaque worker envoie à Mistral, au démarrage, des données issues de votre code de workflow. Les workers n'envoient ni les entrées ni les sorties d'exécution.
+
+<SectionTab as="h2" variant="secondary" sectionId="graph-data">Graphe</SectionTab>
+
+Le graphe contient la structure du workflow, mais pas ses fichiers source :
+
+- Les noms du workflow, des activités, des workflows enfants, des gestionnaires et des connecteurs.
+- Les noms des paramètres et les annotations de type.
+- Le chemin du fichier source qui définit le workflow et la position de chaque nœud dans ce fichier.
+- Les liens entre les nœuds.
+
+<SectionTab as="h2" variant="secondary" sectionId="summary-data">Résumés générés par l’IA</SectionTab>
+
+Pour générer les résumés, le worker envoie des extraits de code correspondant au point d'entrée, aux activités définies dans le fichier du workflow et à chaque nœud du graphe. Nous générons les résumés avec des modèles Mistral. Les résumés ne sont pas facturés sur votre compte.
+
+Avant d'envoyer les extraits, le worker remplace chaque littéral de chaîne par `'...'`, y compris les docstrings et les parties littérales des f-strings. Ainsi, les identifiants d'accès et autres secrets stockés sous forme de constantes de chaîne dans votre code restent dans votre environnement. Les identifiants et les commentaires sont envoyés tels quels : ne mettez pas de secrets dans les commentaires ou les identifiants.
+
+Pour n’envoyer que le graphe, sans extraits de code, désactivez les résumés :
+
+```bash
+GRAPH_SUMMARISE_ENABLED=false
+```

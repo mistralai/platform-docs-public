@@ -1,4 +1,5 @@
 'use client';
+import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { ModelPricing } from '@/schema/models';
 import {
@@ -27,13 +28,19 @@ export function PriceValue({
   unit,
   tooltip,
   orientation = 'column',
+  originalPrice,
+  discountTooltip,
 }: {
   value: number;
   label: string;
   unit?: string;
   tooltip?: string;
   orientation?: 'column' | 'row';
+  originalPrice?: number;
+  discountTooltip?: React.ReactNode;
 }) {
+  const hasDiscount = originalPrice !== undefined;
+  const effectiveTooltip = hasDiscount && discountTooltip ? discountTooltip : tooltip;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -41,20 +48,27 @@ export function PriceValue({
           className={cn(
             'min-w-0 cursor-help',
             orientation === 'row'
-              ? 'grid grid-cols-[5rem_minmax(7rem,1fr)] items-start gap-x-4 gap-y-1 py-2'
-              : 'flex flex-col gap-1 px-3 first:pl-0 last:!pr-0'
+              ? 'grid grid-cols-[5rem_minmax(7rem,1fr)] items-start gap-x-8 py-2'
+              : 'flex flex-col gap-4 px-3 first:pl-0 last:!pr-0'
           )}
         >
-          <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
-            ${formatPriceValue(value)}
-          </span>
+          <div className="flex items-baseline gap-1.5">
+            {hasDiscount && (
+              <span className="text-foreground/30 text-sm font-semibold font-mono uppercase !leading-none line-through">
+                ${formatPriceValue(originalPrice)}
+              </span>
+            )}
+            <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
+              ${formatPriceValue(value)}
+            </span>
+          </div>
           <p className="text-xs leading-tight uppercase text-foreground/30 font-mono font-semibold">
             {label}
             {unit && <span className="block whitespace-nowrap">{unit}</span>}
           </p>
         </div>
       </TooltipTrigger>
-      <TooltipContent className="max-w-[200px]">{tooltip}</TooltipContent>
+      <TooltipContent className="max-w-[200px]">{effectiveTooltip}</TooltipContent>
     </Tooltip>
   );
 }
@@ -93,12 +107,19 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
 
     if (pricing.type === 'custom') {
       if (layout === 'stacked') {
+        const launchDiscountTooltip = (
+          <span className="whitespace-nowrap">
+            {l.text('Launch pricing: 50% off for 2 weeks.', { context: 'Tooltip explaining the launch discount on the model card price' })}
+          </span>
+        );
         return (
           <div className="flex min-w-0 flex-col divide-y divide-foreground/30 divide-dashed">
             {pricing.input.map((input, i) => (
               <PriceValue
                 key={`input-${input.denominator}-${i}`}
                 value={input.price}
+                originalPrice={input.originalPrice}
+                discountTooltip={input.originalPrice !== undefined ? launchDiscountTooltip : undefined}
                 tooltip={input.label ?? inputCostLabel}
                 label={input.label ?? input.denominator}
                 unit={input.label ? input.denominator : undefined}
@@ -109,6 +130,8 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
               <PriceValue
                 key={`output-${output.denominator}-${i}`}
                 value={output.price}
+                originalPrice={output.originalPrice}
+                discountTooltip={output.originalPrice !== undefined ? launchDiscountTooltip : undefined}
                 tooltip={output.label ?? outputCostLabel}
                 label={output.label ?? output.denominator}
                 unit={output.label ? output.denominator : undefined}

@@ -35,6 +35,7 @@ export const MODEL_COLORS = {
   emeraldSubtle: 'var(--model-emerald-subtle)',
   beigeSubtle: 'var(--model-beige-subtle)',
   beige: 'var(--model-beige)',
+  lechonk: '#FBD679',
   gray: 'var(--model-gray)',
 };
 

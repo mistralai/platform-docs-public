@@ -93,6 +93,7 @@ export async function ModelTabs({ model, locale }: ModelTabsProps) {
 					})}
 				</FeaturesGrid>
 				{(model.usageExample === 'zai-glm-5-2' || model.usageExample === 'zai-glm-5-3') && <ZaiGlmUsageExample l={l} usageExample={model.usageExample} />}
+				{model.usageExample === 'mistral-large-4-0' && <MistralLarge4UsageExample l={l} />}
 			</TabsContent>
 
 			{/* Weights Tab */}
@@ -149,6 +150,32 @@ const ZaiGlmUsageExample = ({ l, usageExample }: { l: Lingo; usageExample: 'zai-
         "content": "Summarize the main migration risks in this codebase."
       }
     ]
+  }'`}</code>
+		</pre>
+	</div>
+);
+
+const MistralLarge4UsageExample = ({ l }: { l: Lingo }) => (
+	<div className="mt-10 space-y-6">
+		<SectionTab as="h2" variant="secondary" sectionId="use-mistral-large-4-0-with-curl">
+			{l.text('Use Mistral Large 4', { context: 'Heading for a Mistral Large 4 curl onboarding example' })}
+		</SectionTab>
+		<p className="text-muted-foreground">
+			{l.text('Send a request to the Chat Completions API with the `mistral-large-4` model name.', { context: 'Intro for a Mistral Large 4 curl onboarding example' })}
+		</p>
+		<pre className="overflow-x-auto rounded-lg border border-border bg-card p-4 text-sm">
+			<code>{`curl https://api.mistral.ai/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \\
+  -d '{
+    "model": "mistral-large-4",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a Python function to merge two sorted linked lists into one sorted list."
+      }
+    ],
+    "reasoning_effort": "high"
   }'`}</code>
 		</pre>
 	</div>

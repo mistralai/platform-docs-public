@@ -27,6 +27,7 @@ export const PRICING_TABLES: PricingTableGroup[] = [
     title: l => l.text('Flagship models', { context: 'Heading for flagship model pricing table' }),
     description: l => l.text('Premier frontier models for the most demanding workloads.', { context: 'Description for flagship model pricing table' }),
     slugs: [
+      'mistral-large-4-0',
       'mistral-large-3-25-12',
       'mistral-medium-3-5-26-04',
       'mistral-small-4-0-26-03',

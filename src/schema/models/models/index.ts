@@ -7,6 +7,7 @@ import mistralMedium352604 from './mistral-medium-3-5-26-04';
 import mistralSmall402603 from './mistral-small-4-0-26-03';
 import leanstral26032603 from './leanstral-26-03';
 import leanstral15 from './leanstral-1-5';
+import mistralLarge40 from './mistral-large-4-0';
 import mistralLarge32512 from './mistral-large-3-25-12';
 import mistralMedium312508 from './mistral-medium-3-1-25-08';
 import mistralSmall322506 from './mistral-small-3-2-25-06';
@@ -74,6 +75,7 @@ export const MODELS = defineModels([
   mistralSmall402603,
   leanstral15,
   leanstral26032603,
+  mistralLarge40,
   mistralLarge32512,
   mistralMedium312508,
   mistralSmall322506,

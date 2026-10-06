@@ -476,6 +476,10 @@ declare module "@lingo.dev/react" {
     "Mistral develops, or makes available, open-weight and commercial large language models. Explore the full lineup, compare benchmarks, and find the right model for your use case.": { context: "Introductory description of Mistral AI models" };
     "Mistral Docs": { context: "Site name used in documentation page titles" };
     "Mistral Large 3, is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 41B active parameters and 675B total parameters.": { context: "Full description of an AI model" };
+    "Mistral Large 4 is a state-of-the-art, open-weight, general-purpose multimodal model with a granular Mixture-of-Experts architecture. It features 49B active parameters and 1.05T total parameters, and a 1.6B vision encoder.": { context: "Full description of an AI model" };
+    "Use Mistral Large 4": { context: "Heading for a Mistral Large 4 curl onboarding example" };
+    "Launch pricing: 50% off for 2 weeks.": { context: "Tooltip explaining the launch discount on the model card price" };
+    "Send a request to the Chat Completions API with the `mistral-large-4` model name.": { context: "Intro for a Mistral Large 4 curl onboarding example" };
     "Mistral's coding mode. CLI, VS Code extension, and remote web sessions to write code with an agent.": { context: "Description of the Vibe Code card on the developers overview" };
     "Mistral's unified agent. Runs in two modes: Work (the unified chat and work experience in the web and mobile apps at chat.mistral.ai) and Code (CLI, VS Code extension, or remote web sessions at code.mistral.ai). Legacy Chat features such as Agents and Memories have equivalents in Work, and the legacy Chat tab remains available only to some Enterprise organizations during the migration window.": { context: "Definition of the Vibe glossary term" };
     "Mistral's unified agent. Work mode for the unified chat and work experience, Code mode for the terminal and editor.": { context: "Description of the Vibe product" };

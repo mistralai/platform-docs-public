@@ -13,6 +13,8 @@ import {
   models,
 } from '@/schema';
 import { BenchmarkTable } from './benchmark-item';
+import { PricingCurrencyToggle } from '@/components/model/pricing-currency-toggle';
+import { usePricingCurrency } from '@/hooks/use-pricing-currency';
 import { cn } from '@/lib/utils';
 import { useQueryState, createParser } from 'nuqs';
 
@@ -67,6 +69,7 @@ export function ModelsSelector() {
     'models',
     parseAsModelArray.withDefault(DEFAULT_BENCHMARK_MODELS)
   );
+  const [currency, setCurrency] = usePricingCurrency();
 
   // Always show 3 columns - pad with defaults if URL has fewer
   const displayModels: ModelSlug[] = (() => {
@@ -106,6 +109,11 @@ export function ModelsSelector() {
           case, from pricing to general performance, features, context size,
           and licensing.
         </HeadingSubtitle>
+        <PricingCurrencyToggle
+          value={currency}
+          onValueChange={setCurrency}
+          className="mt-2"
+        />
       </Heading>
       {/* Model Selector */}
       <div

@@ -1,11 +1,13 @@
 'use client';
 import { cn } from '@/lib/utils';
-import { ModelPricing } from '@/schema/models';
+import { formatPrice, ModelPricing, PricingCurrency } from '@/schema/models';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { PricingCurrencyToggle } from '@/components/model/pricing-currency-toggle';
+import { usePricingCurrency } from '@/hooks/use-pricing-currency';
 import { useLingo } from '@lingo.dev/react';
 import type { Locale } from '@/i18n/config';
 
@@ -17,21 +19,19 @@ interface PriceProps {
   layout?: 'default' | 'stacked';
 }
 
-function formatPriceValue(value: number): string {
-  return String(Number(value.toFixed(5)));
-}
-
 export function PriceValue({
   value,
   label,
   unit,
   tooltip,
+  currency,
   orientation = 'column',
 }: {
   value: number;
   label: string;
   unit?: string;
   tooltip?: string;
+  currency: PricingCurrency;
   orientation?: 'column' | 'row';
 }) {
   return (
@@ -46,7 +46,7 @@ export function PriceValue({
           )}
         >
           <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
-            ${formatPriceValue(value)}
+            {formatPrice(value, currency)}
           </span>
           <p className="text-xs leading-tight uppercase text-foreground/30 font-mono font-semibold">
             {label}
@@ -61,6 +61,7 @@ export function PriceValue({
 
 export function Price({ pricing, className, layout = 'default' }: PriceProps) {
   const l = useLingo();
+  const [currency, setCurrency] = usePricingCurrency();
   const inputCostLabel = l.text('Input Cost', { context: 'Tooltip label for input token price' });
   const outputCostLabel = l.text('Output Cost', { context: 'Tooltip label for output token price' });
 
@@ -86,7 +87,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
       const price = pricing.price;
       return (
         <span className="text-primary-soft text-lg font-semibold font-mono uppercase leading-[1]">
-          ${formatPriceValue(price)}
+          {formatPrice(price, currency)}
         </span>
       );
     }
@@ -102,6 +103,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                 tooltip={input.label ?? inputCostLabel}
                 label={input.label ?? input.denominator}
                 unit={input.label ? input.denominator : undefined}
+                currency={currency}
                 orientation="row"
               />
             ))}
@@ -112,6 +114,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                 tooltip={output.label ?? outputCostLabel}
                 label={output.label ?? output.denominator}
                 unit={output.label ? output.denominator : undefined}
+                currency={currency}
                 orientation="row"
               />
             ))}
@@ -128,11 +131,13 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
               value={pricing.input}
               tooltip={inputCostLabel}
               label={pricing.denominator}
+              currency={currency}
             />
             <PriceValue
               value={pricing.output}
               tooltip={outputCostLabel}
               label={pricing.denominator}
+              currency={currency}
             />
           </>
         ) : (
@@ -144,6 +149,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                   value={input.price}
                   tooltip={inputCostLabel}
                   label={input.denominator}
+                  currency={currency}
                 />
               ))}
             </div>
@@ -154,6 +160,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                   value={output.price}
                   tooltip={outputCostLabel}
                   label={output.denominator}
+                  currency={currency}
                 />
               ))}
             </div>
@@ -165,6 +172,13 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
+      {!pricing.free && (
+        <PricingCurrencyToggle
+          value={currency}
+          onValueChange={setCurrency}
+          className="w-fit self-start"
+        />
+      )}
       {renderContent()}
     </div>
   );

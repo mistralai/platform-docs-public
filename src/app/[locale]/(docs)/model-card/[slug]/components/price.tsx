@@ -1,12 +1,15 @@
 'use client';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { ModelPricing } from '@/schema/models';
+import { formatPrice, ModelPricing, PricingCurrency } from '@/schema/models';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { PricingCurrencyToggle } from '@/components/model/pricing-currency-toggle';
+import { usePricingCurrency } from '@/hooks/use-pricing-currency';
 import { useLingo } from '@lingo.dev/react';
 import type { Locale } from '@/i18n/config';
 
@@ -18,15 +21,12 @@ interface PriceProps {
   layout?: 'default' | 'stacked';
 }
 
-function formatPriceValue(value: number): string {
-  return String(Number(value.toFixed(5)));
-}
-
 export function PriceValue({
   value,
   label,
   unit,
   tooltip,
+  currency,
   orientation = 'column',
   originalPrice,
   discountTooltip,
@@ -35,10 +35,12 @@ export function PriceValue({
   label: string;
   unit?: string;
   tooltip?: string;
+  currency: PricingCurrency;
   orientation?: 'column' | 'row';
   originalPrice?: number;
   discountTooltip?: React.ReactNode;
 }) {
+  const l = useLingo();
   const hasDiscount = originalPrice !== undefined;
   const effectiveTooltip = hasDiscount && discountTooltip ? discountTooltip : tooltip;
   return (
@@ -48,19 +50,28 @@ export function PriceValue({
           className={cn(
             'min-w-0 cursor-help',
             orientation === 'row'
-              ? 'grid grid-cols-[5rem_minmax(7rem,1fr)] items-start gap-x-8 py-2'
+              ? 'grid grid-cols-[minmax(5rem,max-content)_minmax(7rem,1fr)] items-start gap-x-8 py-2'
               : 'flex flex-col gap-4 px-3 first:pl-0 last:!pr-0'
           )}
         >
-          <div className="flex items-baseline gap-1.5">
-            {hasDiscount && (
-              <span className="text-foreground/30 text-sm font-semibold font-mono uppercase !leading-none line-through">
-                ${formatPriceValue(originalPrice)}
+          {/* On sale: the struck-through original price sits on its own line above the sale price. */}
+          <div className={cn('flex gap-1.5', hasDiscount ? 'flex-col items-start' : 'items-baseline')}>
+            {hasDiscount ? (
+              <>
+                <del className="text-foreground/30 text-sm font-semibold font-mono uppercase !leading-tight line-through whitespace-nowrap">
+                  <span className="sr-only">{l.text('Original price:', { context: 'Screen reader prefix for the struck-through regular price of a model on sale' })} </span>
+                  {formatPrice(originalPrice, currency)}
+                </del>
+                <ins className="no-underline text-primary-soft text-base font-semibold font-mono uppercase !leading-tight whitespace-nowrap">
+                  <span className="sr-only">{l.text('Sale price:', { context: 'Screen reader prefix for the temporary discounted price of a model on sale' })} </span>
+                  {formatPrice(value, currency)}
+                </ins>
+              </>
+            ) : (
+              <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
+                {formatPrice(value, currency)}
               </span>
             )}
-            <span className="text-primary-soft text-base font-semibold font-mono uppercase !leading-none">
-              ${formatPriceValue(value)}
-            </span>
           </div>
           <p className="text-xs leading-tight uppercase text-foreground/30 font-mono font-semibold">
             {label}
@@ -75,8 +86,18 @@ export function PriceValue({
 
 export function Price({ pricing, className, layout = 'default' }: PriceProps) {
   const l = useLingo();
+  const [currency, setCurrency] = usePricingCurrency();
   const inputCostLabel = l.text('Input Cost', { context: 'Tooltip label for input token price' });
   const outputCostLabel = l.text('Output Cost', { context: 'Tooltip label for output token price' });
+  const onSale =
+    !pricing.free &&
+    pricing.type === 'custom' &&
+    [...pricing.input, ...pricing.output].some(entry => entry.originalPrice !== undefined);
+  const launchDiscountTooltip = (
+    <span className="whitespace-nowrap">
+      {l.text('Launch pricing: 50% off for 2 weeks.', { context: 'Tooltip explaining the launch discount on the model card price' })}
+    </span>
+  );
 
   const renderContent = () => {
     if (pricing.free) {
@@ -100,18 +121,13 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
       const price = pricing.price;
       return (
         <span className="text-primary-soft text-lg font-semibold font-mono uppercase leading-[1]">
-          ${formatPriceValue(price)}
+          {formatPrice(price, currency)}
         </span>
       );
     }
 
     if (pricing.type === 'custom') {
       if (layout === 'stacked') {
-        const launchDiscountTooltip = (
-          <span className="whitespace-nowrap">
-            {l.text('Launch pricing: 50% off for 2 weeks.', { context: 'Tooltip explaining the launch discount on the model card price' })}
-          </span>
-        );
         return (
           <div className="flex min-w-0 flex-col divide-y divide-foreground/30 divide-dashed">
             {pricing.input.map((input, i) => (
@@ -123,6 +139,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                 tooltip={input.label ?? inputCostLabel}
                 label={input.label ?? input.denominator}
                 unit={input.label ? input.denominator : undefined}
+                currency={currency}
                 orientation="row"
               />
             ))}
@@ -135,6 +152,7 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                 tooltip={output.label ?? outputCostLabel}
                 label={output.label ?? output.denominator}
                 unit={output.label ? output.denominator : undefined}
+                currency={currency}
                 orientation="row"
               />
             ))}
@@ -151,11 +169,13 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
               value={pricing.input}
               tooltip={inputCostLabel}
               label={pricing.denominator}
+              currency={currency}
             />
             <PriceValue
               value={pricing.output}
               tooltip={outputCostLabel}
               label={pricing.denominator}
+              currency={currency}
             />
           </>
         ) : (
@@ -165,8 +185,11 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                 <PriceValue
                   key={`${input.denominator}-${i}`}
                   value={input.price}
+                  originalPrice={input.originalPrice}
+                  discountTooltip={input.originalPrice !== undefined ? launchDiscountTooltip : undefined}
                   tooltip={inputCostLabel}
                   label={input.denominator}
+                  currency={currency}
                 />
               ))}
             </div>
@@ -175,8 +198,11 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
                 <PriceValue
                   key={`${output.denominator}-${i}`}
                   value={output.price}
+                  originalPrice={output.originalPrice}
+                  discountTooltip={output.originalPrice !== undefined ? launchDiscountTooltip : undefined}
                   tooltip={outputCostLabel}
                   label={output.denominator}
+                  currency={currency}
                 />
               ))}
             </div>
@@ -188,6 +214,32 @@ export function Price({ pricing, className, layout = 'default' }: PriceProps) {
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
+      {!pricing.free && (
+        <div className="flex flex-wrap items-center gap-2">
+          <PricingCurrencyToggle
+            value={currency}
+            onValueChange={setCurrency}
+            className="w-fit self-start"
+          />
+          {onSale && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  size="xs"
+                  tabIndex={0}
+                  className="font-mono uppercase text-[11px] cursor-help"
+                >
+                  {l.text('Sale price', { context: 'Badge marking a model whose listed price is a temporary discount' })}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-left">
+                {l.text('Temporary sale price. The struck-through amount is the original price.', { context: 'Tooltip explaining the sale price badge in the model pricing table' })}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      )}
       {renderContent()}
     </div>
   );

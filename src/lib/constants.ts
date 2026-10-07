@@ -57,9 +57,6 @@ export const MISTRAL_HELP_CENTER_URL = process.env.MISTRAL_HELP_CENTER_URL
   : new URL('https://help.mistral.ai');
 
 export const MISTRAL_PRICING_URL = new URL('/pricing', MISTRAL_URL);
-const _MISTRAL_API_PRICING_URL = new URL('', MISTRAL_PRICING_URL);
-_MISTRAL_API_PRICING_URL.hash = 'api-pricing';
-export const MISTRAL_API_PRICING_URL = _MISTRAL_API_PRICING_URL.toString();
 
 export const MISTRAL_LEGAL_URL = new URL(
   process.env.MISTRAL_LEGAL_URL || 'https://legal.mistral.ai/'

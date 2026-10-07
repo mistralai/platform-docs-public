@@ -15,14 +15,18 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { PricingCurrencyToggle } from '@/components/model/pricing-currency-toggle';
+import { usePricingCurrency } from '@/hooks/use-pricing-currency';
 import { Link } from '@/i18n/navigation.client';
 import { useLingo } from '@lingo.dev/react';
 import {
   findModelBySlug,
+  formatPrice,
   getModelUrl,
   Model,
   ModelPricing,
   ModelSlug,
+  PricingCurrency,
 } from '@/schema';
 
 interface PricingTableProps {
@@ -137,11 +141,6 @@ function getRawPrices(
   }
 }
 
-/** Round to 5 decimals and drop trailing zeros to avoid float artifacts. */
-function formatPriceValue(value: number): string {
-  return String(Number(value.toFixed(5)));
-}
-
 interface RowPrices {
   model: Model;
   isFree: boolean;
@@ -155,12 +154,14 @@ function PricingRow({
   mode,
   regional,
   hideDenominator,
+  currency,
   l,
 }: {
   row: RowPrices;
   mode: Mode;
   regional: boolean;
   hideDenominator: boolean;
+  currency: PricingCurrency;
   l: ReturnType<typeof useLingo>;
 }) {
   const { model, isFree, input, cachedInput, output } = row;
@@ -173,10 +174,10 @@ function PricingRow({
   const renderPrice = (side?: SidePrice, extraFactor = 1) => {
     if (isFree) return l.text('Free', { context: 'Free price label' });
     if (!side) return '—';
-    const value = `$${formatPriceValue(side.price * factor * extraFactor)}`;
+    const value = formatPrice(side.price * factor * extraFactor, currency);
     const unit = hideDenominator ? '' : ` ${side.denominator}`;
     if (side.originalPrice === undefined) return `${value}${unit}`;
-    const original = `$${formatPriceValue(side.originalPrice * factor * extraFactor)}`;
+    const original = formatPrice(side.originalPrice * factor * extraFactor, currency);
     return (
       <span className="inline-flex flex-col items-end md:flex-row md:items-baseline md:gap-x-1.5">
         <del className="text-foreground/65 line-through">
@@ -251,6 +252,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
   const l = useLingo();
   const [mode, setMode] = React.useState<Mode>('standard');
   const [regional, setRegional] = React.useState(false);
+  const [currency, setCurrency] = usePricingCurrency();
 
   const rows: RowPrices[] = slugs
     .map(slug => findModelBySlug(slug))
@@ -277,6 +279,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
     denominators.size === 1 ? [...denominators][0] : undefined;
 
   const suffix = modeSuffix(mode, l);
+  const showCurrencyToggle = rows.some(row => !row.isFree);
 
   return (
     <div className="flex flex-col gap-3">
@@ -287,7 +290,10 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
             : l.text('Prices as marked', { context: 'Pricing table unit prefix when prices have different units' })}
           {suffix}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {showCurrencyToggle && (
+            <PricingCurrencyToggle value={currency} onValueChange={setCurrency} />
+          )}
           <Label className="font-mono text-xs uppercase cursor-pointer">
             <Checkbox
               checked={regional}
@@ -346,6 +352,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
               mode={mode}
               regional={regional}
               hideDenominator={Boolean(sharedDenominator)}
+              currency={currency}
               l={l}
             />
           ))}

@@ -24,21 +24,31 @@ interface WeightsTableProps {
 export function WeightsTable({ weights, className }: WeightsTableProps) {
   const hasTrillionParams = weights.some(w => w.parameters.includes('T'));
   const paramsHeader = hasTrillionParams ? 'Parameters (T)' : 'Parameters (B)';
+  const hasVisionEncoder = weights.some(w => w.visionEncoder !== undefined);
+
+  const headers = [
+    'Weights',
+    'License',
+    paramsHeader,
+    'Active (B)',
+    ...(hasVisionEncoder ? ['Vision Encoder (B)'] : []),
+    '≈ GPU RAM at bf16 - fp4 (GB)',
+    'Context Size (tokens)',
+  ];
+  const fields = [
+    'parameters',
+    'active',
+    ...(hasVisionEncoder ? ['visionEncoder'] : []),
+    'minGpuRam',
+    'contextSize',
+  ];
 
   return (
     <div className={cn('w-full', className)}>
       <Table>
         <TableHeader>
           <TableRow>
-            {[
-              'Weights',
-              'License',
-              paramsHeader,
-              'Active (B)',
-              'Vision Encoder (B)',
-              '≈ GPU RAM at bf16 - fp4 (GB)',
-              'Context Size (tokens)',
-            ].map((header, i) => (
+            {headers.map((header, i) => (
               <TableHead
                 key={header}
                 className={cn(
@@ -88,7 +98,7 @@ export function WeightsTable({ weights, className }: WeightsTableProps) {
                   )}
                 </div>
               </TableCell>
-              {['parameters', 'active', 'visionEncoder', 'minGpuRam', 'contextSize'].map(
+              {fields.map(
                 (field, i) => (
                   <TableCell key={field} className="text-end">
                     <WeightsSwitchTableCellValue

@@ -22,7 +22,7 @@ import { ModelCard, ModelCardInner } from './components/model-card';
 import { ApiNamesBadges } from './components/api-names-badges';
 import InfoHint from '@/components/icons/info-hint';
 import { Link } from '@/i18n/navigation.client';
-import { MISTRAL_API_PRICING_URL, MISTRAL_LEGAL_URL } from '@/lib/constants';
+import { MISTRAL_LEGAL_URL } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -501,12 +501,10 @@ const PriceTooltip = async ({ locale }: { locale: Locale }) => {
         <p>
           {l.text('The price may change depending on the features used.', { context: 'Note that AI model pricing can vary by feature' })}{' '}
           <Link
-            target="_blank"
-            rel="noopener noreferrer"
-            href={MISTRAL_API_PRICING_URL}
+            href="/inference/pricing"
             className="underline font-semibold text-primary"
           >
-            {l.text('Full Pricing Page', { context: 'Link to full AI model pricing' })}<span className="text-primary">↗</span>
+            {l.text('Full Pricing Page', { context: 'Link to full AI model pricing' })}
           </Link>
         </p>
       </TooltipContent>

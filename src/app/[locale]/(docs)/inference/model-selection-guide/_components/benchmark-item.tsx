@@ -10,7 +10,11 @@ import {
   Model,
   EndpointKey,
   EndpointIcon,
+  formatPriceValue,
+  PricingCurrency,
+  pricingCurrencySymbol,
 } from '@/schema';
+import { usePricingCurrency } from '@/hooks/use-pricing-currency';
 import { featureLabel } from '@/schema/models/i18n';
 import type { Lingo } from '@lingo.dev/react';
 import { ModelAvatar } from '@/components/model/avatar';
@@ -64,6 +68,8 @@ export const BenchmarkTable = ({
     | NonNullable<Model['identifiers']['aliases']>[number];
 }) => {
   const l = useLingo();
+  const [currency] = usePricingCurrency();
+  const currencySymbol = pricingCurrencySymbol(currency);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const model = nonLegacyModels.find(model => {
     if (model.slug === modelIdentifierOrSlug) return true;
@@ -202,15 +208,15 @@ export const BenchmarkTable = ({
                       key={i}
                       className="font-mono font-medium text-sm text-foreground/30"
                     >
-                      {`$${formatPrice(entry.price)}${entry.denominator || ''}`}
+                      {`${currencySymbol}${formatPriceValue(entry.price, currency)}${entry.denominator || ''}`}
                     </span>
                   ))}
                 </div>
               </BenchmarkRow>
             ) : (
-              <BenchmarkRow label={l.text('INPUT', { context: 'Row label for input token price' })} value={`$${getInputPrice(model)}`} />
+              <BenchmarkRow label={l.text('INPUT', { context: 'Row label for input token price' })} value={`${currencySymbol}${getInputPrice(model, currency)}`} />
             )}
-            <BenchmarkRow label={l.text('OUTPUT', { context: 'Row label for output token price' })} value={`$${getOutputPrice(model)}`} />
+            <BenchmarkRow label={l.text('OUTPUT', { context: 'Row label for output token price' })} value={`${currencySymbol}${getOutputPrice(model, currency)}`} />
           </BenchmarkBox>
 
           <BenchmarkBox label={l.text('FEATURES', { context: 'Section heading for supported API features' })}>
@@ -510,31 +516,31 @@ const BenchmarkAdditionalInfo = ({
 };
 
 // Helpers
-const getInputPrice = (model: Model) => {
+const getInputPrice = (model: Model, currency: PricingCurrency) => {
   if (model.pricing.type === 'flat') {
-    return formatPrice(model.pricing.price);
+    return formatPriceValue(model.pricing.price, currency);
   }
   if (model.pricing.type === 'range') {
-    return formatPrice(model.pricing.input);
+    return formatPriceValue(model.pricing.input, currency);
   }
   if (model.pricing.type === 'custom' && model.pricing.input.length > 0) {
     return model.pricing.input
-      .map(entry => `${formatPrice(entry.price)}${entry.denominator || ''}`)
+      .map(entry => `${formatPriceValue(entry.price, currency)}${entry.denominator || ''}`)
       .join(', ');
   }
   return '-';
 };
 
-const getOutputPrice = (model: Model) => {
+const getOutputPrice = (model: Model, currency: PricingCurrency) => {
   if (model.pricing.type === 'flat') {
-    return formatPrice(model.pricing.price);
+    return formatPriceValue(model.pricing.price, currency);
   }
   if (model.pricing.type === 'range') {
-    return formatPrice(model.pricing.output);
+    return formatPriceValue(model.pricing.output, currency);
   }
   if (model.pricing.type === 'custom' && model.pricing.output.length > 0) {
     return model.pricing.output
-      .map(entry => `${formatPrice(entry.price)}${entry.denominator || ''}`)
+      .map(entry => `${formatPriceValue(entry.price, currency)}${entry.denominator || ''}`)
       .join(', ');
   }
   return '-';
@@ -639,13 +645,6 @@ const getEndpointIcon = (icon: EndpointIcon) => {
     [EndpointIcon.COMPUTER]: ComputerIcon,
   };
   return iconMap[icon] || ChatIcon;
-};
-
-const formatPrice = (price: number) => {
-  return price
-    .toFixed(4)
-    .replace(/(\.\d*[1-9])0+$|\.0+$/, '$1')
-    .replace(/\.$/, '');
 };
 
 const NoModel = () => {

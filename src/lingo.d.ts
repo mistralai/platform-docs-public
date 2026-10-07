@@ -95,6 +95,8 @@ declare module "@lingo.dev/react" {
     "Models for safety filtering, moderation, and policy checks.": { context: "Description for moderation and safety model group" };
     "Specialized models for focused domains and task-specific workloads.": { context: "Description for other specialist model group" };
     "Pricing": { context: "Page title for model pricing" | "Title of the Inference landing card linking to model pricing" };
+    "API pricing": { context: "Page title for model pricing through the API" };
+    "Pricing for Mistral models through the API, organized by family.": { context: "Meta description for the model pricing page" };
     "Pricing for Mistral models, organized by family.": { context: "Introductory description for model pricing page" };
     "Flagship models": { context: "Heading for flagship model pricing table" };
     "Premier frontier models for the most demanding workloads.": { context: "Description for flagship model pricing table" };
@@ -117,6 +119,7 @@ declare module "@lingo.dev/react" {
     "Original price:": { context: "Screen reader prefix for the struck-through regular price of a model on sale" };
     "Sale price:": { context: "Screen reader prefix for the temporary discounted price of a model on sale" };
     "Sale price": { context: "Badge marking a model whose listed price is a temporary discount" };
+    "Pricing currency": { context: "Accessible label for the USD/EUR price currency selector" };
     "Temporary sale price. The struck-through amount is the original price.": { context: "Tooltip explaining the sale price badge in the model pricing table" };
     "Compare model capabilities": { context: "CTA heading for model comparison on models page" };
     "Use the model selection guide to match models to your task, latency, and cost targets.": { context: "CTA description for model comparison on models page" };

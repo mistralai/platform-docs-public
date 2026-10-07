@@ -5,8 +5,8 @@ export const getIndex = (_locale: string) => {
     {
       id: 'pricing',
       url: '/inference/pricing',
-      title: 'Pricing',
-      description: 'Pricing',
+      title: 'API pricing',
+      description: 'Pricing for Mistral models through the API, organized by family.',
       body: '',
       type: 'docs',
     } satisfies Doc,

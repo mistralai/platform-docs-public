@@ -20,7 +20,7 @@ export default {
       name: 'Coming soon',
       license: '',
       licenseUrl: null,
-      url: null,
+      url: 'https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B',
       parameters: '1.05T',
       minGpuRam: {
         bf16: null,

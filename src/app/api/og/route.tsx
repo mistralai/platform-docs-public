@@ -25,6 +25,20 @@ const getHexColor = (cssVar: string): string => {
   return colorMap[cssVar] || '#BDC3C7';
 };
 
+// ImageResponse renders lazily while its body streams, so a rendering error
+// (for example an `image` that is not an image) would only surface after the
+// 200 status and cache headers were sent, as an empty PNG. Rendering here lets
+// the caller's catch turn it into a 500.
+const renderImage = async (
+  image: ImageResponse,
+  cacheControl?: string
+): Promise<Response> => {
+  const body = await image.arrayBuffer();
+  const headers = new Headers(image.headers);
+  if (cacheControl) headers.set('Cache-Control', cacheControl);
+  return new Response(body, { status: image.status, headers });
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -70,9 +84,11 @@ export async function GET(request: NextRequest) {
         image: '',
       });
 
-      return new ImageResponse(
-        <OG {...OGProps} image={modelSvg} />,
-        await getOGDeps()
+      return await renderImage(
+        new ImageResponse(
+          <OG {...OGProps} image={modelSvg} />,
+          await getOGDeps()
+        )
       );
     } else {
       OGProps = getOGPropsFromSearchParams(searchParams, {
@@ -82,24 +98,18 @@ export async function GET(request: NextRequest) {
         image: '/ogs/docs.png',
       });
 
-      const response = new ImageResponse(
-        <OG {...OGProps} />,
-        await getOGDeps()
+      return await renderImage(
+        new ImageResponse(<OG {...OGProps} />, await getOGDeps()),
+        searchParams.get('v') !== 'dev'
+          ? 'public, max-age=31536000, immutable'
+          : undefined
       );
-
-      if (searchParams.get('v') !== 'dev') {
-        response.headers.set(
-          'Cache-Control',
-          'public, max-age=31536000, immutable'
-        );
-      }
-
-      return response;
     }
   } catch (e: any) {
     console.log(`${e.message}`);
     return new Response(`Failed to generate the image`, {
       status: 500,
+      headers: { 'Cache-Control': 'no-store' },
     });
   }
 }

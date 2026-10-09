@@ -1,5 +1,6 @@
 import type { Locale } from '@/i18n/config';
 import type { ReleaseNote } from '@/components/release-notes/types';
+import managedDeploymentsPublicPreviewEn from './en/2026-10-09-managed-deployments-public-preview.json';
 import agenticKnowledgeBaseEn from './en/2026-09-22-agentic-knowledge-base.json';
 import spreadsheetsInVibeWorkEn from './en/2026-09-22-spreadsheets-in-vibe-work.json';
 import miniAppCanvasEn from './en/2026-09-22-mini-app-canvas.json';
@@ -12,7 +13,7 @@ import enhancedSearchFilteringEn from './en/2026-07-31-enhanced-search-and-filte
 import enhancedSearchFilteringFr from './fr/2026-07-31-enhanced-search-and-filtering-for-workflows.json';
 
 const releaseNotesByLocale: Record<Locale, ReleaseNote[]> = {
-  en: [aSimplerVibeExperienceEn, spreadsheetsInVibeWorkEn, miniAppCanvasEn, agenticKnowledgeBaseEn, userAndPermissionsManagementEn, apiKeyExpirationPoliciesEn, enhancedSearchFilteringEn] as ReleaseNote[],
+  en: [managedDeploymentsPublicPreviewEn, aSimplerVibeExperienceEn, spreadsheetsInVibeWorkEn, miniAppCanvasEn, agenticKnowledgeBaseEn, userAndPermissionsManagementEn, apiKeyExpirationPoliciesEn, enhancedSearchFilteringEn] as ReleaseNote[],
   fr: [userAndPermissionsManagementFr, apiKeyExpirationPoliciesFr, enhancedSearchFilteringFr] as ReleaseNote[],
 };
 

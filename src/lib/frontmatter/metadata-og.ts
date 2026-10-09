@@ -31,7 +31,7 @@ export const remarkOgFromPath: Plugin<[Options?]> = (opts = {}) => {
         .replace(/\.md$/i, '');
     }
 
-    slug = slug.replace(/\//g, ' > ').replace('_', ' ');
+    slug = slug.replace(/\//g, ' > ').replace(/_/g, ' ');
 
     const code = /* ts */ `
       const __fm = (typeof _fm === 'object' && _fm) ? _fm : {};

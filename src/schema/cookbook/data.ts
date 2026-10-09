@@ -17,7 +17,6 @@ export const FEATURED_COOKBOOK_PATHS = [
   'mistral/ocr/document_understanding.ipynb',
 
   // Core AI capabilities
-  'mistral/classifier_factory/product_classification.ipynb',
   'mistral/ocr/data_extraction.ipynb',
   'mistral/ocr/batch_ocr.ipynb',
   'mistral/agents/non_framework/hubspot_dynamic_multi_agent/hubspot_dynamic_multi_agent_system.ipynb',

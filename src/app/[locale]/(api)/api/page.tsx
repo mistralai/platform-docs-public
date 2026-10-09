@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import { getOGImageUrl } from '@/components/og/helpers';
+import { OG_IMAGE_DIMENSIONS } from '@/lib/constants';
 import { resolveContentLocale } from '@/lib/content/locale-content';
 import type { Locale } from '@/i18n/config';
 import { getLingo } from '@/i18n/server';
@@ -12,6 +14,13 @@ export async function generateMetadata({
   const l = await getLingo(locale);
   const title = l.text('API Specs', { context: 'Page title for API specifications' });
   const description = l.text('Complete Mistral AI API Specifications', { context: 'Meta description for API specifications' });
+  const ogImageUrl = getOGImageUrl({
+    path: 'generic',
+    eyebraw: title,
+    title,
+    description,
+    image: '/ogs/docs.png',
+  });
   return {
     title,
     description,
@@ -20,9 +29,9 @@ export async function generateMetadata({
       description,
       images: [
         {
-          url: '/api/og?type=generic&eyebrow=API Specs&title=API Specs&description=Complete Mistral AI API Specifications',
-          width: 1200,
-          height: 630,
+          url: ogImageUrl,
+          width: OG_IMAGE_DIMENSIONS.width,
+          height: OG_IMAGE_DIMENSIONS.height,
         },
       ],
     },
@@ -30,9 +39,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: [
-        '/api/og?type=generic&eyebrow=API Specs&title=API Specs&description=Complete Mistral AI API Specifications',
-      ],
+      images: [ogImageUrl],
     },
   };
 }

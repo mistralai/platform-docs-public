@@ -1,0 +1,31 @@
+---
+id: managed-deployments-troubleshooting
+title: Troubleshooting
+sidebar_label: Troubleshooting
+sidebar_position: 5
+description: Common managed deployment failures, and how to reproduce a build locally.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Troubleshooting
+
+<SectionTab as="h2" sectionId="test-the-image-locally">Test the image locally</SectionTab>
+
+Most build failures are plain Docker build or startup failures. You can reproduce the build on your machine with the same context and `Dockerfile`:
+
+```bash
+docker build -t my-worker .   # run from build_directory if the worker is in a subdirectory
+docker run --rm \
+  -e MISTRAL_API_KEY \
+  -e DEPLOYMENT_NAME=my-worker-local \
+  my-worker
+```
+
+`MISTRAL_API_KEY` is passed through from your shell. With it set, the worker connects to `https://api.mistral.ai` and registers its workflows for real. Use a `DEPLOYMENT_NAME` different from your live deployment: a local worker with the same name would steal its executions.
+
+<SectionTab as="h2" sectionId="common-failures">Common failures</SectionTab>
+
+- **The worker runs but no workflows appear** — check the image's `ENTRYPOINT`/`CMD`. It must start the worker, for example `python worker.py` calling `run_worker([...])`. The platform runs the image as-is.
+- **The build fails** — open the deployment details to read the error, then reproduce it with [Test the image locally](#test-the-image-locally).
+- **Executions land on the wrong worker** — two deployments with the same name steal each other's executions. Give every deployment a unique name.

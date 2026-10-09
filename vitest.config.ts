@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // tsconfig keeps JSX as-is for Next; tests that import .tsx modules need it compiled.
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',

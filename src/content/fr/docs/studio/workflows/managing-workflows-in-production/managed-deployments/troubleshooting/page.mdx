@@ -1,0 +1,31 @@
+---
+id: managed-deployments-troubleshooting
+title: Résolution des problèmes
+sidebar_label: Résolution des problèmes
+sidebar_position: 5
+description: Pannes courantes des déploiements gérés, et comment reproduire un build en local.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Résolution des problèmes
+
+<SectionTab as="h2" sectionId="test-the-image-locally">Tester l'image en local</SectionTab>
+
+La plupart des échecs de build sont de simples échecs de build Docker ou de démarrage. Vous pouvez reproduire le build sur votre machine avec le même contexte et le même `Dockerfile` :
+
+```bash
+docker build -t my-worker .   # run from build_directory if the worker is in a subdirectory
+docker run --rm \
+  -e MISTRAL_API_KEY \
+  -e DEPLOYMENT_NAME=my-worker-local \
+  my-worker
+```
+
+La variable `MISTRAL_API_KEY` est transmise depuis votre shell. Une fois définie, le worker se connecte à `https://api.mistral.ai` et enregistre réellement ses workflows. Utilisez un `DEPLOYMENT_NAME` différent de celui de votre déploiement en production : un worker local portant le même nom lui volerait ses exécutions.
+
+<SectionTab as="h2" sectionId="common-failures">Pannes courantes</SectionTab>
+
+- **Le worker s'exécute mais aucun workflow n'apparaît** — vérifiez les instructions `ENTRYPOINT`/`CMD` de l'image. Elles doivent démarrer le worker, par exemple `python worker.py`, qui appelle `run_worker([...])`. La plateforme exécute l'image telle quelle.
+- **Le build échoue** — ouvrez les détails du déploiement pour lire l'erreur, puis reproduisez-la avec [Tester l'image en local](#test-the-image-locally).
+- **Les exécutions arrivent sur le mauvais worker** — deux déploiements portant le même nom se volent leurs exécutions. Donnez un nom unique à chaque déploiement.

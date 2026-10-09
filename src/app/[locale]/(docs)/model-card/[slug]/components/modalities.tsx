@@ -11,12 +11,18 @@ import MicrophoneIcon from '@/components/icons/pixel/microphone';
 import { ModalityKey } from '@/schema/models';
 import { modalityLabel } from '@/schema/models/i18n';
 import { getLingo } from '@/i18n/server';
+import { Link } from '@/i18n/navigation.client';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { Locale } from '@/i18n/config';
+
+const OUTPUT_MODALITY_LINKS: Partial<Record<ModalityKey, string>> = {
+  reasoning: '/studio/conversations/reasoning',
+  text: '/studio/conversations/chat-completion',
+};
 
 interface ModalitiesSectionProps {
   inputCapabilities: ModalityKey[];
@@ -51,7 +57,7 @@ export async function Modalities({
     if (!IconComponent) return null;
 
     const name = modalityLabel(modality, l);
-    const tooltip =
+    const tooltipText =
       direction === 'input'
         ? l.text('{name} input', {
             context:
@@ -64,14 +70,24 @@ export async function Modalities({
             values: { name },
           });
 
+    const link = direction === 'output' ? OUTPUT_MODALITY_LINKS[modality] : undefined;
+
+    const icon = <IconComponent className="size-6 text-primary-soft" />;
+
     return (
       <Tooltip key={modality}>
         <TooltipTrigger asChild>
           <span className="inline-block">
-            <IconComponent className="size-6 text-primary-soft" />
+            {link ? (
+              <Link href={link} className="inline-block hover:opacity-80 transition-opacity">
+                {icon}
+              </Link>
+            ) : (
+              icon
+            )}
           </span>
         </TooltipTrigger>
-        <TooltipContent>{tooltip}</TooltipContent>
+        <TooltipContent>{tooltipText}</TooltipContent>
       </Tooltip>
     );
   };

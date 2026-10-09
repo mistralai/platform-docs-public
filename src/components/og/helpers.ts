@@ -48,12 +48,14 @@ export const getOGPropsFromSearchParams = (
   searchParams: URLSearchParams,
   defaults: OGProps
 ) => {
+  const titleFontSize = Number(searchParams.get('titleFontSize'));
   return {
     imageBackground: searchParams.get('bg') ?? defaults.imageBackground,
     title: searchParams.get('title') ?? defaults.title,
-    titleFontSize: searchParams.get('titleFontSize')
-      ? Number(searchParams.get('titleFontSize'))
-      : defaults.titleFontSize,
+    titleFontSize:
+      Number.isFinite(titleFontSize) && titleFontSize > 0
+        ? titleFontSize
+        : defaults.titleFontSize,
     description: searchParams.get('description') ?? defaults.description,
     eyebraw: searchParams.get('eyebraw') ?? defaults.eyebraw,
     image: searchParams.get('image') ?? defaults.image,

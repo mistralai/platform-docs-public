@@ -1,0 +1,39 @@
+---
+id: managed-deployments-how-it-works
+title: How it works
+sidebar_label: How it works
+sidebar_position: 2
+description: "What Mistral Cloud does to your worker container: service account, Dockerfile entrypoint, and injected environment variables."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# How it works
+
+A managed deployment does three things behind the scenes: it authenticates your worker without an API key, it builds your repository into an image it runs as-is, and it injects the connection settings into the container.
+
+<SectionTab as="h1" sectionId="service-account-authentication">Service account authentication</SectionTab>
+
+Each managed deployment runs under its own [service account](/admin/identity-access/service-accounts). No API key is provisioned for the worker.
+
+The platform mounts a rotating service-account token into the container as a file, and sets `MISTRAL_SA_TOKEN_PATH` to its location. The Workflows SDK reads the token from that file and picks up every rotation on its own. Your code does not handle credentials.
+
+:::warning
+The worker image must install `mistralai-workflows` **3.10 or later**. Earlier versions cannot read service-account tokens, so the worker cannot authenticate.
+:::
+
+To restrict which users and service accounts can register workflows in this deployment, harden it — see [Hardened deployments](/studio/workflows/managing-workflows-in-production/hardened_deployments).
+
+<SectionTab as="h1" sectionId="repository-requirements">Repository requirements</SectionTab>
+
+Mistral Cloud clones the repository, builds a Docker image, and runs the image as-is. There is no `entrypoint` setting: the image's `ENTRYPOINT`/`CMD` must start the worker, for example `python worker.py` calling `run_worker([...])`. The console's create dialog includes an example Dockerfile to start from.
+
+The `Dockerfile` is read from the top of the build context by default. When you create the deployment, set the Dockerfile path if the file is nested or named differently, and the build directory if the worker lives in a subdirectory — everything the `Dockerfile` copies must be inside it.
+
+<SectionTab as="h1" sectionId="region">Region</SectionTab>
+
+When you create a managed deployment, the Mistral Cloud worker runs in the `nl-north-1` region, located in the Netherlands.
+
+<SectionTab as="h1" sectionId="environment-variables">Environment variables</SectionTab>
+
+The platform injects everything the worker needs to connect: `DEPLOYMENT_NAME`, `SERVER_URL`, and the service-account token file behind `MISTRAL_SA_TOKEN_PATH`. How the image installs dependencies is up to your `Dockerfile` — the container command only has to start the worker.

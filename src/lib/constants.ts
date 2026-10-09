@@ -12,11 +12,14 @@ const VERCEL_ORIGIN_URL = new URL(
   process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 ).origin;
 
-export const BASE_URL =
+// Callers append paths (`${BASE_URL}/api/og`), so a trailing slash in the env
+// value would produce `//api/og` URLs that only work through a 308 redirect.
+export const BASE_URL = (
   process.env.NEXT_PUBLIC_BASE_URL ||
   VERCEL_URL ||
   CLOUDFLARE_URL ||
-  DEFAULT_URL;
+  DEFAULT_URL
+).replace(/\/+$/, '');
 
 export const DEPLOYMENT_SHA = process.env.VERCEL_GIT_COMMIT_SHA || 'dev';
 

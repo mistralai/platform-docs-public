@@ -51,6 +51,9 @@ const nextConfig: NextConfig = {
 			"framer-motion",
 		],
 	},
+	outputFileTracingExcludes: {
+		'/[locale]/resources/cookbooks/[slug]': ['./static/**/*'],
+	},
 	rewrites: async () => {
 		return rewrites;
 	},

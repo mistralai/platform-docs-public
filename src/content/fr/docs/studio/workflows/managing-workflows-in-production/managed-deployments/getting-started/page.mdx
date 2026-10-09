@@ -1,0 +1,237 @@
+---
+id: managed-deployments-getting-started
+title: Premiers pas avec les déploiements gérés
+sidebar_label: Premiers pas
+sidebar_position: 1
+description: Générez l'application de démarrage Workflows, poussez-la sur GitHub, et laissez Mistral Cloud construire et exécuter le worker pour vous.
+---
+
+import { AppLink } from '@/components/common/app-link';
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+
+# Premiers pas avec les déploiements gérés
+
+Ce guide déploie l'application de démarrage Workflows en déploiement géré : vous poussez le projet généré sur GitHub, et Mistral Cloud construit et exécute le worker pour vous. Aucun serveur à gérer, et aucune clé API dans le dépôt — le worker s'authentifie avec un token de compte de service injecté par la plateforme.
+
+Si vous débutez avec Workflows, lisez d'abord [Votre premier workflow](/studio/workflows/getting-started/your_first_workflow). Il explique les concepts sur lesquels ce guide s'appuie.
+
+<SectionTab as="h1" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Un [compte Mistral](https://console.mistral.ai/) avec un plan payant. Le plan gratuit ne peut pas exécuter de déploiements gérés — voir [Quotas](/studio/workflows/managing-workflows-in-production/managed-deployments/quotas).
+- [Python](https://www.python.org/downloads/) 3.12 ou version ultérieure, et [uv](https://docs.astral.sh/uv/getting-started/installation/) installé (`uvx` est livré avec `uv`).
+- Un compte GitHub, avec le droit de créer un dépôt dans une organisation ou sur votre compte personnel.
+
+<SectionTab as="h1" sectionId="step-1-scaffold-the-starter-app">Étape 1 : générer l'application de démarrage</SectionTab>
+
+Exécutez le CLI Workflows pour générer un projet prêt à l'emploi :
+
+```bash
+uvx mistralai-workflows-cli@latest setup
+```
+
+La commande génère un projet Python avec le SDK Workflows, un workflow d'exemple `hello-world`, et un `Dockerfile` prêt pour les déploiements gérés. Pour une visite du code généré, voir [Votre premier workflow — Générer votre projet](/studio/workflows/getting-started/your_first_workflow#scaffold-your-project).
+
+Vérifiez que le worker s'exécute avant de déployer. Depuis le répertoire du projet :
+
+```bash
+make start-worker
+```
+
+Une fois que le worker a enregistré ses workflows, arrêtez-le avec `Ctrl+C`. L'application de démarrage garde votre clé API hors du dépôt, mais vérifiez avant de pousser : votre clé locale doit rester dans un fichier ignoré, jamais dans un fichier versionné.
+
+<SectionTab as="h1" sectionId="step-2-push-the-project-to-github">Étape 2 : pousser le projet sur GitHub</SectionTab>
+
+Les déploiements gérés construisent depuis un dépôt GitHub. Initialisez-en un depuis le répertoire du projet :
+
+:::note
+Seul GitHub public (github.com) est pris en charge pour le moment. GitLab et GitHub Enterprise seront pris en charge à l'avenir.
+:::
+
+```bash
+cd <votre-nom-de-depot>
+git init
+git add .
+git commit -m "Scaffold workflows starter app"
+```
+
+Créez un dépôt vide sur GitHub, puis poussez :
+
+```bash
+git remote add origin https://github.com/<votre-org>/<votre-nom-de-depot>.git
+git branch -M main
+git push -u origin main
+```
+
+Le dépôt peut être public ou privé : Mistral Cloud le clone via l'application GitHub de Mistral, pas via HTTPS public.
+
+<SectionTab as="h1" sectionId="step-3-install-the-mistral-github-app">Étape 3 : installer l'application GitHub de Mistral</SectionTab>
+
+Les déploiements gérés clonent votre code via l'application GitHub de Mistral, et deux éléments doivent être en place avant de déployer :
+
+1. **Installez l'application GitHub de Mistral** sur les dépôts depuis lesquels vous souhaitez déployer. Accédez à [github.com/apps/mistralai](https://github.com/apps/mistralai), cliquez sur **Configurer**, sélectionnez votre organisation et choisissez les dépôts.
+2. **Connectez GitHub dans la console.** Ouvrez <AppLink href="https://console.mistral.ai/connectors/github_app" app="studio">les paramètres de l'application GitHub</AppLink> et ajoutez des identifiants.
+
+Si votre dépôt apparaît déjà dans la boîte de dialogue de création de déploiement de l'étape suivante, l'application est installée et vous pouvez passer à la suite. Pour un dépôt d'organisation que vous n'administrez pas, demandez à un propriétaire de l'organisation d'installer l'application.
+
+La liste des dépôts affichée lors de la création d'un déploiement contient uniquement les dépôts où l'application est installée et auxquels votre compte peut accéder. Si un dépôt n'apparaît pas dans la liste, c'est que l'application n'y est pas installée.
+
+<SectionTab as="h1" sectionId="step-4-create-the-deployment">Étape 4 : créer le déploiement</SectionTab>
+
+Choisissez un nom de déploiement unique. Deux déploiements portant le même nom se volent leurs exécutions.
+
+<Tabs>
+  <TabItem value="console" label="Console">
+
+1. Ouvrez <AppLink href="https://console.mistral.ai/workflows/deployments" app="studio">Deployments</AppLink> et créez un nouveau déploiement.
+1. Choisissez le dépôt GitHub dans la liste et sélectionnez la branche à déployer. Si votre dépôt est absent de la liste, consultez [l'étape 3](#step-3-install-the-mistral-github-app).
+1. Gardez la configuration par défaut : elle fonctionne telle quelle avec les projets générés par l'application de démarrage du CLI.
+1. Créez le déploiement et attendez la fin du build.
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/deployments \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "<votre-nom-de-deploiement>",
+    "spec": {
+      "github_url": "https://github.com/<votre-org>/<votre-nom-de-depot>",
+      "revision": "main"
+    }
+  }'
+```
+
+La requête renvoie `202 Accepted`. Mistral Cloud clone ensuite le dépôt, construit l'image et démarre le worker. Pour le schéma complet de la requête et de la réponse, voir la référence API [Create Deployment](/api/endpoint/workflows/deployments#operation-create_deployment_v1_workflows_deployments_post).
+
+  </TabItem>
+  <TabItem value="python" label="Python">
+
+```python
+# /// script
+# dependencies = [
+#     "mistralai>=3.0",
+# ]
+# ///
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+deployment = client.workflows.deployments.create_deployment(
+    name="<votre-nom-de-deploiement>",
+    spec={
+        "github_url": "https://github.com/<votre-org>/<votre-nom-de-depot>",
+        "revision": "main",
+    },
+)
+print(deployment.name)
+```
+
+L'appel renvoie le déploiement créé. Mistral Cloud clone ensuite le dépôt, construit l'image et démarre le worker.
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="step-5-run-a-workflow">Étape 5 : vérifier et exécuter un workflow</SectionTab>
+
+Attendez que le déploiement passe à l'état **Actif**. Cela signifie que le worker a enregistré ses workflows, qui sont listés sur la page du déploiement. Si le build échoue, ouvrez les détails du déploiement pour consulter l'erreur — la plupart des échecs sont des problèmes de build Docker ou de démarrage que vous pouvez reproduire avec [Tester l'image en local](/studio/workflows/managing-workflows-in-production/managed-deployments/troubleshooting#test-the-image-locally).
+
+Exécutez le workflow `hello-world` comme n'importe quel workflow :
+
+<Tabs>
+  <TabItem value="console" label="Console">
+
+Ouvrez le workflow <AppLink href="https://console.mistral.ai/workflows/hello-world" app="studio">hello-world</AppLink> dans la console et exécutez-le avec l'entrée `{"name": "World"}`.
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/hello-world/execute \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": {"name": "World"}}'
+```
+
+  </TabItem>
+  <TabItem value="python" label="Python">
+
+```python
+# /// script
+# dependencies = [
+#     "mistralai>=3.0",
+# ]
+# ///
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+execution = client.workflows.execute_workflow(
+    workflow_identifier="hello-world",
+    input={"name": "World"},
+)
+print(execution.execution_id)
+```
+
+Pour attendre la fin du workflow et lire son résultat, appelez `client.workflows.execute_workflow_and_wait` avec les mêmes arguments.
+
+  </TabItem>
+</Tabs>
+
+L'exécution arrive sur votre worker géré et renvoie le message de bienvenue de l'application de démarrage.
+
+<SectionTab as="h1" sectionId="step-6-ship-a-new-version">Étape 6 : publier une nouvelle version</SectionTab>
+
+Poussez vos modifications sur la branche déployée, puis redéployez. Mistral Cloud résout la branche sur son commit le plus récent, reconstruit l'image et redémarre le worker.
+
+<Tabs>
+  <TabItem value="console" label="Console">
+
+1. Ouvrez <AppLink href="https://console.mistral.ai/workflows/deployments" app="studio">Deployments</AppLink>.
+1. Sélectionnez **Redéployer** sur votre déploiement et attendez la fin du build.
+
+  </TabItem>
+  <TabItem value="curl" label="curl">
+
+```bash
+curl -X POST https://api.mistral.ai/v1/workflows/deployments/<votre-nom-de-deploiement>/restart \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+La requête renvoie `202 Accepted`. Mistral Cloud réépingle le déploiement sur le commit le plus récent de la branche configurée, reconstruit l'image et redémarre le worker. Pour épingler une version exacte plutôt qu'une branche, mettez à jour le déploiement avec `revision` défini sur le SHA d'un commit.
+
+  </TabItem>
+  <TabItem value="python" label="Python">
+
+```python
+# /// script
+# dependencies = [
+#     "mistralai>=3.0",
+# ]
+# ///
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+deployment = client.workflows.deployments.restart_deployment(
+    name="<votre-nom-de-deploiement>",
+)
+print(deployment.name)
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
+
+- Pour donner au worker des identifiants pour des services externes, voir [Secrets](/studio/workflows/managing-workflows-in-production/managed-deployments/secrets).
+- Pour utiliser votre propre `Dockerfile` ou un worker dans un sous-répertoire, voir [Comment ça marche](/studio/workflows/managing-workflows-in-production/managed-deployments/how-it-works#repository-requirements).
+- En cas de problème, voir [Résolution des problèmes](/studio/workflows/managing-workflows-in-production/managed-deployments/troubleshooting).

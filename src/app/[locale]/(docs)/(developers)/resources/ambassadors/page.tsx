@@ -28,6 +28,7 @@ import { AmbassadorYouImage } from './components/ambassador-you-image';
 import { Link } from '@/i18n/navigation.client';
 import type { Metadata } from 'next';
 import { getOGImageUrl } from '@/components/og/helpers';
+import { OG_IMAGE_DIMENSIONS } from '@/lib/constants';
 import { getLingo } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
 
@@ -54,7 +55,14 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      images: [ogImageUrl],
+      images: [
+        {
+          url: ogImageUrl,
+          width: OG_IMAGE_DIMENSIONS.width,
+          height: OG_IMAGE_DIMENSIONS.height,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',

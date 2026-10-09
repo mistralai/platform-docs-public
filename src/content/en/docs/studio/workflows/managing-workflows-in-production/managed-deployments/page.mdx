@@ -5,9 +5,6 @@ sidebar_position: 4
 description: Deploy a workflow worker from a GitHub repository. Mistral Cloud builds the image and runs the worker for you.
 ---
 
-import { AppLink } from '@/components/common/app-link';
-import { SectionTab } from '@/components/layout/section-tab';
-
 # Managed deployments
 
 A managed deployment runs your [workflow worker](/studio/workflows/getting-started/core_concepts/workers) for you. You point Mistral at a GitHub repository. Mistral Cloud builds a Docker image from the repository's `Dockerfile` and runs the container. You never manage servers, and you do not create an API key for the worker.
@@ -16,142 +13,10 @@ A managed deployment runs your [workflow worker](/studio/workflows/getting-start
 Managed deployments are in public preview. The feature and its limits may change.
 :::
 
-<SectionTab as="h1" sectionId="service-account-authentication">Service account authentication</SectionTab>
+- [Getting started](/studio/workflows/managing-workflows-in-production/managed-deployments/getting-started) — scaffold the starter app, push it to GitHub, and deploy it.
+- [How it works](/studio/workflows/managing-workflows-in-production/managed-deployments/how-it-works) — service account authentication, Dockerfile entrypoint, and injected environment variables.
+- [Secrets](/studio/workflows/managing-workflows-in-production/managed-deployments/secrets) — bind workspace secrets to the deployment, at build and at runtime.
+- [Quotas](/studio/workflows/managing-workflows-in-production/managed-deployments/quotas) — concurrent deployment caps per plan.
+- [Troubleshooting](/studio/workflows/managing-workflows-in-production/managed-deployments/troubleshooting) — test the image locally, and common failures.
 
-Each managed deployment runs under its own [service account](/admin/identity-access/service-accounts). No API key is provisioned for the worker.
-
-The platform mounts a rotating service-account token into the container as a file, and sets `MISTRAL_SA_TOKEN_PATH` to its location. The Workflows SDK reads the token from that file and picks up every rotation on its own. Your code does not handle credentials.
-
-:::warning
-The worker image must install `mistralai-workflows` **3.10 or later**. Earlier versions cannot read service-account tokens, so the worker cannot authenticate.
-:::
-
-<SectionTab as="h1" sectionId="github-setup">GitHub setup</SectionTab>
-
-Managed deployments clone your code through the Mistral GitHub App. Two things must be in place before you deploy:
-
-1. **Install the Mistral GitHub App** on the repositories you want to deploy. Open <AppLink href="https://console.mistral.ai/connectors/github_app" app="studio">GitHub App settings</AppLink> in the console and follow the install flow to select your repositories.
-2. **Connect GitHub in the console.** Open <AppLink href="https://console.mistral.ai/build/connectors" app="studio" path={['Build', 'Connectors']} />, open the `Github` connector, and add a credential.
-
-The repository list shown when you create a deployment contains only repositories where the App is installed and that your account can access. If a repository is missing from the list, the App is not installed on it. For an organization repository you do not administer, ask an organization owner to install the App.
-
-<SectionTab as="h1" sectionId="create-a-deployment">Create a deployment</SectionTab>
-
-1. Open <AppLink href="https://console.mistral.ai/build/workflows/deployments" app="studio" path={['Build', 'Workflows', 'Deployments']} /> and create a new deployment.
-2. Choose a unique deployment name. Two deployments with the same name steal each other's executions.
-3. Paste the GitHub repository URL and select the branch to deploy.
-4. If the `Dockerfile` is not at the repository root or is not named `Dockerfile`, set `dockerfile_path` and `build_directory` in the **Advanced configuration** section.
-5. Wait for the deployment to become **Active**. This means the worker registered its workflows, which are listed on the deployment page. If the build fails, open the deployment details to read the error.
-6. Run a workflow from the workflows page.
-
-To redeploy from the latest commit on the configured branch, use **Update** on the deployment.
-
-<SectionTab as="h1" sectionId="repository-requirements">Repository requirements</SectionTab>
-
-Mistral Cloud clones the repository, builds a Docker image, and runs the image as-is. There is no `entrypoint` setting: the image's `ENTRYPOINT`/`CMD` must start the worker, for example `python worker.py` calling `run_worker([...])`.
-
-| Setting | Required | Default | Description |
-| --- | --- | --- | --- |
-| `dockerfile_path` | Yes | `Dockerfile` | Path to the `Dockerfile`, relative to `build_directory`. Use it when the file is nested or named differently, for example `docker/worker.Dockerfile`. |
-| `build_directory` | No | Repository root | Docker build context. Use it when the worker lives in a subdirectory. Everything the `Dockerfile` copies must be inside it. |
-
-The platform injects everything the worker needs to connect: `DEPLOYMENT_NAME`, `SERVER_URL`, and the service-account token file behind `MISTRAL_SA_TOKEN_PATH`. How the image installs dependencies is up to your `Dockerfile` — the container command only has to start the worker.
-
-Example layout for a worker at the repository root, started by `worker.py`:
-
-```
-my-worker/
-├── Dockerfile
-├── pyproject.toml
-├── uv.lock
-├── worker.py
-└── workflows/
-    └── hello.py
-```
-
-Example `Dockerfile`:
-
-```dockerfile
-FROM ghcr.io/astral-sh/uv:0.11.16 AS uv
-
-FROM python:3.12-slim AS builder
-
-COPY --from=uv /uv /bin/uv
-
-ENV UV_LINK_MODE=copy \
-    UV_COMPILE_BYTECODE=1
-
-WORKDIR /app
-
-COPY . .
-RUN uv sync --frozen --no-dev
-
-FROM python:3.12-slim
-
-WORKDIR /app
-COPY --from=builder /app /app
-
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1
-
-RUN useradd --uid 1001 --create-home worker && chown -R 1001 /app
-USER 1001
-
-CMD ["/app/.venv/bin/python", "worker.py"]
-```
-
-The final stage runs as a non-root user: the platform runs the image as-is, so the `Dockerfile`'s `USER` sets the runtime user.
-
-<SectionTab as="h1" sectionId="test-the-image-locally">Test the image locally</SectionTab>
-
-Most build failures are plain Docker build or startup failures. You can reproduce the build on your machine with the same context and `Dockerfile`:
-
-```bash
-docker build -t my-worker .   # run from build_directory if the worker is in a subdirectory
-docker run --rm \
-  -e MISTRAL_API_KEY \
-  -e DEPLOYMENT_NAME=my-worker-local \
-  my-worker
-```
-
-`MISTRAL_API_KEY` is passed through from your shell. With it set, the worker connects to `https://api.mistral.ai` and registers its workflows for real. Use a `DEPLOYMENT_NAME` different from your live deployment: a local worker with the same name would steal its executions.
-
-<SectionTab as="h1" sectionId="secrets">Secrets</SectionTab>
-
-Workers often need credentials, for example a token for an external API. Managed deployments read them from the workspace Secrets Manager.
-
-1. Create the secret in the console first, at <AppLink href="https://console.mistral.ai/secrets" app="studio">Secrets</AppLink>.
-2. Bind it to the deployment. When you create or update the deployment, add a binding: one environment variable, one secret from the workspace. The worker reads the value from its environment at boot.
-
-To rebind later, update the deployment's bindings. Secret values are read at boot — restart the deployment to pick up a changed value. Only secrets from the deployment's workspace can be bound.
-
-Each binding is also passed to the Docker build as a build arg with the same name. Declare a matching `ARG` in the `Dockerfile` to use it, for example to install packages from a private registry:
-
-```dockerfile
-ARG UV_INDEX_USERNAME
-ARG UV_INDEX_PASSWORD
-
-RUN uv sync --frozen --no-dev
-```
-
-Build args are stored in the image's history and layers, so anyone who can access the image can recover the values. Prefer credentials you can rotate, and avoid binding high-value secrets for builds.
-
-<SectionTab as="h1" sectionId="quotas">Quotas</SectionTab>
-
-Each organization has a cap on the number of managed deployments running at the same time:
-
-| Plan | Concurrent managed deployments |
-| --- | --- |
-| Free | 0 — managed deployments require a paid plan |
-| Pay-as-you-go | 3 |
-| Enterprise | 10 |
-
-Creating or starting a deployment beyond the cap fails with a `403` error. Stop or delete a deployment to free a slot. Caps can be raised per organization — contact Mistral support.
-
-Mistral Cloud also picks the instance size for you. Every managed worker gets the same size, and per-deployment CPU and memory metrics are not exposed yet.
-
-<SectionTab as="h1" sectionId="troubleshooting">Troubleshooting</SectionTab>
-
-- **The worker runs but no workflows appear** — check the image's `ENTRYPOINT`/`CMD`. It must start the worker, for example `python worker.py` calling `run_worker([...])`. The platform runs the image as-is.
-- **The build fails** — open the deployment details to read the error, then reproduce the build locally with `docker build` using the same context and `Dockerfile`.
-- **Executions land on the wrong worker** — two deployments with the same name steal each other's executions. Give every deployment a unique name.
+A managed deployment can be [hardened](/studio/workflows/managing-workflows-in-production/hardened_deployments): hardening restricts workflow registration to selected users and service accounts.

@@ -1,0 +1,39 @@
+---
+id: managed-deployments-how-it-works
+title: Comment ça marche
+sidebar_label: Comment ça marche
+sidebar_position: 2
+description: "Ce que Mistral Cloud fait à votre conteneur worker : compte de service, entrypoint du Dockerfile et variables d'environnement injectées."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Comment ça marche
+
+Un déploiement géré fait trois choses en coulisses : il authentifie votre worker sans clé API, il construit votre dépôt en une image qu'il exécute telle quelle, et il injecte les réglages de connexion dans le conteneur.
+
+<SectionTab as="h1" sectionId="service-account-authentication">Authentification par compte de service</SectionTab>
+
+Chaque déploiement géré s'exécute sous son propre [compte de service](/admin/identity-access/service-accounts). Aucune clé API n'est provisionnée pour le worker.
+
+La plateforme monte un token de compte de service rotatif dans le conteneur sous forme de fichier et définit `MISTRAL_SA_TOKEN_PATH` avec son emplacement. Le SDK Workflows lit le token dans ce fichier et prend en compte chaque rotation automatiquement. Votre code ne gère pas les identifiants.
+
+:::warning
+L'image du worker doit installer `mistralai-workflows` **3.10 ou version ultérieure**. Les versions antérieures ne peuvent pas lire les tokens de compte de service, le worker ne peut donc pas s'authentifier.
+:::
+
+Pour restreindre les utilisateurs et comptes de service autorisés à enregistrer des workflows dans ce déploiement, sécurisez-le — voir [Déploiements sécurisés](/studio/workflows/managing-workflows-in-production/hardened_deployments).
+
+<SectionTab as="h1" sectionId="repository-requirements">Prérequis du dépôt</SectionTab>
+
+Mistral Cloud clone le dépôt, construit une image Docker et exécute l'image telle quelle. Il n'existe pas de paramètre `entrypoint` : les instructions `ENTRYPOINT`/`CMD` de l'image doivent démarrer le worker, par exemple `python worker.py`, qui appelle `run_worker([...])`. La boîte de dialogue de création dans la console inclut un exemple de `Dockerfile` pour démarrer.
+
+Le `Dockerfile` est lu par défaut à la racine du contexte de build. Lors de la création du déploiement, définissez le chemin du Dockerfile si le fichier se trouve dans un sous-répertoire ou porte un autre nom, et le répertoire de build si le worker vit dans un sous-répertoire — tout ce que le `Dockerfile` copie doit s'y trouver.
+
+<SectionTab as="h1" sectionId="region">Région</SectionTab>
+
+Lors de la création d'un déploiement géré, le worker Mistral Cloud s'exécute dans la région `nl-north-1`, située aux Pays-Bas.
+
+<SectionTab as="h1" sectionId="environment-variables">Variables d'environnement</SectionTab>
+
+La plateforme injecte tout ce dont le worker a besoin pour se connecter : `DEPLOYMENT_NAME`, `SERVER_URL` et le fichier de token de compte de service indiqué par `MISTRAL_SA_TOKEN_PATH`. La façon dont l'image installe les dépendances dépend de votre `Dockerfile` — la commande du conteneur doit seulement démarrer le worker.

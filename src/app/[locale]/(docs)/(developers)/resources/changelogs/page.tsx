@@ -19,6 +19,8 @@ import { Metadata } from 'next';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { getLingo } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
+import { getOGImageUrl } from '@/components/og/helpers';
+import { OG_IMAGE_DIMENSIONS } from '@/lib/constants';
 
 export async function generateMetadata({
   params,
@@ -29,6 +31,13 @@ export async function generateMetadata({
   const l = await getLingo(locale);
   const title = l.text('Changelog', { context: 'Main heading for product and API changelogs' });
   const description = l.text('Find out about all the latest changes to our tool.', { context: 'Meta description for product and API changelogs' });
+  const ogImageUrl = getOGImageUrl({
+    path: 'generic',
+    eyebraw: title,
+    title,
+    description,
+    image: '/ogs/docs.png',
+  });
   return {
     title,
     description,
@@ -38,12 +47,18 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: '/api/og?title=Changelog&description=Find out about all the latest changes to our tool.&eyebraw=Changelog&image=/ogs/docs.png',
-          width: 1200,
-          height: 630,
-          alt: 'Changelog',
+          url: ogImageUrl,
+          width: OG_IMAGE_DIMENSIONS.width,
+          height: OG_IMAGE_DIMENSIONS.height,
+          alt: title,
         },
       ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImageUrl],
     },
   };
 }

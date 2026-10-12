@@ -30,11 +30,63 @@ Utilisez l’un des agents intégrés ci-dessous. Pour changer, définir un agen
 | `default` | Demande une validation avant d’exécuter tout outil. | Travail quotidien pour valider chaque action. |
 | `plan` | Lecture seule. Validation automatique pour la lecture, bloque modifications et commandes. | Exploration d’une base de code inconnue ou conception d’une approche avant toute modification. |
 | `accept-edits` | Valide automatiquement les modifications de fichiers. Demande toujours pour les commandes shell ou actions sensibles. | Refactoring d’ampleur déjà délimité. |
+| `smart-approve` | Classe chaque appel d’outil. Exécute ceux qu’il juge sûrs et vous demande une validation pour les appels risqués. Voir [Validation intelligente](/vibe/code/safety-approvals-permissions#smart-approve). | Travail quotidien avec moins de demandes de validation. |
 | `auto-approve` | Valide automatiquement chaque action, y compris les commandes shell. | Environnements de confiance et isolés uniquement. **À utiliser avec discernement**. |
 
 :::warning
 `default_agent` ne s’applique que dans les sessions interactives. En **mode programmatique** (`vibe --prompt …`), Vibe bascule sur `auto-approve` si `--agent` n’est pas précisé, et les outils interactifs comme `ask_user_question` sont désactivés. Utilisez explicitement `--agent plan` si vous souhaitez une exécution programmatique en lecture seule.
 :::
+
+<SectionTab as="h3" variant="secondary" sectionId="smart-approve">Validation intelligente</SectionTab>
+
+La plupart des demandes de validation portent sur des actions que vous auriez approuvées de toute façon. L’agent `smart-approve` supprime ces demandes et vous garde dans la boucle pour les actions risquées.
+
+Sélectionnez-le avec `Shift+Tab`, ou démarrez une session avec :
+
+```bash
+vibe --agent smart-approve
+# or
+vibe --smart-approve
+```
+
+Pour chaque appel d’outil qui nécessiterait sinon une validation, Vibe :
+
+1. **Applique d’abord vos règles de permission.** Les commandes autorisées s’exécutent sans vérification, et les commandes bloquées restent bloquées. Voir [Permissions par outil](/vibe/code/safety-approvals-permissions#tool-permissions).
+2. **Réutilise les validations déjà accordées** pour le même appel dans la session en cours.
+3. **Classe l’appel.** Un modèle évalue l’appel à partir de votre demande et des arguments de l’outil. Les appels jugés sûrs s’exécutent immédiatement, avec une note expliquant pourquoi ils ont été validés automatiquement.
+4. **Retient les appels risqués.** Vibe renvoie la raison à l’agent pour qu’il essaie une approche plus sûre. Il vous demande de confirmer lorsque l’agent enchaîne les appels risqués, répète le même appel, ou lorsque le classifieur ne parvient pas à trancher.
+
+Un appel jugé risqué ne s’exécute jamais sans votre confirmation. En mode programmatique, où personne ne peut confirmer, les appels risqués sont refusés.
+
+:::warning
+La validation intelligente est un classifieur, pas une sandbox. Un appel jugé sûr s’exécute réellement, avec les mêmes accès que votre compte utilisateur. Elle réduit les demandes de validation ; elle ne limite pas ce que l’agent peut faire. Pour du code non fiable ou des identifiants à protéger, utilisez l’agent `default` ou un environnement isolé.
+:::
+
+Pour démarrer chaque session interactive en validation intelligente, définissez `default_agent = "smart-approve"` dans `config.toml`.
+
+<SectionTab as="h3" variant="secondary" sectionId="smart-approve-model">Choisir le modèle de validation intelligente</SectionTab>
+
+Chaque classification est un appel de modèle distinct. Il n’utilise pas forcément le modèle de votre session. Vibe choisit le modèle du classifieur dans cet ordre :
+
+1. Le modèle défini par `smart_approve` dans `[utility_models]`.
+2. Sinon, un petit modèle Mistral rapide, lorsque votre fournisseur Mistral en propose un.
+3. Sinon, le modèle de votre session, plus coûteux par appel.
+
+Définissez `smart_approve` sur l’`alias` de l’un de vos préréglages `[[models]]`, ou sur `active` pour toujours utiliser le modèle de la session :
+
+```toml
+[utility_models]
+smart_approve = "classifier"
+
+[[models]]
+name = "mistral-small-latest"
+provider = "mistral"
+alias = "classifier"
+```
+
+Un modèle plus petit ajoute moins de latence et de coût à chaque appel d’outil. Un modèle plus grand évalue le risque avec plus de soin. Si l’alias ne correspond à aucun modèle configuré, ou si `allowed_models` l’exclut, Vibe affiche un avertissement et revient à la sélection automatique.
+
+Voir [`[utility_models]`](/vibe/code/cli/configuration-reference#utility-models) dans la référence de configuration.
 
 <SectionTab as="h2" sectionId="trusted-folders">Dossiers de confiance</SectionTab>
 
@@ -169,6 +221,7 @@ Vibe Code Web exécute des sessions dans une sandbox gérée associée à un dé
 - **Commencez en mode `plan` pour un code inconnu.** Explorez et concevez avant d’accorder la modification ou l’accès shell.
 - **Validez vos commits avant les opérations risquées.** Cela permet un retour immédiat en arrière (`git reset --hard`).
 - **Utilisez `accept-edits` pour les refactorings de portée délimitée** et vérifiez le diff avant de valider.
+- **Utilisez `smart-approve` pour réduire les demandes de validation** au quotidien. Il demande toujours une confirmation avant les actions risquées, mais ce n’est pas une sandbox.
 - **Réservez `auto-approve` aux environnements temporaires** (conteneurs, runners CI, VMs éphémères). Ne l’utilisez jamais sur des machines contenant des clés SSH, identifiants cloud ou accès production.
 - **Faites confiance de façon réfléchie.** Vérifiez la configuration `.vibe/` d’un dépôt lors de la première utilisation, et après chaque modification.
 - **Renforcez la sécurité des outils MCP et connecteurs.** Tout ce qui interagit avec des systèmes externes devrait être en `permission = "ask"` même sous `accept-edits`.

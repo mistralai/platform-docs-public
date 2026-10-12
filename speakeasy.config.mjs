@@ -107,11 +107,11 @@ export default {
   codeSamples: [
     {
       language: 'typescript',
-      sdkTarballPath: './sdks/client-ts-2.4.1.tar.gz',
+      sdkTarballPath: './sdks/client-ts-3.0.0.tar.gz',
     },
     {
       language: 'python',
-      sdkTarballPath: './sdks/client-python-2.5.2.tar.gz',
+      sdkTarballPath: './sdks/client-python-3.2.0.tar.gz',
     },
     {
       language: 'curl',

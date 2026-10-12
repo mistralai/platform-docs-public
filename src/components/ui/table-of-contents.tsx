@@ -178,7 +178,19 @@ export function TableOfContents({
       return createTocData(tocItems, { maxDepth, minItems: 1 });
     } else if (sidebar) {
       const slug = pathname === '/' ? [] : pathname.slice(1).split('/');
-      const currentItem = findItemBySlug(sidebar, slug);
+      let currentItem = findItemBySlug(sidebar, slug);
+      // TOC FIX FOR CATEGORIES THAT LINK TO A CHILD PAGE (DOC-610, audio section).
+      // A `_category_.json` with `"link": "/studio/audio/overview"` gives the
+      // category an `overridedSlug` equal to its overview page's slug, so
+      // `findItemBySlug` returns the category before it reaches the page. A
+      // category has no TOC, so the overview page showed none (Audio, Speech to
+      // Text, Text to Speech, Audio agents overviews). When the match is a
+      // category, look for the page with the same slug among its children.
+      // Categories that link to themselves (`/studio`, `/resources`) have no
+      // such child and keep the previous behavior.
+      if (currentItem?.type === 'category' && currentItem.children) {
+        currentItem = findItemBySlug(currentItem.children, slug) ?? currentItem;
+      }
       const toc = currentItem?.type === 'file' ? currentItem.toc : [];
       return createTocData(toc || [], { maxDepth, minItems: 1 });
     } else

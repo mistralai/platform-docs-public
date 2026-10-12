@@ -5,7 +5,12 @@
  * documentation — one H2 section per top-level docs area, one link per
  * public page, every link pointing to the markdown version of the page
  * (same URL with a `.md` extension, produced by `rawmdx:export`). llms-full.txt
- * concatenates the cleaned content of every listed page.
+ * concatenates the cleaned content of every listed page. Routes rendered from
+ * data (changelog, models, pricing, model selection guide) come from
+ * `llms-generated-pages.ts`, and `llms-page-transforms.ts` turns each MDX page
+ * into plain Markdown. This script writes the `.md` version of every generated
+ * page and of every MDX page whose data components it expanded, since the raw
+ * export of those holds only the component tag.
  *
  * Determinism rules: no network, no LLM, no timestamps — identical inputs
  * always produce identical outputs, so the files can be regenerated at
@@ -16,6 +21,8 @@ import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { parseFrontmatter } from '@/lib/content/parse-metadata';
 import { isDocsRouteHidden } from '@/lib/content/hidden';
 import { resolveAndInlineMdxImports } from '@/lib/content/inline-mdx-imports';
+import { buildGeneratedPages, englishLingo, type GeneratedPage, type Lingo } from './llms-generated-pages';
+import { expandDataComponents, rewriteRedirectedLinks, sectionTabsToHeadings } from './llms-page-transforms';
 
 const ROOT = process.cwd();
 const DOCS_ROOT = path.join(ROOT, 'src', 'content', 'en', 'docs');
@@ -60,6 +67,10 @@ async function listPages(dir: string, base: string): Promise<string[]> {
 }
 
 /** Title-case a kebab-case folder name: "getting-started" -> "Getting started". */
+function sectionForSlug(slug: string): string {
+  return sectionLabel(slug.includes('/') ? slug.split('/')[0] : slug);
+}
+
 function sectionLabel(folder: string): string {
   const ACRONYMS = new Set(['api', 'rbac', 'sso', 'mcp', 'sdk']);
   return folder
@@ -108,7 +119,7 @@ function cleanFullContent(body: string): string {
     .trim();
 }
 
-async function buildEntries(): Promise<PageEntry[]> {
+async function buildEntries(l: Lingo): Promise<PageEntry[]> {
   const relativePaths = (await listPages(DOCS_ROOT, DOCS_ROOT))
     .filter(isRoutablePage)
     .sort();
@@ -118,18 +129,19 @@ async function buildEntries(): Promise<PageEntry[]> {
     const pagePath = path.join(DOCS_ROOT, relativePath);
     const source = await readFile(pagePath, 'utf8');
     const { metadata, content } = parseFrontmatter(source);
-    const fullContent = await resolveAndInlineMdxImports(
+    const inlined = await resolveAndInlineMdxImports(
       content,
       path.dirname(pagePath)
     );
+    const expanded = expandDataComponents(inlined, l);
+    const fullContent = rewriteRedirectedLinks(sectionTabsToHeadings(expanded));
 
     const slug = path
       .dirname(relativePath)
       .split(path.sep)
       .join('/');
     const url = `${BASE_URL}/${slug}.md`;
-    const folder = slug.includes('/') ? slug.split('/')[0] : slug;
-    const section = sectionLabel(folder);
+    const section = sectionForSlug(slug);
 
     const firstHeading = content.match(/^#\s+(.+)$/m);
     const title =
@@ -142,12 +154,30 @@ async function buildEntries(): Promise<PageEntry[]> {
       firstBodyParagraph(content);
     const description = cleanDescription(rawDescription);
 
+    const entry = { title, description, url, section, content: cleanFullContent(fullContent) };
+    if (expanded !== inlined) await writeMarkdownExport(slug, entry.content);
+    entries.push(entry);
+  }
+  return entries;
+}
+
+async function writeMarkdownExport(slug: string, content: string): Promise<void> {
+  const file = path.join(OUT_DIR, `${slug}.md`);
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, `${content}\n`, 'utf8');
+}
+
+async function writeGeneratedPages(pages: GeneratedPage[]): Promise<PageEntry[]> {
+  const entries: PageEntry[] = [];
+  for (const page of pages) {
+    const content = rewriteRedirectedLinks(page.content);
+    await writeMarkdownExport(page.slug, content);
     entries.push({
-      title,
-      description,
-      url,
-      section,
-      content: cleanFullContent(fullContent),
+      title: page.title,
+      description: page.description,
+      url: `${BASE_URL}/${page.slug}.md`,
+      section: sectionForSlug(page.slug),
+      content,
     });
   }
   return entries;
@@ -215,7 +245,11 @@ async function writeLlmsFullTxt(entries: PageEntry[]): Promise<void> {
 async function main(): Promise<void> {
   const start = Date.now();
   await mkdir(OUT_DIR, { recursive: true });
-  const entries = await buildEntries();
+  const l = englishLingo();
+  const entries = [
+    ...(await buildEntries(l)),
+    ...(await writeGeneratedPages(await buildGeneratedPages(l))),
+  ];
   if (entries.length === 0) {
     throw new Error('No documentation pages found — refusing to write empty llms files');
   }

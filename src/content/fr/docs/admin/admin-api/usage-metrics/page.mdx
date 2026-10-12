@@ -14,6 +14,10 @@ L’API Admin expose deux types de données de consommation :
 - **Données de facturation** : coût et consommation de votre Organisation sur une période de facturation.
 - **Données d’utilisation des produits** : activité dans le Chat et métriques d’utilisation de Vibe Code sur une période.
 
+:::info[Uniquement pour les plans Entreprise]
+L'API administrateur est disponible uniquement sur les plans Entreprise, et l'accès ne se fait pas en libre-service. Sur les autres plans, vous ne pouvez pas créer de clé API administrateur, et une clé API standard ne fonctionne pas avec les endpoints d'administration. Pour demander l'accès, contactez l'équipe Mistral en charge de votre compte ou [notre équipe commerciale](https://mistral.ai/contact).
+:::
+
 <SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
 Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requête utilise l’URL de base `https://console.mistral.ai/api/admin` et l’en-tête `x-api-key`. Consultez [Authentification de l’API Admin](/admin/admin-api/authentication).
@@ -23,7 +27,7 @@ Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requ�
 Consultez le coût et la consommation de l’Organisation. Les paramètres `month`, `year` et `workspace_id` sont facultatifs. `month` et `year` sont des nombres entiers. Vous pouvez donc utiliser `5` ou `05`.
 
 ```bash
-curl "https://console.mistral.ai/api/admin/usage?month=5&year=2026" \
+curl "https://api.mistral.ai/v1/admin/usage?month=5&year=2026" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -34,19 +38,19 @@ La réponse ventile la consommation par catégorie (`chat`, `completion`, `ocr`,
 Consultez les limites actuelles de l’Organisation :
 
 ```bash
-# Limites de dépenses
-curl https://console.mistral.ai/api/admin/spend-limit \
+# Spend limits
+curl https://api.mistral.ai/v1/admin/spend-limit \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Limites de débit (requêtes par seconde et limites de tokens par modèle)
-curl https://console.mistral.ai/api/admin/rate-limit \
+# Rate limits (requests per second and per-model token limits)
+curl https://api.mistral.ai/v1/admin/rate-limit \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 Définissez la limite de dépenses mensuelle de l’Organisation :
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/spend-limit \
+curl -X POST https://api.mistral.ai/v1/admin/spend-limit \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"amount": 500, "no_monthly_limit": false}'
@@ -64,7 +68,7 @@ Les endpoints `/analytics/lechat` fournissent les données d’activité de la m
 <SectionTab as="h2" variant="secondary" sectionId="lechat-by-user">Par utilisateur</SectionTab>
 
 ```bash
-curl "https://console.mistral.ai/api/admin/analytics/lechat/usage/by_user_stats?start_time=1704067200&end_time=1706745600" \
+curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_user_stats?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -73,7 +77,7 @@ La réponse indique, pour chaque utilisateur, le nombre de messages, de fichiers
 <SectionTab as="h2" variant="secondary" sectionId="lechat-by-agent">Par agent</SectionTab>
 
 ```bash
-curl "https://console.mistral.ai/api/admin/analytics/lechat/usage/by_agent_stats?start_time=1704067200&end_time=1706745600" \
+curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_agent_stats?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -84,7 +88,7 @@ La réponse reprend les mêmes indicateurs d’activité, regroupés par agent, 
 Ajoutez `granularity` (`hour`, `day`, `week` ou `month`) pour regrouper les résultats.
 
 ```bash
-curl "https://console.mistral.ai/api/admin/analytics/lechat/usage/by_time_stats?start_time=1704067200&end_time=1706745600&granularity=day" \
+curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_time_stats?start_time=1704067200&end_time=1706745600&granularity=day" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -99,7 +103,7 @@ Les endpoints `/analytics/vibe` fournissent les données d’activité de Vibe C
 Transmettez `workspace_id` pour limiter le rapport à un seul espace de travail, ou omettez-le pour tous les espaces de travail.
 
 ```bash
-curl "https://console.mistral.ai/api/admin/analytics/vibe/usage/by_workspace?start_time=1704067200&end_time=1706745600" \
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_workspace?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -108,13 +112,13 @@ La réponse fournit des séries quotidiennes pour les sessions (CLI, ACP et API)
 <SectionTab as="h2" variant="secondary" sectionId="vibe-by-organization">Par Organisation</SectionTab>
 
 ```bash
-curl "https://console.mistral.ai/api/admin/analytics/vibe/usage/by_organization?start_time=1704067200&end_time=1706745600" \
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_organization?start_time=1704067200&end_time=1706745600" \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 La réponse fournit des séries quotidiennes pour les suggestions `next_edit` par résultat, les utilisateurs actifs `next_edit` et les lignes de code modifiées.
 
-{/* TODO: confirm the base host for the /analytics/* endpoints. They are generated from the datalake-api service (datalake-api/specs/openapi-admin.json); verify they are served from console.mistral.ai/api/admin or a separate host. */}
+{/* TODO: confirm the base host for the /analytics/* endpoints. They are generated from the datalake-api service (datalake-api/specs/openapi-admin.json); verify they are served from api.mistral.ai/v1/admin or a separate host. */}
 
 <SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
 

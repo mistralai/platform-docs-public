@@ -11,6 +11,10 @@ import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
 
 Ce guide explique comment provisionner des utilisateurs avec l’API Admin : créer plusieurs utilisateurs en une seule requête, les organiser dans un groupe d’utilisateurs et donner au groupe accès à un espace de travail. Il couvre aussi la mise à jour des utilisateurs et leur retrait d’un espace de travail.
 
+:::info[Réservé aux plans Entreprise]
+L'API administrateur est disponible uniquement sur les plans Entreprise, et l'accès n'est pas en libre-service. Sur les autres plans, vous ne pouvez pas créer de clé API administrateur, et une clé API standard ne fonctionne pas avec les endpoints d'administration. Pour demander l'accès, contactez votre équipe de compte Mistral ou [notre équipe commerciale](https://mistral.ai/contact).
+:::
+
 <SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
 Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requête utilise l’URL de base `https://console.mistral.ai/api/admin` et l’en-tête `x-api-key`. Consultez [Authentification de l’API Admin](/admin/admin-api/authentication).
@@ -20,12 +24,12 @@ Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requ�
 Envoyez un tableau d’utilisateurs pour les créer dans une seule requête. Chaque objet doit inclure un rôle, une adresse e-mail et un nom.
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/users \
+curl -X POST https://api.mistral.ai/v1/admin/users \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '[
-    {"role_names": ["organization_admin"], "email": "ada@example.com", "first_name": "Ada", "last_name": "Lovelace"},
-    {"role_names": ["member"], "email": "alan@example.com", "first_name": "Alan", "last_name": "Turing"}
+    {"role": "A", "email": "ada@example.com", "first_name": "Ada", "last_name": "Lovelace"},
+    {"role": "M", "email": "alan@example.com", "first_name": "Alan", "last_name": "Turing"}
   ]'
 ```
 
@@ -40,21 +44,21 @@ Les champs de rôle singuliers (`role`, `role_name`) sont obsolètes. Utilisez l
 Au lieu de créer les utilisateurs directement, vous pouvez envoyer des invitations par e-mail. Les destinataires acceptent l’invitation pour rejoindre l’Organisation. Séparez les adresses par des virgules pour inviter plusieurs personnes à la fois.
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/users-invite \
+curl -X POST https://api.mistral.ai/v1/admin/users-invite \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
-  -d '{"email": "grace@example.com,katherine@example.com", "role_names": ["member"]}'
+  -d '{"email": "grace@example.com,katherine@example.com", "role": "M"}'
 ```
 
 Listez ou supprimez les invitations en attente :
 
 ```bash
-# Lister les invitations
-curl https://console.mistral.ai/api/admin/users-invite \
+# List invitations
+curl https://api.mistral.ai/v1/admin/users-invite \
   -H "x-api-key: $ADMIN_API_KEY"
 
-# Supprimer une invitation par UUID
-curl -X DELETE https://console.mistral.ai/api/admin/users-invite/<INVITATION_UUID> \
+# Delete an invitation by its UUID
+curl -X DELETE https://api.mistral.ai/v1/admin/users-invite/<INVITATION_UUID> \
   -H "x-api-key: $ADMIN_API_KEY"
 ```
 
@@ -63,7 +67,7 @@ curl -X DELETE https://console.mistral.ai/api/admin/users-invite/<INVITATION_UUI
 Un groupe d’utilisateurs vous permet de gérer plusieurs utilisateurs et de leur attribuer les mêmes accès. Créez le groupe :
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/user-groups \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"name": "Interns", "description": "User group for interns"}'
@@ -72,7 +76,7 @@ curl -X POST https://console.mistral.ai/api/admin/user-groups \
 La réponse inclut l’`uuid` du groupe. Ajoutez des membres à l’aide de leurs identifiants utilisateur :
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/user-groups/<GROUP_UUID>/members \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups/<GROUP_UUID>/members \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"user_uuids": ["<USER_UUID_1>", "<USER_UUID_2>"]}'
@@ -85,7 +89,7 @@ Pour en savoir plus sur les groupes, consultez [Groupes d’utilisateurs](/admin
 Créez un espace de travail, éventuellement avec un utilisateur comme administrateur :
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/workspaces \
+curl -X POST https://api.mistral.ai/v1/admin/workspaces \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{
@@ -100,13 +104,13 @@ curl -X POST https://console.mistral.ai/api/admin/workspaces \
 La réponse inclut l’`uuid` de l’espace de travail. Ajoutez tous les membres du groupe à l’espace de travail avec un rôle donné :
 
 ```bash
-curl -X POST https://console.mistral.ai/api/admin/user-groups/provision-workspace \
+curl -X POST https://api.mistral.ai/v1/admin/user-groups/provision-workspace \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{
     "user_group_uuid": "<GROUP_UUID>",
     "workspace_uuid": "<WORKSPACE_UUID>",
-    "workspace_role_name": "user"
+    "workspace_role": "M"
   }'
 ```
 
@@ -115,16 +119,16 @@ curl -X POST https://console.mistral.ai/api/admin/user-groups/provision-workspac
 Mettez à jour les rôles ou les abonnements d’un utilisateur :
 
 ```bash
-curl -X PATCH https://console.mistral.ai/api/admin/users/<USER_UUID> \
+curl -X PATCH https://api.mistral.ai/v1/admin/users/<USER_UUID> \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
-  -d '{"role_names": ["member"], "subscription_types": ["CHAT", "MISTRAL_CODE"]}'
+  -d '{"role": "M", "subscription_types": ["CHAT", "MISTRAL_CODE"]}'
 ```
 
 Retirez des utilisateurs d’un espace de travail. Cette opération supprime toutes leurs permissions dans cet espace de travail :
 
 ```bash
-curl -X DELETE https://console.mistral.ai/api/admin/workspaces/<WORKSPACE_UUID>/remove-users \
+curl -X DELETE https://api.mistral.ai/v1/admin/workspaces/<WORKSPACE_UUID>/remove-users \
   -H "Content-Type: application/json" \
   -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"members": [{"user_uuid": "<USER_UUID_1>"}, {"user_uuid": "<USER_UUID_2>"}]}'

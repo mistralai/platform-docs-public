@@ -102,8 +102,12 @@ function main() {
 
   if (!flags.skipV1) {
     if (!flags.skipApply) {
+      // V1 tabs come only from the V1 SDK tarball: the curated samples and the
+      // registry overlay hold V2 code (`from mistralai.client import Mistral`).
       step('apply patches (V1)', 'pnpm', ['exec', 'tsx', 'src/scripts/api/apply.ts'], {
         API_OUTPUT_SPEC: V1_SPEC,
+        API_CODE_SAMPLES_PATCH_DB: '',
+        API_CODE_SAMPLE_OVERLAYS: '',
       });
     }
     step('docs-md (V1)', 'pnpm', ['exec', 'docs-md', '-c', 'speakeasy.v1.config.mjs'], {

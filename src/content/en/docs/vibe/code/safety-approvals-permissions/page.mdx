@@ -30,11 +30,63 @@ Use one of the built-in agents below. To switch, set a default, or create your o
 | `default` | Asks before running any tool. | Day-to-day work where you want to vet each action. |
 | `plan` | Read-only. Auto-approves safe read tools, blocks edits and commands. | Exploring an unfamiliar codebase or designing an approach before any change. |
 | `accept-edits` | Auto-approves file edits. Still asks for shell commands and other sensitive tools. | Larger refactors you have already scoped. |
+| `smart-approve` | Classifies each tool call. Runs the calls it judges safe and asks you before risky ones. See [Smart approve](/vibe/code/safety-approvals-permissions#smart-approve). | Day-to-day work with fewer approval prompts. |
 | `auto-approve` | Auto-approves every tool execution, including shell commands. | Trusted, sandboxed environments only. **Use with care**. |
 
 :::warning
 `default_agent` only applies in interactive sessions. In **programmatic mode** (`vibe --prompt …`), Vibe falls back to `auto-approve` when `--agent` is not provided, and interactive tools such as `ask_user_question` are disabled. Pass `--agent plan` explicitly if you want a read-only programmatic run.
 :::
+
+<SectionTab as="h3" variant="secondary" sectionId="smart-approve">Smart approve</SectionTab>
+
+Many approval prompts are for actions you approve anyway. The `smart-approve` agent skips those prompts and still asks you before risky actions.
+
+Select it with `Shift+Tab`, or start a session with it:
+
+```bash
+vibe --agent smart-approve
+# or
+vibe --smart-approve
+```
+
+For each tool call that needs approval, Vibe goes through these steps in order:
+
+1. **Applies your permission rules first.** Allowlisted commands run without a check, and denylisted commands stay blocked. See [Per-tool permissions](/vibe/code/safety-approvals-permissions#tool-permissions).
+2. **Reuses approvals you already gave** for the same call in the current session.
+3. **Classifies the call.** A model judges the call from your request and the tool arguments. Calls that it judges safe run immediately, with a note that explains why Vibe approved them.
+4. **Holds back risky calls.** Vibe sends the reason back to the agent so that it can try a safer approach. Vibe asks you to confirm when the agent repeatedly makes risky calls, retries the same call, or when the classifier can't reach a verdict.
+
+A call flagged as risky never runs without your confirmation. In programmatic mode, no one can confirm, so Vibe denies risky calls.
+
+:::warning
+Smart approve is a classifier, not a sandbox. A call that it judges safe runs with the same access as your user account. Smart approve reduces prompts, but it doesn't limit what the agent can do. If you work with untrusted code or sensitive credentials, use the `default` agent or an isolated environment.
+:::
+
+To start every interactive session with smart approve, set `default_agent = "smart-approve"` in `config.toml`.
+
+<SectionTab as="h3" variant="secondary" sectionId="smart-approve-model">Choose the smart approve model</SectionTab>
+
+Each classification is a separate model call, and it can use a different model from your session. Vibe picks the classifier model in this order:
+
+1. The model you set with `smart_approve` in `[utility_models]`.
+2. Otherwise, a small, fast Mistral model, when your Mistral provider serves one.
+3. Otherwise, your session's model, which can cost more per call.
+
+Set `smart_approve` to the `alias` of one of your `[[models]]` presets, or to `active` to always use the session's model:
+
+```toml
+[utility_models]
+smart_approve = "classifier"
+
+[[models]]
+name = "mistral-small-latest"
+provider = "mistral"
+alias = "classifier"
+```
+
+A smaller model adds less latency and cost to each tool call. A larger model can classify risk more accurately. If the alias doesn't match a configured model, or `allowed_models` excludes it, Vibe shows a warning and falls back to automatic selection.
+
+For all the keys, see [`[utility_models]`](/vibe/code/cli/configuration-reference#utility-models) in the configuration reference.
 
 <SectionTab as="h2" sectionId="trusted-folders">Trusted folders</SectionTab>
 
@@ -169,6 +221,7 @@ Vibe Code Web runs sessions in a managed sandbox tied to a GitHub repository. Ap
 - **Start in `plan` for unfamiliar code.** Explore and design before granting edit or shell access.
 - **Commit before risky runs.** A clean baseline gives you an instant rollback (`git reset --hard`) when something goes wrong.
 - **Use `accept-edits` for scoped refactors** and review the diff before committing.
+- **Use `smart-approve` to reduce approval prompts** in day-to-day work. It still asks before risky actions, but it isn't a sandbox.
 - **Reserve `auto-approve` for disposable environments** (containers, CI runners, ephemeral VMs). Never use it on machines that hold SSH keys, cloud credentials, or production access.
 - **Trust deliberately.** Review a repo's `.vibe/` configuration the first time, and again whenever it changes.
 - **Tighten MCP and connector tools.** Anything touching external systems should be `permission = "ask"` even under `accept-edits`.

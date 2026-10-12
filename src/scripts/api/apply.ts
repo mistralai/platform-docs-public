@@ -57,10 +57,11 @@ type JsonObject = Record<string, any>;
 
 const SOURCE_SPEC = process.env.API_SOURCE_SPEC || './openapi-public-doc.yaml';
 const PATCH_DB = process.env.API_PATCH_DB || './src/scripts/api-examples.yaml';
+// `??`, not `||`: an empty string disables the layer (used by the V1 build step).
 const CODE_SAMPLES_PATCH_DB =
-  process.env.API_CODE_SAMPLES_PATCH_DB || './src/scripts/api-code-samples.v2.yaml';
+  process.env.API_CODE_SAMPLES_PATCH_DB ?? './src/scripts/api-code-samples.v2.yaml';
 const CODE_SAMPLE_OVERLAYS = (
-  process.env.API_CODE_SAMPLE_OVERLAYS ||
+  process.env.API_CODE_SAMPLE_OVERLAYS ??
   'registry.speakeasyapi.dev/mistral-dev/mistral-dev/mistral-openapi-code-samples'
 ).split(',');
 const DRAFT_DB = process.env.API_DRAFT_DB || './src/scripts/api-examples.draft.yaml';

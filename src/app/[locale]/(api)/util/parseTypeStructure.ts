@@ -95,7 +95,14 @@ function generateHash(typeInfo: DisplayTypeInfo): string {
   // shared a prefix (e.g. WebSearchTool vs WebSearchPremiumTool both produced
   // "V2ViU2Vh").
   const hashBase = `${typeInfo.label}-${typeInfo.linkedLabel || ''}`;
-  return btoa(hashBase);
+  // btoa only accepts Latin-1: encode to UTF-8 first, so labels such as IPA
+  // enum values ("aɪ", "ʃ") don't throw InvalidCharacterError at prerender.
+  // ASCII labels produce the same hash as before.
+  let binary = '';
+  for (const byte of new TextEncoder().encode(hashBase)) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
 }
 
 function calculateComplexity(

@@ -7,7 +7,7 @@ src/data/releases/en/YYYY-MM-DD-short-release-slug.json
 src/data/releases/fr/YYYY-MM-DD-short-release-slug.json
 ```
 
-Each file contains a single release note object. Lingo translates the source files from `en` into `fr`. The page imports the locale-aware collection from `index.ts`.
+Each file contains a single release note object. The `fr` files are written by hand: Lingo doesn't cover `src/data/releases/`. The page imports the locale-aware collection from `index.ts`.
 
 Release notes can include media. Store image files in an `assets` directory next to the release JSON and reference them with a relative URL:
 

@@ -22,8 +22,43 @@ function parseMdxImports(content: string): MdxImport[] {
   return imports;
 }
 
+const FENCE_MARKER = /^\s*(`{3,}|~{3,})/;
+
+/**
+ * Blank every line outside fenced code blocks that matches `pattern`. Code
+ * samples keep their own `import` and `export` lines.
+ */
+function blankLinesOutsideCode(content: string, pattern: RegExp): string {
+  let fence: string | null = null;
+  return content
+    .split('\n')
+    .map(line => {
+      const marker = FENCE_MARKER.exec(line)?.[1];
+      if (fence !== null) {
+        if (marker && marker[0] === fence[0] && marker.length >= fence.length) {
+          fence = null;
+        }
+        return line;
+      }
+      if (marker) {
+        fence = marker;
+        return line;
+      }
+      return pattern.test(line) ? '' : line;
+    })
+    .join('\n');
+}
+
 export function removeAllImports(content: string): string {
-  return content.replace(/^import\s+.*?from\s+['"][^'"]+['"]\s*;?\s*$/gm, '');
+  return blankLinesOutsideCode(
+    content,
+    /^import\s+.*?from\s+['"][^'"]+['"]\s*;?\s*$/
+  );
+}
+
+/** Remove MDX's ESM `import` and `export` lines; code samples keep theirs. */
+export function removeMdxModuleLines(content: string): string {
+  return blankLinesOutsideCode(content, /^(import|export)\s/);
 }
 
 export function cleanupContent(content: string): string {

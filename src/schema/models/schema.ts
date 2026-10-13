@@ -257,6 +257,7 @@ export interface ModelTemplate<
   avatar?: ModelAvatar;
   bloglink?: string | null;
   paperlink?: string | null;
+  licenselink?: string | null;
   externalLinks?: ModelExternalLink[];
   tags?: ModelTag[];
   pricingLayout?: 'stacked';

@@ -20,7 +20,10 @@ import path from 'node:path';
 import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { parseFrontmatter } from '@/lib/content/parse-metadata';
 import { isDocsRouteHidden } from '@/lib/content/hidden';
-import { resolveAndInlineMdxImports } from '@/lib/content/inline-mdx-imports';
+import {
+  removeMdxModuleLines,
+  resolveAndInlineMdxImports,
+} from '@/lib/content/inline-mdx-imports';
 import { buildGeneratedPages, englishLingo, type GeneratedPage, type Lingo } from './llms-generated-pages';
 import { expandDataComponents, rewriteRedirectedLinks, sectionTabsToHeadings } from './llms-page-transforms';
 
@@ -112,9 +115,7 @@ function cleanDescription(text: string): string {
 }
 
 function cleanFullContent(body: string): string {
-  return body
-    .replace(/^import\s+.*$/gm, '')
-    .replace(/^export\s+.*$/gm, '')
+  return removeMdxModuleLines(body)
     .replace(/\n{4,}/g, '\n\n\n')
     .trim();
 }

@@ -2,7 +2,11 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { resolveAndInlineMdxImports } from "@/lib/content/inline-mdx-imports";
+import {
+  removeAllImports,
+  removeMdxModuleLines,
+  resolveAndInlineMdxImports,
+} from "@/lib/content/inline-mdx-imports";
 
 let root: string;
 
@@ -75,5 +79,46 @@ describe("resolveAndInlineMdxImports", () => {
     const out = await resolveAndInlineMdxImports(page, root);
     expect(out).toContain("A");
     expect(out).toContain("B");
+  });
+});
+
+const PAGE_WITH_CODE_IMPORTS = [
+  "import { Tabs } from '@/components/common/multi-codeblock';",
+  "export const meta = {};",
+  "",
+  "```python",
+  "import os",
+  "from mistralai.client import Mistral",
+  "```",
+  "",
+  "~~~typescript",
+  "import { z } from 'zod';",
+  "export const Book = z.object({});",
+  "~~~",
+].join("\n");
+
+describe("removeAllImports", () => {
+  it("drops MDX imports and keeps the imports of code samples", () => {
+    const out = removeAllImports(PAGE_WITH_CODE_IMPORTS);
+    expect(out).not.toContain("@/components/common/multi-codeblock");
+    expect(out).toContain("import { z } from 'zod';");
+  });
+});
+
+describe("removeMdxModuleLines", () => {
+  it("drops MDX imports and exports and keeps every line of code samples", () => {
+    const out = removeMdxModuleLines(PAGE_WITH_CODE_IMPORTS);
+    expect(out).not.toContain("@/components/common/multi-codeblock");
+    expect(out).not.toContain("export const meta");
+    expect(out).toContain("import os");
+    expect(out).toContain("import { z } from 'zod';");
+    expect(out).toContain("export const Book = z.object({});");
+  });
+
+  it("keeps a longer fence open past a shorter one inside it", () => {
+    const page = ["````md", "```", "import os", "````", "import Late from 'x';"].join("\n");
+    const out = removeMdxModuleLines(page);
+    expect(out).toContain("import os");
+    expect(out).not.toContain("import Late");
   });
 });

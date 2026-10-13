@@ -18,6 +18,7 @@ export default {
   weights: [],
   bloglink: 'https://z.ai/blog/glm-5.3',
   paperlink: null,
+  licenselink: 'https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE',
   externalLinks: [{ href: 'https://huggingface.co/zai-org/GLM-5.3', label: 'Hugging Face' }],
   tags: ['third-party'],
   pricingLayout: 'stacked',

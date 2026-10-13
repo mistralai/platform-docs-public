@@ -451,6 +451,7 @@ declare module "@lingo.dev/react" {
     "Learn how to deploy and use Mistral AI's Large Language Models with our comprehensive documentation, guides, and tutorials.": { context: "Meta description for the documentation home page" };
     "Learn more": { context: "Button to open the full AI model page" | "Link to learn more about the batch pricing mode" | "Link to learn more about the priority pricing mode" };
     "Learn more about this model": { context: "Link to the full AI model page" };
+    "License": { context: "Link to the AI model license" };
     "Legal": { context: "Label for AI model legal terms" };
     "LEGAL": { context: "Footer heading for legal information" };
     "Legal notice": { context: "Footer link to the legal notice" };

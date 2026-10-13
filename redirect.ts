@@ -894,7 +894,13 @@ const rawRedirects: RedirectRule[] = [
   },
   {
     source: "/admin/security-access/privacy",
-    destination: "/admin/monitor-comply/privacy-data-controls",
+    destination: "https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training",
+    permanent: true,
+  },
+  // The Privacy and data controls page was deleted; the Help Center covers training opt-out.
+  {
+    source: "/admin/monitor-comply/privacy-data-controls",
+    destination: "https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training",
     permanent: true,
   },
   {

@@ -241,6 +241,16 @@ export default async function ModelPage({ params }: ModelPageProps) {
                       {l.text('Technical Report', { context: 'Link to the AI model technical report' })}
                     </Link>
                   )}
+                  {model.licenselink && (
+                    <Link
+                      href={model.licenselink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-[#FF8205] underline hover:text-[#FA500F]"
+                    >
+                      {l.text('License', { context: 'Link to the AI model license' })}
+                    </Link>
+                  )}
                 </span>
                 <div className="flex items-center gap-2">
                   <ModelStageBadge status={model.status} l={l} />

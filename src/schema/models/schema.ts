@@ -68,6 +68,7 @@ export const AVAILABLE_MODALITIES = {
   reasoning: { name: 'Reasoning', description: 'Reasoning' },
   embeddings: { name: 'Embeddings', description: 'Embeddings' },
   scores: { name: 'Scores', description: 'Scores' },
+  timeseries: { name: 'Time series', description: 'Time series' },
 } as const;
 export type ModalityKey = keyof typeof AVAILABLE_MODALITIES;
 

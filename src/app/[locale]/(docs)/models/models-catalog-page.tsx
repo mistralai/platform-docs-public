@@ -164,6 +164,7 @@ type ModelGroupTitle =
   | 'Code models'
   | 'Embedding models'
   | 'Moderation and safety models'
+  | 'Time series models'
   | 'Other specialist models';
 
 type ModelGroupDescription =
@@ -173,6 +174,7 @@ type ModelGroupDescription =
   | 'Specialized models for code generation, completion, and software engineering agents.'
   | 'Models that turn text or code into vectors for retrieval and similarity search.'
   | 'Models for safety filtering, moderation, and policy checks.'
+  | 'Models for zero-shot time series forecasting with covariate support and probabilistic outputs.'
   | 'Specialized models for focused domains and task-specific workloads.';
 
 function getModelGroups(items: Model[]): ModelGroup[] {
@@ -233,6 +235,12 @@ function getModelGroups(items: Model[]): ModelGroup[] {
       'Models for safety filtering, moderation, and policy checks.',
       ['mistral-moderation-26-03', 'mistral-moderation-24-11', 'shieldstral-1-0']
     ),
+    specialistGroup(
+      'time-series-models',
+      'Time series models',
+      'Models for zero-shot time series forecasting with covariate support and probabilistic outputs.',
+      ['timestral-1-0', 'timestral-1-0-123m', 'timestral-1-0-28m', 'timestral-1-0-5m']
+    ),
   ];
 
   const otherSpecialists = specialists.filter(
@@ -264,6 +272,8 @@ function getModelGroupTitle(title: ModelGroupTitle, l: Lingo): string {
       return l.text('Embedding models', { context: 'Heading for embedding model family' });
     case 'Moderation and safety models':
       return l.text('Moderation and safety models', { context: 'Heading for moderation and safety model family' });
+    case 'Time series models':
+      return l.text('Time series models', { context: 'Heading for time series model family' });
     case 'Other specialist models':
       return l.text('Other specialist models', { context: 'Heading for other specialist model family' });
   }
@@ -283,6 +293,8 @@ function getModelGroupDescription(description: ModelGroupDescription, l: Lingo):
       return l.text('Models that turn text or code into vectors for retrieval and similarity search.', { context: 'Description for embedding model group' });
     case 'Models for safety filtering, moderation, and policy checks.':
       return l.text('Models for safety filtering, moderation, and policy checks.', { context: 'Description for moderation and safety model group' });
+    case 'Models for zero-shot time series forecasting with covariate support and probabilistic outputs.':
+      return l.text('Models for zero-shot time series forecasting with covariate support and probabilistic outputs.', { context: 'Description for time series model group' });
     case 'Specialized models for focused domains and task-specific workloads.':
       return l.text('Specialized models for focused domains and task-specific workloads.', { context: 'Description for other specialist model group' });
   }

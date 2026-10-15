@@ -6,6 +6,7 @@ import {
   CalculatorIcon,
   ChevronRightIcon,
   ScanIcon,
+  StatsIcon,
 } from '@/components/icons/pixel';
 import MicrophoneIcon from '@/components/icons/pixel/microphone';
 import { ModalityKey } from '@/schema/models';
@@ -44,7 +45,8 @@ export async function Modalities({
     document: PageIcon,
     reasoning: LampIcon,
     embeddings: ScanIcon,
-    scores: CalculatorIcon
+    scores: CalculatorIcon,
+    timeseries: StatsIcon
   };
 
   const renderModalityIcon = (

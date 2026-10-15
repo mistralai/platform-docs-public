@@ -31,7 +31,6 @@ export const AVATAR_ICONS = {
   mathstral: '/assets/models/Mathstral.svg',
   leanstral: '/assets/models/Leanstral.svg',
   shieldstral: '/assets/models/Shieldstral.svg',
-  timestral: '/assets/models/Timestral.svg',
   'zai-glm': '/assets/models/Zai_GLM.svg',
 } as const;
 

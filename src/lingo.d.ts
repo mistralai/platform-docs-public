@@ -65,7 +65,6 @@ declare module "@lingo.dev/react" {
     "A technique that improves factual accuracy by retrieving relevant documents from an external knowledge base and including them in the prompt context. Reduces hallucinations and enables models to answer from proprietary or up-to-date data.": { context: "Definition of the RAG glossary term" };
     "A third-party open weight text model from Z.ai with a 1M-token context window.": { context: "Short description of an AI model" };
     "A third-party open weight text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.": { context: "Full description of an AI model" };
-    "A time series foundation model for zero-shot forecasting with covariate support and probabilistic outputs.": { context: "Short description of an AI model" };
     "A tiny and efficient model offering best-in-class text and vision capabilities. ": { context: "Short description of an AI model" };
     "A visual lab to experiment with system prompts, user messages, and generation parameters (like Temperature and Top-P). Test prompts side-by-side across different Mistral models instantly.": { context: "Detailed description of the Playground feature" };
     "Ability to dedicate time regularly to ambassador activities and community engagement.": { context: "Description of a requirement for joining the Mistral ambassador program" };
@@ -87,7 +86,6 @@ declare module "@lingo.dev/react" {
     "Code models": { context: "Heading for code model family" };
     "Embedding models": { context: "Heading for embedding model family" };
     "Moderation and safety models": { context: "Heading for moderation and safety model family" };
-    "Time series models": { context: "Heading for time series model family" };
     "Other specialist models": { context: "Heading for other specialist model family" };
     "Text and multimodal models for broad reasoning, coding, tool use, and agentic tasks.": { context: "Description for generalist AI model group" };
     "Models for document understanding, text extraction, and structured OCR outputs.": { context: "Description for OCR model group" };
@@ -95,7 +93,6 @@ declare module "@lingo.dev/react" {
     "Specialized models for code generation, completion, and software engineering agents.": { context: "Description for code model group" };
     "Models that turn text or code into vectors for retrieval and similarity search.": { context: "Description for embedding model group" };
     "Models for safety filtering, moderation, and policy checks.": { context: "Description for moderation and safety model group" };
-    "Models for zero-shot time series forecasting with covariate support and probabilistic outputs.": { context: "Description for time series model group" };
     "Specialized models for focused domains and task-specific workloads.": { context: "Description for other specialist model group" };
     "Pricing": { context: "Page title for model pricing" | "Title of the Inference landing card linking to model pricing" };
     "API pricing": { context: "Page title for model pricing through the API" };
@@ -377,7 +374,6 @@ declare module "@lingo.dev/react" {
     "FEATURES": { context: "Section heading for supported API features" };
     "Feedback Provider": { context: "Responsibility of a Mistral ambassador" };
     "Fill out your application ↗": { context: "Call to apply to the Mistral ambassador program" };
-    "Flagship transcription and diarization model with SOTA accuracy.": { context: "Short description of an AI model" };
     "FIM": { context: "Glossary term for fill-in-the-middle code completion" | "Name of an AI model API feature: Fill-In-the-Middle code completion" };
     "Find out about all the latest changes to our tool.": { context: "Meta description for product and API changelogs" };
     "Find out about all the latest changes to our tool. You may filter by date and type of release.": { context: "Introductory description of product and API changelogs" };
@@ -591,7 +587,6 @@ declare module "@lingo.dev/react" {
     "Our small multimodal reasoning model.": { context: "Short description of an AI model" };
     "Our small reasoning model released July 2025.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "Our state-of-the-art semantic for extracting representation of code extracts": { context: "Full description of an AI model" | "Short description of an AI model" };
-    "Our state-of-the-art text-to-speech model with zero-shot voice cloning and professional voice cloning. Supports 9 languages, streaming with ~90 ms time-to-first-audio, 5 output formats, 34 emotion tags, and 2 pace tags.": { context: "Full description of an AI model" };
     "Our state-of-the-art text-to-speech model with zero-shot voice cloning. Supports 9 languages, streaming with ~90ms time-to-first-audio, and no transcript required for voice prompts.": { context: "Full description of an AI model" };
     "Our team will review each application continuously, evaluating candidates based on the following criteria.": { context: "Explanation that ambassador applicants are evaluated against set criteria" };
     "Our top-tier large model for high-complexity tasks with the lastest version released November 2024.": { context: "Full description of an AI model" | "Short description of an AI model" };
@@ -647,7 +642,6 @@ declare module "@lingo.dev/react" {
     "Reach out to get access to": { context: "Prompt to contact Mistral for access to model weights" };
     "Real world code <b>examples</b>": { context: "Description of real-world code examples" };
     "Real-time collaborative editing": { context: "Short description of the Canvas feature" };
-    "Realtime transcription model for agentic use-cases with configurable latency and turn detection.": { context: "Short description of an AI model" };
     "Reasoning": { context: "Label for an AI model capability: reasoning/thinking" };
     "Recognition": { context: "Benefit of the Mistral ambassador program" };
     "Recommended": { context: "Heading for recommended documentation pages" };
@@ -708,12 +702,8 @@ declare module "@lingo.dev/react" {
     "SSO & Authentication": { context: "Title of a documentation card about SSO & Authentication" };
     "SSO, API keys, roles and permissions, usage tracking, and billing across workspaces.": { context: "Intro text for admin documentation links" };
     "Start with a quickstart to send your first API request, then explore the full API reference, install an SDK, or browse cookbooks for production-ready patterns.": { context: "Introductory description of developer docs" };
-    "State-of-the-art TTS with zero-shot and professional voice cloning, 9 languages, and streaming.": { context: "Short description of an AI model" };
     "State-of-the-art TTS with zero-shot voice cloning and multilingual support.": { context: "Short description of an AI model" };
     "Streaming": { context: "Glossary term for streaming model output" };
-    "Streaming speech generation for live conversations and audio agents.": { context: "Short description of an AI model" };
-    "Streaming speech generation model for live conversations. Sends audio in chunks as it generates, enabling low-latency voice output for audio agents and real-time applications.": { context: "Full description of an AI model" };
-    "Strong transcription and diarization at a competitive price point.": { context: "Short description of an AI model" };
     "Strong written and verbal communication skills to effectively engage with community members.": { context: "Description of a requirement for joining the Mistral ambassador program" };
     "Structured outputs": { context: "Topic label for schema-constrained model output" };
     "Structured Outputs": { context: "Name of an API feature supported by an AI model" };
@@ -756,11 +746,6 @@ declare module "@lingo.dev/react" {
     "This model is retired. Use {replacementModel} for new integrations.": { values: { replacementModel: string | number }; context: "Summary for a retired AI model with a replacement model" };
     "Three products, one platform. Pick where you want to start.": { context: "Intro line above the three-product bullet list on the home page" };
     "Time Commitment": { context: "Requirement for joining the Mistral ambassador program" };
-    "Time series": { context: "Label for an AI model capability: time series input/output" };
-    "Timestral 1.0 is a time series foundation model for zero-shot forecasting. It ranks first among pretrained and zero-shot models on GIFT-Eval, TIME, and fev-bench, with support for contexts up to 32K timesteps, past-only and known-future covariates, and probabilistic quantile outputs.": { context: "Full description of an AI model" };
-    "Timestral 1.0 123M is a time series foundation model for zero-shot forecasting. Part of the Timestral family, it offers a balance of forecast accuracy and efficiency, with support for contexts up to 32K timesteps, past-only and known-future covariates, and probabilistic quantile outputs.": { context: "Full description of an AI model" };
-    "Timestral 1.0 28M is a time series foundation model for zero-shot forecasting. Part of the Timestral family, it is optimised for low-latency forecasting, with support for contexts up to 32K timesteps, past-only and known-future covariates, and probabilistic quantile outputs.": { context: "Full description of an AI model" };
-    "Timestral 1.0 5M is a time series foundation model for zero-shot forecasting. The smallest model in the Timestral family, it delivers fast, lightweight forecasts, with support for contexts up to 32K timesteps, past-only and known-future covariates, and probabilistic quantile outputs.": { context: "Full description of an AI model" };
     "Timestamps": { context: "Name of an AI model API feature: word-level timestamps in audio transcriptions" };
     "Tip": { context: "Admonition callout label for tips" };
     "Toggle theme": { context: "Accessible label for switching light and dark mode" };

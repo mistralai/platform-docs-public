@@ -2,10 +2,6 @@ import { defineModels, getModelSlugAliases } from '../schema';
 import zaiGlm53 from './zai-glm-5-3';
 import zaiGlm52 from './zai-glm-5-2';
 import shieldstral10 from './shieldstral-1-0';
-import timestral10 from './timestral-1-0';
-import timestral10123m from './timestral-1-0-123m';
-import timestral1028m from './timestral-1-0-28m';
-import timestral105m from './timestral-1-0-5m';
 import voxtralTts2603 from './voxtral-tts-26-03';
 import mistralMedium352604 from './mistral-medium-3-5-26-04';
 import mistralSmall402603 from './mistral-small-4-0-26-03';
@@ -74,10 +70,6 @@ export const MODELS = defineModels([
   zaiGlm53,
   zaiGlm52,
   shieldstral10,
-  timestral10,
-  timestral10123m,
-  timestral1028m,
-  timestral105m,
   mistralMedium352604,
   voxtralTts2603,
   mistralSmall402603,

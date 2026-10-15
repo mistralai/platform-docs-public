@@ -113,8 +113,6 @@ export function modalityLabel(key: ModalityKey, l: Lingo): string {
       return l.text('Embeddings', { context: 'Label for an AI model capability: vector embeddings output' });
     case 'scores':
       return l.text('Scores', { context: 'Label for an AI model capability: scoring/moderation output' });
-    case 'timeseries':
-      return l.text('Time series', { context: 'Label for an AI model capability: time series input/output' });
   }
 }
 

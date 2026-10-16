@@ -47,7 +47,7 @@ export default {
     input: [],
     output: [],
   },
-  identifiers: { apiNames: ['timestral-1-0-123m'] },
+  identifiers: { apiNames: [] },
   capabilities: {
     input: ['timeseries'],
     output: ['timeseries'],

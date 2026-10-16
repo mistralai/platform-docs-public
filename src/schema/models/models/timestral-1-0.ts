@@ -1,12 +1,12 @@
 import { StaticModel } from '../schema';
 
 export default {
-  name: 'Timestral 1.0',
+  name: 'Timestral 1.0 209M',
   describe: (l) => ({
-    description: l.text(`Timestral 1.0 is a time series foundation model for zero-shot forecasting. It ranks first among pretrained and zero-shot models on GIFT-Eval, TIME, and fev-bench, with support for contexts up to 32K timesteps, past-only and known-future covariates, and probabilistic quantile outputs.`, { context: 'Full description of an AI model' }),
+    description: l.text(`Timestral 1.0 209M is a time series foundation model for zero-shot forecasting. It ranks first among pretrained and zero-shot models on GIFT-Eval, TIME, and fev-bench, with support for contexts up to 32K timesteps, past-only and known-future covariates, and probabilistic quantile outputs.`, { context: 'Full description of an AI model' }),
     shortDescription: l.text(`A time series foundation model for zero-shot forecasting with covariate support and probabilistic outputs.`, { context: 'Short description of an AI model' }),
   }),
-  slug: 'timestral-1-0',
+  slug: 'timestral-1-0-209m',
   version: '1.0',
   frontier: true,
   class: 'Specialist',
@@ -47,7 +47,7 @@ export default {
     input: [],
     output: [],
   },
-  identifiers: { apiNames: ['timestral-1-0'] },
+  identifiers: { apiNames: [] },
   capabilities: {
     input: ['timeseries'],
     output: ['timeseries'],

@@ -25,6 +25,7 @@ const rawRedirects: RedirectRule[] = [
   { source: "/getting-started/models", destination: "/models", permanent: true },
   { source: "/getting-started/models/compare", destination: "/inference/model-selection-guide", permanent: true },
   { source: "/models/model-cards/leanstral-1-5-26-06", destination: "/models/leanstral-1-5", permanent: true },
+  { source: "/models/timestral-1-0", destination: "/models/timestral-1-0-209m", permanent: true },
   { source: "/getting-started/quickstart", destination: "/getting-started/quickstarts", permanent: true },
   { source: "/getting-started/clients", destination: "/resources/sdks", permanent: true },
   { source: "/getting-started/changelog", destination: "/resources/changelogs", permanent: true },

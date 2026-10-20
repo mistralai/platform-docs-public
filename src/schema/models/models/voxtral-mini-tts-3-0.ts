@@ -28,7 +28,7 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 16.0, denominator: '/M Chars' },
+      { type: 'range', price: 13.0, denominator: '/M Chars' },
     ],
     output: [],
   },

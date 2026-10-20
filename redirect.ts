@@ -37,6 +37,10 @@ const rawRedirects: RedirectRule[] = [
   { source: "/capabilities/vision", destination: "/studio/conversations/vision", permanent: true },
   { source: "/capabilities/audio", destination: "/studio/audio/overview", permanent: true },
   { source: "/studio/audio", destination: "/studio/audio/overview", permanent: true },
+  // Audio quickstart URL fix: pages moved from quickstart-* to quickstarts/*.
+  { source: "/studio/audio/speech-to-text/quickstart-transcribe-a-file", destination: "/studio/audio/speech-to-text/quickstarts/transcribe-a-file", permanent: true },
+  { source: "/studio/audio/speech-to-text/quickstart-transcribe-in-realtime", destination: "/studio/audio/speech-to-text/quickstarts/transcribe-in-realtime", permanent: true },
+  { source: "/studio/audio/text-to-speech/quickstart-generate-speech", destination: "/studio/audio/text-to-speech/quickstarts/generate-speech", permanent: true },
   // Audio docs revamp (DOC-610): legacy audio articles moved under /studio/audio/deprecated.
   // Temporary redirects pending decision on the deprecated content.
   // SCOPE NOTE (per review A11): the "temporary" semantics apply to the

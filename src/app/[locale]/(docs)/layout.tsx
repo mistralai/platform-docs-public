@@ -313,50 +313,8 @@ const sidebarTreeData = (
         }
 
         if (isQuickstartsSlug(item.slug)) {
-          // The audio quickstarts live in the Studio > Audio section;
-          // Getting started links to them instead of duplicating pages.
-          // Inserted between Vibe Code and Studio.
-          const audioIndex = categoryChildren.findIndex(
-            child => child.label === 'Studio'
-          );
-          categoryChildren.splice(
-            audioIndex === -1 ? categoryChildren.length : audioIndex,
-            0,
-            {
-            label: 'Audio',
-            categoryPath: '/getting-started/quickstarts/audio',
-            children: [
-              {
-                label: 'Transcribe an audio file',
-                href: '/studio/audio/speech-to-text/quickstart-transcribe-a-file',
-                categoryPath: '/studio/audio/speech-to-text/quickstart-transcribe-a-file',
-                children: [],
-                pagination: { prev: undefined, next: undefined },
-                clickable: true,
-              },
-              {
-                label: 'Transcribe speech in realtime',
-                href: '/studio/audio/speech-to-text/quickstart-transcribe-in-realtime',
-                categoryPath: '/studio/audio/speech-to-text/quickstart-transcribe-in-realtime',
-                children: [],
-                pagination: { prev: undefined, next: undefined },
-                clickable: true,
-              },
-              {
-                label: 'Generate speech',
-                href: '/studio/audio/text-to-speech/quickstart-generate-speech',
-                categoryPath: '/studio/audio/text-to-speech/quickstart-generate-speech',
-                children: [],
-                pagination: { prev: undefined, next: undefined },
-                clickable: true,
-              },
-            ],
-            pagination: { prev: undefined, next: undefined },
-            clickable: false,
-          });
-        }
-
-        if (isStudioSlug(item.slug)) {
+          // The audio quickstarts live in the Studio > Audio section.
+          if (isStudioSlug(item.slug)) {
           const sectionLabel = (label: string): SideBarTreeNode => ({
             label,
             categoryPath: `/studio#${label.toLowerCase().replace(/\s+/g, '-')}`,

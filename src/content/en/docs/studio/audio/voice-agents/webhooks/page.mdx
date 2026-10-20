@@ -1,0 +1,318 @@
+---
+title: Webhooks
+sidebar_label: Webhooks
+sidebar_position: 7
+description: "Receive signed call lifecycle events — call started, ended, failed — on your endpoint."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Webhooks
+
+Webhooks notify your backend when a call starts, ends, or fails, so you don't have to poll. Use them to update a CRM record, store transcripts in your data warehouse, alert on failures, or track call duration for billing. Webhooks are the server-side record of each call. To react while the conversation runs, use the [session events](/studio/audio/voice-agents/sessions#events) instead.
+
+{/* API REFERENCE: a REST API reference page is coming for this entity (Jean Perbet, Sept 24) — add a CtaButton here once it is published. */}
+
+<SectionTab as="h2" sectionId="how-delivery-works">How delivery works</SectionTab>
+
+You register an endpoint URL, and Mistral sends it a signed JSON payload each time an event happens. Every delivery is an HTTP `POST` with `content-type: application/json`, and the same envelope:
+
+```json
+{
+  "event": "<event_type>",
+  "created_at": "2026-09-08T14:32:10Z",
+  "data": { ... }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `event` | string | The event type, see [Event types and payloads](#event-types). |
+| `created_at` | string | When the event was emitted, as an ISO 8601 UTC timestamp. |
+| `data` | object | The payload of the event. |
+
+<SectionTab as="h2" sectionId="setup">Set up an endpoint and a subscription</SectionTab>
+
+You configure webhooks per agent, in the Mistral console or through the API:
+
+1. Create an endpoint: give the URL that receives the events and a name. The platform generates a signing secret.
+2. Create a subscription: attach the endpoint to an agent, and choose the event types to receive.
+
+One endpoint can serve several agents, and one agent can have several subscriptions.
+
+:::warning
+Store the signing secret securely: you need it to verify signatures. It's generated once and can't be rotated. If it leaks, delete the endpoint, create a new one, and update your verification code.
+:::
+
+<SectionTab as="h2" sectionId="verify-and-handle">Verify signatures and handle deliveries</SectionTab>
+
+Every delivery has an `x-mistral-signature` header: an HMAC-SHA256 digest of the raw request body, computed with your endpoint secret.
+
+```text
+x-mistral-signature: hmac-sha256=<hex_digest>
+```
+
+To verify a delivery:
+
+1. Read the raw request body, before any JSON parsing.
+2. Compute `HMAC-SHA256(secret, raw_body)`.
+3. Compare your digest with the value after `hmac-sha256=`, with a constant-time comparison.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import hashlib
+import hmac
+
+def verify_signature(raw_body: bytes, secret: str, header: str) -> bool:
+    expected = hmac.new(
+        secret.encode(), raw_body, hashlib.sha256
+    ).hexdigest()
+    received = header.removeprefix("hmac-sha256=")
+    return hmac.compare_digest(expected, received)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verifySignature(
+  rawBody: Buffer,
+  secret: string,
+  header: string,
+): boolean {
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const received = header.replace("hmac-sha256=", "");
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(received));
+}
+```
+
+  </TabItem>
+</Tabs>
+
+:::warning
+Always verify the raw bytes of the body, not a JSON string you serialized again: that can change whitespace or key order, and the digest no longer matches.
+:::
+
+A safe receiver verifies the signature, returns a 200 right away, then processes the event. This minimal server dispatches by event type:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import hashlib
+import hmac
+import os
+
+from fastapi import FastAPI, Header, HTTPException, Request
+
+app = FastAPI()
+SECRET = os.environ["WEBHOOK_SECRET"]
+
+def verify_signature(raw_body: bytes, header: str) -> None:
+    expected = hmac.new(
+        SECRET.encode(), raw_body, hashlib.sha256
+    ).hexdigest()
+    received = header.removeprefix("hmac-sha256=")
+    if not hmac.compare_digest(expected, received):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+@app.post("/webhooks")
+async def webhook_handler(
+    request: Request,
+    x_mistral_signature: str = Header(...),
+):
+    raw_body = await request.body()
+    verify_signature(raw_body, x_mistral_signature)
+
+    event = await request.json()
+
+    match event["event"]:
+        case "call_started":
+            print(f"Call started: {event['data']['session_id']}")
+        case "call_ended":
+            print(f"Call ended: {event['data']['session_id']}")
+        case "call_failed":
+            print(f"Call failed: {event['data']['session_id']}")
+
+    return {"status": "ok"}
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { createHmac, timingSafeEqual } from "node:crypto";
+import express from "express";
+
+const app = express();
+const SECRET = process.env.WEBHOOK_SECRET!;
+
+app.post(
+  "/webhooks",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const signature = req.headers["x-mistral-signature"] as string;
+    const expected = createHmac("sha256", SECRET)
+      .update(req.body)
+      .digest("hex");
+    const received = signature.replace("hmac-sha256=", "");
+
+    if (
+      !timingSafeEqual(Buffer.from(expected), Buffer.from(received))
+    ) {
+      return res.status(401).send("Invalid signature");
+    }
+
+    const event = JSON.parse(req.body.toString());
+
+    switch (event.event) {
+      case "call_started":
+        console.log(`Call started: ${event.data.session_id}`);
+        break;
+      case "call_ended":
+        console.log(`Call ended: ${event.data.session_id}`);
+        break;
+      case "call_failed":
+        console.log(`Call failed: ${event.data.session_id}`);
+        break;
+    }
+
+    res.status(200).json({ status: "ok" });
+  },
+);
+
+app.listen(3000, () => console.log("Listening on port 3000"));
+```
+
+  </TabItem>
+</Tabs>
+
+Because deliveries can be retried, the same event can arrive more than once: use `session_id` and `event` together to skip duplicates.
+
+<SectionTab as="h2" sectionId="event-types">Event types and payloads</SectionTab>
+
+| Event | Sent when |
+| --- | --- |
+| `call_started` | A session is created and the voice pipeline is ready. |
+| `call_ended` | A session ends normally. |
+| `call_failed` | A session fails to start, or hits a fatal error during the call. |
+
+<SectionTab as="h3" variant="secondary" sectionId="call-started">call_started</SectionTab>
+
+```json
+{
+  "event": "call_started",
+  "created_at": "2026-09-08T14:32:10Z",
+  "data": {
+    "session_id": "RM_a1b2c3d4e5f6",
+    "agent_id": "ag_01234567-89ab-cdef-0123-456789abcdef",
+    "model": "mistral-small-latest",
+    "started_at": 1725802330
+  }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `session_id` | string | Unique ID of the session. |
+| `agent_id` | string | Agent that handled the call. |
+| `model` | string | Model used for the answers. |
+| `started_at` | integer | When the session was created, as a Unix timestamp in seconds. |
+
+<SectionTab as="h3" variant="secondary" sectionId="call-ended">call_ended</SectionTab>
+
+Sent when a session ends normally. It adds the duration and, when available, the full transcript.
+
+```json
+{
+  "event": "call_ended",
+  "created_at": "2026-09-08T14:35:42Z",
+  "data": {
+    "session_id": "RM_a1b2c3d4e5f6",
+    "agent_id": "ag_01234567-89ab-cdef-0123-456789abcdef",
+    "model": "mistral-small-latest",
+    "duration_seconds": 212,
+    "started_at": 1725802330,
+    "ended_at": 1725802542,
+    "transcript": [
+      { "role": "assistant", "content": "Hello! How can I help you today?" },
+      { "role": "user", "content": "I'd like to check my account balance." },
+      { "role": "assistant", "content": "Sure, let me look that up for you." }
+    ]
+  }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `session_id` | string | Unique ID of the session. |
+| `agent_id` | string | Agent that handled the call. |
+| `model` | string | Model used for the answers. |
+| `duration_seconds` | integer | Duration of the call, in seconds. |
+| `started_at` | integer | When the session started, as a Unix timestamp in seconds. |
+| `ended_at` | integer | When the session ended, as a Unix timestamp in seconds. |
+| `transcript` | array or null | The turns of the conversation, in order. Each turn has a `role` (`user` or `assistant`) and a `content` (text, or null if empty). |
+
+:::note
+The transcript is best effort: if it isn't ready in time for the delivery, `transcript` is null. The rest of the payload is complete either way.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="call-failed">call_failed</SectionTab>
+
+Sent when a session fails to start, for example because of an infrastructure error, or hits a fatal error during the call.
+
+```json
+{
+  "event": "call_failed",
+  "created_at": "2026-09-08T14:32:11Z",
+  "data": {
+    "session_id": "RM_a1b2c3d4e5f6",
+    "agent_id": "ag_01234567-89ab-cdef-0123-456789abcdef",
+    "model": "mistral-small-latest",
+    "error": "livekit_error"
+  }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `session_id` | string | Unique ID of the session. |
+| `agent_id` | string | Agent that handled the call. |
+| `model` | string | Model used for the answers. |
+| `error` | string | Machine-readable reason, for example `token_error`, `db_error`, `livekit_error`, or a disconnection reason for failures during the call. |
+
+<SectionTab as="h2" sectionId="delivery-and-retries">Delivery and retries</SectionTab>
+
+| Behavior | Detail |
+| --- | --- |
+| Timeout | Your endpoint must respond within 10 seconds. |
+| Success | Any 2xx status code counts as delivered. |
+| Retries | On 5xx or 429 responses, Mistral tries up to 3 times in total, with exponential backoff (2 s, then 4 s). |
+| Not retried | 4xx responses other than 429. Check your endpoint logic. |
+| Transport errors | Network failures (DNS, TLS, connection reset) are retried on the same schedule. |
+
+Follow these practices:
+
+- **Return a 200 right away.** Acknowledge the delivery, then process it asynchronously. A slow handler risks timeouts and duplicate deliveries.
+- **Make your handler idempotent.** Retries can deliver the same event twice: deduplicate with `session_id` and `event`.
+- **Use HTTPS.** The API accepts plain HTTP URLs, but HTTPS protects the payload and your secret in transit.
+- **Keep the secret safe.** It can't be rotated: if it leaks, replace the endpoint.
+
+<SectionTab as="h2" sectionId="testing-locally">Test locally</SectionTab>
+
+To receive webhooks on your machine during development, expose your local server with an HTTP tunneling tool, and register the URL it gives you as the endpoint.
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/agents" title="Create and manage agents" />
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Manage agent sessions" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Reordered per skeleton review S31: delivery flow first, setup, then the first SAFE receiver (signature + 2xx + async + dedup) BEFORE the exhaustive payloads, retries after, transcript best-effort near the logging use case. Verify at the end: signature flow is the security spine, no unverified handler proposed, retry semantics stated, webhooks vs VoiceSession events distinguished. */}

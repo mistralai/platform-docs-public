@@ -1,0 +1,342 @@
+---
+title: Détection des tours de parole
+sidebar_label: Détection des tours de parole
+sidebar_position: 3
+description: "Activez la détection de fin de tour de parole dans la transcription en temps réel, lisez les événements de tour et leur chronologie par rapport au texte, puis ajustez les seuils."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Détection des tours de parole
+
+La détection de tour de parole indique à votre application, pendant une session de transcription en temps réel, quand l'utilisateur commence à parler et quand il a terminé. Utilisez-la chaque fois que votre application agit à la fin de ce que dit quelqu'un : un agent audio qui répond, une commande vocale ou un sous-titrage en direct qui ferme sa ligne.
+
+:::info
+Pour comprendre pourquoi la fin d'un tour est difficile à détecter, et comment choisir entre répondre plus tôt et couper la parole aux utilisateurs, consultez [Tours et prise de parole](/studio/audio/concepts/turns).
+:::
+
+<SectionTab as="h2" sectionId="enable-turn-detection">Activer la détection des tours de parole</SectionTab>
+
+Pour activer la détection de tour, ajoutez un objet `turn_detection` au message `session.update` qui configure votre [session en temps réel](/studio/audio/speech-to-text/transcribe-in-realtime). Un objet vide applique les valeurs par défaut :
+
+```json
+{
+  "type": "session.update",
+  "session": {
+    "audio_format": { "encoding": "pcm_s16le", "sample_rate": 24000 },
+    "turn_detection": {}
+  }
+}
+```
+
+Envoyez-le avant le premier fragment audio : une fois l'audio démarré, la session rejette toute modification de ses paramètres avec l'erreur `Session fields cannot be changed after audio has started.`
+
+:::caution
+La détection de tour fonctionne uniquement dans les sessions en temps réel, et pas en combinaison avec la diarisation :
+
+- Une requête de transcription de fichier avec `turn_detection` renvoie une erreur 400 : `turn_detection is only supported on the realtime transcription endpoint.`
+- Une session en temps réel qui définit à la fois `turn_detection` et `diarize` reçoit l'erreur `Diarization is not compatible with turn detection.` Pour étiqueter les locuteurs, consultez [Distinguer les locuteurs](/studio/audio/speech-to-text/diarize-speakers).
+:::
+
+L'exemple suivant envoie un fichier WAV en streaming à son propre rythme et affiche chaque événement de tour avec sa position dans l'audio, puis la transcription complète.
+
+:::note
+
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import base64
+import json
+import os
+import wave
+
+import websockets
+
+MODEL = "voxtral-mini-transcribe-realtime-3-0"
+URL = f"wss://api.mistral.ai/v1/audio/transcriptions/realtime?model={MODEL}"
+HEADERS = {"Authorization": f"Bearer {os.environ['MISTRAL_API_KEY']}"}
+AUDIO_FILE = "customer_call.wav"  # 16-bit mono PCM WAV
+
+async def send_audio(ws, path):
+    with wave.open(path, "rb") as wav:
+        while chunk := wav.readframes(wav.getframerate() // 10):
+            await ws.send(json.dumps({"type": "input_audio.append", "audio": base64.b64encode(chunk).decode()}))
+    await ws.send(json.dumps({"type": "input_audio.end"}))
+
+async def main():
+    with wave.open(AUDIO_FILE, "rb") as wav:
+        sample_rate = wav.getframerate()
+
+    async with websockets.connect(URL, additional_headers=HEADERS) as ws:
+        await ws.recv()  # session.created
+        await ws.send(json.dumps({
+            "type": "session.update",
+            "session": {
+                "audio_format": {"encoding": "pcm_s16le", "sample_rate": sample_rate},
+                "turn_detection": {},
+            },
+        }))
+        sender = asyncio.create_task(send_audio(ws, AUDIO_FILE))
+
+        async for message in ws:
+            event = json.loads(message)
+            if event["type"] == "session.updated":
+                print("turn_detection:", event["session"]["turn_detection"])
+            elif event["type"].startswith("turn."):
+                print(f"{event['time_s']:6.2f}s  {event['type']}  {event.get('end_reason', '')}")
+            elif event["type"] == "transcription.done":
+                print("text:", event["text"])
+                break
+            elif event["type"] == "error":
+                print("error:", event["error"]["message"])
+                break
+        sender.cancel()
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import WebSocket from "ws";
+
+const MODEL = "voxtral-mini-transcribe-realtime-3-0";
+const URL = `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${MODEL}`;
+const HEADERS = { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` };
+const AUDIO_FILE = "customer_call.wav"; // 16-bit mono PCM WAV
+
+function readWav(path: string) {
+  const wav = readFileSync(path);
+  let sampleRate = 0;
+  let pcm = Buffer.alloc(0);
+  for (let offset = 12; offset < wav.length; ) {
+    const id = wav.toString("ascii", offset, offset + 4);
+    const size = wav.readUInt32LE(offset + 4);
+    if (id === "fmt ") sampleRate = wav.readUInt32LE(offset + 12);
+    if (id === "data") pcm = wav.subarray(offset + 8, offset + 8 + size);
+    offset += 8 + size + (size % 2);
+  }
+  return { sampleRate, pcm };
+}
+
+function sendAudio(ws: WebSocket, pcm: Buffer, sampleRate: number) {
+  const chunkBytes = (sampleRate / 10) * 2; // 100 ms of 16-bit mono audio
+  for (let i = 0; i < pcm.length; i += chunkBytes) {
+    const audio = pcm.subarray(i, i + chunkBytes).toString("base64");
+    ws.send(JSON.stringify({ type: "input_audio.append", audio }));
+  }
+  ws.send(JSON.stringify({ type: "input_audio.end" }));
+}
+
+const { sampleRate, pcm } = readWav(AUDIO_FILE);
+const ws = new WebSocket(URL, { headers: HEADERS });
+
+ws.on("message", (message) => {
+  const event = JSON.parse(message.toString());
+  if (event.type === "session.created") {
+    ws.send(JSON.stringify({
+      type: "session.update",
+      session: {
+        audio_format: { encoding: "pcm_s16le", sample_rate: sampleRate },
+        turn_detection: {},
+      },
+    }));
+    sendAudio(ws, pcm, sampleRate);
+  } else if (event.type === "session.updated") {
+    console.log("turn_detection:", event.session.turn_detection);
+  } else if (event.type.startsWith("turn.")) {
+    console.log(`${event.time_s.toFixed(2).padStart(6)}s  ${event.type}  ${event.end_reason ?? ""}`);
+  } else if (event.type === "transcription.done") {
+    console.log("text:", event.text);
+    ws.close();
+  } else if (event.type === "error") {
+    console.log("error:", event.error.message);
+    ws.close();
+  }
+});
+```
+
+{/* TESTED Oct 9 (TS tab): turn-detection/turn_detection.ts with the ws package 8.22 (the TS SDK 2.7.0 realtime client only sets audioFormat), Node 26, on the interim alias voxtral-transcribe-realtime-3: session.updated echoed the defaults 0.5 / 0.5 / 0.33 / 500 / 3000, turn.start, eager_end and resume pairs, turn.end threshold at 35.12 s, then the full text. The turn_detection line prints as a JavaScript object instead of a Python dict. */}
+
+  </TabItem>
+</Tabs>
+
+La sortie ressemble à ceci :
+
+```text
+turn_detection: {'start_threshold': 0.5, 'eager_end_threshold': 0.5, 'end_threshold': 0.33, 'min_silence_ms': 500, 'end_timeout_ms': 3000}
+  0.00s  turn.start
+  1.36s  turn.eager_end
+  1.44s  turn.resume
+  2.56s  turn.eager_end
+  2.64s  turn.resume
+...
+ 34.56s  turn.eager_end
+ 35.12s  turn.end  threshold
+text: Thanks for calling Northwind Support. This is Daniel. How can I help you today? [...]
+```
+
+{/* TESTED Oct 9 (neutral recapture): turn-detection/turn_detection.py on customer_call.wav (neutral two-voice Northwind call, fixtures/make_neutral_fixtures.py, 34.9 s, 400 ms gaps between turns) on the interim alias voxtral-transcribe-realtime-3: session.updated echoed 0.5 / 0.5 / 0.33 / 500 / 3000; 16 turn.eager_end and 15 turn.resume, one pair at most pauses; a single turn.end at 35.12 s (end of file, end_reason threshold). The final ID voxtral-mini-transcribe-realtime-3-0 still gets HTTP 403 at the handshake (Oct 9). Earlier run, TESTED Oct 7 (stt agent), on demo 01's call (internal names, replaced): turn_detection.py on the live interim ID voxtral-transcribe-realtime-3-0 (voxtral-mini-transcribe-realtime-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-realtime-3 (and -3-0), to be renamed before launch. Tested on the interim alias. Until the rename, the final ID gets HTTP 403 at the handshake). An empty turn_detection object enables the feature: session.updated echoes the server values 0.5 / 0.5 / 0.33 / 500 / 3000, which are Rakesh's Default preset — this confirms the defaults. support_call.wav is demo 01's two-speaker call with 350 ms gaps between turns: Default only ends the turn at the end of the file (39.52 s), with eager_end / resume pairs at each pause, and the Aggressive values did the same (turn.end at 39.28 s). On round 1's clip (0.4 s gaps), Aggressive added a mid-call turn.end at 20.16 s that Default did not. Turn detection is meant for one live speaker: a recording with real pauses (Ben's demo) will show turn ends better than a dense two-voice call. Diarize + turn_detection: error event "Diarization is not compatible with turn detection." SDK gap: mistralai 3.0.0 cannot send turn_detection and yields turn events as UnknownRealtimeEvent, hence the raw websockets client. */}
+
+Dans cette sortie :
+
+- `session.updated` reprend les valeurs appliquées par la session. Avec un objet `turn_detection` vide, ce sont les valeurs par défaut.
+- Chaque pause entre les phrases produit un `turn.eager_end`, suivi d'un `turn.resume` quand le locuteur continue.
+- Le tour ne se termine par un `turn.end` que lorsque le locuteur s'est arrêté. Son champ `end_reason` indique ce qui l'a terminé.
+
+<SectionTab as="h2" sectionId="how-it-works">Fonctionnement de la fin de tour de parole</SectionTab>
+
+ Le serveur compare ce score à vos seuils et fait passer la session entre trois états. Chaque passage envoie un événement de tour.
+
+<DiagramFrame label="Turn states">
+
+Chaque flèche représente un événement, avec la condition qui l'envoie.
+
+<LinkedDiagram
+  src="/img/audio_turn_state_machine.svg"
+  alt="Turn detection states: Waiting, then turn.start to User speaking when the score rises above start_threshold, turn.eager_end to Probably finished when it falls below eager_end_threshold, turn.resume back to User speaking when it rises above start_threshold again, and turn.end back to Waiting when the score is below end_threshold after a pause of min_silence_ms, or when a pause reaches end_timeout_ms."
+  viewBox={[1100, 400]}
+  links={[]}
+/>
+
+</DiagramFrame>
+
+Le même ordre s'applique dans toutes les sessions :
+
+- Un tour commence toujours par un `turn.start`.
+- 
+- Un `turn.resume` annule la fin anticipée qui le précède, et le tour continue.
+- Après un `turn.end`, le `turn.start` suivant ouvre un nouveau tour.
+
+Le silence minimal et le délai de fin bornent la décision dans le temps. Le tour ne peut pas se terminer tant que la pause n'a pas atteint `min_silence_ms`, même quand le modèle est confiant. 
+
+<SectionTab as="h2" sectionId="events">Événements et synchronisation du texte</SectionTab>
+
+Les événements de tour arrivent dans le même flux que les événements de transcription. Chacun porte `time_s`, la position dans l'audio en secondes depuis le début du flux, et non l'heure de votre horloge.
+
+| Événement | Champs | Envoyé quand | Votre application peut |
+| --- | --- | --- | --- |
+| `turn.start` | `time_s` | L'utilisateur commence à parler | Marquer le début du tour, par exemple pour indiquer que l'utilisateur est en train de parler. |
+| `turn.eager_end` | `time_s` | L'utilisateur a probablement terminé | Commencer un travail que vous pourrez abandonner, comme préparer une réponse. |
+| `turn.resume` | `time_s` | L'utilisateur continue après une fin anticipée | Abandonner le travail commencé à la fin anticipée. |
+| `turn.end` | `time_s`, `end_reason` | Le tour est terminé | Agir sur le tour : répondre, exécuter la commande ou fermer la ligne de sous-titre. |
+
+`end_reason` vaut `threshold` quand c'est le score qui a mis fin au tour, ou `timeout` quand c'est le délai de fin.
+
+:::caution
+Attendez `turn.end` avant toute action irréversible, comme envoyer un message ou appeler un outil qui modifie des données. Les fins anticipées sont fréquentes : la plupart des pauses entre les phrases en envoient une.
+:::
+
+{/* TESTED Oct 7 (stt agent): the event names on the wire are turn.start, turn.eager_end, turn.resume, turn.end (RFC-555 section 2.3), NOT transcription.turn.*. Payloads: {"type": "turn.start", "time_s": 0.0}; turn.eager_end and turn.resume carry time_s; turn.end carries time_s and end_reason ("threshold" observed; "timeout" per RFC, not reproduced). time_s is audio time in seconds from the start of the stream. */}
+
+<SectionTab as="h3" variant="secondary" sectionId="text-timing">Les derniers mots arrivent après l'événement de tour</SectionTab>
+
+La transcription est en retard sur les événements de tour. Quand `turn.end` survient, le texte des derniers mots du tour peut encore être en route : il arrive dans les événements `transcription.text.delta` suivants. 
+
+Les événements de texte ne comportent pas de champ de temps ; vous ne pouvez donc pas les associer à un tour par horodatage. Pour construire le texte complet d'un tour :
+
+1. Continuez d'ajouter les deltas de texte au tour en cours après `turn.end`.
+2. Finalisez le texte du tour une fois le délai de streaming écoulé après l'événement, ou à l'arrivée du `turn.start` suivant.
+3. Agissez sur le texte complet, par exemple en l'envoyant au modèle qui rédige la réponse.
+
+:::tip
+Lors d'un `turn.eager_end`, le texte reçu jusqu'ici suffit pour commencer à préparer une réponse. Si vous l'envoyez à `turn.end`, vérifiez que les mots arrivés entre-temps ne changent pas la demande.
+:::
+
+Pour le délai de streaming et son effet sur la précision, consultez [Transcription en temps réel](/studio/audio/speech-to-text/transcribe-in-realtime) et [Latence](/studio/audio/concepts/latency#realtime-transcription).
+
+<SectionTab as="h2" sectionId="tune-thresholds">Ajuster les seuils</SectionTab>
+
+Cinq paramètres de `turn_detection` contrôlent le moment où les tours commencent et se terminent. Ne définissez que ceux que vous voulez modifier : les autres conservent leurs valeurs par défaut.
+
+:::tip
+Partez de l'une des [configurations courantes](#common-configurations), puis modifiez un seul paramètre à la fois et testez avec des enregistrements de vos utilisateurs réels.
+:::
+
+| Paramètre | Valeur par défaut | Ce qu'il fait | À modifier quand |
+| --- | --- | --- | --- |
+| `start_threshold` | `0.5` | Seuil à partir duquel on considère que l'utilisateur a commencé ou repris la parole. | Augmentez-le si les tours de parole démarrent trop facilement, par exemple à cause du bruit de fond. |
+| `eager_end_threshold` | `0.5` | Seuil à partir duquel on considère que l'utilisateur a peut-être fini de parler, ce qui déclenche un eager end. | Diminuez-le si les eager ends se déclenchent trop souvent. |
+| `end_threshold` | `0.33` | Seuil à partir duquel on considère que l'utilisateur a fini de parler, ce qui met fin au tour de parole. | Diminuez-le pour couper moins souvent la parole aux utilisateurs. La réponse arrive alors plus tard. |
+| `min_silence_ms` | `500` | Pause minimale avant que le tour de parole puisse se terminer. | Augmentez-le pour éviter que les tours de parole ne se terminent trop tôt. La réponse arrive alors plus tard. |
+| `end_timeout_ms` | `3000` | Pause maximale au bout de laquelle le tour de parole se termine dans tous les cas. | Diminuez-le pour limiter plus strictement l'attente maximale. |
+
+:::caution
+Les seuils doivent conserver leur ordre : `start_threshold` doit être au moins égal à `eager_end_threshold`, lui-même supérieur à `end_threshold`, et `end_timeout_ms` doit être au moins égal à `min_silence_ms`. Sinon, la session renvoie une erreur.
+:::
+
+{/* SOURCE (Oct 9): Rakesh, "How to use end-of-turn detection" (via Gregory): the five fields, their defaults (0.5 / 0.5 / 0.33 / 500 / 3000, same as the server defaults echoed on Oct 7), the meaning of each, and the direction to move them. Passed in session.update as {"turn_detection": {...}}. Ordering rules TESTED Oct 7 (stt agent): start 0.5 / eager 0.3 / end 0.4 -> "Expected start_threshold >= eager_end_threshold > end_threshold"; min_silence_ms 800 with end_timeout_ms 500 -> "Expected end_timeout_ms to be greater than or equal to min_silence_ms"; both as realtime error events (code 3051). emit_probabilities is NOT accepted (extra_forbidden): no row for it. */}
+
+<SectionTab as="h2" sectionId="common-configurations">Configurations courantes</SectionTab>
+
+Deux jeux de valeurs couvrent la plupart des applications. Choisissez le plus proche, puis ajustez les paramètres individuels à partir de là.
+
+| Configuration | `start_threshold` | `eager_end_threshold` | `end_threshold` | `min_silence_ms` | `end_timeout_ms` | Meilleur cas |
+| --- | --- | --- | --- | --- | --- | --- |
+| Par défaut | `0.5` | `0.5` | `0.33` | `500` | `3000` | Un bon point de départ pour la plupart des conversations. Vous obtenez ces valeurs avec un objet `turn_detection` vide. |
+| Agressive | `0.5` | `0.4` | `0.33` | `300` | `2500` | La vitesse compte avant tout, comme dans les échanges rapides : le tour se termine plus vite après l'arrêt de l'utilisateur, au prix de coupures de parole plus fréquentes. |
+
+Aucun champ ne permet de sélectionner une configuration par son nom : envoyez ses valeurs dans `turn_detection`. Par exemple, la configuration Agressive :
+
+```json
+{
+  "type": "session.update",
+  "session": {
+    "audio_format": { "encoding": "pcm_s16le", "sample_rate": 24000 },
+    "turn_detection": {
+      "start_threshold": 0.5,
+      "eager_end_threshold": 0.4,
+      "end_threshold": 0.33,
+      "min_silence_ms": 300,
+      "end_timeout_ms": 2500
+    }
+  }
+}
+```
+
+{/* TESTED Oct 7 (stt agent): probes/probe_turn2.py / probe_turn3.py, output out/probes/rt_turn_aggr_support.json: exactly this session.update (24 kHz, support_call.wav) on the interim alias voxtral-transcribe-realtime-3-0; session.updated echoed the five values; turn.end at 39.28 s. Same values at 16 kHz (rt_turn_aggr.json) added a mid-call turn.end at 20.16 s that Default didn't. turn_detection.preset is rejected (extra_forbidden): presets are documented values, not an API field.
+   SOURCE: Rakesh (Slack, Sept 28) — "Lets have a few presets like default, aggressive etc", with the Default and Aggressive values above. Default = server defaults echoed for an empty turn_detection object = SDK 0.5 defaults (settles R154: the RFC-555 example values 0.8 / 0.4 / 0.2 / 5600 are NOT the defaults and must not appear as such). Never port Cartesia's profiles. */}
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/concepts/turns" title="Tours et prise de parole" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-in-realtime" title="Transcription en temps réel" />
+  <LinkCard href="/studio/audio/voice-agents/overview" title="Agents audio" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Résolution des problèmes" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Enable, defaults echoed, event names and payloads, end_reason threshold: Oct 7 tests (turn-detection/turn_detection.py,
+     out/probes/rt_turn*.json), handoff-stt item 6.
+   - Late update rejected: out/probes/rt_late_update.json ("Session fields cannot be changed after audio has started.").
+   - Offline 400: out/probes/turn_offline_small.json. Diarize + turn_detection: out/probes/rt_turn_diar.json (code 3051).
+   - Event order: every run on Oct 7 (4 sessions, 5 turn.end, 47 eager_end/resume pairs), see .
+   - Text after turn.end: rt_turn_aggr.json, see . Lag size = streaming delay: RFC-555 2.3, .
+   - Settings meaning and direction: Rakesh, "How to use end-of-turn detection" (Oct 9, via Gregory).
+   - Presets: Rakesh (Sept 28); Aggressive JSON tested Oct 7.
+   - State diagram: public/img/audio_turn_state_machine.svg, conditions from the Tune thresholds table (Rakesh, Oct 9)
+     and the state machine of RFC-555 2.3. The Turns concept keeps the timeline of one turn (audio_turn_timeline.svg).
+   - No debug probability stream: turn_detection.emit_probabilities is rejected (extra_forbidden, out/probes/rt_turn_probs.json)
+     and no vad event was observed, so the page documents none. Ask Rakesh only if a debug stream is planned for launch.
+   - Tested code and output rerun on Oct 9 on the neutral customer_call.wav (fixtures/make_neutral_fixtures.py). The
+     Aggressive JSON block shows no file name or output and wasn't rerun (Oct 7 run on demo 01's call). */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Order per skeleton review S09: minimal enable path
+   first, state machine, then events WITH the text timing in the same section (never commit actions without it),
+   thresholds last as tuning, then named configurations. Boundary with the Turns concept: the concept owns the why
+   and the trade-off (no values); this page owns enabling, events, timing, values. Keep sectionId
+   "common-configurations": the Turns concept links to it. Verify at the end: enabling possible in one block,
+   timing explained before any commit guidance, presets table with CONFIRMED values only (Default, Aggressive),
+   third preset still a Draft until Rakesh answers. */}

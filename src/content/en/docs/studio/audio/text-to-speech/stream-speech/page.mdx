@@ -1,0 +1,186 @@
+---
+title: Stream speech
+sidebar_label: Stream speech
+sidebar_position: 4
+description: "Stream the audio of a speech request as it's generated, play it before the whole file is ready, and measure the time to first audio."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Stream speech
+
+Streaming sends the audio of a speech request in pieces while the rest is still being generated, so the listener hears the first words sooner. This page shows how to stream a request, play the audio as it arrives, and measure how long the listener waits.
+
+:::info
+To get one complete file instead, see [Speech generation](/studio/audio/text-to-speech/generate-speech). For what the listener waits for and where the time goes, see [Latency](/studio/audio/concepts/latency#speech-generation).
+:::
+
+{/* MODE VOCABULARY: see the flag in the Text to Speech overview — this page title may become "Realtime speech" once Kayla decides. */}
+
+<SectionTab as="h2" sectionId="how-it-works">How streaming works</SectionTab>
+
+A streamed request is a [speech generation](/studio/audio/text-to-speech/generate-speech) request with `stream` set to `true`. You still send the complete text in one request: only the audio comes back in pieces, as server-sent events.
+
+| Event | Fields | What your application does |
+| --- | --- | --- |
+| `speech.audio.delta` | `audio_data`: a base64 chunk of audio | Decode the chunk and pass it to your player, or append it to the file you write. |
+| `speech.audio.done` | `usage` | Stop reading: the audio is complete. |
+
+The chunks arrive in order. Put together, they make one audio file in the `response_format` you asked for, the same as the file of a request without streaming.
+
+:::note
+Streaming the response doesn't make the request a realtime session: the text must be complete when you send it. To speak text while it's still being written, see [Stream text as it's written](#realtime-sessions).
+:::
+
+<SectionTab as="h2" sectionId="stream-a-request">Stream a request</SectionTab>
+
+The following script streams a request, records when the first chunk arrives, and saves all the chunks to one MP3 file:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import base64
+import os
+import time
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+chunks = []
+first_audio = None
+start = time.perf_counter()
+
+with client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input=(
+        "Thanks for calling. Your order shipped this morning and should arrive on Thursday. "
+        "You'll get a tracking link by email within the hour."
+    ),
+    voice_id="gb_jane_neutral",
+    response_format="mp3",
+    stream=True,
+) as stream:
+    for event in stream:
+        if event.event == "speech.audio.delta":
+            if first_audio is None:
+                first_audio = time.perf_counter() - start
+            chunks.append(base64.b64decode(event.data.audio_data))
+        elif event.event == "speech.audio.done":
+            print(f"Usage: {event.data.usage}")
+
+output = Path("streamed.mp3")
+output.write_bytes(b"".join(chunks))
+print(f"First audio after {first_audio:.2f} s, {len(chunks)} chunks, total {time.perf_counter() - start:.2f} s")
+print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const chunks: Buffer[] = [];
+let firstAudio: number | undefined;
+const start = performance.now();
+
+const stream = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input:
+    "Thanks for calling. Your order shipped this morning and should arrive on Thursday. " +
+    "You'll get a tracking link by email within the hour.",
+  voiceId: "gb_jane_neutral",
+  responseFormat: "mp3",
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.data.type === "speech.audio.delta") {
+    firstAudio ??= (performance.now() - start) / 1000;
+    chunks.push(Buffer.from(event.data.audioData, "base64"));
+  } else if (event.data.type === "speech.audio.done") {
+    console.log("Usage:", event.data.usage);
+  }
+}
+
+const output = resolve("streamed.mp3");
+writeFileSync(output, Buffer.concat(chunks));
+const total = (performance.now() - start) / 1000;
+console.log(`First audio after ${firstAudio?.toFixed(2)} s, ${chunks.length} chunks, total ${total.toFixed(2)} s`);
+console.log(`Saved ${output}`);
+```
+
+  </TabItem>
+</Tabs>
+
+{/* TESTED Oct 7 (mistralai 3.0.0, voxtral-mini-tts-3-0): stream_speech.py saves a playable MP3 from 10 chunks; first audio after about 0.5 s from Gregory's machine (not a published figure — the Latency concept page owns the numbers). The usage in speech.audio.done reports completion_tokens=203520 for about 12.5 s of audio, worth a question to Rakesh. Use this HTTP path when the text is known up front; the WebSocket session in the following sections streams text in as well. Whether this SSE section stays here or moves to Speech generation: Gregory's call. */}
+
+<SectionTab as="h2" sectionId="play-as-it-arrives">Play audio as it arrives</SectionTab>
+
+To start playback before the whole file is ready, decode each `speech.audio.delta` and pass the bytes to a player that accepts a stream, in the order they arrive.
+
+Most players keep a small buffer of audio before they start, and that buffer sets a trade-off:
+
+| Player buffer | The listener gets | The risk |
+| --- | --- | --- |
+| Smaller | The first sound sooner | Gaps in playback if the next chunk is late |
+| Larger | Smooth playback | A longer wait before the first sound |
+
+:::tip
+Start with your player's default buffer and reduce it only if the first sound comes too late. Test on the network your users have, not only on a fast connection.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="first-audio">Measure the time to first audio</SectionTab>
+
+The time to first audio is what the listener waits for. Measure it in two places:
+
+1. From sending the request to the first `speech.audio.delta`, as the example does. This is the wait for the API and the network.
+2. From sending the request to the first sound in your player. This adds the player buffer, and it's the wait the listener notices.
+
+, so measure it over many requests and watch the slowest ones, not only the average. For the full method, see [Latency](/studio/audio/concepts/latency#measure-from-your-application).
+
+<SectionTab as="h2" sectionId="realtime-sessions">Stream text as it's written</SectionTab>
+
+{/* Kept from the skeleton (RFC-555 section 4): ref_audio is REMOVED in section 3 (offline) but STILL PRESENT in section 4 (streaming): do not uniformize the two sections; write each as specced. Lifecycle diagram first, connect, minimal send-and-play path before the event table and lookahead, dedicated Latency and lookahead section (skeleton review S18). Do not invent cancellation or reconnection semantics. */}
+
+<SectionTab as="h2" sectionId="common-issues">Common issues</SectionTab>
+
+These issues are specific to streaming. For errors on the request itself, such as an unknown voice or an invalid format, see [Troubleshooting](/studio/audio/text-to-speech/troubleshooting).
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Nothing plays until the whole audio is ready | Your client reads the full response before handing it on | Read the events as they arrive, and pass each chunk to the player at once. |
+| Gaps or stutter during playback | The player buffer runs out before the next chunk arrives | Increase the player buffer, or check the network between your application and the API. |
+| The saved file doesn't play | The chunks were saved out of order, or one was dropped | Decode every `speech.audio.delta` and write the chunks in the order they arrived. |
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/generate-speech" title="Speech generation" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latency" />
+  <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Troubleshooting" />
+  <LinkCard href="/studio/audio/voice-agents/overview" title="Voice agents" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): stream=True, speech.audio.delta (audio_data) and speech.audio.done (usage): stream_speech.py,
+   Oct 7, mistralai 3.0.0, voxtral-mini-tts-3-0 (results.csv: 10 chunks, first audio 0.48 s, total 1.34 s, 12.5 s
+   MP3, STT exact). Chunks joined = playable MP3: same run. Raw SSE shape: demos/common/voxtral.py speech_stream().
+   Usage oddity: speech.audio.done reported completion_tokens=203520 (then 195840 on the re-run) for 12.5 s of
+   audio, question open for Rakesh: usage isn't described on the page. Player buffer and measuring method: Latency
+   concept. Realtime sessions: RFC-555 section 4 via the skeleton, all in a Draft (TTS Realtime 3 not released). */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 around the tested SSE path; the realtime
+   session part (skeleton review S18 order) is parked in the Draft until TTS Realtime 3 ships. Verify at the end:
+   the reader can hear audio from the streamed request, formats that stream confirmed, realtime section written
+   from the final spec with the ref_audio streaming/offline distinction kept, latency figures (if any) scoped and
+   owned by the Latency concept. */}

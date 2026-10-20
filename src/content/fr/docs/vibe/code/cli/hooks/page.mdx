@@ -41,7 +41,7 @@ description = "Reject dangerous shell commands."
 |---|---|---|
 | `name` | oui | Identifiant unique. Utilisé pour dédupliquer entre les fichiers projet et utilisateur. |
 | `type` | oui | Une valeur parmi `pre_tool`, `post_tool`, `post_agent`. |
-| `command` | oui | Commande shell à exécuter. Reçoit la charge utile du hook sur `stdin`. |
+| `command` | oui | Commande shell à exécuter. Reçoit la charge utile du hook sur `stdin`. Sous Windows, s'exécute dans Git Bash s'il est disponible, sinon dans PowerShell, comme l'outil `bash`. |
 | `match` | `pre_tool` / `post_tool` | Filtre sur le nom de l'outil : glob fnmatch, ou regex avec le préfixe `re:`. Insensible à la casse. |
 | `timeout` | non | Secondes avant que le hook ne soit interrompu. Défaut : `60`. |
 | `strict` | hooks d'outil uniquement | Si `true`, les échecs de parsing et d'exécution deviennent des refus (`pre_tool`) ou des effacements de texte (`post_tool`) au lieu d'avertissements. Défaut : `false`. |
@@ -75,6 +75,8 @@ Déclenché à chaque appel d'outil, **avant** la demande d'autorisation utilisa
 
 **Reçoit** (en plus du contexte de session) : `tool_name`, `tool_call_id`, `tool_input` (les arguments bruts du modèle).
 
+`tool_name` est le nom complet de l'outil, comme `file_system.bash` ou `<server>.<tool>` pour les outils MCP. `match` accepte les noms complets comme les noms courts, donc `match = "bash"` fonctionne. Les commandes que l'agent lance en arrière-plan passent par `process_start` au lieu de `bash`, couvrez donc les deux dans vos gardes shell : `match = "re:bash|process_start"`.
+
 **Peut renvoyer** :
 
 - `decision: "deny"` + `reason` — refuse l'appel ; `reason` devient l'erreur d'outil visible par le LLM.
@@ -83,17 +85,17 @@ Déclenché à chaque appel d'outil, **avant** la demande d'autorisation utilisa
 
 <SectionTab as="h2" sectionId="post-tool">`post_tool`</SectionTab>
 
-Déclenché à chaque appel d'outil, **mais uniquement si le corps de l'outil s'est réellement exécuté**. Il ne se déclenche pas lorsque l'outil n'a pas été exécuté : refus en `pre_tool`, refus de l'utilisateur à la demande d'autorisation, permission `NEVER`, ou annulation avant le début de l'exécution du corps. L'annulation pendant l'exécution du corps est protégée, de sorte que les hooks d'audit s'exécutent tout de même.
+Se déclenche à chaque appel d'outil **si et seulement si le corps de l'outil s'est réellement exécuté**. Il ne se déclenche pas si l'outil n'a jamais été exécuté : refus par `pre_tool`, refus au prompt d'approbation ou permission définie sur `never`.
 
 **Reçoit** (en plus du contexte de session) :
 
 - `tool_name`, `tool_call_id`
 - `tool_input` (post-réécriture)
-- `tool_status` — `success`, `failure` ou `cancelled`
+- `tool_status` — `success` ou `failure`
 - `tool_output` — dict de résultat structuré ; `null` en cas d'échec
 - `tool_output_text` — le texte courant que le LLM verra, mutable par les hooks précédents
 - `tool_error`
-- `duration_ms`
+- `duration_ms` — pas encore remonté (toujours `0`)
 
 **Peut renvoyer** :
 
@@ -109,7 +111,7 @@ Déclenché après chaque tour de l'assistant qui se termine sans appel d'outil 
 
 **Peut renvoyer** :
 
-- `decision: "deny"` + `reason` — `reason` est injecté en tant que nouveau message utilisateur demandant à l'agent de recommencer. Limité à **3 retries par hook et par tour utilisateur** ; les refus suivants deviennent des avertissements définitifs.
+- `decision: "deny"` + `reason` — `reason` est injecté comme un nouveau message utilisateur demandant à l'agent de réessayer. Plafonné à **3 tentatives par tour** pour l'ensemble des Hooks `post_agent` ; au-delà, Vibe accepte la réponse. Si un Hook `post_agent` échoue, Vibe accepte la réponse et affiche un avertissement.
 - `system_message` — interface uniquement.
 
 <SectionTab as="h2" sectionId="example">Exemple : bloquer les commandes shell destructrices</SectionTab>
@@ -120,7 +122,7 @@ Déclenché après chaque tour de l'assistant qui se termine sans appel d'outil 
 [[hooks]]
 name = "deny-rm-rf"
 type = "pre_tool"
-match = "bash"
+match = "re:bash|process_start"
 command = "python ./.vibe/hooks/guard-bash.py"
 strict = true
 description = "Reject rm -rf and other destructive shell commands."

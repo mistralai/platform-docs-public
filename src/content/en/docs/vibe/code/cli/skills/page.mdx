@@ -7,7 +7,7 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Skills
 
-Skills are **reusable instruction sets** that extend Vibe Code with new workflows, custom slash commands, and scoped tool sets. Vibe follows the [Agent Skills specification](https://agentskills.io/specification), so skills you write here are portable to other agents that adopt the same spec.
+Skills are **reusable instruction sets** that extend Vibe Code with new workflows and custom slash commands. Vibe follows the [Agent Skills specification](https://agentskills.io/specification), so skills you write here are portable to other agents that adopt the same spec.
 
 <SectionTab as="h2" sectionId="skill-format">Skill format</SectionTab>
 
@@ -18,11 +18,10 @@ A skill is a **directory containing a `SKILL.md` file**. The file starts with YA
 name: code-review
 description: Perform automated code reviews.
 license: MIT
-compatibility: Python 3.12+
+compatibility: Requires git
 user-invocable: true
 allowed-tools:
   - read_file
-  - grep
   - ask_user_question
 ---
 
@@ -34,9 +33,10 @@ This skill helps analyze code quality and suggest improvements.
 Common frontmatter fields:
 
 - **`name`**: used to invoke the skill.
-- **`description`**: shown in the skill list.
-- **`user-invocable`**: defaults to `true`, which exposes the skill as a slash command in the CLI and the VS Code extension. Set to `false` to hide it from the slash picker.
-- **`allowed-tools`**: restricts which tools the skill can call.
+- **`description`**: shown in the skill list. Up to 1,024 characters.
+- **`user-invocable`**: defaults to `true`, which exposes the skill as a slash command in the CLI and the VS Code extension. Set to `false` to hide it from the slash picker. The agent can still load it.
+- **`disable-model-invocation`**: set to `true` to stop the agent from loading the skill on its own. You can still run it with `/skill-name`.
+- **`allowed-tools`**: lists the tools the skill expects to use. Vibe reads this field but doesn't enforce it: a skill can call any tool the active agent allows.
 
 <SectionTab as="h2" sectionId="locations">Skill locations</SectionTab>
 
@@ -44,7 +44,7 @@ The CLI discovers skills from several locations, in order:
 
 1. **Custom paths** defined in `config.toml` → `skill_paths = ["/path/to/custom/skills"]`
 2. **Project-level** skills in `./.vibe/skills/` or `./.agents/skills/` when the working directory is [trusted](/vibe/code/safety-approvals-permissions#trusted-folders).
-3. **User-level** skills in `~/.vibe/skills/`.
+3. **User-level** skills in `~/.vibe/skills/` or `~/.agents/skills/`.
 
 <SectionTab as="h2" sectionId="filtering">Enable, disable, or filter skills</SectionTab>
 
@@ -61,12 +61,14 @@ Skill filters support **exact names**, **glob patterns**, and **regex** with the
 
 Skills are the recommended way to add your own slash commands. `user-invocable` defaults to `true`, so the skill name becomes available with `/skill-name` autocompletion in the CLI prompt, and in the [VS Code extension](/vibe/code/vs-code-extension/commands-slash-commands#slash-commands) slash picker too.
 
-Pair custom skills with `allowed-tools` to keep their access scoped to what the workflow needs.
+Type `/skill-name` followed by your request, for example `/code-review focus on error handling`. Vibe adds the skill's instructions to your message.
 
-{/* TODO (devs): confirm whether all user-invocable skills appear in the slash menu by default, or whether they must be enabled per project. Also confirm exact arg-passing syntax for skills that take input. */}
+<SectionTab as="h2" sectionId="plugins">Plugins</SectionTab>
+
+Plugins are packages that bundle skills with other extensions, such as MCP servers, hooks, and subagents. Vibe loads them from `~/.vibe/plugins/` and, in trusted folders, from `./.vibe/plugins/`. Vibe prefixes plugin skills with the plugin name, for example `/vibe:skill-creator`. Run `/plugins` to list the plugins in your session, and `/reload-plugins` to pick up changes.
 
 <SectionTab as="h2" sectionId="stay-in-control">Stay in control</SectionTab>
 
 - **Review a skill before enabling it** if it can call write-capable tools.
-- Prefer **narrow `allowed-tools` lists** over disabling tools elsewhere.
+- To limit what a skill can do, **restrict the agent's tools and permissions**. `allowed-tools` doesn't restrict anything.
 - Keep project-specific skills in `./.vibe/skills/` so collaborators can review them in code review.

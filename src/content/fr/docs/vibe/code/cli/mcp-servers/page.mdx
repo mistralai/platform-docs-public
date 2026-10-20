@@ -8,12 +8,12 @@ import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
 
 # Serveurs MCP
 
-Les serveurs MCP étendent le Vibe Code CLI avec des **outils externes** via le [Model Context Protocol](https://modelcontextprotocol.io). Configurez-les dans `config.toml` sous `mcp_servers` ; leurs outils deviennent alors disponibles pour Vibe comme tout outil natif.
+Les serveurs MCP étendent la Vibe Code CLI avec des **outils externes** via le [Model Context Protocol](https://modelcontextprotocol.io). Ajoutez-les avec la commande `vibe mcp add`, la commande slash `/mcp add`, ou directement dans `config.toml` sous `mcp_servers`. Leurs outils deviennent alors disponibles pour Vibe comme tout outil natif.
 
 Les serveurs MCP sont **configurés par l'utilisateur**. Pour les intégrations gérées par Mistral, consultez plutôt [Connectors](/vibe/code/cli/connectors).
 
 :::info
-**Limite connue :** le CLI ne prend pas encore en charge les serveurs MCP nécessitant une authentification OAuth. Utilisez le transport `stdio` ou `http` avec une clé API ou d'autres identifiants statiques.
+Votre administrateur peut bloquer les serveurs MCP avec `enable_mcp = false` dans la [configuration administrateur](/vibe/code/cli/admin-config#block-mcp). Dans ce cas, Vibe refuse d'ajouter, de supprimer, d'activer des serveurs MCP ou de s'y connecter, et ne charge aucun outil MCP.
 :::
 
 <SectionTab as="h2" sectionId="transports">Transports pris en charge</SectionTab>
@@ -24,7 +24,39 @@ Les serveurs MCP sont **configurés par l'utilisateur**. Pour les intégrations 
 | `streamable-http` | Le serveur est accessible en HTTP et prend en charge les réponses en streaming. |
 | `stdio` | Le serveur est un processus local lancé depuis une commande. |
 
-<SectionTab as="h2" sectionId="add">Ajouter un serveur MCP</SectionTab>
+<SectionTab as="h2" sectionId="add-command">Ajouter un serveur MCP depuis la ligne de commande</SectionTab>
+
+`vibe mcp add` écrit le serveur dans votre `config.toml` utilisateur sans démarrer de session. Pour un serveur distant qui utilise OAuth, indiquez son nom et son URL. Vibe ouvre votre navigateur pour vous connecter :
+
+```bash
+vibe mcp add linear --url https://mcp.linear.app/mcp
+```
+
+Passez `--no-login` pour enregistrer le serveur sans vous connecter, et `--scope` (répétable) pour demander des scopes OAuth spécifiques.
+
+Pour un serveur distant qui utilise une clé API ou des en-têtes statiques, passez `--api-key-env` ou `--header` :
+
+```bash
+vibe mcp add mistralai \
+  --url https://api.mistral.ai/mcp \
+  --api-key-env MISTRAL_API_KEY
+```
+
+Pour un serveur local, utilisez le transport `stdio`. Répétez `--arg` pour chaque argument et `--env` pour chaque variable d'environnement :
+
+```bash
+vibe mcp add fetch_server --transport stdio --command uvx --arg mcp-server-fetch
+```
+
+Supprimez un serveur avec `vibe mcp remove <name>`. La suppression d'un serveur OAuth efface également ses tokens stockés. Exécutez `vibe mcp add --help` pour voir toutes les options.
+
+Vous pouvez également ajouter un serveur OAuth depuis une session avec `/mcp add <url>`. La commande accepte les mêmes options `--name`, `--scope`, `--transport` et `--no-login` :
+
+```text
+/mcp add https://mcp.linear.app/mcp
+```
+
+<SectionTab as="h2" sectionId="add">Ajouter un serveur MCP dans `config.toml`</SectionTab>
 
 Ajoutez une table `[[mcp_servers]]` dans `config.toml`. Les champs obligatoires dépendent du transport.
 
@@ -36,7 +68,10 @@ Ajoutez une table `[[mcp_servers]]` dans `config.toml`. Les champs obligatoires 
 name = "my_http_server"
 transport = "http"
 url = "http://localhost:8000"
-headers = { "Authorization" = "Bearer my_token" }
+
+[mcp_servers.auth]
+type = "static"
+headers = { "X-Client" = "vibe" }
 api_key_env = "MY_API_KEY_ENV_VAR"
 api_key_header = "Authorization"
 api_key_format = "Bearer {token}"
@@ -50,8 +85,29 @@ api_key_format = "Bearer {token}"
 name = "my_streamable_server"
 transport = "streamable-http"
 url = "http://localhost:8001"
-headers = { "X-API-Key" = "my_api_key" }
+
+[mcp_servers.auth]
+type = "static"
+api_key_env = "MY_API_KEY_ENV_VAR"
+api_key_header = "X-API-Key"
+api_key_format = "{token}"
 ```
+
+</ExplorerTab>
+<ExplorerTab value="oauth" label="OAuth">
+
+```toml
+[[mcp_servers]]
+name = "linear"
+transport = "streamable-http"
+url = "https://mcp.linear.app/mcp"
+
+[mcp_servers.auth]
+type = "oauth"
+scopes = []
+```
+
+Connectez-vous avec `/mcp login linear` depuis une session. Une liste `scopes` vide accepte les scopes par défaut du serveur.
 
 </ExplorerTab>
 <ExplorerTab value="stdio" label="Processus local (stdio)">
@@ -76,11 +132,12 @@ env = { "DEBUG" = "1", "LOG_LEVEL" = "info" }
 | `transport` | `http`, `streamable-http` ou `stdio`. |
 | `url` | URL de base pour les transports HTTP. |
 | `command` / `args` | Commande et arguments pour le transport stdio. |
-| `headers` | Entêtes HTTP supplémentaires pour les transports HTTP. |
-| `api_key_env` | Variable d'environnement contenant la clé API. |
 | `env` | Variables d'environnement passées au processus serveur (stdio). |
-| `startup_timeout_sec` | Durée d'attente du démarrage du serveur. |
-| `tool_timeout_sec` | Durée d'attente d'une exécution d'outil. |
+| `startup_timeout_sec` | Durée d'attente du démarrage du serveur. Valeur par défaut : `10` secondes. |
+| `tool_timeout_sec` | Durée d'attente de l'exécution d'un appel d'outil. Valeur par défaut : `60` secondes. |
+| `[mcp_servers.auth]` | Authentification pour les transports HTTP : `type = "static"` avec `headers` ou `api_key_env`, ou `type = "oauth"` avec `scopes`. |
+
+Vibe accepte toujours `headers`, `api_key_env`, `api_key_header` et `api_key_format` directement dans `[[mcp_servers]]`, et les traite comme une authentification statique. Ne les combinez pas avec un tableau `[mcp_servers.auth]`. Consultez la [référence de configuration](/vibe/code/cli/configuration-reference#mcp-servers) pour tous les champs.
 
 <SectionTab as="h2" sectionId="permissions">Nomination et autorisations des outils</SectionTab>
 
@@ -97,11 +154,11 @@ permission = "ask"
 Vous pouvez aussi restreindre les outils MCP actifs via `enabled_tools` et `disabled_tools` :
 
 ```toml
-# N’activer que les outils de serena
+# Only enable serena's tools
 enabled_tools = ["serena_*"]
 
-# Désactiver tous les outils MCP et grep
-disabled_tools = ["mcp_*", "grep"]
+# Disable every tool from the fetch_server server
+disabled_tools = ["fetch_server_*"]
 ```
 
 Les filtres prennent en charge les **noms exacts**, les **motifs globaux** et les **regex** avec le préfixe `re:`.
@@ -119,6 +176,15 @@ Indiquez un nom de serveur pour répertorier ses outils :
 ```text
 /mcp fetch_server
 ```
+
+`/mcp` accepte également ces sous-commandes :
+
+| Sous-commande | Action |
+|---|---|
+| `/mcp add <url>` | Ajouter un serveur OAuth et se connecter. Voir [Ajouter un serveur MCP depuis la ligne de commande](#add-command). |
+| `/mcp status` | Afficher le statut de chaque serveur. |
+| `/mcp login <name>` | Se connecter à un serveur OAuth. |
+| `/mcp logout <name>` | Se déconnecter d'un serveur OAuth. |
 
 :::note
 `/connectors` est un alias de `/mcp`.

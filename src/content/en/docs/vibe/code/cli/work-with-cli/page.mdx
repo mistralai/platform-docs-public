@@ -37,6 +37,8 @@ Prefix a path with `@` to attach a file to your prompt. The CLI provides autocom
 > Read the file @src/agent.py and suggest improvements.
 ```
 
+To attach an image, `@`-mention it or paste its file path. On macOS, you can also paste an image from the clipboard with `Ctrl+V` or `/paste-image`. Images work when the active model supports them or when a `vision_model` is configured.
+
 <SectionTab as="h3" variant="secondary" sectionId="builtin-commands">Run built-in commands with `/`</SectionTab>
 
 Type `/` to open the slash-command picker with autocompletion. Use it for built-in commands like `/help`, `/model`, `/config`, or any command exposed by an installed skill. See [Commands and shortcuts](/vibe/code/cli/commands-shortcuts) for the full list.
@@ -53,6 +55,8 @@ Prefix a command with `!` to run it directly in your shell, bypassing the agent:
 > !ls -l
 ```
 
+The agent sees the command and its output as context for your next message.
+
 <SectionTab as="h3" variant="secondary" sectionId="cloud-session">Send a prompt to a cloud session with `&`</SectionTab>
 
 Prefix a prompt with `&` to run it in a Vibe Code Web sandbox. The CLI returns a link to the cloud session.
@@ -63,11 +67,17 @@ Prefix a prompt with `&` to run it in a Vibe Code Web sandbox. The CLI returns a
 
 See [Teleport from CLI to web](/vibe/code/cli/teleport-cli-web) for prerequisites and limits.
 
+<SectionTab as="h3" variant="secondary" sectionId="queue-messages">Send messages while the agent works</SectionTab>
+
+Press `Enter` while the agent works to queue a message. Vibe sends all queued messages together when the turn ends. To hand them to the agent before the turn ends, press `Enter` again with an empty input.
+
+Press `Up` to select a queued message, then `Enter` to edit it or `Backspace` to remove it. `Escape` interrupts the agent and pauses the queue; press `Enter` to send the paused messages. Shell (`!`) commands and most slash commands wait until the agent is idle.
+
 <SectionTab as="h3" variant="secondary" sectionId="in-session-shortcuts">Useful in-session shortcuts</SectionTab>
 
 | Shortcut | Action |
 |---|---|
-| `Shift+Tab` | Cycle through agents (default, plan, accept-edits, smart-approve, auto-approve). |
+| `Shift+Tab` | Cycle through agents (ask, accept-edits, smart-approve, auto-approve). |
 | `Ctrl+O` | Toggle the tool output view. |
 | `Ctrl+G` | Edit the current input in an external editor. |
 | `Escape` | Interrupt the current operation. |
@@ -76,39 +86,61 @@ See [Commands and shortcuts](/vibe/code/cli/commands-shortcuts) for the full lis
 
 <SectionTab as="h2" sectionId="programmatic-mode">Programmatic mode</SectionTab>
 
-Programmatic mode is built for **scripting, CI jobs, and any non-interactive use**. Use the `--prompt` flag to run a single task and exit:
+Programmatic mode is built for **scripting, CI jobs, and any non-interactive use**. Use the `--prompt` (`-p`) flag to run a single task and exit:
 
 ```bash
 vibe --prompt "Analyze the codebase" --max-turns 5 --output json
 ```
 
-Programmatic mode does not start the chat interface and disables interactive tools such as the question prompt. By default, it runs with the `auto-approve` agent.
+You can also read the prompt from a file with `--prompt-file PATH`, or pipe it on stdin with `-p` and no text.
+
+Programmatic mode doesn't start the chat interface and disables interactive tools such as the question prompt. It runs with your `default_agent` (`accept-edits` unless you change it). Nobody can answer an approval prompt, so Vibe denies any tool call that needs one. To approve every tool call, pass `--auto-approve` (or its alias `--yolo`):
+
+```bash
+vibe --prompt "Fix the failing tests" --auto-approve
+```
+
+If your administrator sets [`enable_auto_approve = false`](/vibe/code/cli/admin-config#block-auto-approve), Vibe ignores `--auto-approve`. Allow the tools the run needs with [`permission = "always"`](/vibe/code/safety-approvals-permissions#set-permissions) or an [`allowlist`](/vibe/code/safety-approvals-permissions#bash-allow-deny) instead.
 
 Useful options:
 
 - `--max-turns N` caps the number of assistant turns. **Recommended** to bound run length.
-- `--enabled-tools TOOL` restricts which tools the agent can use. Supports exact names, glob patterns (`bash*`), and regex with the `re:` prefix (`re:^serena_.*$`).
-- `--output text|json|streaming` sets the output format.
+- `--max-tokens N` caps the total prompt and completion tokens for the run.
+- `--time-limit SECONDS` stops the run after a deadline. You can resume the session later. `SIGTERM` stops a run the same way.
+- `--enabled-tools TOOL` restricts which tools the agent can use, and disables all others. Supports exact names, glob patterns (`bash*`), and regex with the `re:` prefix (`re:^serena_.*$`). Repeat the flag for several tools.
+- `--disabled-tools TOOL` disables tools after `--enabled-tools` filtering. Repeat the flag for several tools.
+- `--output text|json|streaming` sets the output format. `text` (default) prints the final answer, `json` prints the session messages as a JSON array when the run ends, and `streaming` prints one JSON object per message as the run progresses.
+- `--output-dir DIR` writes an `export.json` file (Vibe version, effective config, token usage, cost, stop reason, and outcome) and a copy of the session to `DIR`, however the run ends. The export also lists each subagent with its status, model, token usage, cost, and steps, and copies its session.
+
+Before it exits, a programmatic run waits for the subagents its last turn left running. `--time-limit` and other stops interrupt them.
 
 :::warning
 The CLI also exposes a `--max-price DOLLARS` flag, but the underlying price values come from the config file and can be missing or outdated. Treat the reported cost as **indicative only**: do not rely on it for hard budget enforcement.
 :::
 
+The exit code tells you how the run ended:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | The agent finished. |
+| `1` | The run couldn't start, for example because of an invalid flag or config. |
+| `2` | The model API or the runtime failed. |
+| `3` | The agent stopped before finishing: a limit was reached, the run was stopped, or the model declined to answer. |
+
 <SectionTab as="h2" sectionId="approval">Choose how the CLI handles approval</SectionTab>
 
-The CLI ships with several built-in agents. Pick one with `--agent`:
+The CLI ships with several built-in agents. By default, it uses `accept-edits`. Pick another one with `--agent`:
 
 ```bash
-vibe --agent plan
-vibe --agent accept-edits
+vibe --agent ask
 vibe --agent smart-approve
 vibe --agent auto-approve
 ```
 
-Switch agents mid-session (interactive mode only) with `Shift+Tab`. Set a default interactive agent in `config.toml`:
+Switch agents mid-session (interactive mode only) with `Shift+Tab`. Set the default agent for interactive and programmatic sessions in `config.toml`:
 
 ```toml
-default_agent = "plan"
+default_agent = "ask"
 ```
 
 See [Agents](/vibe/code/cli/agents) for the full list and behavior.
@@ -122,7 +154,7 @@ For tasks with substantial file edits or shell commands, the CLI:
 3. **Displays the result** after each step.
 
 :::tip
-Use the `plan` agent when you want a read-only walkthrough before any change is proposed. See [Agents](/vibe/code/cli/agents).
+Use the `ask` agent when you want to review every tool call, file edits included, before it runs. See [Agents](/vibe/code/cli/agents).
 :::
 
 <SectionTab as="h2" sectionId="trust-folders">Trust folders</SectionTab>
@@ -138,11 +170,37 @@ Trusted folders are remembered in `~/.vibe/trusted_folders.toml`.
 The CLI can pick up where you left off:
 
 - `vibe --continue` (or `-c`) resumes the most recent session.
-- `vibe --resume SESSION_ID` resumes a specific session. Partial IDs are supported.
-- `/resume` (or `/continue`) inside a session opens a browser of past sessions.
+- `vibe --resume` opens a picker of past sessions.
+- `vibe --resume SESSION_ID` resumes a specific session. Partial IDs are supported. In programmatic mode, combine `-p` with `--continue` or `--resume SESSION_ID` to continue a saved session.
+- `/resume` (or `/continue`) inside a session opens the same picker. Press `d` twice to delete the highlighted session.
+- `/branch` forks the current conversation into a new session that you can resume later, and leaves the current session unchanged.
+- `/rewind` (or `Escape` twice on an empty input) goes back to an earlier message so you can edit it and continue from there.
 
-Session continuation requires logging, which is enabled by default. If resume stops working after editing your configuration, make sure logging is still enabled in `~/.vibe/config.toml`:
+A resumed or continued session keeps the agent it last ran on, even if your `default_agent` changed or you pass another `--agent`. Switch agents inside the session to change it. If that agent is no longer available, Vibe uses `--agent` or your `default_agent` instead.
+
+The picker, `--continue`, and `--resume` without an ID only list sessions started in the current directory. `--resume SESSION_ID` works from anywhere. Vibe 3.0 can still resume sessions saved by Vibe 2.0 and later, but not sessions saved by Vibe 1.x.
+
+Session continuation requires session logging, which is enabled by default. If resume stops working after editing your configuration, make sure logging is still enabled in `~/.vibe/config.toml`:
 
 ```toml
-log_interactions = true
+[session_logging]
+enabled = true
 ```
+
+<SectionTab as="h2" sectionId="worktrees">Work in a git worktree</SectionTab>
+
+Use `--worktree` to run a session in its own [git worktree](https://git-scm.com/docs/git-worktree), so the agent's changes stay apart from your current checkout:
+
+```bash
+vibe --worktree my-feature
+```
+
+Vibe creates the worktree under `~/.vibe/worktrees/` on a branch named `my-feature`, or reuses it if it already exists. Without a name, Vibe names the worktree after your prompt. Put the prompt first, because `--worktree` reads the next argument as the name:
+
+```bash
+vibe "Fix the login bug" --worktree
+```
+
+When an interactive session ends, Vibe removes a worktree it created if it holds no changes, and asks you otherwise. Programmatic runs leave the worktree in place.
+
+`--worktree` trusts the worktree for that run, so you don't need `--trust`. Combine it with `-c` or `--resume` to resume a session started in that worktree.

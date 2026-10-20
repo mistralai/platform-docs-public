@@ -69,7 +69,7 @@ The activation process depends on the deployment type:
 Admin config is the **highest-priority** layer. It takes precedence over command-line flags, environment variables, and both project and user `config.toml`:
 
 ```text
-admin config  >  CLI flags  >  env vars  >  project config.toml  >  user config.toml
+admin config  >  agent settings  >  CLI flags  >  VIBE_* env vars  >  project config.toml  >  user config.toml
 ```
 
 This precedence means the admin-provided values take effect for users by default, without them needing to update their own `config.toml`.
@@ -79,20 +79,20 @@ This precedence means the admin-provided values take effect for users by default
 Admin config accepts most of the same keys as [`config.toml`](/vibe/code/cli/configuration), for example:
 
 - Active model, models, and providers.
-- MCP server.
+- MCP servers, and whether users can use MCP servers at all.
+- Whether users can auto-approve every tool call.
 - Connectors, and enabled/disabled tools, agents, and skills.
-- Telemetry, auto-update, and notification toggles.
+- Telemetry, update check, and notification toggles.
 
 ```toml
-active_model = "mistral-large-latest"
-enable_auto_update = false
-disabled_tools = ["shell"]
-
-[[providers]]
-name = "mistral"
-api_base = "https://api.mistral.ai"
-api_key_env_var = "MISTRAL_API_KEY"
+active_model = "mistral-medium-3.5"
+enable_update_checks = false
+disabled_tools = ["bash"]
 ```
+
+:::warning
+A `[[providers]]` entry replaces the built-in provider with the same name entirely. Don't redefine the built-in `mistral` provider unless you set every field it needs, including `backend = "mistral"` and an `api_base` that ends with `/v1`.
+:::
 
 <SectionTab as="h2" sectionId="enterprise-defaults">Enforce enterprise defaults</SectionTab>
 
@@ -107,7 +107,6 @@ backend = "mistral"
 api_base = "https://mistral.acme.internal/v1"
 api_key_env_var = "ACME_MISTRAL_API_KEY"
 api_style = "openai"
-region = "eu-west-1"
 
 [providers.extra_headers]
 "x-acme-tenant" = "engineering"
@@ -147,8 +146,39 @@ alias = "mistral-large-enterprise"
 Combine `allowed_models` with the models you distribute: ship the `[[models]]` presets users need, and filter out every other model.
 
 :::warning
-Every pattern must match at least one distributed or built-in model name. `allowed_models` restricts which models the Vibe Code clients offer and run. It doesn't restrict API access: enforce access at the provider or API key level to limit which models a user can reach.
+If no configured model matches `allowed_models`, the CLI rejects the entire admin config. Every pattern should match at least one distributed or built-in model name. `allowed_models` restricts which models the Vibe Code clients offer and run. It doesn't restrict API access: enforce access at the provider or API key level to limit which models a user can reach.
 :::
+
+<SectionTab as="h2" sectionId="block-mcp">Block MCP servers</SectionTab>
+
+An empty `mcp_servers` list in admin config doesn't remove the servers users add themselves. To block MCP servers, set `enable_mcp` to `false`:
+
+```toml
+enable_mcp = false
+```
+
+With `enable_mcp = false`, the Vibe Code clients:
+
+- Refuse to add, remove, enable, or disable MCP servers, for example with `vibe mcp` or `/mcp`.
+- Refuse to sign in to or out of OAuth MCP servers.
+- Load no tools from MCP servers, including servers provided by plugins.
+
+Users who try one of these actions see a message that their administrator disabled MCP servers. The clients enforce this setting, so like the rest of admin config, it isn't a security boundary. It requires Vibe Code CLI 3.0 or later. [Connectors](/vibe/code/cli/connectors) have a separate setting, `enable_connectors`.
+
+<SectionTab as="h2" sectionId="block-auto-approve">Block auto-approve</SectionTab>
+
+To stop users from skipping approval prompts with the auto-approve mode, set `enable_auto_approve` to `false`:
+
+```toml
+enable_auto_approve = false
+```
+
+With `enable_auto_approve = false`, the Vibe Code CLI:
+
+- Hides the `auto-approve` agent and every custom agent with `safety = "yolo"`. A session whose `--agent` or `default_agent` names one of them doesn't start and explains that the auto-approve mode is disabled. Users need to pick another default agent.
+- Ignores `--auto-approve` and `--yolo`, and shows a warning that approval prompts stay on.
+
+[Per-tool permissions](/vibe/code/safety-approvals-permissions#set-permissions) still apply: a tool set to `always` in `[tools.<tool_name>]`, or a command in its `allowlist`, still runs without approval. Like the rest of admin config, this setting isn't a security boundary. It requires Vibe Code CLI 3.0.1 or later.
 
 <SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
 
@@ -158,12 +188,12 @@ Admin config never contains literal secrets. Credential fields must reference an
 
 When admin config is active, users in the Vibe Code CLI notice the following:
 
-- Admin-managed settings in `/config` appear dim with a `⚿` lock glyph and list `your administrator` as the origin. A legend at the bottom of the screen reads `⚿ Settings are managed by your organization`.
-- Admin-managed fields are read-only in `/config`. Attempts to edit or reset them have no effect.
-- The model picker is an exception. If a user switches models while `active_model` is admin-managed, a warning explains that the administrator controls the setting.
-- Users see admin-managed markers only when they open `/config`. There is no startup banner or global indicator.
+- Admin-managed settings are read-only in `/config`: users can't edit or reset them. The settings editor's **WHERE IT'S SET** panel lists the administrator as a source.
+- There is no startup banner or global indicator.
 - The CLI fetches admin config in the background at the start of each session. It keeps the configuration in memory and never writes it to the local `config.toml`.
 - If a network or server error prevents the fetch, the session continues without admin config. The CLI logs the failure at debug level and doesn't show a warning.
+- If the CLI can't find a Mistral API key, it skips admin config.
+- If the admin config is invalid, the CLI ignores it and shows: `Your administrator-managed configuration could not be applied: <reason>`.
 
 <SectionTab as="h2" sectionId="disable">Stop applying admin config</SectionTab>
 

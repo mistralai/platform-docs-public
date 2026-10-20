@@ -41,7 +41,7 @@ description = "Reject dangerous shell commands."
 |---|---|---|
 | `name` | yes | Unique identifier. Used to deduplicate between project and user files. |
 | `type` | yes | One of `pre_tool`, `post_tool`, `post_agent`. |
-| `command` | yes | Shell command to spawn. Receives the hook payload on `stdin`. |
+| `command` | yes | Shell command to spawn. Receives the hook payload on `stdin`. On Windows, runs in Git Bash when available, otherwise in PowerShell, like the `bash` tool. |
 | `match` | `pre_tool` / `post_tool` | Tool-name matcher: fnmatch glob, or regex with the `re:` prefix. Case-insensitive. |
 | `timeout` | no | Seconds before the hook is killed. Default: `60`. |
 | `strict` | tool hooks only | When `true`, parse and runtime failures become denials (`pre_tool`) or text clears (`post_tool`) instead of warnings. Default: `false`. |
@@ -75,6 +75,8 @@ Fires per tool call, **before** the user permission prompt. The first deny short
 
 **Receives** (in addition to the session context): `tool_name`, `tool_call_id`, `tool_input` (the model's raw arguments).
 
+`tool_name` is the full tool name, such as `file_system.bash` or `<server>.<tool>` for MCP tools. `match` accepts both full and short names, so `match = "bash"` works. Commands the agent starts in the background go through `process_start` instead of `bash`, so match both in shell guards: `match = "re:bash|process_start"`.
+
 **Can return**:
 
 - `decision: "deny"` + `reason` — denies the tool call; `reason` becomes the tool error that the LLM sees.
@@ -83,17 +85,17 @@ Fires per tool call, **before** the user permission prompt. The first deny short
 
 <SectionTab as="h2" sectionId="post-tool">`post_tool`</SectionTab>
 
-Fires per tool call **if and only if the tool body actually ran**. It does not fire when the tool never executed: `pre_tool` denial, user denial at the approval prompt, permission set to `NEVER`, or cancellation before the body started. Cancellation during the tool body is shielded, so audit hooks still run.
+Fires per tool call **if and only if the tool body actually ran**. It doesn't fire when the tool never ran: `pre_tool` denial, denial at the approval prompt, or permission set to `never`.
 
 **Receives** (in addition to the session context):
 
 - `tool_name`, `tool_call_id`
 - `tool_input` (post-rewrite)
-- `tool_status` — `success`, `failure`, or `cancelled`
+- `tool_status` — `success` or `failure`
 - `tool_output` — structured result dict; `null` on failure
 - `tool_output_text` — the running text the LLM will see, mutable by prior hooks
 - `tool_error`
-- `duration_ms`
+- `duration_ms` — not reported yet (always `0`)
 
 **Can return**:
 
@@ -109,7 +111,7 @@ Fires after every assistant turn that ends without pending tool calls.
 
 **Can return**:
 
-- `decision: "deny"` + `reason` — `reason` is injected as a new user message asking the agent to retry. Capped at **3 retries per hook per user turn**; further denies become terminal warnings.
+- `decision: "deny"` + `reason` — `reason` is injected as a new user message asking the agent to retry. Capped at **3 retries per turn** across all `post_agent` hooks; after that, Vibe accepts the answer. If a `post_agent` hook fails, Vibe accepts the answer and shows a warning.
 - `system_message` — UI-only.
 
 <SectionTab as="h2" sectionId="example">Example: block destructive shell commands</SectionTab>
@@ -120,7 +122,7 @@ Fires after every assistant turn that ends without pending tool calls.
 [[hooks]]
 name = "deny-rm-rf"
 type = "pre_tool"
-match = "bash"
+match = "re:bash|process_start"
 command = "python ./.vibe/hooks/guard-bash.py"
 strict = true
 description = "Reject rm -rf and other destructive shell commands."

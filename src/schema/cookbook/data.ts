@@ -38,7 +38,8 @@ export const FEATURED_USE_CASES = [
   'Structured outputs',
   'Multimodal',
   'Prefix',
-  'Batch'
+  'Batch',
+  'Audio'
 ] as const;
 
 /**

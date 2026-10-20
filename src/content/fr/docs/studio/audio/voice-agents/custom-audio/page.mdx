@@ -1,0 +1,146 @@
+---
+title: Interfaces audio personnalisées
+sidebar_label: Audio personnalisé
+sidebar_position: 6
+description: "Prenez le contrôle des entrées/sorties audio : sous-classez l'interface, ou envoyez et recevez de l'audio brut manuellement."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Interfaces audio personnalisées
+
+Par défaut, le SDK enregistre l'audio depuis votre microphone et le restitue sur vos haut-parleurs. Lorsque l'audio provient d'une autre source ou que vous devez le traiter, vous pouvez reprendre la main à deux niveaux : implémenter votre propre interface audio, ou envoyer et recevoir l'audio vous-même. Les cas typiques sont un flux WebSocket, une passerelle de téléphonie, une visualisation ou un test qui fournit de l'audio enregistré.
+
+<SectionTab as="h2" sectionId="choose-an-integration">Choisir une intégration</SectionTab>
+
+Implémentez une interface audio lorsque vous souhaitez que le SDK continue de gérer la session pendant que vous contrôlez les flux audio, par exemple pour les traiter ou les visualiser, ou pour capter le son depuis un autre périphérique. Gérez l'audio manuellement lorsque vous voulez piloter vous-même l'échange, par exemple depuis un WebSocket, une passerelle téléphonique ou un banc de test.
+
+:::note
+Les deux intégrations utilisent le même format, en entrée comme en sortie : PCM signé 16 bits, mono, 48 kHz. Il s'agit du format audio du SDK, et non du format des endpoints de reconnaissance vocale et de synthèse vocale. Pour ces derniers, consultez [Formats audio](/studio/audio/specs-and-limits/audio-formats).
+:::
+
+<SectionTab as="h2" sectionId="custom-interface">Implémenter une interface personnalisée</SectionTab>
+
+Une interface audio comporte quatre méthodes. Le SDK appelle `start()` à l'ouverture de la session, puis lit votre audio via `input_audio()` et transmet l'audio de l'agent à `output_audio()` tant que la session est en cours. Il appelle `stop()` à la fin de la session, ce qui vous permet de libérer vos ressources. Transmettez votre interface à `init()` avec `audio_interface`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from collections.abc import AsyncIterator
+
+from mistralai.extra.voice_agents import AudioInterface
+
+class MyAudioInterface(AudioInterface):
+    async def start(self) -> None:
+        """Initialize audio resources."""
+        ...
+
+    def input_audio(self) -> AsyncIterator[bytes]:
+        """Yield audio chunks from your source."""
+        ...
+
+    async def output_audio(self, audio: bytes) -> None:
+        """Play or process agent audio output."""
+        ...
+
+    async def stop(self) -> None:
+        """Clean up resources."""
+        ...
+
+# then pass it to init()
+session = await client.audio.sessions.init(
+    llm={"model": "mistral-small-latest"},
+    tts={"voice_id": "fr_marie_neutral"},
+    audio_interface=MyAudioInterface(),
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import type { AudioInterface } from "@mistralai/mistralai/extra/voice-agents";
+
+class MyAudioInterface implements AudioInterface {
+  async start(): Promise<void> {
+    // Initialize audio resources.
+  }
+
+  async *inputAudio(): AsyncIterable<Uint8Array> {
+    // Yield audio chunks from your source.
+  }
+
+  async outputAudio(audio: Uint8Array): Promise<void> {
+    // Play or process agent audio output.
+  }
+
+  async stop(): Promise<void> {
+    // Clean up resources.
+  }
+}
+
+// then pass it to init()
+const session = await client.audio.sessions.init({
+  llm: { model: "mistral-small-latest" },
+  tts: { voiceId: "fr_marie_neutral" },
+  audioInterface: new MyAudioInterface(),
+});
+```
+
+  </TabItem>
+</Tabs>
+
+Pour ne modifier qu'une partie du comportement par défaut, créez une sous-classe de l'interface par défaut plutôt que de partir de zéro.
+
+<SectionTab as="h2" sectionId="manual-audio">Gérer l'audio manuellement</SectionTab>
+
+Si vous ne transmettez pas d'interface audio à `init()`, la session n'enregistre rien et ne restitue rien. Envoyez l'audio à l'agent avec `send_audio()` (`sendAudio()` en TypeScript), et recevez l'audio de l'agent depuis l'événement `audio`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+session = await client.audio.sessions.init(
+    llm={"model": "mistral-small-latest"},
+    tts={"voice_id": "fr_marie_neutral"},
+    instructions="You are a helpful voice assistant.",
+)
+
+# Send audio to the agent (16-bit PCM, mono, 48 kHz)
+await session.send_audio(audio_bytes)
+
+# Receive agent audio output
+session.on("audio", lambda audio: handle_audio(audio))
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const session = await client.audio.sessions.init({
+  llm: { model: "mistral-small-latest" },
+  tts: { voiceId: "fr_marie_neutral" },
+  instructions: "You are a helpful voice assistant.",
+});
+
+// Send audio to the agent (16-bit PCM, mono, 48 kHz)
+await session.sendAudio(audioBytes);
+
+// Receive agent audio output
+session.on("audio", (audio) => handleAudio(audio));
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Gérer les sessions d'agent" />
+  <LinkCard href="/studio/audio/voice-agents/browser" title="Guide navigateur (TypeScript)" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Authoritative source: dashboard repo, voice_agents_sdk/docs/docs/ (SDK 0.5.0, dashboard@ffed1e6b333) local-audio/ — custom-audio-interface.mdx and manual-audio.mdx, both complete with samples. Port verbatim. Verify at the end: the two levels (subclass vs manual) are distinct, the PCM format callout present. */}

@@ -1,0 +1,381 @@
+---
+title: File transcription
+sidebar_label: File transcription
+sidebar_position: 1
+description: "Transcribe recorded audio: send a file, a URL, or an uploaded file, pin the language, get segment timestamps, and stream the response."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+
+# File transcription
+
+File transcription turns a recording you already have, such as a call, a meeting, or a podcast episode, into text with a single request. This page shows how to send the audio, which request fields change the result, and how to get timestamps or a streamed response.
+
+<CtaButton href="/api/endpoint/audio/transcriptions#operation-audio_api_v1_transcriptions_post">API reference — POST /v1/audio/transcriptions</CtaButton>
+
+:::info
+File transcription is the offline mode: the whole recording exists before you send it. For audio that's still being recorded, such as a microphone or a phone line, use [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime). [Offline and realtime audio](/studio/audio/concepts/offline-and-realtime) explains how the two modes differ.
+:::
+
+<SectionTab as="h2" sectionId="choose-input">Choose your audio input</SectionTab>
+
+The audio reaches the API in one of three ways, and each request uses exactly one of them:
+
+| Input | Field | Use it when |
+| --- | --- | --- |
+| Audio file | `file` | The recording is on your machine or your server. |
+| Audio URL | `file_url` | The recording is already hosted at a URL the API can reach. |
+| Uploaded file | `file_id` | You uploaded the recording to the Files API with `purpose=audio`, for example to transcribe it several times. |
+
+Each tab shows only the part of the request that changes. The rest of the request is the same as in [Make a request and read the result](#make-a-request).
+
+<Tabs groupId="input">
+  <TabItem value="file" label="Audio file" default>
+
+```bash
+  -F file=@obama.mp3
+```
+
+  </TabItem>
+  <TabItem value="url" label="Audio URL">
+
+```bash
+  -F file_url=https://docs.mistral.ai/audio/obama.mp3
+```
+
+  </TabItem>
+  <TabItem value="uploaded" label="Uploaded file ID">
+
+```bash
+# Upload the file once with purpose=audio, then pass the returned id
+curl https://api.mistral.ai/v1/files \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F purpose=audio \
+  -F file=@obama.mp3
+
+  -F file_id=$FILE_ID
+```
+
+  </TabItem>
+</Tabs>
+
+{/* TESTED Oct 7 (stt agent): each fragment is the differing line of a complete tested request — transcribe-files/input_file.sh, input_url.sh, input_file_id.sh (upload with purpose=audio, transcribe by file_id, then DELETE /v1/files/{id}). All three returned the same transcript on the live interim ID voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. */}
+
+:::tip
+When you no longer need an uploaded recording, delete it with `DELETE /v1/files/{file_id}`.
+:::
+
+For the accepted audio formats and the maximum file size, see [Audio formats](/studio/audio/specs-and-limits/audio-formats) and [Limits](/studio/audio/specs-and-limits/limits).
+
+<SectionTab as="h2" sectionId="make-a-request">Make a request and read the result</SectionTab>
+
+This request sends a local recording of a support call and returns its transcript:
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@customer_call.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("customer_call.wav", "rb") as audio:
+    transcription = client.audio.transcriptions.complete(
+        model="voxtral-mini-transcribe-3",
+        file={"file_name": "customer_call.wav", "content": audio},
+    )
+
+print(transcription.model_dump_json(indent=2))
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const transcription = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-transcribe-3",
+  file: { fileName: "customer_call.wav", content: await readFile("customer_call.wav") },
+});
+
+console.log(JSON.stringify(transcription, null, 2));
+```
+
+  </TabItem>
+</Tabs>
+
+The response holds the full transcript in `text`:
+
+```json
+{
+  "model": "voxtral-mini-transcribe-3",
+  "text": "Thanks for calling Northwind Support. This is Daniel. How can I help you today? Hi Daniel. I ordered two Quilliera headsets last week. Order 4417. And the tracking page still says pending. [...] Of course. I will email the tracking link today and ask billing to issue the invoice by Friday. Perfect. Thank you.",
+  "language": null,
+  "segments": [],
+  "usage": {
+    "prompt_audio_seconds": 34,
+    "prompt_tokens": 3,
+    "total_tokens": 879,
+    "completion_tokens": 126,
+    "prompt_tokens_details": {
+      "cached_tokens": 1,
+      "audio_tokens": 750
+    },
+    "service_tier": "standard"
+  },
+  "finish_reason": null
+}
+```
+
+{/* TESTED Oct 9 (neutral recapture): transcribe-files/transcribe.{sh,py} on customer_call.wav (examples/stt/fixtures/make_neutral_fixtures.py: neutral two-voice Northwind support call, 34.9 s, synthesized with voxtral-mini-tts-3-0 on the presets en_paul_neutral (agent) and gb_jane_neutral (customer), the presets listed in the Oct 9 key's workspace), the same recording as Diarize speakers, Bias context and vocabulary, Turn detection, and Realtime transcription, so readers follow one call across the section. Without context_bias, the product name "Quillara" comes out as "Quilliera" and the company "Alder Creek Design" as "Older Creek Design"; Bias context and vocabulary fixes both on the same file. Response captured on the interim alias voxtral-transcribe-3 (text cut with [...]), "model" shown with the documented ID (the field echoes the requested ID). voxtral-mini-transcribe-3-0 is the final ID (Rakesh, Oct 7); on Oct 9 it still returned 400 "Invalid model" (rename pending). Also ran on voxtral-small-transcribe-3-0 ("Quilara", order number spelled out). The Python tab prints the same fields, ordered by the SDK model. Replaces the Oct 7 capture on demo 01's call (internal names). Swap for Ben's P0 asset if preferred, and recapture. */}
+
+The other fields:
+
+- `segments` stays empty unless you ask for [timestamps](#timestamps).
+- `language` is `null`, even when you pin the language. To get the detected language in the response when you don't pin it, set `return_language` to `true`.
+- `usage.prompt_audio_seconds` is the duration of the audio the model processed, in seconds.
+
+<SectionTab as="h3" variant="secondary" sectionId="request-fields">Useful request fields</SectionTab>
+
+These fields change what you get back. Send them as multipart form fields. For every field, see the [API reference](/api/endpoint/audio/transcriptions#operation-audio_api_v1_transcriptions_post).
+
+| Field | What it does | Details |
+| --- | --- | --- |
+| `model` | Required. `voxtral-mini-transcribe-3` or `voxtral-small-transcribe-3`. | [Choose your model](/studio/audio/speech-to-text/overview#choose-your-model) |
+| `file`, `file_url`, or `file_id` | The audio to transcribe. Send exactly one. | [Choose your audio input](#choose-input) |
+| `language` | The language of the audio, as a two-letter code such as `fr`. Leave it out to let the model detect it. | [Pin the language](#pin-the-language) |
+| `timestamp_granularities` | Set it to `segment` to get each segment of the transcript with its start and end time. Leave it out for text only. Word-level timestamps aren't available. | [Timestamps](#timestamps) |
+| `diarize` | Set it to `true` to label each segment with its speaker. Requires `timestamp_granularities=segment`. | [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers) |
+| `context_bias` | Names and terms the model should spell right, or a sentence that describes the recording. Repeat the field once per entry. [Custom vocabulary](/studio/audio/concepts/custom-vocabulary) explains when it helps. | [Bias context and vocabulary](/studio/audio/speech-to-text/bias-context-and-vocabulary) |
+| `stream` | Set it to `true` to receive the transcript in pieces as server-sent events. | [Stream the response](#stream-the-response) |
+
+{/* Rows: field names and types from public/openapi.yaml (AudioTranscriptionRequest). timestamp_granularities: segment only, word returns 400 "Word-level segments are not enabled for this model" on both v3 offline models (Oct 7, timestamps_word.sh), CONFIRMED Rakesh Oct 9 (none or segment). diarize without segment: 422 (Oct 7). context_bias repeated as one multipart field per entry (Oct 7); the OpenAPI item pattern ^[^,\s]+$ forbids spaces but multi-word entries and sentences work (handoff-stt item 8). */}
+
+<SectionTab as="h3" variant="secondary" sectionId="pin-the-language">Pin the language</SectionTab>
+
+By default, the model detects the language of the recording. When you know it in advance, pass it in `language` as a two-letter ISO 639-1 code:
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@meeting_fr.wav \
+  -F language=fr
+```
+
+{/* TESTED Oct 7 (stt agent): transcribe-files/pin_language.sh, on demo 02's French meeting (meeting_fr.wav, language pinned as in the demo). Accepted on the live interim ID voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. The response "language" field stays null even when language is set. An invalid code (language=zz) returns 422 "Invalid language alpha2 code" — not the 400 listing the model's valid codes described in RFC-555 section 5.2. */}
+
+Pinning the language can improve accuracy. Leave it out when the language can vary from one recording to the next. For the supported languages and their codes, see [Languages](/studio/audio/specs-and-limits/languages).
+
+{/* "Can improve accuracy": API reference description of the language field ("Providing the language can boost accuracy."). No accuracy comparison was run. */}
+
+<SectionTab as="h2" sectionId="timestamps">Timestamps</SectionTab>
+
+Segment timestamps tell you when each part of the transcript was spoken, which you need for subtitles, for speaker labels, and to jump to a moment in the recording. Add `timestamp_granularities=segment` to the request:
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@customer_call.wav \
+  -F timestamp_granularities=segment
+```
+
+The response keeps the full `text` and fills `segments`. Here are the first three:
+
+```json
+{
+  "segments": [
+    {
+      "type": "transcription_segment",
+      "text": "Thanks for calling Northwind Support.",
+      "start": 0.0,
+      "end": 1.6,
+      "speaker_id": null
+    },
+    {
+      "type": "transcription_segment",
+      "text": " This is Daniel.",
+      "start": 1.7,
+      "end": 2.4,
+      "speaker_id": null
+    },
+    {
+      "type": "transcription_segment",
+      "text": " How can I help you today?",
+      "start": 2.6,
+      "end": 3.5,
+      "speaker_id": null
+    }
+  ]
+}
+```
+
+{/* TESTED Oct 9 (neutral recapture): transcribe-files/timestamps.sh on customer_call.wav, excerpt of the response on the interim alias voxtral-transcribe-3 (17 segments; also ran on voxtral-small-transcribe-3-0). start and end are in seconds; speaker_id is null without diarize (see Diarize speakers). Segment text keeps its leading space. No "score" field was returned, unlike the RFC-555 section 1.5 example (Oct 7 and Oct 9). */}
+
+Each segment has:
+
+- `text`: the words of the segment. It keeps its leading space, so you can join the segments back into the full transcript.
+- `start` and `end`: the time of the segment in the recording, in seconds.
+- `speaker_id`: `null` unless you also set `diarize`, see [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers).
+
+:::note
+Timestamps are available per segment only. A request for word-level timestamps returns an error.
+:::
+
+<SectionTab as="h2" sectionId="stream-the-response">Stream the response</SectionTab>
+
+With `stream=true`, the API sends the transcript in pieces as it's written, so your application can show the first words of a long recording without waiting for the full result:
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -N https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@customer_call.wav \
+  -F stream=true
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("customer_call.wav", "rb") as audio:
+    with client.audio.transcriptions.stream(
+        model="voxtral-mini-transcribe-3",
+        file={"file_name": "customer_call.wav", "content": audio},
+    ) as events:
+        for event in events:
+            if event.event == "transcription.text.delta":
+                print(event.data.text, end="", flush=True)
+            elif event.event == "transcription.done":
+                print(f"\n\nDone: {event.data.usage.prompt_audio_seconds} s of audio")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const events = await client.audio.transcriptions.stream({
+  model: "voxtral-mini-transcribe-3",
+  file: { fileName: "customer_call.wav", content: await readFile("customer_call.wav") },
+});
+
+for await (const event of events) {
+  if (event.data.type === "transcription.text.delta") {
+    process.stdout.write(event.data.text);
+  } else if (event.data.type === "transcription.done") {
+    console.log(`\n\nDone: ${event.data.usage.promptAudioSeconds} s of audio`);
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+
+The stream is a series of server-sent events:
+
+```text
+event: transcription.text.delta
+data: {"type":"transcription.text.delta","text":"Thanks"}
+
+event: transcription.text.delta
+data: {"type":"transcription.text.delta","text":" for"}
+
+...
+
+event: transcription.done
+data: {"model":"voxtral-mini-transcribe-3","text":"Thanks for calling Northwind Support. [...]","language":null,"segments":[],"usage":{"prompt_audio_seconds":34,...},"finish_reason":null,"type":"transcription.done"}
+```
+
+{/* TESTED Oct 9 (neutral recapture): transcribe-files/stream.{sh,py} on customer_call.wav, on the interim alias voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. Event names are transcription.text.delta then transcription.done (the done event carries the full response plus "type"); no transcription.language event was emitted (Oct 7 and Oct 9). The text block is an abbreviated capture, "model" shown with the documented ID. The SDK yields events with .event (name) and .data (typed payload). */}
+
+To consume it:
+
+1. Append the `text` of each `transcription.text.delta` event to what you display.
+2. On `transcription.done`, use its payload as the final result: it has the same fields as a response without streaming, including `usage`.
+
+The API reference lists the other event types a stream can carry: `transcription.language`, `transcription.segment.delta` (with `speaker_id`, `start`, and `end`), and `transcription.done`.
+
+:::info
+Streaming doesn't make the transcription itself faster, and it isn't realtime transcription: the whole recording is sent first, and only the result arrives in pieces. See [Latency](/studio/audio/concepts/latency#offline-requests).
+:::
+
+<SectionTab as="h2" sectionId="common-issues">Common issues</SectionTab>
+
+These errors come from a request field. Fix the field and send the request again:
+
+| Error | Cause | Fix |
+| --- | --- | --- |
+| 400 `Word-level segments are not enabled for this model` | `timestamp_granularities=word` | Use `segment`. |
+| 422 when you set `diarize` | Diarization without segment timestamps | Add `timestamp_granularities=segment`. |
+| 422 `Invalid language alpha2 code` | `language` isn't a two-letter code | Use a code from [Languages](/studio/audio/specs-and-limits/languages), such as `en` or `fr`. |
+| 400 `maximum context length` | The audio and the `context_bias` entries together are over the model's context. Nothing is cut: the request fails. | Shorten the `context_bias` list, see [Bias context and vocabulary](/studio/audio/speech-to-text/bias-context-and-vocabulary). |
+
+:::tip
+For problems with the transcript itself, such as noisy audio, overlapping speakers, or misspelled names, see [Speech to Text troubleshooting](/studio/audio/speech-to-text/troubleshooting).
+:::
+
+{/* Errors: captured Oct 7 — word: out/probes/word_voxtral-transcribe-3.json (400, code 3051); diarize without segment: 422 (handoff-stt item 3); invalid language: out/probes/lang_xx_voxtral-transcribe-3.json (422, pydantic detail); context: handoff-stt item 8 (400, code 3059). */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Diarize speakers" />
+  <LinkCard href="/studio/audio/speech-to-text/bias-context-and-vocabulary" title="Bias context and vocabulary" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Inputs file / file_url / file_id, one per request, purpose=audio upload, DELETE afterwards: Oct 7 tests
+     (transcribe-files/input_*.sh, results.csv), field names and file_url max length in public/openapi.yaml.
+   - Base request and response, language null, segments empty, usage: transcribe.{sh,py} (Oct 7; outputs recaptured Oct 9 on
+     the neutral customer_call.wav).
+   - Request fields: public/openapi.yaml (AudioTranscriptionRequest); segment only CONFIRMED Rakesh Oct 9;
+     diarize requires segment (422, Oct 7); context_bias one field per entry (Oct 7). temperature and verbatim
+     left out (Draft, Rakesh).
+   - Pin the language: pin_language.sh on a French meeting (Oct 7); "can improve accuracy" from the API reference
+     field description; invalid code 422 (probe lang_xx).
+   - Timestamps: timestamps.sh (Oct 7), word 400 (timestamps_word.sh), CONFIRMED Rakesh Oct 9.
+   - Streaming: stream.{sh,py} (Oct 7), events text.delta then done; language and segment events listed in the
+     OpenAPI schema but not observed ().
+   - Long audio: design spec only (RFC-555 section 1.2), so a Draft, no section, no figure.
+   - Common issues: probes and handoff-stt items 2, 3, 8, 9.
+   - "Why" content linked, not repeated: offline vs realtime and streaming vs realtime (concepts/offline-and-realtime,
+     concepts/latency#offline-requests); biasing (concepts/custom-vocabulary via Bias context and vocabulary). */}
+
+{/* Feature page — audio docs revamp (DOC-610). Reordered per skeleton review S07: input methods first (one decision, tabs), ONE request walkthrough with the base result before options and timestamps; Request fields trimmed to decision-relevant rows with a link to the reference; SSE as a mini consumption walkthrough. Written Oct 9 from the skeleton. Verify at the end: input tabs show only the differing part (no complete request in the tabs), no two complete requests for the same file, base response shown before segments, the sample clip + transcript demo is in place (Draft, Ben), API facts link to the reference, no realtime content, temperature/verbatim and long audio answered by Rakesh, response "language" still null on the launch model. */}

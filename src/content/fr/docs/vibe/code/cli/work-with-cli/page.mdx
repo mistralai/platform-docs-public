@@ -20,7 +20,7 @@ vibe
 Vous pouvez aussi démarrer avec un prompt initial :
 
 ```bash
-vibe "Refactorisez la fonction principale dans cli/main.py pour la rendre plus modulaire."
+vibe "Refactor the main function in cli/main.py to be more modular."
 ```
 
 Le CLI lance une interface de chat dans le terminal. Depuis cette interface, vous pouvez enchainer les tâches de codage, référencer des fichiers, exécuter des commandes shell et changer d’agent sans quitter le terminal.
@@ -34,8 +34,10 @@ Le mode interactif est le mode par défaut. Utilisez-le pour explorer, enchaîne
 Ajoutez le préfixe `@` devant un chemin pour joindre un fichier à votre prompt. Le CLI propose l’autocomplétion pendant la saisie :
 
 ```text
-> Lis le fichier @src/agent.py et suggère des améliorations.
+> Read the file @src/agent.py and suggest improvements.
 ```
+
+Pour joindre une image, mentionnez-la avec `@` ou collez son chemin d'accès. Sur macOS, vous pouvez aussi coller une image depuis le presse-papiers avec `Ctrl+V` ou `/paste-image`. Les images sont utilisables lorsque le modèle actif les prend en charge ou qu'un `vision_model` est configuré.
 
 <SectionTab as="h3" variant="secondary" sectionId="builtin-commands">Exécutez des commandes intégrées avec `/`</SectionTab>
 
@@ -53,21 +55,29 @@ Ajoutez le préfixe `!` devant une commande pour l’exécuter directement dans 
 > !ls -l
 ```
 
+L'agent utilise la commande et sa sortie en tant que contexte pour votre prochain message.
+
 <SectionTab as="h3" variant="secondary" sectionId="cloud-session">Envoyez un prompt à une session cloud avec `&`</SectionTab>
 
 Ajoutez le préfixe `&` devant votre prompt pour l’exécuter dans une sandbox Vibe Code Web. Le CLI vous renvoie un lien vers la session cloud.
 
 ```text
-> & corriger les tests en échec
+> & fix the failing tests
 ```
 
 Voir [Téléportation du CLI vers le web](/vibe/code/cli/teleport-cli-web) pour les prérequis et limitations.
+
+<SectionTab as="h3" variant="secondary" sectionId="queue-messages">Envoyer des messages pendant que l'agent travaille</SectionTab>
+
+Appuyez sur `Enter` pendant que l'agent travaille pour mettre un message en file d'attente. Vibe envoie tous les messages en attente ensemble à la fin du tour. Pour les transmettre à l'agent avant la fin du tour, appuyez à nouveau sur `Enter` avec un champ de saisie vide.
+
+Appuyez sur `Up` pour sélectionner un message en attente, puis sur `Enter` pour le modifier ou sur `Backspace` pour le supprimer. `Escape` interrompt l'agent et met la file d'attente en pause ; appuyez sur `Enter` pour envoyer les messages en pause. Les commandes shell (`!`) et la plupart des commandes slash attendent que l'agent soit inactif.
 
 <SectionTab as="h3" variant="secondary" sectionId="in-session-shortcuts">Raccourcis en session utiles</SectionTab>
 
 | Raccourci | Action |
 |---|---|
-| `Shift+Tab` | Faites défiler les agents (par défaut, plan, accept-edits, smart-approve, auto-approve). |
+| `Shift+Tab` | Passer d'un agent à l'autre (ask, accept-edits, smart-approve, auto-approve). |
 | `Ctrl+O` | Afficher/masquer la sortie des outils. |
 | `Ctrl+G` | Modifier votre saisie en cours dans un éditeur externe. |
 | `Échap` | Interrompre l’opération en cours. |
@@ -76,39 +86,61 @@ Voir [Commandes et raccourcis](/vibe/code/cli/commands-shortcuts) pour la liste 
 
 <SectionTab as="h2" sectionId="programmatic-mode">Mode programmatique</SectionTab>
 
-Le mode programmatique est conçu pour **les scripts, les tâches CI, et tout usage non interactif**. Utilisez l’option `--prompt` pour exécuter une seule tâche et quitter :
+Le mode programmatique est conçu pour **les scripts, les tâches de CI et tout usage non interactif**. Utilisez l'option `--prompt` (`-p`) pour exécuter une seule tâche, puis quitter :
 
 ```bash
-vibe --prompt "Analyse la base de code" --max-turns 5 --output json
+vibe --prompt "Analyze the codebase" --max-turns 5 --output json
 ```
 
-Le mode programmatique ne lance pas l’interface de chat et désactive les outils interactifs comme la demande de précision. Par défaut, il utilise l’agent `auto-approve`.
+Vous pouvez aussi lire le prompt depuis un fichier avec `--prompt-file PATH`, ou le transmettre via un pipe sur l'entrée standard avec `-p` sans texte.
+
+Le mode programmatique ne lance pas l'interface de conversation et désactive les outils interactifs tels que la demande de précision. Il utilise votre `default_agent` (`accept-edits` si vous ne le modifiez pas). Personne ne peut répondre à une demande d'approbation, donc Vibe refuse tout appel d'outil qui en nécessite une. Pour approuver tous les appels d'outils, passez `--auto-approve` (ou son alias `--yolo`) :
+
+```bash
+vibe --prompt "Fix the failing tests" --auto-approve
+```
+
+Si votre administrateur définit [`enable_auto_approve = false`](/vibe/code/cli/admin-config#block-auto-approve), Vibe ignore `--auto-approve`. Autorisez plutôt les outils dont l'exécution a besoin avec [`permission = "always"`](/vibe/code/safety-approvals-permissions#set-permissions) ou une [`allowlist`](/vibe/code/safety-approvals-permissions#bash-allow-deny).
 
 Options utiles :
 
 - `--max-turns N` limite le nombre de tours de l’assistant. **Recommandé** pour borner la durée.
-- `--enabled-tools TOOL` limite les outils accessibles à l’agent. Accepte noms exacts, glob (`bash*`), et regex avec préfixe `re:` (`re:^serena_.*$`).
-- `--output text|json|streaming` définit le format de sortie.
+- `--max-tokens N` limite le nombre total de tokens du prompt et de la réponse pour l'exécution.
+- `--time-limit SECONDS` arrête l'exécution après le délai indiqué. Vous pouvez reprendre la session plus tard. `SIGTERM` arrête une exécution de la même manière.
+- `--enabled-tools TOOL` limite les outils que l'agent peut utiliser et désactive tous les autres. Cette option accepte les noms exacts, les glob patterns (`bash*`) et les expressions régulières avec le préfixe `re:` (`re:^serena_.*$`). Répétez l'option pour plusieurs outils.
+- `--disabled-tools TOOL` désactive des outils après le filtrage par `--enabled-tools`. Répétez l'option pour plusieurs outils.
+- `--output text|json|streaming` définit le format de sortie. `text` (par défaut) affiche la réponse finale, `json` affiche les messages de la session sous forme de tableau JSON à la fin de l'exécution, et `streaming` affiche un objet JSON par message au fil de l'exécution.
+- `--output-dir DIR` écrit dans `DIR` un fichier `export.json` (version de Vibe, configuration effective, consommation de tokens, coût, motif d'arrêt et résultat) et une copie de la session, quelle que soit la manière dont l'exécution se termine. L'export liste aussi chaque sous-agent avec son statut, son modèle, sa consommation de tokens, son coût et ses étapes, et copie sa session.
+
+Avant de se terminer, une exécution programmatique attend les sous-agents que son dernier tour a laissés en cours d'exécution. `--time-limit` et les autres arrêts les interrompent.
 
 :::warning
 Le CLI expose aussi une option `--max-price DOLLARS`, mais les valeurs de prix sous-jacentes proviennent du fichier de configuration et peuvent être absentes ou obsolètes. Considérez le coût affiché comme **purement indicatif** : ne vous fiez pas à cette valeur pour un contrôle budgétaire strict.
 :::
 
+Le code de sortie indique comment l'exécution s'est terminée :
+
+| Code de sortie | Signification |
+|---|---|
+| `0` | L'agent a terminé. |
+| `1` | L'exécution n'a pas pu démarrer, par exemple à cause d'une option ou d'une configuration invalide. |
+| `2` | L'API du modèle ou l'environnement d'exécution a rencontré une erreur. |
+| `3` | L'agent s'est arrêté avant de terminer : une limite a été atteinte, l'exécution a été arrêtée ou le modèle a refusé de répondre. |
+
 <SectionTab as="h2" sectionId="approval">Choisir la gestion des validations par le CLI</SectionTab>
 
-Le CLI intègre plusieurs agents par défaut. Sélectionnez-en un avec `--agent` :
+La CLI inclut plusieurs agents intégrés. Par défaut, elle utilise `accept-edits`. Choisissez-en un autre avec `--agent` :
 
 ```bash
-vibe --agent plan
-vibe --agent accept-edits
+vibe --agent ask
 vibe --agent smart-approve
 vibe --agent auto-approve
 ```
 
-Changez d’agent en cours de session (mode interactif uniquement) avec `Shift+Tab`. Définissez l’agent interactif par défaut dans `config.toml` :
+Changez d'agent en cours de session (en mode interactif uniquement) avec `Shift+Tab`. Définissez l'agent par défaut pour les sessions interactives et programmatiques dans `config.toml` :
 
 ```toml
-default_agent = "plan"
+default_agent = "ask"
 ```
 
 Voir [Agents](/vibe/code/cli/agents) pour la liste complète et leurs comportements.
@@ -122,7 +154,7 @@ Pour les tâches impliquant de nombreuses modifications de fichiers ou commandes
 3. **Affiche le résultat** après chaque étape.
 
 :::tip
-Utilisez l’agent `plan` pour obtenir un aperçu en lecture seule avant toute modification. Voir [Agents](/vibe/code/cli/agents).
+Utilisez l'agent `ask` pour examiner chaque appel d'outil, y compris les modifications de fichiers, avant son exécution. Consultez [Les agents](/vibe/code/cli/agents).
 :::
 
 <SectionTab as="h2" sectionId="trust-folders">Dossiers de confiance</SectionTab>
@@ -138,11 +170,37 @@ Les dossiers approuvés sont conservés dans `~/.vibe/trusted_folders.toml`.
 Le CLI peut reprendre là où votre travail s’est arrêté :
 
 - `vibe --continue` (ou `-c`) reprend la session la plus récente.
-- `vibe --resume SESSION_ID` relance une session spécifique. Les IDs partiels sont acceptés.
-- `/resume` (ou `/continue`) dans une session ouvre un navigateur des sessions précédentes.
+- `vibe --resume` ouvre un sélecteur de sessions passées.
+- `vibe --resume SESSION_ID` reprend une session spécifique. Les identifiants partiels sont pris en charge. En mode programmatique, combinez `-p` avec `--continue` ou `--resume SESSION_ID` pour continuer une session enregistrée.
+- `/resume` (ou `/continue`) ouvre le même sélecteur depuis une session. Appuyez deux fois sur `d` pour supprimer la session sélectionnée.
+- `/branch` crée une nouvelle session à partir de la conversation actuelle. Vous pouvez la reprendre plus tard, et la session actuelle reste inchangée.
+- `/rewind` (ou deux pressions sur `Escape` avec un champ de saisie vide) revient à un message précédent pour vous permettre de le modifier et de continuer à partir de là.
 
-La reprise de session nécessite l’activation des logs, qui est activée par défaut. Si la fonction de reprise ne fonctionne plus après modification de la configuration, vérifiez que la journalisation est toujours activée dans `~/.vibe/config.toml` :
+Une session reprise ou continuée conserve le dernier agent sur lequel elle s'est exécutée, même si votre `default_agent` a changé ou si vous passez un autre `--agent`. Changez d'agent dans la session pour le modifier. Si cet agent n'est plus disponible, Vibe utilise `--agent` ou votre `default_agent` à la place.
+
+Le sélecteur, `--continue` et `--resume` sans identifiant ne répertorient que les sessions démarrées dans le répertoire courant. `--resume SESSION_ID` fonctionne depuis n'importe quel répertoire. Vibe 3.0 peut toujours reprendre les sessions enregistrées par Vibe 2.0 et les versions ultérieures, mais pas celles enregistrées par Vibe 1.x.
+
+La reprise d'une session nécessite la journalisation des sessions, activée par défaut. Si la reprise ne fonctionne plus après une modification de votre configuration, vérifiez que la journalisation est toujours activée dans `~/.vibe/config.toml` :
 
 ```toml
-log_interactions = true
+[session_logging]
+enabled = true
 ```
+
+<SectionTab as="h2" sectionId="worktrees">Travailler dans un git worktree</SectionTab>
+
+Utilisez `--worktree` pour exécuter une session dans son propre [git worktree](https://git-scm.com/docs/git-worktree), afin de garder les modifications de l'agent séparées de votre copie de travail actuelle :
+
+```bash
+vibe --worktree my-feature
+```
+
+Vibe crée le worktree dans `~/.vibe/worktrees/` sur une branche nommée `my-feature`, ou le réutilise s'il existe déjà. Sans nom explicite, Vibe nomme le worktree à partir de votre prompt. Placez le prompt en premier, car `--worktree` interprète l'argument suivant comme le nom :
+
+```bash
+vibe "Fix the login bug" --worktree
+```
+
+À la fin d'une session interactive, Vibe supprime le worktree qu'il a créé s'il ne contient aucune modification. Sinon, il vous demande confirmation. Les exécutions programmatiques conservent le worktree.
+
+`--worktree` considère le worktree comme fiable pour cette exécution : vous n'avez donc pas besoin de `--trust`. Combinez cette option avec `-c` ou `--resume` pour reprendre une session démarrée dans ce worktree.

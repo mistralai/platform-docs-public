@@ -1,0 +1,59 @@
+---
+title: Languages
+sidebar_label: Languages
+sidebar_position: 1
+description: "How each Voxtral 3 model handles languages for transcription, speech generation, and translation, and where to find its supported languages."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Languages
+
+This page shows how each audio capability handles languages, and which languages each Voxtral 3 model supports. Coverage differs by model and by mode, so check the model you use.
+
+<SectionTab as="h2" sectionId="how-languages-work">How each capability handles languages</SectionTab>
+
+Each capability sets or detects the language in its own way:
+
+| Capability | How the language is set | Without a language | Details |
+| --- | --- | --- | --- |
+| File transcription | `language`, a two-letter ISO 639-1 code such as `fr`. Any other value returns a `422` error. | The model detects the language of the recording. | [Pin the language](/studio/audio/speech-to-text/transcribe-files#pin-the-language) |
+| Realtime transcription | `language` in `session.update`, the same two-letter code | The model detects the language of the audio. | [Session fields](/studio/audio/speech-to-text/transcribe-in-realtime#session-fields) |
+| Speech generation | Write `input` in the language to speak. Each preset voice has a language and an accent of its own. | Not applicable | [Voices](/studio/audio/text-to-speech/voices) and [Use a cloned voice in other languages](/studio/audio/text-to-speech/voice-cloning#use-across-languages) |
+| Translation | The prompt of an audio in chat request, such as "Translate this call into French" | Not applicable | [Audio in chat completions](/studio/audio/audio-in-chat) |
+
+{/* Sources: language field pattern ^\w{2}$ (public/openapi.yaml) and 422 "Invalid language alpha2 code" (Oct 7, offline and realtime); auto-detection offline (API reference field description, transcribe-files) and realtime (Oct 9 probe: French clip without language came back in French, identical to language=fr). Speech generation: the voice carries the accent, cross-lingual cloning tested Oct 7 (xling_clone_es/fr); voice languages on Voices. Translation: demo 02 (audio in chat, text output). */}
+
+<SectionTab as="h2" sectionId="languages-by-model">Supported languages by model</SectionTab>
+
+Each model has its own list of supported languages:
+
+| Model | Capability | Supported languages |
+| --- | --- | --- |
+| `voxtral-mini-transcribe-3-0` | File transcription | 50 languages |
+| `voxtral-small-transcribe-3-0` | File transcription | 50 languages |
+| `voxtral-mini-transcribe-realtime-3-0` | Realtime transcription | 45 languages and dialects |
+| `voxtral-mini-tts-3-0` | Speech generation | 35 languages, 50+ dialects |
+
+<SectionTab as="h2" sectionId="translation">Translation</SectionTab>
+
+Translation is a task of [audio in chat completions](/studio/audio/audio-in-chat): the model listens to the audio and writes the translation as text.
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="File transcription" />
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Voices" />
+  <LinkCard href="/studio/audio/audio-in-chat" title="Audio in chat completions" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): language counts NOT settled (audio-sources-doc610.md, Rakesh Sept 28 "I need to confirm this", R159):
+   STT 58 (launch page) vs 50 "batch or live" (all-hands) vs 13 L1 + about 45 (RFC-555); realtime L1 only (RFC-555 2.2) vs 50
+   (all-hands); TTS 35 + ~50 dialects (PRD, launch page) vs 36 + 53 (all-hands). Hence no number and one Draft per model
+   (brief, Oct 9). Premier removed (Gregory, Oct 9). */}
+
+{/* Reference page (layer 5) — audio docs revamp (DOC-610). Moved Sept 24 from /studio/audio/speech-to-text/languages and
+   widened: TTS language and dialect coverage and translation pairs had no reference home. The "Specify a language" how-to
+   lives on File transcription and Realtime transcription. Verify at the end: one list per model, lookup order, caveats per
+   row, counts identical to the hub and the overviews, no code. */}

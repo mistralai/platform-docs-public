@@ -1,0 +1,187 @@
+---
+title: Guide navigateur (TypeScript)
+sidebar_label: Guide navigateur
+sidebar_position: 5
+description: "Exécuter des agents audio dans le navigateur avec une session assistée par le serveur."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Guide navigateur (TypeScript)
+
+Ce guide explique comment exécuter un agent audio dans une page web avec le SDK TypeScript. La différence avec le parcours local tient à la sécurité : votre clé API ne doit jamais atteindre le navigateur. Votre serveur crée donc la session, et la page se connecte avec les identifiants renvoyés par le serveur. Le navigateur enregistre et lit lui-même l'audio avec `getUserMedia()`. Il n'y a donc aucun outil audio à installer.
+
+<SectionTab as="h2" sectionId="how-it-works">Comment fonctionne le flux navigateur</SectionTab>
+
+```text
+Browser  --(1) ask for a session-->  Your server  --(2) create session, with the API key-->  Mistral
+Browser  <--(3) session credentials--  Your server
+Browser  <=====(4) audio, in real time=====>  Mistral
+```
+
+1. La page demande une session à votre serveur.
+2. Votre serveur la crée avec sa clé API.
+3. Votre serveur renvoie l'ID de session et les identifiants de connexion à la page.
+4. La page les utilise pour se connecter et diffuse l'audio directement. Lorsque la conversation se termine, la page demande à votre serveur de fermer la session.
+
+<SectionTab as="h2" sectionId="prerequisites">Prérequis</SectionTab>
+
+- Le SDK navigateur est disponible uniquement en TypeScript.
+- Un serveur, ou une route serverless, qui conserve votre clé API et crée des sessions.
+- Un contexte sécurisé pour la page, HTTPS ou `localhost`, pour que le navigateur puisse accéder au microphone.
+
+<SectionTab as="h2" sectionId="server">Créer la session sur votre serveur</SectionTab>
+
+`Mistral` expose les endpoints de session via `client.audio.sessions`. Ce gestionnaire de route Next.js crée une session avec les options envoyées par la page, renvoie ce dont la page a besoin pour se connecter, et ferme la session à la demande :
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY! });
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const session = await client.audio.sessions.create({
+    instructions: body.instructions,
+    llm: body.llm,
+    stt: body.stt,
+    tts: body.tts,
+    tools: body.tools,
+  });
+  return Response.json({
+    id: session.id,
+    participantToken: session.participantToken,
+    serverUrl: session.serverUrl,
+  });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const sessionId = searchParams.get("sessionId")!;
+  await client.audio.sessions.close(sessionId);
+  return new Response(null, { status: 204 });
+}
+```
+
+<SectionTab as="h2" sectionId="client">Se connecter, parler et fermer</SectionTab>
+
+Dans la page, `initSession()` se connecte à la session. Vous lui passez deux callbacks qui appellent votre serveur : l'un pour créer la session, l'autre pour la fermer. Abonnez-vous ensuite aux événements dont vous avez besoin, ici la transcription :
+
+```typescript
+import { initSession } from "@mistralai/mistralai/extra/voice-agents/browser";
+import type { VoiceAgentTranscriptEvent } from "@mistralai/mistralai/extra/voice-agents";
+
+const session = await initSession({
+  createSession: () =>
+    fetch("/api/voice-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        llm: { model: "mistral-small-latest" },
+        tts: { voiceId: "gb_oliver_excited" },
+      }),
+    }).then((res) => res.json()),
+  deleteSession: (sessionId) =>
+    fetch(`/api/voice-session?sessionId=${sessionId}`, {
+      method: "DELETE",
+    }).then(() => {}),
+});
+
+session.on("transcript", (e: VoiceAgentTranscriptEvent) => {
+  console.log(`${e.role}: ${e.content}`);
+});
+```
+
+La page demande l'accès au microphone, l'utilisateur parle, et les lignes de transcription arrivent au fil de la conversation. La session renvoyée est la même `VoiceAgentSession` que dans Node.js. `wait()` et `close()` fonctionnent donc de la même façon :
+
+```typescript
+await session.wait();  // resolves when the session disconnects
+await session.close(); // disconnect the media plane, then delete server-side
+```
+
+`close()` arrête la piste du microphone, quitte la salle temps réel, puis appelle votre callback `deleteSession` pour que votre serveur ferme la session. Le navigateur ne détient jamais la clé API.
+
+:::warning
+Conserver la clé API sur votre serveur ne suffit pas en soi : la route qui crée les sessions est accessible à toute personne pouvant atteindre votre page. Protégez-la avec l'authentification propre à votre application, et ne comptez pas sur un gestionnaire d'outils côté navigateur pour autoriser quoi que ce soit.
+:::
+
+{/* Security callout from skeleton review S29: confirm the phrasing with the SDK team. */}
+
+<SectionTab as="h2" sectionId="client-side-tools">Outils côté client</SectionTab>
+
+Dans le navigateur, vous définissez des outils côté client dans la page avec `functionTool`. `initSession()` passe leurs déclarations à votre callback `createSession`, pour que votre serveur puisse les transférer dans la requête de session. Le gestionnaire s'exécute dans le navigateur : votre serveur se contente de relayer la déclaration, et la clé API reste sur le serveur.
+
+```typescript
+import { initSession } from "@mistralai/mistralai/extra/voice-agents/browser";
+import { functionTool } from "@mistralai/mistralai/extra/voice-agents";
+import { z } from "zod";
+
+const getWeather = functionTool({
+  name: "getWeather",
+  description: "Return the current weather for a city.",
+  parameters: z.object({ city: z.string() }),
+  handler: ({ city }) => ({ city, tempC: 21 }),
+});
+
+const session = await initSession({
+  tools: [getWeather],
+  createSession: (tools) =>
+    fetch("/api/voice-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        llm: { model: "mistral-small-latest" },
+        tts: { voiceId: "gb_oliver_excited" },
+        tools,
+      }),
+    }).then((res) => res.json()),
+  deleteSession: (sessionId) =>
+    fetch(`/api/voice-session?sessionId=${sessionId}`, {
+      method: "DELETE",
+    }).then(() => {}),
+});
+```
+
+La route de votre serveur transmet `tools` directement à `client.audio.sessions.create()`, comme dans l'[exemple de serveur](#server).
+
+<SectionTab as="h2" sectionId="audio-tracks">Pistes audio</SectionTab>
+
+Le microphone et la voix de l'agent sont disponibles sous forme d'objets `MediaStreamTrack` standard, pour la visualisation, l'enregistrement ou un traitement personnalisé :
+
+- La piste du microphone est disponible immédiatement après la connexion, dans `session.localTrack`.
+- La piste de l'agent arrive plus tard, dans un événement `audio_track` avec `source: "remote"`.
+
+```typescript
+import type { AudioTrackEvent } from "@mistralai/mistralai/extra/voice-agents";
+
+// Local mic track — available right away
+const micTrack = session.localTrack as MediaStreamTrack;
+
+// Remote agent track — arrives asynchronously
+session.on("audio_track", (event: AudioTrackEvent) => {
+  if (event.source === "remote") {
+    const agentTrack = event.track as MediaStreamTrack;
+  }
+});
+```
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Gérer les sessions d'agent" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Outils" />
+  <LinkCard href="/studio/audio/voice-agents/quickstarts/build-a-voice-agent" title="Construire un agent audio (chemin local)" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Renamed from React SDK: the real
+   SDK has NO React package — the browser path is TypeScript with a
+   server-assisted session. RFC-391's React SDK is superseded design.
+   Authoritative source: dashboard repo, voice_agents_sdk/docs/docs/ (SDK 0.5.0, dashboard@ffed1e6b333) browser/browser.mdx — complete: server
+   route handler, connectSession client, client-side tools (clientTool
+   with zod, handler runs in the browser, server is just a relay),
+   audio tracks (session.localTrack + audio_track events as
+   MediaStreamTrack).
+   Verify at the end: security story (key server-side) is the through-line,
+   close() teardown explained (stops mic track, leaves the room, invokes
+   deleteSession), no React hooks. */}

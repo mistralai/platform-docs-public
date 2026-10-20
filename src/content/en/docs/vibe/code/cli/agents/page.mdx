@@ -15,40 +15,43 @@ The CLI ships with several built-in agents, and you can define your own.
 
 | Agent | Behavior |
 |---|---|
-| `default` | General-purpose agent. Asks for approval before running tools. |
-| `plan` | Read-only agent for exploration and planning. Auto-approves safe read tools. |
-| `accept-edits` | Auto-approves file edits in the working directory. Still asks for approval for other actions (for example, shell commands). |
+| `ask` | Asks for approval before running tools. Formerly named `default`. |
+| `accept-edits` | **Default agent.** Auto-approves file edits in the working directory. Still asks for approval for other actions (for example, shell commands). |
 | `smart-approve` | Classifies each tool call, runs the ones it judges safe, and asks for approval before risky ones. See [Smart approve](/vibe/code/safety-approvals-permissions#smart-approve). |
-| `auto-approve` | Auto-approves all tool execution. Use **only in a trusted, sandboxed environment**: this agent can run arbitrary commands such as `rm -rf` against any path Vibe can reach. |
-| `lean` | Specialized agent for the [Lean 4](https://lean-lang.org/) proof assistant. Install with `/leanstall` from inside the CLI. |
+| `auto-approve` | Auto-approves all tool execution. Use **only in a trusted, sandboxed environment**: this agent can run arbitrary commands such as `rm -rf` against any path Vibe can reach. Unavailable when your administrator sets [`enable_auto_approve = false`](/vibe/code/cli/admin-config#block-auto-approve). |
+| `lean` | Specialized agent for the [Lean 4](https://lean-lang.org/) proof assistant. Install with `/leanstall` from inside the CLI, and remove it with `/unleanstall`. |
 
-The CLI also ships with a built-in subagent named `explore`, used by the model for read-only codebase exploration. You cannot select subagents directly with `--agent`.
+:::note
+Vibe 3.0 removes the `plan` agent. If your config still sets `default_agent = "plan"` and you don't have a custom agent named `plan`, Vibe shows a warning and starts sessions with `ask` instead. To keep a planning workflow, [create your own plan agent](#plan-agent).
+:::
+
+The agent can also delegate work to **subagents**, for example to explore a large codebase without filling its own context. You can't select subagents with `--agent`. See [Custom subagents](#custom-subagents).
 
 <SectionTab as="h2" sectionId="select">Select an agent</SectionTab>
 
 Pick an agent at launch:
 
 ```bash
-vibe --agent plan
+vibe --agent ask
 vibe --agent auto-approve
 ```
 
 In interactive sessions, switch agents on the fly with `Shift+Tab`.
 
-Set the default interactive agent in `config.toml`:
+Set the default agent in `config.toml`:
 
 ```toml
-default_agent = "plan"
+default_agent = "ask"
 ```
 
-This applies to **interactive sessions only**. In programmatic mode (`--prompt`), the CLI falls back to `auto-approve` if `--agent` is not provided.
+`default_agent` applies to both interactive and programmatic (`--prompt`) sessions. To approve every tool call for one run, whatever the agent, pass `--auto-approve` (or its alias `--yolo`). Vibe ignores these flags when your administrator sets `enable_auto_approve = false`.
 
 <SectionTab as="h2" sectionId="custom-agents">Custom agents</SectionTab>
 
-Create custom agents in `~/.vibe/agents/` (user-level) or `./.vibe/agents/` (project-level) by adding a `.toml` file. Every agent must declare its kind via `agent_type`:
+Create custom agents in `~/.vibe/agents/` (user-level) or `./.vibe/agents/` (project-level) by adding a `.toml` file. Set the agent's kind with `agent_type`:
 
-- `agent_type = "agent"`: **user-facing**. Selectable via `vibe --agent <name>` or `Shift+Tab`.
-- `agent_type = "subagent"`: **delegation-only**. Spawned by the model through the `task` tool. Not selectable by the user.
+- `agent_type = "agent"` (default): **user-facing**. Selectable via `vibe --agent <name>` or `Shift+Tab`.
+- `agent_type = "subagent"`: **delegation-only**. Spawned by the agent when it delegates work. Not selectable by the user.
 
 Run a custom agent with its filename:
 
@@ -66,9 +69,9 @@ agent_type = "agent"
 display_name = "Red team"
 description = "Read-only audit agent for security review."
 safety = "safe"
-active_model = "mistral-medium-latest"
+active_model = "mistral-medium-3.5"
 system_prompt_id = "redteam"
-disabled_tools = ["search_replace", "write_file"]
+disabled_tools = ["edit", "write_file"]
 
 [tools.bash]
 permission = "ask"
@@ -78,16 +81,39 @@ permission = "always"
 ```
 
 :::note
-The `safety` field changes the input border color in the CLI to signal the agent's safety level. Options are `safe`, `neutral`, `destructive`, and `yolo`. It is a **visual hint only** and does not enforce permissions, so pair it with appropriate `enabled_tools`, `disabled_tools`, and per-tool permissions.
+The `safety` field changes the input border color in the CLI to signal the agent's safety level. Options are `safe`, `neutral`, `destructive`, `smart`, and `yolo`. It is a **visual hint only** and does not enforce permissions, so pair it with appropriate `enabled_tools`, `disabled_tools`, and per-tool permissions. The one exception: when `enable_auto_approve` is `false`, Vibe hides every agent with `safety = "yolo"`.
 :::
 
-The `system_prompt_id` value points to a file in `~/.vibe/prompts/`. The example above expects `~/.vibe/prompts/redteam.md`.
+The `system_prompt_id` value names a Markdown file in `./.vibe/prompts/` (trusted folders only) or `~/.vibe/prompts/`. The example above expects `redteam.md`.
+
+A custom agent's prompt applies only if you select the agent before your first message, with `--agent` or `Shift+Tab`. If you switch agents later, the new agent's tools, permissions, and model apply, but the prompt changes only after `/clear`.
+
+<SectionTab as="h3" variant="secondary" sectionId="plan-agent">Create a plan agent</SectionTab>
+
+To explore a codebase and agree on a plan before any file changes, define a read-only agent named `plan`:
+
+```toml
+# ~/.vibe/agents/plan.toml
+display_name = "Plan"
+description = "Explores the codebase and proposes a plan before any change."
+safety = "safe"
+disabled_tools = ["edit", "write_file"]
+instructions = """
+Explore the codebase and propose a step-by-step implementation plan.
+Don't modify any file until the user approves the plan.
+"""
+
+[tools.bash]
+permission = "ask"
+```
+
+Start with `vibe --agent plan`, or set `default_agent = "plan"`. The agent can read files and run read-only shell commands, and asks before any other command. Once you approve the plan, press `Shift+Tab` to switch to `accept-edits` and ask the agent to implement it. The instructions above stay in the conversation and allow the change once you approve.
 
 <SectionTab as="h2" sectionId="custom-subagents">Custom subagents</SectionTab>
 
-Subagents run independently and return **text-only results** to the parent agent. The model can spawn them through the `task` tool when it wants to delegate exploration or background work.
+Subagents run independently and return **text-only results** to the parent agent. The agent spawns them when it wants to delegate exploration or background work. Without a custom subagent, it can spawn a generic subagent that uses the same instructions and tools as itself.
 
-Create a custom subagent by setting `agent_type = "subagent"`:
+Create a custom subagent by setting `agent_type = "subagent"`. The `description` tells the agent when to use it:
 
 ```toml
 # ~/.vibe/agents/research.toml
@@ -95,17 +121,19 @@ agent_type = "subagent"
 display_name = "Research"
 description = "Read-only subagent for research tasks."
 safety = "safe"
-enabled_tools = ["grep", "read_file"]
+enabled_tools = ["read_file", "skill"]
 ```
 
-Subagents cannot ask the user questions. By default, the built-in subagents do not write files, but a custom subagent can if its `enabled_tools` and per-tool permissions allow it.
+Subagents can't ask the user questions. A subagent can use only the built-in tools its file allows, not MCP, connector, or plugin tools, and never with broader permissions than the parent agent. Subagents always run on the session's model and ignore `active_model`. If Vibe can't load a subagent file, for example because its `description` is empty, it reports the issue instead of skipping the file silently.
+
+To stop the agent from spawning subagents, set `enable_subagents = false` in `config.toml`.
 
 <SectionTab as="h2" sectionId="agents-md">AGENTS.md support</SectionTab>
 
-The CLI loads up to **two `AGENTS.md` files** into context to follow project-specific agent instructions:
+The CLI loads `AGENTS.md` files into context to follow user and project-specific agent instructions:
 
 1. **User-level**: `~/.vibe/AGENTS.md` (or in `$VIBE_HOME` if you set it).
-2. **Project-level**: starting from the current working directory and walking up parent directories (but only inside [trusted folders](/vibe/code/safety-approvals-permissions#trusted-folders)), the first `AGENTS.md` found is loaded.
+2. **Project-level**: every `AGENTS.md` from the current working directory up to the root of the [trusted folder](/vibe/code/safety-approvals-permissions#trusted-folders). When instructions conflict, the file closest to the working directory wins.
 
 For example:
 
@@ -114,9 +142,9 @@ For example:
   dir_1/
     AGENTS.md      <- never loaded: location is not trusted
     dir_2/         <- trusted
-      AGENTS.md
+      AGENTS.md    <- loaded
       dir_3/
-        AGENTS.md  <- loaded
+        AGENTS.md  <- loaded, takes priority over dir_2/AGENTS.md
         project/   <- cwd (no AGENTS.md here)
 ```
 

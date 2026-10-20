@@ -1,0 +1,294 @@
+---
+title: Voix
+sidebar_label: Voix
+sidebar_position: 5
+description: "Parcourez les voix prédéfinies et gérez les voix enregistrées dans votre espace de travail via l'API."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Voix
+
+Cette page présente les voix prédéfinies que vous pouvez passer à une requête de synthèse vocale et explique comment lister, écouter, créer et gérer des voix via l'API.
+
+:::info
+Pour comprendre ce que définit une voix et en quoi les voix prédéfinies, clonées et enregistrées diffèrent, consultez [Voix](/studio/audio/concepts/voices) dans la section Concepts.
+:::
+
+<CtaButton href="/api/endpoint/audio/voices#operation-list_voices_v1_audio_voices_get"></CtaButton>
+
+{/* API REFERENCE LINK: this operation already exists in the API reference (public/openapi.yaml, Oct 9), but with the schema from before Voxtral 3, so v3 fields may be missing or outdated there. It becomes accurate once the reference is rebuilt from the dashboard Swagger, which must be up to date and public first: that can't happen ahead of the writing. After the rebuild, check that the anchor still exists and that the operation shows the Voxtral 3 fields this page documents. */}
+
+<SectionTab as="h2" sectionId="voice-library">Bibliothèque de voix</SectionTab>
+
+Mistral fournit deux jeux de voix prédéfinies. Passez l'identifiant de la voix à n'importe quelle requête de synthèse vocale.
+
+<SectionTab as="h3" variant="secondary" sectionId="voxtral-3-voices">Voix Voxtral 3</SectionTab>
+
+Les voix suivantes sont fournies avec Voxtral 3.
+
+| Voix | Identifiant de voix | Langue |
+| --- | --- | --- |
+| Sarah | `voice_478` | English (`en`) |
+| Yael | `voice_447` | English (`en`) |
+| Eric | `voice_485` |  |
+| Jesse | `voice_484` |  |
+| Esmeralda | `voice_483` |  |
+| Andrea | `voice_482` |  |
+| Fiona | `voice_481` |  |
+| Marina | `voice_480` |  |
+| Linda | `voice_479` |  |
+
+{/* Listed Oct 7 from GET /v1/audio/voices (and /v2/audio/voices, same 42 items): 9 presets with `type: preset`, `kind: pvc`, and opaque `voice_NNN` slugs. The API returns `languages: []` for the 7 voices after Yael. Sarah and Yael are the checkpoint 3-0-4 voices formerly called `sarah` and `yael`. The API also returns a `gender` field for every preset (Sarah, Yael, Esmeralda, Andrea, Fiona, Marina, Linda: female; Eric, Jesse: male): not shown, Gregory to decide whether the library gets a gender column. */}
+
+<SectionTab as="h3" variant="secondary" sectionId="voxtral-2-preset-voices">Voix prédéfinies Voxtral 2</SectionTab>
+
+Voxtral 3 accepte encore ces voix prédéfinies. Chaque locuteur est disponible en plusieurs variantes, une par émotion : choisissez la variante qui correspond au rendu que vous souhaitez.
+
+| Locuteur | Langue | Identifiants de voix |
+| --- | --- | --- |
+| Paul | English, US (`en_us`) | `en_paul_neutral`, `en_paul_happy`, `en_paul_cheerful`, `en_paul_excited`, `en_paul_confident`, `en_paul_sad`, `en_paul_frustrated`, `en_paul_angry` |
+| Jane | English, UK (`en_gb`) | `gb_jane_neutral`, `gb_jane_confident`, `gb_jane_curious`, `gb_jane_confused`, `gb_jane_sarcasm`, `gb_jane_sad`, `gb_jane_shameful`, `gb_jane_jealousy`, `gb_jane_frustrated` |
+| Oliver | English, UK (`en_gb`) | `gb_oliver_neutral`, `gb_oliver_cheerful`, `gb_oliver_excited`, `gb_oliver_confident`, `gb_oliver_curious`, `gb_oliver_sad`, `gb_oliver_angry` |
+| Marie | French (`fr_fr`) | `fr_marie_neutral`, `fr_marie_happy`, `fr_marie_excited`, `fr_marie_curious`, `fr_marie_sad`, `fr_marie_angry` |
+
+:::tip
+Avec les voix Voxtral 3, vous gardez une seule voix et définissez plutôt l'émotion directement dans le texte. Voir [Balises d'émotion et de rythme](/studio/audio/text-to-speech/emotion-tags).
+:::
+
+{/* Rakesh (Oct 7): the earlier presets stay accepted, no deprecation flag; current checkpoints have some issues with them, the final checkpoint fully supports them. Observed Oct 7: pace tags change the duration on Voxtral 3 voices but barely on gb_jane_neutral. */}
+
+<SectionTab as="h2" sectionId="use-a-voice-id">Utiliser un identifiant de voix</SectionTab>
+
+Passez l'identifiant de la voix sous forme de `voice_id` dans une requête de synthèse vocale. Une voix prédéfinie possède un slug, comme `gb_jane_neutral` ou `voice_478`. Une voix enregistrée dans votre espace de travail n'a pas de slug : utilisez l'identifiant que l'API renvoie lorsque vous la créez. Si l'identifiant ne correspond à aucune voix, la requête échoue avec une erreur `404`.
+
+:::info
+Pour voir une requête complète, consultez le [guide de démarrage](/studio/audio/text-to-speech/quickstarts/generate-speech) ou [Génération de parole](/studio/audio/text-to-speech/generate-speech).
+:::
+
+<SectionTab as="h2" sectionId="manage-voices">Gérer les voix</SectionTab>
+
+L'API des voix couvre les voix prédéfinies et les voix enregistrées dans votre espace de travail. Le tableau suivant indique à quoi s'applique chaque opération.
+
+{/* SDK METHOD COLUMN (Gregory, Oct 9): the method names are the Python SDK's (mistralai 3.x). The TypeScript SDK 2.7.0 has no voices.search: its voices.list uses the v1 endpoint and drops the type field, so the TypeScript tab calls GET /v2/audio/voices with fetch. Revisit the column and the voices.search note when the TypeScript SDK catches up. */}
+
+| Opération | Méthode SDK | S'applique à |
+| --- | --- | --- |
+| Lister les voix | `voices.search` | Les voix prédéfinies et vos voix enregistrées. Le champ `type` les distingue : `preset` ou `custom`. |
+| Écouter une voix | `voices.get_sample_audio` |  |
+| Créer une voix | `voices.create` | Une nouvelle voix enregistrée, clonée à partir d'un enregistrement |
+| Obtenir, renommer, supprimer | `voices.get`, `voices.update`, `voices.delete` | Vos voix enregistrées |
+
+<Tabs groupId="api">
+  <TabItem value="list" label="Lister les voix" default>
+    <Tabs groupId="code">
+      <TabItem value="python" label="python" default>
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+page = client.audio.voices.search(page_size=50)
+while page is not None:
+    for voice in page.result.data:
+        languages = ", ".join(voice.languages or []) or "-"
+        print(f"{voice.slug or voice.id:<38} {voice.name:<28} {voice.type:<7} {languages}")
+    page = page.next()
+```
+
+      </TabItem>
+      <TabItem value="typescript" label="typescript">
+
+```typescript
+const apiKey = process.env.MISTRAL_API_KEY;
+
+let pageToken: string | undefined;
+do {
+  const url = new URL("https://api.mistral.ai/v2/audio/voices");
+  url.searchParams.set("page_size", "50");
+  if (pageToken) url.searchParams.set("page_token", pageToken);
+
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+  if (!response.ok) throw new Error(`${response.status}: ${await response.text()}`);
+  const page = await response.json();
+
+  for (const voice of page.data) {
+    const languages = (voice.languages ?? []).join(", ") || "-";
+    console.log(`${(voice.slug ?? voice.id).padEnd(38)} ${voice.name.padEnd(28)} ${voice.type.padEnd(7)} ${languages}`);
+  }
+  pageToken = page.next_page_token || undefined;
+} while (pageToken);
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="sample" label="Écouter une voix">
+    <Tabs groupId="code">
+      <TabItem value="python" label="python" default>
+
+```python
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.audio.voices.get_sample_audio(voice_id="gb_jane_neutral")
+try:
+    output = Path("gb_jane_neutral_sample.wav")
+    output.write_bytes(response.read())
+finally:
+    response.close()
+print(f"Saved {output.resolve()} ({response.headers['content-type']})")
+```
+
+      </TabItem>
+      <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const stream = await client.audio.voices.getSampleAudio({ voiceId: "gb_jane_neutral" });
+const audio = Buffer.from(await new Response(stream).arrayBuffer());
+
+const output = "gb_jane_neutral_sample.wav";
+await writeFile(output, audio);
+console.log(`Saved ${resolve(output)} (${audio.length} bytes)`);
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="create" label="Créer">
+    <Tabs groupId="code">
+      <TabItem value="python" label="python" default>
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+sample = Path("voice_sample.mp3")
+voice = client.audio.voices.create(
+    name="Support agent",
+    sample_audio=base64.b64encode(sample.read_bytes()).decode(),
+    sample_filename=sample.name,
+    languages=["en"],
+)
+print(f"Created voice {voice.id} ({voice.name})")
+```
+
+      </TabItem>
+      <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const sample = "voice_sample.mp3";
+const voice = await client.audio.voices.create({
+  name: "Support agent",
+  sampleAudio: (await readFile(sample)).toString("base64"),
+  sampleFilename: sample,
+  languages: ["en"],
+});
+console.log(`Created voice ${voice.id} (${voice.name})`);
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="update" label="Récupérer, mettre à jour, supprimer">
+    <Tabs groupId="code">
+      <TabItem value="python" label="python" default>
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+voice_id = os.environ["VOICE_ID"]
+
+voice = client.audio.voices.get(voice_id=voice_id)
+print(f"Found {voice.id}: {voice.name}, languages {voice.languages}")
+
+voice = client.audio.voices.update(voice_id=voice_id, name="Support agent (EU)")
+print(f"Renamed to {voice.name}")
+
+client.audio.voices.delete(voice_id=voice_id)
+print(f"Deleted {voice_id}")
+```
+
+      </TabItem>
+      <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+const voiceId = process.env.VOICE_ID ?? "";
+
+let voice = await client.audio.voices.get({ voiceId });
+console.log(`Found ${voice.id}: ${voice.name}, languages ${JSON.stringify(voice.languages)}`);
+
+voice = await client.audio.voices.update({
+  voiceId,
+  voiceUpdateRequest: { name: "Support agent (EU)" },
+});
+console.log(`Renamed to ${voice.name}`);
+
+await client.audio.voices.delete({ voiceId });
+console.log(`Deleted ${voiceId}`);
+```
+
+      </TabItem>
+    </Tabs>
+  </TabItem>
+</Tabs>
+
+Les exemples lisent l'enregistrement dans `voice_sample.mp3`, situé dans le répertoire de travail, et l'identifiant de la voix à gérer dans la variable d'environnement `VOICE_ID`. 
+
+:::note
+Pour lister les voix, utilisez `voices.search`. Le SDK marque `voices.list` comme obsolète.
+:::
+
+:::info
+Pour savoir quel enregistrement fournir et comment utiliser une voix clonée, voir [Clonage de la voix](/studio/audio/text-to-speech/voice-cloning).
+:::
+
+{/* TESTED Oct 7 (mistralai 3.0.0): list_voices.py uses voices.search (GET /v2/audio/voices, cursor pages) because voices.list (GET /v1/audio/voices, offset pages) raises a DeprecationWarning in the SDK ("Use GET /v2/audio/voices"). The list returned 42 voices: 9 Voxtral 3 presets, 30 Voxtral 2 presets, 3 custom voices (type custom, slug null). The sample endpoint returns audio/wav for Voxtral 2 presets and saved voices, but 404 "Voice not found or no sample available" for the Voxtral 3 voices tested (Sarah, Eric). manage_voice.py reads the ID printed by create_voice.py from the VOICE_ID environment variable. Unknown voice ID in a speech request: 404 invalid_voice, code 1902 (probe p2). Saved voice IDs are UUIDs, accepted as voice_id (clone_saved_voice.py). */}
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/voice-cloning" title="Cloner votre propre voix" />
+  <LinkCard href="/studio/audio/text-to-speech/generate-speech" title="Génération Speech" />
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Instructions de style" />
+</UsefullLinkContainer>
+
+{/* Reference page — audio docs revamp (DOC-610). Written Oct 9 from the Oct 7 tests (examples/tts/voices,
+   probes p1 and p2, out/probes/voices_v2.json). The why (kinds of voices, choosing vs directing) lives on
+   concepts/voices: linked, not repeated. Verify at the end: every voice has a playable sample (this page is the
+   sample reference), the Voxtral 3 languages and IDs confirmed, CRUD salvaged from deprecated content, no cloning
+   how-to (own page). FALLBACK: publish with the voices already confirmed and grow the library later. */}

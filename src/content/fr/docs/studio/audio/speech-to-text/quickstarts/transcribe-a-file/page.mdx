@@ -1,0 +1,158 @@
+---
+title: "Guide de démarrage : transcrire un fichier audio"
+sidebar_label: Transcrire un fichier audio
+sidebar_position: 1
+description: "Transformez un fichier audio en texte précis avec un seul appel API."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Guide de démarrage : transcrire un fichier audio
+
+Ce tutoriel vous montre comment transcrire l'audio d'un fichier. Pour transcrire de l'audio préenregistré provenant d'autres sources, consultez [Transcription de fichiers](/studio/audio/speech-to-text/transcribe-files). Pour transcrire de l'audio en streaming en temps réel, consultez [le guide de démarrage en temps réel](/studio/audio/speech-to-text/quickstarts/transcribe-in-realtime).
+
+<SectionTab as="h2" sectionId="get-an-api-key">Obtenir une clé API</SectionTab>
+
+Vous avez d'abord besoin d'une clé API Mistral. Si vous n'en avez pas, rendez-vous sur [Studio](https://console.mistral.ai). Accédez à la [section Clés API](https://console.mistral.ai/home?profile_dialog=api-keys) et créez une nouvelle clé API.
+
+Enregistrez votre clé API dans la variable d'environnement `MISTRAL_API_KEY` :
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+<SectionTab as="h2" sectionId="install-the-sdk">Installer le SDK</SectionTab>
+
+Pour utiliser Python ou TypeScript, installez le SDK Mistral. L'exemple curl ne nécessite aucune installation.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```bash
+pip install mistralai
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```bash
+npm install @mistralai/mistralai
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="transcribe-your-audio">Transcrire votre audio</SectionTab>
+
+Pour suivre ce tutoriel sans votre propre fichier, téléchargez l'enregistrement d'exemple :
+
+```bash
+curl -O https://docs.mistral.ai/audio/obama.mp3
+```
+
+Utilisez ce code pour transcrire en texte la parole d'un fichier audio. La parole peut être en plusieurs langues.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@obama.mp3
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("obama.mp3", "rb") as audio:
+    transcription = client.audio.transcriptions.complete(
+        model="voxtral-mini-transcribe-3",
+        file={"file_name": "obama.mp3", "content": audio},
+    )
+
+print(transcription.text)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const transcription = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-transcribe-3",
+  file: { fileName: "obama.mp3", content: readFileSync("obama.mp3") },
+});
+
+console.log(transcription.text);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="you-should-see">Vous devriez voir</SectionTab>
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```json
+{
+  "model": "voxtral-mini-transcribe-3",
+  "text": "I'm recording some speech now for testing. Et on peut aussi parler français !",
+  "language": null,
+  "segments": [],
+  "usage": {
+    "prompt_audio_seconds": 7,
+    "prompt_tokens": 3,
+    "total_tokens": 397,
+    "completion_tokens": 19,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 375
+    },
+    "service_tier": "standard"
+  },
+  "finish_reason": null
+}
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```text
+I'm recording some speech now for testing. Et on peut aussi parler français !
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```text
+I'm recording some speech now for testing. Et on peut aussi parler français !
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Séparer les locuteurs" />
+  <LinkCard href="/studio/audio/speech-to-text/bias-context-and-vocabulary" title="Améliorer la précision pour votre vocabulaire" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="Transcription de fichiers en profondeur" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Verify at the end: intro states purpose + prerequisites (including the provided sample file), exactly 4 blocks (key / run / result / going further), code runs as written, the sample file + transcript demo is in place, no concepts embedded. */}

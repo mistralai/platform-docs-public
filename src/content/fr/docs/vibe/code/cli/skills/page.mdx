@@ -7,7 +7,7 @@ import { SectionTab } from '@/components/layout/section-tab';
 
 # Compétences
 
-Les compétences sont des **ensembles d’instructions réutilisables** qui enrichissent Vibe Code avec de nouveaux workflows, des commandes personnalisées (slash) et des ensembles d’outils restreints. Vibe suit la [spécification Agent Skills](https://agentskills.io/specification), ce qui rend les compétences créées ici interopérables avec d’autres agents utilisant le même standard.
+Les compétences sont des **ensembles d'instructions réutilisables** qui enrichissent Vibe Code avec de nouveaux workflows et des commandes slash personnalisées. Vibe suit la [spécification Agent Skills](https://agentskills.io/specification), ce qui rend les compétences créées ici interopérables avec d'autres agents utilisant le même standard.
 
 <SectionTab as="h2" sectionId="skill-format">Format d’une compétence</SectionTab>
 
@@ -16,27 +16,27 @@ Une compétence est un **répertoire contenant un fichier `SKILL.md`**. Ce fichi
 ```markdown
 ---
 name: code-review
-description: Réaliser des revues de code automatisées.
+description: Perform automated code reviews.
 license: MIT
-compatibility: Python 3.12+
+compatibility: Requires git
 user-invocable: true
 allowed-tools:
   - read_file
-  - grep
   - ask_user_question
 ---
 
-# Compétence de revue de code
+# Code review skill
 
-Cette compétence aide à analyser la qualité du code et à suggérer des améliorations.
+This skill helps analyze code quality and suggest improvements.
 ```
 
 Champs courants du frontmatter :
 
 - **`name`** : sert à invoquer la compétence.
-- **`description`** : affiché dans la liste des compétences.
-- **`user-invocable`** : lorsque la valeur est `true` (par défaut), rend la compétence accessible comme commande slash dans le CLI et l’extension VS Code. Définissez à `false` pour la masquer du sélecteur slash.
-- **`allowed-tools`** : restreint les outils que la compétence peut utiliser.
+- **`description`** : affiché dans la liste des compétences. Jusqu'à 1 024 caractères.
+- **`user-invocable`** : lorsque la valeur est `true` (par défaut), rend la compétence accessible comme commande slash dans le CLI et l'extension VS Code. Définissez à `false` pour la masquer du sélecteur slash. L'agent peut toujours la charger.
+- **`disable-model-invocation`** : définissez à `true` pour empêcher l'agent de charger la compétence de sa propre initiative. Vous pouvez toujours l'exécuter avec `/skill-name`.
+- **`allowed-tools`** : liste les outils que la compétence compte utiliser. Vibe lit ce champ, mais ne l'applique pas : une compétence peut appeler n'importe quel outil autorisé par l'agent actif.
 
 <SectionTab as="h2" sectionId="locations">Emplacements des compétences</SectionTab>
 
@@ -44,7 +44,7 @@ Le CLI découvre les compétences à plusieurs emplacements, dans l’ordre :
 
 1. **Chemins personnalisés** définis dans `config.toml` → `skill_paths = ["/path/to/custom/skills"]`
 2. Compétences **au niveau du projet** dans `./.vibe/skills/` ou `./.agents/skills/` lorsque le répertoire courant est [approuvé](/vibe/code/safety-approvals-permissions#trusted-folders).
-3. Compétences **au niveau utilisateur** dans `~/.vibe/skills/`.
+3. Compétences **au niveau utilisateur** dans `~/.vibe/skills/` ou `~/.agents/skills/`.
 
 <SectionTab as="h2" sectionId="filtering">Activer, désactiver ou filtrer les compétences</SectionTab>
 
@@ -61,12 +61,14 @@ Les filtres de compétences prennent en charge les **noms exacts**, les **glob p
 
 L’ajout de commandes slash personnalisées passe idéalement par les compétences. `user-invocable` étant `true` par défaut, le nom de la compétence est accessible avec l’autocomplétion `/nom-compétence` dans le prompt CLI, ainsi que dans le sélecteur slash de [l’extension VS Code](/vibe/code/vs-code-extension/commands-slash-commands#slash-commands).
 
-Associez des compétences personnalisées à `allowed-tools` pour limiter strictement leurs accès aux besoins du workflow.
+Saisissez `/skill-name` suivi de votre demande, par exemple `/code-review focus on error handling`. Vibe ajoute les instructions de la compétence à votre message.
 
-{/* TODO (devs): confirmer si toutes les compétences user-invocable apparaissent par défaut dans le menu slash, ou si elles doivent être activées par projet. Confirmer aussi la syntaxe exacte de passage d’arguments pour les compétences prenant des paramètres. */}
+<SectionTab as="h2" sectionId="plugins">Plugins</SectionTab>
+
+Les plugins sont des paquets qui regroupent des compétences et d'autres extensions, comme des serveurs MCP, des hooks et des sous-agents. Vibe les charge depuis `~/.vibe/plugins/` et, dans les dossiers approuvés, depuis `./.vibe/plugins/`. Vibe préfixe les compétences des plugins avec le nom du plugin, par exemple `/vibe:skill-creator`. Exécutez `/plugins` pour lister les plugins de votre session, et `/reload-plugins` pour prendre en compte les modifications.
 
 <SectionTab as="h2" sectionId="stay-in-control">Gardez le contrôle</SectionTab>
 
 - **Examinez une compétence avant de l’activer** si elle peut invoquer des outils ayant des droits d’écriture.
-- Privilégiez **des listes d’`allowed-tools` restreintes** plutôt que de désactiver des outils ailleurs.
+- Pour limiter ce qu'une compétence peut faire, **restreignez les outils et les autorisations de l'agent**. `allowed-tools` ne restreint rien.
 - Placez les compétences spécifiques au projet dans `./.vibe/skills/` pour que vos collaborateurs puissent les relire lors des revues de code.

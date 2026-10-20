@@ -44,11 +44,9 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.0, denominator: '/M Chars' },
-    ],
-    output: [
       { type: 'range', price: 16.0, denominator: '/M Chars' },
     ],
+    output: [],
   },
   identifiers: { apiNames: ['voxtral-mini-tts-2603', 'voxtral-mini-tts-latest'] },
   capabilities: {

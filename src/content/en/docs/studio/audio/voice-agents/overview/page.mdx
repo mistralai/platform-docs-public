@@ -1,0 +1,155 @@
+---
+title: Voice agents
+sidebar_label: Overview
+sidebar_position: 0
+description: "Real-time bidirectional voice conversations through the Voice Agents SDK: microphone capture, STT, LLM, TTS, and playback handled by the SDK."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Voice agents
+
+Voice agents hold real-time, two-way voice conversations. The Voice Agents SDK runs the whole pipeline for you: it captures the user's voice, transcribes it, generates an answer with a model, speaks the answer, and plays it back. You write the application around it: what the agent knows, which tools it can call, and what happens when a call ends. Users can interrupt the agent mid-sentence, and the agent can search the web, query your document libraries, call your workspace connectors, or run your own functions.
+
+{/* API REFERENCE: sessions, agents, and webhook endpoints/subscriptions will get REST API reference pages — they are CRUD entities (Jean Perbet, Sept 24). Add CtaButtons on Create and manage agents, Manage agent sessions, and Webhooks once published. Phone numbers stay enterprise-only: no public reference. */}
+
+<SectionTab as="h2" sectionId="how-it-works">How it works</SectionTab>
+
+Every turn of the conversation goes through the same stages. The models run at Mistral, and your application captures and plays the audio.
+
+<DiagramFrame label="One turn of the pipeline">
+
+Read from the microphone to the speaker: the top lane runs in your application, the bottom lane at Mistral. Dashed boxes only run when the model calls a tool.
+
+<LinkedDiagram
+  src="/img/voice_agent_pipeline.svg"
+  alt="The pipeline of one turn: the microphone in your application, then transcription, the model, and speech at Mistral, then the speaker in your application. The model can call client-side tools in your application and server-side tools at Mistral."
+  viewBox={[1190, 520]}
+  links={[
+    { href: '/studio/audio/voice-agents/custom-audio', label: 'Custom audio interfaces', x: 40, y: 70, width: 190, height: 80, rx: 12 },
+    { href: '/studio/audio/concepts/turns', label: 'Turns and turn-taking', x: 270, y: 280, width: 190, height: 80, rx: 12 },
+    { href: '/studio/audio/voice-agents/configuration#agent-options', label: 'Agent options', x: 500, y: 280, width: 190, height: 80, rx: 12 },
+    { href: '/studio/audio/concepts/voices', label: 'Voices', x: 730, y: 280, width: 190, height: 80, rx: 12 },
+    { href: '/studio/audio/voice-agents/custom-audio', label: 'Custom audio interfaces', x: 960, y: 70, width: 190, height: 80, rx: 12 },
+    { href: '/studio/audio/voice-agents/tools#client-side-tools', label: 'Client-side tools', x: 500, y: 70, width: 190, height: 80, rx: 12 },
+    { href: '/studio/audio/voice-agents/tools#server-side-tools', label: 'Server-side tools', x: 500, y: 400, width: 190, height: 80, rx: 12 },
+  ]}
+/>
+
+</DiagramFrame>
+
+Each stage has one job:
+
+| Stage | What it does | Learn more |
+| --- | --- | --- |
+| Transcription | Turns the user's speech into text as they talk, and detects when they've finished their turn. | [Turns and turn-taking](/studio/audio/concepts/turns) |
+| Model | Reads the conversation and writes the answer. When it needs data or an action, it calls a tool: server-side tools run at Mistral, client-side tools run your own functions in your application. | [Tools](/studio/audio/voice-agents/tools) |
+| Speech | Speaks the answer in the agent's voice. | [Voices](/studio/audio/concepts/voices) |
+
+The stages form a chain, so each one adds to the time the user waits for a reply: see [Latency](/studio/audio/concepts/latency#voice-agents).  The user can also talk over the agent while it speaks, see [Interruptions in voice agents](/studio/audio/concepts/turns#interruptions).
+
+On a phone line, the caller's phone takes the place of the microphone and the speaker, and no code of yours runs in the call: client-side tools fail there, so use server-side tools for anything a phone agent needs.
+
+<SectionTab as="h2" sectionId="agents-and-sessions">Agents and sessions</SectionTab>
+
+The agent is what you configure, and the session is one conversation that runs it. They don't last as long and don't hold the same things:
+
+| | Agent | Session |
+| --- | --- | --- |
+| What it is | A saved, versioned configuration | One live conversation |
+| Lasts | Until you delete it | From the moment it connects until your application closes it or a fatal error ends it |
+| Holds | How the agent behaves: instructions, models, voice, tool declarations, welcome message, and whether the user can interrupt | What's specific to this conversation: the audio interface, the handlers of your client-side tools, and any option you override |
+| How many | One per use, such as a support line | One per conversation, started from a saved agent or from a configuration you pass when you connect |
+| To change it | Create a new version | Override agent options when you connect, for this session only |
+
+<SectionTab as="h3" variant="secondary" sectionId="when-to-save">When to save an agent</SectionTab>
+
+A session can run without a saved agent: you pass the whole configuration when you connect, which is the quickest way to try things. Save it as an agent once the configuration should outlive one script:
+
+- **Reuse it everywhere.** Sessions from the SDK, from a browser, and from a phone line start from the same agent and behave the same way.
+- **Change it safely.** Each change creates a new version. Sessions start from the latest version by default, and you can pin one to keep a known configuration in production while you try the next. See [Versions](/studio/audio/voice-agents/agents#versions).
+- **Attach phone numbers and webhooks.** 
+
+When a session starts from a saved agent, the options you pass override the saved ones for that session only, and the agent doesn't change. See [Inline or saved configuration](/studio/audio/voice-agents/configuration#inline-or-saved).
+
+<SectionTab as="h3" variant="secondary" sectionId="session-lifecycle">How a session unfolds</SectionTab>
+
+A session goes through three phases, and your application follows each one through session events:
+
+| Phase | What happens | What your application gets |
+| --- | --- | --- |
+| Start | Your application opens the session, or your server does for a browser page. The agent can greet the user with its welcome message. | A connection event |
+| Conversation | The user and the agent take turns: the agent listens, thinks, speaks, and calls tools when it needs them. | Transcripts, changes of agent state, and tool calls |
+| End | Your application closes the session, or a fatal error ends it. | A disconnection event, with the reason when it isn't a normal close |
+
+Session events reach the code that runs the session, while the conversation goes on: use them to update your interface. [Webhooks](/studio/audio/voice-agents/webhooks) reach your backend when a call starts, ends, or fails: use them as the record of each call, for example to store the transcript. For the event list, see [Manage agent sessions](/studio/audio/voice-agents/sessions#events). For the agent states and interruptions, see [Turns and turn-taking](/studio/audio/concepts/turns#interruptions).
+
+The SDK builds on LiveKit for the real-time audio transport, and adds the Python and TypeScript bindings and the bridge to Mistral models. You don't need to know LiveKit to use it.
+
+{/* LiveKit co-marketing wording: sync with Jenn Cunningham, who is in touch with LiveKit about joint promotion (SDK team request, Sept 24). LATENCY: no per-turn figure — the SDK team confirms it is not under 1 s today and the final number depends on inference work (Valentin Flageat, Sept 24). */}
+
+<SectionTab as="h2" sectionId="choose-your-path">Choose your path</SectionTab>
+
+| You want | Build with | What to know |
+| --- | --- | --- |
+| An agent that runs on your machine or server | The SDK in Python or Node.js | The SDK manages the whole pipeline and uses the machine's microphone and speakers. Start with the [quickstart](/studio/audio/voice-agents/quickstarts/build-a-voice-agent). |
+| Voice in a web app | The SDK in the browser (TypeScript) | Your server creates the session so the API key never reaches the browser, then the page connects with the credentials it returns. See the [Browser guide](/studio/audio/voice-agents/browser). |
+| An agent that answers phone calls | Telephony (SIP) | Available to enterprise customers at launch, through your account team. See [Telephony](/studio/audio/voice-agents/telephony). |
+| Full control over every stage | Your own pipeline: [realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime), a chat model, and [streamed speech](/studio/audio/text-to-speech/stream-speech) | You own the transport, the latency, and turn handling. |
+
+Use the SDK when you want capture, transcription, the model, speech, and playback handled end to end. Build your own pipeline when you need to control each stage separately, for example to change how turns are detected or where audio is processed.
+
+<SectionTab as="h2" sectionId="tools">Tools</SectionTab>
+
+You choose the model for each stage per agent or per session, see [Agent configuration](/studio/audio/voice-agents/configuration). Tools let the agent act during the conversation: built-in web search, document libraries, and workspace connectors run on Mistral's side, and your own functions run in your code. A short spoken filler covers the wait while a tool runs, see [Tools](/studio/audio/voice-agents/tools). For production, signed [webhooks](/studio/audio/voice-agents/webhooks) notify your backend when a call starts, ends, or fails.
+
+<SectionTab as="h2" sectionId="common-issues">Common issues</SectionTab>
+
+| Symptom | Fix |
+| --- | --- |
+| The SDK installs but no audio is captured or played | Install the native audio tools: PortAudio for Python, SoX and FFmpeg for Node.js. See [Install the SDK](/studio/audio/voice-agents/quickstarts/build-a-voice-agent#install-the-sdk). |
+| A `livekit::rtc_engine` warning about a closed data channel appears when the session opens or closes | Nothing to fix: it's a harmless LiveKit warning, not an error in your session. |
+
+<SectionTab as="h2" sectionId="get-started">Get started</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/quickstarts/build-a-voice-agent" title="Build a voice agent" />
+  <LinkCard href="/studio/audio/voice-agents/browser" title="Browser (TypeScript) guide" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Tools" />
+  <LinkCard href="/studio/audio/voice-agents/webhooks" title="Webhooks" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). SDK ships live with the October
+   launch — no hide plan (decision Gregory, Sept 24). These pages are the canonical SDK documentation: the separate SDK docs site was for internal communication only (Jean Perbet, Sept 24). The SDK surface is not frozen — updates are expected before release (Valentin Flageat). The SDK doc draft (Sept 16) is the
+   authoritative source: RFC-391's design (client.audio.agent namespace,
+   React SDK package) is superseded — do not use it for examples.
+   Verify at the end: the choose-your-path decision is the core (local, browser, telephony), pipeline diagram
+   present, tools story includes connectors (not just web_search), quickstart
+   linked (first page after this overview), agents presented as the central entity, the SDK-vs-build-your-own decision
+   present (build-yourself row + paragraph). */}
+
+{/* Sources for How it works and Agents and sessions (Oct 9, merged from the former concepts/agents-and-sessions page):
+   - Pipeline microphone -> STT -> LLM -> TTS -> speaker, handled by the SDK: SDK docs (Oct 8 copy,
+     research/voice-agents-sdk-notes-2026-10-08, "Deux parcours"). Transcription is a Voxtral realtime model
+     (stt default voxtral-mini-realtime-latest) with turn detection: same notes, and Agent configuration.
+   - Server-side tools (web_search, document_library, connector) run at Mistral; client-side tools run your
+     handler in your code; client tools fail on phone calls: SDK notes "Outils" and the Tools page.
+   - "Speech starts before the model has finished": kept from the Oct 8 page, no source found ().
+   - Agent = saved, versioned configuration; create, versions, latest by default, agent_version pinning;
+     only the client tool declaration is saved: SDK notes "Agents sauvegardés" and Create and manage agents.
+   - Agent options vs session options (audio_interface, agent_id, agent_version), inline sessions, overrides
+     for one session only: Agent configuration (connect() options, Inline or saved configuration).
+   - Session lifecycle: connected / disconnected (reasons), transcript, agent_state_changed, tool_call_*,
+     fatal errors close the session, close() ends it (client.sessions.close in Gregory's Oct 8 copy, not
+     delete): SDK notes "Événements", "Erreurs", "Cycle de vie". Welcome message spoken at connection:
+     Agent configuration.
+   - Webhooks call_started / call_ended / call_failed, configured per agent: SDK notes "Webhooks" and the
+     Webhooks page. Phone calls reach a saved agent: Create and manage agents (interruption settings apply to
+     phone calls attached to the agent) and the Telephony skeleton (Telephony V0 RFC).
+   - Interruptions and agent states: owned by Turns and turn-taking (linked, not repeated). LiveKit transport
+     and the path decision: owned by the Voice agents overview (removed from this page Oct 9). */}
+
+{/* MERGE (Oct 9, Gregory): concepts/agents-and-sessions was a feature, not a concept, and repeated this page. Its pipeline SVG, stage table, agent vs session table, "When to save an agent", and session lifecycle now live here; the ASCII pipeline is gone. The concept page is deleted (never published on main, no redirect). */}

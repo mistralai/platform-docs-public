@@ -15,7 +15,7 @@ Vibe Code peut lire des fichiers, modifier du code, exécuter des commandes shel
 - **Dossiers de confiance** : ils déterminent si Vibe peut charger la configuration projet, les compétences et les fichiers d’agent depuis le répertoire courant.
 - **Permissions par outil** : vous affinez ou assouplissez l’accès pour chaque outil.
 
-Vibe demande également une confirmation à chaque fois qu’un outil tente de lire, écrire ou exécuter une commande **en dehors du répertoire de travail courant**, quel que soit l’agent actif.
+Vibe demande également une confirmation à chaque fois qu'un outil tente de lire, écrire ou exécuter une commande **en dehors du répertoire de travail** et des répertoires ajoutés avec `--add-dir`, sauf si chaque appel d'outil est approuvé automatiquement (agent `auto-approve` ou `--auto-approve`). Vibe demande aussi confirmation avant qu'un outil lise ou modifie les fichiers `.env` et `.envrc`, même lorsque la permission de l'outil est `always`. Un chemin listé dans l'[`allowlist`](/vibe/code/cli/configuration-reference#tool-permissions) de l'outil ignore les deux vérifications.
 
 Cette page détaille le fonctionnement de ces contrôles et leurs interactions.
 
@@ -27,14 +27,13 @@ Utilisez l’un des agents intégrés ci-dessous. Pour changer, définir un agen
 
 | Agent | Comportement d’approbation | Usage recommandé |
 |---|---|---|
-| `default` | Demande une validation avant d’exécuter tout outil. | Travail quotidien pour valider chaque action. |
-| `plan` | Lecture seule. Validation automatique pour la lecture, bloque modifications et commandes. | Exploration d’une base de code inconnue ou conception d’une approche avant toute modification. |
-| `accept-edits` | Valide automatiquement les modifications de fichiers. Demande toujours pour les commandes shell ou actions sensibles. | Refactoring d’ampleur déjà délimité. |
+| `ask` | Demande une validation avant d’exécuter tout outil. | Exploration d'une base de code inconnue, ou tout travail où vous souhaitez valider chaque action. |
+| `accept-edits` | **Par défaut.** Approuve automatiquement les modifications de fichiers. Continue de demander confirmation pour les commandes shell et les autres outils sensibles. | Travail quotidien et refactorisations dont la portée est déjà définie. |
 | `smart-approve` | Classe chaque appel d’outil. Exécute ceux qu’il juge sûrs et vous demande une validation pour les appels risqués. Voir [Validation intelligente](/vibe/code/safety-approvals-permissions#smart-approve). | Travail quotidien avec moins de demandes de validation. |
-| `auto-approve` | Valide automatiquement chaque action, y compris les commandes shell. | Environnements de confiance et isolés uniquement. **À utiliser avec discernement**. |
+| `auto-approve` | Valide automatiquement chaque action, y compris les commandes shell. Votre administrateur peut [le désactiver](/vibe/code/cli/admin-config#block-auto-approve). | Environnements de confiance et isolés uniquement. **À utiliser avec discernement**. |
 
 :::warning
-`default_agent` ne s’applique que dans les sessions interactives. En **mode programmatique** (`vibe --prompt …`), Vibe bascule sur `auto-approve` si `--agent` n’est pas précisé, et les outils interactifs comme `ask_user_question` sont désactivés. Utilisez explicitement `--agent plan` si vous souhaitez une exécution programmatique en lecture seule.
+En **mode programmatique** (`vibe --prompt …`), Vibe utilise votre `default_agent` comme dans les sessions interactives et désactive les outils interactifs tels que `ask_user_question`. Personne ne peut répondre à une demande d'approbation : Vibe refuse donc chaque appel d'outil nécessitant une approbation. Passez `--auto-approve` (ou `--yolo`) pour approuver chaque appel d'outil — uniquement dans un environnement sandbox. Vibe ignore ces options lorsque votre administrateur définit `enable_auto_approve = false`.
 :::
 
 <SectionTab as="h3" variant="secondary" sectionId="smart-approve">Validation intelligente</SectionTab>
@@ -49,6 +48,8 @@ vibe --agent smart-approve
 vibe --smart-approve
 ```
 
+La validation intelligente se déploie progressivement. Si elle n'apparaît pas lorsque vous appuyez sur `Shift+Tab`, démarrez Vibe avec l'une des commandes ci-dessus ou définissez `default_agent = "smart-approve"`.
+
 Pour chaque appel d’outil qui nécessiterait sinon une validation, Vibe :
 
 1. **Applique d’abord vos règles de permission.** Les commandes autorisées s’exécutent sans vérification, et les commandes bloquées restent bloquées. Voir [Permissions par outil](/vibe/code/safety-approvals-permissions#tool-permissions).
@@ -59,10 +60,8 @@ Pour chaque appel d’outil qui nécessiterait sinon une validation, Vibe :
 Un appel jugé risqué ne s’exécute jamais sans votre confirmation. En mode programmatique, où personne ne peut confirmer, les appels risqués sont refusés.
 
 :::warning
-La validation intelligente est un classifieur, pas une sandbox. Un appel jugé sûr s’exécute réellement, avec les mêmes accès que votre compte utilisateur. Elle réduit les demandes de validation ; elle ne limite pas ce que l’agent peut faire. Pour du code non fiable ou des identifiants à protéger, utilisez l’agent `default` ou un environnement isolé.
+La validation intelligente est un classifieur, pas une sandbox. Un appel qu'elle juge sûr s'exécute avec les mêmes accès que votre compte utilisateur. La validation intelligente réduit les prompts, mais ne limite pas ce que l'agent peut faire. Si vous travaillez avec du code non fiable ou des identifiants sensibles, utilisez l'agent `ask` ou un environnement isolé.
 :::
-
-Pour démarrer chaque session interactive en validation intelligente, définissez `default_agent = "smart-approve"` dans `config.toml`.
 
 <SectionTab as="h3" variant="secondary" sectionId="smart-approve-model">Choisir le modèle de validation intelligente</SectionTab>
 
@@ -94,14 +93,14 @@ Un projet peut embarquer sa propre configuration Vibe (agents, compétences, ser
 
 Le contenu de confiance comprend l'un des éléments suivants dans le répertoire ou ses ancêtres :
 
-- Un répertoire `.vibe/` (configuration, agents, compétences, prompts, hooks et outils)
-- Un répertoire `.agents/` (compétences standard Agent Skills)
+- Un répertoire `.vibe/` contenant un fichier `config.toml` ou un sous-répertoire `agents/`, `skills/`, `prompts/`, `plugins/` ou `tools/`
+- Un répertoire `.agents/skills/` (compétences standard Agent Skills)
 - Un fichier `AGENTS.md` (instructions d'agent au niveau du projet)
 
 Fonctionnement :
 
-- Lorsqu’une session interactive démarre dans un répertoire contenant du contenu de confiance et que l’état de confiance est inconnu, Vibe demande si le dossier peut être approuvé.
-- La boîte de dialogue de confiance liste les fichiers de confiance détectés et signale les risques (comme les serveurs MCP ou les permissions d'outils accordant un accès étendu). Elle propose la racine du dépôt git comme cible de confiance lorsque le répertoire se trouve dans un dépôt git
+- Lorsqu'une session interactive démarre dans un répertoire contenant du contenu de confiance que vous n'avez pas approuvé, Vibe demande si le dossier peut être approuvé. Si vous choisissez **Ne pas approuver**, Vibe pose à nouveau la question la prochaine fois.
+- La boîte de dialogue de confiance liste les fichiers de confiance qu'elle a détectés. Choisissez **Approuver le dossier**, **Approuver tout le dépôt** (proposé lorsque vous démarrez Vibe dans un sous-répertoire d'un dépôt git) ou **Ne pas approuver**. La boîte de dialogue n'analyse pas ces fichiers : relisez-les vous-même.
 - Les dossiers de confiance sont enregistrés dans `~/.vibe/trusted_folders.toml`.
 - Si vous refusez ou n’avez pas encore approuvé un dossier, la configuration projet est ignorée et Vibe affiche un avertissement. La configuration utilisateur dans `~/.vibe/` reste active.
 
@@ -117,20 +116,26 @@ Le flag `vibe --trust` approuve le dossier de travail pour la seule exécution e
 
 ```bash
 # Trust the current project for one run, then exit
-vibe --trust --prompt "Run the test suite and summarize failures"
+vibe --trust --prompt "Summarize the project structure"
 ```
+
+`--worktree` approuve également son worktree pour la durée de l'exécution. Vibe charge la configuration du projet depuis les répertoires ajoutés avec `--add-dir` sans demander d'approbation : n'ajoutez donc que des répertoires de confiance.
 
 <SectionTab as="h2" sectionId="tool-permissions">Permissions par outil</SectionTab>
 
-Au-delà des agents, vous pouvez restreindre ou ouvrir l’accès à des outils spécifiques dans `config.toml`. Cela s’applique aussi bien aux outils intégrés (`read_file`, `write_file`, `bash`, `grep`, etc.), qu’aux outils MCP ou connecteurs.
+Au-delà des modes d'agent, vous pouvez restreindre ou élargir les permissions d'outils individuels dans `config.toml`. Cela s'applique aux outils intégrés (`read_file`, `write_file`, `edit`, `bash`, etc.) ainsi qu'aux outils MCP et aux connecteurs.
+
+:::note
+Certains outils intégrés ont été renommés : `read` devient `read_file` et `search_replace` devient `edit`. Vibe migre automatiquement les anciens noms dans vos fichiers de configuration.
+:::
 
 <SectionTab as="h3" variant="secondary" sectionId="enable-disable-tools">Activer ou désactiver des outils</SectionTab>
 
 Activez/désactivez globalement des outils par nom exact, motif ou regex :
 
 ```toml
-# Only allow read-only and search tools
-enabled_tools = ["read_file", "grep", "task"]
+# Only allow reading files and loading skills
+enabled_tools = ["read_file", "skill"]
 
 # Or disable a specific class of tools
 disabled_tools = ["bash"]
@@ -138,7 +143,7 @@ disabled_tools = ["bash"]
 
 <SectionTab as="h3" variant="secondary" sectionId="set-permissions">Définir les permissions par outil</SectionTab>
 
-Définissez quand Vibe doit demander l’autorisation avant d’utiliser un outil, ou l’autoriser systématiquement :
+Définissez si Vibe doit demander confirmation avant d'utiliser un outil, toujours l'autoriser ou ne jamais l'autoriser :
 
 ```toml
 [tools.read_file]
@@ -146,17 +151,20 @@ permission = "always"
 
 [tools.bash]
 permission = "ask"
+
+[tools.write_file]
+permission = "never"
 ```
 
 <SectionTab as="h3" variant="secondary" sectionId="bash-allow-deny">Listes d’autorisation et de blocage Bash</SectionTab>
 
-Pour l’outil `bash`, vous pouvez accorder ou bloquer des **commandes précises**. Certaines commandes sûres (`ls`, `pwd`, `cat`, `echo`, etc.) sont autorisées par défaut ; ajoutez les vôtres pour étoffer la liste :
+Pour l'outil `bash`, vous pouvez aussi autoriser ou bloquer **des commandes spécifiques** par préfixe. Certaines commandes en lecture seule (`ls`, `pwd`, `cat`, `git status`, etc.) sont autorisées automatiquement par défaut. Définissez `allowlist` et `denylist` pour choisir les commandes que Vibe exécute toujours ou bloque toujours. Chaque paramètre remplace sa liste par défaut ; incluez donc les commandes par défaut que vous souhaitez conserver :
 
 ```toml
 [tools.bash]
 permission = "ask"
-allow = ["git status", "pnpm test"]
-deny = ["rm -rf *"]
+allowlist = ["git status", "pnpm test"]
+denylist = ["rm -rf"]
 ```
 
 <SectionTab as="h3" variant="secondary" sectionId="mcp-and-connector-tools">Outils MCP et connecteurs</SectionTab>
@@ -177,17 +185,18 @@ Le modèle de validation est cohérent sur la CLI, l’extension VS Code et Vibe
 <ExplorerTabs>
 <ExplorerTab value="cli" label="CLI" default>
 
-Les demandes de validation apparaissent dans le chat. Utilisez le clavier :
+Les demandes d'approbation s'affichent en bas du terminal. Utilisez le clavier ou cliquez sur une option :
 
 | Touche | Action |
 |---|---|
-| `Entrée` ou `1` ou `Y` | Valider l’action. |
-| `2`, `3`, `4` | Valider avec une portée plus large (par exemple, autoriser systématiquement cet outil). |
-| `N` | Refuser l’action. |
-| `Haut` / `Bas` | Naviguer entre les options. |
-| `Échap` | Interrompre l’agent. |
+| `1` ou `y` | Autoriser l'action une seule fois. |
+| `2` | Autoriser pour le reste de la session. |
+| `3` | Toujours autoriser. |
+| `4`, `n` ou `Échap` | Refuser l'action. |
+| `Flèche haut` / `Flèche bas` | Naviguer entre les options d'approbation. |
+| `Entrée` | Choisir l'option en surbrillance. |
 
-L’agent actif et le mode de validation s’affichent dans la barre d’état. Changez en cours de session avec `/config` ou redémarrez avec `vibe --agent <name>`.
+La couleur de la bordure du champ de saisie indique l'agent actif. Changez d'agent en cours de session avec `Shift+Tab` ou redémarrez avec `vibe --agent <name>`.
 
 </ExplorerTab>
 <ExplorerTab value="vscode" label="Extension VS Code">
@@ -218,7 +227,7 @@ Vibe Code Web exécute des sessions dans une sandbox gérée associée à un dé
 
 <SectionTab as="h2" sectionId="best-practices">Bonnes pratiques</SectionTab>
 
-- **Commencez en mode `plan` pour un code inconnu.** Explorez et concevez avant d’accorder la modification ou l’accès shell.
+- **Démarrez en mode `ask` ou avec un [agent de planification](/vibe/code/cli/agents#plan-agent) pour une base de code inconnue.** Vérifiez chaque action, ou convenez d'un plan, avant d'accorder des accès d'édition ou de shell plus étendus.
 - **Validez vos commits avant les opérations risquées.** Cela permet un retour immédiat en arrière (`git reset --hard`).
 - **Utilisez `accept-edits` pour les refactorings de portée délimitée** et vérifiez le diff avant de valider.
 - **Utilisez `smart-approve` pour réduire les demandes de validation** au quotidien. Il demande toujours une confirmation avant les actions risquées, mais ce n’est pas une sandbox.

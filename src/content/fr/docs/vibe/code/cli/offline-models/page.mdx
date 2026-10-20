@@ -43,7 +43,7 @@ vllm serve mistralai/Devstral-Small-2-24B-Instruct-2512 \
   --port 8080
 ```
 
-Le CLI utilise le port 8080 par défaut pour le serveur local.
+Le port 8080 correspond au préréglage de fournisseur `llamacpp` intégré à Vibe. Si votre serveur écoute sur un autre port, ajustez `api_base` en conséquence.
 
 Options utiles :
 
@@ -62,19 +62,13 @@ Devstral fonctionne sur tout framework d’inférence exposant une API compatibl
 
 <SectionTab as="h2" sectionId="point-cli">Pointer le CLI vers votre serveur local</SectionTab>
 
-Une fois le serveur démarré, passez au modèle local depuis le CLI :
-
-```text
-/config
-```
-
-Sélectionnez le modèle `local`.
-
-Pour un usage récurrent, créez un provider et un preset modèle dans `config.toml`. Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles) et [Configuration](/vibe/code/cli/configuration) pour la syntaxe des presets.
+Vibe n'est pas livré avec un modèle local intégré. Une fois votre serveur démarré, ajoutez un fournisseur et un préréglage de modèle pour celui-ci dans `config.toml`. Consultez [Clés API et profils](/vibe/code/cli/api-keys-profiles) et [Configuration](/vibe/code/cli/configuration) pour la syntaxe des préréglages.
 
 Un exemple minimal pour un serveur local compatible OpenAI sur le port 8080 :
 
 ```toml
+active_model = "devstral-local"
+
 [[providers]]
 name = "local"
 api_base = "http://localhost:8080/v1"
@@ -85,11 +79,13 @@ backend = "generic"
 name = "mistralai/Devstral-Small-2-24B-Instruct-2512"
 provider = "local"
 alias = "devstral-local"
-
-active_model = "devstral-local"
 ```
 
-{/* À vérifier (devs) : `api_key_env_var` est-il requis pour les providers locaux, et une valeur sentinelle (par exemple `none`) est-elle prise en charge ? */}
+Conservez `active_model` au-dessus du premier tableau `[[...]]`, sinon TOML le rattache à ce tableau. Ne définissez pas `api_key_env_var` si votre serveur n'exige pas de clé API.
+
+Vibe inclut également un préréglage de fournisseur nommé `llamacpp` qui pointe vers `http://127.0.0.1:8080/v1` sans clé API. Pour l'utiliser, définissez `provider = "llamacpp"` dans votre préréglage `[[models]]` au lieu de définir votre propre fournisseur.
+
+Pour basculer entre votre modèle local et les modèles hébergés pendant une session, exécutez `/model`.
 
 <SectionTab as="h2" sectionId="stay-in-control">Gardez la main</SectionTab>
 
@@ -103,7 +99,7 @@ Si vous avez choisi des modèles hors ligne pour des raisons de confidentialité
 
 ```toml
 enable_telemetry = false
-enable_auto_update = false
+enable_update_checks = false
 ```
 
 Avec ces paramètres et un provider local comme ci-dessus, le CLI ne contacte ni `mistral.ai` ni aucun autre service externe. Les compétences, serveurs MCP, et connecteurs accédant à l’extérieur doivent être désactivés séparément. Vérifiez `enabled_tools`, `disabled_tools`, `mcp_servers` et votre liste de connecteurs.

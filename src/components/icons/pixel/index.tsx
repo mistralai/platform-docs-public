@@ -46,6 +46,7 @@ export { default as ArrowDownIcon } from './arrow-down';
 export { default as LockIcon } from './lock';
 export { default as MailIcon } from './mail';
 export { default as MenuIcon } from './menu';
+export { default as MicrophoneIcon } from './microphone';
 export { default as MotoIcon } from './moto';
 export { default as MusicIcon } from './music';
 export { default as PageIcon } from './page';

@@ -1,0 +1,238 @@
+---
+title: Outils
+sidebar_label: Outils
+sidebar_position: 3
+description: "Donnez à l'agent la recherche sur le Web, les bibliothèques de documents, les connecteurs et vos propres fonctions côté client — avec les fillers."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Outils
+
+Les outils permettent à un agent d'agir pendant une conversation : effectuer une recherche sur le Web, interroger vos bibliothèques de documents, appeler vos connecteurs d'espace de travail ou exécuter vos propres fonctions. Transmettez-les à `init()`, ou enregistrez-les sur un [agent](/studio/audio/voice-agents/agents). Les outils côté serveur s'exécutent côté Mistral. Les outils côté client exécutent votre propre handler dans votre code, puis envoient le résultat au modèle.
+
+<SectionTab as="h2" sectionId="server-side-tools">Outils côté serveur</SectionTab>
+
+Les outils côté serveur sont les [outils d'agent intégrés](/studio/agents/agent-tools) et vos [connecteurs d'espace de travail](/studio/connectors). Les connecteurs qui nécessitent une authentification doivent déjà être authentifiés dans votre espace de travail : l'agent les utilise ensuite en votre nom.
+
+| Outil | Ce qu'il fait | Forme en dictionnaire |
+| --- | --- | --- |
+| `WebSearchTool` | Effectue une recherche sur le Web | `{"type": "web_search"}` |
+| `DocumentLibraryTool` | Interroge vos bibliothèques de documents | `{"type": "document_library", "library_ids": ["id1", ...]}` |
+| `ConnectorTool` | Appelle un connecteur d'espace de travail | `{"type": "connector", "connector_id": "my-connector"}` |
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.client.models import WebSearchTool
+
+tools = [
+    WebSearchTool(),
+    {"type": "document_library", "library_ids": ["my-lib-id"]},
+    {"type": "connector", "connector_id": "my_connector"},
+]
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import type { Tool } from "@mistralai/mistralai/extra/voice-agents";
+
+const tools: Tool[] = [
+  { type: "web_search" },
+  { type: "document_library", libraryIds: ["my-lib-id"] },
+  { type: "connector", connectorId: "my_connector" },
+];
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="client-side-tools">Outils côté client</SectionTab>
+
+Les outils côté client exposent vos propres fonctions à l'agent. Le SDK envoie la déclaration (nom, description et paramètres) pour que le modèle sache que l'outil existe. Quand le modèle l'appelle, le SDK exécute votre handler dans votre code et renvoie le résultat au modèle, qui poursuit la conversation. Utilisez-les pour des données ou des actions propres à votre application : l'état actuel de l'interface, la position de l'utilisateur ou un appel authentifié à votre backend.
+
+En Python, le décorateur `@function_tool` construit le schéma des paramètres à partir des type hints et la description à partir de la docstring. En TypeScript, `functionTool` prend un schéma [zod](https://zod.dev), et le type des arguments du handler en découle.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.extra.voice_agents import function_tool
+
+@function_tool
+def get_weather(city: str) -> dict:
+    """Return the current weather for a city."""
+    return {"city": city, "temp_c": 21}
+
+session = await client.audio.sessions.init(
+    llm={"model": "mistral-small-latest"},
+    tts={"voice_id": "gb_oliver_excited"},
+    tools=[get_weather],
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { functionTool } from "@mistralai/mistralai/extra/voice-agents";
+import { z } from "zod";
+
+const getWeather = functionTool({
+  name: "getWeather",
+  description: "Return the current weather for a city.",
+  parameters: z.object({ city: z.string() }),
+  handler: ({ city }) => ({ city, tempC: 21 }),
+});
+
+const session = await client.audio.sessions.init({
+  tools: [getWeather],
+  llm: { model: "mistral-small-latest" },
+  tts: { voiceId: "gb_oliver_excited" },
+});
+```
+
+  </TabItem>
+</Tabs>
+
+En Python, passez `name` et `description` pour remplacer les valeurs par défaut :
+
+```python
+@function_tool(name="getWeather", description="Weather for a city.")
+async def get_weather(city: str) -> dict: ...
+```
+
+Le handler peut être synchrone ou asynchrone et renvoyer une valeur que le modèle peut utiliser.
+
+:::note
+Les handlers s'exécutent sur la même boucle d'événements que celle qui diffuse l'audio. Rendez asynchrone tout handler qui effectue des entrées-sorties, pour que la conversation ne se bloque pas. Dans le navigateur, les outils côté client ont un fonctionnement légèrement différent : voir [Outils côté client dans le navigateur](/studio/audio/voice-agents/browser#client-side-tools).
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="save-client-tools">Enregistrer des outils côté client sur un agent</SectionTab>
+
+Vous pouvez stocker des outils côté client sur un [agent enregistré](/studio/audio/voice-agents/agents) en passant le même objet outil à `audio.agents.create`. Seule la déclaration est enregistrée : le handler est du code dans votre application et n'est jamais stocké. Quand vous démarrez une session à partir de cet agent, passez à nouveau l'outil à `init()` pour associer le handler. Le SDK établit la correspondance par nom.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+# Persist the declaration on the agent
+agent = await client.audio.agents.create(
+    name="Weather bot",
+    configuration={
+        "llm": {"model": "mistral-small-latest"},
+        "tts": {"voice_id": "gb_oliver_excited"},
+        "tools": [get_weather],
+    },
+)
+
+# Re-attach the handler when connecting
+session = await client.audio.sessions.init(agent_id=agent.id, tools=[get_weather])
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+// Persist the declaration on the agent
+const agent = await client.audio.agents.create({
+  name: "Weather bot",
+  configuration: {
+    llm: { model: "mistral-small-latest" },
+    tts: { voiceId: "gb_oliver_excited" },
+    tools: [getWeather],
+  },
+});
+
+// Re-attach the handler when connecting
+const session = await client.audio.sessions.init({ agentId: agent.id, tools: [getWeather] });
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="unhandled-tools">Outils non gérés</SectionTab>
+
+Un agent enregistré peut déclarer un outil côté client que l'application actuelle n'implémente pas. Quand le modèle l'appelle, le SDK émet un événement `unhandled_tool` et signale l'échec de l'appel à l'agent, pour que la conversation ne reste pas bloquée.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+session.on("unhandled_tool", lambda e: print(f"no handler for {e.name}"))
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+session.on("unhandled_tool", (e) => console.log(`no handler for ${e.name}`));
+```
+
+  </TabItem>
+</Tabs>
+
+:::warning
+Les outils côté client ne fonctionnent que là où votre code s'exécute. Si vous lancez le même agent depuis une interface qui ne peut pas enregistrer de handlers, comme un appel téléphonique ou un test dans le dashboard, ses outils côté client échouent quand le modèle les appelle. Utilisez des outils côté serveur pour tout ce qui doit fonctionner partout.
+:::
+
+<SectionTab as="h2" sectionId="fillers">Fillers</SectionTab>
+
+Un appel d'outil peut prendre un moment, et le silence peut vite devenir gênant dans une conversation. Associez un filler à n'importe quel outil, côté serveur ou côté client : l'agent joue un court extrait au début de l'appel et l'arrête dès que le résultat arrive. Cet extrait est du texte, prononcé avec la voix de l'agent. Le SDK prépare les fillers à la connexion de la session, pour que le premier appel ne soit pas retardé. Un outil sans filler reste silencieux. L'utilisateur peut parler pendant un filler, comme pendant n'importe quelle autre réplique de l'agent. Les fillers se marient bien avec les [événements de session](/studio/audio/voice-agents/sessions#events) `tool_call_started` et `tool_call_ended`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.client.models import WebSearchTool
+from mistralai.extra.voice_agents import StaticToolFiller, function_tool
+
+# Text filler on a server-side tool — synthesized in the agent's voice.
+web_search = WebSearchTool(filler=StaticToolFiller(text="Searching the web…"))
+
+# Text filler on a client-side tool.
+@function_tool(filler=StaticToolFiller(text="Checking your order…"))
+def check_order(order_id: str) -> dict:
+    """Look up an order's delivery status."""
+    return lookup(order_id)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { functionTool, type Tool } from "@mistralai/mistralai/extra/voice-agents";
+import { z } from "zod";
+
+// Text filler on a server-side tool.
+const tools: Tool[] = [
+  { type: "web_search", filler: { text: "Searching the web…" } },
+];
+
+// Text filler on a client-side tool.
+const checkOrder = functionTool({
+  name: "checkOrder",
+  description: "Look up an order's delivery status.",
+  parameters: z.object({ orderId: z.string() }),
+  filler: { text: "Checking your order…" },
+  handler: ({ orderId }) => lookup(orderId),
+});
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/agents" title="Créer et gérer les agents" />
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Gérer les sessions d'agent" />
+  <LinkCard href="/studio/audio/voice-agents/browser" title="Guide Browser (TypeScript)" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Authoritative source: dashboard repo, voice_agents_sdk/docs/docs/ (SDK 0.5.0, dashboard@ffed1e6b333) core/tools.mdx — complete with samples for everything: server tools, client tools, fire-and-forget, persistence, fillers. Port verbatim. Verify at the end: server vs client split is the spine, the non-SDK-surfaces warning is kept, fillers explained with their events. */}

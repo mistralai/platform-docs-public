@@ -69,7 +69,7 @@ Les déploiements **dédiés et auto-hébergés** nécessitent que `/whoami` ren
 La configuration administrateur est la couche **prioritaire**. Elle prévaut sur les options de ligne de commande, les variables d'environnement, ainsi que les deux fichiers `config.toml`, celui du projet et celui de l'utilisateur :
 
 ```text
-admin config  >  CLI flags  >  env vars  >  project config.toml  >  user config.toml
+admin config  >  agent settings  >  CLI flags  >  VIBE_* env vars  >  project config.toml  >  user config.toml
 ```
 
 Cette priorité signifie que les valeurs fournies par l'administrateur s'appliquent aux utilisateurs par défaut, sans qu'ils aient à mettre à jour leur propre `config.toml`.
@@ -79,20 +79,20 @@ Cette priorité signifie que les valeurs fournies par l'administrateur s'appliqu
 La configuration Admin accepte la plupart des mêmes clés que [`config.toml`](/vibe/code/cli/configuration), par exemple :
 
 - Modèle actif, modèles et providers.
-- Serveur MCP.
+- Les serveurs MCP, et la possibilité même pour les utilisateurs d'utiliser des serveurs MCP.
+- La possibilité pour les utilisateurs d'approuver automatiquement tous les appels d'outils.
 - Connecteurs, ainsi que les outils, agents et skills activés ou désactivés.
-- Interrupteurs de télémétrie, de mise à jour automatique et de notifications.
+- Les interrupteurs de télémétrie, de vérification des mises à jour et de notifications.
 
 ```toml
-active_model = "mistral-large-latest"
-enable_auto_update = false
-disabled_tools = ["shell"]
-
-[[providers]]
-name = "mistral"
-api_base = "https://api.mistral.ai"
-api_key_env_var = "MISTRAL_API_KEY"
+active_model = "mistral-medium-3.5"
+enable_update_checks = false
+disabled_tools = ["bash"]
 ```
+
+:::warning
+Une entrée `[[providers]]` remplace entièrement le fournisseur intégré portant le même nom. Ne redéfinissez pas le fournisseur intégré `mistral`, sauf si vous définissez tous les champs qu'il requiert, y compris `backend = "mistral"` et une `api_base` qui se termine par `/v1`.
+:::
 
 <SectionTab as="h2" sectionId="enterprise-defaults">Imposer les valeurs par défaut de l’entreprise</SectionTab>
 
@@ -107,7 +107,6 @@ backend = "mistral"
 api_base = "https://mistral.acme.internal/v1"
 api_key_env_var = "ACME_MISTRAL_API_KEY"
 api_style = "openai"
-region = "eu-west-1"
 
 [providers.extra_headers]
 "x-acme-tenant" = "engineering"
@@ -147,8 +146,39 @@ alias = "mistral-large-enterprise"
 Combinez `allowed_models` avec les modèles que vous distribuez : livrez les préréglages `[[models]]` dont les utilisateurs ont besoin, et excluez tous les autres modèles.
 
 :::warning
-Chaque motif doit correspondre à au moins un nom de modèle distribué ou intégré. `allowed_models` restreint les modèles que les clients Vibe Code proposent et exécutent. Cette clé ne restreint pas l'accès à l'API : appliquez des contrôles d'accès au niveau du fournisseur ou de la clé API pour limiter les modèles qu'un utilisateur peut utiliser.
+Si aucun modèle configuré ne correspond à `allowed_models`, la CLI rejette l'ensemble de la configuration administrateur. Chaque motif doit correspondre à au moins un nom de modèle distribué ou intégré. `allowed_models` restreint les modèles que les clients Vibe Code proposent et exécutent. Il ne restreint pas l'accès à l'API : appliquez des restrictions au niveau du fournisseur ou de la clé API pour limiter les modèles auxquels un utilisateur peut accéder.
 :::
+
+<SectionTab as="h2" sectionId="block-mcp">Bloquer les serveurs MCP</SectionTab>
+
+Une liste `mcp_servers` vide dans la configuration administrateur ne supprime pas les serveurs que les utilisateurs ajoutent eux-mêmes. Pour bloquer les serveurs MCP, définissez `enable_mcp` sur `false` :
+
+```toml
+enable_mcp = false
+```
+
+Avec `enable_mcp = false`, les clients Vibe Code :
+
+- Refusent d'ajouter, de supprimer, d'activer ou de désactiver des serveurs MCP, par exemple avec `vibe mcp` ou `/mcp`.
+- Refusent de se connecter aux serveurs MCP OAuth ou de s'en déconnecter.
+- Ne chargent aucun outil depuis les serveurs MCP, y compris les serveurs fournis par des plugins.
+
+Les utilisateurs qui tentent l'une de ces actions voient un message indiquant que leur administrateur a désactivé les serveurs MCP. Les clients appliquent ce paramètre ; comme le reste de la configuration administrateur, il ne constitue pas une frontière de sécurité. Il nécessite Vibe Code CLI 3.0 ou une version ultérieure. Les [Connecteurs](/vibe/code/cli/connectors) disposent d'un paramètre distinct, `enable_connectors`.
+
+<SectionTab as="h2" sectionId="block-auto-approve">Bloquer l'approbation automatique</SectionTab>
+
+Pour empêcher les utilisateurs de contourner les demandes d'approbation avec le mode d'approbation automatique, définissez `enable_auto_approve` sur `false` :
+
+```toml
+enable_auto_approve = false
+```
+
+Avec `enable_auto_approve = false`, la CLI Vibe Code :
+
+- Masque l'agent `auto-approve` et tout agent personnalisé avec `safety = "yolo"`. Une session dont `--agent` ou `default_agent` désigne l'un d'eux ne démarre pas et indique que le mode d'approbation automatique est désactivé. Les utilisateurs doivent choisir un autre agent par défaut.
+- Ignore `--auto-approve` et `--yolo`, et affiche un avertissement indiquant que les demandes d'approbation restent actives.
+
+Les [autorisations par outil](/vibe/code/safety-approvals-permissions#set-permissions) s'appliquent toujours : un outil défini sur `always` dans `[tools.<tool_name>]`, ou une commande de son `allowlist`, s'exécute toujours sans approbation. Comme le reste de la configuration administrateur, ce paramètre ne constitue pas une frontière de sécurité. Il nécessite Vibe Code CLI 3.0.1 ou une version ultérieure.
 
 <SectionTab as="h2" sectionId="secrets">Secrets</SectionTab>
 
@@ -158,12 +188,12 @@ La configuration Admin ne contient jamais de secrets en clair. Les champs d’id
 
 Lorsque la configuration administrateur est active, les utilisateurs de Vibe Code CLI voient les éléments suivants :
 
-- Les paramètres gérés par un administrateur dans `/config` apparaissent grisés avec le glyphe de verrouillage `⚿` et indiquent `your administrator` comme origine. Une légende en bas de l'écran affiche `⚿ Settings are managed by your organization`.
-- Les champs gérés par un administrateur sont en lecture seule dans `/config`. Les tentatives de modification ou de réinitialisation n'ont aucun effet.
-- Le sélecteur de modèle constitue une exception. Si un utilisateur change de modèle alors que `active_model` est géré par un administrateur, un avertissement indique que l'administrateur contrôle ce paramètre.
-- Les utilisateurs voient les marqueurs de gestion uniquement lorsqu'ils ouvrent `/config`. Aucune bannière ni aucun indicateur global ne s'affiche au démarrage.
+- Les paramètres gérés par l'administrateur sont en lecture seule dans `/config` : les utilisateurs ne peuvent ni les modifier ni les réinitialiser. Le panneau **OÙ IL EST DÉFINI** de l'éditeur de paramètres indique l'administrateur comme source.
+- Il n'y a ni bannière de démarrage ni indicateur global.
 - La CLI récupère la configuration administrateur en arrière-plan au début de chaque session. Elle la conserve en mémoire et ne l'écrit jamais dans le fichier `config.toml` local.
 - Si une erreur réseau ou serveur empêche la récupération, la session continue sans configuration administrateur. La CLI journalise l'échec au niveau debug et n'affiche aucun avertissement.
+- Si la CLI ne trouve pas de clé API Mistral, elle ignore la configuration administrateur.
+- Si la configuration administrateur est invalide, la CLI l'ignore et affiche : `Your administrator-managed configuration could not be applied: <reason>`.
 
 <SectionTab as="h2" sectionId="disable">Arrêter d'appliquer la configuration administrateur</SectionTab>
 

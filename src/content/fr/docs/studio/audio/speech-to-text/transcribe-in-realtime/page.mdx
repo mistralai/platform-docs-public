@@ -1,0 +1,66 @@
+---
+title: Transcription en temps réel
+sidebar_label: Transcription en temps réel
+sidebar_position: 2
+description: "Transcription en direct via WebSocket : sessions, événements et contrôle de la latence."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Transcription en temps réel
+
+Cette page couvre la transcription audio en direct vers du texte via une session WebSocket, à privilégier pour les flux audio nécessitant une faible latence (par opposition aux fichiers audio enregistrés – voir [Transcrire des fichiers](Transcribe files)). À la fin de cette lecture, vous comprendrez le cycle de vie d’une session et comment contrôler la latence.
+
+## Comprendre le cycle de vie
+
+Avant tout code, voici le modèle mental : ouvrez une session, validez votre configuration avant le premier fragment audio, envoyez l’audio, recevez les mises à jour de transcription, finalisez, puis fermez. Chaque étape a une signification précise : quand afficher, remplacer, finaliser ou conserver les résultats.
+
+## Se connecter à une session
+
+Configuration de la connexion : URL WSS, authentification de l’endpoint en temps réel (adapté depuis la page obsolète client_auth). Référence au cycle de vie : il s’agit de l’étape « ouvrir une session ».
+
+```bash
+```
+
+## Configurer la session
+
+session.update : format audio, délai de streaming, langue, diarisation, speaker_references, context_bias, turn_detection — ces paramètres doivent être validés avant l’envoi du premier fragment audio. Une fois l’audio démarré, les mises à jour sont rejetées. Il s’agit de l’étape « valider la configuration ».
+
+```json
+```
+
+### Champs de la session
+
+Tableau de référence : les champs de la session avec leurs types, valeurs par défaut et contraintes (issus de la RFC-555, section 2.2). Signaler les exclusivités mutuelles et lier la matrice de compatibilité dans l’[Aperçu des cas d'utilisation de la STT](Use case overview).
+
+## Recevoir les mises à jour et finaliser
+
+Étape « recevoir les mises à jour et finaliser » du cycle de vie : signification d’un delta de texte, quand remplacer ou ajouter dans votre interface, aspect des résultats finaux, et comment la session se termine. Ce guide explique le flux d’événements — les détails sur la détection de fin de tour se trouvent dans [Détection des tours de parole](Turn detection).
+
+## Contrôler la latence
+
+target_streaming_delay_ms : ce qu’il échange, les valeurs discrètes valides, et les points de départ recommandés par cas d’utilisation — sous-titrage en direct ou agents vocaux.
+
+| Cas d'utilisation | Délai recommandé | Pourquoi |
+| --- | --- | --- |
+| [ligne : sous-titres en direct — valeur — raison] |
+| [ligne : entrée d’agent vocal — valeur — raison] |
+
+## Problèmes courants
+
+Limites spécifiques au mode en direct, avec liens vers les solutions — section courte. Les détails complets se trouvent dans [Résolution des problèmes](Troubleshooting). Problèmes en direct : champs de session verrouillés une fois l’audio démarré, valeur de délai non valide (non entraînée), interruptions de connexion. NE PAS inventer de sémantique de reconnexion ou de reprise — documenter uniquement ce que précise la spécification.
+
+- [limite : les mises à jour de session sont rejetées après le démarrage de l’audio — valider la configuration en premier — lien vers [Résolution des problèmes](Troubleshooting)]
+- [limite : target_streaming_delay_ms doit être un délai **entraîné** — lien vers [Détection des tours de parole](Turn detection) et [Résolution des problèmes](Troubleshooting)]
+- [limite : interruptions de connexion — comportement selon la spécification uniquement — lien vers [Résolution des problèmes](Troubleshooting)]
+
+## Aller plus loin
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Détection des tours de parole" />
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Identifier les locuteurs en temps réel" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Résolution des problèmes" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Reordered per skeleton review S08: lifecycle before connect/configure — the mental model gives meaning to the messages. Verify at the end: the lifecycle is visual and first, display/replace/finalize/persist guidance explicit, latency has recommended defaults, live-specific common issues (not offline ones), no invented reconnection semantics. */}

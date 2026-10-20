@@ -1,0 +1,247 @@
+---
+title: Balises d'émotion et de rythme
+sidebar_label: Balises d'émotion et de rythme
+sidebar_position: 3
+description: "Modifiez l’émotion et le débit de parole d’une partie du texte avec des balises en ligne dans l’entrée de synthèse vocale."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Balises d'émotion et de rythme
+
+Les balises d’émotion et de débit modifient la façon dont une voix prononce une partie du texte : écrivez-les directement dans `input`, entre crochets, par exemple `[emotion=happy]` ou `[pace=slow]`. Pour définir l’interprétation de l’ensemble de l’entrée, utilisez plutôt les [instructions de style](/studio/audio/text-to-speech/style-instructions).
+
+:::info
+Pour comparer les balises aux autres façons de diriger une voix, et pour comprendre le fonctionnement des émotions dans Voxtral 2 et Voxtral 3, consultez [Voix](/studio/audio/concepts/voices#choose-and-direct).
+:::
+
+<CtaButton href="/api/endpoint/audio/speech#operation-speech_v1_audio_speech_post"></CtaButton>
+
+{/* API REFERENCE LINK: this operation already exists in the API reference (public/openapi.yaml, Oct 9), but with the schema from before Voxtral 3, so v3 fields may be missing or outdated there. It becomes accurate once the reference is rebuilt from the dashboard Swagger, which must be up to date and public first: that can't happen ahead of the writing. After the rebuild, check that the anchor still exists and that the operation shows the Voxtral 3 fields this page documents. */}
+
+<SectionTab as="h2" sectionId="tag-syntax">Syntaxe des balises</SectionTab>
+
+Les balises d’émotion et de débit partagent la même syntaxe et les mêmes règles :
+
+| Règle | Détails |
+| --- | --- |
+| Format | `[emotion=<value>]` ou `[pace=<value>]`, avec une valeur issue des tableaux de cette page |
+| Emplacement | Dans `input`, avant le texte auquel elle s’applique : au début ou au milieu d’une phrase |
+| Prononcé | Non : la balise n’est pas lue à voix haute |
+| Combinaison | Écrivez une balise d’émotion et une balise de débit l’une à la suite de l’autre, par exemple `[emotion=calm][pace=slow]` |
+| Portée |  |
+
+{/* TESTED Oct 7 (tts agent, probes/p3_features.py "tags", voice_478 and gb_jane_neutral, transcribed with STT): tags at the start and mid-sentence ("I just got the results, and [emotion=excited]we passed the audit!") return 200; no tag was read aloud in 11 cases x 2 voices; "[emotion=calm][pace=slow]" returns 200 with the full sentence. */}
+
+<SectionTab as="h2" sectionId="tag-an-emotion">Ajouter une balise d’émotion</SectionTab>
+
+Placez la balise d’émotion dans `input`, avant le texte à prononcer avec cette émotion :
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "input": "[emotion=happy]We passed the audit!",
+    "voice_id": "voice_478",
+    "response_format": "wav"
+  }' | jq -r '.audio_data' | base64 --decode > happy.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="Python">
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="[emotion=happy]We passed the audit!",
+    voice_id="voice_478",
+    response_format="wav",
+)
+
+output = Path("happy.wav")
+output.write_bytes(base64.b64decode(response.audio_data))
+print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "[emotion=happy]We passed the audit!",
+  voiceId: "voice_478",
+  responseFormat: "wav",
+});
+
+const output = "happy.wav";
+await writeFile(output, Buffer.from(response.audioData, "base64"));
+console.log(`Saved ${resolve(output)}`);
+```
+
+  </TabItem>
+</Tabs>
+
+{/* TESTED Oct 7 (voxtral-mini-tts-3-0, checkpoint 3-0-5): the example returns the full sentence in 5 of 5 runs, and transcription confirms the tag is not read aloud (also checked for happy, sad, sarcastic, calm, slow, medium, fast, on voice_478 and gb_jane_neutral). QUALITY FLAG for Rakesh: on the Voxtral 3 voices, a tag before a two-clause sentence often cuts the output after the first clause — "[emotion=sad]I just got the results, and we passed the audit." gives only "I just got the results." in 6 of 6 runs (voice_478 and voice_485), [emotion=happy] in 4 of 6, a mid-sentence tag in 5 of 6; without a tag the sentence is complete 6 of 6. The example uses a single short sentence for that reason. gb_jane_neutral did not cut the sentence. Demo 03 ("[emotion=happy]Welcome to Harmattan Bank." followed by two more sentences, voice_447) kept the full text, so the cut seems tied to a comma-joined two-clause sentence, not to every tag. */}
+
+<SectionTab as="h2" sectionId="supported-emotions">Émotions prises en charge</SectionTab>
+
+La balise d’émotion prend l’une de ces 34 valeurs :
+
+| Émotion |
+| --- |
+| `amused` |
+| `angry` |
+| `anxious` |
+| `apologetic` |
+| `appreciative` |
+| `assertive` |
+| `bored` |
+| `calm` |
+| `confident` |
+| `confused` |
+| `critical` |
+| `curious` |
+| `determined` |
+| `disappointed` |
+| `disgusted` |
+| `excited` |
+| `frustrated` |
+| `grateful` |
+| `happy` |
+| `hopeful` |
+| `playful` |
+| `proud` |
+| `reflective` |
+| `resigned` |
+| `sad` |
+| `sarcastic` |
+| `skeptical` |
+| `somber` |
+| `surprised` |
+| `tense` |
+| `tired` |
+| `urgent` |
+| `warm` |
+| `wistful` |
+
+{/* Source: Rakesh (Slack, Oct 7): the 34 values. Demo column: same sentence, same voice, one emotion per row — to record with Ben. */}
+
+<SectionTab as="h2" sectionId="pace-tags">Balises de rythme</SectionTab>
+
+Les balises de débit règlent le débit de parole. Utilisez-les pour lire une mention légale plus lentement, ou pour dérouler une liste plus rapidement :
+
+| Rythme | Effet |
+| --- | --- |
+| `slow` | La voix parle plus lentement qu’à son débit normal. |
+| `fast` | La voix parle plus rapidement qu’à son débit normal. |
+
+ L’exemple suivant génère la même phrase pour chaque débit :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+for pace in ["slow", "fast"]:
+    response = client.audio.speech.complete(
+        model="voxtral-mini-tts-3-0",
+        input=f"[pace={pace}]Please read the terms carefully before you sign.",
+        voice_id="voice_478",
+        response_format="wav",
+    )
+    output = Path(f"pace_{pace}.wav")
+    output.write_bytes(base64.b64decode(response.audio_data))
+    print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+for (const pace of ["slow", "fast"]) {
+  const response = await client.audio.speech.complete({
+    model: "voxtral-mini-tts-3-0",
+    input: `[pace=${pace}]Please read the terms carefully before you sign.`,
+    voiceId: "voice_478",
+    responseFormat: "wav",
+  });
+  const output = `pace_${pace}.wav`;
+  await writeFile(output, Buffer.from(response.audioData, "base64"));
+  console.log(`Saved ${resolve(output)}`);
+}
+```
+
+  </TabItem>
+</Tabs>
+
+{/* Source: Rakesh (Slack, Oct 7): pace tags exist, same syntax as emotion tags. Rakesh (Oct 9, via Gregory): pace tags are only slow or fast, so medium is dropped from the text, the loop, and the table (the Oct 7 run covered slow and fast with this exact code). "Without a pace tag, the voice keeps its normal rate" is our wording: confirm that no tag equals the former medium. TESTED Oct 7 on voice_478: slow 2.72 s, medium 2.40 s, fast 2.08 s for the example sentence, full text each time and tags not spoken. On gb_jane_neutral pace barely changes the duration (3.28 / 3.12 / 3.12 s on another sentence), consistent with Rakesh's note that current checkpoints have issues with the Voxtral 2 presets. Combining "[emotion=calm][pace=slow]" returns 200 with the full sentence. */}
+
+<SectionTab as="h2" sectionId="combine-with-instructions">Combiner des balises avec une instruction de style</SectionTab>
+
+Les balises et une instruction de style agissent à des niveaux différents.  Consultez [Instructions de style](/studio/audio/text-to-speech/style-instructions).
+
+<SectionTab as="h2" sectionId="unsupported-values">Valeurs non prises en charge</SectionTab>
+
+L’API ne rejette pas une balise dont la valeur ne figure pas dans les tableaux de cette page. Une requête comme `[emotion=ecstatic]` renvoie une réponse normale, et la balise n’est pas prononcée. 
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Instructions de style" />
+  <LinkCard href="/studio/audio/concepts/voices" title="Voix (concept)" />
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Voix" />
+  <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Résolution des problèmes" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Syntax, tag not spoken, mid-sentence tag, combined tags, unsupported values accepted: Oct 7 tests (emotion_tag.{sh,py},
+     probes/p3_features.py "tags" and "repeat", handoff-tts.md surprises 3 and 4).
+   - 34 emotion values: Rakesh (Slack, Oct 7). Pace slow and fast only: Rakesh (Oct 9, via Gregory).
+   - Emotion in Voxtral 2 (voice variants) vs Voxtral 3 (tags): moved to the Voices concept, section emotion-voxtral-2-and-3
+     (final), linked from the info callout instead of repeated here.
+   - Tag vs instruction: RFC-555 section 3.2, not testable (instruction 400 code 3051 on Oct 7).
+   - Truncation after a tag on Voxtral 3 voices: Draft for Rakesh, not published as a caution until the launch checkpoint
+     is checked.
+   - Removed the [demo] cells of the emotion and pace tables (placeholder text would render): Drafts for Ben instead. */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton. Verify at the end: the emotion
+   table carries a demo per value (Ben), tag vs instruction split is clear, scope and unsupported values answered by
+   Rakesh, truncation issue checked on the launch checkpoint, combined example tested once instruction works. */}

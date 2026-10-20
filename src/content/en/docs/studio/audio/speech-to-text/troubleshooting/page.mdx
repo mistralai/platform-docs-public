@@ -1,0 +1,176 @@
+---
+title: Speech to Text troubleshooting
+sidebar_label: Troubleshooting
+sidebar_position: 9
+description: "The errors that transcription requests and realtime sessions return, the usual causes of a poor or missing transcript, and the setting that fixes each one."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Speech to Text troubleshooting
+
+This page lists the errors that file transcription and realtime sessions return, then the usual causes of a missing, inaccurate, or slow transcript. Each fix links to the page that covers the setting to change.
+
+:::tip
+Many transcript problems have a setting that fixes them, such as custom vocabulary for names or diarization for speakers. Check the symptom tables before you change models or contact support.
+:::
+
+<SectionTab as="h2" sectionId="errors">Errors</SectionTab>
+
+Errors arrive in a different form in each mode. A file transcription request returns an HTTP error with a JSON body, for example:
+
+```json
+{
+  "object": "error",
+  "message": "Word-level segments are not enabled for this model",
+  "type": "invalid_request_invalid_args",
+  "param": null,
+  "code": "3051",
+  "raw_status_code": 400
+}
+```
+
+A `422` validation error carries its explanation in `message.detail`, a list where each item has a `msg` field. A realtime session sends an event of type `error` on the open connection, with the explanation in `error.message`:
+
+```json
+{
+  "type": "error",
+  "error": {
+    "message": "Session fields cannot be changed after audio has started.",
+    "code": 3051
+  }
+}
+```
+
+{/* TESTED Oct 7 (stt agent): both blocks are copied from live captures. File envelope: out/probes/word_voxtral-transcribe-3.json (timestamp_granularities=word on the interim alias voxtral-transcribe-3). 422 shape: out/probes/lang_xx_*.json and mini_refs_nodiar.json ({"object": "error", "message": {"detail": [{"type", "loc", "msg", "input"}]}, "type": "invalid_request_error"}). Realtime: out/probes/rt_late_update.json on voxtral-transcribe-realtime-3-0. Every realtime error captured on Oct 7 had code 3051. Added to the page Oct 9 by the troubleshooting agent from the logs, no new run (expired key). */}
+
+<SectionTab as="h3" variant="secondary" sectionId="file-transcription-errors">File transcription errors</SectionTab>
+
+These errors come from a field of the transcription request. Fix the field and send the request again:
+
+| Error | Cause | Fix |
+| --- | --- | --- |
+| 400 `Invalid model: <model>` | The `model` isn't a transcription model you can use. | Use `voxtral-mini-transcribe-3` or `voxtral-small-transcribe-3`. See [Choose your model](/studio/audio/speech-to-text/overview#choose-your-model). |
+| 400 `Word-level segments are not enabled for this model` | `timestamp_granularities=word`. Timestamps are per segment only. | Use `segment`. See [Timestamps](/studio/audio/speech-to-text/transcribe-files#timestamps). |
+| 422 `When diarize is set to True and streaming is disabled, the timestamp granularity must be set to ['segment']` | `diarize=true` without segment timestamps. | Add `timestamp_granularities=segment`. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers#offline). |
+| 422 `Invalid language alpha2 code` | `language` isn't a two-letter code. | Use a code from [Languages](/studio/audio/specs-and-limits/languages), such as `en` or `fr`. See [Pin the language](/studio/audio/speech-to-text/transcribe-files#pin-the-language). |
+| 422 `Speaker references require diarization` | Speaker references without `diarize=true`. | Set `diarize` to `true`. See [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
+| 400 `turn_detection is only supported on the realtime transcription endpoint.` | `turn_detection` in a file transcription request. | Use a realtime session. See [Turn detection](/studio/audio/speech-to-text/turn-detection). |
+| 400 `maximum context length` | The audio and the `context_bias` entries together are over the model's context. Nothing is cut: the request fails. | Shorten the `context_bias` list. See [Limits and errors](/studio/audio/speech-to-text/bias-context-and-vocabulary#limits-and-errors). |
+|  | The model doesn't accept reference clips. | Use a model that supports them. See [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
+
+{/* TESTED Oct 7 (stt agent), messages copied from the probe logs: invalid model out/probes/id_voxtral-mini-transcribe-3-0.json (400, code 1500, type invalid_model, captured with the final Mini ID before the rename: the row stays valid for any wrong ID); word out/probes/word_*.json (400, code 3051); diarize without segment handoff-stt item 3 (422, message as on Diarize speakers); invalid language out/probes/lang_xx_*.json (422, detail msg); references without diarize out/probes/mini_refs_nodiar.json (422, detail msg "Assertion failed, Speaker references require diarization, set `diarize=True`.", shortened to the part Diarize speakers shows); turn_detection offline out/probes/turn_offline_small.json (400, code 3051); context handoff-stt item 8 (400, code 3059). Messages and short forms match File transcription (Common issues), Diarize speakers (Errors), and Bias context and vocabulary (Limits and errors) as of Oct 9. */}
+
+<SectionTab as="h3" variant="secondary" sectionId="realtime-errors">Realtime session errors</SectionTab>
+
+A realtime session can fail at the connection, or send an `error` event after a `session.update` message. Match the message, then fix the session configuration:
+
+| Error | Cause | Fix |
+| --- | --- | --- |
+| HTTP 403 at the WebSocket handshake | The `model` in the connection URL isn't a realtime model you can use. | Use `voxtral-mini-transcribe-realtime-3`. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime). |
+| `Session fields cannot be changed after audio has started.` | A `session.update` sent after the first audio chunk. | Send the whole configuration in one `session.update` before any audio. To change it, open a new session. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime). |
+| `target_streaming_delay_ms must be one of the trained values: ['80-1200', '2400'] (got <value>).` | A streaming delay outside the accepted values. | Use a value from 80 to 1200, or 2400. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime). |
+| `Diarization is not compatible with turn detection.` | `diarize` and `turn_detection` in the same session. | Keep one of them. See [Diarization and turn detection](/studio/audio/speech-to-text/diarize-speakers#diarization-and-turn-detection). |
+| `Speaker references require diarization, set diarize=true.` | `speaker_references` without `diarize`. | Set `diarize` to `true`. See [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
+| Message contains `Expected start_threshold >= eager_end_threshold > end_threshold` | The turn detection thresholds are out of order. | Keep `start_threshold` at least `eager_end_threshold`, itself above `end_threshold`. See [Tune thresholds](/studio/audio/speech-to-text/turn-detection#tune-thresholds). |
+| Message contains `Expected end_timeout_ms to be greater than or equal to min_silence_ms` | `end_timeout_ms` is shorter than `min_silence_ms`. | Raise `end_timeout_ms` or lower `min_silence_ms`. See [Tune thresholds](/studio/audio/speech-to-text/turn-detection#tune-thresholds). |
+| Message contains `Extra inputs are not permitted` | A field the session doesn't accept, such as a configuration name in `turn_detection`. | Remove the field. To use a configuration, send its values. See [Common configurations](/studio/audio/speech-to-text/turn-detection#common-configurations). |
+| Message contains `Invalid language alpha2 code` | `language` isn't a two-letter code. | Use a code from [Languages](/studio/audio/specs-and-limits/languages). |
+
+{/* TESTED Oct 7 (stt agent) on the interim alias voxtral-transcribe-realtime-3-0, messages copied from out/probes/: 403 rt_doc_model.json (handshake with the final Mini realtime ID before the rename, empty body; a wrong ID gets the same answer); late update rt_late_update.json; delay rt_delay1300.json (1300; 123, 480, and 2400 accepted); diarize + turn rt_turn_diar.json; references without diarize rt_refs_nodiar.json; threshold order rt_turn_degenerate.json and rt_turn_timeout_lt_silence.json (pydantic validation messages, quoted by their stable part, as on Turn detection); extra field rt_turn_preset.json (turn_detection.preset) and rt_turn_probs.json (emit_probabilities); language rt_lang_bad.json. All error events had code 3051. Auth failures (missing or expired key) were not tested in realtime: no row. */}
+
+<SectionTab as="h2" sectionId="missing-output">No transcript or missing fields</SectionTab>
+
+When a request succeeds but part of the result is missing, the cause is usually a field you didn't set:
+
+| Symptom | Mode | Cause | Fix |
+| --- | --- | --- | --- |
+| `segments` is empty | File | Segment timestamps aren't requested. | Add `timestamp_granularities=segment`. See [Timestamps](/studio/audio/speech-to-text/transcribe-files#timestamps). |
+| `speaker_id` is `null` on every segment | File | Diarization isn't on. | Set `diarize` to `true`. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers). |
+| No `transcription.text.delta` events | Realtime | With diarization on, text arrives in `transcription.segment` events instead. | Read the text from `transcription.segment`. See [Read speaker labels](/studio/audio/speech-to-text/diarize-speakers#read-labels). |
+| No `turn.*` events | Realtime | `turn_detection` isn't in the session configuration. | Add a `turn_detection` object to `session.update`. See [Enable turn detection](/studio/audio/speech-to-text/turn-detection#enable-turn-detection). |
+|  | Realtime | The `audio_format` in `session.update` doesn't match the audio you send: encoding or sample rate. | Declare the encoding and sample rate of your audio. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime). |
+|  | Realtime | The client didn't send `input_audio.end` after the last audio chunk. | Send `input_audio.end` when the audio is over. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime). |
+| `text` is empty | File | The recording has no speech, or a format the API can't read. | Check the file plays, and its format. See [Audio formats](/studio/audio/specs-and-limits/audio-formats). |
+
+<SectionTab as="h2" sectionId="wrong-words">Wrong words</SectionTab>
+
+When the transcript is there but some words are wrong, find the kind of error in this table:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Names, brands, product names, or jargon come out misspelled | The model doesn't know the term, and writes what it hears. | List each term as a keyphrase in `context_bias`. See [Bias with keyphrases](/studio/audio/speech-to-text/bias-context-and-vocabulary#keyphrases) and [Custom vocabulary](/studio/audio/concepts/custom-vocabulary). |
+| A term is still wrong in realtime, with only a description of the recording in `context_bias` |  | Add the term as its own keyphrase. See [Use it in realtime sessions](/studio/audio/speech-to-text/bias-context-and-vocabulary#realtime). |
+| Words come out in the wrong language | Without `language`, the model detects the language of the recording, and the detection can be wrong. | Pin the language with `language`. See [Pin the language](/studio/audio/speech-to-text/transcribe-files#pin-the-language). |
+| The realtime transcript has too many errors | A short streaming delay gives the model less context before it writes each word. | Raise `target_streaming_delay_ms`, at the cost of later text. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime) and [Latency](/studio/audio/concepts/latency#realtime-transcription). |
+
+{/* Wrong language: auto-detection by default and pinning, from File transcription Pin the language (API reference field description: "Providing the language can boost accuracy.", pin_language.sh). No wrong detection was observed in tests. Realtime language field accepted (out/probes/rt_lang.json). Streaming delay trade-off: RFC-555 section 2.2, concepts/latency (final). */}
+
+<SectionTab as="h2" sectionId="speakers">Speaker labels</SectionTab>
+
+Speaker labels raise their own questions. For what labels mean, see [Speakers and diarization](/studio/audio/concepts/speakers-and-diarization).
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| A speaker you sent a reference clip for shows a generic label, such as `speaker_3` | The clip doesn't match the voice in the recording, for example a different person who sounds alike. | Use a clip of the same person. See [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
+| The same person has a different label in two recordings | Labels only hold within one transcript or session. | Name the speaker with a reference clip in each request. See [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
+| Overlapping speech is not supported in this version. | Two people speak at the same time. | See [Overlapping segments](/studio/audio/speech-to-text/diarize-speakers#overlapping-segments). |
+
+<SectionTab as="h2" sectionId="latency">Slow results</SectionTab>
+
+When the transcript is right but arrives too late, the setting to change depends on what the user waits for:
+
+| Symptom | Mode | Cause | Fix |
+| --- | --- | --- | --- |
+| Realtime text appears too long after the words are spoken | Realtime | The streaming delay is long. | Lower `target_streaming_delay_ms`, at the cost of accuracy. See [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime) and [Latency](/studio/audio/concepts/latency#realtime-transcription). |
+| Users wait for the whole transcript of a long file | File | The response arrives when the whole file is transcribed. | Stream the response to show the text as it comes. The total time stays the same. See [Stream the response](/studio/audio/speech-to-text/transcribe-files#stream-the-response). |
+| An agent answers long after the user stops speaking | Realtime | Turn detection waits for a minimum silence before it ends the turn. | Lower `min_silence_ms`, or start from the Aggressive configuration. Turns then end sooner, with more cut-offs. See [Common configurations](/studio/audio/speech-to-text/turn-detection#common-configurations). |
+
+<SectionTab as="h2" sectionId="turn-detection">Turn detection</SectionTab>
+
+Each turn detection symptom has one setting to move. Change one at a time, and test with recordings of your real users:
+
+| Symptom | Fix |
+| --- | --- |
+| The turn ends while the user is still speaking, during a pause | Lower `end_threshold`, or increase `min_silence_ms`. The reply comes later. |
+| The turn takes too long to end after a long pause | Decrease `end_timeout_ms` to cap the wait. |
+| Turns start on background noise | Raise `start_threshold`. |
+| Too many `turn.eager_end` events | Lower `eager_end_threshold`. A `turn.eager_end` followed by `turn.resume` at a pause between sentences is expected. |
+| The last words of a turn arrive after `turn.end` | Keep adding text to the turn after `turn.end`. See [The last words arrive after the turn event](/studio/audio/speech-to-text/turn-detection#text-timing). |
+
+For every setting, its default, and what it does, see [Tune thresholds](/studio/audio/speech-to-text/turn-detection#tune-thresholds). For the trade-off between replying sooner and cutting people off, see [Turns and turn-taking](/studio/audio/concepts/turns).
+
+{/* Directions: Rakesh, "How to use end-of-turn detection" (Oct 9, via Gregory), as in Turn detection Tune thresholds. "End timeout caps the wait": same source. Eager end + resume at pauses: Oct 7 runs (Turn detection, In this output). Text after turn.end: Turn detection text-timing section ( there, rt_turn_aggr.json). */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="File transcription" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-in-realtime" title="Realtime transcription" />
+  <LinkCard href="/studio/audio/speech-to-text/bias-context-and-vocabulary" title="Bias context and vocabulary" />
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Diarize speakers" />
+  <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Turn detection" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Every error message: live captures of Oct 7 in examples/stt/out/probes/ and handoff-stt.md (see the TESTED comments under
+     each table). Short forms aligned with File transcription (Common issues), Diarize speakers (Errors), and Bias context and
+     vocabulary (Limits and errors), all written Oct 9.
+   - Missing output: segments empty without timestamps and speaker_id null without diarize (File transcription, transcribe.sh and
+     timestamps.sh, Oct 7); transcription.segment replaces text.delta with diarize (out/probes/rt_diar.json vs rt_basic.json);
+     no turn events without turn_detection (rt_basic.json). Mismatched audio_format, missing input_audio.end, and empty files:
+     not tested, s.
+   - Wrong words: Bias context and vocabulary (tests Oct 7), concepts/custom-vocabulary; streaming delay trade-off from
+     concepts/latency and RFC-555 section 2.2.
+   - Speakers: handoff-stt.md surprise 5 (look-alike references give speaker_3 / speaker_4), concepts/speakers-and-diarization,
+     overlap probes ().
+   - Latency: concepts/latency, File transcription Stream the response (stream does not shorten the total), Turn detection
+     Common configurations (Aggressive) and Rakesh's directions (Oct 9).
+   - Not documented on purpose: realtime usage prompt_audio_seconds stuck at 3 (probable bug, asked to Rakesh in handoff-stt);
+     audio in chat errors (429 for large bodies) belong to Audio in chat. */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton. Every row is symptom -> cause -> fix,
+   with the fix linked to the page that owns the setting (no option documented here). Verify at the end: every message matches
+   the owning page, Draft rows resolved or removed (reference limits error, empty transcript causes, audio quality, connection
+   drops), errors re-captured on the launch checkpoint. */}

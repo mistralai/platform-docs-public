@@ -1,0 +1,159 @@
+---
+title: Turns and turn-taking
+sidebar_label: Turns and turn-taking
+sidebar_position: 3
+description: "How Voxtral decides when someone has finished speaking, why it matters for live transcription and voice agents, and the trade-off between cutting people off and answering late."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Turns and turn-taking
+
+A turn ends at the moment a speaker hands the conversation over, and any live application that acts on speech has to detect that moment. This page explains how Voxtral makes that decision, how to lean between cutting people off and answering late, and how voice agents handle a user who talks over them.
+
+<SectionTab as="h2" sectionId="why-silence-isnt-enough">Why silence isn't enough</SectionTab>
+
+People stop talking for many reasons besides being done. They breathe, look for a word, read out an order number digit by digit, or think before the end of a sentence. Your application has to tell these pauses apart from a real end, because the end is when it acts: a voice agent answers, a voice command runs, or a live caption closes its line.
+
+:::tip
+A rule based on silence alone can't do it well. With a short silence, the application cuts off everyone who pauses mid-sentence. With a long one, every reply comes late, even after a clear, complete question. A better decision also takes into account what the speaker said and how they said it.
+:::
+
+<SectionTab as="h2" sectionId="how-detection-works">How Voxtral detects the end of a turn</SectionTab>
+
+End-of-turn detection is built into the realtime transcription model, so it only exists in [realtime sessions](/studio/audio/concepts/offline-and-realtime). While it transcribes, the model scores the probability that the user is in a semantically active segment of speech, from 0 to 1. The server turns that estimate into events that mark the moments of a turn.
+
+<DiagramFrame label="One turn">
+
+Read from left to right: the user speaks, pauses, speaks again, then stops.
+
+<LinkedDiagram
+  src="/img/audio_turn_timeline.svg"
+  alt="One turn on a timeline: start when the user begins speaking, an eager end during a short pause, a resume when the user speaks again, a second eager end in the final silence, then the end. A reply started on the first eager end is dropped; a reply started on the second is ready sooner."
+  viewBox={[1100, 345]}
+  links={[
+    { href: '#eager-end', label: 'Eager end: prepare before the turn is over', x: 415, y: 226, width: 150, height: 56, rx: 10 },
+    { href: '#eager-end', label: 'Eager end: prepare before the turn is over', x: 755, y: 226, width: 150, height: 56, rx: 10 },
+    { href: '/studio/audio/speech-to-text/turn-detection', label: 'Turn detection', x: 925, y: 150, width: 150, height: 56, rx: 10 },
+  ]}
+/>
+
+A pause produces an eager end, not an end. If the user goes on, a resume cancels it. The end comes once the silence lasts long enough and the model is confident that the turn is over.
+
+</DiagramFrame>
+
+:::info
+Each moment has a matching event. For the events, their timing against the transcript, and how to enable detection, see [Turn detection](/studio/audio/speech-to-text/turn-detection).
+:::
+
+<SectionTab as="h2" sectionId="eager-end">Eager end: prepare before the turn is over</SectionTab>
+
+Waiting for the end costs time on every turn. The eager end lets your application use that time: when the turn is probably over, start preparing the reply, such as the model call or the first words of speech. If the user goes on, drop what you prepared. If the end follows, the reply is already underway and the user waits less. For where this time goes in a full reply, see [Latency](/studio/audio/concepts/latency#end-of-turn-detection).
+
+ Only start work that you can throw away at no cost. Wait for the end before you do anything that can't be undone, such as sending a message, booking a slot, or calling a tool that changes data.
+
+The Voice Agents SDK handles turn detection internally and does not expose `turn.eager_end` or `turn.resume` events to the application.
+
+<SectionTab as="h2" sectionId="trade-off">Cutting people off or answering late</SectionTab>
+
+Every turn detection setting moves the same dial. End turns sooner, and replies come faster, but more users get cut off mid-sentence. End them later, and fewer users get cut off, but every reply waits longer. No setting removes the trade-off: you choose where your application sits on it.
+
+<SectionTab as="h3" variant="secondary" sectionId="which-way-to-lean">Which way to lean</SectionTab>
+
+The right balance depends on how your users speak and on which mistake costs them more. Find the row closest to your application. If it mixes cases, such as a support agent that also takes order numbers, start from the row where a mistake costs your users the most.
+
+| Your application | Lean toward | Why |
+| --- | --- | --- |
+| Short commands and quick questions, such as a voice menu | Ending sooner | Requests are short and complete, and a slow reply is what users notice. |
+| Fast back-and-forth conversation | Ending sooner | Turns are short, and long gaps make the conversation feel stiff. |
+| Collecting details, such as addresses, order numbers, or symptoms | Ending later | People pause while they read or remember. A cut-off makes them start over. |
+| Users who think aloud, such as in interviews, tutoring, or advice | Ending later | Pauses are part of the answer. Interrupting feels rude and loses information. |
+
+<SectionTab as="h3" variant="secondary" sectionId="presets">Start from a preset</SectionTab>
+
+Rather than tune each setting from scratch, start from a preset, a set of values chosen to work together:
+
+- **Default**: what you get when you enable turn detection without any settings. A good starting point for most conversations.
+- **Aggressive**: ends the turn sooner after the user stops, for fast back-and-forth where speed matters more than the occasional cut-off.
+
+A preset isn't a switch in the API: you copy its values into your session settings, then adjust from there. For the values, see the [common configurations](/studio/audio/speech-to-text/turn-detection#common-configurations) on Turn detection.
+
+:::tip
+To end turns sooner, the settings go in this direction: a shorter minimum silence, a higher end threshold, and a shorter end timeout. To end them later, move the same settings the other way. Change one at a time, and check the effect on interruptions as well as on speed. The settings, their ranges, and their defaults are on [Turn detection](/studio/audio/speech-to-text/turn-detection).
+:::
+
+<SectionTab as="h2" sectionId="interruptions">Interruptions in voice agents</SectionTab>
+
+Turn-taking goes both ways. In a conversation with an [voice agent](/studio/audio/voice-agents/overview), the user also needs a way to take the floor back while the agent is speaking, for example to correct it or to skip a long answer.
+
+By default, the user can interrupt the agent. When the user starts speaking while the agent talks, the agent stops its speech and listens. The `turn.allow_interruptions` setting controls this behavior (default: on). You can turn interruptions off in the [agent configuration](/studio/audio/voice-agents/configuration#agent-options). The choice comes down to who must be able to stop whom:
+
+| | Interruptions on | Interruptions off |
+| --- | --- | --- |
+| The user can | Stop the agent at any time and take the floor | Speak only when the agent has finished |
+| Suits | Most conversations, where users expect to cut in as they would with a person | Messages that must be heard in full, such as a legal notice or a confirmation to read back |
+| Watch out for |  | A user who can't stop a long or wrong answer gets frustrated |
+
+:::tip
+To show who has the floor in your interface, such as a microphone indicator or a speaking animation, follow the agent state.  See the events on [Manage agent sessions](/studio/audio/voice-agents/sessions#events).
+:::
+
+<SectionTab as="h2" sectionId="turns-and-diarization">Turn detection and diarization</SectionTab>
+
+Realtime transcription offers both turn detection and speaker diarization, but not in the same session: a session that turns on both gets an error. The two features answer different questions about the audio. 
+
+For each session, pick the one your application needs:
+
+- **Turn detection** for interactive applications that act when one user finishes, such as voice agents and voice commands.
+- **Diarization** for conversations between several people, where you need to know who said what, such as live captions of a meeting. See [Speakers and diarization](/studio/audio/concepts/speakers-and-diarization).
+
+If you need both, for example to answer live and to label speakers in the record, you can keep the recording of the session and diarize it offline afterwards. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers).
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Turn detection" />
+  <LinkCard href="/studio/audio/voice-agents/configuration" title="Agent configuration" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latency" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Turn events start / eager end / resume / end, time_s, end_reason "threshold": Oct 7 tests
+     (examples/stt/turn-detection/turn_detection.py, out/probes/rt_turn_*.json), handoff-stt item 6.
+   - Built into the realtime model, per-frame estimate of "still saying something meaningful": all-hands (Sept 23)
+     and RFC-555 section 2.3 via the Turn detection skeleton ( on the estimate).
+   - Realtime only: offline 400 "turn_detection is only supported on the realtime transcription endpoint."
+     (out/probes/turn_offline_small.json, cited on the Speakers and diarization concept).
+   - Eager ends frequent: Oct 7 runs on support_call.wav and meeting_16k.wav (Default values), eager end and
+     resume pairs at most pauses.
+   - Presets Default and Aggressive: Rakesh (Slack, Sept 28); Default = server values echoed for an empty
+     turn_detection object; no preset field in the API (turn_detection.preset rejected, extra_forbidden, Oct 7);
+     Aggressive ended a turn at a 0.4 s pause where Default didn't (Oct 7). No value on this page by design.
+   - Threshold directions: CONFIRMED by Rakesh, Oct 9 ("How to use end-of-turn detection", via Gregory): lower end_threshold =
+     fewer false cutoffs, higher latency; longer min_silence_ms = fewer premature endings, higher latency; shorter
+     end_timeout_ms = caps the maximum latency. Minimum silence direction also tested Oct 7.
+   - Interruptions: SDK docs (Oct 8 copy, voice-agents-sdk-notes-2026-10-08): turn option, allow_interruptions
+     default True, "whether the user can interrupt the agent"; agent_state_changed (listening, thinking, speaking,
+     and more). Barge-in behavior itself: , team.
+   - Diarization exclusivity: CHECKED Oct 9 against out/probes/rt_turn_diar.json (Oct 7, realtime model served as
+     voxtral-transcribe-realtime-3-0-1): diarize + turn_detection in one session.update returns an error event
+     "Diarization is not compatible with turn detection." (code 3051). The skeleton cited RFC-555 only; the test
+     confirms it on the v3 interim checkpoint. Re-check on the launch checkpoint. The Voice agents STT config has
+     no diarize option, so the constraint doesn't reach agents. Offline diarization tested on support_call.wav.
+   - Use-case table ("Which way to lean") and the interruptions table: written in our own words, inspired by the
+     idea of ElevenLabs "Conversation flow" (turn eagerness levels, interruptions on or off) as summarized in
+     tracker/competitor-analysis.md. The vendor page itself wasn't fetched (Tavily quota): no text copied. */}
+
+{/* Concept page (layer 1, Context) — audio docs revamp (DOC-610). Created Sept 25
+   after Ben's review. Boundary: this page owns the "why" (what a turn is, why
+   silence is not enough, the trade-off, interruptions); Turn detection owns the
+   "how" (enable, events and timing, thresholds, state machine diagram); Latency owns
+   the delay that end-of-turn detection adds to each reply. The timeline diagram here
+   shows one turn in time; the state machine diagram stays on Turn detection. Written
+   Oct 9. Verify at the end: no threshold values, SDK event names checked against the
+   release version (R175), exclusivity with diarization still true on the launch
+   checkpoint, third preset answered by Rakesh, the anchor
+   turn-detection#common-configurations still valid once that page uses SectionTabs. */}

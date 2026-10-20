@@ -27,6 +27,7 @@ import {
   ThunderIcon,
   FireIcon,
   PictureIcon,
+  MicrophoneIcon,
 } from '@/components/icons/pixel';
 
 // Icon mapping for different use cases and integrations using pixel icons
@@ -44,6 +45,7 @@ const getUseCaseIcon = (useCase: string) => {
     Quickstart: ThunderIcon,
     Search: SearchIcon,
     Pixtral: PictureIcon,
+    Audio: MicrophoneIcon,
   };
 
   return iconMap[useCase] || PageIcon;

@@ -15,24 +15,53 @@ Toutes les clés se trouvent à la racine de `config.toml` sauf indication contr
 
 | Clé | Type | Valeur par défaut | Description |
 |---|---|---|---|
-| `default_agent` | string |  | Agent interactif par défaut, par exemple `"plan"`. Ignoré en mode programmatique, qui revient à `auto-approve`. Voir [Agents](/vibe/code/cli/agents) |
+| `default_agent` | string | `"accept-edits"` | Agent utilisé lorsque vous ne spécifiez pas `--agent`, dans les sessions interactives et programmatiques. Voir [Les agents](/vibe/code/cli/agents) |
 | `active_model` | string |  | Alias de modèle actuellement utilisé. Défini sur un `alias` de `[[models]]` ou un ID de modèle intégré |
 | `allowed_models` | array&lt;string&gt; |  | Liste d'autorisation de motifs de noms de modèles (correspondance exacte, glob ou regex `re:`), comparés aux noms des modèles envoyés à l'API d'inférence, et non à leurs alias. Si la liste n'est pas vide, seuls les modèles correspondants sont sélectionnables |
-| `compaction_model` | table |  | Modèle qui résume la conversation pendant `/compact`. Valeur par défaut : le modèle actif |
+| `compaction_model` | table |  | Modèle qui résume la conversation pendant `/compact` et la compaction automatique. Doit utiliser le fournisseur du modèle actif ; sinon, Vibe affiche un avertissement et utilise le modèle actif. Valeur par défaut : le modèle actif |
+| `auto_compact_threshold` | number |  | Nombre de tokens qui déclenche la compaction automatique pour les modèles qui ne définissent pas leur propre seuil. Ignoré pour un modèle si ce seuil est supérieur ou égal à son `max_context_length`. Si aucun seuil n'est défini, la compaction se déclenche à 80 % de `max_context_length`, ou à 200 000 tokens si la fenêtre de contexte est inconnue. `0` désactive la compaction automatique |
+| `compaction_max_output_tokens` | number | `80000` | Limite de tokens de sortie des requêtes de compaction. Ne dépasse jamais la limite de sortie du modèle. `0` applique à la compaction la même limite qu'aux autres requêtes |
+| `compaction_thinking` | string |  | Niveau de réflexion de la première requête de compaction : `off`, `low`, `medium`, `high` ou `max`. Si cette clé n'est pas définie, le modèle de compaction conserve son propre niveau. La requête de repli s'exécute toujours sans raisonnement |
+| `compaction_reasoning_limit_tokens` | number | `32000` | Nombre approximatif de tokens de raisonnement au-delà duquel Vibe abandonne la première requête de compaction au profit d'une requête de repli plus simple, sans outils ni raisonnement. `0` désactive cette limite |
+| `output_limit_retries` | number | `6` | Nombre de fois par tour où Vibe écarte une réponse coupée à la limite de tokens de sortie et la redemande, en demandant une réponse plus courte. `0` termine le tour dès la première réponse coupée |
+| `output_token_reserve` | number | `4096` | Tokens laissés libres lorsque Vibe réduit la limite de sortie d'une requête à la place que son entrée laisse dans la fenêtre de contexte. S'applique aux modèles qui définissent `max_context_length` |
 | `vision_model` | table |  | Modèle compatible vision qui décrit les images jointes lorsque le modèle actif ne prend pas en charge les images. Utilise par défaut n'importe quel modèle compatible vision du fournisseur du modèle actif. Définissez-le pour utiliser un modèle d'un autre fournisseur |
-| `log_interactions` | boolean | `true` | Active la journalisation des sessions. Requis pour `--continue` / `--resume`. Voir [Travailler avec la CLI](/vibe/code/cli/work-with-cli#resume) |
+| `enabled_agents` | array&lt;string&gt; |  | Liste d'autorisation de motifs de noms d'agents. Si la liste n'est pas vide, seuls les agents correspondants sont disponibles |
+| `disabled_agents` | array&lt;string&gt; |  | Liste d'exclusion de motifs de noms d'agents, appliquée quand `enabled_agents` est vide |
+| `agent_paths` | array&lt;string&gt; |  | Répertoires supplémentaires où découvrir des agents personnalisés |
+| `system_prompt_id` | string | `"cli"` | Prompt système à utiliser. Définissez cette valeur sur le nom d'un fichier Markdown dans `~/.vibe/prompts/` ou `.vibe/prompts/`, sans l'extension `.md` |
+| `compaction_prompt_id` | string | `"compact"` | Prompt utilisé pour résumer la conversation pendant la compaction. Résolu comme `system_prompt_id` |
+| `title_prompt_id` | string | `"session_title"` | Prompt utilisé pour générer les titres de session. Résolu comme `system_prompt_id` |
 | `skill_paths` | array&lt;string&gt; |  | Répertoires supplémentaires où découvrir des skills. Voir [Skills](/vibe/code/cli/skills) |
 | `enabled_skills` | array&lt;string&gt; |  | Liste d’autorisation de motifs de noms de skills (exact, glob ou `re:` regex). Si non vide, seuls les skills correspondants se chargent |
 | `disabled_skills` | array&lt;string&gt; |  | Liste d’exclusion de motifs de noms de skills, appliquée quand `enabled_skills` est vide |
 | `enabled_tools` | array&lt;string&gt; |  | Liste d’autorisation de motifs de noms d’outils. Voir [Sécurité, approbations et permissions](/vibe/code/safety-approvals-permissions#tool-permissions) |
-| `disabled_tools` | array&lt;string&gt; |  | Liste d’exclusion de motifs de noms d’outils |
-| `enable_auto_update` | boolean | `true` | Vérifie et installe les nouvelles versions en arrière-plan |
-| `enable_notifications` | boolean | `true` | Notifications système quand une tâche longue se termine ou qu’une saisie est requise |
-| `enable_telemetry` | boolean | `true` | Envoie de la télémétrie anonyme d’usage et d’erreurs à Mistral. Désactivez pour un usage hors ligne uniquement |
+| `disabled_tools` | array&lt;string&gt; |  | Liste d'exclusion de motifs de noms d'outils, appliquée après `enabled_tools` |
+| `enable_mcp` | boolean | `true` | Autorise les serveurs MCP. Si `false`, Vibe bloque l'ajout, la suppression et l'activation de serveurs MCP, la connexion à ces serveurs et le chargement de leurs outils, y compris pour les serveurs fournis par des plugins. Voir [Configuration administrateur](/vibe/code/cli/admin-config#block-mcp) |
+| `enable_connectors` | boolean | `true` | Autorise les [Connecteurs](/vibe/code/cli/connectors) |
+| `enable_auto_approve` | boolean | `true` | Autorise le mode d'approbation automatique. Si `false`, Vibe masque l'agent `auto-approve` et tout agent personnalisé avec `safety = "yolo"`, et ignore `--auto-approve` et `--yolo`. Les autorisations par outil s'appliquent toujours. Destiné à la [configuration administrateur](/vibe/code/cli/admin-config#block-auto-approve) |
+| `enable_subagents` | boolean | `true` | Permet à l'agent de déléguer du travail à des sous-agents. Voir [Les agents](/vibe/code/cli/agents#custom-subagents) |
+| `enable_background_processes` | boolean | `true` | Permet à l'agent d'exécuter des commandes en arrière-plan. Si `false`, les commandes s'exécutent au premier plan jusqu'à leur terme |
+| `enable_update_checks` | booléen | `true` | Vérifie une fois par jour si une nouvelle version est disponible et propose de l'installer |
+| `enable_notifications` | booléen | `true` | Émet un signal sonore et met à jour le titre du terminal lorsque Vibe termine ou attend votre saisie alors que le terminal n'a pas le focus |
+| `enable_telemetry` | booléen | `true` | Envoie de la télémétrie anonyme d’usage et d’erreurs à Mistral. Désactivez pour un usage hors ligne uniquement |
+| `enable_system_trust_store` | booléen | `false` | Valide les certificats HTTPS à l'aide du magasin de certificats de confiance du système d'exploitation plutôt que des certificats racines intégrés à Vibe. Voir [Autorités de certification d'entreprise](/vibe/code/cli/configuration#certificates) |
+| `api_stream_idle_timeout` | number | `0` | Nombre de secondes sans activité, une fois que le modèle commence à répondre, avant que Vibe considère la réponse comme bloquée. `0` désactive cette limite |
+| `ask_confirmation_on_exit` | booléen | `true` | Demande un second `Ctrl+D` avant de quitter. `Ctrl+C` demande toujours une confirmation |
+| `autocopy_to_clipboard` | booléen | `true` | Copie le texte dans le presse-papiers lorsque vous relâchez le bouton de la souris après une sélection |
+| `cursor_blink` | booléen | `true` | Fait clignoter le curseur de saisie. Définissez cette valeur sur `false` pour un curseur fixe |
+| `theme` | string | `"auto"` | Thème du terminal. `auto` suit la couleur de fond du terminal ou la préférence de thème clair ou sombre du système d'exploitation. Modifiez-le avec `/theme` |
+| `show_subagent_status_list` | booléen | `true` | Affiche la liste des sous-agents en cours d'exécution au-dessus du prompt |
+| `worktree_limit` | number | `15` | Nombre maximal de worktrees git récents gérés par Vibe et conservés localement |
+| `log_level` | string | `"WARNING"` | Niveau de log pour `~/.vibe/logs/vibe.log` : `DEBUG`, `INFO`, `WARNING`, `ERROR` ou `CRITICAL`. Modifiez-le avec `/log-level` |
+| `experimental_enable_model_catalog` | booléen | `false` | Expérimental. Récupère le catalogue de modèles sélectionnés par Mistral au début de la session et ajoute ces modèles à la liste des modèles. Vos préréglages `[[models]]` continuent de surcharger leurs paramètres. Si vous n'avez choisi aucun modèle, Vibe utilise le modèle recommandé par le catalogue, sauf si une expérience vous en attribue un autre |
 | `[[providers]]` | table array |  | Préréglages de fournisseurs. Champs listés ci-dessous. Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles) |
 | `[[models]]` | table array |  | Préréglages de modèles. Champs listés ci-dessous. Voir [Clés API et profils](/vibe/code/cli/api-keys-profiles) |
 | `[[mcp_servers]]` | table array |  | Définitions de serveurs MCP. Champs listés ci-dessous. Voir [Serveurs MCP](/vibe/code/cli/mcp-servers) |
 | `[utility_models]` | table |  | Modèles des tâches d’arrière-plan, comme le classifieur de validation intelligente et les titres de session. Champs listés ci-dessous |
+| `[session_logging]` | table |  | Paramètres de stockage des sessions. Champs indiqués ci-dessous |
+
+`displayed_workdir`, `context_warnings` et `raise_on_compaction_failure` sont obsolètes. Vibe les accepte encore dans les fichiers existants, mais ces clés n'ont aucun effet. `enable_auto_update` n'a pas d'effet non plus : utilisez `enable_update_checks`.
 
 <SectionTab as="h2" sectionId="providers">Fournisseurs (`[[providers]]`)</SectionTab>
 
@@ -41,11 +70,12 @@ Une table `[[providers]]` par préréglage de fournisseur.
 | Clé | Type | Valeur par défaut | Description |
 |---|---|---|---|
 | `name` | string | Requis | Identifiant du préréglage de fournisseur, référencé par un `provider` de `[[models]]` |
-| `api_base` | string |  | URL de base de l’API du fournisseur |
+| `api_base` | string | Requis | URL de base de l’API du fournisseur |
 | `api_key_env_var` | string |  | Nom de la variable d’environnement contenant la clé d’API. Les secrets doivent utiliser cette forme dans la config admin |
-| `api_style` | string |  | Style d’API, par exemple `"openai"` |
-| `backend` | string |  | Type de backend, par exemple `"generic"` ou `"mistral"` |
-| `region` | string |  | Région, par exemple `"eu-west-1"`. Configurations d’entreprise uniquement |
+| `api_style` | string | `"openai"` | Style d'API : `"openai"`, `"openai-responses"`, `"reasoning"`, `"anthropic"` ou `"vertex-anthropic"` |
+| `backend` | string | `"generic"` | Type de backend : `"generic"` ou `"mistral"` |
+| `region` | string |  | Région Google Cloud pour Vertex AI (`api_style = "vertex-anthropic"`). Nécessite `project_id` |
+| `project_id` | string |  | Projet Google Cloud pour Vertex AI (`api_style = "vertex-anthropic"`) |
 | `[providers.extra_headers]` | table |  | Sous-table d’en-têtes HTTP supplémentaires, par exemple `"x-acme-tenant" = "engineering"` |
 
 <SectionTab as="h2" sectionId="models">Modèles (`[[models]]`)</SectionTab>
@@ -59,14 +89,16 @@ Une table `[[models]]` par préréglage de modèle.
 | `alias` | string | `name` | Alias local utilisé par `active_model`. En cas d'omission, la valeur par défaut est `name` |
 | `display_name` | string | `alias` | Libellé affiché dans le sélecteur de modèle. Prend la valeur `alias` si non renseigné |
 | `temperature` | number | `0.2` | Température d'échantillonnage |
+| `top_p` | number |  | Échantillonnage par noyau, entre `0` (exclu) et `1`. Si non défini, la valeur par défaut du fournisseur est conservée |
+| `max_output_tokens` | number |  | Nombre maximal de tokens de sortie par requête au modèle. Si non défini, la valeur par défaut du fournisseur est conservée |
 | `input_price` | number |  | Coût par million de tokens d'entrée, utilisé pour plafonner les coûts en mode programmatique |
 | `output_price` | number |  | Coût par million de tokens de sortie, utilisé pour plafonner les coûts en mode programmatique |
-| `cached_input_price` | number |  | Coût par million de tokens d'entrée mis en cache. Omettez-le pour facturer l'entrée mise en cache au tarif `input_price` |
+| `cached_input_price` | nombre |  | Coût par million de tokens d'entrée mis en cache. Omettez-le pour facturer l'entrée mise en cache au tarif `input_price` |
 | `thinking` | string | `off` | Niveau de réflexion par défaut pour le modèle. L'un des `thinking_levels` du modèle |
-| `thinking_levels` | array&lt;string&gt; |  | Niveaux de Réflexion disponibles pour ce modèle. Utilise par défaut les cinq niveaux intégrés à la CLI en cas d'omission |
+| `thinking_levels` | array&lt;string&gt; |  | Niveaux de réflexion disponibles pour ce modèle. Valeurs par défaut si non définis : `off`, `low`, `medium`, `high` et `max` |
 | `supports_images` | booléen | `false` | Indique si le modèle est compatible vision. Si `true`, vous pouvez mentionner des images avec `@` |
-| `max_context_length` | number |  | Fenêtre de contexte en tokens. Détermine la compaction automatique |
-| `auto_compact_threshold` | number |  | Nombre de tokens qui déclenche la compaction automatique. Remplace le seuil de déclenchement par défaut, soit 80 % de `max_context_length` |
+| `max_context_length` | nombre |  | Fenêtre de contexte en tokens. Détermine la compaction automatique, et réduit la limite de sortie de chaque requête à la place que son entrée laisse, moins `output_token_reserve` |
+| `auto_compact_threshold` | nombre |  | Nombre de tokens qui déclenche la compaction automatique. Remplace le seuil de déclenchement par défaut, soit 80 % de `max_context_length` |
 
 <SectionTab as="h2" sectionId="utility-models">Modèles utilitaires (`[utility_models]`)</SectionTab>
 
@@ -76,6 +108,16 @@ Modèles des tâches d’arrière-plan, une clé par tâche. Chaque valeur est l
 |---|---|---|---|
 | `smart_approve` | string | Automatique | Modèle qui classe les appels d’outils pour l’agent `smart-approve`. Voir [Choisir le modèle de validation intelligente](/vibe/code/safety-approvals-permissions#smart-approve-model) |
 | `title` | string | Automatique | Modèle qui génère les titres de session |
+
+<SectionTab as="h2" sectionId="session-logging">Enregistrement des sessions (`[session_logging]`)</SectionTab>
+
+Définit où Vibe enregistre les sessions. `--continue`, `--resume` et `/resume` nécessitent des sessions enregistrées. Voir [Travailler avec la CLI](/vibe/code/cli/work-with-cli#resume).
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `enabled` | booléen | `true` | Enregistre les sessions sur le disque |
+| `save_dir` | string | `~/.vibe/logs/session` | Répertoire où les sessions sont enregistrées |
+| `generate_titles` | booléen | `true` | Génère les titres de session en arrière-plan. Si `false`, Vibe affiche le premier message à la place |
 
 <SectionTab as="h2" sectionId="mcp-servers">Serveurs MCP (`[[mcp_servers]]`)</SectionTab>
 
@@ -88,13 +130,25 @@ Une table `[[mcp_servers]]` par serveur. Les champs requis dépendent du `transp
 | `url` | string |  | URL de base pour les transports HTTP |
 | `command` | string |  | Commande pour le transport stdio |
 | `args` | array&lt;string&gt; |  | Arguments pour le transport stdio |
-| `headers` | table |  | En-têtes HTTP supplémentaires pour les transports HTTP |
 | `env` | table |  | Variables d’environnement passées au processus stdio |
-| `api_key_env` | string |  | Variable d’environnement contenant la clé d’API. Distinct du champ `api_key_env_var` des fournisseurs |
-| `api_key_header` | string |  | Nom de l’en-tête à définir avec la clé d’API |
-| `api_key_format` | string |  | Chaîne de format, par exemple `"Bearer {token}"` |
-| `startup_timeout_sec` | number |  | Secondes d’attente pour le démarrage du serveur |
-| `tool_timeout_sec` | number |  | Secondes d’attente pour l’exécution d’un appel d’outil |
+| `startup_timeout_sec` | nombre | `10` | Secondes d’attente pour le démarrage du serveur |
+| `tool_timeout_sec` | nombre | `60` | Secondes d’attente pour l’exécution d’un appel d’outil |
+| `disabled` | booléen | `false` | Masque tous les outils de ce serveur. `/mcp` permet de modifier ce réglage |
+| `disabled_tools` | array&lt;string&gt; |  | Noms des outils de ce serveur à masquer, sans le préfixe du serveur |
+| `[mcp_servers.auth]` | table |  | Authentification pour les transports HTTP. Champs indiqués ci-dessous |
+
+La table `[mcp_servers.auth]` définit la manière dont Vibe s'authentifie auprès d'un serveur HTTP :
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `type` | string | `"static"` | `"static"` pour des en-têtes ou une clé API, `"oauth"` pour une connexion via le navigateur |
+| `headers` | table |  | `static` uniquement. En-têtes HTTP supplémentaires |
+| `api_key_env` | string |  | `static` uniquement. Variable d'environnement contenant la clé API. Distincte de `api_key_env_var` des fournisseurs |
+| `api_key_header` | string | `"Authorization"` | `static` uniquement. Nom de l'en-tête dont la valeur est définie avec la clé API |
+| `api_key_format` | string | `"Bearer {token}"` | `static` uniquement. Chaîne de format pour la valeur de l'en-tête |
+| `scopes` | array&lt;string&gt; | Requis pour `oauth` | `oauth` uniquement. Portées OAuth à demander. Fournissez une liste vide pour accepter la valeur par défaut du serveur |
+
+Vibe accepte encore `headers`, `api_key_env`, `api_key_header` et `api_key_format` au premier niveau de `[[mcp_servers]]` et les interprète comme une authentification statique.
 
 <SectionTab as="h2" sectionId="tool-permissions">Permissions par outil (`[tools.<tool_name>]`)</SectionTab>
 
@@ -102,9 +156,9 @@ Une table `[[mcp_servers]]` par serveur. Les champs requis dépendent du `transp
 
 | Clé | Type | Valeur par défaut | Description |
 |---|---|---|---|
-| `permission` | string |  | `"always"` pour autoriser automatiquement l’outil, `"ask"` pour demander avant usage |
-| `allow` | array&lt;string&gt; |  | `bash` uniquement. Liste d’autorisation de commandes, par exemple `["git status", "pnpm test"]` |
-| `deny` | array&lt;string&gt; |  | `bash` uniquement. Liste d’exclusion de commandes, par exemple `["rm -rf *"]` |
+| `permission` | string |  | `"always"` pour autoriser automatiquement l'outil, `"ask"` pour demander une confirmation avant utilisation, `"never"` pour le bloquer |
+| `allowlist` | array&lt;string&gt; | Commandes en lecture seule pour `bash` | Autorisés sans approbation. Pour `bash`, préfixes de commandes tels que `["git status", "pnpm test"]`. Pour `read_file`, `write_file` et `edit`, motifs glob comparés aux chemins absolus, tels que `["/home/me/project/docs/*"]`. Remplace la liste par défaut |
+| `denylist` | array&lt;string&gt; | Commandes interactives pour `bash` | Toujours refusés. Pour `bash`, préfixes de commandes tels que `["rm -rf"]`. Pour `read_file`, `write_file` et `edit`, motifs glob comparés aux chemins absolus. Remplace la liste par défaut |
 
 <SectionTab as="h2" sectionId="agent-files">Fichiers de définition d’agents</SectionTab>
 
@@ -112,12 +166,13 @@ Ces clés se trouvent dans `~/.vibe/agents/<name>.toml` ou `./.vibe/agents/<name
 
 | Clé | Type | Valeur par défaut | Description |
 |---|---|---|---|
-| `agent_type` | string | Requis | `"agent"` (utilisateur, sélectionnable via `--agent`) ou `"subagent"` (délégation uniquement) |
+| `agent_type` | string | `"agent"` | `"agent"` (utilisateur, sélectionnable via `--agent`) ou `"subagent"` (délégation uniquement) |
 | `display_name` | string |  | Libellé lisible par l’utilisateur |
-| `description` | string |  | Description en texte libre |
-| `safety` | string |  | Indicateur visuel : `safe`, `neutral`, `destructive` ou `yolo`. Change uniquement la couleur de bordure de l’entrée ; n’applique aucune permission |
-| `system_prompt_id` | string |  | Pointe vers un fichier de prompt dans `~/.vibe/prompts/` |
-| `active_model` | string |  | Alias de modèle pour cet agent (même clé que la config globale) |
+| `description` | string |  | Description en texte libre. Requise pour les sous-agents |
+| `instructions` | string |  | Texte du prompt écrit directement dans le fichier. Pour un agent, ajouté après le prompt système. Pour un sous-agent, remplace le prompt `system_prompt_id` |
+| `safety` | chaîne | `"neutral"` | Indication visuelle : `safe`, `neutral`, `destructive`, `smart` ou `yolo`. Modifie la couleur de la bordure de la zone de saisie ; n'applique aucune autorisation. `enable_auto_approve = false` masque les agents `yolo` |
+| `system_prompt_id` | chaîne |  | Désigne un fichier de prompt Markdown dans `./.vibe/prompts/` (dossiers de confiance uniquement) ou `~/.vibe/prompts/`, sans l'extension `.md` |
+| `active_model` | chaîne |  | Alias de modèle pour cet agent (même clé que la config globale) |
 | `enabled_tools` | array&lt;string&gt; |  | Liste d’autorisation d’outils pour cet agent |
 | `disabled_tools` | array&lt;string&gt; |  | Liste d’exclusion d’outils pour cet agent |
 
@@ -125,11 +180,12 @@ Voir [Agents](/vibe/code/cli/agents) pour les agents intégrés et des exemples 
 
 <SectionTab as="h2" sectionId="environment-variables">Variables d’environnement</SectionTab>
 
-Ce ne sont pas des clés de `config.toml`, mais elles font partie du modèle de configuration. Elles se situent au niveau de précédence 3 (variables d’environnement).
+Ces éléments ne sont pas des clés de `config.toml`, mais font partie du modèle de configuration. Voir [Priorité des configurations](/vibe/code/cli/configuration#precedence) pour connaître la priorité des variables `VIBE_<KEY>`.
 
 | Variable | Rôle |
 |---|---|
 | `VIBE_HOME` | Surcharge le répertoire racine `~/.vibe/` pour tout l’état (config, prompts, agents, skills, journaux) |
+| `VIBE_<KEY>` | Surcharge la clé de configuration de premier niveau `<key>`, par exemple `VIBE_ACTIVE_MODEL`. Utilisez `__` pour les clés imbriquées. Vibe ignore une valeur qu'il ne peut pas analyser et la consigne dans les logs |
 | `MISTRAL_API_KEY` | Clé d’API Mistral principale |
 | `<PROVIDER>_API_KEY` | Clé d’API référencée par un `api_key_env_var` de `[[providers]]` (par exemple `OPENROUTER_API_KEY`) |
 

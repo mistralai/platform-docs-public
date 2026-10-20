@@ -1,0 +1,168 @@
+---
+title: Style instructions
+sidebar_label: Style instructions
+sidebar_position: 2
+description: "Steer the delivery of the whole speech output with a short free-form instruction."
+---
+
+:::caution
+Style instructions are not available at launch. The `instruction` parameter is not supported on the current Voxtral TTS 3 checkpoint. This page documents the intended behavior for when the feature is enabled in a future release.
+:::
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Style instructions
+
+A style instruction describes, in your own words, how to say the whole input, such as a calm and slow delivery. Use it to set one delivery for the whole output; to change the emotion or the pace of part of the text, use [emotion and pace tags](/studio/audio/text-to-speech/emotion-tags).
+
+:::info
+For how instructions compare with the other ways to direct a voice, see [Voices](/studio/audio/concepts/voices#choose-and-direct).
+:::
+
+<CtaButton href="/api/endpoint/audio/speech#operation-speech_v1_audio_speech_post">API reference — POST /v1/audio/speech</CtaButton>
+
+<SectionTab as="h2" sectionId="give-an-instruction">Give a delivery instruction</SectionTab>
+
+Add `instruction` to the speech request, next to `input` and the voice. The value is a short sentence in plain language:
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "input": "Your order shipped this morning and should arrive on Thursday.",
+    "voice_id": "gb_jane_neutral",
+    "instruction": "A calm, slow delivery.",
+    "response_format": "wav"
+  }' | jq -r '.audio_data' | base64 --decode > calm.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import os
+from pathlib import Path
+
+import httpx
+
+response = httpx.post(
+    "https://api.mistral.ai/v1/audio/speech",
+    headers={"Authorization": f"Bearer {os.environ['MISTRAL_API_KEY']}"},
+    json={
+        "model": "voxtral-mini-tts-3-0",
+        "input": "Your order shipped this morning and should arrive on Thursday.",
+        "voice_id": "gb_jane_neutral",
+        "instruction": "A calm, slow delivery.",
+        "response_format": "wav",
+    },
+    timeout=60,
+)
+response.raise_for_status()
+
+output = Path("calm.wav")
+output.write_bytes(base64.b64decode(response.json()["audio_data"]))
+print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const response = await fetch("https://api.mistral.ai/v1/audio/speech", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "voxtral-mini-tts-3-0",
+    input: "Your order shipped this morning and should arrive on Thursday.",
+    voice_id: "gb_jane_neutral",
+    instruction: "A calm, slow delivery.",
+    response_format: "wav",
+  }),
+});
+if (!response.ok) {
+  throw new Error(`${response.status} ${await response.text()}`);
+}
+
+const { audio_data } = await response.json();
+const output = resolve("calm.wav");
+writeFileSync(output, Buffer.from(audio_data, "base64"));
+console.log(`Saved ${output}`);
+```
+
+  </TabItem>
+</Tabs>
+
+{/* RUN STATUS (Oct 7, tts agent): both blocks above ran on voxtral-mini-tts-3-0 and FAILED with 400 code 3051 "instruction is not supported for this model." (style_instruction.{sh,py}; the curl writes garbage to calm.wav because jq gets null). They stay as written because the field and the request shape are confirmed (instruction is the field: a number returns 422 string_type, "instructions" returns 422 extra_forbidden). Re-run on the launch checkpoint, then remove the Draft above. The Python example uses httpx because mistralai 3.0.0 and 3.1.0 have no instruction parameter. */}
+
+:::note
+
+:::
+
+Style instructions are not available at launch. It changes how the voice speaks, not what it says or which voice speaks: keep choosing the voice with `voice_id`.
+
+<SectionTab as="h2" sectionId="instructions-and-tags">Instructions, tags, and expressiveness</SectionTab>
+
+Three request settings shape the delivery, at different levels:
+
+| Setting | Applies to | Details |
+| --- | --- | --- |
+| `instruction` | The whole input | This page |
+| Emotion and pace tags in `input` | Part of the text | [Emotion and pace tags](/studio/audio/text-to-speech/emotion-tags) |
+| `expressiveness` | Controls how expressive the speech is. Higher values trade voice similarity and stability for stronger delivery. | [Generate speech](/studio/audio/text-to-speech/generate-speech) |
+
+Style instructions are not available at launch.
+
+<SectionTab as="h2" sectionId="limits-and-errors">Limits and errors</SectionTab>
+
+These errors come from the `instruction` field:
+
+| Error | Cause | Fix |
+| --- | --- | --- |
+| 422 `Extra inputs are not permitted` | A misspelled field name, such as `instructions` | Use `instruction`, singular. |
+| 422 with type `string_type` | `instruction` isn't a string | Send the instruction as text. |
+| Style instructions are not available at launch. | The instruction is over the length limit. It isn't shortened for you. | Shorten the instruction. |
+| Style instructions are not available at launch. | The model doesn't support style instructions. | Use a model that supports them. |
+
+For other speech generation errors, see [Troubleshooting](/studio/audio/text-to-speech/troubleshooting).
+
+{/* Errors TESTED Oct 7 (tts agent, probes/p3_features.py "instruction field name", handoff-tts.md surprise 1): "instructions" -> 422 extra_forbidden "Extra inputs are not permitted"; instruction=123 -> 422 string_type; instruction (string) -> 400 code 3051. Same 422 extra_forbidden row as the TTS Troubleshooting skeleton. */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/emotion-tags" title="Emotion and pace tags" />
+  <LinkCard href="/studio/audio/concepts/voices" title="Voices (concept)" />
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Voices" />
+  <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Availability: Rakesh (Sept 28: both TTS 3 models at launch; Oct 7: "supported on the API, but not on the checkpoint").
+     Oct 7 tests: 400 code 3051 on every request (style_instruction.{sh,py}, demo 00 styles, demo 03 step 2).
+   - Field name and validation: probes/p3_features.py (instruction vs instructions, number type), handoff-tts.md surprise 1.
+   - Whole-input scope, separation from tags, budget and no truncation: design spec RFC-555 sections 3.2 and 5.2. s.
+   - Expressiveness row: same wording and  as Generate speech (cfg renamed expressiveness, Gregory, Oct 9).
+   - Conversation history: handoff-tts.md surprise 2, probes/p6_history.py, Rakesh (Sept 28: not enabled). Draft only.
+   - Removed from the skeleton: "voice-as-instruction" (PRD) is covered by the Voices concept (what a clone copies), and the
+     "Same input, different instructions" section became a Draft for Ben (demo grid) until the feature works. */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the contract: instruction returned 400 on the
+   Oct 7 checkpoint. Verify at the end: both examples re-run successfully on the launch checkpoint, every  checked
+   by listening, demos recorded (Ben), conversation history shipped with a tested example or removed, instruction vs tags
+   split clear. */}

@@ -15,40 +15,43 @@ Le CLI est livré avec plusieurs agents intégrés, et vous pouvez définir les 
 
 | Agent | Comportement |
 |---|---|
-| `default` | Agent polyvalent. Demande une approbation avant d'exécuter des outils. |
-| `plan` | Agent en lecture seule pour l'exploration et la planification. Approuve automatiquement les outils de lecture sûrs. |
-| `accept-edits` | Approuve automatiquement les modifications de fichiers dans le répertoire de travail. Demande toujours une approbation pour les autres actions (par exemple, les commandes shell). |
+| `ask` | Demande une approbation avant d'exécuter des outils. Anciennement nommé `default`. |
+| `accept-edits` | **Agent par défaut.** Approuve automatiquement les modifications de fichiers dans le répertoire de travail. Continue de demander une approbation pour les autres actions (par exemple, les commandes shell). |
 | `smart-approve` | Classe chaque appel d'outil, exécute ceux qu'il juge sûrs et demande une approbation avant les appels risqués. Voir [Validation intelligente](/vibe/code/safety-approvals-permissions#smart-approve). |
-| `auto-approve` | Approuve automatiquement toutes les exécutions d'outils. Utilisez **uniquement dans un environnement de confiance et sandboxé** : cet agent peut exécuter des commandes arbitraires comme `rm -rf` sur tout chemin accessible par Vibe. |
-| `lean` | Agent spécialisé pour l'assistant de preuve [Lean 4](https://lean-lang.org/). Installez-le avec `/leanstall` depuis le CLI. |
+| `auto-approve` | Approuve automatiquement toutes les exécutions d'outils. Utilisez **uniquement dans un environnement de confiance et sandboxé** : cet agent peut exécuter des commandes arbitraires comme `rm -rf` sur tout chemin accessible par Vibe. Indisponible lorsque votre administrateur définit [`enable_auto_approve = false`](/vibe/code/cli/admin-config#block-auto-approve). |
+| `lean` | Agent spécialisé pour l'assistant de preuve [Lean 4](https://lean-lang.org/). Installez-le avec `/leanstall` depuis la CLI et supprimez-le avec `/unleanstall`. |
 
-Le CLI inclut également un sous-agent intégré appelé `explore`, utilisé par le modèle pour l'exploration en lecture seule de la base de code. Vous ne pouvez pas sélectionner les sous-agents directement avec `--agent`.
+:::note
+Vibe 3.0 supprime l'agent `plan`. Si votre configuration définit encore `default_agent = "plan"` et que vous n'avez pas d'agent personnalisé nommé `plan`, Vibe affiche un avertissement et démarre les sessions avec `ask` à la place. Pour conserver un workflow de planification, [créez votre propre agent plan](#plan-agent).
+:::
+
+L'agent peut également déléguer du travail à des **sous-agents**, par exemple pour explorer une grande base de code sans remplir son propre contexte. Vous ne pouvez pas sélectionner de sous-agents avec `--agent`. Voir [Sous-agents personnalisés](#custom-subagents).
 
 <SectionTab as="h2" sectionId="select">Sélectionner un agent</SectionTab>
 
 Choisissez un agent au lancement :
 
 ```bash
-vibe --agent plan
+vibe --agent ask
 vibe --agent auto-approve
 ```
 
 Dans les sessions interactives, changez d'agent à la volée avec `Maj+Tab`.
 
-Définissez l'agent interactif par défaut dans `config.toml` :
+Définissez l'agent par défaut dans `config.toml` :
 
 ```toml
-default_agent = "plan"
+default_agent = "ask"
 ```
 
-Cela s'applique **uniquement aux sessions interactives**. En mode programmatique (`--prompt`), le CLI utilise `auto-approve` par défaut si `--agent` n'est pas fourni.
+`default_agent` s'applique à la fois aux sessions interactives et programmatiques (`--prompt`). Pour approuver tous les appels d'outils d'une même exécution, quel que soit l'agent, utilisez l'option `--auto-approve` (ou son alias `--yolo`). Vibe ignore ces options lorsque votre administrateur définit `enable_auto_approve = false`.
 
 <SectionTab as="h2" sectionId="custom-agents">Agents personnalisés</SectionTab>
 
-Créez des agents personnalisés dans `~/.vibe/agents/` (niveau utilisateur) ou `./.vibe/agents/` (niveau projet) en ajoutant un fichier `.toml`. Chaque agent doit déclarer son type via `agent_type` :
+Créez des agents personnalisés dans `~/.vibe/agents/` (au niveau de l'utilisateur) ou `./.vibe/agents/` (au niveau du projet) en ajoutant un fichier `.toml`. Définissez le type d'agent avec `agent_type` :
 
-- `agent_type = "agent"` : **destiné à l'utilisateur**. Sélectionnable via `vibe --agent <nom>` ou `Maj+Tab`.
-- `agent_type = "subagent"` : **délegation uniquement**. Lancé par le modèle via l'outil `task`. Non sélectionnable par l'utilisateur.
+- `agent_type = "agent"` (par défaut) : **destiné à l'utilisateur**. Sélectionnable via `vibe --agent <name>` ou `Shift+Tab`.
+- `agent_type = "subagent"` : **réservé à la délégation**. Lancé par l'agent lorsqu'il délègue du travail. Non sélectionnable par l'utilisateur.
 
 Exécutez un agent personnalisé avec son nom de fichier :
 
@@ -66,9 +69,9 @@ agent_type = "agent"
 display_name = "Red team"
 description = "Read-only audit agent for security review."
 safety = "safe"
-active_model = "mistral-medium-latest"
+active_model = "mistral-medium-3.5"
 system_prompt_id = "redteam"
-disabled_tools = ["search_replace", "write_file"]
+disabled_tools = ["edit", "write_file"]
 
 [tools.bash]
 permission = "ask"
@@ -78,16 +81,39 @@ permission = "always"
 ```
 
 :::note
-Le champ `safety` modifie la couleur de la bordure d'entrée dans le CLI pour signaler le niveau de sécurité de l'agent. Les options sont `safe`, `neutral`, `destructive` et `yolo`. Il s'agit d'**un indicateur visuel uniquement** et n'applique pas de permissions, aussi associez-le à des `enabled_tools`, `disabled_tools` et des permissions par outil appropriés.
+Le champ `safety` change la couleur de la bordure de la zone de saisie dans la CLI pour signaler le niveau de sécurité de l'agent. Les options sont `safe`, `neutral`, `destructive`, `smart` et `yolo`. Il s'agit d'un **simple indicateur visuel** qui ne contrôle pas les autorisations ; associez-le donc à des `enabled_tools`, `disabled_tools` et autorisations par outil appropriés. Seule exception : lorsque `enable_auto_approve` vaut `false`, Vibe masque tout agent avec `safety = "yolo"`.
 :::
 
-La valeur `system_prompt_id` pointe vers un fichier dans `~/.vibe/prompts/`. L'exemple ci-dessus nécessite `~/.vibe/prompts/redteam.md`.
+La valeur `system_prompt_id` désigne un fichier Markdown dans `./.vibe/prompts/` (dossiers de confiance uniquement) ou `~/.vibe/prompts/`. L'exemple ci-dessus attend `redteam.md`.
+
+Le prompt d'un agent personnalisé s'applique uniquement si vous sélectionnez l'agent avant votre premier message, avec `--agent` ou `Shift+Tab`. Si vous changez d'agent par la suite, les outils, autorisations et modèle du nouvel agent prennent effet, mais le prompt ne change qu'après `/clear`.
+
+<SectionTab as="h3" variant="secondary" sectionId="plan-agent">Créer un agent plan</SectionTab>
+
+Pour explorer une base de code et convenir d'un plan avant toute modification de fichier, définissez un agent en lecture seule nommé `plan` :
+
+```toml
+# ~/.vibe/agents/plan.toml
+display_name = "Plan"
+description = "Explores the codebase and proposes a plan before any change."
+safety = "safe"
+disabled_tools = ["edit", "write_file"]
+instructions = """
+Explore the codebase and propose a step-by-step implementation plan.
+Don't modify any file until the user approves the plan.
+"""
+
+[tools.bash]
+permission = "ask"
+```
+
+Démarrez avec `vibe --agent plan`, ou définissez `default_agent = "plan"`. L'agent peut lire les fichiers et exécuter des commandes shell en lecture seule, et demande une approbation avant toute autre commande. Une fois le plan approuvé, appuyez sur `Shift+Tab` pour passer à `accept-edits` et demandez à l'agent de le mettre en œuvre. Les instructions ci-dessus restent dans la conversation et autorisent la modification une fois que vous l'approuvez.
 
 <SectionTab as="h2" sectionId="custom-subagents">Sous-agents personnalisés</SectionTab>
 
-Les sous-agents s'exécutent indépendamment et renvoyent **uniquement des résultats textuels** à l'agent parent. Le modèle peut les lancer via l'outil `task` lorsqu'il souhaite déléguer une exploration ou un travail en arrière-plan.
+Les sous-agents s'exécutent indépendamment et renvoient des **résultats sous forme de texte** à l'agent parent. L'agent les lance lorsqu'il souhaite déléguer de l'exploration ou du travail en arrière-plan. Sans sous-agent personnalisé, il peut lancer un sous-agent générique qui utilise les mêmes instructions et outils que lui.
 
-Créez un sous-agent personnalisé en définissant `agent_type = "subagent"` :
+Créez un sous-agent personnalisé en définissant `agent_type = "subagent"`. La `description` indique à l'agent quand l'utiliser :
 
 ```toml
 # ~/.vibe/agents/research.toml
@@ -95,17 +121,19 @@ agent_type = "subagent"
 display_name = "Research"
 description = "Read-only subagent for research tasks."
 safety = "safe"
-enabled_tools = ["grep", "read_file"]
+enabled_tools = ["read_file", "skill"]
 ```
 
-Les sous-agents ne peuvent pas poser de questions à l'utilisateur. Par défaut, les sous-agents intégrés n'écrivent pas de fichiers, mais un sous-agent personnalisé peut le faire si ses `enabled_tools` et ses permissions par outil l'y autorisent.
+Les sous-agents ne peuvent pas poser de questions à l'utilisateur. Un sous-agent ne peut utiliser que les outils intégrés autorisés par son fichier, et non les outils MCP, connecteur ou plugin. Il ne dispose jamais d'autorisations plus larges que celles de l'agent parent. Les sous-agents s'exécutent toujours sur le modèle de la session et ignorent `active_model`. Si Vibe ne peut pas charger un fichier de sous-agent, par exemple parce que sa `description` est vide, il signale le problème au lieu d'ignorer silencieusement le fichier.
+
+Pour empêcher l'agent de lancer des sous-agents, définissez `enable_subagents = false` dans `config.toml`.
 
 <SectionTab as="h2" sectionId="agents-md">Prise en charge de AGENTS.md</SectionTab>
 
-Le CLI charge jusqu'à **deux fichiers `AGENTS.md`** dans le Contexte pour suivre les instructions spécifiques aux agents du projet :
+La CLI charge les fichiers `AGENTS.md` dans le contexte pour suivre les instructions d'agent propres à l'utilisateur et au projet :
 
 1. **Niveau utilisateur** : `~/.vibe/AGENTS.md` (ou dans `$VIBE_HOME` si vous l'avez défini).
-2. **Niveau projet** : à partir du répertoire de travail actuel, en remontant les répertoires parents (mais uniquement dans les [dossiers de confiance](/vibe/code/safety-approvals-permissions#trusted-folders)), le premier fichier `AGENTS.md` trouvé est chargé.
+2. **Au niveau du projet** : tous les fichiers `AGENTS.md`, du répertoire de travail actuel jusqu'à la racine du [dossier de confiance](/vibe/code/safety-approvals-permissions#trusted-folders). En cas de conflit entre les instructions, le fichier le plus proche du répertoire de travail prévaut.
 
 Par exemple :
 
@@ -114,9 +142,9 @@ Par exemple :
   dir_1/
     AGENTS.md      <- never loaded: location is not trusted
     dir_2/         <- trusted
-      AGENTS.md
+      AGENTS.md    <- loaded
       dir_3/
-        AGENTS.md  <- loaded
+        AGENTS.md  <- loaded, takes priority over dir_2/AGENTS.md
         project/   <- cwd (no AGENTS.md here)
 ```
 

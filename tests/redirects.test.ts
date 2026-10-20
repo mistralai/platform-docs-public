@@ -108,8 +108,10 @@ describe("existing redirect rules keep working", () => {
 
   it("resolves capabilities rules", () => {
     expect(resolveRedirect("/capabilities/audio")).toBe("/studio/audio/overview");
+    // Audio revamp (DOC-610): legacy audio pages live under /studio/audio/deprecated.
+    // Update together with the audio redirect review noted in redirect.ts.
     expect(resolveRedirect("/capabilities/audio/speech_to_text")).toBe(
-      "/studio/audio/speech_to_text"
+      "/studio/audio/deprecated/speech_to_text"
     );
   });
 

@@ -1,0 +1,363 @@
+---
+title: Realtime transcription
+sidebar_label: Realtime transcription
+sidebar_position: 2
+description: "Transcribe live audio over a WebSocket session: the session lifecycle, its settings, the events to read, and how to trade speed for accuracy."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Realtime transcription
+
+Realtime transcription turns live audio, such as a microphone, a phone line, or a broadcast, into text while the person is still speaking. This page explains how a session runs from start to finish, how to configure it, how to read its events, and how to trade speed for accuracy.
+
+:::info
+If the audio is already recorded, use [File transcription](/studio/audio/speech-to-text/transcribe-files) instead. To choose between the two, see [Offline and realtime audio](/studio/audio/concepts/offline-and-realtime). For a first live transcript in a few minutes, follow the [realtime quickstart](/studio/audio/speech-to-text/quickstarts/transcribe-in-realtime).
+:::
+
+<SectionTab as="h2" sectionId="lifecycle">Understand the lifecycle</SectionTab>
+
+A session is one WebSocket connection that goes through four stages, always in the same order. Your application sends the audio, and the API sends the text back while the audio still flows.
+
+<DiagramFrame label="Session lifecycle">
+
+Read from top to bottom: each arrow is one message, from your application on the left or from the API on the right.
+
+<LinkedDiagram
+  src="/img/audio_realtime_session_lifecycle.svg"
+  alt="Realtime session lifecycle: connect, then session.created; session.update, then session.updated; input_audio.append and transcription.text.delta, repeated while audio flows; then input_audio.end and transcription.done with the full transcript."
+  viewBox={[1100, 640]}
+  links={[]}
+/>
+
+</DiagramFrame>
+
+At each stage, your application does the following:
+
+| Stage | You send | You receive | What your application does |
+| --- | --- | --- | --- |
+| [Open](#connect) | A connection with the model and your API key | `session.created`, with the default settings | Wait for it before you send anything else. |
+| [Configure](#configure) | `session.update`, with your settings | `session.updated`, with the settings the session applies | Check the values. They're fixed from the first audio chunk. |
+| Stream | `input_audio.append`, one chunk of audio at a time | `transcription.text.delta`, with each piece of new text | Add each piece of text to the end of the transcript you show. |
+| [Finish](#finish) | `input_audio.end`, when the audio stops | `transcription.done`, with the full transcript | Save the full transcript, then close the connection. |
+
+If the API rejects a message, it sends an `error` event at that stage instead. See [Common issues](#common-issues).
+
+<SectionTab as="h2" sectionId="connect">Connect to a session</SectionTab>
+
+Open a WebSocket connection to the realtime endpoint, with the model in the query string and your API key in the `Authorization` header:
+
+```text
+wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=voxtral-mini-transcribe-realtime-3
+Authorization: Bearer $MISTRAL_API_KEY
+```
+
+With the Python or TypeScript SDK, `connect()` opens the connection and returns once the session is created:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import os
+
+from mistralai.client import Mistral
+
+async def main():
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+    async with await client.audio.realtime.connect(
+        model="voxtral-mini-transcribe-realtime-3",
+    ) as connection:
+        print(connection.session.model_dump_json(indent=2))
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { RealtimeTranscription } from "@mistralai/mistralai/extra/realtime";
+
+const client = new RealtimeTranscription({ apiKey: process.env.MISTRAL_API_KEY });
+const connection = await client.connect("voxtral-mini-transcribe-realtime-3");
+
+console.log(JSON.stringify(connection.session, null, 2));
+await connection.close();
+```
+
+{/* TESTED Oct 9 (TS tab): transcribe-in-realtime/connect.ts, @mistralai/mistralai 2.7.0 on Node 26 (RealtimeTranscription from @mistralai/mistralai/extra/realtime; the Mistral client has no audio.realtime), on the interim alias voxtral-transcribe-realtime-3: connect() resolved after session.created; the session printed requestId, model voxtral-transcribe-realtime-3-0-1, audioFormat pcm_s16le 16000, targetStreamingDelayMs null. */}
+
+  </TabItem>
+</Tabs>
+
+{/* TESTED Oct 7 (stt agent): transcribe-in-realtime/connect.py (mistralai 3.0.0), plus raw websockets with the same URL and header, on the live interim ID voxtral-transcribe-realtime-3-0. The SDK waits for session.created before returning; its session model only exposes request_id, model, audio_format, and target_streaming_delay_ms — the raw session.created also carries diarize, context_bias, language, speaker_references, and turn_detection (defaults: false, [], null, null, null; audio_format pcm_s16le at 16000 Hz). voxtral-mini-transcribe-realtime-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-realtime-3 (and -3-0), to be renamed before launch. Tested on the interim alias. Until the rename, the final ID is refused at the handshake with HTTP 403 and an empty body. Browser auth (ephemeral token as subprotocol, RFC-555 section 7.2) not tested. */}
+
+<SectionTab as="h2" sectionId="configure">Configure the session</SectionTab>
+
+Send your settings in a `session.update` message, before the first audio chunk. The session answers with `session.updated`, which echoes every setting it applies:
+
+```json
+{
+  "type": "session.update",
+  "session": {
+    "audio_format": { "encoding": "pcm_s16le", "sample_rate": 24000 },
+    "target_streaming_delay_ms": 480,
+    "language": "en",
+    "context_bias": ["Northwind", "Quillara", "Alder Creek Design", "Rotterdam"]
+  }
+}
+```
+
+The following script sends these settings, streams a WAV file in chunks of 100 ms, and prints the transcript as it arrives.
+
+:::note
+The Voice Agents SDK sends `language`, `context_bias`, and `turn_detection` through the `stt` config. For raw WebSocket sessions without the SDK, send `session.update` with `websockets` in Python and `ws` in TypeScript.
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import base64
+import json
+import os
+import wave
+
+import websockets
+
+MODEL = "voxtral-mini-transcribe-realtime-3"
+URL = f"wss://api.mistral.ai/v1/audio/transcriptions/realtime?model={MODEL}"
+HEADERS = {"Authorization": f"Bearer {os.environ['MISTRAL_API_KEY']}"}
+AUDIO_FILE = "customer_call.wav"  # 16-bit mono PCM WAV
+
+async def send_audio(ws, path):
+    with wave.open(path, "rb") as wav:
+        while chunk := wav.readframes(wav.getframerate() // 10):
+            await ws.send(json.dumps({"type": "input_audio.append", "audio": base64.b64encode(chunk).decode()}))
+    await ws.send(json.dumps({"type": "input_audio.end"}))
+
+async def main():
+    with wave.open(AUDIO_FILE, "rb") as wav:
+        sample_rate = wav.getframerate()
+
+    async with websockets.connect(URL, additional_headers=HEADERS) as ws:
+        print(json.loads(await ws.recv())["type"])  # session.created
+
+        await ws.send(json.dumps({
+            "type": "session.update",
+            "session": {
+                "audio_format": {"encoding": "pcm_s16le", "sample_rate": sample_rate},
+                "target_streaming_delay_ms": 480,
+                "language": "en",
+                "context_bias": ["Northwind", "Quillara", "Alder Creek Design", "Rotterdam"],
+            },
+        }))
+        sender = asyncio.create_task(send_audio(ws, AUDIO_FILE))
+
+        async for message in ws:
+            event = json.loads(message)
+            if event["type"] == "session.updated":
+                print("session.updated:", json.dumps(event["session"]))
+            elif event["type"] == "transcription.text.delta":
+                print(event["text"], end="", flush=True)
+            elif event["type"] == "transcription.done":
+                print("\ntranscription.done")
+                break
+            elif event["type"] == "error":
+                print("error:", event["error"]["message"])
+                break
+        sender.cancel()
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import WebSocket from "ws";
+
+const MODEL = "voxtral-mini-transcribe-realtime-3";
+const URL = `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${MODEL}`;
+const HEADERS = { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` };
+const AUDIO_FILE = "customer_call.wav"; // 16-bit mono PCM WAV
+
+function readWav(path: string) {
+  const wav = readFileSync(path);
+  let sampleRate = 0;
+  let pcm = Buffer.alloc(0);
+  for (let offset = 12; offset < wav.length; ) {
+    const id = wav.toString("ascii", offset, offset + 4);
+    const size = wav.readUInt32LE(offset + 4);
+    if (id === "fmt ") sampleRate = wav.readUInt32LE(offset + 12);
+    if (id === "data") pcm = wav.subarray(offset + 8, offset + 8 + size);
+    offset += 8 + size + (size % 2);
+  }
+  return { sampleRate, pcm };
+}
+
+function sendAudio(ws: WebSocket, pcm: Buffer, sampleRate: number) {
+  const chunkBytes = (sampleRate / 10) * 2; // 100 ms of 16-bit mono audio
+  for (let i = 0; i < pcm.length; i += chunkBytes) {
+    const audio = pcm.subarray(i, i + chunkBytes).toString("base64");
+    ws.send(JSON.stringify({ type: "input_audio.append", audio }));
+  }
+  ws.send(JSON.stringify({ type: "input_audio.end" }));
+}
+
+const { sampleRate, pcm } = readWav(AUDIO_FILE);
+const ws = new WebSocket(URL, { headers: HEADERS });
+
+ws.on("message", (message) => {
+  const event = JSON.parse(message.toString());
+  if (event.type === "session.created") {
+    console.log(event.type);
+    ws.send(JSON.stringify({
+      type: "session.update",
+      session: {
+        audio_format: { encoding: "pcm_s16le", sample_rate: sampleRate },
+        target_streaming_delay_ms: 480,
+        language: "en",
+        context_bias: ["Northwind", "Quillara", "Alder Creek Design", "Rotterdam"],
+      },
+    }));
+    sendAudio(ws, pcm, sampleRate);
+  } else if (event.type === "session.updated") {
+    console.log("session.updated:", JSON.stringify(event.session));
+  } else if (event.type === "transcription.text.delta") {
+    process.stdout.write(event.text);
+  } else if (event.type === "transcription.done") {
+    console.log("\ntranscription.done");
+    ws.close();
+  } else if (event.type === "error") {
+    console.log("error:", event.error.message);
+    ws.close();
+  }
+});
+```
+
+{/* TESTED Oct 9 (TS tab): transcribe-in-realtime/session_config.ts with the ws package 8.22, Node 26, on the interim alias voxtral-transcribe-realtime-3: session.updated echoed delay 480, language en, and the four context_bias entries; the transcript reads Quillara and Alder Creek Design, same as the Python tab. */}
+
+  </TabItem>
+</Tabs>
+
+:::caution
+The settings are fixed once audio has started. A `session.update` sent after the first `input_audio.append` returns the error `Session fields cannot be changed after audio has started.` To change a setting, open a new session.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="session-fields">Session fields</SectionTab>
+
+`session.update` takes the following fields. Send only the ones you want to change: the others keep the default that `session.created` reports.
+
+| Field | Type | Default | Use it to |
+| --- | --- | --- | --- |
+| `audio_format` | Object: `encoding`, `sample_rate` | `pcm_s16le` at `16000` Hz | Describe the audio you send: 16-bit signed little-endian PCM, mono, at the sample rate of your source. The format is inferred automatically from the PCM payload if you don't set it. |
+| `target_streaming_delay_ms` | Integer | 480 ms (recommended starting point) | Trade speed for accuracy: any value from 80 to 1200, or 2400. See [Control latency](#control-latency). |
+| `language` | String, a two-letter ISO 639-1 code such as `"en"` | Not set | Pin the language of the audio. Leave it out and the model detects the language. See [Languages](/studio/audio/specs-and-limits/languages). |
+
+{/* TESTED Oct 9 (probe round, alias voxtral-transcribe-realtime-3-0, served as 3-0-1): fixtures/meeting_fr.wav (21 s) without language came back in correct French, identical to the run with language=fr (examples/stt/out/probes_oct9). One language tested. */}
+| `context_bias` | Array of strings | `[]` | Help the model spell names and terms. See [Bias context and vocabulary](/studio/audio/speech-to-text/bias-context-and-vocabulary#realtime). |
+| `diarize` | Boolean | `false` | Label each piece of text with its speaker. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers#realtime). |
+| `speaker_references` | Object: a name for each base64 audio clip | Not set | Name known speakers, up to 8 clips of 3 to 15 seconds. Requires `diarize`. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
+| `turn_detection` | Object | Not set | Know when the user starts and finishes speaking. See [Turn detection](/studio/audio/speech-to-text/turn-detection). |
+
+:::caution
+`diarize` and `turn_detection` can't be used in the same session: the session returns the error `Diarization is not compatible with turn detection.`
+:::
+
+{/* Fields, types, and defaults: raw session.created on Oct 7 (out/probes/rt_*.json): audio_format pcm_s16le 16000, target_streaming_delay_ms null, diarize false, context_bias [], language null, speaker_references null, turn_detection null. Each field accepted and echoed in session.updated in the Oct 7 probes (rt_lang, rt_bias, rt_delay123/2400, rt_diar, rt_refs, rt_turn). speaker_references shape {name: base64 WAV} from realtime_speaker_references.py. Limits 8 refs / 3-15 s: Rakesh, Oct 9. Invalid language "zz" -> "Invalid language alpha2 code" (rt_lang_bad). The "mono" in audio_format: the WAV fixtures are mono; stereo not tested. */}
+
+<SectionTab as="h2" sectionId="events">Events: receive updates and finish</SectionTab>
+
+Everything the API sends arrives as a JSON message with a `type`. Read the `type` first, then the fields of that event:
+
+| Event | Fields | Sent when |
+| --- | --- | --- |
+| `session.created` | `session` | The connection opens, with the default settings. |
+| `session.updated` | `session` | After each `session.update`, with the settings the session applies. |
+| `transcription.text.delta` | `text` | New text is ready, as the audio flows. |
+| `transcription.segment` | `text`, `speaker_id`, `start`, `end` | With `diarize` on, instead of `transcription.text.delta`. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers#realtime). |
+| `turn.start`, `turn.eager_end`, `turn.resume`, `turn.end` | `time_s`, and `end_reason` on `turn.end` | With `turn_detection` on, at the moments of each turn. See [Turn detection](/studio/audio/speech-to-text/turn-detection#events). |
+| `transcription.done` | `text`, `segments`, `language`, `model`, `usage` | After `input_audio.end`, once all the audio is transcribed. |
+| `error` | `error.message`, `error.code` | The API rejects a message or a setting. |
+
+<SectionTab as="h3" variant="secondary" sectionId="display-text">Show the text as it arrives</SectionTab>
+
+Each `transcription.text.delta` adds new text after the text already sent. A delta never corrects earlier text, so your application only appends: there's nothing to replace. 
+
+- **Show** each delta as soon as it arrives. It's final when you receive it.
+- **Append** it as is. Deltas carry their own spaces and punctuation, such as `" for"` or `"."`, so don't add separators.
+- **Save** the `text` of `transcription.done` as the transcript of record.
+
+:::tip
+To show fast text first and replace it with more accurate text later, you need two sessions on the same audio. See [Variable transcription rate](#variable-transcription-rate).
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="finish">Finish the session</SectionTab>
+
+When the audio stops, send `input_audio.end`. The API sends the last deltas, then `transcription.done` with the full transcript. Close the connection once you've received it.
+
+{/* Event list and fields: Oct 7 probes (out/probes/rt_*.json), all event types observed. transcription.done carried language null in every run, even with language "en" set (rt_lang), and usage.prompt_audio_seconds 3 whatever the audio length (probable bug, handoff-stt): neither is described on the page. Ask Rakesh about both. */}
+
+<SectionTab as="h2" sectionId="control-latency">Control latency</SectionTab>
+
+The model doesn't write a word as soon as it hears it: it waits to hear what follows, because the next sounds help it pick the right word. `target_streaming_delay_ms` sets that wait for the session.
+
+- A **shorter** delay gets the text out sooner, but less accurately.
+- A **longer** delay gives the model more context, and more accurate text, but later.
+
+The delay takes any integer from 80 to 1200, or 2400. Any other value returns an error. The Python SDK can set it with `update_session()`, along with the audio format.
+
+:::info
+For where the delay fits in the wait your users notice, see [Latency](/studio/audio/concepts/latency#realtime-transcription). Turn events don't wait for the delay: see [Turn detection](/studio/audio/speech-to-text/turn-detection#text-timing).
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="variable-transcription-rate">Variable transcription rate</SectionTab>
+
+ Readers see words at once, and the text they keep is the accurate one. Live captions and note-taking benefit most.
+
+<SectionTab as="h2" sectionId="common-issues">Common issues</SectionTab>
+
+Most issues come back as an `error` event with a message. These are the ones specific to live sessions:
+
+| Error or symptom | Cause | Fix |
+| --- | --- | --- |
+| `Session fields cannot be changed after audio has started.` | A `session.update` sent after the first audio chunk | Send every setting before the first `input_audio.append`. To change one, open a new session. |
+| `target_streaming_delay_ms must be one of the trained values` | A delay outside 80 to 1200, other than 2400 | Pick a value in the accepted range. See [Control latency](#control-latency). |
+| `Diarization is not compatible with turn detection.` | `diarize` and `turn_detection` in the same session | Keep one of them. See [Turn detection](/studio/audio/speech-to-text/turn-detection). |
+| `Speaker references require diarization, set diarize=true.` | `speaker_references` without `diarize` | Set `diarize` to `true`. |
+| An error that mentions `Invalid language alpha2 code` | A `language` that isn't a two-letter ISO 639-1 code | Use a code such as `"en"` or `"fr"`. |
+| Latency measured on a file doesn't match live use | The file is sent faster than real time | To measure latency, send each chunk at the pace of the audio, for example 100 ms of audio every 100 ms. |
+
+For other errors, see [Troubleshooting](/studio/audio/speech-to-text/troubleshooting).
+
+{/* Errors TESTED Oct 7 (out/probes): rt_late_update, rt_delay1300 (full message: "target_streaming_delay_ms must be one of the trained values: ['80-1200', '2400'] (got 1300)."), rt_turn_diar, rt_refs_nodiar, rt_lang_bad (pydantic validation message containing "Invalid language alpha2 code"). All arrive as {"type": "error", "error": {"message": ..., "code": 3051}}. Not listed: HTTP 403 with an empty body at the handshake, seen only with the final model ID before the rename (internal). The pace row comes from the Latency concept ("Measure from your application"); the tested scripts on this page send the file as fast as possible, which is fine for a transcript but not for timing. */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Turn detection" />
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Label speakers live" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latency" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): lifecycle and messages from the Oct 7 tests (connect.py, session_config.py, probes/probe_realtime.py:
+   session.update, input_audio.append {audio: base64 PCM}, input_audio.flush, input_audio.end); diagram
+   public/img/audio_realtime_session_lifecycle.svg. Delay range: rt_delay123, rt_delay1300, rt_delay2400. Append-only
+   deltas: 13 sessions, done.text == concatenated deltas. Dual delay: Voxtral 2 docs (deprecated page). Tested code
+   rerun on Oct 9 on the neutral customer_call.wav (fixtures/make_neutral_fixtures.py). */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Order per skeleton review S08: lifecycle before
+   connect/configure, so the mental model gives meaning to the messages. Boundary: options with their own page
+   (turn detection, diarization, context bias) get one row and a link, not a section. Verify at the end: lifecycle
+   visual and first, display/append/save guidance explicit, recommended delays from Rakesh only (never invented),
+   the "Events" heading and sectionId stable, live-specific common issues, no invented reconnection semantics. */}

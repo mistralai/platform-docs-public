@@ -1,0 +1,157 @@
+---
+title: Tours de parole et prise de tour
+sidebar_label: Tours de parole et prise de tour
+sidebar_position: 3
+description: "Comment Voxtral décide quand quelqu'un a fini de parler, pourquoi c'est important pour la transcription en temps réel et les agents audio, et le compromis entre couper la parole aux utilisateurs et répondre trop tard."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Tours de parole et prise de tour
+
+Un tour de parole se termine au moment où le locuteur passe la main, et toute application en temps réel qui agit sur la parole doit détecter ce moment. Cette page explique comment Voxtral prend cette décision, comment trouver le bon équilibre entre couper la parole aux utilisateurs et répondre trop tard, et comment les agents audio gèrent un utilisateur qui parle par-dessus eux.
+
+<SectionTab as="h2" sectionId="why-silence-isnt-enough">Pourquoi le silence ne suffit pas</SectionTab>
+
+Les gens s'arrêtent de parler pour de nombreuses raisons autres que le fait d'avoir fini. Ils respirent, cherchent leurs mots, énoncent un numéro de commande chiffre par chiffre ou réfléchissent avant la fin d'une phrase. Votre application doit distinguer ces pauses d'une véritable fin, car c'est à la fin qu'elle agit : un agent audio répond, une commande vocale s'exécute ou un sous-titrage en direct clôt sa ligne.
+
+:::tip
+Une règle fondée sur le silence seul ne donne pas de bons résultats. Avec un silence court, l'application coupe la parole à tous ceux qui s'arrêtent en pleine phrase. Avec un silence long, chaque réponse arrive en retard, même après une question claire et complète. Une meilleure décision tient aussi compte de ce que le locuteur a dit et de la façon dont il l'a dit.
+:::
+
+<SectionTab as="h2" sectionId="how-detection-works">Comment Voxtral détecte la fin d'un tour</SectionTab>
+
+La détection de fin de tour est intégrée au modèle de transcription en temps réel, elle n'existe donc que dans les [sessions en temps réel](/studio/audio/concepts/offline-and-realtime).  Le serveur transforme cette estimation en événements qui marquent les moments d'un tour.
+
+<DiagramFrame label="One turn">
+
+À lire de gauche à droite : l'utilisateur parle, marque une pause, parle à nouveau, puis s'arrête.
+
+<LinkedDiagram
+  src="/img/audio_turn_timeline.svg"
+  alt="One turn on a timeline: start when the user begins speaking, an eager end during a short pause, a resume when the user speaks again, a second eager end in the final silence, then the end. A reply started on the first eager end is dropped; a reply started on the second is ready sooner."
+  viewBox={[1100, 345]}
+  links={[
+    { href: '#eager-end', label: 'Eager end: prepare before the turn is over', x: 415, y: 226, width: 150, height: 56, rx: 10 },
+    { href: '#eager-end', label: 'Eager end: prepare before the turn is over', x: 755, y: 226, width: 150, height: 56, rx: 10 },
+    { href: '/studio/audio/speech-to-text/turn-detection', label: 'Turn detection', x: 925, y: 150, width: 150, height: 56, rx: 10 },
+  ]}
+/>
+
+Une pause produit une fin anticipée, pas une fin. Si l'utilisateur continue, une reprise l'annule. La fin survient quand le silence dure suffisamment longtemps et que le modèle juge le tour terminé.
+
+</DiagramFrame>
+
+:::info
+Chaque moment a son événement correspondant. Pour les événements, leur synchronisation avec la transcription et la marche à suivre pour activer la détection, consultez [Détection de fin de tour](/studio/audio/speech-to-text/turn-detection).
+:::
+
+<SectionTab as="h2" sectionId="eager-end">Fin anticipée : préparer la réponse avant la fin du tour</SectionTab>
+
+Attendre la fin coûte du temps à chaque tour. La fin anticipée permet à votre application de récupérer ce temps : quand le tour est probablement terminé, commencez à préparer la réponse, comme l'appel au modèle ou les premiers mots à prononcer. Si l'utilisateur continue, abandonnez ce que vous avez préparé. Si la fin suit, la réponse est déjà en cours et l'utilisateur attend moins. Pour savoir où passe ce temps dans une réponse complète, consultez [Latence](/studio/audio/concepts/latency#end-of-turn-detection).
+
+ Ne lancez que ce que vous pouvez abandonner sans conséquence. Attendez la fin avant de faire quoi que ce soit d'irréversible, comme envoyer un message, réserver un créneau ou appeler un outil qui modifie des données.
+
+<SectionTab as="h2" sectionId="trade-off">Couper la parole ou répondre trop tard</SectionTab>
+
+Chaque réglage de la détection de fin de tour agit sur le même curseur. Terminez les tours plus tôt, et les réponses arrivent plus vite, mais plus d'utilisateurs sont coupés en pleine phrase. Terminez-les plus tard, et moins d'utilisateurs sont coupés, mais chaque réponse attend plus longtemps. Aucun réglage ne supprime ce compromis : à vous de choisir où placer votre application.
+
+<SectionTab as="h3" variant="secondary" sectionId="which-way-to-lean">Quel équilibre choisir</SectionTab>
+
+Le bon équilibre dépend de la manière dont vos utilisateurs parlent et de l'erreur qui leur coûte le plus cher. Repérez la ligne la plus proche de votre application. Si votre application mélange plusieurs cas, comme un agent d'assistance qui collecte aussi des numéros de commande, partez de la ligne où une erreur coûte le plus cher à vos utilisateurs.
+
+| Votre application | Privilégier | Pourquoi |
+| --- | --- | --- |
+| Commandes courtes et questions rapides, comme un menu vocal | Terminer plus tôt | Les demandes sont courtes et complètes, et c'est une réponse lente que les utilisateurs remarquent. |
+| Conversation rapide en va-et-vient | Terminer plus tôt | Les tours de parole sont courts, et les longues pauses rendent la conversation artificielle. |
+| Collecte de détails, comme des adresses, des numéros de commande ou des symptômes | Terminer plus tard | Les gens marquent une pause pour lire ou se souvenir. Une coupure les oblige à recommencer. |
+| Utilisateurs qui réfléchissent à voix haute, par exemple en entretien, en tutorat ou en conseil | Terminer plus tard | Les pauses font partie de la réponse. Interrompre paraît impoli et fait perdre des informations. |
+
+<SectionTab as="h3" variant="secondary" sectionId="presets">Partir d'un préréglage</SectionTab>
+
+Plutôt que de régler chaque paramètre à partir de zéro, partez d'un préréglage, un ensemble de valeurs choisies pour fonctionner ensemble :
+
+- **Par défaut** : ce que vous obtenez quand vous activez la détection de fin de tour sans aucun réglage. Un bon point de départ pour la plupart des conversations.
+- **Agressif** : met fin au tour plus tôt après l'arrêt de l'utilisateur, pour les échanges rapides où la vitesse compte plus que la coupure occasionnelle.
+
+Un préréglage n'est pas une option de l'API : vous copiez ses valeurs dans les paramètres de votre session, puis vous les ajustez. Pour les valeurs, consultez les [configurations courantes](/studio/audio/speech-to-text/turn-detection#common-configurations) sur la page Détection de fin de tour.
+
+:::tip
+Pour terminer les tours plus tôt, les réglages évoluent dans ce sens : un silence minimum plus court, un seuil de fin plus élevé et un timeout de fin plus court. Pour les terminer plus tard, modifiez les mêmes réglages dans l'autre sens. Changez un réglage à la fois, et vérifiez l'effet sur les interruptions autant que sur la vitesse. Les réglages, leurs plages de valeurs et leurs valeurs par défaut figurent sur [Détection de fin de tour](/studio/audio/speech-to-text/turn-detection).
+:::
+
+<SectionTab as="h2" sectionId="interruptions">Interruptions dans les agents audio</SectionTab>
+
+L'alternance des tours de parole fonctionne dans les deux sens. Dans une conversation avec un [agent audio](/studio/audio/voice-agents/overview), l'utilisateur doit aussi pouvoir reprendre la parole pendant que l'agent parle, par exemple pour le corriger ou passer une réponse longue.
+
+Par défaut, l'utilisateur peut interrompre l'agent.  Vous pouvez désactiver les interruptions dans la [configuration de l'agent](/studio/audio/voice-agents/configuration#agent-options). Le choix dépend de qui doit pouvoir arrêter qui :
+
+| | Interruptions activées | Interruptions désactivées |
+| --- | --- | --- |
+| L'utilisateur peut | Arrêter l'agent à tout moment et prendre la parole | Parler uniquement quand l'agent a terminé |
+| Convient à | La plupart des conversations, où les utilisateurs s'attendent à pouvoir intervenir comme avec une personne | Les messages qui doivent être entendus en entier, comme des mentions légales ou une confirmation à relire |
+| Points de vigilance |  | Un utilisateur qui ne peut pas arrêter une réponse longue ou erronée finit frustré |
+
+:::tip
+Pour afficher qui a la parole dans votre interface, comme un indicateur de microphone ou une animation de parole, suivez l'état de l'agent.  Consultez les événements sur [Gérer les sessions d'agent](/studio/audio/voice-agents/sessions#events).
+:::
+
+<SectionTab as="h2" sectionId="turns-and-diarization">Détection de fin de tour et diarisation</SectionTab>
+
+La transcription en temps réel propose à la fois la détection de fin de tour et la diarisation des locuteurs, mais pas dans la même session : une session qui active les deux reçoit une erreur. Les deux fonctionnalités répondent à des questions différentes sur l'audio. 
+
+Pour chaque session, choisissez celle dont votre application a besoin :
+
+- **Détection de fin de tour** pour les applications interactives qui agissent quand un utilisateur unique a terminé, comme les agents audio et les commandes vocales.
+- **Diarisation** pour les conversations entre plusieurs personnes, quand vous devez savoir qui a dit quoi, comme pour le sous-titrage en direct d'une réunion. Consultez [Locuteurs et diarisation](/studio/audio/concepts/speakers-and-diarization).
+
+Si vous avez besoin des deux, par exemple pour répondre en direct et identifier les locuteurs dans la retranscription, vous pouvez conserver l'enregistrement de la session, puis le diariser en différé. Consultez [Diariser les locuteurs](/studio/audio/speech-to-text/diarize-speakers).
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Détection de tour de parole" />
+  <LinkCard href="/studio/audio/voice-agents/configuration" title="Configuration de l'agent" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latence" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Turn events start / eager end / resume / end, time_s, end_reason "threshold": Oct 7 tests
+     (examples/stt/turn-detection/turn_detection.py, out/probes/rt_turn_*.json), handoff-stt item 6.
+   - Built into the realtime model, per-frame estimate of "still saying something meaningful": all-hands (Sept 23)
+     and RFC-555 section 2.3 via the Turn detection skeleton ( on the estimate).
+   - Realtime only: offline 400 "turn_detection is only supported on the realtime transcription endpoint."
+     (out/probes/turn_offline_small.json, cited on the Speakers and diarization concept).
+   - Eager ends frequent: Oct 7 runs on support_call.wav and meeting_16k.wav (Default values), eager end and
+     resume pairs at most pauses.
+   - Presets Default and Aggressive: Rakesh (Slack, Sept 28); Default = server values echoed for an empty
+     turn_detection object; no preset field in the API (turn_detection.preset rejected, extra_forbidden, Oct 7);
+     Aggressive ended a turn at a 0.4 s pause where Default didn't (Oct 7). No value on this page by design.
+   - Threshold directions: CONFIRMED by Rakesh, Oct 9 ("How to use end-of-turn detection", via Gregory): lower end_threshold =
+     fewer false cutoffs, higher latency; longer min_silence_ms = fewer premature endings, higher latency; shorter
+     end_timeout_ms = caps the maximum latency. Minimum silence direction also tested Oct 7.
+   - Interruptions: SDK docs (Oct 8 copy, voice-agents-sdk-notes-2026-10-08): turn option, allow_interruptions
+     default True, "whether the user can interrupt the agent"; agent_state_changed (listening, thinking, speaking,
+     and more). Barge-in behavior itself: , team.
+   - Diarization exclusivity: CHECKED Oct 9 against out/probes/rt_turn_diar.json (Oct 7, realtime model served as
+     voxtral-transcribe-realtime-3-0-1): diarize + turn_detection in one session.update returns an error event
+     "Diarization is not compatible with turn detection." (code 3051). The skeleton cited RFC-555 only; the test
+     confirms it on the v3 interim checkpoint. Re-check on the launch checkpoint. The Audio agents STT config has
+     no diarize option, so the constraint doesn't reach agents. Offline diarization tested on support_call.wav.
+   - Use-case table ("Which way to lean") and the interruptions table: written in our own words, inspired by the
+     idea of ElevenLabs "Conversation flow" (turn eagerness levels, interruptions on or off) as summarized in
+     tracker/competitor-analysis.md. The vendor page itself wasn't fetched (Tavily quota): no text copied. */}
+
+{/* Concept page (layer 1, Context) — audio docs revamp (DOC-610). Created Sept 25
+   after Ben's review. Boundary: this page owns the "why" (what a turn is, why
+   silence is not enough, the trade-off, interruptions); Turn detection owns the
+   "how" (enable, events and timing, thresholds, state machine diagram); Latency owns
+   the delay that end-of-turn detection adds to each reply. The timeline diagram here
+   shows one turn in time; the state machine diagram stays on Turn detection. Written
+   Oct 9. Verify at the end: no threshold values, SDK event names checked against the
+   release version (R175), exclusivity with diarization still true on the launch
+   checkpoint, third preset answered by Rakesh, the anchor
+   turn-detection#common-configurations still valid once that page uses SectionTabs. */}

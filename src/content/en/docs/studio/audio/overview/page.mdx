@@ -1,96 +1,555 @@
 ---
 title: Audio
-description: Transcribe speech, generate expressive voices, and build real-time voice agents with Mistral's Voxtral audio models.
+description: "Transcribe speech, generate expressive voices, and build real-time voice agents with Mistral's Voxtral audio models."
 sidebar_label: Overview
 sidebar_position: 0
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
-import { ModelCardsBySlug } from '@/components/common/model-cards';
-import { Faq, FaqItem } from '@/components/common/faq';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { ExplorerTabs, ExplorerTab } from '@/components/common/explorer-tabs';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { TempAudioModelCards } from '@/components/common/temp-audio-model-cards';
 
 # Audio
 
-Transcribe speech to text, generate and clone voices from text, and build real-time voice agents with Mistral's **Voxtral** models.
+Mistral audio covers three jobs: turning speech into text, turning text into speech, and running both in live conversations. Voxtral 3 models transcribe recorded files and live streams, with speaker labels, timestamps, and custom vocabulary. They generate speech with preset or cloned voices, which you direct with emotion and pace tags. You can also send audio to a chat model to summarize or question a recording, and build voice agents that answer callers in real time.
 
-Start with the outcome you want to build. Use the request-based audio APIs for files and bounded requests, the realtime API for live audio that needs low latency, and the full speech-to-speech pipeline for voice agents that listen, reason, and respond.
-
-<SectionTab as="h2" sectionId="choose-your-path">Choose your path</SectionTab>
-
-| Goal | Models | How to use |
-| --- | --- | --- |
-| Transcribe recordings, meetings, or call archives | [Voxtral Mini Transcribe 2](/models/voxtral-mini-transcribe-26-02) | [Offline transcription](/studio/audio/speech_to_text/offline_transcription) |
-| Transcribe live audio with sub-200ms latency | [Voxtral Realtime](/models/voxtral-mini-transcribe-realtime-26-02) | [Realtime transcription](/studio/audio/speech_to_text/realtime_transcription) |
-| Generate natural speech or clone a voice | [Voxtral TTS](/models/voxtral-tts-26-03) | [Text to speech](/studio/audio/text_to_speech) |
-| Build a voice agent that listens, reasons, and speaks | [Voxtral Realtime](/models/voxtral-mini-transcribe-realtime-26-02) + an LLM + [Voxtral TTS](/models/voxtral-tts-26-03) | [Speech-to-speech pipeline](#speech-to-speech-pipeline) |
-
-<SectionTab as="h2" sectionId="capabilities">Capabilities</SectionTab>
-
-<SectionTab as="h2" variant="secondary" sectionId="speech-to-text">Speech to text</SectionTab>
-
-Convert speech to text with high accuracy and low latency. Two models cover batch and live workloads:
-
-- **[Voxtral Mini Transcribe 2](/studio/audio/speech_to_text/offline_transcription)** for batch transcription — speaker diarization, context biasing (up to 100 custom terms), word-level timestamps, recordings up to 3 hours per request, and noise-robust accuracy across 13 languages.
-- **Voxtral Realtime** (`voxtral-mini-transcribe-realtime-2602`) for [live streaming](/studio/audio/speech_to_text/realtime_transcription) — transcribes audio as it arrives with latency configurable down to sub-200ms, a 4B footprint for edge deployment, and open weights under Apache 2.0.
-
-:::note
-Realtime transcription is not compatible with the `diarize` parameter. Use one or the other.
-:::
-
-<SectionTab as="h2" variant="secondary" sectionId="text-to-speech">Text to speech</SectionTab>
-
-**Voxtral TTS** (`voxtral-mini-tts-2603`) generates expressive speech and clones any voice from a sample as short as 2–3 seconds, capturing tone, rhythm, and personality. The model treats the voice prompt as an instruction, so it follows the speaker's intonation and emotional rendering without separate prosody tags. It supports 9 languages with cross-lingual cloning and code-mixing, and streams with low processing latency (~90ms) for voice-agent use.
-
-- [Voices](/studio/audio/text_to_speech/voices): create and manage reusable voice profiles for consistent branding.
-- [Speech generation](/studio/audio/text_to_speech/speech): generate speech from saved voices or one-off reference clips, with basic or streaming delivery.
-
-<SectionTab as="h2" variant="secondary" sectionId="speech-to-speech-pipeline">Speech-to-speech pipeline</SectionTab>
-
-Combine the models into a real-time voice-to-voice loop: **Voxtral Realtime** transcribes incoming speech, **an LLM** reasons over the transcript and decides a response, and **Voxtral TTS** speaks the reply.
-
-<div className="[&>div>img]:!border-0 [&>div>img]:!rounded-none [&>div>img]:!shadow-none">
-<Image
-  url={'/img/audio_speech_to_speech_pipeline.svg'}
-  alt="Speech-to-speech pipeline: speech in flows to Voxtral Realtime (transcribe speech), then an LLM (reason over transcript), then Voxtral TTS (speak the reply), producing speech out."
-  centered
-  className="border-none!"
-/>
-</div>
-
-Each component is independently customizable and deployable. Cross-lingual voice adaptation lets the same pipeline handle live translation while preserving the speaker's accent and identity.
-
-<SectionTab as="h2" sectionId="models">Models</SectionTab>
-
-The Voxtral family covers transcription, speech generation, and audio understanding, available as Premier and open-weights models. Open a model card for capabilities, languages, pricing, and benchmarks.
-
-<ModelCardsBySlug slugs={['voxtral-mini-transcribe-26-02', 'voxtral-tts-26-03', 'voxtral-mini-transcribe-realtime-26-02', 'voxtral-small-25-07']} />
+This section is for developers who integrate audio through the API and SDKs, and for product teams who evaluate what Voxtral can do.
 
 :::tip
-Test transcription in the [speech-to-text playground](https://console.mistral.ai/build/audio/speech-to-text), and voice generation and cloning in the [text-to-speech playground](https://console.mistral.ai/build/audio/text-to-speech).
+Not a developer? Dictate prompts and talk with Work in [Voice mode](/vibe/work/voice-mode), or analyze a recording by uploading it to a chat. with no code to write.
 :::
 
-<SectionTab as="h2" sectionId="use-cases">How teams use audio</SectionTab>
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/overview#get-started" title="Make a first call" />
+  <LinkCard href="/studio/audio/overview#meet-the-models" title="Meet the models" />
+  <LinkCard href="/studio/audio/overview#what-you-can-build" title="See what you can build" />
+</UsefullLinkContainer>
 
-- **Customer support**: voice agents that route and resolve queries with natural, brand-appropriate speech.
-- **Financial services**: compliant voice AI for advisory, policy queries, and client onboarding.
-- **Compliance and risk**: real-time call monitoring with speaker attribution and auditable interaction records.
-- **Manufacturing and field operations**: voice interfaces for inspection and feedback in high-noise environments.
-- **Meetings and sales**: meeting intelligence with speaker attribution and automated follow-ups.
-- **Real-time translation**: cross-lingual voice adaptation for live translation that preserves speaker identity and accent.
+:::info
+The audio docs cover Voxtral 3. If your code still calls Voxtral 2 models, [Migrate from Voxtral 2](/studio/audio/migrate-from-voxtral-2) lists what to change.
+:::
 
-<SectionTab as="h2" sectionId="faq">FAQ</SectionTab>
+<SectionTab as="h2" sectionId="get-started">Get started</SectionTab>
 
-<Faq type="multiple" className="my-6">
-  <FaqItem question="Which transcription model should I use?">
-    Use **Voxtral Mini Transcribe 2** for batch transcription with diarization, word-level timestamps, and long audio. Use **Voxtral Realtime** for live streaming with sub-200ms latency.
-  </FaqItem>
-  <FaqItem question="Can I clone a voice?">
-    Yes. Use the [API](https://docs.mistral.ai/studio/audio/text_to_speech/voices) and provide a sample as short as 2–3 seconds and Voxtral TTS adapts to its tone, rhythm, and personality. You can also use preset voices or build a reusable [voice library](/studio/audio/text_to_speech/voices).
-  </FaqItem>
-  <FaqItem question="Which languages are supported?">
-    Transcription supports 13 languages and voice generation supports 9, with cross-lingual and dialect adaptation. See [supported languages](/resources/languages).
-  </FaqItem>
-  <FaqItem question="Can I deploy on-premises or in a VPC?">
-    Yes. The Voxtral models ship with open weights, so you can self-host or deploy them on your own infrastructure. See [deployment](/inference/deployment).
-  </FaqItem>
-</Faq>
+<SectionTab as="h3" variant="secondary" sectionId="create-an-api-key">1. Create an API key</SectionTab>
+
+Every request needs an API key from AI Studio.
+
+1. Select `Create new key`, give the key a name, and set an expiration date.
+2. Copy the key. It appears only once.
+3. Store the key in the `MISTRAL_API_KEY` environment variable, where the examples read it:
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+:::info
+For screenshots and every key option, see [Activate Studio and generate an API key](/getting-started/quickstarts/studio/activate-and-generate-api-key). If your organization manages keys centrally, see [API keys](/admin/identity-access/api-keys) in the Admin docs.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="install-the-sdk">2. Install the SDK</SectionTab>
+
+The curl examples need no installation. For Python or TypeScript, install the Mistral SDK:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```bash
+pip install "mistralai[realtime]"
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```bash
+npm install @mistralai/mistralai
+```
+
+  </TabItem>
+</Tabs>
+
+The `realtime` extra adds the WebSocket client for realtime transcription. 
+
+<SectionTab as="h3" variant="secondary" sectionId="run-your-first-call">3. Run your first call</SectionTab>
+
+<ExplorerTabs id="first-call">
+  <ExplorerTab value="file" label="Transcribe a file">
+
+Send a recorded file and get its transcript back. Download the <a href="/audio/obama.mp3" download className="text-primary-soft hover:text-primary">sample recording</a> first, or fetch it from the command line:
+
+```bash
+curl -O https://docs.mistral.ai/audio/obama.mp3
+```
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@obama.mp3
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("obama.mp3", "rb") as audio:
+    transcription = client.audio.transcriptions.complete(
+        model="voxtral-mini-transcribe-3",
+        file={"file_name": "obama.mp3", "content": audio},
+    )
+
+print(transcription.text)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const transcription = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-transcribe-3",
+  file: { fileName: "obama.mp3", content: readFileSync("obama.mp3") },
+});
+
+console.log(transcription.text);
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+This example runs on [Voxtral Mini Transcribe 3](#meet-the-models). To check the full response and see what to try next, follow [Quickstart: transcribe an audio file](/studio/audio/speech-to-text/quickstarts/transcribe-a-file).
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="realtime" label="Transcribe in realtime">
+
+Stream audio as it's recorded and print the transcript while the speaker talks. The examples stream a WAV file at real-time pace to stand in for a live source. Realtime transcription runs over a WebSocket, so there's no curl example. Download the <a href="/audio/chat.wav" download className="text-primary-soft hover:text-primary">sample recording</a> first, or fetch it from the command line:
+
+```bash
+curl -O https://docs.mistral.ai/audio/chat.wav
+```
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import os
+import wave
+
+from mistralai.client import Mistral
+from mistralai.client.models import (
+    AudioFormat,
+    RealtimeTranscriptionError,
+    TranscriptionStreamDone,
+    TranscriptionStreamTextDelta,
+)
+
+AUDIO_FILE = "chat.wav"  # 16-bit mono PCM WAV
+
+async def read_chunks(path):
+    with wave.open(path, "rb") as wav:
+        while chunk := wav.readframes(wav.getframerate() // 10):
+            yield chunk
+            await asyncio.sleep(0.1)  # send 100 ms of audio every 100 ms, like a live source
+
+async def main():
+    with wave.open(AUDIO_FILE, "rb") as wav:
+        sample_rate = wav.getframerate()
+
+    client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+    async for event in client.audio.realtime.transcribe_stream(
+        read_chunks(AUDIO_FILE),
+        model="voxtral-mini-transcribe-realtime-3",
+        audio_format=AudioFormat(encoding="pcm_s16le", sample_rate=sample_rate),
+    ):
+        if isinstance(event, TranscriptionStreamTextDelta):
+            print(event.text, end="", flush=True)
+        elif isinstance(event, TranscriptionStreamDone):
+            print(f"\n\nFinal transcript: {event.text}")
+        elif isinstance(event, RealtimeTranscriptionError):
+            print(f"\nError: {event.error.message}")
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+import { setTimeout as sleep } from "node:timers/promises";
+
+import { AudioEncoding, RealtimeTranscription } from "@mistralai/mistralai/extra/realtime";
+
+const wav = readFileSync("chat.wav"); // 16-bit mono PCM WAV
+const sampleRate = wav.readUInt32LE(24);
+const pcm = wav.subarray(wav.indexOf("data") + 8);
+
+async function* readChunks() {
+  const chunkSize = (sampleRate / 10) * 2; // 100 ms of 16-bit audio
+  for (let i = 0; i < pcm.length; i += chunkSize) {
+    yield pcm.subarray(i, i + chunkSize);
+    await sleep(100); // send 100 ms of audio every 100 ms, like a live source
+  }
+}
+
+const client = new RealtimeTranscription({ apiKey: process.env.MISTRAL_API_KEY });
+
+for await (const event of client.transcribeStream(
+  readChunks(),
+  "voxtral-mini-transcribe-realtime-3",
+  { audioFormat: { encoding: AudioEncoding.PcmS16le, sampleRate } },
+)) {
+  if (event.type === "transcription.text.delta") {
+    process.stdout.write(event.text);
+  } else if (event.type === "transcription.done") {
+    console.log(`\n\nFinal transcript: ${event.text}`);
+  } else if (event.type === "error") {
+    console.error(`\nError: ${JSON.stringify(event.error.message)}`);
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+This example runs on [Voxtral Mini Transcribe Realtime 3](#meet-the-models). To see every event the session sends and what to try next, follow [Quickstart: transcribe in realtime](/studio/audio/speech-to-text/quickstarts/transcribe-in-realtime).
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="speech" label="Generate speech">
+
+Send text and save the generated speech as a WAV file.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "input": "Hello! This is Voxtral, Mistral'\''s text-to-speech model.",
+    "voice_id": "gb_jane_neutral",
+    "response_format": "wav"
+  }' | jq -r '.audio_data' | base64 --decode > hello.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="Hello! This is Voxtral, Mistral's text-to-speech model.",
+    voice_id="gb_jane_neutral",
+    response_format="wav",
+)
+
+output = Path("hello.wav")
+output.write_bytes(base64.b64decode(response.audio_data))
+print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "Hello! This is Voxtral, Mistral's text-to-speech model.",
+  voiceId: "gb_jane_neutral",
+  responseFormat: "wav",
+});
+
+writeFileSync("hello.wav", Buffer.from(response.audioData, "base64"));
+console.log("Saved hello.wav");
+```
+
+  </TabItem>
+</Tabs>
+
+The curl example uses `jq` to extract the audio from the JSON response. Every example uses the  voice. To choose another voice, see [Voices](/studio/audio/text-to-speech/voices).
+
+:::tip
+This example runs on [Voxtral TTS 3](#meet-the-models). To play the result and try other voices, follow [Quickstart: generate speech](/studio/audio/text-to-speech/quickstarts/generate-speech).
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="agent" label="Build a voice agent">
+
+Talk with an agent through your microphone and speakers: it listens, answers with a model, and speaks back with a voice.
+
+Install the SDK and the native audio tools its default audio interface uses:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```bash
+brew install portaudio  # Linux: sudo apt install libportaudio2 portaudio19-dev
+pip install "mistralai-voice-agents[default-audio]"
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```bash
+brew install sox ffmpeg  # Linux: sudo apt install sox ffmpeg
+npm install @mistralai/voice-agents
+```
+
+  </TabItem>
+</Tabs>
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import os
+
+from mistralai.voice.agents import MistralVoiceAgent
+from mistralai.voice.agents.audio import DefaultAudioInterface
+from mistralai.voice.agents.models import (
+    AudioLLMConfig,
+    AudioTTSConfig,
+    TranscriptEvent,
+)
+
+async def main() -> None:
+    client = MistralVoiceAgent(api_key=os.environ["MISTRAL_API_KEY"])
+
+    session = await client.connect(
+        llm=AudioLLMConfig(model="mistral-small-latest"),
+        tts=AudioTTSConfig(voice_id="fr_marie_neutral"),
+        instructions="You are a helpful voice assistant.",
+        audio_interface=DefaultAudioInterface(),
+    )
+
+    def on_transcript(event: TranscriptEvent) -> None:
+        print(f"{event.role}: {event.content}")
+
+    session.on("transcript", on_transcript)
+
+    print("Voice agent connected. Press Ctrl+C to stop.")
+    try:
+        await session.wait()
+    finally:
+        await session.close()
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { MistralVoiceAgent } from "@mistralai/voice-agents";
+import { DefaultAudioInterface } from "@mistralai/voice-agents/audio/node";
+import type { TranscriptEvent } from "@mistralai/voice-agents/types";
+
+const client = new MistralVoiceAgent({ apiKey: process.env.MISTRAL_API_KEY! });
+
+const session = await client.connect({
+  llm: { model: "mistral-small-latest" },
+  tts: { voiceId: "fr_marie_neutral" },
+  instructions: "You are a helpful voice assistant.",
+  audioInterface: new DefaultAudioInterface(),
+});
+
+session.on("transcript", (event: TranscriptEvent) => {
+  console.log(`${event.role}: ${event.content}`);
+});
+
+console.log("Voice agent connected. Press Ctrl+C to stop.");
+try {
+  await session.wait();
+} finally {
+  await session.close();
+}
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+This example answers with Mistral Small and speaks with the `fr_marie_neutral` voice. A LiveKit warning about a closed data channel can appear when the session opens or closes: it's harmless. To save the agent, add tools, and handle interruptions, follow [Quickstart: build a voice agent](/studio/audio/voice-agents/quickstarts/build-a-voice-agent).
+:::
+
+  </ExplorerTab>
+  <ExplorerTab value="chat" label="Ask about audio">
+
+Send a recording to a chat model with a question, and get a text answer. Download the <a href="/audio/bcn_weather.mp3" download className="text-primary-soft hover:text-primary">sample recording</a> first, or fetch it from the command line:
+
+```bash
+curl -O https://docs.mistral.ai/audio/bcn_weather.mp3
+```
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+AUDIO_B64=$(base64 < bcn_weather.mp3 | tr -d '\n')
+
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @- <<JSON
+{
+  "model": "voxtral-small-transcribe-3",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {"type": "input_audio", "input_audio": "$AUDIO_B64"},
+        {"type": "text", "text": "What temperature is expected today, and how does it compare with yesterday?"}
+      ]
+    }
+  ]
+}
+JSON
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("bcn_weather.mp3", "rb") as f:
+    audio_base64 = base64.b64encode(f.read()).decode()
+
+response = client.chat.complete(
+    model="voxtral-small-transcribe-3",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_audio", "input_audio": audio_base64},
+                {
+                    "type": "text",
+                    "text": "What temperature is expected today, and how does it compare with yesterday?",
+                },
+            ],
+        }
+    ],
+)
+
+print(response.choices[0].message.content)
+```
+
+  </TabItem>
+</Tabs>
+
+:::tip
+To summarize a call, translate a recording, or extract action items with function calling, see [Audio in chat completions](/studio/audio/audio-in-chat).
+:::
+
+  </ExplorerTab>
+</ExplorerTabs>
+
+{/* Code sources (Oct 8): Transcribe a file = the quickstart scripts (stt/quickstart-transcribe-a-file/transcribe_file.{sh,py,ts}); Transcribe in realtime = stt/overview/realtime.{py,ts} (the quickstart Python script with the public chat.wav instead of the support_call.wav fixture; the quickstart page still uses support_call.wav, align it); Generate speech = tts/quickstart-generate-speech/quickstart.{sh,py} + tts/overview/generate_speech.ts; Ask about audio = stt/overview/chat_audio.{sh,py} with the public bcn_weather.mp3. The quickstart cards were removed (Gregory, Oct 8): each tab links its quickstart. */}
+
+<SectionTab as="h2" sectionId="meet-the-models">Meet the models</SectionTab>
+
+Voxtral 3 has five models: three turn speech into text, and two turn text into speech.
+
+<SectionTab as="h3" variant="secondary" sectionId="models-speech-to-text">Speech to text</SectionTab>
+
+<TempAudioModelCards group="stt" />
+
+<SectionTab as="h3" variant="secondary" sectionId="models-text-to-speech">Text to speech</SectionTab>
+
+<TempAudioModelCards group="tts" />
+
+To choose, start from what you need to do:
+
+| Model | Use it to | Key numbers |
+| --- | --- | --- |
+| Voxtral Mini Transcribe 3 (`voxtral-mini-transcribe-3-0`) | Transcribe recorded files, with speaker labels, segment timestamps, and custom vocabulary | 65,536-token context, shared by the audio and the vocabulary list |
+| Voxtral Mini Transcribe Realtime 3 (`voxtral-mini-transcribe-realtime-3-0`) | Transcribe live audio for captions and voice agents, with turn detection | Streaming delay from 80 to 1,200 ms, or 2,400 ms, set per session |
+| Voxtral Small Transcribe 3 (`voxtral-small-transcribe-3-0`) | Transcribe recorded files at higher quality | Transcription only at launch |
+| Voxtral TTS 3 (`voxtral-mini-tts-3-0`) | Generate speech from text with preset or cloned voices | 5 output formats, WAV at 24 kHz; 34 emotion tags and 2 pace tags |
+| Voxtral TTS Realtime 3 (`voxtral-mini-tts-realtime-3-0`) | Stream speech for live conversations |  |
+
+To compare modes, options, and features in detail, see [Speech to Text](/studio/audio/speech-to-text/overview) and [Text to Speech](/studio/audio/text-to-speech/overview).
+
+{/* Key numbers sources (Oct 8): context limit = Oct 7 STT test "Prompt 38268 > 32768 maximum context length" (code 3059), model not recorded in the handoff; streaming delay = realtime session.update accepted 80-1200 and 2400 ("trained values"); TTS = 5 response formats tested, WAV 24 kHz mono 16-bit, 34 emotion tags (Rakesh, Oct 7), pace tags slow / fast (Rakesh, Oct 9; medium dropped). No latency figure: none is scoped and sourced yet. */}
+
+{/* Key numbers rule (kept from the skeleton): any latency figure must be scoped (model inference only, excluding network and application latency) and footnoted, and the hub then carries a one-line benchmark caveat (measure from your application, not from API benchmark figures). Language counts disagree across sources (STT: 58 on the launch page vs 50 "batch or live" in the all-hands; realtime: 13 L1 in RFC-555 vs 50; TTS: 35 + ~50 dialects vs 36 + 53): one number per model, from the source Rakesh names, identical on every page. See audio-sources-doc610.md.
+   Deprecation note removed from the hub (Oct 8): Voxtral 2 users get the migration callout after the intro; the canonical deprecation information lives in the Deprecated models sections of the STT and TTS overviews. */}
+
+<SectionTab as="h2" sectionId="concepts">Understand the concepts</SectionTab>
+
+Before you tune options or design a voice product, read how each part of the audio stack works and what each choice trades off.
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/concepts/offline-and-realtime" title="Offline and realtime" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latency" />
+  <LinkCard href="/studio/audio/concepts/turns" title="Turns and turn-taking" />
+  <LinkCard href="/studio/audio/concepts/custom-vocabulary" title="Custom vocabulary" />
+  <LinkCard href="/studio/audio/concepts/speakers-and-diarization" title="Speakers and diarization" />
+  <LinkCard href="/studio/audio/concepts/voices" title="Voices" />
+</UsefullLinkContainer>
+
+<SectionTab as="h2" sectionId="what-you-can-build">What you can build</SectionTab>
+
+Pick the scenario closest to your product. Each guide combines several capabilities into one result and links to the article behind every step.
+
+<UsefullLinkContainer>
+  </UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Restructured Sept 25 after Ben's review:
+   Get started (minimal code + quickstart cards) moved above the fold; the "What you
+   can build" routing table was dropped and merged with "Explore use cases" into one
+   set of use case entry points; the 2-3 sentence concepts moved to their own pages
+   in the Concepts section. The quickstart cards duplicate the sidebar on purpose:
+   landing pages carry shortcuts, as in the other hubs.
+   Verify at the end: the three minimal snippets are identical to their quickstarts,
+   Meet the models carries the numbers (not the children pages), no section
+   duplicates a child page's intro.
+   SECTION ORDER (Gregory, Oct 8): intro + cards + Voxtral 2 migration callout,
+   Get started (API key, SDK, first call), Meet the models (+ "Not a developer?"
+   playground callout), Understand the concepts, What you can build.
+   STRUCTURAL EXCEPTION (formalized): this hub has no final Going further /
+   Next steps section by design — Get started is the routing section and What you
+   can build closes the page on real scenarios. */}

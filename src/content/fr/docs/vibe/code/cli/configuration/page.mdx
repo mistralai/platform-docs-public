@@ -15,12 +15,14 @@ Pour la liste exhaustive de toutes les clés de `config.toml` et des fichiers de
 
 <SectionTab as="h2" sectionId="file-locations">Emplacements des fichiers de configuration</SectionTab>
 
-La CLI recherche `config.toml` dans cet ordre :
+La CLI fusionne deux fichiers `config.toml` :
 
-1. `./.vibe/config.toml` dans le répertoire de travail courant (**au niveau du projet**).
-2. `~/.vibe/config.toml` dans votre dossier personnel (**au niveau utilisateur**).
+1. **Au niveau du projet** : le fichier `.vibe/config.toml` le plus proche, trouvé en remontant l'arborescence depuis le répertoire de travail, sans dépasser votre répertoire racine.
+2. **Au niveau utilisateur** : `~/.vibe/config.toml`.
 
-La configuration projet a priorité sur la configuration utilisateur. La configuration du projet n’est chargée que si le dossier de travail est [approuvé](/vibe/code/safety-approvals-permissions#trusted-folders).
+Les paramètres du projet priment sur les paramètres utilisateur correspondants, et tout ce que le fichier du projet ne définit pas provient du fichier utilisateur. La configuration du projet n'est chargée que si son dossier est [approuvé](/vibe/code/safety-approvals-permissions#trusted-folders).
+
+`/config` enregistre les modifications dans le fichier utilisateur par défaut. Dans l'éditeur de paramètres, utilisez **Enregistrer dans** pour enregistrer dans le fichier du projet ou uniquement dans la session en cours.
 
 <SectionTab as="h2" sectionId="open">Ouvrir votre fichier de configuration</SectionTab>
 
@@ -65,7 +67,7 @@ Utilisez `--workdir` pour pointer la CLI vers un projet qui n’est pas le dossi
 vibe --workdir /path/to/project
 ```
 
-Utilisez `--add-dir` pour donner à la CLI un accès en lecture à un autre dossier, le temps d’une session.
+Utilisez `--add-dir` pour donner à l'agent l'accès à un répertoire supplémentaire le temps d'une session. Répétez l'option pour plusieurs répertoires. Vibe approuve chaque répertoire pour la session, charge son fichier `AGENTS.md` et sa configuration `.vibe/`, et permet à l'agent d'y lire et d'y modifier des fichiers sans déclencher le prompt d'accès hors du répertoire de travail.
 
 <SectionTab as="h2" sectionId="common-sections">Sections courantes de configuration</SectionTab>
 
@@ -73,19 +75,19 @@ Utilisez `--add-dir` pour donner à la CLI un accès en lecture à un autre doss
 
 <SectionTab as="h3" variant="secondary" sectionId="default-agent">Agent par défaut</SectionTab>
 
-Définissez l’agent interactif par défaut :
+Définissez l'agent par défaut :
 
 ```toml
-default_agent = "plan"
+default_agent = "ask"
 ```
 
-Ce réglage ne concerne que les sessions interactives. En mode programmatique, le mode `auto-approve` est utilisé si `--agent` n’est pas précisé. Voir [Agents](/vibe/code/cli/agents).
+Cela s'applique aussi bien aux sessions interactives qu'aux sessions programmatiques. Si ce paramètre n'est pas défini, Vibe utilise `accept-edits`. Voir [Les agents](/vibe/code/cli/agents).
 
 <SectionTab as="h3" variant="secondary" sectionId="providers-models">Fournisseurs et modèles</SectionTab>
 
-Définissez les préréglages de fournisseurs, les préréglages de modèles et le modèle actif.
+Définissez des préréglages de fournisseur, des préréglages de modèle et le modèle actif. Vibe est livré avec un modèle intégré, Mistral Medium 3.5 (alias `mistral-medium-3.5`), et `/model` ne liste que les modèles configurés pour vous. Il les regroupe selon leur provenance : la configuration administrateur de votre organisation, les expériences, le catalogue de modèles, puis votre propre configuration.
 
-Les modèles conversationnels suivants sont disponibles via l'API de Mistral (la Plateforme). Utilisez l'**ID du modèle** comme valeur `name` dans un bloc `[[models]]`, ou transmettez-le directement avec `--model` :
+Les modèles conversationnels suivants sont disponibles via l'API de Mistral (la Plateforme). Utilisez l'**ID du modèle** comme valeur de `name` dans un bloc `[[models]]` avec `provider = "mistral"`, puis sélectionnez-le avec `/model` ou `active_model` :
 
 | Modèle | ID du modèle | Usage recommandé |
 |---|---|---|
@@ -148,7 +150,7 @@ Restreignez les outils accessibles à l’agent :
 
 ```toml
 enabled_tools = ["serena_*"]
-disabled_tools = ["mcp_*", "grep"]
+disabled_tools = ["bash"]
 ```
 
 Les filtres d’outils acceptent les **noms exacts**, les **glob patterns** et les **regex** avec le préfixe `re:`. Des autorisations spécifiques peuvent aussi être définies dans des blocs `[tools.<tool_name>]`. Voir [Sécurité, validations et permissions](/vibe/code/safety-approvals-permissions#tool-permissions).
@@ -159,19 +161,29 @@ Exécutez des commandes shell arbitraires avant ou après les appels d'outils, o
 
 <SectionTab as="h3" variant="secondary" sectionId="updates-telemetry">Mises à jour et télémétrie</SectionTab>
 
-Gérez la mise à jour automatique, les notifications et la télémétrie :
+Contrôlez la vérification des mises à jour, les notifications et la télémétrie :
 
 ```toml
-enable_auto_update = true
+enable_update_checks = true
 enable_notifications = true
 enable_telemetry = true
 ```
 
 | Paramètre | Par défaut | Détails |
 |---|---|---|
-| `enable_auto_update` | `true` | Vibe vérifie les nouvelles versions et se met à jour en arrière-plan. **Nous vous recommandons vivement de laisser cette option activée** afin de toujours bénéficier des dernières corrections. Vous pouvez aussi relancer le script d’installation à tout moment pour une mise à jour manuelle. |
-| `enable_notifications` | `true` | Notifications du système d’exploitation quand Vibe termine une tâche longue ou demande votre intervention (par exemple, lorsqu’une demande d’approbation attend). |
+| `enable_update_checks` | `true` | Vibe recherche une nouvelle version une fois par jour et propose de l'installer au prochain lancement. **Nous vous recommandons vivement de laisser cette option activée** pour toujours bénéficier des derniers correctifs. Vous pouvez aussi exécuter `vibe update` à tout moment. |
+| `enable_notifications` | `true` | Fait retentir la cloche du terminal et met à jour le titre du terminal lorsque Vibe termine une tâche ou nécessite une entrée de votre part (par exemple, lorsqu'un prompt d'approbation est en attente) alors que le terminal n'est pas au premier plan. Votre terminal peut l'afficher sous forme de notification système. |
 | `enable_telemetry` | `true` | Envoie à Mistral des données anonymes d’utilisation et d’erreur. Sert à améliorer le produit (diagnostics de crash, usage des fonctions, performance). Aucun prompt, contenu de fichier ou sortie de modèle n’est transmis. Désactivez-la pour une utilisation strictement hors ligne. |
+
+<SectionTab as="h3" variant="secondary" sectionId="certificates">Autorités de certification d'entreprise</SectionTab>
+
+Par défaut, Vibe valide les certificats HTTPS par rapport à ses racines de certification intégrées. Depuis Vibe 3.0, il applique des règles de validation plus strictes : une autorité de certification (CA) privée dépourvue de certaines extensions standard peut donc être rejetée. Si votre organisation installe son autorité de certification dans le magasin d'approbations du système d'exploitation, indiquez à Vibe d'utiliser ce magasin :
+
+```toml
+enable_system_trust_store = true
+```
+
+Vibe charge également les certificats des variables d'environnement `SSL_CERT_FILE` et `SSL_CERT_DIR` comme ancres de confiance supplémentaires. Pour configurer un proxy et des certificats depuis une session, exécutez `/proxy-setup`.
 
 <SectionTab as="h2" sectionId="admin-config">Configuration gérée par un administrateur</SectionTab>
 
@@ -179,8 +191,7 @@ Votre Organization peut distribuer une configuration de Vibe Code CLI à tous le
 
 Lorsque la configuration administrateur est active :
 
-- Les paramètres gérés par un administrateur dans `/config` apparaissent grisés avec le glyphe de verrouillage `⚿` et indiquent `your administrator` comme origine. Une légende en bas de l'écran affiche `⚿ Settings are managed by your organization`.
-- Les champs gérés par un administrateur sont en lecture seule dans `/config`. Les tentatives de modification ou de réinitialisation n'ont aucun effet. Si vous changez de modèle alors que `active_model` est géré par un administrateur, le sélecteur de modèle affiche un avertissement.
+- Les paramètres gérés par un administrateur sont en lecture seule dans `/config` : vous ne pouvez ni les modifier ni les réinitialiser. Le panneau **OÙ C'EST DÉFINI** de l'éditeur de paramètres liste votre administrateur comme source.
 - La CLI récupère la configuration administrateur au début de chaque session et la conserve en mémoire. Elle ne l'écrit jamais dans votre fichier `config.toml` local.
 
 :::info
@@ -192,7 +203,8 @@ La configuration administrateur est un mécanisme de distribution, pas un contr�
 Lorsque le même paramètre est défini à plusieurs endroits, la CLI les applique dans cet ordre (**priorité décroissante**) :
 
 1. **Configuration administrateur**, lorsque votre Organization en fournit une. Consultez [Configuration administrateur](/vibe/code/cli/admin-config).
-2. **Options en ligne de commande** (par exemple, `--agent`, `--workdir`).
-3. **Variables d’environnement** (par exemple, `MISTRAL_API_KEY`, `VIBE_HOME`).
-4. **Projet** `./.vibe/config.toml`.
-5. **Utilisateur** `~/.vibe/config.toml`.
+2. **Les paramètres de l'agent actif**, issus de son fichier d'agent. Voir [Les agents](/vibe/code/cli/agents).
+3. **Les options de ligne de commande** (par exemple, `--enabled-tools`) et les modifications enregistrées dans la session en cours via `/config`.
+4. **Les variables d'environnement `VIBE_<KEY>`**, qui priment sur la clé de configuration du même nom (par exemple, `VIBE_ACTIVE_MODEL`).
+5. **Projet** `.vibe/config.toml`.
+6. **Utilisateur** `~/.vibe/config.toml`.

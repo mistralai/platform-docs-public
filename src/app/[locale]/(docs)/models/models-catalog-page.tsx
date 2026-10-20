@@ -215,7 +215,7 @@ function getModelGroups(items: Model[]): ModelGroup[] {
       'audio-models',
       'Audio models',
       'Models for speech transcription, realtime transcription, and speech generation.',
-      ['voxtral-mini-transcribe-26-02', 'voxtral-mini-transcribe-realtime-26-02', 'voxtral-tts-26-03', 'voxtral-small-25-07', 'voxtral-mini-25-07', 'voxtral-mini-transcribe-25-07']
+      ['voxtral-mini-transcribe-3-0', 'voxtral-mini-transcribe-realtime-3-0', 'voxtral-small-transcribe-3-0', 'voxtral-mini-tts-3-0', 'voxtral-mini-transcribe-26-02', 'voxtral-mini-transcribe-realtime-26-02', 'voxtral-tts-26-03', 'voxtral-small-25-07', 'voxtral-mini-25-07', 'voxtral-mini-transcribe-25-07']
     ),
     specialistGroup(
       'code-models',

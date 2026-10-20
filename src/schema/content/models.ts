@@ -14,7 +14,7 @@ export const LATEST_MODEL_NAMES: ModelSlug[] = [
   'zai-glm-5-3',
   'mistral-medium-3-5-26-04',
   'mistral-small-4-0-26-03',
-  'voxtral-mini-transcribe-realtime-26-02',
+  'voxtral-mini-transcribe-3-0',
   'ocr-4-1',
 ];
 
@@ -23,8 +23,8 @@ export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
   'ocr-4-1',
   'zai-glm-5-3',
   'mistral-small-4-0-26-03',
-  'voxtral-mini-transcribe-26-02',
-  'voxtral-mini-transcribe-realtime-26-02',
+  'voxtral-mini-transcribe-3-0',
+  'voxtral-mini-tts-3-0',
 ];
 
 export const FEATURED_MODELS_COLOR_OVERRIDES = [

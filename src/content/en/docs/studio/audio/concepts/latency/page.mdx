@@ -1,0 +1,188 @@
+---
+title: Latency
+sidebar_label: Latency
+sidebar_position: 2
+description: "What latency means in each Mistral audio mode, the delays it adds up, and how to measure it and weigh speed against quality."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Latency
+
+Latency sounds like a single number, but in audio it covers several delays that are easy to mix up: the time the model spends on the work, the end-to-end latency, and every stage in between. Telling them apart is how you find what's slow, choose the setting that fixes it, and weigh speed against quality.
+
+<SectionTab as="h2" sectionId="model-latency">Model latency and end-to-end latency</SectionTab>
+
+Keep two numbers apart:
+
+- **Model latency** is the time the model spends on the work, measured on the server. It leaves out the network and everything your application does.
+- **End-to-end latency** is the number to watch for your mode, listed below. It starts when your application acts and stops when the user sees or hears the result, so it includes the model latency and every stage around it.
+
+End-to-end latency is always the longer of the two, and the gap between them is where most latency problems are. A model latency figure helps you compare models. It doesn't predict what your users will wait for: only a measurement from your application does.
+
+<SectionTab as="h2" sectionId="numbers-that-matter">The numbers that matter</SectionTab>
+
+Measure the delay the user notices, not the duration of an API call. Depending on the mode, that's one of these:
+
+- **Time to the complete result**, for offline requests: from sending a file or a text to having the full transcript or the full audio. Watch it for batch work, where nobody waits in front of the screen.
+- **Time to first transcript**, for realtime transcription: from the moment someone says a word to the moment its text reaches your application. Watch it for live captions and voice input.
+- **Time to first audio**, for speech generation: from sending the text to hearing the first sound. Watch it whenever someone is waiting to hear the answer.
+- **Per-turn latency**, for voice agents: from the moment the user stops speaking to the moment the agent starts answering. Users perceive it as how responsive the agent is.
+
+<DiagramFrame label="What end-to-end latency covers">
+
+Each number adds up several stages, shown in grey below, from the moment the request starts to the moment the user sees or hears the result.
+
+<LinkedDiagram
+  src="/img/audio_latency_by_mode.svg"
+  alt="What end-to-end latency covers in each mode: the time to the complete result for an offline request, the time to first transcript in realtime transcription, the time to first audio in speech generation, and the per-turn latency of a voice agent, where end-of-turn detection comes first."
+  viewBox={[1170, 675]}
+  links={[
+    { href: '#offline-requests', label: 'Offline requests: where the delay comes from', x: 20, y: 20, width: 670, height: 140 },
+    { href: '#realtime-transcription', label: 'Realtime transcription: where the delay comes from', x: 20, y: 185, width: 900, height: 140 },
+    { href: '#speech-generation', label: 'Speech generation: where the delay comes from', x: 20, y: 350, width: 900, height: 140 },
+    { href: '#voice-agents', label: 'Voice agents: where the delay comes from', x: 20, y: 515, width: 1130, height: 140 },
+  ]}
+/>
+
+</DiagramFrame>
+
+<SectionTab as="h2" sectionId="latency-by-mode">Latency by mode</SectionTab>
+
+| Mode | What end-to-end latency covers | Where the delay comes from | Where to tune |
+| --- | --- | --- | --- |
+| Offline transcription | The complete transcript, or its first words when you stream the response | Sending the file, then processing time that grows with the length of the audio | [File transcription](/studio/audio/speech-to-text/transcribe-files) |
+| Realtime transcription | The text of each word, soon after it's spoken | The streaming delay you choose, then the network | [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime) |
+| Speech generation | The first sound | Generating the first chunk of audio, then buffering in your player | [Stream speech](/studio/audio/text-to-speech/stream-speech) |
+| Voice agents | The agent's reply after the user stops speaking | End-of-turn detection, transcription, the model, tools, and speech generation, one after the other | [End-of-turn detection](/studio/audio/voice-agents/configuration#end-of-turn-detection) and [fillers](/studio/audio/voice-agents/tools#fillers) |
+
+{/* COMPETITOR ORDERS OF MAGNITUDE — reference only, never publish as ours (noted Oct 9 from ElevenLabs
+   "Understanding latency", elevenlabs.io/docs/eleven-api/concepts/latency). Their figures, their setup:
+   - Model inference, Flash TTS models: about 75 ms for short inputs, server-side, without network or app.
+   - Network round trip over the public internet: 20 to 200 ms, depending on distance to the cluster.
+   - Audio player buffer: 500 ms is common; a smaller buffer plays sooner, with more risk of gaps.
+   - Server overhead (auth, validation, scheduling): single-digit milliseconds.
+   Use: (1) ask Rakesh how Voxtral TTS compares on the same scoping (model inference, short input);
+   (2) sanity-check our own figures when they arrive; (3) if we ever give generic ranges for the network or
+   the player buffer, measure them ourselves first (Paris and US clients, one browser player) instead of
+   reusing these. Check again before launch: the page may have changed. */}
+
+<SectionTab as="h2" sectionId="where-delay-comes-from">Where the delay comes from</SectionTab>
+
+Every request crosses the network twice and waits for the model. On top of that, each mode adds its own stages. A delay you measure in your application is always longer than the model's processing time alone, because it includes everything around it.
+
+The network share depends on distance: between your users and your servers, and between your servers and the API. A test from your laptop doesn't tell you what a user on another continent waits for, so measure from where your application runs and from where your users are.
+
+<SectionTab as="h3" variant="secondary" sectionId="offline-requests">Offline requests</SectionTab>
+
+An offline request starts once the whole input is sent, so a long recording takes longer to upload before the work starts. The model then processes the complete input. The time to the complete result grows with the length of the audio to transcribe, or of the text to speak.
+
+When you stream the response of an offline request, the total time doesn't shrink, but the first words of the transcript or the first chunk of audio reach you before the rest is ready. Your application can show or play them while the model works on the rest. For the difference between this and the realtime mode, see [Offline and realtime audio](/studio/audio/concepts/offline-and-realtime).
+
+<SectionTab as="h3" variant="secondary" sectionId="realtime-transcription">Realtime transcription</SectionTab>
+
+In a realtime session, the model doesn't write each word as soon as it hears it. It waits a little to hear what comes next, because the following sounds help it pick the right word. This wait is the streaming delay, and you set it for each session: a shorter delay gets the text out sooner, a longer delay gives the model more context and more accurate text. Choose it for your use case on [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime).
+
+ Live captions and note-taking benefit most, because readers see words at once and the final text is right.
+
+ If your application acts on a turn event, account for the text still on its way.
+
+<SectionTab as="h3" variant="secondary" sectionId="end-of-turn-detection">End-of-turn detection</SectionTab>
+
+A pause doesn't always mean the speaker has finished. To avoid cutting people off, end-of-turn detection waits for a minimum silence before it ends a turn, and ends it anyway after an end timeout when the model still isn't sure. That wait comes before anything else in an agent's reply, so it counts in full in the per-turn latency. A shorter silence makes the agent answer sooner, and interrupt more often. [Turns and turn-taking](/studio/audio/concepts/turns) explains this trade-off.
+
+Detection also sends an early signal, the eager end, when a turn is probably over. Your application can start preparing a reply at that point and drop it if the speaker goes on. The Voice Agents SDK handles turn detection internally and does not expose `turn.eager_end` events to the application. The settings are on [Turn detection](/studio/audio/speech-to-text/turn-detection).
+
+<SectionTab as="h3" variant="secondary" sectionId="speech-generation">Speech generation</SectionTab>
+
+For speech, what the listener notices is the time to first audio, not the time to generate the whole clip. When you stream speech, the API sends audio in chunks as it generates them, and your application can start playback with the first chunk. Your player adds its own wait if it buffers audio before it plays: a smaller buffer starts playback sooner, with more risk of gaps if the stream slows down. so measure it over many requests. See [Stream speech](/studio/audio/text-to-speech/stream-speech).
+
+<SectionTab as="h3" variant="secondary" sectionId="voice-agents">Voice agents</SectionTab>
+
+A voice agent chains the stages above in one session: realtime transcription, a model, then speech generation. For one turn, the delay adds up in order.
+
+<DiagramFrame label="One voice agent turn">
+
+<LinkedDiagram
+  src="/img/voice_agent_turn_latency.svg"
+  alt="One voice agent turn: end-of-turn detection, transcript, model, tools when called, then speech. A filler plays during the tool call, so the user hears a first sound before the useful answer."
+  viewBox={[1170, 305]}
+  links={[
+    { href: '/studio/audio/voice-agents/configuration#end-of-turn-detection', label: 'End-of-turn detection settings', x: 80, y: 100, width: 170, height: 70, rx: 12 },
+    { href: '/studio/audio/voice-agents/tools', label: 'Tools', x: 710, y: 100, width: 170, height: 70, rx: 12 },
+    { href: '/studio/audio/voice-agents/tools#fillers', label: 'Fillers', x: 710, y: 30, width: 170, height: 50, rx: 10 },
+  ]}
+/>
+
+</DiagramFrame>
+
+Each stage waits for the one before it to produce something, so the slowest stage sets the pace. Tool calls are often the longest wait, because they depend on a service outside the model, such as a web search or your own code. A filler covers that wait: the agent plays a short clip when a tool call starts and stops it when the result arrives. The filler makes the wait easier to bear but doesn't shorten it. See [Fillers](/studio/audio/voice-agents/tools#fillers) and [Voice agents](/studio/audio/voice-agents/overview).
+
+<SectionTab as="h2" sectionId="speed-trade-offs">Speed against quality</SectionTab>
+
+Most settings that cut a delay cost something else. Change one at a time, then check what you lost.
+
+| You shorten | The user gets | The cost | Details |
+| --- | --- | --- | --- |
+| The streaming delay | Text sooner | Less accurate text | [Realtime transcription](#realtime-transcription) |
+| The end-of-turn silence | Replies sooner | The agent cuts people off more often | [End-of-turn detection](#end-of-turn-detection) |
+| The player buffer | Sound sooner | More risk of gaps in playback | [Speech generation](#speech-generation) |
+| The silence during a tool call, with a filler | A first sound sooner | Nothing: the useful answer arrives at the same time | [Voice agents](#voice-agents) |
+
+<SectionTab as="h2" sectionId="measure-from-your-application">Measure from your application</SectionTab>
+
+Measure where your users feel the delay: in your application, on your network, with your models and your settings.
+
+<SectionTab as="h3" variant="secondary" sectionId="time-each-stage">Time each stage</SectionTab>
+
+A single end-to-end number tells you something is slow, not what. Record a timestamp at the boundary of each stage, then compare the stages to find the one to work on.
+
+| Stage | Start | Stop |
+| --- | --- | --- |
+| Connection | Your application opens the session | The session is ready to receive audio or text |
+| Transcription | The user says a word | Its text reaches your application |
+| End-of-turn detection | The user stops speaking | The turn ends |
+| Model | The final transcript is ready | The first part of the model's answer arrives |
+| Tools | A tool call starts | Its result is back |
+| Speech generation | The text to speak is sent | The first audio chunk arrives |
+| Playback | The first audio chunk arrives | The user hears it |
+
+Count connection apart from the rest: it happens once per session, not once per turn. For the stages that start with the user's voice, take the timestamp from the audio itself, not from the moment your code sends a request. In realtime transcription, turn events carry the position in the audio stream where they happened, which you can line up with the moment you sent that audio.
+
+<SectionTab as="h3" variant="secondary" sectionId="compare-runs">Compare runs, not single calls</SectionTab>
+
+One call proves nothing: the same request can take a different time on each run. Repeat the same scenario many times and look at two numbers: the median, for the usual experience, and the 95th percentile, for the slow cases that users remember.
+
+- **Change one thing at a time.** Switch the model, the streaming delay, or the end-of-turn settings, then run the same scenario again. If you change two things at once, you can't tell which one made the difference.
+- **Keep the conditions the same.** Use the same network, the same region, and the same audio for each run.
+- **Send audio at the pace of speech.** In a realtime session, a file sent faster than real time doesn't behave like a microphone. Stream it at its real pace, as a live speaker would.
+- **Test with real conversations.** Short, clear sentences hide the pauses and hesitations that end-of-turn detection has to handle. Start with recordings you control, so runs compare, then replay recordings of real users, with their accents, microphones, and background noise, then full conversations with interruptions.
+- **Check what speed costs.** After each change, check accuracy and interruptions, not only the time. See [Speed against quality](#speed-trade-offs).
+
+<SectionTab as="h3" variant="secondary" sectionId="measure-fillers-separately">Measure fillers separately</SectionTab>
+
+A filler or a quick acknowledgment makes the agent sound responsive, but it isn't the answer. Record two times for each turn: when the user first hears something, and when they hear the useful answer. If you only track the first, fillers hide a slow tool. If you only track the second, you miss what fillers do for the conversation.
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-in-realtime" title="Realtime transcription" />
+  <LinkCard href="/studio/audio/text-to-speech/stream-speech" title="Stream speech" />
+  <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Turn detection" />
+  <LinkCard href="/studio/audio/voice-agents/tools#fillers" title="Fillers" />
+</UsefullLinkContainer>
+
+{/* Concept page — audio docs revamp (DOC-610). Moved from /studio/audio/understanding-latency
+   (Sept 24): the page was orphaned at sidebar position 0.25, before the quickstarts,
+   absent from the audit CSV and from the hub. It then lived in Specs and limits
+   and covers the voice agent per-turn number that the previous version missed.
+   Moved to Concepts on Sept 25 (Ben's review, Gregory): latency is an explanation
+   first, and deserves a place higher in the sidebar. The "Latency by mode" table stays here as the
+   single canonical copy of the figures; Limits links to it. Written Oct 8 without figures (none
+   publishable): the page explains where the delay comes from and how to measure it. Verify at the end:
+   one scoping rule stated once, every figure scoped + footnoted or left out, knobs linked not duplicated,
+   the modes use the same vocabulary as the STT/TTS overviews (see the mode-vocabulary
+   flag in the TTS overview). */}

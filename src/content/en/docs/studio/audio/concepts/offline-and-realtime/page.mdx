@@ -1,0 +1,90 @@
+---
+title: Offline and realtime audio
+sidebar_label: Offline and realtime
+sidebar_position: 1
+description: "The two ways Mistral processes audio: recorded audio in a single request, or live audio in a streaming session, and what changes between them."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Offline and realtime audio
+
+Every audio capability runs in one of two modes, and the question is whether the input exists before you call the API:
+
+- **Offline**: you already have the whole input, such as a call recording, a podcast episode, or a script to voice. You send it in one request. The API processes all of it and returns the result: a full transcript, or a full audio file.
+- **Realtime**: the input is still being produced, such as a microphone, a phone line, or text that a model is writing. You open a session and send the input in small pieces, for example 100 ms of audio at a time. The API sends results back as they're ready: partial transcripts, events such as the end of a speaker's turn, or chunks of speech.
+
+Pick the mode first, before the model and the options: it decides how you connect, how fast results arrive, and which features you can use.
+
+<SectionTab as="h2" sectionId="choosing">Choose a mode</SectionTab>
+
+<DiagramFrame label="Offline, realtime, or voice agents">
+
+Answer the questions from the top.
+
+<LinkedDiagram
+  src="/img/audio_offline_or_realtime.svg"
+  alt="Choosing an audio mode: if the input is complete before you send it, use offline; if not and your app answers back by voice, use voice agents; otherwise, use realtime."
+  viewBox={[940, 640]}
+  links={[
+    { href: '/studio/audio/speech-to-text/transcribe-files', label: 'Offline: File transcription', x: 540, y: 75, width: 380, height: 90 },
+    { href: '/studio/audio/voice-agents/overview', label: 'Voice agents overview', x: 540, y: 325, width: 380, height: 90 },
+    { href: '/studio/audio/speech-to-text/transcribe-in-realtime', label: 'Realtime transcription', x: 50, y: 530, width: 380, height: 90 },
+  ]}
+/>
+
+If the audio or the text exists before you call the API, start offline: it's simpler, and the model hears the whole input before it answers. If it's being produced while the user waits, you need realtime. If your app also answers back by voice, use [voice agents](/studio/audio/voice-agents/overview), which run the whole conversation for you. To choose the model for each mode, see the [Speech to Text](/studio/audio/speech-to-text/overview) and [Text to Speech](/studio/audio/text-to-speech/overview) overviews.
+
+</DiagramFrame>
+
+<SectionTab as="h2" sectionId="what-changes">What changes between the modes</SectionTab>
+
+The mode changes how you connect, what you get back, and which latency you measure.
+
+| | Offline | Realtime |
+| --- | --- | --- |
+| Input | Complete, sent in one request | Live, sent in pieces during a session |
+| Connection | One HTTP request | A WebSocket session that stays open |
+| Result | One complete result, or the same result streamed in pieces | Incremental results and events while the session runs |
+| Speed to watch | Time to the complete result, which grows with the length of the input | Delay between the input and its result, which you can tune |
+| Only in this mode |  | Turn detection: knowing when a speaker has finished |
+| Models | One model per capability, see the [Speech to Text](/studio/audio/speech-to-text/overview) and [Text to Speech](/studio/audio/text-to-speech/overview) overviews | A dedicated realtime model per capability |
+
+:::tip
+In realtime transcription, you choose the trade-off between speed and accuracy: a longer streaming delay, from 80 to 1,200 ms or 2,400 ms, gives the model more context before it commits to the text. For what drives each delay, see [Latency](/studio/audio/concepts/latency).
+:::
+
+{/* Sources (Oct 7 tests, examples/stt and examples/tts): offline STT = POST /v1/audio/transcriptions, optional SSE (transcription.text.delta, transcription.done); realtime STT = WebSocket /v1/audio/transcriptions/realtime, 100 ms chunks, turn.* events, target_streaming_delay_ms 80-1200 or 2400; segment timestamps tested offline only (not tested in realtime); offline TTS = POST /v1/audio/speech, optional SSE (speech.audio.delta). */}
+
+<SectionTab as="h2" sectionId="across-capabilities">Across the three capabilities</SectionTab>
+
+Each capability supports the modes differently. Find yours, then follow the link to the article that covers it.
+
+| Capability | Offline | Realtime |
+| --- | --- | --- |
+| Speech to text | Transcribe a recorded file. [File transcription](/studio/audio/speech-to-text/transcribe-files) | Transcribe live audio, with end-of-turn detection built in. [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime) |
+| Text to speech | Generate speech for a complete text, and optionally stream the audio back as it's generated. [Speech generation](/studio/audio/text-to-speech/generate-speech) |  [Stream speech](/studio/audio/text-to-speech/stream-speech) |
+| Voice agents | Not applicable | Always realtime: a session chains realtime transcription, a model, and speech. [Voice agents](/studio/audio/voice-agents/overview) |
+
+:::note
+Streaming the response of an offline request isn't the realtime mode. When you set `stream` on a transcription or speech request, the input is still complete when you send it: only the result arrives in pieces, so you see or hear it sooner. Realtime starts before the input is complete.
+:::
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/overview" title="Speech to Text" />
+  <LinkCard href="/studio/audio/text-to-speech/overview" title="Text to Speech" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latency" />
+</UsefullLinkContainer>
+
+{/* Concept page (layer 1, Context) — audio docs revamp (DOC-610). Created Sept 25
+   after Ben's review: concepts get their own sidebar section with more than 2-3
+   sentences each. Boundary: this page explains the two modes across capabilities;
+   the per-capability decision tables stay on the STT and TTS overviews, and feature
+   availability stays on each feature article. Verify at the end: no code, no option
+   list, mode vocabulary identical to the overviews, TTS Realtime availability updated
+   once the model is exposed. */}

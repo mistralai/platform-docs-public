@@ -1,0 +1,150 @@
+---
+title: "Create and manage agents"
+sidebar_label: "Agents"
+sidebar_position: 1
+description: "Save and version agent configurations, then start sessions from them."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Create and manage agents
+
+An agent is a saved, versioned configuration: its instructions, the model for each stage, the voice, the tools, the welcome message, and how it handles interruptions. You create it once, then start as many sessions from it as you need, from the SDK, a browser, or a phone line. Saving the configuration as an agent also keeps the behavior consistent: the saved interruption settings apply to phone calls attached to the agent, too.
+
+{/* API REFERENCE: a REST API reference page is coming for this entity (Jean Perbet, Sept 24) — add a CtaButton here once it is published. */}
+
+<SectionTab as="h2" sectionId="create-an-agent">Create an agent and start a session</SectionTab>
+
+Create the agent with `client.audio.agents.create`, then start a session from it with `agent_id`. Any agent option you also pass to `init()` overrides the saved configuration for that session only: here, a different voice. The saved agent doesn't change.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.client import Mistral
+from mistralai.extra.voice_agents import DefaultAudioInterface
+
+async with Mistral(api_key="...") as client:
+    agent = await client.audio.agents.create(
+        name="Support bot",
+        description="French-speaking support assistant",
+        configuration={
+            "llm": {"model": "mistral-small-latest"},
+            "tts": {"voice_id": "fr_marie_neutral"},
+            "turn": {"allow_interruptions": False},
+            "instructions": "Tu es un assistant serviable.",
+        },
+    )
+
+    # Start a session from the saved agent with a session-only voice override.
+    session = await client.audio.sessions.init(
+        agent_id=agent.id,
+        tts={"voice_id": "gb_oliver_excited"},
+        audio_interface=DefaultAudioInterface(),
+    )
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { DefaultAudioInterface } from "@mistralai/mistralai/extra/voice-agents/audio/node";
+
+const client = new Mistral({ apiKey: "..." });
+
+const agent = await client.audio.agents.create({
+  name: "Support bot",
+  description: "French-speaking support assistant",
+  configuration: {
+    llm: { model: "mistral-small-latest" },
+    tts: { voiceId: "fr_marie_neutral" },
+    turn: { allowInterruptions: false },
+    instructions: "Tu es un assistant serviable.",
+  },
+});
+
+// Start a session from the saved agent with a session-only voice override.
+const session = await client.audio.sessions.init({
+  agentId: agent.id,
+  tts: { voiceId: "gb_oliver_excited" },
+  audioInterface: new DefaultAudioInterface(),
+});
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="versions">Versions</SectionTab>
+
+Each configuration change creates a new version of the agent. Sessions start from the latest version by default. To keep a session on a known configuration, pin a version with `agent_version`. In this example, `update` saves a new version that switches the model to Mistral Medium:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+agent = await client.audio.agents.update(
+    agent_id=agent.id,
+    name="Support bot",
+    configuration={
+        "llm": {"model": "mistral-medium-latest"},
+        "tts": {"voice_id": "fr_marie_neutral"},
+        "turn": {"allow_interruptions": False},
+    },
+)
+
+session = await client.audio.sessions.init(agent_id=agent.id, agent_version=agent.version)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const agent = await client.audio.agents.update({
+  agentId: agent.id,
+  name: "Support bot",
+  configuration: {
+    llm: { model: "mistral-medium-latest" },
+    tts: { voiceId: "fr_marie_neutral" },
+    turn: { allowInterruptions: false },
+  },
+});
+
+const session = await client.audio.sessions.init({
+  agentId: agent.id,
+  agentVersion: agent.version,
+});
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="manage-agents">Manage agents</SectionTab>
+
+Manage agents with the methods of `client.audio.agents`. In TypeScript, the method names are in camelCase, for example `listVersions` and `listSessions`.
+
+| Method | Description |
+| --- | --- |
+| `create(name, description?, configuration?)` | Creates an agent, optionally with a first configuration version. |
+| `list(page_size=10, page_token=None)` | Lists agents, with cursor pagination: the response has `data` and `next_page_token`. |
+| `get(agent_id)` | Gets one agent. |
+| `update(agent_id, name, configuration, description?)` | Saves a new configuration as a new version of the agent. |
+| `delete(agent_id)` | Deletes an agent. The agent no longer appears in `list` and `get`. |
+| `list_versions(agent_id, page_size=10, page_token=None)` | Lists the configuration versions of an agent, with cursor pagination. |
+| `list_sessions(agent_id, page_size=10, page_token=None)` | Lists the sessions started from an agent, with cursor pagination. |
+
+<SectionTab as="h2" sectionId="client-tools-on-agents">Client tools on agents</SectionTab>
+
+An agent can save client-side tools, but only their declaration: the name, the description, and the parameters. The handler stays in your code, so pass the tool to `init()` again when you start a session. If the model calls a client tool that has no handler, the session emits an `unhandled_tool` event. For details, see [Save client tools on an agent](/studio/audio/voice-agents/tools#save-client-tools).
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/configuration" title="Agent configuration" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Tools" />
+  <LinkCard href="/studio/audio/voice-agents/webhooks" title="Webhooks" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Reordered per skeleton review S28: create-and-start first, versions next (latest + pinning), the seven-method CRUD reference after the journey, tools note brief with a link. Verify at the end: the versioned-snapshot concept is the spine, agent_id/inline relationship explicit, no invented methods. */}

@@ -44,11 +44,11 @@ export default {
     type: 'custom',
     free: false,
     input: [
-      { type: 'range', price: 0.68, denominator: '/M Tokens', label: 'Input', originalPrice: 1.36 },
-      { type: 'range', price: 0.07, denominator: '/M Tokens', label: 'Cached input', originalPrice: 0.14 },
+      { type: 'range', price: 1.36, denominator: '/M Tokens', label: 'Input' },
+      { type: 'range', price: 0.14, denominator: '/M Tokens', label: 'Cached input' },
     ],
     output: [
-      { type: 'range', price: 2.09, denominator: '/M Tokens', label: 'Output', originalPrice: 4.18 },
+      { type: 'range', price: 4.18, denominator: '/M Tokens', label: 'Output' },
     ],
   },
   identifiers: { apiNames: ['mistral-large-4', 'mistral-large-4-0'] },

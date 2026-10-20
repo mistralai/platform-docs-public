@@ -1,0 +1,254 @@
+---
+title: "Agent configuration"
+sidebar_label: "Agent configuration"
+sidebar_position: 2
+description: "The Mistral client and the audio.sessions.init() options — agent configuration vs session runtime."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { Badge } from '@/components/ui/badge';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Agent configuration
+
+This page lists every option you can pass to `client.audio.sessions.init()`. Options come in two scopes. **Agent** options define the agent itself: its models, voice, instructions, tools, and turn-taking. You can save them as a [saved agent](/studio/audio/voice-agents/agents). **Session** options only apply to the session you open, such as which saved agent to start from and which audio interface to use.
+
+:::note
+The tables use the Python names. In TypeScript, the same options are in camelCase: `api_key` becomes `apiKey`, `server_url` becomes `serverUrl`, and `turn.allow_interruptions` becomes `turn.allowInterruptions`.
+:::
+
+<SectionTab as="h2" sectionId="the-client">The client</SectionTab>
+
+`client.audio.sessions.init()` is a method on the general-purpose `Mistral` client. Construct the client once, then start any number of sessions from it.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+Mistral(
+    api_key: str,
+    server_url: str = "https://api.mistral.ai",
+    timeout_ms: int = 60000,
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+new Mistral({
+  apiKey: string,
+  serverURL?: string, // default "https://api.mistral.ai"
+  timeoutMs?: number, // default 60000
+});
+```
+
+  </TabItem>
+</Tabs>
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `api_key` | `str` | Required | Your Mistral API key. |
+| `server_url` | `str` | `"https://api.mistral.ai"` | API base URL. |
+| `timeout_ms` | `int` | `60000` | Timeout for the requests that create and close sessions. |
+
+<SectionTab as="h2" sectionId="inline-or-saved">Inline or saved configuration</SectionTab>
+
+You can pass the agent options to `init()` every time, which suits quick experiments. Or you can save them once as an agent and start each session with `agent_id`. When you set `agent_id`, the saved configuration is the base, and any agent option you also pass to `init()` overrides it for that session only. The saved agent doesn't change. Session options always apply. For an example, see [Create an agent and start a session](/studio/audio/voice-agents/agents#create-an-agent).
+
+:::info
+In the browser, you don't call `init()`: your server creates the session with `client.audio.sessions.create()`, which takes the same options. See the [Browser guide](/studio/audio/voice-agents/browser).
+:::
+
+<SectionTab as="h2" sectionId="connect-options">init() options</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="agent-options">Agent options</SectionTab>
+
+These options are part of the agent configuration, and you can save them on an agent.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `llm` | mapping | `mistral-small-latest` | Model that generates the answers. |
+| `stt` | mapping |  | Speech-to-text model, with optional `language` (ISO 639-1 code such as `"fr"`), `context_bias` (terms to favor), `target_streaming_delay_ms` (80 to 1200, default 240), and `turn_detection` (see [End-of-turn detection](#end-of-turn-detection)). `language`, `context_bias`, and `turn_detection` need a Voxtral 3 realtime model; other models return a 422 error. |
+| `tts` | mapping |  | Text-to-speech model and voice (`voice_id`). |
+| `instructions` | `str` | None | System prompt for the agent. |
+| `tools` | list of tools | None | Tools the agent can call. See [Tools](/studio/audio/voice-agents/tools). |
+| `welcome_message` | `str` | None | Message the agent speaks when the session connects. |
+| `turn` | mapping | `allow_interruptions=True` | Turn-taking settings, including whether the user can interrupt the agent. |
+
+<SectionTab as="h3" variant="secondary" sectionId="session-options">Session options</SectionTab>
+
+These options only apply to the session you open.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `agent_id` | `str` | None | Start the session from a [saved agent](/studio/audio/voice-agents/agents). |
+| `agent_version` | `int` | Latest | Pin a specific version of `agent_id`. |
+| `audio_interface` | `AudioInterface` | None | Audio input and output. Leave it out to handle audio yourself, see [Custom audio](/studio/audio/voice-agents/custom-audio). |
+| `http_headers` | mapping of `str` to `str` | None | Extra headers for the request that creates the session. |
+
+<SectionTab as="h2" sectionId="end-of-turn-detection">End-of-turn detection</SectionTab>
+
+Set `stt.turn_detection` to let a Voxtral 3 realtime model decide when the user has finished speaking. Without it, the agent uses the model's default turn detection. Pass `{}` to use the server defaults, or set any of these fields:
+
+| Field | Range | Server default | What it does |
+| --- | --- | --- | --- |
+| `start_threshold` | 0 to 1 | 0.5 | Decides when the user starts or resumes speaking. Raise it if turns start too easily, such as on background noise. |
+| `eager_end_threshold` | 0 to 1 | 0.5 | Decides when the user may have stopped. Lower it if eager ends fire too often. |
+| `end_threshold` | 0 to 1 | 0.33 | Decides when the user has stopped. Lower it to cut people off less, at the cost of a later reply. |
+| `min_silence_ms` | 0 or more | 500 | Minimum pause before the turn can end. Increase it to end turns too early less often, at the cost of a later reply. |
+| `end_timeout_ms` | 0 or more | 3000 | Maximum pause before the turn ends anyway. Decrease it to cap the longest wait. |
+
+For example, to let the agent answer after a shorter silence:
+
+```python
+session = await client.audio.sessions.init(
+    stt={
+        "model": "voxtral-mini-transcribe-realtime-3",
+        "turn_detection": {"min_silence_ms": 300},
+    },
+)
+```
+
+{/* Deviation from the vendor sample: model="voxtral-transcribe-realtime-3" (interim alias) replaced with the final ID voxtral-mini-transcribe-realtime-3 (Rakesh, Oct 7). */}
+
+For what each threshold does and the faster Aggressive preset, see [Turn detection](/studio/audio/speech-to-text/turn-detection).
+
+<SectionTab as="h2" sectionId="text-to-speech">Text-to-speech</SectionTab>
+
+`tts` accepts the following fields:
+
+| Field | Availability | Description |
+| --- | --- | --- |
+| `model` | All | Text-to-speech model to use. Options are Voxtral TTS 3 (recommended) `voxtral-mini-tts-3` and Voxtral TTS 2 `voxtral-mini-tts-2603`. |
+| `voice_id` | All | Voice to use, depending on the model. See the following lists. |
+| `phoneme_hints` | <Badge variant="outline">Voxtral TTS 3 only</Badge> | [Pronunciation](#pronunciation) of specific words, as a map from each word to its list of IPA phonemes. |
+| `expressiveness` | <Badge variant="outline">Voxtral TTS 3 only</Badge> | Not available yet: this option is disabled for now. Will set how expressive the voice is, from 1.0 to 5.0. |
+
+<SectionTab as="h3" variant="secondary" sectionId="pronunciation">Pronunciation</SectionTab>
+
+Use `phoneme_hints` to fix how the agent says names, brands, or acronyms. Each word maps to a list of IPA phonemes. Words are case-sensitive. Only English phonemes are supported, and a phoneme outside that set is rejected when you create the session or save the agent.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+session = await client.audio.sessions.init(
+    tts={
+        "model": "voxtral-mini-tts-3",
+        "voice_id": "voice_447",
+        "phoneme_hints": {"Mistral": ["m", "ɪ", "s", "t", "ɹ", "ɑ", "l"]},
+    },
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const session = await client.audio.sessions.init({
+  tts: {
+    model: "voxtral-mini-tts-3",
+    voiceId: "voice_447",
+    phonemeHints: { Mistral: ["m", "ɪ", "s", "t", "ɹ", "ɑ", "l"] },
+  },
+});
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="voxtral-tts-3">Voxtral TTS 3 voices</SectionTab>
+
+On top of Voxtral TTS 2 voices listed [below](#voxtral-tts-2), here are the additional actor voices supported by Voxtral TTS 3.
+
+| Voice | Language | Gender | `voice_id` |
+| --- | --- | --- | --- |
+| Richard | English (UK) | Male | `voice_1788` |
+| Jules | English (UK) | Female | `voice_1787` |
+| Jade | English (UK) | Female | `voice_1786` |
+| Sarah | English (US) | Female | `voice_478` |
+| Yael | English (US) | Female | `voice_447` |
+| Eric | English (US) | Male | `voice_485` |
+| Jesse | English (US) | Male | `voice_484` |
+| Esmeralda | Spanish | Female | `voice_483` |
+| Andrea | Italian | Female | `voice_482` |
+| Fiona | German | Female | `voice_481` |
+| Marina | Portuguese | Female | `voice_480` |
+| Linda | Arabic | Female | `voice_479` |
+
+<SectionTab as="h3" variant="secondary" sectionId="voxtral-tts-2">Voxtral TTS 2 voices</SectionTab>
+
+On top of these actor voices, Voxtral TTS 2 supports [instant voice cloning](/studio/audio/text-to-speech/voice-cloning) to create a voice from an audio sample.
+
+| Voice | Language | Gender | `voice_id` |
+| --- | --- | --- | --- |
+| Paul | English (US) | Male | `en_paul_{neutral,sad,happy,frustrated,excited,confident,cheerful,angry}` |
+| Oliver | English (UK) | Male | `gb_oliver_{neutral,sad,excited,curious,confident,cheerful,angry}` |
+| Jane | English (UK) | Female | `gb_jane_{neutral,sarcasm,confused,shameful,sad,jealousy,frustrated,curious,confident}` |
+| Marie | French | Female | `fr_marie_{neutral,sad,happy,excited,curious,angry}` |
+
+<SectionTab as="h2" sectionId="turn-taking">Turn-taking</SectionTab>
+
+`turn` controls how the agent shares the conversation with the user:
+
+| Field | Description |
+| --- | --- |
+| `allow_interruptions` | Whether the user can interrupt the agent while it speaks. Defaults to `True`. |
+| `inactivity` | Reminders the agent speaks when the user stays silent. |
+
+`inactivity` accepts:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `timeout_ms` | `int` | Milliseconds of silence before the first reminder. Default: `10000`. |
+| `max_reminders` | `int` | Maximum number of reminders before the session ends. Default: `2`. |
+| `messages` | list of `str` | Messages the agent speaks. Default: `["Are you still there?"]`. |
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+session = await client.audio.sessions.init(
+    turn={
+        "allow_interruptions": True,
+        "inactivity": {
+            "timeout_ms": 10000,
+            "max_reminders": 2,
+            "messages": ["Are you still there?"],
+        },
+    },
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const session = await client.audio.sessions.init({
+  turn: {
+    allowInterruptions: true,
+    inactivity: {
+      timeoutMs: 10000,
+      maxReminders: 2,
+      messages: ["Are you still there?"],
+    },
+  },
+});
+```
+
+  </TabItem>
+</Tabs>
+
+You can change `instructions`, `tools`, and `turn` on a running session. See [Update a live session](/studio/audio/voice-agents/sessions#update-a-live-session).
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/agents" title="Create and manage agents" />
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Manage agent sessions" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Tools" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Authoritative source: dashboard repo, voice_agents_sdk/docs/docs/ (SDK 0.5.0, dashboard@ffed1e6b333) core/configuration.mdx. The options table is COMPLETE in the vendor doc — port it fully, no invention needed. RFC-391 is superseded. Verify at the end: agent vs session scope is the organizing principle, defaults stated, browser divergence noted. */}

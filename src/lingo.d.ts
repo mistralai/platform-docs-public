@@ -81,6 +81,7 @@ declare module "@lingo.dev/react" {
     "Send a request to the Chat Completions API with the": { context: "Intro before GLM 5.3 model name in onboarding examples" };
     "model name.": { context: "Intro after GLM 5.3 model name in onboarding examples" };
     "Regional inference": { context: "Link text to the regional inference documentation" | "Title of the Inference landing card linking to regional inference" };
+    "Generate speech": { context: "Quickstart title about generating speech from text" };
     "Generalist models": { context: "Heading for generalist AI models" };
     "OCR models": { context: "Heading for OCR model family" };
     "Audio models": { context: "Heading for audio model family" };
@@ -182,7 +183,7 @@ declare module "@lingo.dev/react" {
     "Approximate minimum required GB for different quantization formats.": { context: "Intro text for minimum GPU memory by quantization format" };
     "As our Mistral AI community continues to grow, we are looking for Mistral experts who are passionate about our models and offerings, and who are committed to giving back to the community and supporting fellow members.": { context: "Description of the Mistral ambassador program" };
     "Assistants": { context: "Keyword tag for the Custom Agents feature" };
-    "Audio": { context: "Label for an AI model capability: audio input/output" };
+    "Audio": { context: "Label for an AI model capability: audio input/output" | "Topic label for voice and audio processing" };
     "Audit Logs": { context: "Name of a Mistral platform feature" };
     "Auth": { context: "Keyword tag for the API Keys feature" };
     "Automatic model updates": { context: "Feature of the SaaS deployment option" };
@@ -271,6 +272,7 @@ declare module "@lingo.dev/react" {
     "Contribute": { context: "Call to contribute a developer cookbook" };
     "Conversational AI interface": { context: "Short description of the Chat feature" };
     "Conversational coding in your terminal": { context: "Short description of the Terminal Agent feature" };
+    "Convert text into natural speech and play it back with one API call.": { context: "Quickstart description about generating speech from text" };
     "Cookbook Not Found": { context: "Not found message for a developer cookbook" };
     "Cookbooks": { context: "Footer link to developer cookbooks" | "Title of a documentation card about Cookbooks" | "Title of the Resources landing card linking to cookbooks" };
     "Cookbooks - Mistral AI": { context: "Page title for the developer cookbooks index" };
@@ -771,8 +773,10 @@ declare module "@lingo.dev/react" {
     "Track API updates, new model releases, deprecations, and breaking changes.": { context: "Description of a documentation card about Changelogs" };
     "Track consumption, manage subscriptions, and set usage limits per workspace.": { context: "Description of a documentation card about Billing & Usage" };
     "Tracking": { context: "Keyword tag for the Audit Logs feature" };
+    "Transcribe an audio file": { context: "Quickstart title about transcribing an audio file" };
     "Transcriptions": { context: "Name of an AI model API feature: audio speech-to-text" };
     "Try adjusting your filters or search query.": { context: "Secondary hint in the glossary empty state" };
+    "Turn an audio file into accurate text with a single API call.": { context: "Quickstart description about transcribing an audio file" };
     "Try Document AI": { context: "Call to try document OCR in Studio" };
     "Try in Playground": { context: "Button to test the AI model in the playground" };
     "Try our Audio API": { context: "Call to try the audio transcription API" };
@@ -810,6 +814,9 @@ declare module "@lingo.dev/react" {
     "VIP experience": { context: "Benefit of the Mistral ambassador program" };
     "Vision": { context: "Label for an AI model capability: vision-understanding" };
     "Voice Cloning": { context: "Name of an AI model API feature: voice cloning for text-to-speech" };
+    "Voxtral Mini Transcribe 3 achieves strong transcription and diarization performance at a competitive price point. It ranks 3rd on the FLEURS multilingual transcription and English diarization benchmarks, surpassing state-of-the-art models such as Gemini 3.5 Transcribe, while being small enough to be deployed in resource-constrained environments.": { context: "Full description of an AI model" };
+    "Voxtral Realtime Transcribe 3 is a realtime transcription model built for agentic use-cases. It achieves state-of-the-art streaming transcription with configurable latency (80 ms to 2,400 ms), built-in end-of-turn detection, context biasing, and speaker diarization, all in a single streaming session over WebSocket.": { context: "Full description of an AI model" };
+    "Voxtral Small Transcribe 3 is our flagship transcription and diarization model. It achieves SOTA transcription scores, outperforming Microsoft AI Transcribe 2, Whisper large-v3, GPT-Transcribe, Scribe v2, and Gemini 3.5 Transcribe. It also supports translation, speech Q&A, summarization, and function calling.": { context: "Full description of an AI model" };
     "Warning": { context: "Admonition callout label for warnings" };
     "Weights": { context: "Heading for downloadable model weights" };
     "WEIGHTS": { context: "Row label for downloadable model weights" | "Section heading for downloadable model weights" };

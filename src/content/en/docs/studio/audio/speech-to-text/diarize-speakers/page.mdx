@@ -1,0 +1,452 @@
+---
+title: Diarize speakers
+sidebar_label: Diarize speakers
+sidebar_position: 4
+description: "Label who speaks in a recorded file or a live session, read the speaker labels, and name known speakers with reference clips."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Diarize speakers
+
+Diarization labels each part of a transcript with the speaker who said it, in a recorded file or a live session. This page shows how to turn it on in each mode, read the labels, and name known speakers with reference clips.
+
+:::info
+For what speaker labels mean and how to display speakers who talk at the same time, see [Speakers and diarization](/studio/audio/concepts/speakers-and-diarization).
+:::
+
+<CtaButton href="/api/endpoint/audio/transcriptions#operation-audio_api_v1_transcriptions_post">API reference — POST /v1/audio/transcriptions</CtaButton>
+
+<SectionTab as="h2" sectionId="turn-on-diarization">Turn on diarization</SectionTab>
+
+Diarization works offline and in realtime, with the same `diarize` option. Only the way you send it and the way labels come back differ.
+
+<SectionTab as="h3" variant="secondary" sectionId="offline">Offline</SectionTab>
+
+To diarize a file, set `diarize` to `true` and `timestamp_granularities` to `segment` in the transcription request. Diarization labels segments, so the request fails without segment timestamps.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3 \
+  -F file=@customer_call.wav \
+  -F diarize=true \
+  -F timestamp_granularities=segment
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("customer_call.wav", "rb") as audio:
+    transcription = client.audio.transcriptions.complete(
+        model="voxtral-mini-transcribe-3",
+        file={"file_name": "customer_call.wav", "content": audio},
+        diarize=True,
+        timestamp_granularities=["segment"],
+    )
+
+for segment in transcription.segments:
+    print(f"[{segment.start:5.1f}s - {segment.end:5.1f}s] {segment.speaker_id}: {segment.text.strip()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const transcription = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-transcribe-3",
+  file: { fileName: "customer_call.wav", content: readFileSync("customer_call.wav") },
+  diarize: true,
+  timestampGranularities: ["segment"],
+});
+
+for (const segment of transcription.segments ?? []) {
+  const start = segment.start?.toFixed(1).padStart(5);
+  const end = segment.end?.toFixed(1).padStart(5);
+  console.log(`[${start}s - ${end}s] ${segment.speakerId}: ${segment.text.trim()}`);
+}
+```
+
+{/* TESTED Oct 9 (TS tab): diarize-speakers/diarize.ts, @mistralai/mistralai 2.7.0 on Node 26, on the interim alias voxtral-transcribe-3 (15 segments, same output shape as the Python tab) and on voxtral-small-transcribe-3-0 (7 longer segments). */}
+
+  </TabItem>
+</Tabs>
+
+The response holds the transcript as a list of segments, each with its speaker:
+
+```json
+{
+  "segments": [
+    {
+      "type": "transcription_segment",
+      "text": "Thanks for calling Northwind Support.",
+      "start": 0.0,
+      "end": 1.6,
+      "speaker_id": "speaker_1"
+    },
+    {
+      "type": "transcription_segment",
+      "text": " This is Daniel.",
+      "start": 1.7,
+      "end": 2.4,
+      "speaker_id": "speaker_1"
+    },
+    {
+      "type": "transcription_segment",
+      "text": " How can I help you today?",
+      "start": 2.6,
+      "end": 3.5,
+      "speaker_id": "speaker_1"
+    },
+    {
+      "type": "transcription_segment",
+      "text": " Hi Daniel.",
+      "start": 4.1,
+      "end": 4.8,
+      "speaker_id": "speaker_2"
+    }
+  ]
+}
+```
+
+The Python script prints one line per segment:
+
+```text
+[  0.0s -   1.6s] speaker_1: Thanks for calling Northwind Support.
+[  1.7s -   2.4s] speaker_1: This is Daniel.
+[  2.6s -   3.5s] speaker_1: How can I help you today?
+[  4.1s -   4.8s] speaker_2: Hi Daniel.
+[  5.1s -  13.2s] speaker_2: I ordered two Quilliera headsets last week, order 4417, and the tracking page still says pending.
+[ 13.8s -  14.3s] speaker_1: Let me check.
+```
+
+<SectionTab as="h3" variant="secondary" sectionId="realtime">Realtime</SectionTab>
+
+To diarize a live session, set `diarize` to `true` in the `session.update` message, before you send the first audio chunk:
+
+```json
+{
+  "type": "session.update",
+  "session": {
+    "audio_format": { "encoding": "pcm_s16le", "sample_rate": 16000 },
+    "diarize": true
+  }
+}
+```
+
+With diarization on, the session sends `transcription.segment` events instead of `transcription.text.delta` events. Each event carries a few words and the label of their speaker:
+
+```json
+{"type": "transcription.segment", "text": " today?", "start": null, "end": null, "speaker_id": "speaker_1"}
+{"type": "transcription.segment", "text": " Hi,", "start": null, "end": null, "speaker_id": "speaker_2"}
+{"type": "transcription.segment", "text": " Daniel.", "start": null, "end": null, "speaker_id": "speaker_2"}
+```
+
+{/* TESTED Oct 7 (stt agent): examples/stt/probes/probe_realtime.py "diar" probe, output out/probes/rt_diar.json, on the live interim ID voxtral-transcribe-realtime-3-0 (served as checkpoint voxtral-transcribe-realtime-3-0-1), input fixtures/meeting_16k.wav (synthetic Northwind support call, 16 kHz). The JSON block is the exact session.update the probe sent (audio_format + diarize, no other field). The events are three consecutive transcription.segment events copied from the log. The session sent 70 transcription.segment events and NO transcription.text.delta event (rt_basic, without diarize: 41 text.delta, no segment). transcription.done carries the full text and the segments list with speaker_id, start and end null. Speaker IDs start at speaker_1, as offline. Added Oct 9 by the diarize-speakers agent from the probe log, no new run (expired key). The full script with the websockets package is the one in "Name speakers with reference clips", which adds speaker_references to the same session.update. */}
+
+For a complete realtime client, see the Python script in [Name speakers with reference clips](#speaker-references): it sends the same session configuration, plus reference clips.
+
+:::note
+The Voice Agents SDK does not send `diarize` or `speaker_references` in its `stt` config. For realtime diarization with speaker references, use a raw WebSocket session. The realtime examples on this page use a WebSocket package directly: `websockets` in Python, which `mistralai[realtime]` installs, and `ws` in TypeScript, which `@mistralai/mistralai` installs.
+:::
+
+<SectionTab as="h2" sectionId="read-labels">Read speaker labels</SectionTab>
+
+Labels carry the same values in both modes, but arrive in a different place:
+
+| | Offline | Realtime |
+| --- | --- | --- |
+| Where the label is | `speaker_id` on each item of `segments` in the response | `speaker_id` on each `transcription.segment` event |
+| What one item holds | A segment of one or more sentences | A few words, as soon as they're transcribed |
+| Timestamps | `start` and `end`, in seconds | `start` and `end` are `null` |
+| Full transcript | `text` holds the whole transcript, without labels | `transcription.done` holds the whole text and the labeled segments |
+| Label values | `speaker_1`, `speaker_2`, and so on, or the names of your reference clips | Same as offline |
+
+To show the transcript as turns, start a new turn each time `speaker_id` changes and append the text of the following items to it. Both Python examples on this page print the transcript this way.
+
+:::caution
+Labels only hold within one transcript or session. `speaker_1` in one file and `speaker_1` in the next aren't necessarily the same person. To keep the same name for a person across recordings, use [reference clips](#speaker-references).
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="overlapping-segments">Overlapping segments</SectionTab>
+
+When two people talk at the same time, the transcript has to place both voices on the same stretch of time. Overlapping speech (two speakers talking at the same time) is not supported in this version.
+
+If your application draws segments on a timeline, or shows them as a chat thread, don't assume that each segment ends before the next one starts:
+
+- Order segments by `start`, and keep both segments when their times overlap.
+- Show two active speakers at once, for example on separate tracks of a timeline, instead of cutting one segment short.
+- Merge consecutive segments of the same speaker into turns only when they don't overlap with another speaker.
+
+<SectionTab as="h2" sectionId="speaker-references">Name speakers with reference clips</SectionTab>
+
+When you know who speaks, send a short clip of each person's voice under a name. Segments from that voice then carry the name in `speaker_id` instead of a generic label. Reference clips follow these rules:
+
+| Rule | Value |
+| --- | --- |
+| Number of clips | Up to 8. The total number of speakers across references and prediction must not exceed 10. |
+| Length of each clip | 3 to 15 seconds |
+| Speaking rate | At least 85% of the clip should be speech. Avoid long silences. |
+| Format | WAV, Opus, MP3, or FLAC, base64-encoded. WAV and other lossless formats give the best results. |
+| Name | The key of each clip. It becomes the `speaker_id` of that speaker's segments. |
+| Diarization | Required: set `diarize` to `true` in the same request or session |
+| Modes | Offline and realtime |
+
+The closer the acoustic and speaking conditions of the reference clip are to the audio being transcribed, the better the match. For more guidance on choosing good reference clips, see [Naming speakers with reference clips](/studio/audio/concepts/speakers-and-diarization#naming-speakers).
+
+<Tabs groupId="mode">
+  <TabItem value="realtime" label="Realtime" default>
+
+Add `speaker_references` to the `session.update` message, next to `diarize`:
+
+```json
+{
+  "type": "session.update",
+  "session": {
+    "audio_format": { "encoding": "pcm_s16le", "sample_rate": 24000 },
+    "diarize": true,
+    "speaker_references": {
+      "agent": "<base64 of agent_reference.wav>",
+      "customer": "<base64 of customer_reference.wav>"
+    }
+  }
+}
+```
+
+The following script streams a recorded call at real-time pace and prints a new line each time the speaker changes:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import base64
+import json
+import os
+import wave
+
+import websockets
+
+MODEL = "voxtral-mini-transcribe-realtime-3"
+URL = f"wss://api.mistral.ai/v1/audio/transcriptions/realtime?model={MODEL}"
+HEADERS = {"Authorization": f"Bearer {os.environ['MISTRAL_API_KEY']}"}
+AUDIO_FILE = "customer_call.wav"  # 16-bit mono PCM WAV
+
+def b64_file(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+async def send_audio(ws, path):
+    with wave.open(path, "rb") as wav:
+        while chunk := wav.readframes(wav.getframerate() // 10):
+            await ws.send(json.dumps({"type": "input_audio.append", "audio": base64.b64encode(chunk).decode()}))
+    await ws.send(json.dumps({"type": "input_audio.end"}))
+
+async def main():
+    with wave.open(AUDIO_FILE, "rb") as wav:
+        sample_rate = wav.getframerate()
+
+    async with websockets.connect(URL, additional_headers=HEADERS) as ws:
+        await ws.recv()  # session.created
+        await ws.send(json.dumps({
+            "type": "session.update",
+            "session": {
+                "audio_format": {"encoding": "pcm_s16le", "sample_rate": sample_rate},
+                "diarize": True,
+                "speaker_references": {
+                    "agent": b64_file("agent_reference.wav"),
+                    "customer": b64_file("customer_reference.wav"),
+                },
+            },
+        }))
+        sender = asyncio.create_task(send_audio(ws, AUDIO_FILE))
+
+        speaker = None
+        async for message in ws:
+            event = json.loads(message)
+            if event["type"] == "transcription.segment":
+                text = event["text"]
+                if event["speaker_id"] != speaker:
+                    speaker = event["speaker_id"]
+                    print(f"\n{speaker}: ", end="")
+                    text = text.lstrip()
+                print(text, end="", flush=True)
+            elif event["type"] == "transcription.done":
+                print()
+                break
+            elif event["type"] == "error":
+                print("error:", event["error"]["message"])
+                break
+        sender.cancel()
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import WebSocket from "ws";
+
+const MODEL = "voxtral-mini-transcribe-realtime-3";
+const URL = `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${MODEL}`;
+const HEADERS = { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` };
+const AUDIO_FILE = "customer_call.wav"; // 16-bit mono PCM WAV
+
+function readWav(path: string) {
+  const wav = readFileSync(path);
+  let sampleRate = 0;
+  let pcm = Buffer.alloc(0);
+  for (let offset = 12; offset < wav.length; ) {
+    const id = wav.toString("ascii", offset, offset + 4);
+    const size = wav.readUInt32LE(offset + 4);
+    if (id === "fmt ") sampleRate = wav.readUInt32LE(offset + 12);
+    if (id === "data") pcm = wav.subarray(offset + 8, offset + 8 + size);
+    offset += 8 + size + (size % 2);
+  }
+  return { sampleRate, pcm };
+}
+
+function b64File(path: string) {
+  return readFileSync(path).toString("base64");
+}
+
+function sendAudio(ws: WebSocket, pcm: Buffer, sampleRate: number) {
+  const chunkBytes = (sampleRate / 10) * 2; // 100 ms of 16-bit mono audio
+  for (let i = 0; i < pcm.length; i += chunkBytes) {
+    const audio = pcm.subarray(i, i + chunkBytes).toString("base64");
+    ws.send(JSON.stringify({ type: "input_audio.append", audio }));
+  }
+  ws.send(JSON.stringify({ type: "input_audio.end" }));
+}
+
+const { sampleRate, pcm } = readWav(AUDIO_FILE);
+const ws = new WebSocket(URL, { headers: HEADERS });
+let speaker: string | undefined;
+
+ws.on("message", (message) => {
+  const event = JSON.parse(message.toString());
+  if (event.type === "session.created") {
+    ws.send(JSON.stringify({
+      type: "session.update",
+      session: {
+        audio_format: { encoding: "pcm_s16le", sample_rate: sampleRate },
+        diarize: true,
+        speaker_references: {
+          agent: b64File("agent_reference.wav"),
+          customer: b64File("customer_reference.wav"),
+        },
+      },
+    }));
+    sendAudio(ws, pcm, sampleRate);
+  } else if (event.type === "transcription.segment") {
+    let text: string = event.text;
+    if (event.speaker_id !== speaker) {
+      speaker = event.speaker_id;
+      process.stdout.write(`\n${speaker}: `);
+      text = text.trimStart();
+    }
+    process.stdout.write(text);
+  } else if (event.type === "transcription.done") {
+    console.log();
+    ws.close();
+  } else if (event.type === "error") {
+    console.log("error:", event.error.message);
+    ws.close();
+  }
+});
+```
+
+{/* TESTED Oct 9 (TS tab): diarize-speakers/realtime_speaker_references.ts with the ws package 8.22 (a dependency of @mistralai/mistralai 2.7.0, whose RealtimeConnection.updateSession() only takes audioFormat), Node 26, on the interim alias voxtral-transcribe-realtime-3: six turns named agent / customer, the first four identical to the output below. */}
+
+  </TabItem>
+</Tabs>
+
+```text
+agent: Thanks for calling Northwind Support. This is Daniel. How can I help you today?
+customer: Hi, Daniel. I ordered two Quilera headsets last week. Order four, 417. And the tracking page still says pending.
+agent: Let me check. I can see order 4417. It left our Rotterdam warehouse yesterday, but the tracking was not updated.
+customer: Okay. Can you send me the new tracking link? And I also need an invoice for my company, Alder Creek Design.
+```
+
+{/* TESTED Oct 9 (neutral recapture): diarize-speakers/realtime_speaker_references.py on customer_call.wav, on the interim alias voxtral-transcribe-realtime-3 (served as checkpoint voxtral-transcribe-realtime-3-0-1). The final ID voxtral-mini-transcribe-realtime-3-0 is refused at the WebSocket handshake with HTTP 403 (Oct 7 and Oct 9, rename pending). The JSON block is the exact session.update the script sends, with the base64 elided. Reference clips: agent_reference.wav (4.7 s) and customer_reference.wav (6.3 s), synthesized separately (other sentences) with the same two presets as the call (en_paul_neutral, gb_jane_neutral), sent as base64 of the whole WAV file. Every segment came back under the right name ("agent", "customer"), output above (first four of six turns). On Oct 7, references re-synthesized with voice_447 / voice_478 did NOT match demo 01's call (recorded Sept 24 with yael / sarah): every segment came back as speaker_3 / speaker_4, so unmatched speakers get generic IDs numbered after the references. Observed on Oct 7: start and end are null in realtime; session.updated echoes speaker_references as the list of names; without diarize the server sends an error event "Speaker references require diarization, set diarize=true." The 8-reference and 3-15 s limits were not tested. SDK: mistralai 3.0.0 cannot send diarize or speaker_references (update_session only takes audio_format and target_streaming_delay_ms), so the script uses the websockets package directly (installed with mistralai[realtime]). Replaces the Oct 7 capture on demo 01's call (internal names). */}
+
+  </TabItem>
+  <TabItem value="offline" label="Offline">
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="diarization-and-turn-detection">Diarization and turn detection</SectionTab>
+
+A realtime session can label speakers or detect turns, not both. If one `session.update` sets `diarize` to `true` and includes `turn_detection`, the session sends an error event. Turn detection only exists in realtime, so offline requests aren't affected.
+
+:::tip
+To answer users live and keep a speaker-labeled record, run the live session with turn detection, keep the audio, and diarize the recording offline afterwards.
+:::
+
+For which feature fits your application, see [Turn detection and diarization](/studio/audio/concepts/turns#turns-and-diarization). For the turn detection settings, see [Turn detection](/studio/audio/speech-to-text/turn-detection).
+
+<SectionTab as="h2" sectionId="errors">Errors</SectionTab>
+
+Offline requests return an HTTP error. Realtime sessions send an event of type `error`, with the message in `error.message`. These errors are specific to diarization:
+
+| Error message | Mode | Cause | Fix |
+| --- | --- | --- | --- |
+| `When diarize is set to True and streaming is disabled, the timestamp granularity must be set to ['segment']` (422) | Offline | `diarize` without segment timestamps | Set `timestamp_granularities` to `segment`. |
+| `Speaker references require diarization` (422 offline, `error` event in realtime) | Both | Reference clips without `diarize` | Set `diarize` to `true`. |
+| `Diarization is not compatible with turn detection.` | Realtime | `diarize` and `turn_detection` in the same session | Remove one of them. See [Diarization and turn detection](#diarization-and-turn-detection). |
+| The request is rejected with a `400` error: "At most 8 speaker references are supported, got \{n\}". | Both | More than 8 reference clips, or a clip shorter than 3 s or longer than 15 s | Trim or remove clips. |
+|  | Offline | The model doesn't accept reference clips | Use a model that supports them. |
+
+For other transcription errors, see [Troubleshooting](/studio/audio/speech-to-text/troubleshooting).
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/concepts/speakers-and-diarization" title="Speakers and diarization" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-in-realtime" title="Realtime transcription" />
+  <LinkCard href="/studio/audio/speech-to-text/bias-context-and-vocabulary" title="Improve name accuracy" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Offline diarize + segment requirement, labels from speaker_1, segment fields: diarize-speakers/diarize.{sh,py}, Oct 7,
+     Mini and Small; 422 message captured then. Offline `text` without labels: out/probes/refs_json_voxtral-transcribe-3.json.
+   - Realtime diarize: out/probes/rt_diar.json (segment events replace text.delta, start/end null, done carries segments).
+   - Speaker references: limits (8 clips, 3 to 15 s), diarize required, both modes: Rakesh Oct 9 via Gregory (status.md),
+     RFC-555 sections 1.1 and 2.2. Realtime run: realtime_speaker_references.py, Oct 7. Unmatched speakers numbered after
+     the references (speaker_3 / speaker_4 with two references): handoff-stt.md surprise 5. Offline: refused Oct 7, Draft.
+   - Errors: refs without diarize, offline out/probes/mini_refs_nodiar.json (422, message inside an assertion detail) and
+     realtime out/probes/rt_refs_nodiar.json; diarize + turn_detection, out/probes/rt_turn_diar.json (code 3051); realtime
+     error shape {"type": "error", "error": {"message", "code"}} from the same logs.
+   - Exclusivity tip (diarize the recording offline afterwards): concepts/turns, section turns-and-diarization (final).
+   - Overlap: RFC-555 only, not reproduced. .
+   - Removed the "Realtime inline tags" section of the skeleton: realtime labels are explained once, in Read speaker labels. */}
+
+{/* Feature page (layer 4, How) — audio docs revamp (DOC-610). Boundary: the concept page Speakers and diarization owns
+   the why (what labels mean, choosing reference clips, overlap in an interface); this page owns options, values, code,
+   and errors. Verify at the end: the demo shows the value, overlap confirmed or removed, offline speaker references
+   tested before an offline example ships, tested outputs rerun on a neutral recording, exclusivity with turn detection
+   stated. */}

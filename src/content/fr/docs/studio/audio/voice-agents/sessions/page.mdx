@@ -1,0 +1,186 @@
+---
+title: Gérer les sessions d’agent
+sidebar_label: Gérer les sessions d’agent
+sidebar_position: 4
+description: Cycle de vie des sessions, modèle d’événements et gestion des erreurs pour les agents audio en production.
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Gérer les sessions d’agent
+
+Une session correspond à une conversation avec un agent. `init()` renvoie une `VoiceAgentSession` : vous vous abonnez à ses événements, coupez ou réactivez le microphone, attendez sa fin et fermez-la. Cette page s'adresse aux développeurs qui veulent aller au-delà de la première démonstration avec un agent. Elle suppose qu'un agent est en cours d'exécution ; consultez le [guide de démarrage](/studio/audio/voice-agents/quickstarts/build-a-voice-agent). La session fonctionne de la même manière en Python, dans Node.js et dans le navigateur, où `initSession()` la renvoie.
+
+{/* API REFERENCE: a REST API reference page is coming for this entity (Jean Perbet, Sept 24) — add a CtaButton here once it is published. */}
+
+<SectionTab as="h2" sectionId="lifecycle">Cycle de vie</SectionTab>
+
+Une session se connecte, échange de l'audio et des événements pendant que la conversation se déroule, puis se termine. Coupez le microphone avec `set_input_enabled(False)`, attendez la fin avec `wait()`, et appelez toujours `close()` lorsque vous avez terminé.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+await session.set_input_enabled(False)  # mute
+await session.set_input_enabled(True)   # unmute
+
+await session.wait()   # blocks until disconnected
+await session.close()  # close the session, should always be called
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await session.setInputEnabled(false); // mute
+await session.setInputEnabled(true);  // unmute
+
+await session.wait();  // resolves when disconnected
+await session.close(); // close the session, should always be called
+```
+
+  </TabItem>
+</Tabs>
+
+`init()` crée la session avec `POST /v1/audio/sessions`, et `close()` la supprime avec `DELETE /v1/audio/sessions/{id}`. Pour appeler vous-même ces endpoints, utilisez `client.audio.sessions.create(...)` et `client.audio.sessions.close(session_id)`.
+
+<SectionTab as="h2" sectionId="events">Événements</SectionTab>
+
+Enregistrez un gestionnaire avec `session.on(event, handler)`.
+
+| Événement | Données | Action à effectuer dans votre application |
+| --- | --- | --- |
+| `connected` | `session_id` | Marquez la session comme prête. |
+| `disconnected` | `session_id`, `reason` | Arrêtez l'audio et libérez les ressources. |
+| `transcript` | `id`, `role`, `content`, `final` | Affichez les transcriptions partielles en direct (`final` est faux), et conservez les transcriptions finales. |
+| `audio` | bytes | Lisez vous-même l'audio de l'agent si vous gérez l'audio manuellement. Consultez [Audio personnalisé](/studio/audio/voice-agents/custom-audio). |
+| `audio_track` | `track`, `source` | Dans le navigateur, attachez la piste média. |
+| `agent_state_changed` | `state` (`listening`, `thinking`, `speaking`, et d'autres) | Mettez à jour l'interface. |
+| `tool_call_started` | `id`, `name` | Indiquez que l'agent travaille. Les arguments ne sont pas encore connus. |
+| `tool_call_ended` | `id`, `name`, `arguments`, `result` | Affichez le résultat. |
+| `unhandled_tool` | `name`, `arguments` | Écrivez-le dans les logs : l'agent a appelé un [outil client](/studio/audio/voice-agents/tools#client-side-tools) qui n'a pas de gestionnaire. |
+| `error` | `message`, `fatal`, `code`, `source` | Signalez-le. Si `fatal` est vrai, la session est en cours de fermeture ; consultez [Erreurs et nettoyage](#errors-and-cleanup). |
+
+`disconnected` n'a pas de `reason` après une fermeture normale. Sinon, `reason` vaut `user_interrupt`, `start_failed`, `audio_input_error`, `audio_output_error` ou `error`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.extra.voice_agents import (
+    VoiceAgentErrorEvent,
+    VoiceAgentStateChangedEvent,
+    VoiceAgentToolCallEndedEvent,
+    VoiceAgentToolCallStartedEvent,
+    VoiceAgentTranscriptEvent,
+)
+
+def on_transcript(event: VoiceAgentTranscriptEvent) -> None:
+    print(f"{event.role}: {event.content}")
+
+def on_tool_call_started(event: VoiceAgentToolCallStartedEvent) -> None:
+    print(f"tool call started: {event.name}")
+
+def on_tool_call_ended(event: VoiceAgentToolCallEndedEvent) -> None:
+    print(f"tool call ended: {event.name} -> {event.result!r}")
+
+def on_agent_state_changed(event: VoiceAgentStateChangedEvent) -> None:
+    print(f"state: {event.state}")
+
+def on_error(event: VoiceAgentErrorEvent) -> None:
+    print(f"error (fatal={event.fatal}): {event.message}")
+
+session.on("transcript", on_transcript)
+session.on("tool_call_started", on_tool_call_started)
+session.on("tool_call_ended", on_tool_call_ended)
+session.on("agent_state_changed", on_agent_state_changed)
+session.on("error", on_error)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import type {
+  VoiceAgentErrorEvent,
+  VoiceAgentStateChangedEvent,
+  VoiceAgentToolCallEndedEvent,
+  VoiceAgentToolCallStartedEvent,
+  VoiceAgentTranscriptEvent,
+} from "@mistralai/mistralai/extra/voice-agents";
+
+session.on("transcript", (event: VoiceAgentTranscriptEvent) => {
+  console.log(`${event.role}: ${event.content}`);
+});
+
+session.on("tool_call_started", (event: VoiceAgentToolCallStartedEvent) => {
+  console.log(`tool call started: ${event.name}`);
+});
+
+session.on("tool_call_ended", (event: VoiceAgentToolCallEndedEvent) => {
+  console.log(`tool call ended: ${event.name}`, event.result);
+});
+
+session.on("agent_state_changed", (event: VoiceAgentStateChangedEvent) => {
+  console.log(`state: ${event.state}`);
+});
+
+session.on("error", (event: VoiceAgentErrorEvent) => {
+  console.error(`error (fatal=${event.fatal}): ${event.message}`);
+});
+```
+
+  </TabItem>
+</Tabs>
+
+`session.on()` renvoie une fonction qui annule l'abonnement du gestionnaire. Vous pouvez aussi appeler `session.off()` avec le gestionnaire d'origine :
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+unsubscribe = session.on("transcript", on_transcript)
+
+unsubscribe()  # stop receiving
+# or, equivalently:
+session.off("transcript", on_transcript)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const unsubscribe = session.on("transcript", onTranscript);
+
+unsubscribe(); // stop receiving
+// or, equivalently:
+session.off("transcript", onTranscript);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="errors-and-cleanup">Erreurs et nettoyage</SectionTab>
+
+Chaque erreur comporte `fatal` :
+
+- **Les erreurs récupérables** (`fatal` est faux) laissent la session ouverte. Écrivez-les dans les logs et continuez.
+- **Les erreurs fatales** ferment la session : `wait()` rend la main, et l'audio s'arrête. Les échecs de démarrage et les déconnexions inattendues sont fatals.
+
+Enregistrez un gestionnaire `error` pour décider du comportement de votre application. Sans gestionnaire, le SDK écrit l'erreur dans les logs (`logging` en Python, `console.error` dans Node.js), de sorte qu'aucune erreur ne passe inaperçue. Comme `init()` démarre la session avant de renvoyer, un échec de démarrage lève aussi `VoiceAgentConnectionException`, avec l'erreur dans `error_event` (Python) ou `errorEvent` (TypeScript).
+
+Dans les deux cas, appelez `close()` dans un bloc `finally`, comme dans le [guide de démarrage](/studio/audio/voice-agents/quickstarts/build-a-voice-agent#talk-to-your-agent), afin que la session soit toujours libérée.
+
+{/* Error code list (which codes are fatal): in progress on the SDK side (R170). Document codes only once shared. */}
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Outils" />
+  <LinkCard href="/studio/audio/voice-agents/webhooks" title="Webhooks" />
+  <LinkCard href="/studio/audio/voice-agents/custom-audio" title="Interfaces audio personnalisées" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Reordered per skeleton review S26: lifecycle first, events as the detail of that lifecycle, errors (fatal vs recoverable, SDK 0.5) WITH cleanup; the 0.3.x migration note was dropped — it is no longer in the SDK docs. Verify at the end: partial/final explicit, terminal-error behavior next to cleanup, no connect() table copied from Configure sessions. */}

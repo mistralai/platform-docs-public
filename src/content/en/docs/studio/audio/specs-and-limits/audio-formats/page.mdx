@@ -1,0 +1,94 @@
+---
+title: Audio formats
+sidebar_label: Audio formats
+sidebar_position: 2
+description: "Accepted input formats and available output formats across transcription, speech generation, audio in chat, and voice agents."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Audio formats
+
+This page lists the audio formats each audio API accepts and returns. The feature pages link here instead of repeating the lists.
+
+<SectionTab as="h2" sectionId="transcription-input">Transcription input</SectionTab>
+
+Each transcription mode takes audio in a different form:
+
+| Mode | How you send audio | Formats | Details |
+| --- | --- | --- | --- |
+| File transcription | One file per request: `file` (upload), `file_url` (a URL of up to 2,083 characters), or `file_id` (a file uploaded to `/v1/files` with `purpose=audio`) |  | [File transcription](/studio/audio/speech-to-text/transcribe-files#choose-input) |
+| Realtime transcription | Raw audio in base64 chunks, described by `audio_format` in `session.update` | `pcm_s16le` (16-bit signed little-endian PCM, mono). Default sample rate: 16,000 Hz.  | [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime#session-fields) |
+
+{/* Sources: file_url maxLength 2083 and the three inputs: public/openapi.yaml (AudioTranscriptionRequest); file_id with purpose=audio tested Oct 7 (transcribe-files/input_file_id.sh). Realtime default audio_format: session.created, Oct 7 and Oct 9 probes. */}
+
+<SectionTab as="h2" sectionId="speech-output">Speech output</SectionTab>
+
+Speech generation returns audio in the format you set with `response_format`:
+
+| Format | Use it for |
+| --- | --- |
+| `mp3` (default) | Playback in browsers and apps, when file size matters |
+| `opus` | Streaming and playback over limited bandwidth |
+| `wav` | Editing, or when you need uncompressed audio in a standard file |
+| `flac` | Lossless archiving at a smaller size than WAV |
+| `pcm` | Raw pipelines and telephony bridges that take raw samples, with no file header |
+
+Generated speech is mono at 24 kHz. To set the format in a request, see [Response formats](/studio/audio/text-to-speech/generate-speech#response-formats).
+
+{/* TESTED Oct 7 (voxtral-mini-tts-3-0): the five formats return valid files (ID3, RIFF, fLaC, OggS headers); omitting response_format returns MP3. Same values in RFC-555 section 3.1 and the SDK SpeechOutputFormat. The "Use it for" column is general guidance on the formats, not a Mistral-specific claim. */}
+
+<SectionTab as="h2" sectionId="reference-audio">Reference audio</SectionTab>
+
+Two features take a short recording of a voice as a reference:
+
+| Use | Format | Number and length | Details |
+| --- | --- | --- | --- |
+| Speaker references for diarization | The base64 encoding of an audio file, keyed by a speaker name | Up to 8 clips, 3 to 15 seconds each | [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references) |
+| Voice cloning | An MP3 or WAV file, base64-encoded. A URL isn't accepted. | A few seconds to a few minutes | [Prepare a reference clip](/studio/audio/text-to-speech/voice-cloning#prepare-a-reference-clip) |
+
+{/* Speaker references: 8 clips of 3 to 15 s, both modes, diarize required: Rakesh, Oct 9 (via Gregory); base64 of whole WAV files tested in realtime (Oct 7, Oct 9). Accepted formats beyond WAV:  on Diarize speakers. */}
+
+<SectionTab as="h2" sectionId="audio-in-chat">Audio in chat completions</SectionTab>
+
+Audio in chat completions takes the audio inline, in the message:
+
+| How you send audio | Formats | Details |
+| --- | --- | --- |
+| An `input_audio` content part with the base64 encoding of the file |  | [Audio in chat completions](/studio/audio/audio-in-chat) |
+
+{/* A {"type": "file", "file_id": ...} chunk is accepted on chat completions but the audio isn't read (no audio tokens, invented transcript, Oct 9 probe): never documented, Draft for Rakesh on Audio in chat. */}
+
+<SectionTab as="h2" sectionId="voice-agents-sdk">Voice agents SDK</SectionTab>
+
+The Voice Agents SDK uses one audio format of its own, for input and output:
+
+| Integration | Format | Details |
+| --- | --- | --- |
+| Custom audio interface, or audio sent manually | 16-bit signed PCM, mono, 48 kHz | [Custom audio](/studio/audio/voice-agents/custom-audio) |
+| Browser | The page's media tracks: you don't handle any format | [Voice agents in the browser](/studio/audio/voice-agents/browser) |
+
+{/* Source: SDK docs local-audio/custom-audio-interface.mdx (dashboard 342dec89fe6, Oct 8 copy), same values as Custom audio. */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/specs-and-limits/limits" title="Limits" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="File transcription" />
+  <LinkCard href="/studio/audio/text-to-speech/generate-speech" title="Speech generation" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Transcription input: transcribe-files tests (Oct 7, Oct 9 neutral recapture: customer_call.wav, obama.mp3, file_url, file_id);
+     public/openapi.yaml (file_url maxLength 2083); realtime pcm_s16le at 16 and 24 kHz (Oct 7, Oct 9), default from session.created.
+   - Speech output: Oct 7 format tests (generate-speech), RFC-555 section 3.1, SDK SpeechOutputFormat. Use-it-for column: general
+     properties of the formats.
+   - Reference audio: Rakesh Oct 9 (speaker references); voice-cloning page and Oct 7 tests (MP3 ref_audio, 400 code 3291 on a URL).
+   - Audio in chat: Oct 7 and Oct 9 tests (handoff-stt surprises 2 and 3, probes_oct9 p6).
+   - Voice agents SDK: SDK docs (custom-audio-interface), same as Custom audio. */}
+
+{/* Reference page (layer 5) — audio docs revamp (DOC-610). New page (Sept 24): format information was scattered across
+   File transcription, Speech generation (response formats), and Custom audio (PCM 48 kHz). This page is the canonical copy;
+   those pages keep one sentence and a link. Verify at the end: every row links its feature page, no format listed without
+   confirmation, the SDK contract kept distinct from the raw API formats, realtime speech row added when TTS Realtime ships. */}

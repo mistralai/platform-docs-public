@@ -1,0 +1,90 @@
+---
+title: Audio hors ligne et en temps réel
+sidebar_label: Hors ligne et en temps réel
+sidebar_position: 1
+description: "Les deux façons dont Mistral traite l'audio : de l'audio enregistré en une seule requête, ou de l'audio en direct dans une session de streaming, et ce qui change entre les deux."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Audio hors ligne et en temps réel
+
+Chaque capacité audio s'exécute dans l'un de ces deux modes, et la question est de savoir si l'entrée existe avant l'appel à l'API :
+
+- **Hors ligne** : vous disposez déjà de l'entrée complète, comme un enregistrement d'appel, un épisode de podcast ou un script à vocaliser. Vous l'envoyez en une seule requête. L'API traite l'intégralité de l'entrée et renvoie le résultat : une transcription complète ou un fichier audio complet.
+- **Temps réel** : l'entrée est encore en cours de production, comme un microphone, une ligne téléphonique ou un texte qu'un modèle est en train d'écrire. Vous ouvrez une session et envoyez l'entrée par petits morceaux, par exemple 100 ms d'audio à la fois. L'API renvoie les résultats dès qu'ils sont prêts : des transcriptions partielles, des événements comme la fin du tour de parole d'un interlocuteur, ou des fragments de voix.
+
+Choisissez d'abord le mode, avant le modèle et les options : il détermine la façon dont vous vous connectez, la vitesse à laquelle les résultats arrivent et les fonctionnalités que vous pouvez utiliser.
+
+<SectionTab as="h2" sectionId="choosing">Choisir un mode</SectionTab>
+
+<DiagramFrame label="Offline, realtime, or audio agents">
+
+Répondez aux questions en commençant par le haut.
+
+<LinkedDiagram
+  src="/img/audio_offline_or_realtime.svg"
+  alt="Choosing an audio mode: if the input is complete before you send it, use offline; if not and your app answers back by voice, use audio agents; otherwise, use realtime."
+  viewBox={[940, 640]}
+  links={[
+    { href: '/studio/audio/speech-to-text/transcribe-files', label: 'Offline: File transcription', x: 540, y: 75, width: 380, height: 90 },
+    { href: '/studio/audio/voice-agents/overview', label: 'Audio agents overview', x: 540, y: 325, width: 380, height: 90 },
+    { href: '/studio/audio/speech-to-text/transcribe-in-realtime', label: 'Realtime transcription', x: 50, y: 530, width: 380, height: 90 },
+  ]}
+/>
+
+Si l'audio ou le texte existe avant l'appel à l'API, commencez par le mode hors ligne : c'est plus simple, et le modèle entend toute l'entrée avant de répondre. S'il est en cours de production pendant que l'utilisateur attend, vous avez besoin du temps réel. Si votre application répond aussi à la voix, utilisez les [agents audio](/studio/audio/voice-agents/overview), qui gèrent toute la conversation pour vous. Pour choisir le modèle de chaque mode, consultez les vues d'ensemble [Reconnaissance vocale](/studio/audio/speech-to-text/overview) et [Synthèse vocale](/studio/audio/text-to-speech/overview).
+
+</DiagramFrame>
+
+<SectionTab as="h2" sectionId="what-changes">Ce qui change entre les modes</SectionTab>
+
+Le mode change la façon dont vous vous connectez, ce que vous recevez en retour et la latence que vous mesurez.
+
+| | Hors ligne | Temps réel |
+| --- | --- | --- |
+| Entrée | Complète, envoyée en une seule requête | En direct, envoyée par morceaux pendant une session |
+| Connexion | Une requête HTTP | Une session WebSocket qui reste ouverte |
+| Résultat | Un résultat complet, ou le même résultat envoyé par morceaux en streaming | Résultats incrémentaux et événements au fil de la session |
+| Vitesse à surveiller | Temps d'obtention du résultat complet, qui augmente avec la longueur de l'entrée | Délai entre l'entrée et son résultat, que vous pouvez ajuster |
+| Uniquement dans ce mode |  | Détection de tour de parole : savoir quand un interlocuteur a terminé |
+| Modèles | Un modèle par capacité ; consultez les vues d'ensemble [Reconnaissance vocale](/studio/audio/speech-to-text/overview) et [Synthèse vocale](/studio/audio/text-to-speech/overview) | Un modèle temps réel dédié par capacité |
+
+:::tip
+En transcription en temps réel, vous choisissez le compromis entre vitesse et précision : un délai de streaming plus long, de 80 à 1 200 ms ou 2 400 ms, donne davantage de contexte au modèle avant qu'il ne fige le texte. Pour savoir ce qui détermine chaque délai, consultez [Latence](/studio/audio/concepts/latency).
+:::
+
+{/* Sources (Oct 7 tests, examples/stt and examples/tts): offline STT = POST /v1/audio/transcriptions, optional SSE (transcription.text.delta, transcription.done); realtime STT = WebSocket /v1/audio/transcriptions/realtime, 100 ms chunks, turn.* events, target_streaming_delay_ms 80-1200 or 2400; segment timestamps tested offline only (not tested in realtime); offline TTS = POST /v1/audio/speech, optional SSE (speech.audio.delta). */}
+
+<SectionTab as="h2" sectionId="across-capabilities">Pour les trois fonctionnalités</SectionTab>
+
+Chaque capacité prend en charge les modes différemment. Trouvez la vôtre, puis suivez le lien vers l'article qui la concerne.
+
+| Capacité | Hors ligne | Temps réel |
+| --- | --- | --- |
+| Reconnaissance vocale | Transcrire un fichier enregistré. [Transcription de fichiers](/studio/audio/speech-to-text/transcribe-files) | Transcrire de l'audio en direct, avec détection de fin de tour de parole intégrée. [Transcription en temps réel](/studio/audio/speech-to-text/transcribe-in-realtime) |
+| Synthèse vocale | Générer la voix pour un texte complet, et éventuellement renvoyer l'audio en streaming au fur et à mesure de sa génération. [Génération de voix](/studio/audio/text-to-speech/generate-speech) |  [Diffuser la voix](/studio/audio/text-to-speech/stream-speech) |
+| Agents audio | Non applicable | Toujours en temps réel : une session enchaîne la transcription en temps réel, un modèle et la voix. [Agents audio](/studio/audio/voice-agents/overview) |
+
+:::note
+Le streaming de la réponse d'une requête hors ligne n'est pas le mode temps réel. Lorsque vous définissez `stream` sur une requête de transcription ou de voix, l'entrée reste complète quand vous l'envoyez : seul le résultat arrive par morceaux, et vous le voyez ou l'entendez donc plus tôt. Le temps réel commence avant que l'entrée soit complète.
+:::
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/overview" title="Reconnaissance vocale" />
+  <LinkCard href="/studio/audio/text-to-speech/overview" title="Synthèse vocale" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latence" />
+</UsefullLinkContainer>
+
+{/* Concept page (layer 1, Context) — audio docs revamp (DOC-610). Created Sept 25
+   after Ben's review: concepts get their own sidebar section with more than 2-3
+   sentences each. Boundary: this page explains the two modes across capabilities;
+   the per-capability decision tables stay on the STT and TTS overviews, and feature
+   availability stays on each feature article. Verify at the end: no code, no option
+   list, mode vocabulary identical to the overviews, TTS Realtime availability updated
+   once the model is exposed. */}

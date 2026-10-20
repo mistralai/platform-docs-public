@@ -1,0 +1,92 @@
+---
+title: Speakers and diarization
+sidebar_label: Speakers and diarization
+sidebar_position: 5
+description: "What diarization tells you about who spoke when, how reference clips turn anonymous speaker labels into known speakers, and what overlapping speech means for your interface."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Speakers and diarization
+
+A transcript of a call or a meeting is only useful when you know who said what. This page explains what speaker labels tell you, how to turn them into real names, and how to show speakers who talk at the same time.
+
+<SectionTab as="h2" sectionId="who-spoke-when">Who spoke when, not who is speaking</SectionTab>
+
+Diarization groups the parts of a recording that come from the same voice and gives each group a label, such as `speaker_1` or `speaker_2`. A label tells you that two passages come from the same voice. It doesn't tell you whose voice it is.
+
+:::caution
+Labels stay consistent within one transcript, so you can follow each voice from start to end. They mean nothing outside it: `speaker_1` in one call and `speaker_1` in the next aren't necessarily the same person. To follow a person from one recording to the next, name them with [reference clips](#naming-speakers).
+:::
+
+Diarization works in both modes, but the labels don't arrive in the same form:
+
+| | Offline | Realtime |
+| --- | --- | --- |
+| Where labels appear | On each segment of the finished transcript, with its start and end times | On each piece of text, as it arrives during the session |
+| What you can build | Speaker-labeled records, subtitles, and per-speaker summaries | Live captions that show who is speaking |
+
+For the request options and examples in each mode, see [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers).
+
+<SectionTab as="h2" sectionId="naming-speakers">Naming speakers with reference clips</SectionTab>
+
+When you know in advance who speaks, such as the agent and the customer on a support call, you can send a short clip of each voice under a name. The transcript then shows those names instead of generic labels, and the same name refers to the same person in every transcript.
+
+A reference only helps if it matches the voice in the recording:
+
+- **Use the same person.** A different voice that sounds similar isn't matched to the name.
+- **Record in similar conditions.** A clip from the same microphone or phone line as the real audio is the closest match.
+- **Expect unnamed speakers.** A speaker without a reference keeps a generic label, so a call with an unexpected third person still transcribes.
+
+### Reference clip guidelines
+
+| Property | Recommendation |
+| --- | --- |
+| Duration | 3 to 15 seconds |
+| Number of references | Up to 8. The total number of speakers across references and prediction must not exceed 10. |
+| Speaking rate | At least 85% of the clip should be speech. Avoid long silences. |
+| Conditions | The closer the acoustic and speaking conditions are to the audio being transcribed, the better the match. |
+
+Reference clips work offline and in realtime. For how to send them, see [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers).
+
+<SectionTab as="h2" sectionId="overlapping-speech">Overlapping speech</SectionTab>
+
+In real conversations, people talk at the same time: one person interrupts another, or someone says "yes" while someone else is speaking. Overlapping speech (two speakers talking at the same time) is not supported in this version.
+
+A transcript with overlaps isn't a simple sequence of turns. If your interface shows one speaker at a time, such as a chat-style transcript or a timeline with a single track, plan how to show two active speakers. For example, order the segments by start time and let them overlap, so you don't cut one of them.
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Diarize speakers" />
+  <LinkCard href="/studio/audio/use-cases/meeting-and-call-transcripts" title="Meeting and call transcripts" />
+  <LinkCard href="/studio/audio/concepts/turns" title="Turns and turn-taking" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Labels per segment offline, with start and end: examples/stt diarize-speakers/diarize.{sh,py}, Oct 7
+     (diarize=true + timestamp_granularities=segment, speaker_1 and speaker_2). Labels per text delta in realtime:
+     out/probes/rt_diar.json (transcription.segment with speaker_id, start and end null), Oct 7.
+   - "Not necessarily the same person across recordings": inference from anonymous per-request labels; not a tested
+     behavior, worded as no guarantee.
+   - Reference clips in realtime: diarize-speakers/realtime_speaker_references.py and out/probes/rt_refs.json, Oct 7
+     (speaker_id carries the reference name). Look-alike voices not matched, unmatched speakers get generic labels
+     (speaker_3 / speaker_4 with two references): handoff-stt.md surprise 5.
+   - Offline reference clips: R144 (Rakesh, Sept 28) and Rakesh Oct 9 (via Gregory): both modes. offline_speaker_references.sh and
+     out/probes/mini_refs.json, Oct 7: 400 "does not support speaker references" on Mini and Small. Retest on the launch checkpoint.
+   - References need diarization: offline 422 (out/probes/mini_refs_nodiar.json), realtime error event
+     (out/probes/rt_refs_nodiar.json), Oct 7.
+   - Diarization + turn detection: realtime error "Diarization is not compatible with turn detection."
+     (out/probes/rt_turn_diar.json, Oct 7); RFC-555 section 5.2. Turn detection realtime only: offline 400
+     "turn_detection is only supported on the realtime transcription endpoint." (out/probes/turn_offline_small.json).
+   - Overlap: RFC-555 sections 1.4 and 2.4 only; not reproduced (out/probes/overlap_*.json). .
+   - Limits (8 references, 3 to 15 s each, requires diarize=true, both modes): RFC-555, confirmed by Rakesh Oct 9 (via Gregory). Not tested. */}
+
+{/* Concept page (layer 1, Context) — audio docs revamp (DOC-610). Created Sept 25
+   after Ben's review; replaces the 2-3 sentence "Diarization and speaker
+   references" concept on the hub. Boundary: this page explains labels, references,
+   and overlap; Diarize speakers owns the options, examples, and compatibility
+   matrix. Verify at the end: speaker reference availability per mode matches the
+   latest test or Rakesh's answer (offline refused on Oct 7 despite R144), overlap
+   confirmed or removed, no invented limits. */}

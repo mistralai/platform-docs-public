@@ -1,0 +1,329 @@
+---
+title: Audio in chat completions
+sidebar_label: Audio in chat
+sidebar_position: 3
+description: "Summarize, question, translate, and extract structured data from a recording by sending the audio in a chat completions request."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+
+# Audio in chat completions
+
+Audio in chat completions lets a model listen to a recording and answer about it in text: a summary, an answer to a question, a translation, or structured data. This page shows the request once, then the instruction to write for each task.
+
+:::info
+To get a word-for-word transcript instead of answers, use [File transcription](/studio/audio/speech-to-text/transcribe-files).
+:::
+
+<CtaButton href="/api/endpoint/chat#operation-chat_completion_v1_chat_completions_post">API reference — POST /v1/chat/completions</CtaButton>
+
+<SectionTab as="h2" sectionId="send-audio">Send audio in a chat request</SectionTab>
+
+Put the audio and your instruction in the same user message: an `input_audio` part with the recording, base64-encoded, and a `text` part with what you want to know. Every example on this page uses the same recording of a support call, so only the instruction changes from one task to the next.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+AUDIO_B64=$(base64 < support_call_8k.wav | tr -d '\n')
+
+curl https://api.mistral.ai/v1/chat/completions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @- <<JSON
+{
+  "model": "voxtral-small-latest",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {"type": "input_audio", "input_audio": "$AUDIO_B64"},
+        {"type": "text", "text": "Summarize this support call in three bullet points: the problem, what was checked, and the outcome."}
+      ]
+    }
+  ]
+}
+JSON
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("support_call_8k.wav", "rb") as f:
+    audio_base64 = base64.b64encode(f.read()).decode()
+
+response = client.chat.complete(
+    model="voxtral-small-latest",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_audio", "input_audio": audio_base64},
+                {
+                    "type": "text",
+                    "text": "Summarize this support call in three bullet points: the problem, what was checked, and the outcome.",
+                },
+            ],
+        }
+    ],
+)
+
+print(response.choices[0].message.content)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const audioBase64 = readFileSync("support_call_8k.wav").toString("base64");
+
+const response = await client.chat.complete({
+  model: "voxtral-small-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "input_audio", inputAudio: audioBase64 },
+        {
+          type: "text",
+          text: "Summarize this support call in three bullet points: the problem, what was checked, and the outcome.",
+        },
+      ],
+    },
+  ],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+  </TabItem>
+</Tabs>
+
+:::note
+`input_audio` takes the base64 string of the file directly. The object form used by OpenAI's API, with `data` and `format` fields, is accepted too.
+:::
+
+:::caution
+ See [Limits](/studio/audio/specs-and-limits/limits#audio-in-chat).
+:::
+
+<SectionTab as="h2" sectionId="summarize">Summarize a recording</SectionTab>
+
+To get a summary, describe the one you need in the `text` part: its length, its format, and who reads it. The example in [Send audio in a chat request](#send-audio) asks for this:
+
+> Summarize this support call in three bullet points: the problem, what was checked, and the outcome.
+
+<SectionTab as="h2" sectionId="ask-questions">Ask questions about a recording</SectionTab>
+
+To ask about a recording, put your question in the `text` part, in place of the summary instruction. 
+
+> Which order number does the customer give, and what does the agent promise to send?
+
+<SectionTab as="h2" sectionId="translate">Translate a recording</SectionTab>
+
+To translate a recording, name the language of the audio and the language you want in the instruction. The answer is written text, not speech: to hear the translation, send the text to [Speech generation](/studio/audio/text-to-speech/generate-speech).
+
+To get the original words and the translation in one answer, ask for two labeled sections. This instruction, sent with a French recording, returns the French transcript and its English translation:
+
+> This recording is in French. Return two sections exactly:
+> ORIGINAL: the verbatim French transcript.
+> TRANSLATION: a faithful English translation.
+> Do not add commentary.
+
+The two sections carry no timestamps, so you can't match a line of the translation to a moment of the audio.
+
+{/* TESTED Oct 7 (stt agent): audio-in-chat/translate.py (demo 02, meeting_fr_8k.wav, the prompt above, unchanged). On voxtral-small-latest it returned both sections, complete; on the documented voxtral-small-transcribe-3-0 it fails with 400 "Invalid model" (same blocker). The output isn't shown: it quotes internal content (launch dates, people), and the launch model hasn't run it. */}
+
+<SectionTab as="h3" variant="secondary" sectionId="language-pairs">Supported language pairs</SectionTab>
+
+For the source and target languages that translation supports, see [Translation](/studio/audio/specs-and-limits/languages#translation) on Languages.
+
+<SectionTab as="h2" sectionId="extract-structured-data">Extract structured data</SectionTab>
+
+With function calling, the model reads the recording and fills in the arguments of a function you define, such as the follow-up actions agreed in a call. It doesn't run the function: your application does. Define the function in `tools`, and set the tool choice to `any` so the model must call it.
+
+:::info
+For how function calling works in chat completions, see [Function calling](/studio/conversations/function-calling).
+:::
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import base64
+import json
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("support_call_8k.wav", "rb") as f:
+    audio_base64 = base64.b64encode(f.read()).decode()
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "record_action_items",
+            "description": "Record the follow-up actions agreed during the call.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "owner": {"type": "string", "description": "Who does it (agent, billing, customer...)"},
+                                "task": {"type": "string"},
+                                "due": {"type": "string", "description": "Deadline if one was stated"},
+                            },
+                            "required": ["owner", "task"],
+                        },
+                    },
+                    "order_id": {"type": "string"},
+                },
+                "required": ["items"],
+            },
+        },
+    }
+]
+
+response = client.chat.complete(
+    model="voxtral-small-latest",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_audio", "input_audio": audio_base64},
+                {"type": "text", "text": "Extract every follow-up action agreed in this call."},
+            ],
+        }
+    ],
+    tools=tools,
+    tool_choice="any",
+)
+
+tool_call = response.choices[0].message.tool_calls[0]
+print(tool_call.function.name)
+print(json.dumps(json.loads(tool_call.function.arguments), indent=2))
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const audioBase64 = readFileSync("support_call_8k.wav").toString("base64");
+
+const tools = [
+  {
+    type: "function" as const,
+    function: {
+      name: "record_action_items",
+      description: "Record the follow-up actions agreed during the call.",
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                owner: { type: "string", description: "Who does it (agent, billing, customer...)" },
+                task: { type: "string" },
+                due: { type: "string", description: "Deadline if one was stated" },
+              },
+              required: ["owner", "task"],
+            },
+          },
+          order_id: { type: "string" },
+        },
+        required: ["items"],
+      },
+    },
+  },
+];
+
+const response = await client.chat.complete({
+  model: "voxtral-small-latest",
+  messages: [
+    {
+      role: "user",
+      content: [
+        { type: "input_audio", inputAudio: audioBase64 },
+        { type: "text", text: "Extract every follow-up action agreed in this call." },
+      ],
+    },
+  ],
+  tools,
+  toolChoice: "any",
+});
+
+const toolCall = response.choices[0].message.toolCalls![0];
+const args = toolCall.function.arguments;
+console.log(toolCall.function.name);
+console.log(JSON.stringify(typeof args === "string" ? JSON.parse(args) : args, null, 2));
+```
+
+  </TabItem>
+</Tabs>
+
+{/* TESTED Oct 7 (stt agent): audio-in-chat/extract_tools.py — the tool schema is demo 01's ACTION_TOOL (record_action_items) and its step 4b prompt, unchanged. Same blocker as above: 400 "Invalid model" on voxtral-small-transcribe-3-0. On voxtral-small-latest with support_call_8k.wav it returns record_action_items with order_id "4417" and two items — agent: "Send tracking link" (due today), billing: "Issue invoice" (due Friday) — identical to demo 01's saved Sept 24 action_items.json. Do not publish it as the expected result until the documented model runs. */}
+
+The answer carries a tool call to `record_action_items`, with arguments that follow the schema of the function: the order number, and one item per action with its owner, its task, and its deadline. Your application reads them and acts on them.
+
+<SectionTab as="h2" sectionId="common-issues">Common issues</SectionTab>
+
+These problems are specific to audio in chat requests:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| The answer rephrases what was said instead of quoting it | A chat model answers your instruction. It doesn't return a word-for-word transcript. | For the exact words, use [File transcription](/studio/audio/speech-to-text/transcribe-files). |
+| `429` error, `Rate limit exceeded`, on a request with audio |  | Send a shorter clip, or a WAV file at 8 or 16 kHz. See [Limits](/studio/audio/specs-and-limits/limits#audio-in-chat). |
+|  | Part of the MP3 isn't read. | Send the recording as WAV. See [Audio formats](/studio/audio/specs-and-limits/audio-formats#audio-in-chat). |
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/use-cases/meeting-and-call-transcripts" title="Meeting and call transcripts" />
+  <LinkCard href="/studio/audio/use-cases/multilingual-calls-and-meetings" title="Multilingual calls and meetings" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="Need a transcript instead?" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Request shape: chat_audio.{sh,py,ts} and extract_tools.{py,ts} (Oct 7 and Oct 9), on voxtral-small-latest; the
+     documented voxtral-small-latest returns 400 Invalid model. input_audio inline is the only documented
+     method (status.md, API probe round Oct 9: the file chunk is accepted but not read).
+   - OpenAI object shape: Oct 7 test (). Size limit: Oct 7 and Oct 9 probes (, same wording as
+     Limits). MP3 cut: Oct 7, one file (, same as Audio formats).
+   - Summarize: demo 01 prompt (tested). Questions: no test, the example question is a . Translate: demo 02
+     prompt, translate.py (tested on voxtral-small-latest, output not shown). "Written text, not speech": the
+     endpoint returns text. Timestamps: chat answers carry none (response shape).
+   - Extract: extract_tools.py and .ts, tool_choice any; the result shape follows the schema, the Oct 7 and Oct 9
+     outputs aren't published until the launch model runs.
+   - Common issues: transcript vs answers (skeleton, Kayla), 429 and MP3 (probes above). */}
+

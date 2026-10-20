@@ -1,0 +1,210 @@
+---
+title: Clonage de la voix
+sidebar_label: Clonage de la voix
+sidebar_position: 6
+description: "Clonez une voix à partir d'un court enregistrement, pour une requête unique ou pour la conserver dans votre espace de travail."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Clonage de la voix
+
+Le clonage de la voix génère de la parole avec la voix de l'enregistrement que vous fournissez, sans entraînement. Clonez une voix pour une requête unique, ou enregistrez-la dans votre espace de travail et réutilisez-la via son ID.
+
+:::info
+Pour comparer une voix clonée et une voix prédéfinie, et savoir ce qu'elle conserve de son enregistrement, voir [Voix](/studio/audio/concepts/voices) dans Concepts.
+:::
+
+<CtaButton href="/api/endpoint/audio/speech#operation-speech_v1_audio_speech_post"></CtaButton>
+<CtaButton href="/api/endpoint/audio/voices#operation-create_voice_v1_audio_voices_post"></CtaButton>
+
+{/* API REFERENCE LINK: this operation already exists in the API reference (public/openapi.yaml, Oct 9), but with the schema from before Voxtral 3, so v3 fields may be missing or outdated there. It becomes accurate once the reference is rebuilt from the dashboard Swagger, which must be up to date and public first: that can't happen ahead of the writing. After the rebuild, check that the anchor still exists and that the operation shows the Voxtral 3 fields this page documents. */}
+
+<SectionTab as="h2" sectionId="prepare-a-reference-clip">Préparer un extrait de référence</SectionTab>
+
+Le clip de référence est l'enregistrement de la voix à cloner. Vérifiez-le avant de l'envoyer :
+
+- **Format :** 
+- **Encodage :** l'audio lui-même, encodé en base64. Une URL n'est pas acceptée.
+- **Contenu :** 
+
+<SectionTab as="h2" sectionId="zero-shot-cloning">Clonage zero-shot</SectionTab>
+
+Le clonage zero-shot reproduit une voix à partir d’un court enregistrement, sans entraînement. Utilisez l’enregistrement pour une seule requête, ou enregistrez-le comme voix dans votre espace de travail pour le réutiliser à l’aide de son identifiant.
+
+<SectionTab as="h3" variant="secondary" sectionId="clone-for-one-request">Cloner une voix pour une seule requête</SectionTab>
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+jq -n --arg ref_audio "$(base64 < voice_sample.mp3 | tr -d '\n')" '{
+  model: "voxtral-mini-tts-3-0",
+  input: "Your order shipped this morning and should arrive on Thursday.",
+  ref_audio: $ref_audio,
+  response_format: "wav"
+}' | curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @- | jq -r '.audio_data' | base64 --decode > cloned_one_off.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+reference = Path("voice_sample.mp3")
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="Your order shipped this morning and should arrive on Thursday.",
+    ref_audio=base64.b64encode(reference.read_bytes()).decode(),
+    response_format="wav",
+)
+
+output = Path("cloned_one_off.wav")
+output.write_bytes(base64.b64decode(response.audio_data))
+print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const reference = "voice_sample.mp3";
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "Your order shipped this morning and should arrive on Thursday.",
+  refAudio: (await readFile(reference)).toString("base64"),
+  responseFormat: "wav",
+});
+
+const output = "cloned_one_off.wav";
+await writeFile(output, Buffer.from(response.audioData, "base64"));
+console.log(`Saved ${resolve(output)}`);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h3" variant="secondary" sectionId="save-a-cloned-voice">Enregistrer une voix clonée</SectionTab>
+
+Créez une voix à partir de l'enregistrement, puis transmettez son ID comme `voice_id`. 
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+sample = Path("voice_sample.mp3")
+voice = client.audio.voices.create(
+    name="Support agent",
+    sample_audio=base64.b64encode(sample.read_bytes()).decode(),
+    sample_filename=sample.name,
+    languages=["en"],
+)
+print(f"Created voice {voice.id}")
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="Your order shipped this morning and should arrive on Thursday.",
+    voice_id=voice.id,
+    response_format="wav",
+)
+
+output = Path("cloned_saved_voice.wav")
+output.write_bytes(base64.b64decode(response.audio_data))
+print(f"Saved {output.resolve()}")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFile, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const sample = "voice_sample.mp3";
+const voice = await client.audio.voices.create({
+  name: "Support agent",
+  sampleAudio: (await readFile(sample)).toString("base64"),
+  sampleFilename: sample,
+  languages: ["en"],
+});
+console.log(`Created voice ${voice.id}`);
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "Your order shipped this morning and should arrive on Thursday.",
+  voiceId: voice.id,
+  responseFormat: "wav",
+});
+
+const output = "cloned_saved_voice.wav";
+await writeFile(output, Buffer.from(response.audioData, "base64"));
+console.log(`Saved ${resolve(output)}`);
+```
+
+  </TabItem>
+</Tabs>
+
+Les exemples lisent l'enregistrement à partir du fichier `voice_sample.mp3` dans le répertoire de travail.
+
+:::info
+Pour lister, renommer ou supprimer une voix enregistrée, voir [Gérer les voix](/studio/audio/text-to-speech/voices#manage-voices).
+:::
+
+{/* TESTED Oct 7 (mistralai 3.0.0, voxtral-mini-tts-3-0): the three scripts run; the one-off and saved-voice outputs read the input sentence word for word (checked by transcription). The scripts read `voice_sample.mp3` (the public bcn_weather.mp3 asset, 11 s, one speaker) from the working directory. A URL in ref_audio returns 400 code 3291 "Failed to load audio file. Verify that the given file is valid mp3 or wav." Sending `ref_audio` together with `voice_id` also returns 200: which one wins is unconfirmed, so the page never combines them. Voice IDs created by the test run were deleted. */}
+
+<SectionTab as="h2" sectionId="use-across-languages">Utiliser une voix clonée dans d'autres langues</SectionTab>
+
+Une voix clonée n'est pas limitée à la langue de son enregistrement.  Pour connaître les langues prises en charge, voir [Langues](/studio/audio/specs-and-limits/languages).
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Parcourir les voix" />
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Instructions de style" />
+  <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Résolution des problèmes" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): zero-shot cloning ships at launch (Rakesh, Oct 7); one-off and saved-voice clones tested on
+   voxtral-mini-tts-3-0 (Oct 7, examples/tts/voice-cloning, results.csv); offline ref_audio vs RFC-555 sections 3.1
+   and 4.1; clip format from the 400 code 3291 message; clip duration: PRD (2-3 s), RFC-600 (3-30 s, obsolete),
+   test (11 s); professional cloning: Rakesh Sept 28 and Oct 7, Sept 23 all-hands, RFC-600 (research/notion-pvc3.md);
+   cross-language: probe p3 xling (Oct 7). */}
+
+{/* Feature page — audio docs revamp (DOC-610). Written Oct 9. Order per skeleton review S20: reference clip
+   prerequisites before the call; methods (zero-shot, professional conditional) separated from usages
+   (cross-language); ref_audio migration as a targeted note for existing callers, only if ref_audio is removed.
+   The why (what a clone keeps, kinds of voices) lives on concepts/voices: linked, not repeated. Verify at the end:
+   reference -> result demo present, consent wording approved by Kayla, clip requirements confirmed, ref_audio
+   offline/streaming accuracy kept. */}

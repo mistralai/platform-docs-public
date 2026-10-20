@@ -1,0 +1,140 @@
+---
+title: "Guide de démarrage : générer de la parole"
+sidebar_label: Générer de la parole
+sidebar_position: 1
+description: "Convertissez du texte en parole naturelle et lisez-la avec un seul appel à l'API."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Guide de démarrage : générer de la parole
+
+Ce tutoriel vous montre comment générer de la parole, enregistrer les octets dans un fichier, puis lire ce fichier via les haut-parleurs de votre ordinateur. Pour lire l'audio en continu au fur et à mesure de sa génération, consultez [Lire la parole en streaming](/studio/audio/text-to-speech/stream-speech).
+
+<SectionTab as="h2" sectionId="get-an-api-key">Obtenir la clé API</SectionTab>
+
+Vous avez d'abord besoin d'une clé API Mistral. Si vous n'en avez pas, rendez-vous sur [Studio](https://console.mistral.ai). Accédez à la [section Clés API](https://console.mistral.ai/home?profile_dialog=api-keys) et créez une nouvelle clé API.
+
+Stockez votre clé API dans la variable d'environnement `MISTRAL_API_KEY` :
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+<SectionTab as="h2" sectionId="install-the-sdk">Installer le SDK</SectionTab>
+
+Pour utiliser Python ou TypeScript, installez le SDK Mistral, ainsi qu'une bibliothèque pour lire l'audio. L'exemple curl utilise [`jq`](https://jqlang.org/) pour décoder les octets encodés en base64.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```bash
+pip install mistralai sounddevice soundfile
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```bash
+npm install @mistralai/mistralai play-sound
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="generate-your-audio">Générer votre audio</SectionTab>
+
+Utilisez ce code pour convertir du texte en parole. L'API renvoie l'audio encodé en base64 ; cet exemple le décode donc en octets. L'exemple curl enregistre l'audio sous le nom `hello.wav`, l'exemple Python le lit immédiatement et l'exemple TypeScript l'enregistre, puis le lit.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "input": "Hi there! You are listening to Voxtral.",
+    "voice_id": "gb_jane_neutral",
+    "response_format": "wav"
+  }' | jq -r '.audio_data' | base64 --decode > hello.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import io
+import os
+
+import sounddevice as sd
+import soundfile as sf
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="Hi there! You are listening to Voxtral.",
+    voice_id="gb_jane_neutral",
+    response_format="wav"
+)
+
+bytes = io.BytesIO(base64.b64decode(response.audio_data))
+audio, sample_rate = sf.read(bytes)
+sd.play(audio, sample_rate)
+sd.wait()
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+import playSound from "play-sound";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "Hi there! You are listening to Voxtral.",
+  voiceId: "gb_jane_neutral",
+  responseFormat: "wav",
+});
+
+writeFileSync("hello.wav", Buffer.from(response.audioData, "base64"));
+playSound().play("hello.wav");
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="you-should-hear">Ce que vous devriez entendre</SectionTab>
+
+Les exemples Python et TypeScript lisent l'audio via vos haut-parleurs.
+
+L'exemple curl enregistre `hello.wav` dans le répertoire courant. Ouvrez-le dans n'importe quel lecteur audio, ou lisez-le depuis le terminal :
+
+```bash
+afplay hello.wav   # macOS
+aplay hello.wav    # Linux
+```
+
+Vous entendrez la voix `gb_jane_neutral` dire « Bonjour ! Je suis Voxtral, le modèle de synthèse vocale de Mistral. »
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Parcourir toutes les voix" />
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Contrôler la restitution" />
+  <LinkCard href="/studio/audio/text-to-speech/stream-speech" title="Diffuser la parole" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Verify at the end: 4 blocks, the reader can hear the expected result (demo), no voice taxonomy embedded. */}

@@ -15,12 +15,14 @@ For an exhaustive list of every key in `config.toml` and the agent-definition fi
 
 <SectionTab as="h2" sectionId="file-locations">Configuration file locations</SectionTab>
 
-The CLI looks for `config.toml` in this order:
+The CLI merges two `config.toml` files:
 
-1. `./.vibe/config.toml` in the current working directory (**project-level**).
-2. `~/.vibe/config.toml` in your home directory (**user-level**).
+1. **Project-level**: the closest `.vibe/config.toml`, found by walking up from the working directory, without going past your home directory.
+2. **User-level**: `~/.vibe/config.toml`.
 
-Project-level configuration takes precedence over user-level configuration. Project configuration is loaded only when the working directory is [trusted](/vibe/code/safety-approvals-permissions#trusted-folders).
+Project settings override the same user settings, and anything the project file doesn't set comes from the user file. Project configuration is loaded only when its folder is [trusted](/vibe/code/safety-approvals-permissions#trusted-folders).
+
+`/config` saves changes to the user file by default. Use **Save to** in the settings editor to save to the project file or to the current session only.
 
 <SectionTab as="h2" sectionId="open">Open your configuration file</SectionTab>
 
@@ -65,7 +67,7 @@ Use `--workdir` to point the CLI at a project that is not your current directory
 vibe --workdir /path/to/project
 ```
 
-Use `--add-dir` to give the CLI read access to an extra directory for a single session.
+Use `--add-dir` to give the agent access to an extra directory for a single session. Repeat the flag for several directories. Vibe trusts each directory for the session, loads its `AGENTS.md` and `.vibe/` configuration, and lets the agent read and edit files there without the outside-workdir prompt.
 
 <SectionTab as="h2" sectionId="common-sections">Common configuration sections</SectionTab>
 
@@ -73,19 +75,19 @@ Use `--add-dir` to give the CLI read access to an extra directory for a single s
 
 <SectionTab as="h3" variant="secondary" sectionId="default-agent">Default agent</SectionTab>
 
-Set the default interactive agent:
+Set the default agent:
 
 ```toml
-default_agent = "plan"
+default_agent = "ask"
 ```
 
-This applies to interactive sessions only. Programmatic mode falls back to `auto-approve` when `--agent` is not provided. See [Agents](/vibe/code/cli/agents).
+This applies to both interactive and programmatic sessions. When unset, Vibe uses `accept-edits`. See [Agents](/vibe/code/cli/agents).
 
 <SectionTab as="h3" variant="secondary" sectionId="providers-models">Providers and models</SectionTab>
 
-Define provider presets, model presets, and the active model.
+Define provider presets, model presets, and the active model. Vibe ships with one built-in model, Mistral Medium 3.5 (alias `mistral-medium-3.5`), and `/model` lists only the models configured for you. It groups them by where they come from: your organization's admin config, experiments, the model catalog, then your own configuration.
 
-The following chat-capable models are available through Mistral's API (la Plateforme). Use the **model ID** as the `name` value in a `[[models]]` block, or pass it directly with `--model`:
+The following chat-capable models are available through Mistral's API (la Plateforme). Use the **model ID** as the `name` value in a `[[models]]` block with `provider = "mistral"`, then select it with `/model` or `active_model`:
 
 | Model | Model ID | Best for |
 |---|---|---|
@@ -148,7 +150,7 @@ Restrict which tools the agent can use:
 
 ```toml
 enabled_tools = ["serena_*"]
-disabled_tools = ["mcp_*", "grep"]
+disabled_tools = ["bash"]
 ```
 
 Tool filters support **exact names**, **glob patterns**, and **regex** with the `re:` prefix. Per-tool permissions can also be set in `[tools.<tool_name>]` blocks. See [Safety, approvals, and permissions](/vibe/code/safety-approvals-permissions#tool-permissions).
@@ -159,19 +161,29 @@ Run arbitrary shell commands before or after tool calls, or after each assistant
 
 <SectionTab as="h3" variant="secondary" sectionId="updates-telemetry">Update and telemetry settings</SectionTab>
 
-Control auto-updates, notifications, and telemetry:
+Control update checks, notifications, and telemetry:
 
 ```toml
-enable_auto_update = true
+enable_update_checks = true
 enable_notifications = true
 enable_telemetry = true
 ```
 
 | Setting | Default | Details |
 |---|---|---|
-| `enable_auto_update` | `true` | Vibe checks for new releases and updates itself in the background. **We strongly recommend keeping this enabled** so you always run the latest fixes. You can also rerun the install script at any time to update manually. |
-| `enable_notifications` | `true` | OS-level notifications when Vibe finishes a long-running task or needs your input (for example, when an approval prompt is waiting). |
+| `enable_update_checks` | `true` | Vibe checks for a new release once a day and offers to install it at the next launch. **We strongly recommend keeping this enabled** so you always run the latest fixes. You can also run `vibe update` at any time. |
+| `enable_notifications` | `true` | Rings the terminal bell and updates the terminal title when Vibe finishes a task or needs your input (for example, when an approval prompt is waiting) while the terminal isn't focused. Your terminal may show this as a system notification. |
 | `enable_telemetry` | `true` | Sends anonymous usage and error telemetry to Mistral. Used to improve the product (crash diagnostics, feature usage, performance). No prompts, file contents, or model outputs are sent. Disable if you require an offline-only setup. |
+
+<SectionTab as="h3" variant="secondary" sectionId="certificates">Corporate certificate authorities</SectionTab>
+
+By default, Vibe validates HTTPS certificates against its bundled certificate roots. Since Vibe 3.0, it applies stricter validation rules, so a private certificate authority (CA) that lacks some standard extensions can be rejected. If your organization installs its CA in the operating system trust store, tell Vibe to use that store:
+
+```toml
+enable_system_trust_store = true
+```
+
+Vibe also loads the certificates in the `SSL_CERT_FILE` and `SSL_CERT_DIR` environment variables as additional trust anchors. To configure a proxy and certificates from inside a session, run `/proxy-setup`.
 
 <SectionTab as="h2" sectionId="admin-config">Admin-managed configuration</SectionTab>
 
@@ -179,8 +191,7 @@ Your Organization can distribute a Vibe Code CLI configuration to all users. Adm
 
 When admin config is active:
 
-- Admin-managed settings in `/config` appear dim with a `⚿` lock glyph and list `your administrator` as the origin. A legend at the bottom of the screen reads `⚿ Settings are managed by your organization`.
-- Admin-managed fields are read-only in `/config`. Attempts to edit or reset them have no effect. If you switch models while `active_model` is admin-managed, the model picker shows a warning.
+- Admin-managed settings are read-only in `/config`: you can't edit or reset them. The settings editor's **WHERE IT'S SET** panel lists your administrator as a source.
 - The CLI fetches admin config at the start of each session and keeps it in memory. It never writes admin config to your local `config.toml`.
 
 :::info
@@ -192,7 +203,8 @@ Admin config is a distribution mechanism, not a security control. Users who cont
 When the same setting is defined in multiple places, the CLI applies them in this order, from **highest to lowest priority**:
 
 1. **Admin config**, when your Organization provides one. See [Admin config](/vibe/code/cli/admin-config).
-2. **Command-line flags** (for example, `--agent`, `--workdir`).
-3. **Environment variables** (for example, `MISTRAL_API_KEY`, `VIBE_HOME`).
-4. **Project** `./.vibe/config.toml`.
-5. **User** `~/.vibe/config.toml`.
+2. **The active agent's settings**, from its agent file. See [Agents](/vibe/code/cli/agents).
+3. **Command-line flags** (for example, `--enabled-tools`) and changes saved to the current session from `/config`.
+4. **`VIBE_<KEY>` environment variables**, which override the config key of the same name (for example, `VIBE_ACTIVE_MODEL`).
+5. **Project** `.vibe/config.toml`.
+6. **User** `~/.vibe/config.toml`.

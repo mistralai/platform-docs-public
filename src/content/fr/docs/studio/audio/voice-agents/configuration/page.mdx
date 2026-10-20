@@ -1,0 +1,125 @@
+---
+title: Configuration de l'agent
+sidebar_label: Configuration de l'agent
+sidebar_position: 2
+description: "Le client Mistral et les options de audio.sessions.init() — configuration de l'agent ou exécution de la session."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Configuration de l'agent
+
+Cette page liste toutes les options que vous pouvez passer à `client.audio.sessions.init()`. Les options se répartissent en deux portées. Les options **Agent** définissent l'agent lui-même : ses modèles, sa voix, ses instructions, ses outils et la gestion des tours de parole. Vous pouvez les enregistrer en tant qu'[agent enregistré](/studio/audio/voice-agents/agents). Les options **Session** ne s'appliquent qu'à la session que vous ouvrez, comme l'agent enregistré à partir duquel démarrer ou l'interface audio à utiliser.
+
+:::note
+Les tableaux utilisent les noms Python. En TypeScript, les mêmes options sont en camelCase : `api_key` devient `apiKey`, `server_url` devient `serverUrl`, et `turn.allow_interruptions` devient `turn.allowInterruptions`.
+:::
+
+<SectionTab as="h2" sectionId="the-client">Le client</SectionTab>
+
+`client.audio.sessions.init()` est une méthode du client `Mistral` polyvalent. Construisez le client une fois, puis démarrez autant de sessions que nécessaire à partir de celui-ci.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+Mistral(
+    api_key: str,
+    server_url: str = "https://api.mistral.ai",
+    timeout_ms: int = 60000,
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+new Mistral({
+  apiKey: string,
+  serverURL?: string, // default "https://api.mistral.ai"
+  timeoutMs?: number, // default 60000
+});
+```
+
+  </TabItem>
+</Tabs>
+
+| Paramètre | Type | Par défaut | Description |
+| --- | --- | --- | --- |
+| `api_key` | `str` | Obligatoire | Votre clé API Mistral. |
+| `server_url` | `str` | `"https://api.mistral.ai"` | URL de base de l'API. |
+| `timeout_ms` | `int` | `60000` | Délai d'expiration des requêtes qui créent et ferment les sessions. |
+
+<SectionTab as="h2" sectionId="inline-or-saved">Configuration directe ou enregistrée</SectionTab>
+
+Vous pouvez passer les options de l'agent à `init()` à chaque fois, ce qui convient aux essais rapides. Vous pouvez aussi les enregistrer une seule fois en tant qu'agent, puis démarrer chaque session avec `agent_id`. Quand vous définissez `agent_id`, la configuration enregistrée sert de base, et toute option d'agent que vous passez également à `init()` la remplace pour cette session uniquement. L'agent enregistré ne change pas. Les options de session s'appliquent toujours. Pour un exemple, consultez [Créer un agent et démarrer une session](/studio/audio/voice-agents/agents#create-an-agent).
+
+:::info
+Dans le navigateur, vous n'appelez pas `init()` : c'est votre serveur qui crée la session avec `client.audio.sessions.create()`, qui accepte les mêmes options. Consultez le [Guide du navigateur](/studio/audio/voice-agents/browser).
+:::
+
+<SectionTab as="h2" sectionId="connect-options">Options de init()</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="agent-options">Options de l'agent</SectionTab>
+
+Ces options font partie de la configuration de l'agent et vous pouvez les enregistrer dans un agent.
+
+| Option | Type | Par défaut | Description |
+| --- | --- | --- | --- |
+| `llm` | mapping | `mistral-small-latest` | Modèle qui génère les réponses. |
+| `stt` | mapping |  | Modèle de reconnaissance vocale, avec en option `language` (code ISO 639-1 comme `"fr"`), `context_bias` (termes à privilégier), `target_streaming_delay_ms` (de 80 à 1200, 240 par défaut) et `turn_detection` (voir [Détection de fin de tour](#end-of-turn-detection)). `language`, `context_bias` et `turn_detection` nécessitent un modèle Voxtral 3 realtime ; les autres modèles renvoient une erreur 422. |
+| `tts` | mapping |  | Modèle de synthèse vocale et voix (`voice_id`). |
+| `instructions` | `str` | None | Prompt système de l'agent. |
+| `tools` | liste d'outils | None | Outils que l'agent peut appeler. Voir [Outils](/studio/audio/voice-agents/tools). |
+| `welcome_message` | `str` | None | Message que l'agent prononce à la connexion de la session. |
+| `turn` | mapping | `allow_interruptions=True` | Paramètres de gestion des tours de parole, dont la possibilité pour l'utilisateur d'interrompre l'agent. |
+
+<SectionTab as="h3" variant="secondary" sectionId="session-options">Options de session</SectionTab>
+
+Ces options ne s'appliquent qu'à la session que vous ouvrez.
+
+| Option | Type | Par défaut | Description |
+| --- | --- | --- | --- |
+| `agent_id` | `str` | None | Démarrez la session à partir d'un [agent enregistré](/studio/audio/voice-agents/agents). |
+| `agent_version` | `int` | La plus récente | Figez une version précise de `agent_id`. |
+| `audio_interface` | `AudioInterface` | None | Entrée et sortie audio. Omettez-la pour gérer vous-même l'audio, voir [Audio personnalisé](/studio/audio/voice-agents/custom-audio). |
+| `http_headers` | mapping de `str` vers `str` | None | En-têtes supplémentaires pour la requête qui crée la session. |
+
+<SectionTab as="h2" sectionId="end-of-turn-detection">Détection de fin de tour</SectionTab>
+
+Définissez `stt.turn_detection` pour laisser un modèle Voxtral 3 realtime décider quand l'utilisateur a fini de parler. Sans ce paramètre, l'agent utilise la détection de fin de tour par défaut du modèle. Passez `{}` pour utiliser les valeurs par défaut du serveur, ou définissez les champs de votre choix parmi les suivants :
+
+| Champ | Plage | Par défaut côté serveur | Ce qu'il fait |
+| --- | --- | --- | --- |
+| `start_threshold` | de 0 à 1 | 0,5 | Détermine quand l'utilisateur commence ou reprend la parole. Augmentez-le si les débuts de tour sont détectés trop facilement, par exemple en cas de bruit de fond. |
+| `eager_end_threshold` | de 0 à 1 | 0,5 | Détermine quand l'utilisateur a peut-être fini de parler. Diminuez-le si les fins de tour anticipées se déclenchent trop souvent. |
+| `end_threshold` | de 0 à 1 | 0,33 | Détermine quand l'utilisateur a fini de parler. Diminuez-le pour couper moins souvent la parole aux utilisateurs, au prix d'une réponse plus tardive. |
+| `min_silence_ms` | 0 ou plus | 500 | Pause minimale avant que le tour puisse se terminer. Augmentez-la pour éviter les fins de tour trop hâtives, au prix d'une réponse plus tardive. |
+| `end_timeout_ms` | 0 ou plus | 3000 | Pause maximale avant que le tour ne se termine quoi qu'il arrive. Diminuez-la pour plafonner l'attente maximale. |
+
+Par exemple, pour que l'agent réponde après un silence plus court :
+
+```python
+session = await client.audio.sessions.init(
+    stt={
+        "model": "voxtral-mini-transcribe-realtime-3",
+        "turn_detection": {"min_silence_ms": 300},
+    },
+)
+```
+
+{/* Deviation from the vendor sample: model="voxtral-transcribe-realtime-3" (interim alias) replaced with the final ID voxtral-mini-transcribe-realtime-3 (Rakesh, Oct 7). */}
+
+Pour connaître le rôle de chaque seuil et le préréglage Agressif, plus rapide, consultez [Détection de tour](/studio/audio/speech-to-text/turn-detection).
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/agents" title="Créer et gérer des agents" />
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Gérer les sessions d'agent" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Outils" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Authoritative source: dashboard repo, voice_agents_sdk/docs/docs/ (SDK 0.5.0, dashboard@ffed1e6b333) core/configuration.mdx. The options table is COMPLETE in the vendor doc — port it fully, no invention needed. RFC-391 is superseded. Verify at the end: agent vs session scope is the organizing principle, defaults stated, browser divergence noted. */}

@@ -1,0 +1,203 @@
+---
+id: voice_agents_audio_interface
+title: Interface Audio
+description: Comment un agent vocal capture et lit l'audio en Python et Node.js, comment configurer l'interface audio par défaut, créer la vôtre ou envoyer et recevoir de l'audio brut.
+sidebar_label: Interface Audio
+sidebar_position: 8
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Interface Audio
+
+L'interface audio relie une session à vos entrées et sorties audio. Elle capture l'audio de l'utilisateur et le transmet au SDK, puis lit l'audio renvoyé par l'agent. Le SDK se charge uniquement du transfert de l'audio entre votre interface et Mistral : la transcription, le modèle et la synthèse vocale s'exécutent chez Mistral.
+
+Cette page concerne Python et Node.js. Dans le navigateur, le SDK capture et lit l'audio pour vous. Consultez [Navigateur](/studio/audio/voice-agents/browser#audio-tracks).
+
+<SectionTab as="h2" sectionId="how-audio-flows">Circulation de l'audio</SectionTab>
+
+Vous fournissez une interface avec `audio_interface` (`audioInterface` en TypeScript) lors de la création de la session. Le SDK la pilote ensuite :
+
+1. **Avant la création de la session**, le SDK exécute la vérification préalable de l'interface. Si un périphérique ou une bibliothèque audio manque, une erreur se produit avant que Mistral n'alloue une session.
+2. **Lorsque la session se connecte**, le SDK appelle `start()` pour ouvrir vos périphériques ou vos flux.
+3. **Dès que l'agent rejoint la session**, le SDK lit l'audio de l'utilisateur depuis `input_audio()` et envoie chaque fragment à Mistral. Lorsque le microphone est désactivé avec `set_input_enabled(False)`, le SDK continue la lecture, mais ignore les fragments.
+4. **Chaque fois que l'agent parle**, le SDK transmet son audio à `output_audio()`, fragment par fragment.
+5. **Lorsque la session se ferme**, le SDK appelle `stop()` pour vous permettre de libérer vos ressources.
+
+Audio utilise le même format dans les deux sens :
+
+| Propriété | Valeur |
+| --- | --- |
+| Encodage | PCM signé sur 16 bits, little-endian |
+| Canaux | Mono |
+| Fréquence d'échantillonnage | 48 kHz |
+| Taille des trames | L'interface par défaut capture des trames de 20 ms : 960 échantillons, soit 1 920 octets |
+
+:::warning
+Le SDK ne rééchantillonne ni ne convertit l'audio. Si votre source utilise un autre format, par exemple de l'audio téléphonique à 8 kHz ou de la stéréo, convertissez-le en PCM mono à 48 kHz avant de le fournir.
+:::
+
+<SectionTab as="h2" sectionId="choose-an-integration">Choisir une intégration</SectionTab>
+
+| Vous souhaitez utiliser | Solution |
+| --- | --- |
+| Le microphone et les haut-parleurs de l'ordinateur | L'[interface par défaut](#default-interface). |
+| Audio provenant d'une autre source, comme un WebSocket, une passerelle téléphonique ou un fichier, tout en laissant le SDK gérer les échanges | Une [interface personnalisée](#custom-interface). |
+| L'envoi de l'audio et la réception de l'audio de l'agent sous votre contrôle, par exemple dans un banc de test | La [gestion manuelle de l'audio](#manual-audio), sans interface. |
+
+<SectionTab as="h2" sectionId="default-interface">L'interface par défaut</SectionTab>
+
+`DefaultAudioInterface` enregistre depuis le microphone par défaut du système et lit l'audio sur les haut-parleurs par défaut. En Python, elle utilise [PyAudio](https://pypi.org/project/PyAudio/), qui nécessite PortAudio. En Node.js, elle utilise [SoX](https://sox.sourceforge.net/). Consultez [Installer le SDK](/studio/audio/voice-agents/quickstart#install-the-sdk).
+
+Avant d'envoyer l'audio du microphone, l'interface le nettoie : elle supprime la voix de l'agent captée par le microphone (annulation d'écho), réduit le bruit de fond et uniformise le volume. En sortie, elle met l'audio de l'agent en mémoire tampon et le lit à un rythme régulier. Si l'audio de l'agent arrive plus vite qu'il n'est lu et que le tampon se remplit, l'audio le plus ancien est supprimé.
+
+En Python, ces options permettent de la configurer :
+
+| Paramètre | Valeur par défaut | Description |
+| --- | --- | --- |
+| `echo_cancellation` | `True` | Supprimer la voix de l'agent captée par le microphone. |
+| `noise_suppression` | `True` | Réduire le bruit de fond. |
+| `high_pass_filter` | `True` | Supprimer les bruits de basse fréquence, comme les bourdonnements. |
+| `auto_gain_control` | `True` | Normaliser le volume du microphone. |
+| `output_buffer_size_ms` | `300` | Durée maximale de l'audio en attente de lecture, en millisecondes. |
+| `frames_per_buffer` | 960 (20 ms) | Nombre d'échantillons lus depuis le microphone à chaque lecture. |
+| `echo_cancellation_delay_ms` | Mesuré | Délai fixe entre la lecture et la capture pour l'annulation d'écho. Définissez-le uniquement si le délai mesuré est incorrect sur votre matériel. |
+
+Gardez l'annulation d'écho activée lorsque vous utilisez des haut-parleurs plutôt qu'un casque. Sinon, l'agent risque de s'entendre et de se répondre.
+
+```python
+from mistralai.extra.voice_agents import DefaultAudioInterface
+
+audio_interface = DefaultAudioInterface(
+    noise_suppression=False,  # The input is already clean
+    output_buffer_size_ms=500,
+)
+```
+
+<SectionTab as="h2" sectionId="custom-interface">Implémenter une interface personnalisée</SectionTab>
+
+Pour utiliser une autre source ou destination audio, créez une sous-classe d'`AudioInterface` (implémentez-la en TypeScript) et fournissez une instance avec `audio_interface`. Elle comporte quatre méthodes :
+
+| Méthode | Moment de l'appel | Action à effectuer |
+| --- | --- | --- |
+| `start()` | Lorsque la session se connecte | Ouvrez vos périphériques, sockets ou fichiers. |
+| `input_audio()` | Dès que l'agent rejoint la session, puis pendant toute sa durée | Fournissez l'audio de l'utilisateur sous forme de fragments PCM à mesure qu'ils sont disponibles. La session transmet chaque fragment à l'agent en streaming, comme de l'audio en direct. |
+| `output_audio(audio)` | Pour chaque fragment audio de l'agent | Lisez ou transférez le fragment. La méthode doit retourner rapidement : la session attend son retour avant de traiter l'événement suivant. |
+| `stop()` | Lorsque la session se ferme | Libérez vos ressources. |
+
+<Tabs groupId="code">
+  <TabItem value="python" label="Python" default>
+
+```python
+from collections.abc import AsyncIterator
+
+from mistralai.extra.voice_agents import AudioInterface
+
+class MyAudioInterface(AudioInterface):
+    async def start(self) -> None:
+        """Open devices, sockets, or other audio resources."""
+        ...
+
+    async def input_audio(self) -> AsyncIterator[bytes]:
+        """Yield user audio chunks to send to the agent."""
+        ...
+
+    async def output_audio(self, audio: bytes) -> None:
+        """Play or forward agent audio."""
+        ...
+
+    async def stop(self) -> None:
+        """Release resources."""
+        ...
+
+session = await client.audio.sessions.init(
+    instructions="You are a helpful voice assistant.",
+    audio_interface=MyAudioInterface(),
+)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+import type { AudioInterface } from "@mistralai/mistralai/extra/voiceAgents";
+
+class MyAudioInterface implements AudioInterface {
+  async start(): Promise<void> {
+    // Open devices, sockets, or other audio resources.
+  }
+
+  async *inputAudio(): AsyncIterable<Uint8Array> {
+    // Yield user audio chunks to send to the agent.
+  }
+
+  async outputAudio(audio: Uint8Array): Promise<void> {
+    // Play or forward agent audio.
+  }
+
+  async stop(): Promise<void> {
+    // Release resources.
+  }
+}
+
+const session = await client.audio.sessions.init({
+  instructions: "You are a helpful voice assistant.",
+  audioInterface: new MyAudioInterface(),
+});
+```
+
+  </TabItem>
+</Tabs>
+
+En Python, vous pouvez aussi redéfinir `preflight()`. Le SDK l'appelle avant de créer la session. Si un périphérique manque, l'erreur se produit donc avant l'allocation de la session, et non après. Pour ne modifier qu'une partie du comportement par défaut, créez une sous-classe de l'interface par défaut plutôt que de repartir de zéro.
+
+Si `start()`, `input_audio()` ou `output_audio()` lève une erreur, la session se ferme avec le [motif de déconnexion](/studio/audio/voice-agents/sessions#disconnect-reasons) `start_failed`, `audio_input_error` ou `audio_output_error`, respectivement. Si `stop()` échoue, la session émet un événement `error` non fatal et se ferme malgré tout.
+
+<SectionTab as="h2" sectionId="manual-audio">Gérer l'audio manuellement</SectionTab>
+
+Si vous ne fournissez pas d'interface audio, la session n'enregistre ni ne lit aucun audio. Une fois la session connectée, envoyez de l'audio à l'agent avec `send_audio()` (`sendAudio()` en TypeScript), dans le [même format](#how-audio-flows). Recevez l'audio de l'agent via l'événement `audio`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="Python" default>
+
+```python
+session = await client.audio.sessions.init(
+    instructions="You are a helpful voice assistant.",
+)
+
+async def handle_audio(audio: bytes) -> None:
+    ...  # Play or forward agent audio
+
+session.on("audio", handle_audio)
+
+async with session:
+    await session.send_audio(audio_bytes)  # 16-bit PCM, mono, 48 kHz
+    await session.wait()
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="TypeScript">
+
+```typescript
+const session = await client.audio.sessions.init({
+  instructions: "You are a helpful voice assistant.",
+});
+
+session.on("audio", (audio: Uint8Array) => {
+  // Play or forward agent audio
+});
+
+await session.sendAudio(audioBytes); // 16-bit PCM, mono, 48 kHz
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/sessions" title="Sessions" />
+  <LinkCard href="/studio/audio/voice-agents/browser" title="Navigateur" />
+</UsefullLinkContainer>

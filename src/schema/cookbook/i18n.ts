@@ -24,6 +24,8 @@ export function cookbookUseCaseLabel(useCase: string, l: Lingo): string {
       return l.text('Prefix', { context: 'Topic label for prefix-based generation' });
     case 'Batch':
       return l.text('Batch', { context: 'Topic label for batch API processing' });
+    case 'Audio':
+      return l.text('Audio', { context: 'Topic label for voice and audio processing' });
     default:
       return useCase;
   }

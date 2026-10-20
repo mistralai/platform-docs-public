@@ -1,0 +1,170 @@
+---
+title: "Quickstart: build a voice agent"
+sidebar_label: Build a voice agent
+sidebar_position: 1
+description: "Run a voice conversation with an agent from your terminal in a few steps."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Quickstart: build a voice agent
+
+This quickstart creates a complete voice agent.
+The Voice Agents API handles the whole pipeline. It captures your voice, transcribes it, generates an answer with a model, and speaks that answer.
+
+To make this work, you need a Mistral API key, a microphone, speakers, and Python or Node.js. To run an agent in a web page instead, follow the [Browser guide](/studio/audio/voice-agents/browser).
+
+<SectionTab as="h2" sectionId="install-audio-tools-and-the-sdk">Install audio tools and the SDK</SectionTab>
+
+The Python SDK uses [`PyAudio`](https://pypi.org/project/PyAudio/). As `PyAudio` uses [`PortAudio`](https://portaudio.com/), you'll need to install `PortAudio`. Include the `voice-agents` extra when you install the SDK, which pulls in the audio stack (`PyAudio`, LiveKit, NumPy) so the SDK can use your microphone and speaker.
+
+For JavaScript or TypeScript, you'll need to install `SoX` and `FFmpeg`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```bash
+# macOS
+brew install portaudio
+# Linux
+sudo apt install libportaudio2 libportaudiocpp0 portaudio19-dev libasound-dev libsndfile1-dev -y
+
+pip install "mistralai[voice-agents]"
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```bash
+# macOS
+brew install sox ffmpeg
+# Linux
+sudo apt install sox ffmpeg
+
+npm install @mistralai/mistralai
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="set-your-api-key">Set your API key</SectionTab>
+
+Store your API key in the `MISTRAL_API_KEY` environment variable. To create an API key, see [Activate Studio and generate an API key](/getting-started/quickstarts/studio/activate-and-generate-api-key).
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+<SectionTab as="h2" sectionId="chat-with-your-agent">Chat with your agent</SectionTab>
+
+Now save this code to a file, and run it with Python or Node.js.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+import asyncio
+import os
+
+from mistralai.client import Mistral
+from mistralai.extra.voice_agents import DefaultAudioInterface
+
+MISTRAL_API_KEY = os.environ["MISTRAL_API_KEY"]
+
+async def main():
+    async with Mistral(api_key=MISTRAL_API_KEY) as client:
+        session = await client.audio.sessions.init(
+            audio_interface=DefaultAudioInterface(),
+            instructions="Please respond to me in the most dramatic way possible."
+        )
+
+        def on_transcript(event):
+            print(f"{event.role}: {event.content}")
+
+        session.on("transcript", on_transcript)
+
+        async with session:
+            await session.wait()
+
+asyncio.run(main())
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { Mistral } from "@mistralai/mistralai";
+import { DefaultAudioInterface } from "@mistralai/mistralai/extra/voice-agents/audio/node";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+await using session = await client.audio.sessions.init({
+  audioInterface: new DefaultAudioInterface(),
+  instructions: "Please respond to me in the most dramatic way possible."
+});
+
+session.on("transcript", (event) => {
+  console.log(`${event.role}: ${event.content}`);
+});
+
+await session.wait();
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="you-should-see">You should see</SectionTab>
+Start talking, and you'll see your words appear on the screen. When you pause, the agent will respond. Your words will be prefaced with "user:", and the agents' will start with "assistant:".
+
+Press Ctrl+C to stop.
+
+:::note
+A line like `livekit::rtc_engine::rtc_session: - publisher data channel '_data_track' closed unexpectedly` can appear when the session opens or closes. It's a harmless warning from LiveKit, the real-time layer the SDK builds on, not an error in your session. The browser SDK doesn't show it.
+:::
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+This example only uses two parameters: `"audio_interface"` / `audioInterface` and `"instructions"`. There are many more! For example, to change the agent's voice, use the `"tts"` parameter:
+
+{/* we should link to a list of possible voices. I don't think that exists in the current docs, unfortunately */}
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+  ```python
+  tts={"voice_id": "fr_marie_neutral"}
+  ```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+  ```typescript
+  tts: { voiceId: "fr_marie_neutral" }
+  ```
+
+  </TabItem>
+</Tabs>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/agents" title="Save and version your agent" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Give your agent tools" />
+  <LinkCard href="/studio/audio/voice-agents/browser" title="Run an agent in the browser" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). SDK status: ships live with the October
+   launch — no hide plan (decision Gregory, Sept 24). The 
+   wording in the intro and callout must match the launch status before
+   publishing. SDK SURFACE NOT FROZEN: the SDK team expects updates before release to align the API/SDK with the agents platform DX (Valentin Flageat, Sept 24) — port the samples as late as possible and re-check them against the release version. The SDK access status at launch ( or public) is still open (R174).
+   NOTE: the real SDK diverges from RFC-391 (dedicated package
+   mistralai-voice-agents / @mistralai/voice-agents, MistralVoiceAgent class,
+   no React SDK) — the SDK doc draft (Sept 16) is the authoritative source
+   for examples, RFC-391 is design background only.
+   ACCEPTED DEVIATION (rule 3): this quickstart is 5 blocks — Install the SDK
+   first, then key / run / result / going further. Install-first is deliberate
+   for an SDK quickstart (the package is step zero of a working example); do
+   not force-fit the 4-block recipe.
+   Verify at the end: code samples match the vendor doc verbatim, private
+   install uses PyPI / npm only, key-compliance wording re-verified at launch, LiveKit
+   named as the layer the SDK builds on without exposing its concepts. */}

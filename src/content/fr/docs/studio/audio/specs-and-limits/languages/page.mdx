@@ -1,0 +1,59 @@
+---
+title: Langues
+sidebar_label: Langues
+sidebar_position: 1
+description: "Comment chaque modèle Voxtral 3 gère les langues pour la transcription, la Speech generation et la traduction, et où trouver ses langues prises en charge."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Langues
+
+Cette page montre comment chaque capacité audio gère les langues et quelles langues chaque modèle Voxtral 3 prend en charge. La couverture varie selon le modèle et le mode ; vérifiez donc celle du modèle que vous utilisez.
+
+<SectionTab as="h2" sectionId="how-languages-work">Comment chaque capacité gère les langues</SectionTab>
+
+Chaque capacité définit ou détecte la langue à sa manière :
+
+| Capacité | Comment la langue est définie | Sans langue renseignée | Détails |
+| --- | --- | --- | --- |
+| Transcription de fichiers | `language`, un code ISO 639-1 à deux lettres comme `fr`. Toute autre valeur renvoie une erreur `422`. | Le modèle détecte la langue de l'enregistrement. | [Épingler la langue](/studio/audio/speech-to-text/transcribe-files#pin-the-language) |
+| Transcription en temps réel | `language` dans `session.update`, le même code à deux lettres | Le modèle détecte la langue de l'audio. | [Champs de session](/studio/audio/speech-to-text/transcribe-in-realtime#session-fields) |
+| Génération de parole | Écrivez `input` dans la langue à parler. Chaque voix prédéfinie a sa propre langue et son propre accent. | Non applicable | [Voix](/studio/audio/text-to-speech/voices) et [Utiliser une voix clonée dans d'autres langues](/studio/audio/text-to-speech/voice-cloning#use-across-languages) |
+| Traduction | Le prompt d'une requête audio dans le chat, comme « Traduire cet appel en français » | Non applicable | [Audio dans les chat completions](/studio/audio/audio-in-chat) |
+
+{/* Sources: language field pattern ^\w{2}$ (public/openapi.yaml) and 422 "Invalid language alpha2 code" (Oct 7, offline and realtime); auto-detection offline (API reference field description, transcribe-files) and realtime (Oct 9 probe: French clip without language came back in French, identical to language=fr). Speech generation: the voice carries the accent, cross-lingual cloning tested Oct 7 (xling_clone_es/fr); voice languages on Voices. Translation: demo 02 (audio in chat, text output). */}
+
+<SectionTab as="h2" sectionId="languages-by-model">Langues prises en charge par modèle</SectionTab>
+
+Chaque modèle a sa propre liste de langues prises en charge :
+
+| Modèle | Capacité | Langues prises en charge |
+| --- | --- | --- |
+| `voxtral-mini-transcribe-3-0` | Transcription de fichiers | 50 langues |
+| `voxtral-small-transcribe-3-0` | Transcription de fichiers | 50 langues |
+| `voxtral-mini-transcribe-realtime-3-0` | Transcription en temps réel | 45 langues et dialectes |
+| `voxtral-mini-tts-3-0` | Speech generation | 35 langues, plus de 50 dialectes |
+
+<SectionTab as="h2" sectionId="translation">Traduction</SectionTab>
+
+La traduction est une tâche de [l'audio dans les chat completions](/studio/audio/audio-in-chat) : le modèle écoute l'audio et écrit la traduction sous forme de texte.
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="Transcription de fichiers" />
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Voix" />
+  <LinkCard href="/studio/audio/audio-in-chat" title="Audio dans les chat completions" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): language counts NOT settled (audio-sources-doc610.md, Rakesh Sept 28 "I need to confirm this", R159):
+   STT 58 (launch page) vs 50 "batch or live" (all-hands) vs 13 L1 + about 45 (RFC-555); realtime L1 only (RFC-555 2.2) vs 50
+   (all-hands); TTS 35 + ~50 dialects (PRD, launch page) vs 36 + 53 (all-hands). Hence no number and one Draft per model
+   (brief, Oct 9). Premier removed (Gregory, Oct 9). */}
+
+{/* Reference page (layer 5) — audio docs revamp (DOC-610). Moved Sept 24 from /studio/audio/speech-to-text/languages and
+   widened: TTS language and dialect coverage and translation pairs had no reference home. The "Specify a language" how-to
+   lives on File transcription and Realtime transcription. Verify at the end: one list per model, lookup order, caveats per
+   row, counts identical to the hub and the overviews, no code. */}

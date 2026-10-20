@@ -44,6 +44,12 @@ export interface DocsMetadata {
    * - Search engines will be instructed NOT to index (noindex meta tag)
    */
   hidden?: boolean;
+  /**
+   * People to interrogate for this page's content — name with role hint,
+   * e.g. "Rakesh (API spec, model cards)". Informational: not rendered,
+   * used by writers and reviewers to know who owns the answers.
+   */
+  stakeholders?: string[];
 }
 
 export interface DocsCategoryMetadata {

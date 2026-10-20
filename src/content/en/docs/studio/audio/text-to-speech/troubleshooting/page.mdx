@@ -1,0 +1,128 @@
+---
+title: Text to Speech troubleshooting
+sidebar_label: Troubleshooting
+sidebar_position: 7
+description: "The errors that speech requests return, the usual causes of speech that sounds wrong, flat, cut short, or slow to start, and the setting that fixes each one."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Text to Speech troubleshooting
+
+This page lists the errors that speech requests return, then the usual causes of speech that sounds wrong, flat, cut short, or slow to start. Each fix links to the page that covers the setting to change.
+
+:::tip
+Many problems with generated speech have a setting that fixes them, such as phonemes for a name or a tag for an emotion. Check the symptom tables before you change voices or contact support.
+:::
+
+<SectionTab as="h2" sectionId="errors">Errors</SectionTab>
+
+A speech request that fails returns an HTTP error with a JSON body, for example:
+
+```json
+{
+  "object": "error",
+  "message": "Voice '01a0f6db-3084-701a-b61c-b6b755947e7f' not found.",
+  "type": "invalid_voice",
+  "param": null,
+  "code": "1902",
+  "raw_status_code": 404
+}
+```
+
+A `422` validation error carries its explanation in `message.detail`, a list where each item has a `msg` field.
+
+{/* TESTED Oct 9 (probes run by another agent, examples/tts/out/probes_oct9/): the block is copied from p2_uuid_01a0f6db-3084-701a-b61c-b6b755947e7f.json (speech request with an ID that matches no voice, voxtral-mini-tts-3-0). 422 shape: p3/expr_*.json and p3/cfg_0.9.json ({"object": "error", "message": {"detail": [{"type", "loc", "msg", "input"}]}, "type": "invalid_request_error", "code": null, "raw_status_code": 422}). No new run by the troubleshooting agent (expired key). */}
+
+<SectionTab as="h3" variant="secondary" sectionId="request-errors">Speech request errors</SectionTab>
+
+These errors come from a field of the speech request. Fix the field and send the request again:
+
+| Error | Cause | Fix |
+| --- | --- | --- |
+| 404 `Voice 'x' not found.` | The `voice_id` doesn't match a preset voice or a voice saved in your workspace. | List the voices and copy the exact slug or ID. See [Use a voice ID](/studio/audio/text-to-speech/voices#use-a-voice-id). |
+| 400 `Either ref_audio or voice must be provided.` | The request has no voice. | Add `voice_id`. See [Request fields](/studio/audio/text-to-speech/generate-speech#request-fields). |
+| 422 `Extra inputs are not permitted` | A misspelled or unknown field name, such as `instructions` instead of `instruction`. | Check the field name. See [Request fields](/studio/audio/text-to-speech/generate-speech#request-fields). |
+|  | The value is out of range. | Use a value from `1.0` to `5.0`. See [Expressiveness](/studio/audio/text-to-speech/generate-speech#expressiveness). |
+| 422, the message lists the accepted phonemes | A phoneme in `phoneme_hints` isn't in the accepted list. | Replace it with a phoneme from the list. See [Accepted phonemes](/studio/audio/text-to-speech/custom-pronunciation#phonemes). |
+| 422 with type `string_type` | `instruction` isn't a string. | Send the instruction as text. See [Style instructions](/studio/audio/text-to-speech/style-instructions#limits-and-errors). |
+| Style instructions are not available at launch. | The instruction is over the length limit. It isn't shortened for you. | Shorten the instruction. See [Style instructions](/studio/audio/text-to-speech/style-instructions#limits-and-errors). |
+| Style instructions are not available at launch. | The model doesn't support style instructions. | Use a model that supports them. See [Style instructions](/studio/audio/text-to-speech/style-instructions#limits-and-errors). |
+| 400 `Failed to load audio file. Verify that the given file is valid mp3 or wav.` | The `ref_audio` recording is a URL, or not an MP3 or WAV file. | Send the recording itself, base64-encoded, as MP3 or WAV. See [Prepare a reference clip](/studio/audio/text-to-speech/voice-cloning#prepare-a-reference-clip). |
+
+{/* TESTED, messages copied from the captures: unknown voice handoff-tts.md item 7 (Oct 7) and probes_oct9/p2_uuid_*.json (Oct 9: 404, type invalid_voice, code 1902; short form 'x' as on Speech generation); no voice handoff-tts.md item 6 (400); extra field probes/p3_features.py "instruction field name" (instructions -> 422 extra_forbidden, as on Style instructions); expressiveness see the ; phoneme probes/p3_features.py phon_bad_symbol ("r" -> 422 enum, message lists the 50 values; wording as on Custom pronunciation); string_type and instruction rows as on Style instructions; ref_audio URL handoff-tts.md item 5 (400 code 3291). Not published on purpose: voice and voice_id together return 500 "Service unavailable." (bug reported to Rakesh in handoff-tts.md item 6); GET /v2/audio/voices with limit above 100 returns 422 "Input should be less than or equal to 100" (probes_oct9/p2_voices_list.json): the SDK pages the list for you, so no row. */}
+
+<SectionTab as="h2" sectionId="pronunciation">Mispronounced words</SectionTab>
+
+When the voice says a word wrong, the fix is in the request, not in the voice:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| A name, a brand, or an acronym is mispronounced | The voice guesses the reading from the spelling. | Give the word its phonemes in `phoneme_hints`. See [Define a pronunciation](/studio/audio/text-to-speech/custom-pronunciation#define-a-pronunciation) and [Custom vocabulary](/studio/audio/concepts/custom-vocabulary#custom-pronunciation). |
+
+<SectionTab as="h2" sectionId="delivery">Emotion and delivery</SectionTab>
+
+When the words are right but the delivery isn't, find the symptom in this table:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| The speech sounds flat, or the emotion doesn't come through |  | Add an emotion tag before the text, then raise `expressiveness` if the emotion is still faint. See [Tag an emotion](/studio/audio/text-to-speech/emotion-tags#tag-an-emotion) and [Expressiveness](/studio/audio/text-to-speech/generate-speech#expressiveness). |
+| The speech sounds forced or exaggerated |  | Lower `expressiveness`. See [Expressiveness](/studio/audio/text-to-speech/generate-speech#expressiveness). |
+| A tag has no audible effect | The tag value isn't in the supported list. The API doesn't reject it, and the tag isn't spoken. | Use a listed value. See [Supported emotions](/studio/audio/text-to-speech/emotion-tags#supported-emotions), [Pace tags](/studio/audio/text-to-speech/emotion-tags#pace-tags), and [Unsupported values](/studio/audio/text-to-speech/emotion-tags#unsupported-values). |
+| The audio stops after the first part of a sentence that has an emotion tag | A tag before a long sentence can end the audio early, at a comma. | Keep tagged sentences short, or split a long sentence in two. See [Tag an emotion](/studio/audio/text-to-speech/emotion-tags#tag-an-emotion). |
+
+{/* Flat delivery and forced delivery: Speech generation, Expressiveness (effect description ed there, start with the default, raise or lower), Emotion and pace tags (Voxtral 3 sets the emotion inline, concepts/voices emotion-voxtral-2-and-3). Unsupported values: Emotion and pace tags, Unsupported values ([emotion=ecstatic] and [pace=turbo] return 200, tag not spoken, Oct 7). Pace on Voxtral 2 presets (Oct 7: duration barely changes on gb_jane_neutral; Oct 9 probes_oct9/p4: inconsistent on both a preset and a custom voice) is left out: no clear symptom to publish. Style instructions are not offered as a fix while instruction returns 400 3051. */}
+
+<SectionTab as="h2" sectionId="slow-first-audio">Slow first audio</SectionTab>
+
+When the speech is right but the listener waits too long before hearing it, the fix depends on what they wait for:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| The listener waits for the whole audio before anything plays | A speech request returns the audio once all of it is generated. | Stream the response, and play each chunk as it arrives. The total time stays the same. See [Stream a request](/studio/audio/text-to-speech/stream-speech#stream-a-request). |
+| Nothing plays until the stream ends, even with streaming on | Your client reads the full response before handing it on. | Read the events as they arrive, and pass each chunk to the player at once. See [Common issues](/studio/audio/text-to-speech/stream-speech#common-issues). |
+| The time to first audio varies from one request to the next |  | Measure it over many requests, from where your application runs. See [Time to first audio](/studio/audio/text-to-speech/stream-speech#first-audio) and [Latency](/studio/audio/concepts/latency#speech-generation). |
+
+<SectionTab as="h2" sectionId="cloned-voices">Cloned voices</SectionTab>
+
+A cloned voice depends on its reference clip. When a clone doesn't sound the way you expect, check the clip first:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| The cloned voice carries background noise, or the mood of the recording | A clone copies more than the voice: the recording conditions and the delivery come with it. | Record a clean clip of one speaker, in the style you want to hear. See [Prepare a reference clip](/studio/audio/text-to-speech/voice-cloning#prepare-a-reference-clip). |
+| The cloned voice sounds different from one request to the next | Each request clones from the clip it receives, so a different clip gives a different voice. | Save the voice once, and pass its ID in every request. See [Save a cloned voice](/studio/audio/text-to-speech/voice-cloning#save-a-cloned-voice). |
+
+{/* Cloned voices: Voice cloning (Prepare a reference clip, Clone a voice for one request, Save a cloned voice), concepts/voices kinds-of-voices (clone carries the clip's conditions, ed). Cross-language accent left out: Voice cloning keeps it in a  pending Gregory's listening check. */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/generate-speech" title="Speech generation" />
+  <LinkCard href="/studio/audio/text-to-speech/emotion-tags" title="Emotion and pace tags" />
+  <LinkCard href="/studio/audio/text-to-speech/custom-pronunciation" title="Custom pronunciation" />
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Style instructions" />
+  <LinkCard href="/studio/audio/text-to-speech/voice-cloning" title="Voice cloning" />
+  <LinkCard href="/studio/audio/text-to-speech/stream-speech" title="Stream speech" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Errors: handoff-tts.md surprises 5, 6, 7, 13 (Oct 7), probes/p3_features.py (Oct 7), and the Oct 9 captures in
+     examples/tts/out/probes_oct9/ (run by another agent at 15:54: unknown voice 404, instruction 400 3051, cfg 422,
+     expressiveness 422 extra_forbidden). Messages aligned with Speech generation (Common issues), Style instructions
+     (Limits and errors), Custom pronunciation (Limits and errors), and Voice cloning (Prepare a reference clip) as of
+     Oct 9.
+   - Pronunciation: Custom pronunciation, concepts/custom-vocabulary.
+   - Emotion and delivery: Emotion and pace tags, Speech generation Expressiveness, handoff-tts.md surprise 3 (cut after
+     a tag).
+   - Slow first audio: Stream speech (Stream a request, Common issues, Time to first audio), concepts/latency (speech
+     generation section, ttfa observation).
+   - Cloned voices: Voice cloning, concepts/voices.
+   - Oct 9 drift to flag (not on the page): GET /v2/audio/voices lists 33 voices (30 Voxtral 2 presets, 3 custom), none of
+     the 9 Voxtral 3 voices; speech with voice_478 returns 404 "Voice 'voice_478' not found." (probes_oct9/p2). */}
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton, mirroring Speech to Text
+   troubleshooting. Every row is symptom -> cause -> fix, with the fix linked to the page that owns the setting (no
+   option documented here). Verify at the end: every message matches the owning page, expressiveness error re-captured
+   under the new name, Draft rows resolved or removed (input length, clip limits, conversation history, realtime
+   speech, connection drops), cut-after-tag row checked on the launch checkpoint. */}

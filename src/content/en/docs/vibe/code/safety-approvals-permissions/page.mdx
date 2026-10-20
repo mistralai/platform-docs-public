@@ -15,7 +15,7 @@ Vibe Code can read files, edit code, run shell commands, and call external tools
 - **Trusted folders** define whether Vibe can load project-level configuration, skills, and agent files from the current directory.
 - **Per-tool permissions** let you tighten or loosen access for specific tools.
 
-Vibe also asks for confirmation whenever a tool tries to read, write, or run a command **outside the current working directory**, regardless of the active agent.
+Vibe also asks for confirmation whenever a tool tries to read, write, or run a command **outside the working directory** and the directories added with `--add-dir`, unless every tool call is auto-approved (`auto-approve` agent or `--auto-approve`). It also asks before a tool reads or edits `.env` and `.envrc` files, even when the tool's permission is `always`. A path listed in the tool's [`allowlist`](/vibe/code/cli/configuration-reference#tool-permissions) skips both checks.
 
 This page explains how those controls work and how they interact.
 
@@ -27,14 +27,13 @@ Use one of the built-in agents below. To switch, set a default, or create your o
 
 | Agent | Approval behavior | Use for |
 |---|---|---|
-| `default` | Asks before running any tool. | Day-to-day work where you want to vet each action. |
-| `plan` | Read-only. Auto-approves safe read tools, blocks edits and commands. | Exploring an unfamiliar codebase or designing an approach before any change. |
-| `accept-edits` | Auto-approves file edits. Still asks for shell commands and other sensitive tools. | Larger refactors you have already scoped. |
+| `ask` | Asks before running any tool. | Exploring an unfamiliar codebase, or any work where you want to vet each action. |
+| `accept-edits` | **Default.** Auto-approves file edits. Still asks for shell commands and other sensitive tools. | Day-to-day work and refactors you have already scoped. |
 | `smart-approve` | Classifies each tool call. Runs the calls it judges safe and asks you before risky ones. See [Smart approve](/vibe/code/safety-approvals-permissions#smart-approve). | Day-to-day work with fewer approval prompts. |
-| `auto-approve` | Auto-approves every tool execution, including shell commands. | Trusted, sandboxed environments only. **Use with care**. |
+| `auto-approve` | Auto-approves every tool execution, including shell commands. Your administrator can [disable it](/vibe/code/cli/admin-config#block-auto-approve). | Trusted, sandboxed environments only. **Use with care**. |
 
 :::warning
-`default_agent` only applies in interactive sessions. In **programmatic mode** (`vibe --prompt …`), Vibe falls back to `auto-approve` when `--agent` is not provided, and interactive tools such as `ask_user_question` are disabled. Pass `--agent plan` explicitly if you want a read-only programmatic run.
+In **programmatic mode** (`vibe --prompt …`), Vibe uses your `default_agent` like in interactive sessions, and disables interactive tools such as `ask_user_question`. Nobody can answer an approval prompt, so Vibe denies every tool call that needs approval. Pass `--auto-approve` (or `--yolo`) to approve every tool call, only in a sandboxed environment. Vibe ignores these flags when your administrator sets `enable_auto_approve = false`.
 :::
 
 <SectionTab as="h3" variant="secondary" sectionId="smart-approve">Smart approve</SectionTab>
@@ -49,6 +48,8 @@ vibe --agent smart-approve
 vibe --smart-approve
 ```
 
+Smart approve is rolling out gradually. If it doesn't appear when you press `Shift+Tab`, start Vibe with one of the commands above or set `default_agent = "smart-approve"`.
+
 For each tool call that needs approval, Vibe goes through these steps in order:
 
 1. **Applies your permission rules first.** Allowlisted commands run without a check, and denylisted commands stay blocked. See [Per-tool permissions](/vibe/code/safety-approvals-permissions#tool-permissions).
@@ -59,10 +60,8 @@ For each tool call that needs approval, Vibe goes through these steps in order:
 A call flagged as risky never runs without your confirmation. In programmatic mode, no one can confirm, so Vibe denies risky calls.
 
 :::warning
-Smart approve is a classifier, not a sandbox. A call that it judges safe runs with the same access as your user account. Smart approve reduces prompts, but it doesn't limit what the agent can do. If you work with untrusted code or sensitive credentials, use the `default` agent or an isolated environment.
+Smart approve is a classifier, not a sandbox. A call that it judges safe runs with the same access as your user account. Smart approve reduces prompts, but it doesn't limit what the agent can do. If you work with untrusted code or sensitive credentials, use the `ask` agent or an isolated environment.
 :::
-
-To start every interactive session with smart approve, set `default_agent = "smart-approve"` in `config.toml`.
 
 <SectionTab as="h3" variant="secondary" sectionId="smart-approve-model">Choose the smart approve model</SectionTab>
 
@@ -94,14 +93,14 @@ A project can ship its own Vibe configuration (like agents, skills, MCP servers,
 
 Trustable content includes any of the following in the directory or its ancestors:
 
-- A `.vibe/` directory (configuration, agents, skills, prompts, hooks, and tools)
-- An `.agents/` directory (Agent Skills standard skills)
+- A `.vibe/` directory with a `config.toml` file or an `agents/`, `skills/`, `prompts/`, `plugins/`, or `tools/` subdirectory
+- An `.agents/skills/` directory (Agent Skills standard skills)
 - An `AGENTS.md` file (project-level agent instructions)
 
 How it works:
 
-- When you start an interactive session in a directory that contains trustable content and trust state is unknown, Vibe asks whether to trust the directory.
-- The trust dialog lists the trustable files it detected and flags any risks (such as MCP servers or tool permissions that grant broad access). It proposes the git repository root as the trust target when the directory is inside a git repo
+- When you start an interactive session in a directory that contains trustable content and that you haven't trusted, Vibe asks whether to trust it. If you choose **Don't trust**, Vibe asks again next time.
+- The trust dialog lists the trustable files it detected. Choose **Trust folder**, **Trust full repo** (offered when you start Vibe in a subdirectory of a git repository), or **Don't trust**. The dialog doesn't analyze these files, so review them yourself.
 - Trusted directories are remembered in `~/.vibe/trusted_folders.toml`.
 - If you decline or have not yet trusted a directory, project-level configuration is ignored and Vibe prints a warning. User-level configuration in `~/.vibe/` still applies.
 
@@ -117,20 +116,26 @@ The `vibe --trust` flag trusts the working directory for the current invocation 
 
 ```bash
 # Trust the current project for one run, then exit
-vibe --trust --prompt "Run the test suite and summarize failures"
+vibe --trust --prompt "Summarize the project structure"
 ```
+
+`--worktree` also trusts its worktree for the run. Vibe loads project configuration from directories added with `--add-dir` without asking for trust, so only add directories you trust.
 
 <SectionTab as="h2" sectionId="tool-permissions">Per-tool permissions</SectionTab>
 
-Beyond agent modes, you can lock down or open up individual tools in `config.toml`. This applies to built-in tools (`read_file`, `write_file`, `bash`, `grep`, etc.) as well as MCP tools and connector tools.
+Beyond agent modes, you can lock down or open up individual tools in `config.toml`. This applies to built-in tools (`read_file`, `write_file`, `edit`, `bash`, etc.) as well as MCP tools and connector tools.
+
+:::note
+Some built-in tools were renamed: `read` is now `read_file`, and `search_replace` is now `edit`. Vibe migrates the old names in your configuration files automatically.
+:::
 
 <SectionTab as="h3" variant="secondary" sectionId="enable-disable-tools">Enable or disable tools</SectionTab>
 
 Toggle tools globally using exact names, globs, or regex patterns:
 
 ```toml
-# Only allow read-only and search tools
-enabled_tools = ["read_file", "grep", "task"]
+# Only allow reading files and loading skills
+enabled_tools = ["read_file", "skill"]
 
 # Or disable a specific class of tools
 disabled_tools = ["bash"]
@@ -138,7 +143,7 @@ disabled_tools = ["bash"]
 
 <SectionTab as="h3" variant="secondary" sectionId="set-permissions">Set per-tool permissions</SectionTab>
 
-Set when Vibe should ask before using a tool, or always allow it:
+Set when Vibe should ask before using a tool, always allow it, or never allow it:
 
 ```toml
 [tools.read_file]
@@ -146,17 +151,20 @@ permission = "always"
 
 [tools.bash]
 permission = "ask"
+
+[tools.write_file]
+permission = "never"
 ```
 
 <SectionTab as="h3" variant="secondary" sectionId="bash-allow-deny">Bash allow and deny lists</SectionTab>
 
-For the `bash` tool, you can also allow or block **specific commands**. Some safe commands (`ls`, `pwd`, `cat`, `echo`, etc.) are auto-allowed by default; add your own to extend the list:
+For the `bash` tool, you can also allow or block **specific commands** by prefix. Some read-only commands (`ls`, `pwd`, `cat`, `git status`, etc.) are auto-allowed by default. Set `allowlist` and `denylist` to choose the commands Vibe always runs or always blocks. Each setting replaces its default list, so include the defaults you want to keep:
 
 ```toml
 [tools.bash]
 permission = "ask"
-allow = ["git status", "pnpm test"]
-deny = ["rm -rf *"]
+allowlist = ["git status", "pnpm test"]
+denylist = ["rm -rf"]
 ```
 
 <SectionTab as="h3" variant="secondary" sectionId="mcp-and-connector-tools">MCP and connector tools</SectionTab>
@@ -177,17 +185,18 @@ The approval model is consistent across the CLI, the VS Code extension, and Vibe
 <ExplorerTabs>
 <ExplorerTab value="cli" label="CLI" default>
 
-Approval prompts appear inline in the chat. Use the keyboard:
+Approval prompts appear at the bottom of the terminal. Use the keyboard, or click an option:
 
 | Key | Action |
 |---|---|
-| `Enter` or `1` or `Y` | Approve the action. |
-| `2`, `3`, `4` | Approve with broader scope when offered (for example, always allow this tool). |
-| `N` | Reject the action. |
+| `1` or `y` | Allow the action once. |
+| `2` | Allow it for the rest of the session. |
+| `3` | Always allow it. |
+| `4`, `n`, or `Escape` | Deny the action. |
 | `Up` / `Down` | Move between approval options. |
-| `Escape` | Interrupt the agent. |
+| `Enter` | Choose the highlighted option. |
 
-The active agent and approval style are shown in the status line. Switch mid-session with `/config` or restart with `vibe --agent <name>`.
+The input border color shows the active agent. Switch mid-session with `Shift+Tab` or restart with `vibe --agent <name>`.
 
 </ExplorerTab>
 <ExplorerTab value="vscode" label="VS Code extension">
@@ -218,7 +227,7 @@ Vibe Code Web runs sessions in a managed sandbox tied to a GitHub repository. Ap
 
 <SectionTab as="h2" sectionId="best-practices">Best practices</SectionTab>
 
-- **Start in `plan` for unfamiliar code.** Explore and design before granting edit or shell access.
+- **Start in `ask` or a [plan agent](/vibe/code/cli/agents#plan-agent) for unfamiliar code.** Review each action, or agree on a plan, before granting broader edit or shell access.
 - **Commit before risky runs.** A clean baseline gives you an instant rollback (`git reset --hard`) when something goes wrong.
 - **Use `accept-edits` for scoped refactors** and review the diff before committing.
 - **Use `smart-approve` to reduce approval prompts** in day-to-day work. It still asks before risky actions, but it isn't a sandbox.

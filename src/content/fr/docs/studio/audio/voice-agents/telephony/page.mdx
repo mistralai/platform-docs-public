@@ -1,0 +1,120 @@
+---
+title: Téléphonie (SIP)
+sidebar_label: Téléphonie
+sidebar_position: 5.5
+description: "Répondez aux appels téléphoniques avec votre agent audio via SIP. Disponible pour les clients entreprises."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { LinkedDiagram } from '@/components/common/linked-diagram';
+import { DiagramFrame } from '@/components/common/diagram-frame';
+
+# Téléphonie (SIP)
+
+La téléphonie permet à votre agent audio de répondre aux appels téléphoniques : l'agent enregistré associé à votre numéro décroche, avec son propre modèle, sa voix, ses instructions et ses outils. Vous fournissez le numéro et le système qui transporte vos appels, et Mistral achemine chaque appel vers votre agent.
+
+:::note
+La téléphonie est disponible pour les clients entreprises, mais pas en libre-service. Pour l'activer, contactez votre équipe de compte ou [écrivez-nous](https://mistral.ai/contact).
+:::
+
+<SectionTab as="h2" sectionId="how-calls-reach-your-agent">Comment les appels entrants parviennent à votre agent</SectionTab>
+
+Chaque appel suit le même chemin, de l'appelant à votre agent :
+
+1. Un appelant compose votre numéro de téléphone.
+2. Votre système SIP, par exemple votre opérateur, un IP PBX ou une plateforme de centre de contacts, achemine l'appel vers votre endpoint SIP Mistral.
+3. Mistral démarre une session à partir de l'agent enregistré associé à ce numéro, et l'agent répond à l'appelant.
+
+<DiagramFrame label="An inbound call">
+
+À lire de gauche à droite : l'appel va du téléphone de l'appelant à votre agent enregistré.
+
+<LinkedDiagram
+  src="/img/audio_telephony_inbound_flow.svg"
+  alt="An inbound phone call: the caller dials your number, your SIP system forwards the call, the Mistral SIP endpoint finds the agent bound to that number, and your saved agent answers."
+  viewBox={[1140, 130]}
+  links={[
+    { href: '/studio/audio/voice-agents/agents', label: 'Create and manage agents', x: 890, y: 20, width: 240, height: 90 },
+  ]}
+/>
+
+</DiagramFrame>
+
+:::info
+Avant de demander l'accès, créez l'agent qui répond à vos appels et enregistrez-le. Voir [Créer et gérer des agents](/studio/audio/voice-agents/agents). Vous configurez le numéro et votre système SIP avec l'équipe Mistral : aucune étape de configuration n'est nécessaire de votre côté, dans la console ou via l'API.
+:::
+
+<SectionTab as="h2" sectionId="design-for-the-phone">Concevoir votre agent pour le téléphone</SectionTab>
+
+Lors d'un appel téléphonique, le téléphone de l'appelant remplace le micro et le haut-parleur, et votre code ne s'exécute pas pendant l'appel. Tenez compte de ces différences lorsque vous rédigez l'agent :
+
+| Lors d'un appel téléphonique | Ce qu'il faut faire |
+| --- | --- |
+| Les outils côté client échouent, car il n'y a aucune application pour exécuter leurs handlers | Donnez à l'agent des [outils côté serveur](/studio/audio/voice-agents/tools#server-side-tools) pour tout ce dont il a besoin pendant un appel, par exemple une bibliothèque de documents ou un connecteur vers vos systèmes. |
+| L'agent ne peut pas transférer l'appel à une personne | Indiquez à l'agent, dans ses instructions, quoi répondre lorsqu'une demande sort de son périmètre, par exemple qu'un collègue rappellera, et gérez le suivi dans vos propres systèmes. |
+| Il n'y a pas d'écran : l'appelant n'entend que l'agent | Gardez des réponses courtes et associez des [fillers](/studio/audio/voice-agents/tools#fillers) aux outils lents pour éviter un silence sur la ligne. |
+
+:::tip
+Testez l'agent dans une session navigateur ou SDK avant de le mettre sur une ligne téléphonique, et retirez-en d'abord tout outil côté client. Un outil qui fonctionne dans votre application de test échoue pour les appelants.
+:::
+
+<SectionTab as="h2" sectionId="what-you-can-build">Ce que vous pouvez construire</SectionTab>
+
+La téléphonie convient aux lignes téléphoniques où les questions se répètent et où les réponses se trouvent dans vos systèmes :
+
+- **Assistance de premier niveau** : répondre aux questions courantes, vérifier une commande et ouvrir un ticket. Voir [Agents audio du service client](/studio/audio/use-cases/customer-support-voice-agents).
+- **Prise de rendez-vous** : prendre, déplacer ou annuler un rendez-vous via un connecteur vers votre système de planification.
+- **Permanence hors heures ouvrées** : répondre aux appels que votre équipe ne peut pas prendre et laisser un résumé pour le lendemain matin.
+
+<SectionTab as="h2" sectionId="security">Sécurité</SectionTab>
+
+Les appels entre votre système SIP et Mistral sont protégés aux niveaux suivants :
+
+- **Transport** : 
+- **Authentification** : 
+- **Réseau** : 
+
+<SectionTab as="h2" sectionId="limitations">Limites actuelles</SectionTab>
+
+Planifiez votre service téléphonique en tenant compte de ces limites :
+
+- **Appels entrants uniquement.** L'agent répond aux appels, mais ne peut pas en émettre.
+- 
+- 
+- **Pas d'outils côté client.** Seuls les outils côté serveur s'exécutent pendant un appel.
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/use-cases/customer-support-voice-agents" title="Le service client avec des agents audio" />
+  <LinkCard href="/studio/audio/voice-agents/agents" title="Créer et gérer des agents" />
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Outils" />
+  <LinkCard href="/studio/audio/voice-agents/webhooks" title="Webhooks" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Enterprise-only, private at launch, announced publicly; phone numbers enterprise-only, no public API reference;
+     outbound out of scope: SDK team, Slack Sept 24 (audio-sources-doc610.md "Telephony" RESOLVED; review requests
+     table row 4). Launch date: Linear project Backlog, due Oct 31 (audio-sources), hence the Draft.
+   - Flow (number -> SIP system -> Mistral SIP endpoint -> saved agent bound to the number): Telephony V0 RFC as
+     summarized in the skeleton. Carrier brand names from the skeleton (Twilio, Telnyx) left out of the visible text:
+     confirm with the SDK team whether we name compatible carriers.
+   - Client tools fail on phone calls: SDK docs Oct 8 copy (voice-agents-sdk-notes, "Outils") and the Tools page
+     ("Client tools only work where your code runs"). Same wording as the Audio agents overview.
+   - Escalation advice: demo 05 instructions ("say a human colleague will call back"); no call control (V0 RFC,
+     ). Fillers: Tools page.
+   - Security items: Telephony V0 RFC via the skeleton, .
+   - Use cases: the skeleton list (tier-1 support, appointment booking, after-hours coverage). Booking and after-hours
+     lines describe what a server-side connector would do; no specific connector is claimed.
+   - Contact link: https://mistral.ai/contact, as used on the Labs and Local deployment pages.
+   - Nothing about pricing, numbers, or SIP configuration details (brief, Oct 9). */}
+
+{/* Feature page — audio docs revamp (DOC-610). Reworked Sept 24 after the SDK team's answers:
+   telephony is a private, enterprise-only feature at launch but is announced publicly
+   (Valentin Flageat); phone numbers stay enterprise-only and get no public API reference
+   (Jean Perbet); the internal SDK site may keep the telephony setup details. This page
+   therefore explains the capability and how to get access — no PhoneNumber API, no SIP
+   configuration steps. Outbound is out of scope (Telephony V0 RFC). Written Oct 9.
+   Verify at the end: no self-serve instructions, enterprise access path stated, limitations
+   explicit, launch date and security wording confirmed, call control re-checked. */}

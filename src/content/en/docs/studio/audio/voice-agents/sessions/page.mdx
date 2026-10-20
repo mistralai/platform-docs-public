@@ -1,0 +1,186 @@
+---
+title: "Manage agent sessions"
+sidebar_label: "Manage agent sessions"
+sidebar_position: 4
+description: "Session lifecycle, the event model, and error handling for production voice agents."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Manage agent sessions
+
+A session is one conversation with an agent. `init()` returns a `VoiceAgentSession`: you subscribe to its events, mute or unmute the microphone, wait for it to end, and close it. This page is for developers taking an agent past the first demo. It assumes you have an agent running, see the [quickstart](/studio/audio/voice-agents/quickstarts/build-a-voice-agent). The session works the same way in Python, in Node.js, and in the browser, where `initSession()` returns it.
+
+{/* API REFERENCE: a REST API reference page is coming for this entity (Jean Perbet, Sept 24) — add a CtaButton here once it is published. */}
+
+<SectionTab as="h2" sectionId="lifecycle">Lifecycle</SectionTab>
+
+A session connects, exchanges audio and events while the conversation runs, then ends. Mute the microphone with `set_input_enabled(False)`, wait for the end with `wait()`, and always call `close()` when you're done.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+await session.set_input_enabled(False)  # mute
+await session.set_input_enabled(True)   # unmute
+
+await session.wait()   # blocks until disconnected
+await session.close()  # close the session, should always be called
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+await session.setInputEnabled(false); // mute
+await session.setInputEnabled(true);  // unmute
+
+await session.wait();  // resolves when disconnected
+await session.close(); // close the session, should always be called
+```
+
+  </TabItem>
+</Tabs>
+
+`init()` creates the session with `POST /v1/audio/sessions`, and `close()` removes it with `DELETE /v1/audio/sessions/{id}`. To call these endpoints yourself, use `client.audio.sessions.create(...)` and `client.audio.sessions.close(session_id)`.
+
+<SectionTab as="h2" sectionId="events">Events</SectionTab>
+
+Register a handler with `session.on(event, handler)`.
+
+| Event | Payload | Your app should |
+| --- | --- | --- |
+| `connected` | `session_id` | Mark the session as ready. |
+| `disconnected` | `session_id`, `reason` | Stop audio and clean up. |
+| `transcript` | `id`, `role`, `content`, `final` | Show partial transcripts live (`final` is false), and keep the final ones. |
+| `audio` | bytes | Play the agent's audio yourself, if you handle audio manually. See [Custom audio](/studio/audio/voice-agents/custom-audio). |
+| `audio_track` | `track`, `source` | In the browser, attach the media track. |
+| `agent_state_changed` | `state` (`listening`, `thinking`, `speaking`, and more) | Update the interface. |
+| `tool_call_started` | `id`, `name` | Show that the agent is working. The arguments aren't known yet. |
+| `tool_call_ended` | `id`, `name`, `arguments`, `result` | Show the result. |
+| `unhandled_tool` | `name`, `arguments` | Log it: the agent called a [client tool](/studio/audio/voice-agents/tools#client-side-tools) that has no handler. |
+| `error` | `message`, `fatal`, `code`, `source` | Report it. If `fatal` is true, the session is closing, see [Errors and cleanup](#errors-and-cleanup). |
+
+`disconnected` has no `reason` after a normal close. Otherwise, `reason` is `user_interrupt`, `start_failed`, `audio_input_error`, `audio_output_error`, or `error`.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+from mistralai.extra.voice_agents import (
+    VoiceAgentErrorEvent,
+    VoiceAgentStateChangedEvent,
+    VoiceAgentToolCallEndedEvent,
+    VoiceAgentToolCallStartedEvent,
+    VoiceAgentTranscriptEvent,
+)
+
+def on_transcript(event: VoiceAgentTranscriptEvent) -> None:
+    print(f"{event.role}: {event.content}")
+
+def on_tool_call_started(event: VoiceAgentToolCallStartedEvent) -> None:
+    print(f"tool call started: {event.name}")
+
+def on_tool_call_ended(event: VoiceAgentToolCallEndedEvent) -> None:
+    print(f"tool call ended: {event.name} -> {event.result!r}")
+
+def on_agent_state_changed(event: VoiceAgentStateChangedEvent) -> None:
+    print(f"state: {event.state}")
+
+def on_error(event: VoiceAgentErrorEvent) -> None:
+    print(f"error (fatal={event.fatal}): {event.message}")
+
+session.on("transcript", on_transcript)
+session.on("tool_call_started", on_tool_call_started)
+session.on("tool_call_ended", on_tool_call_ended)
+session.on("agent_state_changed", on_agent_state_changed)
+session.on("error", on_error)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import type {
+  VoiceAgentErrorEvent,
+  VoiceAgentStateChangedEvent,
+  VoiceAgentToolCallEndedEvent,
+  VoiceAgentToolCallStartedEvent,
+  VoiceAgentTranscriptEvent,
+} from "@mistralai/mistralai/extra/voice-agents";
+
+session.on("transcript", (event: VoiceAgentTranscriptEvent) => {
+  console.log(`${event.role}: ${event.content}`);
+});
+
+session.on("tool_call_started", (event: VoiceAgentToolCallStartedEvent) => {
+  console.log(`tool call started: ${event.name}`);
+});
+
+session.on("tool_call_ended", (event: VoiceAgentToolCallEndedEvent) => {
+  console.log(`tool call ended: ${event.name}`, event.result);
+});
+
+session.on("agent_state_changed", (event: VoiceAgentStateChangedEvent) => {
+  console.log(`state: ${event.state}`);
+});
+
+session.on("error", (event: VoiceAgentErrorEvent) => {
+  console.error(`error (fatal=${event.fatal}): ${event.message}`);
+});
+```
+
+  </TabItem>
+</Tabs>
+
+`session.on()` returns a function that unsubscribes the handler. You can also call `session.off()` with the original handler:
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```python
+unsubscribe = session.on("transcript", on_transcript)
+
+unsubscribe()  # stop receiving
+# or, equivalently:
+session.off("transcript", on_transcript)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+const unsubscribe = session.on("transcript", onTranscript);
+
+unsubscribe(); // stop receiving
+// or, equivalently:
+session.off("transcript", onTranscript);
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="errors-and-cleanup">Errors and cleanup</SectionTab>
+
+Every error carries `fatal`:
+
+- **Recoverable errors** (`fatal` is false) leave the session open. Log them and continue.
+- **Fatal errors** close the session: `wait()` returns, and audio stops. Startup failures and unexpected disconnections are fatal.
+
+Register an `error` handler to decide what your app does. Without one, the SDK logs the error (Python `logging`, `console.error` in Node.js), so errors are never silent. Because `init()` starts the session before it returns, a startup failure also raises `VoiceAgentConnectionException`, with the error in `error_event` (Python) or `errorEvent` (TypeScript).
+
+In both cases, call `close()` in a `finally` block, as in the [quickstart](/studio/audio/voice-agents/quickstarts/build-a-voice-agent#talk-to-your-agent), so the session is always released.
+
+{/* Error code list (which codes are fatal): in progress on the SDK side (R170). Document codes only once shared. */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/voice-agents/tools" title="Tools" />
+  <LinkCard href="/studio/audio/voice-agents/webhooks" title="Webhooks" />
+  <LinkCard href="/studio/audio/voice-agents/custom-audio" title="Custom audio interfaces" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Reordered per skeleton review S26: lifecycle first, events as the detail of that lifecycle, errors (fatal vs recoverable, SDK 0.5) WITH cleanup; the 0.3.x migration note was dropped — it is no longer in the SDK docs. Verify at the end: partial/final explicit, terminal-error behavior next to cleanup, no connect() table copied from Configure sessions. */}

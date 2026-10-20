@@ -1,0 +1,116 @@
+---
+title: Custom vocabulary
+sidebar_label: Custom vocabulary
+sidebar_position: 4
+description: "Why names, drugs, and product terms come out wrong in transcription and in generated speech, and the hint that fixes each direction: context biasing for spelling, custom pronunciation for sound."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Custom vocabulary
+
+Some words are rare in the data a model learns from, such as names, drug names, product terms, or jargon, so the model can get them wrong in both directions: transcription misspells them, and generated speech mispronounces them. This page explains why, and which hint to give the model in each direction.
+
+<SectionTab as="h2" sectionId="which-hint">Which hint applies</SectionTab>
+
+Each direction has its own hint, and neither works in the other:
+
+| | Transcription (speech to text) | Speech generation (text to speech) |
+| --- | --- | --- |
+| What goes wrong | The spelling of the word | The way the word sounds |
+| The hint | [Context biasing](#context-biasing): the terms to expect, or a description of the recording | [Custom pronunciation](#custom-pronunciation): the sounds of the word, as phonemes |
+| What you give | Text | Phonemes |
+| Where it works | File and realtime transcription, and the transcription settings of voice agents | Speech generation requests. In voice agents, set `phoneme_hints` in the `tts` config of `client.audio.sessions.init()`. |
+| Settings | [Bias context and vocabulary](/studio/audio/speech-to-text/bias-context-and-vocabulary) | [Custom pronunciation](/studio/audio/text-to-speech/custom-pronunciation) |
+
+<SectionTab as="h2" sectionId="context-biasing">In transcription: context biasing</SectionTab>
+
+The model hears sounds, not spellings. For each stretch of audio, it picks the words that best fit what it learned, and nothing in the audio says that a word is a product name. When a rare name sounds like familiar words, the familiar version wins: a rare surname can come out as a more common one, a drug name as an everyday word, or a product name split into two familiar words. Context biasing tells the model which names and terms to expect, so they come out spelled the way you write them.
+
+:::tip
+Not every name needs help, so transcribe a few recordings without context first to find the terms that come out wrong. Fixing them afterwards with a find-and-replace is fragile: a misheard name doesn't always come out the same way, and context fixes the spelling as the model transcribes.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="two-kinds-of-context">Two kinds of context</SectionTab>
+
+You can tell the model what to expect in two ways: list the terms, or describe the recording in plain language. The model accepts both in the same list, where each entry is either a term or a passage of text.
+
+| | Keyphrases | Free-form context |
+| --- | --- | --- |
+| What you give | The terms that must come out right, one per entry: names, acronyms, product codes. An entry can hold several words, such as "Customer Success Platform". | A sentence or a paragraph that describes the recording: its subject, the people, and the names and tools that come up. |
+| Example, for a medical consultation | Dr. Nakamura, metformin, HbA1c | "Follow-up consultation with Dr. Nakamura about a patient's diabetes treatment: the metformin dose and the latest HbA1c results." |
+| Fits when | You know the vocabulary. | You know the situation, but can't list every term in advance. |
+
+Give every term that must come out right its own entry. When the recording has a clear subject, add a sentence that describes it. In realtime, rely on keyphrases: a sentence alone may not fix the terms that keyphrases fix.
+
+<SectionTab as="h3" variant="secondary" sectionId="what-biasing-does">What biasing does and doesn't do</SectionTab>
+
+Context changes which words the model prefers. It doesn't change what the model hears.
+
+- **It favors your terms, but doesn't force them.** The model still writes what it hears, so a listed term can still come out wrong. Check the transcripts of a few real recordings after you add context.
+- **It applies to one request or one session.** Send the context with each file you transcribe, or at the start of each realtime session, before any audio. You can't change it once the audio has started.
+- **It shares room with the audio.** Context counts toward the same model context as the audio, so a very long list on a long recording can exceed it. The request then fails with an error: the API doesn't shorten your list. See [Bias context and vocabulary](/studio/audio/speech-to-text/bias-context-and-vocabulary) for the error.
+
+<SectionTab as="h2" sectionId="custom-pronunciation">In speech generation: custom pronunciation</SectionTab>
+
+A voice reads text by guessing how each word sounds from its spelling. Common words are easy. A surname from another language, a brand name with an unusual spelling, or an acronym that you read as a word has no obvious reading, so the voice can say it wrong, and the same spelling doesn't tell it which reading you want.
+
+Custom pronunciation removes the guess: for each word that needs it, you give the sounds to say, written as phonemes, the units of a phonetic alphabet. The voice then says that word your way, in every sentence of the request where it appears.
+
+- **It works per request.** Send the pronunciations with each speech request that contains the words. 
+- **It uses a fixed set of phonemes.** The API accepts only the phonemes of its own list, and rejects a request with any other symbol. The list is on [Custom pronunciation](/studio/audio/text-to-speech/custom-pronunciation).
+- **It changes the words, not the delivery.** To change the tone or the pace, use [emotion and pace tags](/studio/audio/text-to-speech/emotion-tags) or [style instructions](/studio/audio/text-to-speech/style-instructions).
+
+<SectionTab as="h2" sectionId="both-directions">Applications that hear and speak</SectionTab>
+
+An application that both listens and talks, such as an [voice agent](/studio/audio/voice-agents/overview), can meet the same name in both directions: when the user says it, and when the agent says it back. Give each direction its own hint: the written name as context for the transcription, and its phonemes for the voice. In voice agents, context biasing goes in the `stt` settings and phoneme hints in the `tts` settings.
+
+<SectionTab as="h2" sectionId="related-settings">Related settings</SectionTab>
+
+Pinning the language is another way to avoid wrong words in transcription, but it works on a different level: it tells the model which language to transcribe, not which words to pick. Set it on [File transcription](/studio/audio/speech-to-text/transcribe-files) or [Realtime transcription](/studio/audio/speech-to-text/transcribe-in-realtime), with the codes on [Languages](/studio/audio/specs-and-limits/languages).
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/bias-context-and-vocabulary" title="Bias context and vocabulary" />
+  <LinkCard href="/studio/audio/text-to-speech/custom-pronunciation" title="Custom pronunciation" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Speech to Text troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9):
+   - Why names go wrong, table: examples/stt round 1 (Oct 7), compare_bias.py and keyphrases.sh on
+     stt/fixtures/standup.wav (12 s, synthesized with TTS; script in standup.txt), live interim ID
+     voxtral-transcribe-3 and voxtral-small-transcribe-3: without bias "VoxDraw", "Qtie", "VLLM"; with
+     bias "Voxtral", "Kyutai", "vLLM". Harmattan and Kubernetes right without bias (same log).
+   - "Voxstroll": examples/stt round 2 (Oct 7), compare_bias.py and demo_replay.py on demo 01
+     support_call.wav, voxtral-transcribe-3 ("VoxTroll" on Small and in realtime). Lyon, Harmattan, and
+     Mistral Medium Labs right without bias. The demo README finding 9 (Sept 24: "Vox Straw", "Lion")
+     isn't reproduced: not used on the page. The Sept 24 no-bias output saved in demos/out is a dry run.
+   - Two kinds of context: skeleton (all-hands "natural-language context biasing", RFC-555 section 1.3);
+     entries with spaces and a free-form sentence accepted offline and in realtime (Oct 7 tests); the
+     example sentence is the one in round 1 free_form.sh; "Mistral Medium Labs" as one entry from demo 01.
+   - Realtime and free-form: round 1 realtime test on the jargon clip, reported in the TESTED comment of
+     Bias context and vocabulary. Keyphrases in realtime fixed Voxtral and Kyutai, not the vLLM casing.
+   - One request or one session: realtime error "Session fields cannot be changed after audio has
+     started." (Transcribe in realtime, TESTED comment, Oct 7).
+   - Shares room with the audio: handoff-stt.md item 8 and stt-features-2026-10-08.md (32,768-token
+     context shared with audio, 400 code 3059, no truncation).
+   - Voxtral 2 "up to 100 words or phrases": deprecated/speech_to_text/offline_transcription, context
+     biasing section.
+   - Custom pronunciation (Oct 9): the custom-pronunciation feature page, API CONTRACT note: phoneme_hints on
+     POST /v1/audio/speech maps a word of input to a list of phonemes, per request (Rakesh, Sept 25); tested
+     on the 3-0-4 checkpoint (demos 00 and 03): accepted on Voxtral 3 voices and older presets, multi-word keys
+     accepted, closed list of 50 phonemes, 422 enum otherwise. Open: realtime, lexicon, non-English words,
+     max entries, list final.
+   - Voice agents: voice-agents-sdk-notes-2026-10-08.md, stt.context_bias (Voxtral 3 realtime model required);
+     no phoneme field in the tts settings. */}
+
+{/* Concept page (layer 1, Context) — audio docs revamp (DOC-610). Created Sept 25 as "Context
+   biasing" after Ben's review. Renamed "Custom vocabulary" on Oct 9 (Gregory): one page for the
+   hints that fix rare words in both directions, with a scope table first. Slug moved from
+   concepts/context-biasing to concepts/custom-vocabulary. Boundary: this page explains why and
+   which hint applies; Bias context and vocabulary and Custom pronunciation own the request
+   shapes, field names, code, phoneme list, limits, and errors. Verify at the end: no invented
+   limits, the Rakesh Drafts resolved or kept, realtime advice on free-form context confirmed,
+   phoneme hints in realtime speech and in voice agents answered. */}

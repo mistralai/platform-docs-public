@@ -1,0 +1,118 @@
+---
+title: "Guide de démarrage : transcrire un fichier audio"
+sidebar_label: "Guide de démarrage : fichier audio"
+sidebar_position: 0.5
+description: Transformez un fichier audio en texte précis avec un seul appel API.
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Guide de démarrage : transcrire un fichier audio
+
+Ce tutoriel vous montre comment transcrire l'audio à partir d'un fichier. Pour transcrire l'audio provenant d'autres sources, consultez [Transcription de fichiers](/studio/audio/speech-to-text/transcribe-files). Pour transcrire de l'audio en streaming en temps réel, consultez [le guide de démarrage temps réel](/studio/audio/speech-to-text/quickstart-transcribe-in-realtime).
+
+## Obtenir une clé API
+
+Vous avez d'abord besoin d'une clé API Mistral. Si vous n'en avez pas, rendez-vous sur [Studio](https://console.mistral.ai). Accédez à la [section Clés API](https://console.mistral.ai/home?profile_dialog=api-keys) et créez une nouvelle clé API.
+
+## Transcrire votre audio
+
+Pour suivre ce tutoriel sans votre propre fichier, téléchargez l'enregistrement d'exemple :
+
+```bash
+curl -O https://docs.mistral.ai/audio/obama.mp3
+```
+
+Utilisez ce code pour transcrire la parole d'un fichier audio en texte. La parole peut être en plusieurs langues.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl https://api.mistral.ai/v1/audio/transcriptions \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -F model=voxtral-mini-transcribe-3-0 \
+  -F file=@obama.mp3
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import os
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+with open("obama.mp3", "rb") as audio:
+    transcription = client.audio.transcriptions.complete(
+        model="voxtral-mini-transcribe-3-0",
+        file={"file_name": "obama.mp3", "content": audio},
+    )
+
+print(transcription.text)
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const transcription = await client.audio.transcriptions.complete({
+  model: "voxtral-mini-transcribe-3-0",
+  file: { fileName: "obama.mp3", content: readFileSync("obama.mp3") },
+});
+
+console.log(transcription.text);
+```
+
+  </TabItem>
+</Tabs>
+
+{/* TESTED Oct 8 (writer agent, @mistralai/mistralai 2.7.0, Node 26): script quickstart-transcribe-a-file/transcribe_file.ts, from Ben's draft (7fa9e64a2), aligned with the Python tab (documented Mini ID, obama.mp3, prints the text). Same results as the Python tab on both models. */}
+
+{/* TESTED Oct 7 (stt agent, mistralai 3.0.0): scripts quickstart-transcribe-a-file/transcribe_file.{sh,py}. The request shape works on the live interim ID voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. voxtral-mini-transcribe-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-3, to be renamed before launch. Tested on the interim alias. (Until the rename, the final ID returns 400 "Invalid model".) Sample file: obama.mp3 is the public asset at https://docs.mistral.ai/audio/obama.mp3 (used by the deprecated pages); swap for Ben's P0 asset when it lands, and update the expected JSON below. */}
+
+## Vous devriez voir
+
+{/* Ben (Oct 6): I'm recording some speech now for testing. Et on peut aussi parler français&nbsp;! */}
+
+```json
+{
+  "model": "voxtral-mini-transcribe-3-0",
+  "text": "This week, I traveled to Chicago to deliver my final farewell address to the nation, following in the tradition of presidents before me. It was an opportunity to say thank you. [...] Thanks, everybody. God bless you, and God bless the United States of America.",
+  "language": null,
+  "segments": [],
+  "usage": {
+    "prompt_audio_seconds": 203,
+    "prompt_tokens": 3,
+    "total_tokens": 3259,
+    "completion_tokens": 631,
+    "prompt_tokens_details": {
+      "cached_tokens": 1,
+      "audio_tokens": 2625
+    },
+    "service_tier": "standard"
+  },
+  "finish_reason": null
+}
+```
+
+{/* TESTED Oct 7: response captured from the curl tab on the live interim ID voxtral-transcribe-3; the "model" field echoes the requested ID, so it is shown here with the documented ID. The text is cut with [...] (3,016 characters in full). Observed: "segments" is empty without timestamp_granularities, "language" stays null even when the request sets it, and "finish_reason" is null. There is no "id" field, unlike the RFC-555 section 1.5 example. */}
+
+## Aller plus loin
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Séparer les locuteurs" />
+  <LinkCard href="/studio/audio/speech-to-text/bias-context-and-vocabulary" title="Améliorer la précision sur votre vocabulaire" />
+  <LinkCard href="/studio/audio/speech-to-text/transcribe-files" title="Transcription de fichiers en profondeur" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Verify at the end: intro states purpose + prerequisites (including the provided sample file), exactly 4 blocks (key / run / result / going further), code runs as written, the sample file + transcript demo is in place, no concepts embedded. */}

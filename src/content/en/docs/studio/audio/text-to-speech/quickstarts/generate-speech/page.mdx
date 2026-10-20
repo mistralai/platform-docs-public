@@ -1,0 +1,140 @@
+---
+title: "Quickstart: generate speech"
+sidebar_label: Generate speech
+sidebar_position: 1
+description: "Convert text into natural speech and play it back with one API call."
+---
+
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Quickstart: generate speech
+
+This tutorial will show you how to generate speech, save the bytes as a file, then play that file through your computer's speakers. To play audio continually as it's generated, see [Stream speech](/studio/audio/text-to-speech/stream-speech).
+
+<SectionTab as="h2" sectionId="get-an-api-key">Get an API key</SectionTab>
+
+First, you'll need a Mistral API key. If you don't have one, then go to [Studio](https://console.mistral.ai). Navigate to the [API keys section](https://console.mistral.ai/home?profile_dialog=api-keys) and create a new API key.
+
+Store your API key in the `MISTRAL_API_KEY` environment variable:
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+<SectionTab as="h2" sectionId="install-the-sdk">Install the SDK</SectionTab>
+
+To use Python or TypeScript, install the Mistral SDK, plus a library to play audio. The curl example uses [`jq`](https://jqlang.org/) to decode base64-encoded bytes.
+
+<Tabs groupId="code">
+  <TabItem value="python" label="python" default>
+
+```bash
+pip install mistralai sounddevice soundfile
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```bash
+npm install @mistralai/mistralai play-sound
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="generate-your-audio">Generate your audio</SectionTab>
+
+Use this code to turn text into speech. The API returns the audio in base64 encoding, so this example decodes it into bytes. The curl example saves the audio as `hello.wav`, the Python example plays it right away, and the TypeScript example saves it, then plays it.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "input": "Hi there! You are listening to Voxtral.",
+    "voice_id": "gb_jane_neutral",
+    "response_format": "wav"
+  }' | jq -r '.audio_data' | base64 --decode > hello.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import io
+import os
+
+import sounddevice as sd
+import soundfile as sf
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="Hi there! You are listening to Voxtral.",
+    voice_id="gb_jane_neutral",
+    response_format="wav"
+)
+
+bytes = io.BytesIO(base64.b64decode(response.audio_data))
+audio, sample_rate = sf.read(bytes)
+sd.play(audio, sample_rate)
+sd.wait()
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFileSync } from "node:fs";
+
+import { Mistral } from "@mistralai/mistralai";
+import playSound from "play-sound";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "Hi there! You are listening to Voxtral.",
+  voiceId: "gb_jane_neutral",
+  responseFormat: "wav",
+});
+
+writeFileSync("hello.wav", Buffer.from(response.audioData, "base64"));
+playSound().play("hello.wav");
+```
+
+  </TabItem>
+</Tabs>
+
+<SectionTab as="h2" sectionId="you-should-hear">You should hear</SectionTab>
+
+The Python and TypeScript examples play the audio through your speakers.
+
+The curl example saves `hello.wav` in the current directory. Open it in any audio player, or play it from the terminal:
+
+```bash
+afplay hello.wav   # macOS
+aplay hello.wav    # Linux
+```
+
+You'll hear the `gb_jane_neutral` voice say "Hello! This is Voxtral, Mistral's text-to-speech model."
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/voices" title="Browse all voices" />
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Control the delivery" />
+  <LinkCard href="/studio/audio/text-to-speech/stream-speech" title="Stream speech" />
+</UsefullLinkContainer>
+
+{/* Skeleton — audio docs revamp (DOC-610). Verify at the end: 4 blocks, the reader can hear the expected result (demo), no voice taxonomy embedded. */}

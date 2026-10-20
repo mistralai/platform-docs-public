@@ -1,0 +1,83 @@
+---
+title: Limits
+sidebar_label: Limits
+sidebar_position: 3
+description: "Size, duration, and value limits for audio requests and sessions, and what happens when you go over them."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Limits
+
+This page lists the limits of each audio request and session, and what you get when you go over one. Request rates and monthly quotas are workspace settings, covered in [Rate limits and quotas](#rate-limits-and-quotas).
+
+<SectionTab as="h2" sectionId="transcription">Transcription</SectionTab>
+
+These limits apply to file transcription and realtime sessions:
+
+| Limit | Value | Over the limit | Details |
+| --- | --- | --- | --- |
+| Audio URL length (`file_url`) | 2,083 characters | Validation error | [File transcription](/studio/audio/speech-to-text/transcribe-files#choose-input) |
+| Uploaded file (`file_id`) |  | Upload rejected | [File transcription](/studio/audio/speech-to-text/transcribe-files#choose-input) |
+| Context window, shared by the audio and `context_bias` | 65,536 tokens | `400` error, nothing is cut | [Limits and errors](/studio/audio/speech-to-text/bias-context-and-vocabulary#limits-and-errors) |
+| Timestamps | Per segment only: `timestamp_granularities=segment` | `word` returns a `400` error | [Timestamps](/studio/audio/speech-to-text/transcribe-files#timestamps) |
+| Speaker references | Up to 8 clips, 3 to 15 seconds each, with `diarize` set to `true` | The request is rejected with a `400` error: "At most 8 speaker references are supported, got \{n\}". | [Name speakers with reference clips](/studio/audio/speech-to-text/diarize-speakers#speaker-references) |
+| Streaming delay (`target_streaming_delay_ms`) | Any integer from 80 to 1200, or 2400 | `error` event | [Control latency](/studio/audio/speech-to-text/transcribe-in-realtime#control-latency) |
+
+{/* Sources: file_url maxLength 2083 (public/openapi.yaml, AudioTranscriptionRequest); 512 MB (public/openapi.yaml, files upload description); context window and 400 code 3059 (handoff-stt item 8); segment only (Rakesh, Oct 9; word 400 tested Oct 7); speaker references (Rakesh, Oct 9); delay 80-1200 or 2400 (Oct 7 tests: 123, 480, 2400 accepted, 1300 rejected with "must be one of the trained values: ['80-1200', '2400']"). */}
+
+<SectionTab as="h2" sectionId="speech-generation">Speech generation</SectionTab>
+
+These limits apply to the values a speech request accepts:
+
+| Limit | Value | Over the limit | Details |
+| --- | --- | --- | --- |
+| `expressiveness` |  | `422` validation error | [Expressiveness](/studio/audio/text-to-speech/generate-speech#expressiveness) |
+| Phonemes in `phoneme_hints` | A closed list of 50 phonemes | `422` error listing the accepted phonemes | [Phonemes](/studio/audio/text-to-speech/custom-pronunciation#phonemes) |
+| Emotion tags | 34 values | No error: the tag isn't spoken, and has no documented effect | [Supported emotions](/studio/audio/text-to-speech/emotion-tags#supported-emotions) |
+| Pace tags | `slow` or `fast` | No error: the tag isn't spoken, and has no documented effect | [Pace tags](/studio/audio/text-to-speech/emotion-tags#pace-tags) |
+| Voice cloning reference clip | A few seconds to a few minutes | `400` error for a file that isn't MP3 or WAV | [Prepare a reference clip](/studio/audio/text-to-speech/voice-cloning#prepare-a-reference-clip) |
+
+{/* Sources: phoneme list of 50 and 422 (custom-pronunciation, Rakesh R145, tests Sept 25 and Oct 7); 34 emotion values (Rakesh, Oct 7); pace slow/fast (Rakesh, Oct 9); unsupported tag values return 200 and aren't spoken (Oct 7, Oct 9 probes: [emotion=ecstatic], [pace=turbo], [pace=medium]); clip 400 code 3291 (Oct 7). */}
+
+<SectionTab as="h2" sectionId="audio-in-chat">Audio in chat completions</SectionTab>
+
+This limit applies to chat requests that carry audio inline:
+
+| Limit | Value | Over the limit | Details |
+| --- | --- | --- | --- |
+| Request body with `input_audio` |  | `429` error, `Rate limit exceeded` | [Audio in chat completions](/studio/audio/audio-in-chat) |
+
+<SectionTab as="h2" sectionId="voice-agents">Voice agents</SectionTab>
+
+Webhook deliveries to your endpoint follow these limits:
+
+| Limit | Value | Details |
+| --- | --- | --- |
+| Webhook response time | Your endpoint must answer within 10 seconds | [Delivery and retries](/studio/audio/voice-agents/webhooks#delivery-and-retries) |
+| Webhook attempts | Up to 3 in total, on 5xx and 429 responses and on network errors | [Delivery and retries](/studio/audio/voice-agents/webhooks#delivery-and-retries) |
+
+<SectionTab as="h2" sectionId="rate-limits-and-quotas">Rate limits and quotas</SectionTab>
+
+Request rates and monthly quotas are set per workspace, and shared by all its API keys. See [Workspace usage and limits](/admin/workspaces/usage-limits#rate-limits).
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/specs-and-limits/audio-formats" title="Audio formats" />
+  <LinkCard href="/studio/audio/concepts/latency" title="Latency" />
+  <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Speech to Text troubleshooting" />
+  <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Text to Speech troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): every value is either confirmed by Rakesh (speaker references Oct 9, pace Oct 9, emotion values Oct 7,
+   segment-only timestamps Oct 9), taken from the public API reference (file_url length, 512 MB Files API), stated on its
+   canonical feature page (webhooks: 10 s timeout, 3 attempts), or tested (delay range, phoneme 422, context window, chat body)
+   with a  when not confirmed. The skeleton's "the API never truncates" rule is not stated globally: it's tested for
+   context_bias only (400, nothing cut); input and instruction length are untested. Rate limits link: Workspace usage and limits
+   (Admin), chosen over billing-usage/usage-limits because it covers per-workspace rate limits (validated by Gregory, Oct 9). The Admin usage and limits pages need their own update later. */}
+
+{/* Reference page (layer 5) — audio docs revamp (DOC-610). New page (Sept 24). Canonical home for numeric limits; how-to pages
+   and troubleshooting keep the symptom and link here for the number. Verify at the end: every value sourced, none invented,
+   Drafts resolved against the reviewed set (Rakesh, SDK team), workspace quotas linked not copied. */}

@@ -239,7 +239,7 @@ function getModelGroups(items: Model[]): ModelGroup[] {
       'time-series-models',
       'Time series models',
       'Models for zero-shot time series forecasting with covariate support and probabilistic outputs.',
-      ['timestral-1-0', 'timestral-1-0-123m', 'timestral-1-0-28m', 'timestral-1-0-5m']
+      ['timestral-1-0-209m', 'timestral-1-0-123m', 'timestral-1-0-28m', 'timestral-1-0-5m']
     ),
   ];
 

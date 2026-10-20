@@ -1,0 +1,152 @@
+---
+title: Speech generation
+sidebar_label: Speech generation
+sidebar_position: 1
+description: "Turn text into audio with control over voice, format, and expressiveness."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { Tabs, TabItem } from '@/components/common/multi-codeblock';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+import { CtaButton } from '@/components/common/cta-button';
+
+# Speech generation
+
+A speech request turns a complete text into an audio file in one call, in the voice and the format you choose. This page shows the request, the fields that change the result, and the errors you're most likely to meet.
+
+:::info
+To start playback before the whole file is ready, see [Stream speech](/studio/audio/text-to-speech/stream-speech). For how voices, tags, and instructions shape the result, see [Voices](/studio/audio/concepts/voices).
+:::
+
+<CtaButton href="/api/endpoint/audio/speech#operation-speech_v1_audio_speech_post">API reference — POST /v1/audio/speech</CtaButton>
+
+<SectionTab as="h2" sectionId="make-a-request">Make a request and use the response</SectionTab>
+
+Send the text and a voice in one `POST` request. The response carries the audio, base64-encoded, in `audio_data`: decode it and save it to a file.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "input": "Your order shipped this morning and should arrive on Thursday.",
+    "voice_id": "gb_jane_neutral",
+    "response_format": "mp3"
+  }' | jq -r '.audio_data' | base64 --decode > order_update.mp3
+```
+
+  </TabItem>
+  <TabItem value="python" label="python">
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    input="Your order shipped this morning and should arrive on Thursday.",
+    voice_id="gb_jane_neutral",
+    response_format="mp3",
+)
+
+audio = base64.b64decode(response.audio_data)
+output = Path("order_update.mp3")
+output.write_bytes(audio)
+print(f"Saved {output.resolve()} ({len(audio)} bytes)")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  input: "Your order shipped this morning and should arrive on Thursday.",
+  voiceId: "gb_jane_neutral",
+  responseFormat: "mp3",
+});
+
+const audio = Buffer.from(response.audioData, "base64");
+const output = resolve("order_update.mp3");
+writeFileSync(output, audio);
+console.log(`Saved ${output} (${audio.length} bytes)`);
+```
+
+  </TabItem>
+</Tabs>
+
+The examples save `order_update.mp3` in the current directory. Open it in any audio player to listen.
+
+{/* TESTED Oct 7: generate-speech/generate_speech.{sh,py} on voxtral-mini-tts-3-0 (first run and re-run with the new key): 200, order_update.mp3 valid MP3 (27,681 bytes), transcription reads the input back. */}
+
+<SectionTab as="h3" variant="secondary" sectionId="request-fields">Request fields</SectionTab>
+
+The following table lists the fields that most often change the result. For the full list, see the API reference.
+
+| Field | What it does |
+| --- | --- |
+| `model` | The speech model, for example `voxtral-mini-tts-3-0`. |
+| `input` | The text to speak. It can carry inline [emotion and pace tags](/studio/audio/text-to-speech/emotion-tags). |
+| `voice_id` | The voice to use: a preset slug such as `gb_jane_neutral`, or the ID of a voice saved in your workspace. See [Voices](/studio/audio/text-to-speech/voices). |
+| `ref_audio` | A short recording, base64-encoded, to clone a voice for this request only, instead of `voice_id`. See [Voice cloning](/studio/audio/text-to-speech/voice-cloning). |
+| `response_format` | The audio format of the result. See [Response formats](#response-formats). |
+| `expressiveness` |  See [Expressiveness](#expressiveness). |
+| `instruction` | Style instructions are not available at launch. See [Style instructions](/studio/audio/text-to-speech/style-instructions). |
+| `phoneme_hints` | The pronunciation of specific words, as lists of phonemes. See [Custom pronunciation](/studio/audio/text-to-speech/custom-pronunciation). |
+| `stream` | Set to `true` to receive the audio in chunks as it's generated. See [Stream speech](/studio/audio/text-to-speech/stream-speech). |
+
+<SectionTab as="h2" sectionId="response-formats">Response formats</SectionTab>
+
+Set `response_format` to `mp3` (the default), `wav`, `pcm`, `flac`, or `opus`. To choose between them, see [Audio formats](/studio/audio/specs-and-limits/audio-formats).
+
+<SectionTab as="h2" sectionId="expressiveness">Expressiveness</SectionTab>
+
+`expressiveness` sets how strongly the generated speech follows what you ask for: the voice, the text, and any emotion tags or style instruction. It accepts values from `1.0` to `5.0`.
+
+Controls how expressive the speech is. Higher values trade voice similarity and stability for stronger delivery. Start with the default, raise it if the emotion doesn't come through, and lower it if the speech sounds forced.
+
+{/* Renamed from cfg to expressiveness, scale 1.0 to 5.0 (Gregory, Oct 9). The live API still took cfg on Oct 7 (below 1.0: 422; 1.0 to 10.0 accepted): retest the new name and bounds once the rename ships. Source of the effect description: notes/cfg-explainer-doc610.md (classifier-free guidance: 1.0 = no extra guidance). */}
+
+<SectionTab as="h2" sectionId="common-issues">Common issues</SectionTab>
+
+These are the problems you're most likely to meet with a speech request. For the full list, see [Troubleshooting](/studio/audio/text-to-speech/troubleshooting).
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `404` error of type `invalid_voice`: `Voice 'x' not found.` | The voice slug or ID doesn't exist in the catalog or in your workspace. | List the voices and copy the exact slug or ID. See [Voices](/studio/audio/text-to-speech/voices). |
+| `400` error: `Either ref_audio or voice must be provided.` | The request has no voice. | Add `voice_id`. |
+| A name, a brand, or an acronym is mispronounced | The voice guesses the reading from the spelling. | Give the word its phonemes. See [Custom pronunciation](/studio/audio/text-to-speech/custom-pronunciation). |
+
+{/* Sources (Oct 9) for Common issues: handoff-tts.md items 6 and 7 (Oct 7): unknown voice -> 404 invalid_voice, code 1902, "Voice 'x' not found." (RFC-555 section 5.2 says 400); no voice -> 400 "Either ref_audio or voice must be provided."; voice and voice_id together -> 500 (internal bug, not published). Mispronounced names -> Custom pronunciation (phoneme_hints tested Oct 7). */}
+
+<SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Style instructions" />
+  <LinkCard href="/studio/audio/text-to-speech/emotion-tags" title="Emotion and pace tags" />
+  <LinkCard href="/studio/audio/text-to-speech/stream-speech" title="Stream speech" />
+  <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Troubleshooting" />
+</UsefullLinkContainer>
+
+{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton; the fields table
+   and Expressiveness were updated on Oct 9 (cfg renamed expressiveness) and kept as is, with four rows added.
+   Boundary: the concept Voices owns how voice, tags, and instructions fit together; Stream speech owns
+   streaming; Voice cloning owns ref_audio and saved voices; Audio formats owns the formats. Verify at the end:
+   voice field name settled (voice or voice_id), ref_audio status at launch, instruction works on the launch
+   checkpoint, expressiveness default and bounds, input length limit. */}

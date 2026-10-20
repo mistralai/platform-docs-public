@@ -1,0 +1,88 @@
+---
+title: Migrer depuis Voxtral 2
+sidebar_label: Migrer depuis Voxtral 2
+sidebar_position: 8
+description: "Passez des modèles audio Voxtral 2 à Voxtral 3 : noms de modèles, ruptures de compatibilité et checklist de migration."
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
+
+# Migrer depuis Voxtral 2
+
+Cette page s'adresse à quiconque appelle un modèle audio Voxtral 2. Elle fait correspondre chaque modèle à son remplaçant Voxtral 3, puis liste ce qui change en reconnaissance vocale et en synthèse vocale, et ce qu'il faut faire pour chaque changement.
+
+<SectionTab as="h2" sectionId="model-mapping">Mappage des modèles</SectionTab>
+
+Remplacez chaque ID de modèle Voxtral 2 par l'ID de son remplaçant Voxtral 3. Chaque modèle Voxtral 3 répond aussi aux alias de la dernière colonne.
+
+| Modèle Voxtral 2 | Modèle Voxtral 3 | ID de modèle | Alias |
+| --- | --- | --- | --- |
+| `voxtral-mini-2602` | Voxtral Mini Transcribe 3 | `voxtral-mini-transcribe-3-0` | `voxtral-mini-transcribe-3`, `voxtral-mini-transcribe-latest` |
+| `voxtral-mini-transcribe-realtime-2602` | Voxtral Mini Transcribe Realtime 3 | `voxtral-mini-transcribe-realtime-3-0` | `voxtral-mini-transcribe-realtime-3`,  |
+| `voxtral-small-2507` | Voxtral Small Transcribe 3 | `voxtral-small-transcribe-latest` | `voxtral-small-transcribe-3`, `voxtral-small-transcribe-latest` |
+| `voxtral-mini-tts-2603` | Voxtral TTS 3 | `voxtral-mini-tts-3-0` | `voxtral-mini-tts-3`,  |
+
+<SectionTab as="h2" sectionId="speech-to-text-changes">Changements de la reconnaissance vocale</SectionTab>
+
+Le tableau suivant liste les changements susceptibles d'affecter une intégration de transcription, en commençant par les ruptures de compatibilité.
+
+| Changement | Casse le code existant ? | Que faire |
+| --- | --- | --- |
+| Les horodatages par mot ont disparu. `timestamp_granularities` n'accepte que `segment`, et `word` renvoie une erreur `400`. | Oui, si vous demandez des horodatages par mot. | Demandez des horodatages par segment. Voir [Horodatages](/studio/audio/speech-to-text/transcribe-files#timestamps). |
+| Une session en temps réel verrouille ses paramètres dès l'arrivée du premier fragment audio. Un `session.update` ultérieur reçoit un événement `error`. |  | Envoyez tous les paramètres dans le premier `session.update`, avant tout audio. Voir [Transcription en temps réel](/studio/audio/speech-to-text/transcribe-in-realtime#configure). |
+|  | Oui, si votre affichage suppose que les segments ne se chevauchent jamais. | Conservez les deux segments quand ils se chevauchent. Voir [Segments qui se chevauchent](/studio/audio/speech-to-text/diarize-speakers#overlapping-segments). |
+| Les entrées `context_bias` peuvent être des expressions contenant des espaces, comme un nom de produit complet, et une phrase de contexte libre fonctionne hors ligne. | Non. |  Voir [Biais de contexte et vocabulaire](/studio/audio/speech-to-text/bias-context-and-vocabulary). |
+| Le nombre d'entrées de `context_bias` n'est pas fixé. | Non. | Gardez la liste courte : les entrées partagent la fenêtre de contexte avec l'audio, et une requête qui dépasse la limite renvoie une erreur `400`. Voir [Limites et erreurs](/studio/audio/speech-to-text/bias-context-and-vocabulary#limits-and-errors). |
+| La transcription prend en charge davantage de langues. | Non. | Omettez `language` pour détecter automatiquement la langue, ou définissez le paramètre si vous la connaissez. Voir [Langues](/studio/audio/specs-and-limits/languages). |
+| Nouveauté : diarisation en temps réel, références de locuteurs et détection des tours de parole dans les sessions en temps réel. | Non. | Activez-les quand vous en avez besoin. Voir [Diariser les locuteurs](/studio/audio/speech-to-text/diarize-speakers) et [Détection des tours de parole](/studio/audio/speech-to-text/turn-detection). |
+
+<SectionTab as="h2" sectionId="text-to-speech-changes">Changements de la synthèse vocale</SectionTab>
+
+Le tableau suivant liste les changements susceptibles d'affecter une intégration de génération de parole.
+
+| Changement | Casse le code existant ? | Que faire |
+| --- | --- | --- |
+| L'émotion passe de la voix aux tags inline. Avec Voxtral 2, chaque voix prédéfinie possède une variante par émotion, comme `gb_jane_sad`. Voxtral 3 ajoute des tags `[emotion=...]` dans `input` pour un contrôle plus fin. | Non. Les voix prédéfinies Voxtral 2 sont toujours acceptées. | Pour faire varier l'émotion d'une voix, utilisez les [tags d'émotion et de rythme](/studio/audio/text-to-speech/emotion-tags). |
+| Clonage de la voix pour une seule requête avec `ref_audio`. | Non. `ref_audio` est toujours accepté. | Pour réutiliser une voix clonée, enregistrez-la une seule fois et transmettez son ID en tant que `voice_id`. Voir [Clonage de la voix](/studio/audio/text-to-speech/voice-cloning). |
+| Nouveauté : voix Voxtral 3, balises de rythme, prononciation personnalisée, ~~instructions de style~~ (non disponibles au lancement) et un nombre supérieur ou égal à 1.0 qui contrôle l'expressivité de la voix. Des valeurs plus élevées sacrifient la similarité vocale au profit d'une interprétation plus marquée. La valeur par défaut est définie par le service. | Non. | Activez-les quand vous en avez besoin. Voir [Voix](/studio/audio/text-to-speech/voices), [Prononciation personnalisée](/studio/audio/text-to-speech/custom-pronunciation), [Instructions de style](/studio/audio/text-to-speech/style-instructions) et [Expressivité](/studio/audio/text-to-speech/generate-speech#expressiveness). |
+
+<SectionTab as="h2" sectionId="deprecation-timeline">Calendrier de dépréciation</SectionTab>
+
+<SectionTab as="h2" sectionId="migration-checklist">Checklist de migration</SectionTab>
+
+Suivez ces étapes pour faire migrer une intégration vers Voxtral 3 :
+
+1. Remplacez chaque ID de modèle par son ID Voxtral 3. Voir [Correspondance des modèles](#model-mapping).
+2. Si vous demandez des horodatages par mot, passez aux horodatages par segment.
+3. Dans les sessions en temps réel, envoyez tous les paramètres avant le premier fragment audio.
+4. Si vous utilisez la diarisation, vérifiez que votre affichage gère le chevauchement des segments.
+5. Passez en revue vos entrées `context_bias` : écrivez les termes composés avec des espaces.
+6. Générez quelques échantillons avec vos voix, et déplacez les variantes d'émotion vers des balises d'émotion si vous voulez une seule voix dans plusieurs humeurs. Voir [Changements de la synthèse vocale](#text-to-speech-changes).
+7. Mesurez de nouveau la latence depuis votre application. Voir [Latence](/studio/audio/concepts/latency).
+
+<SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
+
+<UsefullLinkContainer>
+  <LinkCard href="/studio/audio/speech-to-text/overview" title="Reconnaissance vocale" />
+  <LinkCard href="/studio/audio/text-to-speech/overview" title="Synthèse vocale" />
+  <LinkCard href="/studio/audio/specs-and-limits/limits" title="Limites" />
+</UsefullLinkContainer>
+
+{/* Sources (Oct 9): model IDs and aliases RFC-618 (research/notion-naming-2026-10-07.md), final per Rakesh
+   (Sept 28, Oct 9); the RFC-618 rows for models dropped on Oct 9 (Gregory) are left out. Live state Oct 9 (status.md, API probe round): final Mini
+   Transcribe IDs 404, interim aliases work, Small Transcribe 3 transcription only (400 on chat), TTS 3 live,
+   voxtral-mini-tts-latest -> 2603, TTS Realtime 403. Word timestamps: Voxtral 2 docs (deprecated offline
+   transcription, timestamps section: segment and word) vs v3 400 "not enabled" (Oct 7) and Rakesh Oct 9 (none or
+   segment). Session lock: bias-context-and-vocabulary test (Oct 9). Overlap: RFC-555 1.4 / 2.4, not reproduced.
+   context_bias: Voxtral 2 docs (up to 100 words or phrases, underscores) vs Oct 7 tests (keyphrases with spaces,
+   free-form offline, shared 32,768-token context). Language: Voxtral 2 docs vs auto-detection tested (Oct 9).
+   TTS: Voxtral 2 docs used voice_id and ref_audio; both still accepted (Oct 7, Oct 9); emotion row per Rakesh
+   (Oct 7). No language count on this page: counts are not settled. */}
+
+{/* Canonical migration page — audio docs revamp (DOC-610). New page (Sept 24): migration content was
+   spread over five pages (STT overview, TTS overview, Voice cloning, Deprecated warning, hub). This is the
+   canonical copy; the others keep one sentence and link here. OpenAI SDK compatibility is deliberately NOT
+   covered here — open question to Rakesh/Kayla, see the DOC-610 decisions CSV. Written Oct 9. Verify at the end:
+   breaking changes first, dates sourced from Kayla (none invented), aliases confirmed, the audio in chat model
+   settled, offline ref_audio status settled. */}

@@ -7,6 +7,10 @@ import timestral10123m from './timestral-1-0-123m';
 import timestral1028m from './timestral-1-0-28m';
 import timestral105m from './timestral-1-0-5m';
 import voxtralTts2603 from './voxtral-tts-26-03';
+import voxtralMiniTranscribe30 from './voxtral-mini-transcribe-3-0';
+import voxtralSmallTranscribe30 from './voxtral-small-transcribe-3-0';
+import voxtralMiniTranscribeRealtime30 from './voxtral-mini-transcribe-realtime-3-0';
+import voxtralMiniTts30 from './voxtral-mini-tts-3-0';
 import mistralMedium352604 from './mistral-medium-3-5-26-04';
 import mistralSmall402603 from './mistral-small-4-0-26-03';
 import leanstral26032603 from './leanstral-26-03';
@@ -80,6 +84,10 @@ export const MODELS = defineModels([
   timestral105m,
   mistralMedium352604,
   voxtralTts2603,
+  voxtralMiniTranscribe30,
+  voxtralSmallTranscribe30,
+  voxtralMiniTranscribeRealtime30,
+  voxtralMiniTts30,
   mistralSmall402603,
   leanstral15,
   leanstral26032603,

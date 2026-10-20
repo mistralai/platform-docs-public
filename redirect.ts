@@ -25,6 +25,7 @@ const rawRedirects: RedirectRule[] = [
   { source: "/getting-started/models", destination: "/models", permanent: true },
   { source: "/getting-started/models/compare", destination: "/inference/model-selection-guide", permanent: true },
   { source: "/models/model-cards/leanstral-1-5-26-06", destination: "/models/leanstral-1-5", permanent: true },
+  { source: "/models/voxtral-mini-tts-realtime-3-0", destination: "/models/voxtral-mini-tts-3-0", permanent: true },
   { source: "/models/timestral-1-0", destination: "/models/timestral-1-0-209m", permanent: true },
   { source: "/getting-started/quickstart", destination: "/getting-started/quickstarts", permanent: true },
   { source: "/getting-started/clients", destination: "/resources/sdks", permanent: true },
@@ -36,12 +37,33 @@ const rawRedirects: RedirectRule[] = [
   { source: "/capabilities/vision", destination: "/studio/conversations/vision", permanent: true },
   { source: "/capabilities/audio", destination: "/studio/audio/overview", permanent: true },
   { source: "/studio/audio", destination: "/studio/audio/overview", permanent: true },
-  { source: "/capabilities/audio/speech_to_text", destination: "/studio/audio/speech_to_text", permanent: true },
-  { source: "/capabilities/audio/speech_to_text/offline_transcription", destination: "/studio/audio/speech_to_text/offline_transcription", permanent: true },
-  { source: "/capabilities/audio/speech_to_text/realtime_transcription", destination: "/studio/audio/speech_to_text/realtime_transcription", permanent: true },
-  { source: "/capabilities/audio/text_to_speech", destination: "/studio/audio/text_to_speech", permanent: true },
-  { source: "/capabilities/audio/text_to_speech/voices", destination: "/studio/audio/text_to_speech/voices", permanent: true },
-  { source: "/capabilities/audio/text_to_speech/speech", destination: "/studio/audio/text_to_speech/speech", permanent: true },
+  // Audio docs revamp (DOC-610): legacy audio articles moved under /studio/audio/deprecated.
+  // Temporary redirects pending decision on the deprecated content.
+  // SCOPE NOTE (per review A11): the "temporary" semantics apply to the
+  // /studio/audio/* moves above. The historical /capabilities/audio/* rules
+  // below were permanent (301) BEFORE this branch and keep their historical
+  // permanence; they were repointed to the deprecated destinations as a
+  // single-hop optimization. If the deprecated content is deleted, revisit
+  // BOTH groups together — that decision is pending (see
+  // audio-ia-decisions-doc610.csv).
+  // REVIEW REQUIRED BEFORE RELEASE, WHATEVER THE DEPRECATED DECISION (Gregory, Sept 24):
+  // these rules send legacy traffic to the deprecated pages, not to their v3
+  // equivalents. Re-map each legacy URL to its new page where one exists
+  // (offline_transcription -> speech-to-text/transcribe-files,
+  // realtime_transcription -> speech-to-text/transcribe-in-realtime,
+  // text_to_speech/speech -> text-to-speech/generate-speech,
+  // text_to_speech/voices -> text-to-speech/voices) or confirm the deprecated
+  // target explicitly, then decide 307 vs 301 per group.
+  { source: "/studio/audio/speech_to_text", destination: "/studio/audio/deprecated/speech_to_text", permanent: false },
+  { source: "/studio/audio/speech_to_text/:path*", destination: "/studio/audio/deprecated/speech_to_text/:path*", permanent: false },
+  { source: "/studio/audio/text_to_speech", destination: "/studio/audio/deprecated/text_to_speech", permanent: false },
+  { source: "/studio/audio/text_to_speech/:path*", destination: "/studio/audio/deprecated/text_to_speech/:path*", permanent: false },
+  { source: "/capabilities/audio/speech_to_text", destination: "/studio/audio/deprecated/speech_to_text", permanent: true },
+  { source: "/capabilities/audio/speech_to_text/offline_transcription", destination: "/studio/audio/deprecated/speech_to_text/offline_transcription", permanent: true },
+  { source: "/capabilities/audio/speech_to_text/realtime_transcription", destination: "/studio/audio/deprecated/speech_to_text/realtime_transcription", permanent: true },
+  { source: "/capabilities/audio/text_to_speech", destination: "/studio/audio/deprecated/text_to_speech", permanent: true },
+  { source: "/capabilities/audio/text_to_speech/voices", destination: "/studio/audio/deprecated/text_to_speech/voices", permanent: true },
+  { source: "/capabilities/audio/text_to_speech/speech", destination: "/studio/audio/deprecated/text_to_speech/speech", permanent: true },
   { source: "/capabilities/reasoning", destination: "/studio/conversations/reasoning", permanent: true },
   { source: "/capabilities/reasoning/adjustable", destination: "/studio/conversations/reasoning/adjustable", permanent: true },
   { source: "/capabilities/document_ai", destination: "/studio/document-processing/overview", permanent: true },
@@ -559,7 +581,7 @@ const rawRedirects: RedirectRule[] = [
 
   {
     source: "/capabilities/audio_transcription",
-    destination: "/studio/audio/speech_to_text",
+    destination: "/studio/audio/deprecated/speech_to_text",
     permanent: true,
   },
   {
@@ -615,6 +637,11 @@ const rawRedirects: RedirectRule[] = [
   {
     source: "/studio/knowledge-rag/connectors/confirmation",
     destination: "/studio/connectors/confirmation",
+    permanent: true,
+  },
+  {
+    source: "/studio/knowledge-rag/search-toolkit/:path*",
+    destination: "/studio/search/search-toolkit/:path*",
     permanent: true,
   },
   {

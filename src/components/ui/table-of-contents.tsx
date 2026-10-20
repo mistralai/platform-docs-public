@@ -184,7 +184,7 @@ export function TableOfContents({
       // category an `overridedSlug` equal to its overview page's slug, so
       // `findItemBySlug` returns the category before it reaches the page. A
       // category has no TOC, so the overview page showed none (Audio, Speech to
-      // Text, Text to Speech, Audio agents overviews). When the match is a
+      // Text, Text to Speech, Voice agents overviews). When the match is a
       // category, look for the page with the same slug among its children.
       // Categories that link to themselves (`/studio`, `/resources`) have no
       // such child and keep the previous behavior.

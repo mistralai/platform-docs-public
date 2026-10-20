@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { PRODUCT_LOGOS } from '@/schema/content/getting-started';
 import { useLingo } from '@lingo.dev/react';
 
-type Category = 'all' | 'vibe-work' | 'vibe-code' | 'studio' | 'developer' | 'admin';
+type Category = 'all' | 'vibe-work' | 'vibe-code' | 'studio' | 'developer' | 'admin' | 'audio';
 
 export function QuickstartsFilterableGrid({ categories }: { categories?: Exclude<Category, 'all'>[] } = {}) {
   const l = useLingo();
@@ -17,12 +17,13 @@ export function QuickstartsFilterableGrid({ categories }: { categories?: Exclude
   const ALL_FILTERS: { id: Category; label: string }[] = [
     { id: 'vibe-work', label: 'Vibe Work' },
     { id: 'vibe-code', label: 'Vibe Code' },
+    { id: 'audio', label: 'Audio' },
     { id: 'studio', label: 'Studio' },
     { id: 'developer', label: 'API' },
     { id: 'admin', label: 'Admin' },
   ];
 
-  const allowedCategories = categories ?? ['vibe-work', 'vibe-code', 'studio', 'developer', 'admin'];
+  const allowedCategories = categories ?? ['vibe-work', 'vibe-code', 'studio', 'developer', 'admin', 'audio'];
   const filteredPills = ALL_FILTERS.filter(p => allowedCategories.includes(p.id as Exclude<Category, 'all'>));
   const FILTERS = filteredPills.length > 1
     ? [{ id: 'all' as Category, label: l.text('All', { context: 'Quickstarts filter label for all categories' }) }, ...filteredPills]
@@ -34,6 +35,7 @@ export function QuickstartsFilterableGrid({ categories }: { categories?: Exclude
     'studio': { text: 'group-hover:text-[#0082E6]', bg: 'group-hover:bg-[#0082E6]' },
     'developer': { text: 'group-hover:text-[#0082E6]', bg: 'group-hover:bg-[#0082E6]' },
     'admin': { text: 'group-hover:text-[#4a4a5e]', bg: 'group-hover:bg-[#4a4a5e]' },
+    'audio': { text: 'group-hover:text-[#0082E6]', bg: 'group-hover:bg-[#0082E6]' },
   };
 
   const QUICKSTARTS: {
@@ -98,6 +100,27 @@ export function QuickstartsFilterableGrid({ categories }: { categories?: Exclude
       logo: PRODUCT_LOGOS['vibe-code'],
       alt: 'Vibe Code',
       activeBorder: 'hover:border-[#FA500F]/50',
+    },
+    // Audio
+    {
+      category: 'audio',
+      title: l.text('Transcribe an audio file', { context: 'Quickstart title about transcribing an audio file' }),
+      description: l.text('Turn an audio file into accurate text with a single API call.', { context: 'Quickstart description about transcribing an audio file' }),
+      time: '5 min',
+      href: '/studio/audio/speech-to-text/quickstarts/transcribe-a-file',
+      logo: PRODUCT_LOGOS['studio'],
+      alt: 'Audio',
+      activeBorder: 'hover:border-[#0082E6]/50',
+    },
+    {
+      category: 'audio',
+      title: l.text('Generate speech', { context: 'Quickstart title about generating speech from text' }),
+      description: l.text('Convert text into natural speech and play it back with one API call.', { context: 'Quickstart description about generating speech from text' }),
+      time: '5 min',
+      href: '/studio/audio/text-to-speech/quickstarts/generate-speech',
+      logo: PRODUCT_LOGOS['studio'],
+      alt: 'Audio',
+      activeBorder: 'hover:border-[#0082E6]/50',
     },
     // Studio
     {

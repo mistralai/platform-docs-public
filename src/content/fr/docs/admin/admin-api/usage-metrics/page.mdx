@@ -1,18 +1,18 @@
 ---
-title: Métriques d’utilisation
+title: Métriques d'usage
 sidebar_position: 7
-description: Consultez les données de facturation, les limites de dépenses et de débit, l’activité dans le Chat et les données d’utilisation de Vibe Code avec l’API Admin.
+description: Consultez les données d'usage détaillées, les limites de dépenses et de débit, l’activité dans Vibe Work et les données d’utilisation de Vibe Code avec l’API Admin.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
 import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
 
-# Métriques d’utilisation avec l’API Admin
+# Métriques d'usage avec l’API Admin
 
-L’API Admin expose deux types de données de consommation :
+L’API Admin expose deux catégories de métriques :
 
-- **Données de facturation** : coût et consommation de votre Organisation sur une période de facturation.
-- **Données d’utilisation des produits** : activité dans le Chat et métriques d’utilisation de Vibe Code sur une période.
+- **Données d'usage** : données détaillées, regroupées et filtrées sur une période personnalisée. Utilisez `POST /usage/query` pour les nouvelles intégrations. L’ancien endpoint mensuel reste disponible pendant la migration.
+- **Données d'usage des produits** : activité dans Vibe Work et usage de Vibe Code sur une période.
 
 :::info[Uniquement pour les plans Entreprise]
 L'API administrateur est disponible uniquement sur les plans Entreprise, et l'accès ne se fait pas en libre-service. Sur les autres plans, vous ne pouvez pas créer de clé API administrateur, et une clé API standard ne fonctionne pas avec les endpoints d'administration. Pour demander l'accès, contactez l'équipe Mistral en charge de votre compte ou [notre équipe commerciale](https://mistral.ai/contact).
@@ -20,31 +20,62 @@ L'API administrateur est disponible uniquement sur les plans Entreprise, et l'ac
 
 <SectionTab as="h1" sectionId="before-you-start">Avant de commencer</SectionTab>
 
-Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requête utilise l’URL de base `https://console.mistral.ai/api/admin` et l’en-tête `x-api-key`. Consultez [Authentification de l’API Admin](/admin/admin-api/authentication).
+Vous avez besoin d’une clé API Admin créée dans le Backoffice. Chaque requête utilise l’URL de base `https://api.mistral.ai/v1/admin` et transmet la clé comme jeton bearer dans l’en-tête `Authorization`. Consultez [Authentification de l’API Admin](/admin/admin-api/authentication).
 
-<SectionTab as="h1" sectionId="billing-usage">Données de facturation</SectionTab>
+<SectionTab as="h1" sectionId="detailed-usage">Requête d'usage détaillée</SectionTab>
 
-Consultez le coût et la consommation de l’Organisation. Les paramètres `month`, `year` et `workspace_id` sont facultatifs. `month` et `year` sont des nombres entiers. Vous pouvez donc utiliser `5` ou `05`.
+Utilisez `POST /usage/query` pour les nouvelles intégrations. Cet endpoint permet de définir une période personnalisée, filtrer ou regrouper les résultats, créer des intervalles temporels, paginer les données, calculer des agrégats et compter les appels API distincts. `start` est inclusif et `end` est exclusif.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/usage?month=5&year=2026" \
-  -H "x-api-key: $ADMIN_API_KEY"
+curl -X POST https://api.mistral.ai/v1/admin/usage/query \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -d '{
+    "start": "2026-08-01T00:00:00Z",
+    "end": "2026-09-01T00:00:00Z",
+    "usage_type": ["usage", "ocr"],
+    "group_by": ["usage_type", "billing_metric", "billing_group"],
+    "time_bucket": "day",
+    "include_aggregates": true,
+    "include_nb_api_calls": true
+  }'
 ```
 
-La réponse ventile la consommation par catégorie (`chat`, `completion`, `ocr`, `audio`, `connectors`, `libraries_api`, `fine_tuning` et `vibe_usage`). Elle inclut aussi la période (`start_date`, `end_date`) et la devise (`currency`).
+Vous pouvez filtrer et regrouper l'usage par dimensions de facturation et champs d’attribution. Consultez la [référence de l’API](/api/endpoint/beta/admin/billing#operation-users_api_admin_usage_query_usage) pour connaître la liste complète des champs pris en charge. La réponse contient les quantités d’utilisation regroupées dans `groups`, les totaux facultatifs dans `aggregates` et les informations de pagination dans `metadata`.
+
+:::note
+La requête détaillée renvoie actuellement des quantités d'usage, mais pas les prix, la devise ni les coûts calculés. Pendant la migration, utilisez l’ancien endpoint `GET /usage` uniquement si vous avez besoin de son rapport mensuel fixe avec la tarification.
+:::
+
+<SectionTab as="h1" sectionId="monthly-usage">Ancien endpoint d'usage et de tarification mensuelles</SectionTab>
+
+:::warning[Dépréciation prévue]
+`GET /usage` est l’ancien endpoint mensuel au format fixe. Il reste disponible pendant la migration vers `POST /usage/query`, mais il sera déprécié puis supprimé. Ne l’utilisez pas pour de nouvelles intégrations.
+:::
+
+Vous pouvez filtrer `GET /usage` avec les paramètres de requête facultatifs `month`, `year`, `workspace_id` et `api_zone`. `api_zone` accepte `global`, `us` ou `eu`.
+
+```bash
+curl "https://api.mistral.ai/v1/admin/usage?month=8&year=2026&api_zone=eu" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+La réponse inclut l'usage par produit et par métrique de facturation, la période du rapport, la devise et le catalogue de prix utilisé. Les sections par produit couvrent notamment les complétions, l’OCR, les connecteurs, Libraries, le fine-tuning, l’audio, Audio Agents, Vibe Code et le Chat. Le champ historique `vibe_usage` vaut toujours `0` ; utilisez `vibe_code` pour les données de facturation de Vibe Code.
+
+`POST /usage/query` est l’API de consommation cible. Les endpoints `/analytics/vibe/work` et `/analytics/vibe/code` fournissent l’activité des produits et restent une surface d’analyse distincte.
 
 <SectionTab as="h1" sectionId="limits">Limites de dépenses et de débit</SectionTab>
 
 Consultez les limites actuelles de l’Organisation :
 
 ```bash
-# Spend limits
+# Usage et état de la limite de dépenses
 curl https://api.mistral.ai/v1/admin/spend-limit \
-  -H "x-api-key: $ADMIN_API_KEY"
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 
-# Rate limits (requests per second and per-model token limits)
+# Requêtes par seconde et limites de tokens par modèle
 curl https://api.mistral.ai/v1/admin/rate-limit \
-  -H "x-api-key: $ADMIN_API_KEY"
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
 Définissez la limite de dépenses mensuelle de l’Organisation :
@@ -52,77 +83,79 @@ Définissez la limite de dépenses mensuelle de l’Organisation :
 ```bash
 curl -X POST https://api.mistral.ai/v1/admin/spend-limit \
   -H "Content-Type: application/json" \
-  -H "x-api-key: $ADMIN_API_KEY" \
+  -H "Authorization: Bearer $ADMIN_API_KEY" \
   -d '{"amount": 500, "no_monthly_limit": false}'
 ```
 
-- `amount` : limite mensuelle, sous forme de nombre entier dans la devise de facturation de votre Organisation. `500` signifie 500, pas 500 centimes.
-- `no_monthly_limit` : définissez cette valeur sur `true` pour retirer le plafond.
+- `amount` : limite mensuelle exprimée sous forme de nombre entier positif dans la devise de facturation de l’Organisation. `500` signifie 500 unités monétaires, et non 500 centimes.
+- `no_monthly_limit` : définissez cette valeur sur `true` pour retirer le plafond. Le champ `amount` reste obligatoire, mais il est ignoré dans ce cas. Vous pouvez donc envoyer `{"amount": 0, "no_monthly_limit": true}`.
 
-Pour en savoir plus sur les limites, consultez [Limites d’utilisation](/admin/billing-usage/usage-limits).
+Pour en savoir plus sur les limites, consultez [Limites d'usage](/admin/billing-usage/usage-limits).
 
-<SectionTab as="h1" sectionId="lechat-analytics">Données d’utilisation dans le Chat</SectionTab>
+<SectionTab as="h1" sectionId="vibe-work-analytics">Données d'usage de Vibe Work</SectionTab>
 
-Les endpoints `/analytics/lechat` fournissent les données d’activité de la messagerie dans le Chat. Ils acceptent tous `start_time` et `end_time` sous forme d’horodatages Unix en secondes.
+Les endpoints `/analytics/vibe/work` fournissent les données d’activité de la messagerie dans Vibe Work. Ils exigent tous `start_time` et `end_time` sous forme d’horodatages Unix en secondes.
 
-<SectionTab as="h2" variant="secondary" sectionId="lechat-by-user">Par utilisateur</SectionTab>
+:::note
+Les anciennes routes sous `/analytics/lechat/usage` et `/analytics/vibe/usage` restent disponibles en tant qu’alias dépréciés. Utilisez les routes propres à chaque produit, `/analytics/vibe/work` et `/analytics/vibe/code`, pour les nouvelles intégrations.
+:::
+
+<SectionTab as="h2" variant="secondary" sectionId="vibe-work-by-user">Par utilisateur</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_user_stats?start_time=1704067200&end_time=1706745600" \
-  -H "x-api-key: $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/work/usage/by_user_stats?start_time=1764547200&end_time=1767225600" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
 La réponse indique, pour chaque utilisateur, le nombre de messages, de fichiers, d’images et de feuilles de calcul. Elle inclut aussi le nombre de conversations et d’agents distincts, les messages envoyés aux agents et l’horodatage du dernier message.
 
-<SectionTab as="h2" variant="secondary" sectionId="lechat-by-agent">Par agent</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="vibe-work-by-agent">Par agent</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_agent_stats?start_time=1704067200&end_time=1706745600" \
-  -H "x-api-key: $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/work/usage/by_agent_stats?start_time=1764547200&end_time=1767225600" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
-La réponse reprend les mêmes indicateurs d’activité, regroupés par agent, et inclut le nombre d’utilisateurs distincts par agent.
+La réponse regroupe les indicateurs d’activité par agent et inclut le nombre d’utilisateurs distincts par agent ainsi que l’horodatage du dernier message.
 
-<SectionTab as="h2" variant="secondary" sectionId="lechat-by-time">Dans le temps</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="vibe-work-by-time">Dans le temps</SectionTab>
 
-Ajoutez `granularity` (`hour`, `day`, `week` ou `month`) pour regrouper les résultats.
+Ajoutez `granularity` (`hour`, `day`, `week` ou `month`) pour regrouper les résultats par intervalle.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_time_stats?start_time=1704067200&end_time=1706745600&granularity=day" \
-  -H "x-api-key: $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/work/usage/by_time_stats?start_time=1764547200&end_time=1767225600&granularity=day" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
 La réponse regroupe les indicateurs d’activité par intervalle, avec les utilisateurs et les agents distincts.
 
-<SectionTab as="h1" sectionId="vibe-code-analytics">Données d’utilisation de Vibe Code</SectionTab>
+<SectionTab as="h1" sectionId="vibe-code-analytics">Données d'usage de Vibe Code</SectionTab>
 
-Les endpoints `/analytics/vibe` fournissent les données d’activité de Vibe Code. Ils acceptent `start_time` et `end_time` sous forme d’horodatages Unix en secondes.
+Les endpoints `/analytics/vibe/code` fournissent les données d’activité de Vibe Code. Ils exigent `start_time` et `end_time` sous forme d’horodatages Unix en secondes.
 
-<SectionTab as="h2" variant="secondary" sectionId="vibe-by-workspace">Par espace de travail</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="vibe-code-by-workspace">Par espace de travail</SectionTab>
 
-Transmettez `workspace_id` pour limiter le rapport à un seul espace de travail, ou omettez-le pour tous les espaces de travail.
-
-```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_workspace?start_time=1704067200&end_time=1706745600" \
-  -H "x-api-key: $ADMIN_API_KEY"
-```
-
-La réponse fournit des séries quotidiennes pour les sessions (CLI, ACP et API), les utilisateurs actifs, les tokens consommés (entrée, sortie et cache, par modèle), les appels d’outils et les durées de session.
-
-<SectionTab as="h2" variant="secondary" sectionId="vibe-by-organization">Par Organisation</SectionTab>
+Transmettez `workspace_id` pour sélectionner l’espace de travail. Les clés API Admin sont limitées à l’Organisation. L’endpoint renvoie donc `400 Bad Request` si vous omettez `workspace_id`.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_organization?start_time=1704067200&end_time=1706745600" \
-  -H "x-api-key: $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/code/usage/by_workspace?start_time=1764547200&end_time=1767225600&workspace_id=<WORKSPACE_UUID>" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
 ```
 
-La réponse fournit des séries quotidiennes pour les suggestions `next_edit` par résultat, les utilisateurs actifs `next_edit` et les lignes de code modifiées.
+La réponse fournit des séries quotidiennes pour les sessions, les requêtes utilisateur, les utilisateurs actifs, les tokens consommés par modèle, les appels d’outils (y compris par nom d’outil) et les durées de session.
 
-{/* TODO: confirm the base host for the /analytics/* endpoints. They are generated from the datalake-api service (datalake-api/specs/openapi-admin.json); verify they are served from api.mistral.ai/v1/admin or a separate host. */}
+<SectionTab as="h2" variant="secondary" sectionId="vibe-code-by-organization">Par Organisation</SectionTab>
+
+```bash
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/code/usage/by_organization?start_time=1764547200&end_time=1767225600" \
+  -H "Authorization: Bearer $ADMIN_API_KEY"
+```
+
+La réponse fournit des séries quotidiennes pour les suggestions de modification suivante par résultat, les utilisateurs actifs de cette fonctionnalité et les lignes de code modifiées.
 
 <SectionTab as="h1" sectionId="next-steps">Étapes suivantes</SectionTab>
 
 <UsefullLinkContainer>
-  <LinkCard href="/admin/admin-api/user-provisioning" title="Provisionnement des utilisateurs" />
-  <LinkCard href="/admin/billing-usage/usage-limits" title="Limites d’utilisation" />
+  <LinkCard href="/api/endpoint/beta/admin/vibe-work-analytics" title="Référence de l’API Vibe Work" />
+  <LinkCard href="/api/endpoint/beta/admin/vibe-code-analytics" title="Référence de l’API Vibe Code" />
 </UsefullLinkContainer>

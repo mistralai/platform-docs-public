@@ -314,7 +314,9 @@ const sidebarTreeData = (
 
         if (isQuickstartsSlug(item.slug)) {
           // The audio quickstarts live in the Studio > Audio section.
-          if (isStudioSlug(item.slug)) {
+        }
+
+        if (isStudioSlug(item.slug)) {
           const sectionLabel = (label: string): SideBarTreeNode => ({
             label,
             categoryPath: `/studio#${label.toLowerCase().replace(/\s+/g, '-')}`,

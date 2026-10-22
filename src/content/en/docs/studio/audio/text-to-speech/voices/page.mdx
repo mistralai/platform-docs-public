@@ -30,17 +30,42 @@ The following voices come with Voxtral 3.
 
 | Voice | Voice ID | Language |
 | --- | --- | --- |
-| Sarah | `voice_478` | English (`en`) |
-| Yael | `voice_447` | English (`en`) |
-| Eric | `voice_485` | English (US) |
-| Jesse | `voice_484` | English (US) |
-| Esmeralda | `voice_483` | Spanish |
-| Andrea | `voice_482` | Italian |
-| Fiona | `voice_481` | German |
-| Marina | `voice_480` | Portuguese |
-| Linda | `voice_479` | Arabic |
-
-{/* Listed Oct 7 from GET /v1/audio/voices (and /v2/audio/voices, same 42 items): 9 presets with `type: preset`, `kind: pvc`, and opaque `voice_NNN` slugs. The API returns `languages: []` for the 7 voices after Yael. Sarah and Yael are the checkpoint 3-0-4 voices formerly called `sarah` and `yael`. The API also returns a `gender` field for every preset (Sarah, Yael, Esmeralda, Andrea, Fiona, Marina, Linda: female; Eric, Jesse: male): not shown, Gregory to decide whether the library gets a gender column. */}
+| Sheila | `voice_478` | English (US) |
+| Margaret | `voice_447` | English (US) |
+| Rob | `voice_485` | English (US) |
+| James | `voice_3150` | English (US) |
+| Mary | `voice_1787` | English (UK) |
+| Sky | `voice_1786` | English (UK) |
+| David | `voice_1788` | English (UK) |
+| Harriet | `voice_590` | English (UK) |
+| Fred | `voice_591` | English (UK) |
+| Hugo | `voice_3149` | English (UK) |
+| Howard | `voice_3147` | English (UK) |
+| Marie | `voice_592` | French |
+| Manon | `voice_3137` | French |
+| Lea | `voice_589` | French |
+| Camille | `voice_3141` | French |
+| Elena | `voice_483` | Spanish |
+| Heidi | `voice_481` | German |
+| Lorenzo | `voice_482` | Italian |
+| Gabriela | `voice_480` | Portuguese |
+| Maryam | `voice_479` | Arabic |
+| Jordi | `voice_3143` | Catalan |
+| Ananya | `voice_3139` | Hindi |
+| Himanshu | `voice_3153` | Hindi |
+| Olivia | `voice_3146` | Hungarian |
+| Haruto | `voice_3133` | Japanese |
+| Sung | `voice_3136` | Korean |
+| Jin | `voice_3135` | Korean |
+| Lotte | `voice_3145` | Dutch |
+| Lars | `voice_3134` | Norwegian |
+| Leon | `voice_3154` | Polish |
+| Irina | `voice_3155` | Romanian |
+| Tatiana | `voice_3132` | Russian |
+| Oran | `voice_3138` | Turkish |
+| Taras | `voice_3140` | Ukrainian |
+| Huong | `voice_3144` | Vietnamese |
+| Mei | `voice_3142` | Chinese |
 
 <SectionTab as="h3" variant="secondary" sectionId="voxtral-2-preset-voices">Voxtral 2 preset voices</SectionTab>
 
@@ -57,8 +82,6 @@ Voxtral 3 still accepts these presets. Each speaker comes in several variants, o
 With the Voxtral 3 voices, you keep one voice and set the emotion inline instead. See [Emotion and pace tags](/studio/audio/text-to-speech/emotion-tags).
 :::
 
-{/* Rakesh (Oct 7): the earlier presets stay accepted, no deprecation flag; current checkpoints have some issues with them, the final checkpoint fully supports them. Observed Oct 7: pace tags change the duration on Voxtral 3 voices but barely on gb_jane_neutral. */}
-
 <SectionTab as="h2" sectionId="use-a-voice-id">Use a voice ID</SectionTab>
 
 Pass the voice ID as `voice_id` in a speech request. A preset voice has a slug, such as `gb_jane_neutral` or `voice_478`. A voice saved in your workspace has no slug: use the ID that the API returns when you create it. If the ID doesn't match any voice, the request fails with a `404` error.
@@ -70,8 +93,6 @@ For a complete request, see the [quickstart](/studio/audio/text-to-speech/quicks
 <SectionTab as="h2" sectionId="manage-voices">Manage voices</SectionTab>
 
 The voices API covers the preset voices and the voices saved in your workspace. The following table shows what each operation applies to.
-
-{/* SDK METHOD COLUMN (Gregory, Oct 9): the method names are the Python SDK's (mistralai 3.x). The TypeScript SDK 2.7.0 has no voices.search: its voices.list uses the v1 endpoint and drops the type field, so the TypeScript tab calls GET /v2/audio/voices with fetch. Revisit the column and the voices.search note when the TypeScript SDK catches up. */}
 
 | Operation | SDK method | Applies to |
 | --- | --- | --- |
@@ -92,36 +113,57 @@ from mistralai.client import Mistral
 
 client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
-page = client.audio.voices.search(page_size=50)
+# List all preset voices
+page = client.audio.voices.search(page_size=50, type_="preset")
 while page is not None:
     for voice in page.result.data:
         languages = ", ".join(voice.languages or []) or "-"
         print(f"{voice.slug or voice.id:<38} {voice.name:<28} {voice.type:<7} {languages}")
     page = page.next()
+
+# Filter by language and gender
+page = client.audio.voices.search(
+    language=["fr"],
+    gender=["female"],
+)
+for voice in page.result.data:
+    print(f"{voice.name}: {voice.slug}")
+
+# Search by name
+page = client.audio.voices.search(query="Marie")
+for voice in page.result.data:
+    print(f"{voice.name}: {voice.slug}")
 ```
 
       </TabItem>
       <TabItem value="typescript" label="typescript">
 
 ```typescript
-const apiKey = process.env.MISTRAL_API_KEY;
+import { Mistral } from "@mistralai/mistralai";
 
-let pageToken: string | undefined;
-do {
-  const url = new URL("https://api.mistral.ai/v2/audio/voices");
-  url.searchParams.set("page_size", "50");
-  if (pageToken) url.searchParams.set("page_token", pageToken);
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
 
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
-  if (!response.ok) throw new Error(`${response.status}: ${await response.text()}`);
-  const page = await response.json();
-
-  for (const voice of page.data) {
+// List all preset voices
+for await (const page of await client.audio.voices.search({ pageSize: 50, type: "preset" })) {
+  for (const voice of page.result.data ?? []) {
     const languages = (voice.languages ?? []).join(", ") || "-";
     console.log(`${(voice.slug ?? voice.id).padEnd(38)} ${voice.name.padEnd(28)} ${voice.type.padEnd(7)} ${languages}`);
   }
-  pageToken = page.next_page_token || undefined;
-} while (pageToken);
+}
+
+// Filter by language and gender
+for await (const page of await client.audio.voices.search({ language: ["fr"], gender: ["female"] })) {
+  for (const voice of page.result.data ?? []) {
+    console.log(`${voice.name}: ${voice.slug}`);
+  }
+}
+
+// Search by name
+for await (const page of await client.audio.voices.search({ query: "Marie" })) {
+  for (const voice of page.result.data ?? []) {
+    console.log(`${voice.name}: ${voice.slug}`);
+  }
+}
 ```
 
       </TabItem>
@@ -277,8 +319,6 @@ For the recording to provide and how to use a cloned voice, see [Voice cloning](
 
 Saved voices can be shared within your workspace. Sharing is managed in AI Studio: workspace admins control whether a voice is private or shared with the workspace. The `sharing_scope` field in the voice list response indicates the current scope (`private`, `workspace`, or `global`). The sharing API endpoints are internal for now; sharing is done through the AI Studio interface.
 
-{/* TESTED Oct 7 (mistralai 3.0.0): list_voices.py uses voices.search (GET /v2/audio/voices, cursor pages) because voices.list (GET /v1/audio/voices, offset pages) raises a DeprecationWarning in the SDK ("Use GET /v2/audio/voices"). The list returned 42 voices: 9 Voxtral 3 presets, 30 Voxtral 2 presets, 3 custom voices (type custom, slug null). The sample endpoint returns audio/wav for Voxtral 2 presets and saved voices, but 404 "Voice not found or no sample available" for the Voxtral 3 voices tested (Sarah, Eric). manage_voice.py reads the ID printed by create_voice.py from the VOICE_ID environment variable. Unknown voice ID in a speech request: 404 invalid_voice, code 1902 (probe p2). Saved voice IDs are UUIDs, accepted as voice_id (clone_saved_voice.py). */}
-
 <SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
 
 <UsefullLinkContainer>
@@ -287,8 +327,3 @@ Saved voices can be shared within your workspace. Sharing is managed in AI Studi
   <LinkCard href="/studio/audio/text-to-speech/style-instructions" title="Style instructions" />
 </UsefullLinkContainer>
 
-{/* Reference page — audio docs revamp (DOC-610). Written Oct 9 from the Oct 7 tests (examples/tts/voices,
-   probes p1 and p2, out/probes/voices_v2.json). The why (kinds of voices, choosing vs directing) lives on
-   concepts/voices: linked, not repeated. Verify at the end: every voice has a playable sample (this page is the
-   sample reference), the Voxtral 3 languages and IDs confirmed, CRUD salvaged from deprecated content, no cloning
-   how-to (own page). FALLBACK: publish with the voices already confirmed and grow the library later. */}

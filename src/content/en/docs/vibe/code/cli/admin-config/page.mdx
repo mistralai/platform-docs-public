@@ -8,20 +8,28 @@ import { AppLink } from '@/components/common/app-link';
 
 # Admin config
 
-Admin config, also called **managed config**, lets Organization and Workspace administrators distribute Vibe Code CLI settings to all users. You define it once in the Admin Panel, and the CLI applies it to users in the Organization or Workspace. Use it to distribute models, providers, MCP servers, and tool policies without requiring users to edit `config.toml`.
+Admin config, also called **managed config**, lets Organization and Workspace administrators distribute settings for the Vibe Code CLI and the VS Code extension to all users. You define it once in the Admin Panel, and both clients apply it to users in the Organization or Workspace. Use it to distribute models, providers, MCP servers, and tool policies without requiring users to edit `config.toml`.
 
 :::info
-Admin config is a **distribution mechanism, not a security control**. It applies settings by default and shows them in `/config`, but users who control their local CLI environment can bypass them. Don't use admin config to restrict access to tools or models.
+Admin config is a **distribution mechanism, not a security control**. It applies settings by default and shows them in `/config`, but users who control their local CLI environment can bypass them. Use it to set safe defaults, not to guarantee access rules: anything users must never reach also needs a server-side control, such as API key or Workspace permissions.
+
+When admin config can't be applied, for example because it's invalid, sessions run on the user's local configuration instead. See [What users see](#user-experience).
 :::
 
-Unlike `config.toml`, admin config doesn't live on the user's machine. The CLI fetches it over HTTP at startup, keeps it **in memory only**, and never writes it to disk.
+Unlike `config.toml`, admin config isn't edited on the user's machine. The CLI fetches it over HTTP when a session starts and keeps a copy in `~/.vibe/managed_config_cache.json`, to use when the next fetch fails. It never writes admin config to `config.toml`.
 
 Admin config is available at two scopes:
 
-- **Organization level**: configure it in <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />. It applies to all users in the Organization.
-- **Workspace level**: open <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />, select a Workspace, and open `Settings`. This configuration can override or block specific Organization-level settings.
+- **Organization level**: configure it in <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />. It applies to users in every Workspace that doesn't set its own.
+- **Workspace level**: open <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />, select a Workspace, and open `Settings`. A Workspace can use the Organization-level configuration, replace it with its own, or turn admin config off for its users.
 
-The server merges the Organization and Workspace configurations. The client receives one resolved configuration.
+The server doesn't merge the two configurations. Each user receives one, chosen by the user's Workspace:
+
+| Workspace-level configuration | What users in the Workspace receive |
+|---|---|
+| Not set, or set to inherit | The Organization-level configuration |
+| Enabled | The Workspace-level configuration only. Settings defined only at the Organization level don't apply. |
+| Disabled | No admin config, even when the Organization has one |
 
 <SectionTab as="h2" sectionId="requirements">Minimum client versions</SectionTab>
 
@@ -36,13 +44,15 @@ Earlier clients don't request admin config or apply its settings. Upgrade every 
 
 <SectionTab as="h2" sectionId="how-it-works">How it works</SectionTab>
 
-1. In <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />, enter a TOML configuration under `Vibe Code Clients managed config`.
-2. At startup and after `/reload`, the CLI calls the managed-config endpoint with the user's Mistral API key.
-3. If admin config is enabled, its values take precedence over every other configuration source.
+1. In <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />, or in a Workspace's `Settings`, enter a TOML configuration under `Vibe Code Clients managed config`.
+2. When a session starts, the CLI calls the managed-config endpoint with the user's Mistral API key and waits for the answer, a few seconds at most. `/reload` fetches it again.
+3. If admin config is enabled, its values take precedence over every other configuration source. The session follows them from its first message: starting agent, connectors, MCP servers, and tools.
 
 <SectionTab as="h2" sectionId="permissions">Permissions</SectionTab>
 
 Managing admin config requires the `manage_code_config` role-based access control (RBAC) permission at the Organization scope. Organization administrators can delegate admin config management without granting full administrator access.
+
+Workspace administrators can manage the configuration of their own Workspace.
 
 <SectionTab as="h2" sectionId="enable">Enable the feature</SectionTab>
 
@@ -82,6 +92,7 @@ Admin config accepts most of the same keys as [`config.toml`](/vibe/code/cli/con
 - MCP servers, and whether users can use MCP servers at all.
 - Whether users can auto-approve every tool call.
 - Connectors, and enabled/disabled tools, agents, and skills.
+- The starting agent.
 - Telemetry, update check, and notification toggles.
 
 ```toml
@@ -165,6 +176,54 @@ With `enable_mcp = false`, the Vibe Code clients:
 
 Users who try one of these actions see a message that their administrator disabled MCP servers. The clients enforce this setting, so like the rest of admin config, it isn't a security boundary. It requires Vibe Code CLI 3.0 or later. [Connectors](/vibe/code/cli/connectors) have a separate setting, `enable_connectors`.
 
+<SectionTab as="h2" sectionId="block-connectors">Block connectors</SectionTab>
+
+To block every [connector](/vibe/code/cli/connectors), including the built-in web search, set `enable_connectors` to `false`:
+
+```toml
+enable_connectors = false
+```
+
+To block one connector, add a `[[connectors]]` entry with the connector's name, as listed in `/connectors`:
+
+```toml
+[[connectors]]
+name = "web_search"
+disabled = true
+```
+
+To block only some of a connector's tools, list them in the entry's `disabled_tools`, without the connector prefix:
+
+```toml
+[[connectors]]
+name = "web_search"
+disabled_tools = ["weather_search"]
+```
+
+In the top-level `enabled_tools` and `disabled_tools` keys and in `[tools.<tool_name>]` blocks, a connector tool is named `connector_<connector>_<tool>`:
+
+```toml
+disabled_tools = ["connector_web_search_*"]
+
+[tools.connector_web_search_weather_search]
+permission = "ask"
+```
+
+:::warning
+Session logs show connector tools as `connector_<connector>.<tool>`, with a dot, for example `connector_web_search.weather_search`. Rules written with the dot match no tool. Use the underscore form, `connector_web_search_weather_search`.
+:::
+
+<SectionTab as="h2" sectionId="starting-agent">Set the starting agent</SectionTab>
+
+Set `default_agent` to choose the agent every session starts in, and `enabled_agents` or `disabled_agents` to limit the agents users can switch to. Both lists take agent name patterns: exact names, globs, or regular expressions prefixed with `re:`.
+
+```toml
+default_agent = "ask"
+disabled_agents = ["auto-approve"]
+```
+
+Sessions never run in an agent the admin config excludes. If a user asks for one, for example with `--agent`, the session starts in `default_agent` instead.
+
 <SectionTab as="h2" sectionId="block-auto-approve">Block auto-approve</SectionTab>
 
 To stop users from skipping approval prompts with the auto-approve mode, set `enable_auto_approve` to `false`:
@@ -175,8 +234,8 @@ enable_auto_approve = false
 
 With `enable_auto_approve = false`, the Vibe Code CLI:
 
-- Hides the `auto-approve` agent and every custom agent with `safety = "yolo"`. A session whose `--agent` or `default_agent` names one of them doesn't start and explains that the auto-approve mode is disabled. Users need to pick another default agent.
-- Ignores `--auto-approve` and `--yolo`, and shows a warning that approval prompts stay on.
+- Hides the `auto-approve` agent and every custom agent with `safety = "yolo"`. A session whose `--agent` or `default_agent` names one of them starts in another agent instead, as for any [agent the admin config excludes](#starting-agent).
+- Ignores `--auto-approve` and `--yolo`, and shows a warning that approval prompts stay on. It also ignores `bypass_tool_permissions = true`.
 
 [Per-tool permissions](/vibe/code/safety-approvals-permissions#set-permissions) still apply: a tool set to `always` in `[tools.<tool_name>]`, or a command in its `allowlist`, still runs without approval. Like the rest of admin config, this setting isn't a security boundary. It requires Vibe Code CLI 3.0.1 or later.
 
@@ -188,18 +247,17 @@ Admin config never contains literal secrets. Credential fields must reference an
 
 When admin config is active, users in the Vibe Code CLI notice the following:
 
-- Admin-managed settings are read-only in `/config`: users can't edit or reset them. The settings editor's **WHERE IT'S SET** panel lists the administrator as a source.
+- Admin-managed settings are read-only in `/config`: users can't edit or reset them. The settings editor's **Where it's set** panel lists the administrator as a source.
 - There is no startup banner or global indicator.
-- The CLI fetches admin config in the background at the start of each session. It keeps the configuration in memory and never writes it to the local `config.toml`.
-- If a network or server error prevents the fetch, the session continues without admin config. The CLI logs the failure at debug level and doesn't show a warning.
+- Starting a session waits for admin config, a few seconds at most. The CLI never writes admin config to the local `config.toml`.
+- If the fetch fails, the session uses the last admin config received in the past 7 days, or runs without admin config.
+- `/reload` fetches admin config again. Changes to the starting agent and connectors apply from the next session.
 - If the CLI can't find a Mistral API key, it skips admin config.
-- If the admin config is invalid, the CLI ignores it and shows: `Your administrator-managed configuration could not be applied: <reason>`.
+- If the admin config can't be applied, the CLI tries the last admin config it received, then falls back to the user's local configuration, with no admin config at all. It shows: `Your administrator-managed configuration could not be applied: <reason>`. This happens when the admin config is invalid or doesn't fit the user's setup, for example a `[[models]]` entry whose `provider` isn't defined, or a `system_prompt_id` the user's project doesn't provide.
 
 <SectionTab as="h2" sectionId="disable">Stop applying admin config</SectionTab>
 
-Disabling the feature flag only hides the admin UI. Clients continue to fetch and apply the saved configuration.
-
-To stop applying admin config, **submit an empty configuration** before you disable the feature flag. This prevents a stale configuration from being applied to user sessions.
+To stop applying admin config, **submit an empty configuration**. Users who can't reach the managed-config endpoint keep the last configuration they received for up to 7 days.
 
 <SectionTab as="h2" sectionId="troubleshooting">Troubleshoot dedicated and self-hosted deployments</SectionTab>
 

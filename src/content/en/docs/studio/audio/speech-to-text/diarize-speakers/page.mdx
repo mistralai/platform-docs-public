@@ -86,8 +86,6 @@ for (const segment of transcription.segments ?? []) {
 }
 ```
 
-{/* TESTED Oct 9 (TS tab): diarize-speakers/diarize.ts, @mistralai/mistralai 2.7.0 on Node 26, on the interim alias voxtral-transcribe-3 (15 segments, same output shape as the Python tab) and on voxtral-small-transcribe-3-0 (7 longer segments). */}
-
   </TabItem>
 </Tabs>
 
@@ -160,8 +158,6 @@ With diarization on, the session sends `transcription.segment` events instead of
 {"type": "transcription.segment", "text": " Hi,", "start": null, "end": null, "speaker_id": "speaker_2"}
 {"type": "transcription.segment", "text": " Daniel.", "start": null, "end": null, "speaker_id": "speaker_2"}
 ```
-
-{/* TESTED Oct 7 (stt agent): examples/stt/probes/probe_realtime.py "diar" probe, output out/probes/rt_diar.json, on the live interim ID voxtral-transcribe-realtime-3-0 (served as checkpoint voxtral-transcribe-realtime-3-0-1), input fixtures/meeting_16k.wav (synthetic Northwind support call, 16 kHz). The JSON block is the exact session.update the probe sent (audio_format + diarize, no other field). The events are three consecutive transcription.segment events copied from the log. The session sent 70 transcription.segment events and NO transcription.text.delta event (rt_basic, without diarize: 41 text.delta, no segment). transcription.done carries the full text and the segments list with speaker_id, start and end null. Speaker IDs start at speaker_1, as offline. Added Oct 9 by the diarize-speakers agent from the probe log, no new run (expired key). The full script with the websockets package is the one in "Name speakers with reference clips", which adds speaker_references to the same session.update. */}
 
 For a complete realtime client, see the Python script in [Name speakers with reference clips](#speaker-references): it sends the same session configuration, plus reference clips.
 
@@ -378,8 +374,6 @@ ws.on("message", (message) => {
 });
 ```
 
-{/* TESTED Oct 9 (TS tab): diarize-speakers/realtime_speaker_references.ts with the ws package 8.22 (a dependency of @mistralai/mistralai 2.7.0, whose RealtimeConnection.updateSession() only takes audioFormat), Node 26, on the interim alias voxtral-transcribe-realtime-3: six turns named agent / customer, the first four identical to the output below. */}
-
   </TabItem>
 </Tabs>
 
@@ -389,8 +383,6 @@ customer: Hi, Daniel. I ordered two Quilera headsets last week. Order four, 417.
 agent: Let me check. I can see order 4417. It left our Rotterdam warehouse yesterday, but the tracking was not updated.
 customer: Okay. Can you send me the new tracking link? And I also need an invoice for my company, Alder Creek Design.
 ```
-
-{/* TESTED Oct 9 (neutral recapture): diarize-speakers/realtime_speaker_references.py on customer_call.wav, on the interim alias voxtral-transcribe-realtime-3 (served as checkpoint voxtral-transcribe-realtime-3-0-1). The final ID voxtral-mini-transcribe-realtime-3-0 is refused at the WebSocket handshake with HTTP 403 (Oct 7 and Oct 9, rename pending). The JSON block is the exact session.update the script sends, with the base64 elided. Reference clips: agent_reference.wav (4.7 s) and customer_reference.wav (6.3 s), synthesized separately (other sentences) with the same two presets as the call (en_paul_neutral, gb_jane_neutral), sent as base64 of the whole WAV file. Every segment came back under the right name ("agent", "customer"), output above (first four of six turns). On Oct 7, references re-synthesized with voice_447 / voice_478 did NOT match demo 01's call (recorded Sept 24 with yael / sarah): every segment came back as speaker_3 / speaker_4, so unmatched speakers get generic IDs numbered after the references. Observed on Oct 7: start and end are null in realtime; session.updated echoes speaker_references as the list of names; without diarize the server sends an error event "Speaker references require diarization, set diarize=true." The 8-reference and 3-15 s limits were not tested. SDK: mistralai 3.0.0 cannot send diarize or speaker_references (update_session only takes audio_format and target_streaming_delay_ms), so the script uses the websockets package directly (installed with mistralai[realtime]). Replaces the Oct 7 capture on demo 01's call (internal names). */}
 
   </TabItem>
   <TabItem value="offline" label="Offline">
@@ -431,22 +423,3 @@ For other transcription errors, see [Troubleshooting](/studio/audio/speech-to-te
   <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9):
-   - Offline diarize + segment requirement, labels from speaker_1, segment fields: diarize-speakers/diarize.{sh,py}, Oct 7,
-     Mini and Small; 422 message captured then. Offline `text` without labels: out/probes/refs_json_voxtral-transcribe-3.json.
-   - Realtime diarize: out/probes/rt_diar.json (segment events replace text.delta, start/end null, done carries segments).
-   - Speaker references: limits (8 clips, 3 to 15 s), diarize required, both modes: Rakesh Oct 9 via Gregory (status.md),
-     RFC-555 sections 1.1 and 2.2. Realtime run: realtime_speaker_references.py, Oct 7. Unmatched speakers numbered after
-     the references (speaker_3 / speaker_4 with two references): handoff-stt.md surprise 5. Offline: refused Oct 7, Draft.
-   - Errors: refs without diarize, offline out/probes/mini_refs_nodiar.json (422, message inside an assertion detail) and
-     realtime out/probes/rt_refs_nodiar.json; diarize + turn_detection, out/probes/rt_turn_diar.json (code 3051); realtime
-     error shape {"type": "error", "error": {"message", "code"}} from the same logs.
-   - Exclusivity tip (diarize the recording offline afterwards): concepts/turns, section turns-and-diarization (final).
-   - Overlap: RFC-555 only, not reproduced. .
-   - Removed the "Realtime inline tags" section of the skeleton: realtime labels are explained once, in Read speaker labels. */}
-
-{/* Feature page (layer 4, How) — audio docs revamp (DOC-610). Boundary: the concept page Speakers and diarization owns
-   the why (what labels mean, choosing reference clips, overlap in an interface); this page owns options, values, code,
-   and errors. Verify at the end: the demo shows the value, overlap confirmed or removed, offline speaker references
-   tested before an offline example ships, tested outputs rerun on a neutral recording, exclusivity with turn detection
-   stated. */}

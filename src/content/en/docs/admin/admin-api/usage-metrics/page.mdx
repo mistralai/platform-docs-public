@@ -1,7 +1,7 @@
 ---
 title: Usage metrics
 sidebar_position: 7
-description: Retrieve detailed usage, spending and rate limits, Vibe Work activity, and Vibe Code analytics with the Admin API.
+description: Retrieve billing usage, spending and rate limits, le Chat activity, and Vibe Code analytics with the Admin API.
 ---
 
 import { SectionTab } from '@/components/layout/section-tab';
@@ -9,10 +9,10 @@ import { UsefullLinkContainer, LinkCard } from '@/components/common/link-card';
 
 # Usage metrics with the Admin API
 
-The Admin API exposes two categories of metrics:
+The Admin API exposes two kinds of consumption data:
 
-- **Usage data**: detailed usage grouped and filtered over a custom time range. Use `POST /usage/query` for new integrations. The legacy monthly endpoint remains available during the migration.
-- **Product analytics**: Vibe Work activity and Vibe Code usage over a time range.
+- **Billing usage**: cost and consumption for your Organization over a billing period.
+- **Product analytics**: le Chat activity and Vibe Code usage metrics over a time range.
 
 :::info[Enterprise plans only]
 The Admin API is available only on Enterprise plans, and access isn't self-serve. On other plans, you can't create an Admin API key, and a standard API key doesn't work with admin endpoints. To request access, contact your Mistral account team or [our sales team](https://mistral.ai/contact).
@@ -20,62 +20,31 @@ The Admin API is available only on Enterprise plans, and access isn't self-serve
 
 <SectionTab as="h1" sectionId="before-you-start">Before you start</SectionTab>
 
-You need an Admin API key created in the Backoffice. Every request uses the base URL `https://api.mistral.ai/v1/admin` and passes the key as a bearer token in the `Authorization` header. See [Admin API authentication](/admin/admin-api/authentication).
+You need an Admin API key created in the Admin Panel. Every request uses the base URL `https://api.mistral.ai/v1/admin` and the `x-api-key` header. See [Admin API authentication](/admin/admin-api/authentication).
 
-<SectionTab as="h1" sectionId="detailed-usage">Detailed usage query</SectionTab>
+<SectionTab as="h1" sectionId="billing-usage">Billing usage</SectionTab>
 
-Use `POST /usage/query` for new integrations. It supports custom time ranges, filters, grouping, time buckets, pagination, aggregates, and distinct API-call counts. `start` is inclusive and `end` is exclusive.
-
-```bash
-curl -X POST https://api.mistral.ai/v1/admin/usage/query \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ADMIN_API_KEY" \
-  -d '{
-    "start": "2026-08-01T00:00:00Z",
-    "end": "2026-09-01T00:00:00Z",
-    "usage_type": ["usage", "ocr"],
-    "group_by": ["usage_type", "billing_metric", "billing_group"],
-    "time_bucket": "day",
-    "include_aggregates": true,
-    "include_nb_api_calls": true
-  }'
-```
-
-You can filter and group usage by billing dimensions and attribution fields. See the [API reference](/api/endpoint/beta/admin/billing#operation-users_api_admin_usage_query_usage) for the complete list of supported fields. The response contains grouped usage quantities in `groups`, optional totals in `aggregates`, and pagination information in `metadata`.
-
-:::note
-The detailed query currently returns usage quantities, not prices, currency, or calculated costs. During the migration, use the legacy `GET /usage` endpoint only if you need its fixed monthly report with pricing.
-:::
-
-<SectionTab as="h1" sectionId="monthly-usage">Legacy monthly usage and pricing</SectionTab>
-
-:::warning[Planned deprecation]
-`GET /usage` is the legacy, fixed-format monthly endpoint. It remains available during the migration to `POST /usage/query`, but it will be deprecated and removed. Don't use it for new integrations.
-:::
-
-You can filter `GET /usage` with the optional `month`, `year`, `workspace_id`, and `api_zone` query parameters. `api_zone` accepts `global`, `us`, or `eu`.
+Retrieve cost and consumption for the Organization. The `month`, `year`, and `workspace_id` parameters are optional. `month` and `year` are whole numbers, so `5` and `05` both work.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/usage?month=8&year=2026&api_zone=eu" \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/usage?month=5&year=2026" \
+  -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-The response includes usage by product and billing metric, the report period, the currency, and the price catalog used for the report. Product sections include completions, OCR, connectors, Libraries, fine-tuning, audio, Audio Agents, Vibe Code, and Chat. The legacy `vibe_usage` field is always `0`; use `vibe_code` for Vibe Code billing usage.
-
-`POST /usage/query` is the long-term consumption API. The `/analytics/vibe/work` and `/analytics/vibe/code` endpoints report product activity and remain a separate product-analytics surface.
+The response breaks consumption down by category (`chat`, `completion`, `ocr`, `audio`, `connectors`, `libraries_api`, `fine_tuning`, and `vibe_usage`), together with the period (`start_date`, `end_date`) and the `currency`.
 
 <SectionTab as="h1" sectionId="limits">Spending and rate limits</SectionTab>
 
-Read the Organization's current limits:
+Read the current Organization limits:
 
 ```bash
-# Usage and spending-limit status
+# Spend limits
 curl https://api.mistral.ai/v1/admin/spend-limit \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+  -H "x-api-key: $ADMIN_API_KEY"
 
-# Requests per second and per-model token limits
+# Rate limits (requests per second and per-model token limits)
 curl https://api.mistral.ai/v1/admin/rate-limit \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+  -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 Set the Organization's monthly spending limit:
@@ -83,79 +52,77 @@ Set the Organization's monthly spending limit:
 ```bash
 curl -X POST https://api.mistral.ai/v1/admin/spend-limit \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ADMIN_API_KEY" \
+  -H "x-api-key: $ADMIN_API_KEY" \
   -d '{"amount": 500, "no_monthly_limit": false}'
 ```
 
-- `amount`: the monthly limit as a positive whole number in the Organization's billing currency. `500` means 500 currency units, not 500 cents.
-- `no_monthly_limit`: set it to `true` to remove the cap. The required `amount` field is ignored in that case, so you can send `{"amount": 0, "no_monthly_limit": true}`.
+- `amount`: the monthly limit, as a whole number in your Organization's billing currency (`500` means 500, not 500 cents).
+- `no_monthly_limit`: set to `true` to remove the cap.
 
 See [Usage limits](/admin/billing-usage/usage-limits) for the concept.
 
-<SectionTab as="h1" sectionId="vibe-work-analytics">Vibe Work analytics</SectionTab>
+<SectionTab as="h1" sectionId="lechat-analytics">le Chat analytics</SectionTab>
 
-The `/analytics/vibe/work` endpoints report Vibe Work messaging activity. All of them require `start_time` and `end_time` as Unix timestamps in seconds.
+The `/analytics/lechat` endpoints report le Chat messaging activity. All of them take `start_time` and `end_time` as Unix timestamps in seconds.
 
-:::note
-Older routes under `/analytics/lechat/usage` and `/analytics/vibe/usage` remain as deprecated aliases. Use the product-specific `/analytics/vibe/work` and `/analytics/vibe/code` routes for new integrations.
-:::
-
-<SectionTab as="h2" variant="secondary" sectionId="vibe-work-by-user">By user</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="lechat-by-user">By user</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/work/usage/by_user_stats?start_time=1764547200&end_time=1767225600" \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_user_stats?start_time=1704067200&end_time=1706745600" \
+  -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 Returns, per user: message, file, image, and spreadsheet counts; unique conversations; unique agents; messages sent to agents; and the last message timestamp.
 
-<SectionTab as="h2" variant="secondary" sectionId="vibe-work-by-agent">By agent</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="lechat-by-agent">By agent</SectionTab>
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/work/usage/by_agent_stats?start_time=1764547200&end_time=1767225600" \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_agent_stats?start_time=1704067200&end_time=1706745600" \
+  -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns the activity counts grouped by agent, together with the number of unique users per agent and the last message timestamp.
+Returns the same activity counts grouped by agent, plus the number of unique users per agent.
 
-<SectionTab as="h2" variant="secondary" sectionId="vibe-work-by-time">Over time</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="lechat-by-time">Over time</SectionTab>
 
 Add `granularity` (`hour`, `day`, `week`, or `month`) to bucket the results.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/work/usage/by_time_stats?start_time=1764547200&end_time=1767225600&granularity=day" \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/lechat/usage/by_time_stats?start_time=1704067200&end_time=1706745600&granularity=day" \
+  -H "x-api-key: $ADMIN_API_KEY"
 ```
 
 Returns activity counts per time bucket, including unique users and unique agents.
 
 <SectionTab as="h1" sectionId="vibe-code-analytics">Vibe Code analytics</SectionTab>
 
-The `/analytics/vibe/code` endpoints report Vibe Code activity. They require `start_time` and `end_time` as Unix timestamps in seconds.
+The `/analytics/vibe` endpoints report Vibe Code activity. They take `start_time` and `end_time` as Unix timestamps in seconds.
 
-<SectionTab as="h2" variant="secondary" sectionId="vibe-code-by-workspace">By Workspace</SectionTab>
+<SectionTab as="h2" variant="secondary" sectionId="vibe-by-workspace">By workspace</SectionTab>
 
-Pass `workspace_id` to select the Workspace. Admin API keys are Organization-scoped, so the endpoint returns `400 Bad Request` if you omit `workspace_id`.
-
-```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/code/usage/by_workspace?start_time=1764547200&end_time=1767225600&workspace_id=<WORKSPACE_UUID>" \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
-```
-
-Returns daily series for sessions, user prompts, active users, consumed tokens by model, tool calls (including calls by tool name), and session durations.
-
-<SectionTab as="h2" variant="secondary" sectionId="vibe-code-by-organization">By Organization</SectionTab>
+Pass `workspace_id` to scope the report to a single workspace, or omit it for all workspaces.
 
 ```bash
-curl "https://api.mistral.ai/v1/admin/analytics/vibe/code/usage/by_organization?start_time=1764547200&end_time=1767225600" \
-  -H "Authorization: Bearer $ADMIN_API_KEY"
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_workspace?start_time=1704067200&end_time=1706745600" \
+  -H "x-api-key: $ADMIN_API_KEY"
 ```
 
-Returns daily series for next-edit suggestions by outcome, next-edit active users, and modified lines of code.
+Returns daily series for sessions (CLI, ACP, programmatic), active users, consumed tokens (input, output, and cached, per model), tool calls, and session durations.
+
+<SectionTab as="h2" variant="secondary" sectionId="vibe-by-organization">By Organization</SectionTab>
+
+```bash
+curl "https://api.mistral.ai/v1/admin/analytics/vibe/usage/by_organization?start_time=1704067200&end_time=1706745600" \
+  -H "x-api-key: $ADMIN_API_KEY"
+```
+
+Returns daily series for next-edit suggestions (by outcome), next-edit active users, and modified lines of code.
+
+{/* TODO: confirm the base host for the /analytics/* endpoints. They are generated from the datalake-api service (datalake-api/specs/openapi-admin.json); verify they are served from api.mistral.ai/v1/admin or a separate host. */}
 
 <SectionTab as="h1" sectionId="next-steps">Next steps</SectionTab>
 
 <UsefullLinkContainer>
-  <LinkCard href="/api/endpoint/beta/admin/vibe-work-analytics" title="Vibe Work API reference" />
-  <LinkCard href="/api/endpoint/beta/admin/vibe-code-analytics" title="Vibe Code API reference" />
+  <LinkCard href="/admin/admin-api/user-provisioning" title="User provisioning" />
+  <LinkCard href="/admin/billing-usage/usage-limits" title="Usage limits" />
 </UsefullLinkContainer>

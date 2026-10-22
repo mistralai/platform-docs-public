@@ -107,7 +107,7 @@ type = "oauth"
 scopes = []
 ```
 
-Connectez-vous avec `/mcp login linear` depuis une session. Une liste `scopes` vide accepte les scopes par défaut du serveur.
+Connectez-vous avec `/mcp login linear` depuis une session. Une liste `scopes` vide accepte les scopes par défaut du serveur. Consultez [Se connecter aux serveurs OAuth](#oauth-sign-in) pour le fonctionnement de la connexion.
 
 </ExplorerTab>
 <ExplorerTab value="stdio" label="Processus local (stdio)">
@@ -138,6 +138,26 @@ env = { "DEBUG" = "1", "LOG_LEVEL" = "info" }
 | `[mcp_servers.auth]` | Authentification pour les transports HTTP : `type = "static"` avec `headers` ou `api_key_env`, ou `type = "oauth"` avec `scopes`. |
 
 Vibe accepte toujours `headers`, `api_key_env`, `api_key_header` et `api_key_format` directement dans `[[mcp_servers]]`, et les traite comme une authentification statique. Ne les combinez pas avec un tableau `[mcp_servers.auth]`. Consultez la [référence de configuration](/vibe/code/cli/configuration-reference#mcp-servers) pour tous les champs.
+
+<SectionTab as="h2" sectionId="oauth-sign-in">Se connecter aux serveurs OAuth</SectionTab>
+
+OAuth fonctionne avec les transports `http` et `streamable-http`. Les serveurs `stdio` s'exécutent localement et n'utilisent pas OAuth.
+
+`vibe mcp add` lance la connexion dès qu'il ajoute un serveur OAuth, c'est-à-dire un serveur HTTP ajouté sans `--header` ni `--api-key-env`. `/mcp add` n'ajoute que des serveurs OAuth et lance lui aussi la connexion. Si vous l'avez différée avec `--no-login`, ou si Vibe indique qu'un serveur nécessite une authentification, exécutez `/mcp login <name>` depuis une session. `/mcp status` affiche l'état de connexion de chaque serveur.
+
+Pendant la connexion, Vibe vous fournit l'URL d'autorisation et peut l'ouvrir dans votre navigateur. Une fois l'accès approuvé, le navigateur redirige vers `http://127.0.0.1:<redirect_port>/callback`, soit `http://127.0.0.1:47823/callback` par défaut. Cette adresse doit atteindre la machine sur laquelle Vibe s'exécute. Si Vibe s'exécute sur une machine distante via SSH, redirigez le port du callback avant de vous connecter, puis ouvrez l'URL dans votre navigateur local : `ssh -L 47823:127.0.0.1:47823 <host>`. Utilisez votre `redirect_port` à la place de `47823` si vous l'avez modifié.
+
+Vibe stocke les tokens dans le trousseau de votre système d'exploitation, et non dans `config.toml`. `/mcp logout <name>` les supprime. Si vous modifiez `url`, `scopes`, `client_id` ou `client_metadata_url` pour ce serveur, Vibe cesse d'utiliser les tokens stockés et vous devez exécuter à nouveau `/mcp login <name>`.
+
+Ces champs facultatifs de `[mcp_servers.auth]` configurent le client OAuth :
+
+| Champ | Utilité |
+|---|---|
+| `client_id` | Identifiant d'un client public préenregistré. Enregistrez `http://127.0.0.1:47823/callback` comme URI de redirection, avec votre `redirect_port` à la place de `47823` si vous l'avez modifié. Sans `client_id` ni `client_metadata_url`, Vibe enregistre un client auprès du serveur de façon dynamique. |
+| `client_metadata_url` | URL HTTPS d'un document de métadonnées client, avec un chemin autre que `/`. Le document doit lister `http://127.0.0.1:<redirect_port>/callback` dans `redirect_uris`. Utilisée uniquement si le serveur annonce `client_id_metadata_document_supported`. Sinon, Vibe enregistre un client de façon dynamique. Incompatible avec `client_id`. |
+| `redirect_port` | Port local du callback de connexion. Valeur par défaut : `47823`. Modifiez-le si le port `47823` est déjà utilisé sur votre machine. |
+
+Dans les environnements sans interface graphique et sans trousseau système, comme la CI, Vibe ne peut pas stocker de tokens OAuth. Utilisez plutôt une authentification statique avec `api_key_env`.
 
 <SectionTab as="h2" sectionId="permissions">Nomination et autorisations des outils</SectionTab>
 

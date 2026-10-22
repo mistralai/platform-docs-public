@@ -2,8 +2,8 @@ import { StaticModel } from '../schema';
 export default {
   name: 'Mistral Embed',
   describe: (l) => ({
-    description: l.text(`Our state-of-the-art semantic for extracting representation of code extracts`, { context: 'Full description of an AI model' }),
-    shortDescription: l.text(`Our state-of-the-art semantic for extracting representation of code extracts`, { context: 'Short description of an AI model' }),
+    description: l.text(`A general-purpose text embedding model that turns sentences and paragraphs into vectors for retrieval, classification, and similarity search.`, { context: 'Full description of an AI model' }),
+    shortDescription: l.text(`A general-purpose text embedding model for retrieval and similarity search.`, { context: 'Short description of an AI model' }),
   }),
   slug: 'mistral-embed-23-12',
   releaseDate: '2023-12-11',

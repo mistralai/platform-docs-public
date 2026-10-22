@@ -43,8 +43,6 @@ Une erreur de validation `422` porte son explication dans `message.detail`, une 
 }
 ```
 
-{/* TESTED Oct 7 (stt agent): both blocks are copied from live captures. File envelope: out/probes/word_voxtral-transcribe-3.json (timestamp_granularities=word on the interim alias voxtral-transcribe-3). 422 shape: out/probes/lang_xx_*.json and mini_refs_nodiar.json ({"object": "error", "message": {"detail": [{"type", "loc", "msg", "input"}]}, "type": "invalid_request_error"}). Realtime: out/probes/rt_late_update.json on voxtral-transcribe-realtime-3-0. Every realtime error captured on Oct 7 had code 3051. Added to the page Oct 9 by the troubleshooting agent from the logs, no new run (expired key). */}
-
 <SectionTab as="h3" variant="secondary" sectionId="file-transcription-errors">Erreurs de transcription de fichiers</SectionTab>
 
 Ces erreurs proviennent d'un champ de la requête de transcription. Corrigez le champ, puis renvoyez la requête :
@@ -59,8 +57,6 @@ Ces erreurs proviennent d'un champ de la requête de transcription. Corrigez le 
 | 400 `turn_detection is only supported on the realtime transcription endpoint.` | `turn_detection` dans une requête de transcription de fichier. | Utilisez une session en temps réel. Voir [Détection de tour de parole](/studio/audio/speech-to-text/turn-detection). |
 | 400 `maximum context length` | L'audio et les entrées `context_bias` dépassent ensemble le contexte du modèle. Rien n'est tronqué : la requête échoue. | Raccourcissez la liste `context_bias`. Voir [Limites et erreurs](/studio/audio/speech-to-text/bias-context-and-vocabulary#limits-and-errors). |
 |  | Le modèle n'accepte pas les clips de référence. | Utilisez un modèle qui les prend en charge. Voir [Nommer les locuteurs avec des clips de référence](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
-
-{/* TESTED Oct 7 (stt agent), messages copied from the probe logs: invalid model out/probes/id_voxtral-mini-transcribe-3-0.json (400, code 1500, type invalid_model, captured with the final Mini ID before the rename: the row stays valid for any wrong ID); word out/probes/word_*.json (400, code 3051); diarize without segment handoff-stt item 3 (422, message as on Diarize speakers); invalid language out/probes/lang_xx_*.json (422, detail msg); references without diarize out/probes/mini_refs_nodiar.json (422, detail msg "Assertion failed, Speaker references require diarization, set `diarize=True`.", shortened to the part Diarize speakers shows); turn_detection offline out/probes/turn_offline_small.json (400, code 3051); context handoff-stt item 8 (400, code 3059). Messages and short forms match File transcription (Common issues), Diarize speakers (Errors), and Bias context and vocabulary (Limits and errors) as of Oct 9. */}
 
 <SectionTab as="h3" variant="secondary" sectionId="realtime-errors">Erreurs des sessions en temps réel</SectionTab>
 
@@ -77,8 +73,6 @@ Une session en temps réel peut échouer à la connexion, ou envoyer un événem
 | Le message contient `Expected end_timeout_ms to be greater than or equal to min_silence_ms` | `end_timeout_ms` est inférieur à `min_silence_ms`. | Augmentez `end_timeout_ms` ou réduisez `min_silence_ms`. Voir [Ajuster les seuils](/studio/audio/speech-to-text/turn-detection#tune-thresholds). |
 | Le message contient `Extra inputs are not permitted` | Un champ que la session n'accepte pas, comme un nom de configuration dans `turn_detection`. | Supprimez le champ. Pour utiliser une configuration, envoyez ses valeurs. Voir [Configurations courantes](/studio/audio/speech-to-text/turn-detection#common-configurations). |
 | Le message contient `Invalid language alpha2 code` | `language` n'est pas un code à deux lettres. | Utilisez un code issu de [Langues](/studio/audio/specs-and-limits/languages). |
-
-{/* TESTED Oct 7 (stt agent) on the interim alias voxtral-transcribe-realtime-3-0, messages copied from out/probes/: 403 rt_doc_model.json (handshake with the final Mini realtime ID before the rename, empty body; a wrong ID gets the same answer); late update rt_late_update.json; delay rt_delay1300.json (1300; 123, 480, and 2400 accepted); diarize + turn rt_turn_diar.json; references without diarize rt_refs_nodiar.json; threshold order rt_turn_degenerate.json and rt_turn_timeout_lt_silence.json (pydantic validation messages, quoted by their stable part, as on Turn detection); extra field rt_turn_preset.json (turn_detection.preset) and rt_turn_probs.json (emit_probabilities); language rt_lang_bad.json. All error events had code 3051. Auth failures (missing or expired key) were not tested in realtime: no row. */}
 
 <SectionTab as="h2" sectionId="missing-output">Transcription absente ou champs manquants</SectionTab>
 
@@ -105,8 +99,6 @@ Quand la transcription est présente mais que certains mots sont erronés, ident
 | Des mots apparaissent dans la mauvaise langue | Sans `language`, le modèle détecte la langue de l'enregistrement, et cette détection peut être erronée. | Forcez la langue avec `language`. Voir [Forcer la langue](/studio/audio/speech-to-text/transcribe-files#pin-the-language). |
 | La transcription en temps réel contient trop d'erreurs | Un délai de streaming court laisse moins de contexte au modèle avant d'écrire chaque mot. | Augmentez `target_streaming_delay_ms`, au prix d'un texte plus tardif. Voir [Transcription en temps réel](/studio/audio/speech-to-text/transcribe-in-realtime) et [Latence](/studio/audio/concepts/latency#realtime-transcription). |
 
-{/* Wrong language: auto-detection by default and pinning, from File transcription Pin the language (API reference field description: "Providing the language can boost accuracy.", pin_language.sh). No wrong detection was observed in tests. Realtime language field accepted (out/probes/rt_lang.json). Streaming delay trade-off: RFC-555 section 2.2, concepts/latency (final). */}
-
 <SectionTab as="h2" sectionId="speakers">Étiquettes de locuteurs</SectionTab>
 
 Les étiquettes de locuteurs soulèvent leurs propres questions. Pour savoir ce que signifient les étiquettes, voir [Locuteurs et diarisation](/studio/audio/concepts/speakers-and-diarization).
@@ -115,7 +107,7 @@ Les étiquettes de locuteurs soulèvent leurs propres questions. Pour savoir ce 
 | --- | --- | --- |
 | Un locuteur pour lequel vous avez envoyé un clip de référence affiche une étiquette générique, comme `speaker_3` | Le clip ne correspond pas à la voix de l'enregistrement, par exemple une autre personne à la voix similaire. | Utilisez un clip de la même personne. Voir [Nommer les locuteurs avec des clips de référence](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
 | La même personne porte une étiquette différente dans deux enregistrements | Les étiquettes ne sont valables qu'au sein d'une même transcription ou session. | Nommez le locuteur avec un clip de référence dans chaque requête. Voir [Nommer les locuteurs avec des clips de référence](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
-|  | Deux personnes parlent en même temps. | Voir [Segments superposés](/studio/audio/speech-to-text/diarize-speakers#overlapping-segments). |
+| |   | Deux personnes parlent en même temps. | Voir [Segments superposés](/studio/audio/speech-to-text/diarize-speakers#overlapping-segments). |
 
 <SectionTab as="h2" sectionId="latency">Résultats lents</SectionTab>
 
@@ -141,8 +133,6 @@ Chaque symptôme de détection de tour de parole correspond à un seul paramètr
 
 Pour connaître chaque paramètre, sa valeur par défaut et son effet, consultez [Ajuster les seuils](/studio/audio/speech-to-text/turn-detection#tune-thresholds). Pour le compromis entre répondre plus vite et couper la parole aux utilisateurs, consultez [Tours de parole et prise de tour](/studio/audio/concepts/turns).
 
-{/* Directions: Rakesh, "How to use end-of-turn detection" (Oct 9, via Gregory), as in Turn detection Tune thresholds. "End timeout caps the wait": same source. Eager end + resume at pauses: Oct 7 runs (Turn detection, In this output). Text after turn.end: Turn detection text-timing section ( there, rt_turn_aggr.json). */}
-
 <SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
 
 <UsefullLinkContainer>
@@ -153,24 +143,3 @@ Pour connaître chaque paramètre, sa valeur par défaut et son effet, consultez
   <LinkCard href="/studio/audio/speech-to-text/turn-detection" title="Détection des tours de parole" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9):
-   - Every error message: live captures of Oct 7 in examples/stt/out/probes/ and handoff-stt.md (see the TESTED comments under
-     each table). Short forms aligned with File transcription (Common issues), Diarize speakers (Errors), and Bias context and
-     vocabulary (Limits and errors), all written Oct 9.
-   - Missing output: segments empty without timestamps and speaker_id null without diarize (File transcription, transcribe.sh and
-     timestamps.sh, Oct 7); transcription.segment replaces text.delta with diarize (out/probes/rt_diar.json vs rt_basic.json);
-     no turn events without turn_detection (rt_basic.json). Mismatched audio_format, missing input_audio.end, and empty files:
-     not tested, s.
-   - Wrong words: Bias context and vocabulary (tests Oct 7), concepts/custom-vocabulary; streaming delay trade-off from
-     concepts/latency and RFC-555 section 2.2.
-   - Speakers: handoff-stt.md surprise 5 (look-alike references give speaker_3 / speaker_4), concepts/speakers-and-diarization,
-     overlap probes ().
-   - Latency: concepts/latency, File transcription Stream the response (stream does not shorten the total), Turn detection
-     Common configurations (Aggressive) and Rakesh's directions (Oct 9).
-   - Not documented on purpose: realtime usage prompt_audio_seconds stuck at 3 (probable bug, asked to Rakesh in handoff-stt);
-     audio in chat errors (429 for large bodies) belong to Audio in chat. */}
-
-{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton. Every row is symptom -> cause -> fix,
-   with the fix linked to the page that owns the setting (no option documented here). Verify at the end: every message matches
-   the owning page, Draft rows resolved or removed (reference limits error, empty transcript causes, audio quality, connection
-   drops), errors re-captured on the launch checkpoint. */}

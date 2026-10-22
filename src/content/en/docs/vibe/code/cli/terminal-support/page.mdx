@@ -1,0 +1,93 @@
+---
+title: Terminal support
+sidebar_position: 5.5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Terminal support
+
+The Vibe CLI runs in any modern terminal emulator, but terminals don't all support the same features. When a terminal lacks a feature, Vibe keeps working and falls back to a simpler behavior. This page lists what Vibe uses, which terminals we recommend, and how to work around missing features.
+
+<SectionTab as="h2" sectionId="recommended">Recommended terminals</SectionTab>
+
+We test Vibe most on these terminals and support them best, so we recommend them:
+
+| Operating system | Terminal |
+|---|---|
+| macOS | [Ghostty](https://ghostty.org/), [Kitty](https://sw.kovidgoyal.net/kitty/) |
+| Linux | [Ghostty](https://ghostty.org/), [Kitty](https://sw.kovidgoyal.net/kitty/) |
+| Windows | [Windows Terminal](https://aka.ms/terminal) |
+
+This isn't a full compatibility list. Vibe can work very well in other terminals too, but some features may behave differently. See [Notes by environment](#environments) for known differences.
+
+<SectionTab as="h2" sectionId="features">Terminal features Vibe uses</SectionTab>
+
+| Feature | What Vibe uses it for | Without it |
+|---|---|---|
+| Enhanced keyboard reporting ([Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/)) | Tells `Shift+Enter`, `Cmd` shortcuts, and other modified keys apart from plain keys. | `Shift+Enter` submits instead of inserting a new line. Use `Ctrl+J`. |
+| Mouse reporting | Clicking options and links, scrolling the chat, dragging the scrollbar, and selecting text. | Use the keyboard to navigate and `Shift+Up` or `Shift+Down` to scroll. |
+| Clipboard access | Copying selections and `/copy` output. Vibe uses `pbcopy` on macOS, `clip` on Windows, and `wl-copy`, `xclip`, or `xsel` on Linux. Over SSH, it uses the OSC 52 escape sequence instead. | Copy fails. Select text with your terminal's native selection instead (see [Select and copy text](#select-copy)). |
+| Focus reporting | Ringing the bell and updating the terminal title only when the terminal isn't focused. Pausing the cursor blink while unfocused. | Vibe can't tell when you switch away, so it doesn't send bell notifications. |
+| Background color query (OSC 11) | Picking a light or dark theme when `theme = "auto"`. | Vibe uses your OS light or dark setting. Pick a theme with `/theme`. |
+| 24-bit color | Rendering themes and syntax highlighting in full color. Vibe enables it when `COLORTERM` is `truecolor` or `24bit`, and always on Windows. | Vibe falls back to the 256-color palette. |
+| Bracketed paste | Pasting multiline text as one message. | Each pasted line can be sent as a separate message. On Windows, where this feature isn't available, Vibe groups fast keystrokes into one paste instead. |
+
+<SectionTab as="h2" sectionId="environments">Notes by environment</SectionTab>
+
+<SectionTab as="h3" sectionId="macos-terminal">macOS Terminal and iTerm2</SectionTab>
+
+- Neither terminal enables enhanced keyboard reporting, so `Shift+Enter` submits the message. Press `Ctrl+J` to insert a new line.
+- In iTerm2, hold `Option` while dragging to use iTerm2's own selection instead of Vibe's.
+
+<SectionTab as="h3" sectionId="wezterm">WezTerm</SectionTab>
+
+WezTerm doesn't enable enhanced keyboard reporting by default, so `Shift+Enter` submits the message. Press `Ctrl+J` to insert a new line.
+
+<SectionTab as="h3" sectionId="linux-vte">GNOME Terminal and other VTE-based terminals</SectionTab>
+
+- Install `wl-copy` (Wayland), `xclip`, or `xsel` so Vibe can copy to the clipboard.
+- These terminals ignore OSC 52, so copying from Vibe over SSH doesn't reach your local clipboard. Use `Shift` and drag to select with the terminal instead.
+
+<SectionTab as="h3" sectionId="windows">Windows</SectionTab>
+
+- Run Vibe in Windows Terminal. Other Windows consoles, such as Git Bash's default window (mintty), may not handle every key.
+- Image paste and `/paste-image` are macOS only.
+
+<SectionTab as="h3" sectionId="multiplexers">tmux, screen, and Zellij</SectionTab>
+
+- Vibe runs in the alternate screen, so the multiplexer's scrollback and copy mode don't contain the conversation. Scroll inside Vibe with the mouse wheel or `Shift+Up` and `Shift+Down`.
+- Vibe skips background color detection inside a multiplexer and uses your OS setting. Pick a theme with `/theme` if it doesn't match.
+- To copy to your local clipboard from tmux, especially over SSH, enable OSC 52 forwarding with `set -g set-clipboard on` in `~/.tmux.conf`.
+- tmux may not forward `COLORTERM`. If colors look washed out, set `COLORTERM=truecolor` before running Vibe.
+- Some modified keys don't pass through every multiplexer. Use the alternative shortcuts in [Commands and shortcuts](/vibe/code/cli/commands-shortcuts#keyboard-shortcuts), such as `Ctrl+J` for a new line.
+
+<SectionTab as="h3" sectionId="ssh">SSH sessions</SectionTab>
+
+Over SSH, Vibe copies through OSC 52 instead of a local clipboard tool. Your local terminal must support OSC 52 for copied text to reach your clipboard.
+
+<SectionTab as="h3" sectionId="ide-terminals">IDE terminals</SectionTab>
+
+Terminals built into VS Code, Cursor, and JetBrains IDEs can keep some shortcuts for the editor, so the key never reaches Vibe. Use the alternative shortcuts in [Commands and shortcuts](/vibe/code/cli/commands-shortcuts#keyboard-shortcuts), or change the IDE's terminal keybindings.
+
+<SectionTab as="h2" sectionId="select-copy">Select and copy text</SectionTab>
+
+Vibe captures the mouse, so dragging selects text in Vibe and copies it when you release the button. Set `autocopy_to_clipboard = false` to turn off automatic copying.
+
+To use your terminal's native selection instead, hold a modifier while dragging:
+
+- `Shift` in most terminals, including Ghostty, Kitty, WezTerm, GNOME Terminal, and Windows Terminal.
+- `Option` in iTerm2.
+
+Right-click paste may not work while Vibe captures the mouse. Paste with your terminal's keyboard shortcut instead, such as `Cmd+V` or `Ctrl+Shift+V`.
+
+See [Commands and shortcuts](/vibe/code/cli/commands-shortcuts#keyboard-shortcuts) for the full list of shortcuts, and the [Configuration reference](/vibe/code/cli/configuration-reference) for the settings mentioned on this page.
+
+<SectionTab as="h2" sectionId="report">Report a terminal issue</SectionTab>
+
+If a key or display problem persists, [open an issue](https://github.com/mistralai/mistral-vibe/issues) and include:
+
+- The terminal name and version.
+- Your operating system.
+- Whether you run Vibe inside tmux, screen, Zellij, an SSH session, or an IDE terminal.
+- The output of `vibe --version`.

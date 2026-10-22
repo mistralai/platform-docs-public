@@ -1,0 +1,93 @@
+---
+title: Prise en charge des terminaux
+sidebar_position: 5.5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Prise en charge des terminaux
+
+La CLI Vibe fonctionne dans n'importe quel émulateur de terminal moderne, mais les terminaux ne prennent pas tous en charge les mêmes fonctionnalités. Quand un terminal ne dispose pas d'une fonctionnalité, Vibe continue de fonctionner et se replie sur un comportement plus simple. Cette page présente ce que Vibe utilise, les terminaux que nous recommandons et la manière de contourner l'absence de certaines fonctionnalités.
+
+<SectionTab as="h2" sectionId="recommended">Terminaux recommandés</SectionTab>
+
+C'est sur ces terminaux que nous testons le plus Vibe et que nous les prenons le mieux en charge. Nous vous les recommandons donc :
+
+| Système d'exploitation | Terminal |
+|---|---|
+| macOS | [Ghostty](https://ghostty.org/), [Kitty](https://sw.kovidgoyal.net/kitty/) |
+| Linux | [Ghostty](https://ghostty.org/), [Kitty](https://sw.kovidgoyal.net/kitty/) |
+| Windows | [Windows Terminal](https://aka.ms/terminal) |
+
+Il ne s'agit pas d'une liste de compatibilité exhaustive. Vibe peut aussi très bien fonctionner dans d'autres terminaux, mais certaines fonctionnalités peuvent se comporter différemment. Consultez [Notes par environnement](#environments) pour connaître les différences connues.
+
+<SectionTab as="h2" sectionId="features">Fonctionnalités de terminal utilisées par Vibe</SectionTab>
+
+| Fonctionnalité | Utilisation par Vibe | Sans elle |
+|---|---|---|
+| Signalement clavier étendu ([protocole clavier Kitty](https://sw.kovidgoyal.net/kitty/keyboard-protocol/)) | Distingue `Shift+Enter`, les raccourcis `Cmd` et les autres touches modifiées des touches simples. | `Shift+Enter` envoie le message au lieu d'insérer une nouvelle ligne. Utilisez `Ctrl+J`. |
+| Signalement de la souris | Cliquer sur les options et les liens, faire défiler la conversation, faire glisser la barre de défilement et sélectionner du texte. | Utilisez le clavier pour naviguer et `Shift+Up` ou `Shift+Down` pour faire défiler. |
+| Accès au presse-papiers | Copier les sélections et la sortie de `/copy`. Vibe utilise `pbcopy` sur macOS, `clip` sur Windows, et `wl-copy`, `xclip` ou `xsel` sur Linux. En SSH, il utilise plutôt la séquence d'échappement OSC 52. | La copie échoue. Sélectionnez plutôt le texte avec la sélection native de votre terminal (voir [Sélectionner et copier du texte](#select-copy)). |
+| Signalement du focus | Émettre un bip et mettre à jour le titre du terminal uniquement quand celui-ci n'a pas le focus. Suspendre le clignotement du curseur en l'absence de focus. | Vibe ne peut pas détecter que vous avez changé de fenêtre et n'émet donc pas de bip. |
+| Requête de couleur d'arrière-plan (OSC 11) | Choisir un thème clair ou sombre quand `theme = "auto"`. | Vibe utilise le réglage clair ou sombre de votre système d'exploitation. Choisissez un thème avec `/theme`. |
+| Couleurs 24 bits | Afficher les thèmes et la coloration syntaxique en couleurs réelles. Vibe l'active quand `COLORTERM` vaut `truecolor` ou `24bit`, et systématiquement sur Windows. | Vibe se replie sur la palette de 256 couleurs. |
+| Collage encadré | Coller un texte multiligne en un seul message. | Chaque ligne collée peut être envoyée comme un message distinct. Sur Windows, où cette fonctionnalité n'est pas disponible, Vibe regroupe les frappes rapides en un seul collage. |
+
+<SectionTab as="h2" sectionId="environments">Notes par environnement</SectionTab>
+
+<SectionTab as="h3" sectionId="macos-terminal">Terminal macOS et iTerm2</SectionTab>
+
+- Aucun de ces deux terminaux n'active le signalement clavier étendu, donc `Shift+Enter` envoie le message. Appuyez sur `Ctrl+J` pour insérer une nouvelle ligne.
+- Dans iTerm2, maintenez `Option` pendant le glissement pour utiliser la sélection propre à iTerm2 plutôt que celle de Vibe.
+
+<SectionTab as="h3" sectionId="wezterm">WezTerm</SectionTab>
+
+WezTerm n'active pas le signalement clavier étendu par défaut, donc `Shift+Enter` envoie le message. Appuyez sur `Ctrl+J` pour insérer une nouvelle ligne.
+
+<SectionTab as="h3" sectionId="linux-vte">GNOME Terminal et les autres terminaux basés sur VTE</SectionTab>
+
+- Installez `wl-copy` (Wayland), `xclip` ou `xsel` pour que Vibe puisse copier dans le presse-papiers.
+- Ces terminaux ignorent OSC 52, donc la copie depuis Vibe en SSH n'arrive pas dans votre presse-papiers local. Utilisez plutôt `Shift` et le glissement pour sélectionner avec le terminal.
+
+<SectionTab as="h3" sectionId="windows">Windows</SectionTab>
+
+- Exécutez Vibe dans Windows Terminal. Les autres consoles Windows, comme la fenêtre par défaut de Git Bash (mintty), peuvent ne pas gérer toutes les touches.
+- Le collage d'images et `/paste-image` ne sont disponibles que sur macOS.
+
+<SectionTab as="h3" sectionId="multiplexers">tmux, screen et Zellij</SectionTab>
+
+- Vibe s'exécute dans l'écran alternatif, donc l'historique de défilement et le mode copie du multiplexeur ne contiennent pas la conversation. Faites défiler la conversation dans Vibe avec la molette de la souris ou avec `Shift+Up` et `Shift+Down`.
+- Dans un multiplexeur, Vibe ignore la détection de la couleur d'arrière-plan et utilise le réglage de votre système d'exploitation. Choisissez un thème avec `/theme` si celui-ci ne correspond pas.
+- Pour copier dans votre presse-papiers local depuis tmux, en particulier en SSH, activez le transfert OSC 52 avec `set -g set-clipboard on` dans `~/.tmux.conf`.
+- tmux peut ne pas transmettre `COLORTERM`. Si les couleurs paraissent délavées, définissez `COLORTERM=truecolor` avant de lancer Vibe.
+- Certaines touches modifiées ne sont pas transmises par tous les multiplexeurs. Utilisez les raccourcis alternatifs de [Commandes et raccourcis](/vibe/code/cli/commands-shortcuts#keyboard-shortcuts), comme `Ctrl+J` pour une nouvelle ligne.
+
+<SectionTab as="h3" sectionId="ssh">Sessions SSH</SectionTab>
+
+En SSH, Vibe copie via OSC 52 au lieu d'utiliser un outil de presse-papiers local. Votre terminal local doit prendre en charge OSC 52 pour que le texte copié arrive dans votre presse-papiers.
+
+<SectionTab as="h3" sectionId="ide-terminals">Terminaux des IDE</SectionTab>
+
+Les terminaux intégrés à VS Code, à Cursor et aux IDE JetBrains peuvent se réserver certains raccourcis pour l'éditeur, si bien que la touche n'atteint jamais Vibe. Utilisez les raccourcis alternatifs de [Commandes et raccourcis](/vibe/code/cli/commands-shortcuts#keyboard-shortcuts), ou modifiez les raccourcis clavier du terminal dans l'IDE.
+
+<SectionTab as="h2" sectionId="select-copy">Sélectionner et copier du texte</SectionTab>
+
+Vibe capture la souris, donc un glissement sélectionne le texte dans Vibe et le copie lorsque vous relâchez le bouton. Définissez `autocopy_to_clipboard = false` pour désactiver la copie automatique.
+
+Pour utiliser plutôt la sélection native de votre terminal, maintenez une touche modificatrice pendant le glissement :
+
+- `Shift` dans la plupart des terminaux, dont Ghostty, Kitty, WezTerm, GNOME Terminal et Windows Terminal.
+- `Option` dans iTerm2.
+
+Le collage par clic droit peut ne pas fonctionner quand Vibe capture la souris. Collez plutôt avec le raccourci clavier de votre terminal, comme `Cmd+V` ou `Ctrl+Shift+V`.
+
+Consultez [Commandes et raccourcis](/vibe/code/cli/commands-shortcuts#keyboard-shortcuts) pour la liste complète des raccourcis, et la [Référence de configuration](/vibe/code/cli/configuration-reference) pour les réglages mentionnés sur cette page.
+
+<SectionTab as="h2" sectionId="report">Signaler un problème de terminal</SectionTab>
+
+Si un problème de touche ou d'affichage persiste, [ouvrez un issue](https://github.com/mistralai/mistral-vibe/issues) et incluez :
+
+- Le nom et la version du terminal.
+- Votre système d'exploitation.
+- Si vous exécutez Vibe dans tmux, screen, Zellij, une session SSH ou un terminal d'IDE.
+- La sortie de `vibe --version`.

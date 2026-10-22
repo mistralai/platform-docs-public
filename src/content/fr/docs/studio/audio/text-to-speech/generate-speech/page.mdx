@@ -93,8 +93,6 @@ console.log(`Saved ${output} (${audio.length} bytes)`);
 
 Les exemples enregistrent le fichier `order_update.mp3` dans le répertoire courant. Ouvrez-le dans n'importe quel lecteur audio pour l'écouter.
 
-{/* TESTED Oct 7: generate-speech/generate_speech.{sh,py} on voxtral-mini-tts-3-0 (first run and re-run with the new key): 200, order_update.mp3 valid MP3 (27,681 bytes), transcription reads the input back. */}
-
 <SectionTab as="h3" variant="secondary" sectionId="request-fields">Champs de la requête</SectionTab>
 
 Le tableau suivant répertorie les champs qui modifient le plus souvent le résultat. Pour la liste complète, consultez la référence API.
@@ -110,6 +108,7 @@ Le tableau suivant répertorie les champs qui modifient le plus souvent le résu
 | `instruction` | Les instructions de style ne sont pas disponibles au lancement. Voir [Instructions de style](/studio/audio/text-to-speech/style-instructions). |
 | `phoneme_hints` | La prononciation de mots spécifiques, sous forme de listes de phonèmes. Voir [Prononciation personnalisée](/studio/audio/text-to-speech/custom-pronunciation). |
 | `stream` | Défini sur `true` pour recevoir l'audio en fragments au fur et à mesure de sa génération. Voir [Diffuser la Speech](/studio/audio/text-to-speech/stream-speech). |
+| `conversation_history` | L'audio de la conversation précédente, qui conditionne l'interprétation de la nouvelle réponse. Voir [TTS contextuel](#contextual-tts). |
 
 <SectionTab as="h2" sectionId="response-formats">Formats de réponse</SectionTab>
 
@@ -121,7 +120,127 @@ Définissez `response_format` sur `mp3` (valeur par défaut), `wav`, `pcm`, `fla
 
 Contrôle le caractère expressif de l'audio généré. Des valeurs plus élevées privilégient un rendu plus marqué, au détriment de la similitude de la voix et de la stabilité. Commencez avec la valeur par défaut, augmentez-la si l'émotion ne ressort pas, et diminuez-la si l'audio semble forcé.
 
-{/* Renamed from cfg to expressiveness, scale 1.0 to 5.0 (Gregory, Oct 9). The live API still took cfg on Oct 7 (below 1.0: 422; 1.0 to 10.0 accepted): retest the new name and bounds once the rename ships. Source of the effect description: notes/cfg-explainer-doc610.md (classifier-free guidance: 1.0 = no extra guidance). */}
+<SectionTab as="h2" sectionId="contextual-tts">TTS contextuel</SectionTab>
+
+Lorsque la parole fait partie d'une conversation, transmettez `conversation_history` pour donner au modèle le contexte dont il a besoin afin d'ajuster l'interprétation — ton, rythme et emphase — et la faire correspondre au fil de la conversation. Le `voice_id` définit la voix et l'accent de la parole générée ; l'historique de conversation aide le modèle à prononcer la réponse de manière cohérente avec ce qui précède.
+
+Sans `conversation_history`, le modèle génère la réponse à l'aveugle, sans aucune connaissance de la conversation précédente. Cela convient pour des messages autonomes (annonces, prompts, lecture d'un article), mais on perd le contexte conversationnel qui rend l'interprétation naturelle dans un dialogue.
+
+`conversation_history` est un tableau de tours, du plus ancien au plus récent. Chaque tour est soit un tour utilisateur avec audio, soit un tour assistant avec texte et audio. Le nouveau `input` est la réponse de l'assistant au dernier tour utilisateur de l'historique.
+
+:::note
+`conversation_history` nécessite une voix prédéfinie Voxtral 3 (`voice_id`) et ne peut pas être combiné avec `ref_audio`, `instruction` ou `realtime_context`.
+:::
+
+L'audio de chaque tour est encodé en base64. L'historique doit être non vide, alterner entre `user` et `assistant`, et se terminer par un tour `user`.
+
+<Tabs groupId="code">
+  <TabItem value="curl" label="curl" default>
+
+```bash
+curl -s https://api.mistral.ai/v1/audio/speech \
+  -H "Authorization: Bearer $MISTRAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "voxtral-mini-tts-3-0",
+    "voice_id": "voice_592",
+    "input": "I'm sorry about the delay. Let me check that for you.",
+    "response_format": "wav",
+    "conversation_history": [
+      {
+        "role": "user",
+        "audio": {
+          "data": "<BASE64_USER_AUDIO_1>"
+        }
+      },
+      {
+        "role": "assistant",
+        "text": "How can I help you today?",
+        "audio": {
+          "data": "<BASE64_ASSISTANT_AUDIO>"
+        }
+      },
+      {
+        "role": "user",
+        "audio": {
+          "data": "<BASE64_USER_AUDIO_2>"
+        }
+      }
+    ]
+  }' | jq -r '.audio_data' | base64 --decode > reply.wav
+```
+
+  </TabItem>
+  <TabItem value="python" label="Python">
+
+```python
+import base64
+import os
+from pathlib import Path
+
+from mistralai.client import Mistral
+
+client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+user_audio_1 = base64.b64encode(Path("user_turn_1.wav").read_bytes()).decode()
+assistant_audio = base64.b64encode(Path("assistant_turn.wav").read_bytes()).decode()
+user_audio_2 = base64.b64encode(Path("user_turn_2.wav").read_bytes()).decode()
+
+response = client.audio.speech.complete(
+    model="voxtral-mini-tts-3-0",
+    voice_id="voice_592",
+    input="I'm sorry about the delay. Let me check that for you.",
+    response_format="wav",
+    additional_properties={
+        "conversation_history": [
+            {"role": "user", "audio": {"data": user_audio_1}},
+            {"role": "assistant", "text": "How can I help you today?", "audio": {"data": assistant_audio}},
+            {"role": "user", "audio": {"data": user_audio_2}},
+        ]
+    },
+)
+
+audio = base64.b64decode(response.audio_data)
+Path("reply.wav").write_bytes(audio)
+print(f"Saved reply.wav ({len(audio)} bytes)")
+```
+
+  </TabItem>
+  <TabItem value="typescript" label="typescript">
+
+```typescript
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { Mistral } from "@mistralai/mistralai";
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+const userAudio1 = readFileSync("user_turn_1.wav").toString("base64");
+const assistantAudio = readFileSync("assistant_turn.wav").toString("base64");
+const userAudio2 = readFileSync("user_turn_2.wav").toString("base64");
+
+const response = await client.audio.speech.complete({
+  model: "voxtral-mini-tts-3-0",
+  voiceId: "voice_592",
+  input: "I'm sorry about the delay. Let me check that for you.",
+  responseFormat: "wav",
+  conversation_history: [
+    { role: "user", audio: { data: userAudio1 } },
+    { role: "assistant", text: "How can I help you today?", audio: { data: assistantAudio } },
+    { role: "user", audio: { data: userAudio2 } },
+  ],
+});
+
+const audio = Buffer.from(response.audioData, "base64");
+writeFileSync(resolve("reply.wav"), audio);
+console.log(`Saved reply.wav (${audio.length} bytes)`);
+```
+
+  </TabItem>
+</Tabs>
+
+Chaque tour nécessite `audio: { data: string }` avec un fichier audio encodé en base64. Les tours assistant nécessitent également `text`. L'historique doit se terminer par un tour `user`, et le nouveau `input` est la réponse de l'assistant à ce dernier tour.
 
 <SectionTab as="h2" sectionId="common-issues">Problèmes courants</SectionTab>
 
@@ -133,8 +252,6 @@ Il s'agit des problèmes que vous risquez le plus de rencontrer avec une requêt
 | Erreur `400` : `Either ref_audio or voice must be provided.` | La requête ne contient pas de voix. | Ajoutez `voice_id`. |
 | Un nom, une marque ou un acronyme est mal prononcé | La voix devine la prononciation à partir de l'orthographe. | Fournissez les phonèmes du mot. Voir [Prononciation personnalisée](/studio/audio/text-to-speech/custom-pronunciation). |
 
-{/* Sources (Oct 9) for Common issues: handoff-tts.md items 6 and 7 (Oct 7): unknown voice -> 404 invalid_voice, code 1902, "Voice 'x' not found." (RFC-555 section 5.2 says 400); no voice -> 400 "Either ref_audio or voice must be provided."; voice and voice_id together -> 500 (internal bug, not published). Mispronounced names -> Custom pronunciation (phoneme_hints tested Oct 7). */}
-
 <SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
 
 <UsefullLinkContainer>
@@ -144,9 +261,3 @@ Il s'agit des problèmes que vous risquez le plus de rencontrer avec une requêt
   <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Résolution des problèmes" />
 </UsefullLinkContainer>
 
-{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton; the fields table
-   and Expressiveness were updated on Oct 9 (cfg renamed expressiveness) and kept as is, with four rows added.
-   Boundary: the concept Voices owns how voice, tags, and instructions fit together; Stream speech owns
-   streaming; Voice cloning owns ref_audio and saved voices; Audio formats owns the formats. Verify at the end:
-   voice field name settled (voice or voice_id), ref_audio status at launch, instruction works on the launch
-   checkpoint, expressiveness default and bounds, input length limit. */}

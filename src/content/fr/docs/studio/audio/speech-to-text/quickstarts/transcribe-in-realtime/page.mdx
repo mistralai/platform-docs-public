@@ -11,9 +11,29 @@ import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
 
 # Guide de démarrage : transcrire la parole en temps réel
 
+Diffusez de l'audio en direct vers l'API de transcription en temps réel et obtenez une transcription à faible latence. Pour la transcription hors ligne de fichiers préenregistrés, consultez [Transcrire un fichier audio](/studio/audio/speech-to-text/quickstarts/transcribe-a-file).
+
 <SectionTab as="h2" sectionId="get-an-api-key">Obtenir la clé API</SectionTab>
 
+Vous avez d'abord besoin d'une clé API Mistral. Si vous n'en avez pas, rendez-vous sur [Studio](https://console.mistral.ai). Accédez à la [section Clés API](https://console.mistral.ai/home?profile_dialog=api-keys) et créez une nouvelle clé API.
+
+Stockez votre clé API dans la variable d'environnement `MISTRAL_API_KEY` :
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+<SectionTab as="h2" sectionId="install-the-sdk">Installer le SDK</SectionTab>
+
+Le client de transcription en temps réel nécessite l'extra `realtime`.
+
+```bash
+pip install "mistralai[realtime]"
+```
+
 <SectionTab as="h2" sectionId="connect-and-stream">Connecter et diffuser</SectionTab>
+
+L'API temps réel utilise une connexion WebSocket. Le SDK ouvre la connexion, envoie des fragments audio en streaming au serveur et produit les événements de transcription à mesure qu'ils arrivent. L'exemple ci-dessous lit un fichier WAV par fragments de 100 ms et les envoie au rythme du temps réel pour simuler un micro en direct. Pour une entrée micro réelle, remplacez `read_chunks` par votre source audio.
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -59,8 +79,6 @@ async def main():
 asyncio.run(main())
 ```
 
-{/* TESTED Oct 7 (stt agent, mistralai 3.0.0 with the realtime extra: pip install "mistralai[realtime]"): quickstart-transcribe-in-realtime/realtime_quickstart.py, 42 s run on the 39 s demo 01 call (support_call.wav) paced at real time, on the live interim ID voxtral-transcribe-realtime-3-0. voxtral-mini-transcribe-realtime-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-realtime-3 (and -3-0), to be renamed before launch. Tested on the interim alias. Until the rename, the final ID is refused at the WebSocket handshake (SDK raises RealtimeTranscriptionException "server rejected WebSocket connection: HTTP 403"). SCOPE CHANGE vs the skeleton: the script streams a WAV FILE in 100 ms chunks, not the microphone (per the Oct 7 test brief: no mic in the test environment, and a file run is reproducible). Update the intro and the "prepare, run, stop" note accordingly, or add a microphone variant once someone can test it. 24 kHz and 16 kHz pcm_s16le both work; the script reads the rate from the WAV header. Environment note: on uv/python.org Python builds on macOS, the WebSocket TLS handshake can fail with CERTIFICATE_VERIFY_FAILED until SSL_CERT_FILE points to a CA bundle (certifi). */}
-
   </TabItem>
 </Tabs>
 
@@ -84,4 +102,3 @@ asyncio.run(main())
   <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Étiqueter les locuteurs en direct" />
 </UsefullLinkContainer>
 
-{/* Skeleton — audio docs revamp (DOC-610). Verify at the end: 4 blocks, script runs as written, no lifecycle concepts embedded (they live in Realtime transcription). */}

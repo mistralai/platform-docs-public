@@ -1,4 +1,5 @@
 import { defineModels, getModelSlugAliases } from '../schema';
+import zaiGlm53Flash from './zai-glm-5-3-flash';
 import zaiGlm53 from './zai-glm-5-3';
 import zaiGlm52 from './zai-glm-5-2';
 import shieldstral10 from './shieldstral-1-0';
@@ -75,6 +76,7 @@ import mixtral8x7b01 from './mixtral-8x7b-0-1';
 import mistral7b02 from './mistral-7b-0-2';
 import mistral7b01 from './mistral-7b-0-1';
 export const MODELS = defineModels([
+  zaiGlm53Flash,
   zaiGlm53,
   zaiGlm52,
   shieldstral10,

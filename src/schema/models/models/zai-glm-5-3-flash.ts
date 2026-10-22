@@ -1,0 +1,56 @@
+import { StaticModel } from '../schema';
+
+export default {
+  name: 'Z.ai GLM 5.3 Flash',
+  describe: (l) => ({
+    description: l.text('Z.AI\'s GLM 5.3 Flash is a multimodal 320B-parameter (18B active) Mixture-of-Experts model. Built for developer agent workflows, visual coding, and complex tool-use tasks. The model is served without Mistral modifications.', { context: 'Full description of an AI model' }),
+    shortDescription: l.text('A third-party multimodal model from Z.ai with a 1M-token context window, optimized for agentic workflows and visual coding.', { context: 'Short description of an AI model' }),
+  }),
+  slug: 'zai-glm-5-3-flash',
+  releaseDate: '2026-10-22',
+  version: '5.3-flash',
+  frontier: true,
+  class: 'Generalist',
+  type: 'Open',
+  legalButton: null,
+  status: 'GA',
+  avatar: { icon: 'zai-glm', backgroundColor: 'gray' },
+  weights: [],
+  bloglink: 'https://z.ai/blog/glm-5.3-flash',
+  paperlink: null,
+  licenselink: 'https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE',
+  externalLinks: [{ href: 'https://huggingface.co/zai-org/GLM-5.3-Flash', label: 'Hugging Face' }],
+  tags: ['third-party'],
+  pricingLayout: 'stacked',
+  performanceMaxStars: 5.0,
+  usageExample: 'zai-glm-5-3-flash',
+  contextLength: '1M',
+  outputTokenLimit: '128k',
+  ratings: {
+    speed: 5.0,
+    performance: 5.0,
+    input: 4.0,
+    output: 2.0,
+  },
+  pricing: {
+    type: 'custom',
+    free: false,
+    input: [
+      { type: 'range', price: 0.15, denominator: '/M Tokens', label: 'Input' },
+      { type: 'range', price: 0.03, denominator: '/M Tokens', label: 'Cached input' },
+    ],
+    output: [
+      { type: 'range', price: 0.5, denominator: '/M Tokens', label: 'Output' },
+    ],
+  },
+  identifiers: { apiNames: ['zai-glm-5-3-flash'] },
+  capabilities: {
+    input: ['text', 'image'],
+    output: ['reasoning', 'text'],
+    features: ['structured-outputs', 'function-calling', 'document-qna', 'prefix', 'chat-completions', 'batching', 'agents-conversations', 'connectors'],
+  },
+  relatedModels: ['Z.ai GLM 5.3', 'Mistral Large 4'],
+  metadata: {},
+  playground: undefined,
+  legacy: false,
+} as const satisfies StaticModel;

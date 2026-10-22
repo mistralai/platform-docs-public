@@ -1,0 +1,352 @@
+---
+title: Plugins
+sidebar_position: 10.5
+---
+
+import { SectionTab } from '@/components/layout/section-tab';
+
+# Plugins
+
+:::warning
+Plugin support is experimental and under active development. The plugin format and the features on this page will change, and an update can break existing plugins.
+:::
+
+A plugin is a **directory that bundles extensions** for Vibe Code: skills, MCP servers, knowledge folders, subagents, and more. Use plugins to share a complete setup with your team, or to install one from another source, without merging it into your own `config.toml`, skills, and agent files.
+
+Vibe reads plugins in the [Agent Plugins 1.0](https://agent-plugins.org) format. Every plugin has a `plugin.json` manifest. Vibe-specific components live in an `ai.mistral.vibe/` directory and need the `ai.mistral.vibe` extension in the manifest.
+
+Vibe ships one built-in plugin, `vibe`, which provides skills such as `/vibe:skill-creator` and `/vibe:worktree`.
+
+<SectionTab as="h2" sectionId="locations">Plugin locations</SectionTab>
+
+Each subdirectory of a plugins directory is one plugin:
+
+| Scope | Location | Loaded |
+|---|---|---|
+| Project | `./.vibe/plugins/<plugin>/` in the working directory, and in directories added with `--add-dir` | Working directory: only when [trusted](/vibe/code/safety-approvals-permissions#trusted-folders). `--add-dir` directories: always |
+| User | `~/.vibe/plugins/<plugin>/` (or `$VIBE_HOME/plugins/`) | Always |
+| Built-in | Shipped with Vibe | Always |
+
+When two plugins share a `name`, the project plugin wins over the user plugin, which wins over the built-in one. If two plugins with the same name sit at the same scope, Vibe loads neither.
+
+<SectionTab as="h2" sectionId="quick-start">Create a plugin</SectionTab>
+
+This example creates a user-level plugin with one skill.
+
+1. Create the plugin directory and its skill directory:
+
+   ```bash
+   mkdir -p ~/.vibe/plugins/release-tools/skills/changelog
+   ```
+
+2. Create `~/.vibe/plugins/release-tools/plugin.json`:
+
+   ```json
+   {
+     "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+     "name": "release-tools",
+     "version": "1.0.0",
+     "description": "Skills for cutting releases."
+   }
+   ```
+
+3. Create `~/.vibe/plugins/release-tools/skills/changelog/SKILL.md`:
+
+   ```markdown
+   ---
+   name: changelog
+   description: Draft a changelog entry from the commits since the last release tag.
+   ---
+
+   # Draft a changelog entry
+
+   1. Find the latest release tag with `git describe --tags --abbrev=0`.
+   2. List the commits since that tag.
+   3. Group the changes under Added, Changed, and Fixed.
+   ```
+
+4. Start a new session, or run `/reload-plugins` in a running one.
+5. Run `/plugins` and check that `release-tools` is listed. Run the skill with `/release_tools:changelog`.
+
+The skill prefix is the plugin's **namespace**. By default, Vibe derives it from the plugin name: it replaces every character other than letters, digits, `_`, and `$` with `_`, and adds a leading `_` when the name starts with a digit. To choose your own, set `toolNamespace` in the [Vibe extension](/vibe/code/cli/plugins#vibe-extension).
+
+<SectionTab as="h2" sectionId="layout">Plugin layout</SectionTab>
+
+Only `plugin.json` is required:
+
+```text
+release-tools/
+├── plugin.json                 # Manifest (required)
+├── mcp.json                    # MCP servers
+├── libraries.json              # Python and Node libraries (Vibe extension)
+├── connectors.json             # Required connectors (Vibe extension)
+├── skills/
+│   └── changelog/
+│       └── SKILL.md
+└── ai.mistral.vibe/            # Vibe-specific components (Vibe extension)
+    ├── hooks.toml
+    ├── knowledge/
+    │   └── release-policy/
+    │       └── KNOWLEDGE.md
+    └── agents/
+        └── release-checker.toml
+```
+
+Without the `ai.mistral.vibe` extension in `plugin.json`, Vibe loads only `skills/` and `mcp.json` and ignores the other components.
+
+Every path must stay inside the plugin directory. A file or symbolic link that resolves outside it is rejected.
+
+<SectionTab as="h2" sectionId="manifest">Manifest (`plugin.json`)</SectionTab>
+
+```json
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "release-tools",
+  "version": "1.0.0",
+  "description": "Skills, reference material, and a subagent for cutting releases.",
+  "author": { "name": "Example Team", "url": "https://example.com" },
+  "license": "MIT",
+  "keywords": ["release"],
+  "extensions": {
+    "ai.mistral.vibe": {
+      "schemaVersion": 1,
+      "displayName": "Release tools",
+      "toolNamespace": "release"
+    }
+  }
+}
+```
+
+| Field | Required | Details |
+|---|---|---|
+| `$schema` | yes | Exactly `https://agent-plugins.org/schemas/1.0.0/plugin.schema.json`. Vibe rejects other schema versions. |
+| `name` | yes | 1 to 64 characters: lowercase letters, digits, `.`, and `-`. Starts and ends with a letter or digit, and contains no `--` or `..`. Identifies the plugin. |
+| `version` | no | Shown in `/plugins`. |
+| `description` | no | Shown in `/plugins`. Vibe also lists it in the agent's context, so describe what the plugin is for. |
+| `author` | no | Object with optional `name`, `email`, and `url`. |
+| `homepage`, `repository`, `license` | no | Strings. |
+| `keywords` | no | List of strings. |
+| `extensions` | no | Extension blocks keyed by extension ID. Vibe reads `ai.mistral.vibe`. |
+
+Vibe rejects a manifest that contains any other top-level field.
+
+<SectionTab as="h2" sectionId="vibe-extension">Vibe extension</SectionTab>
+
+The `extensions."ai.mistral.vibe"` block turns on hooks, knowledge, subagents, libraries, and connectors for the plugin:
+
+| Field | Required | Details |
+|---|---|---|
+| `schemaVersion` | yes | `1`. |
+| `displayName` | no | Title of 1 to 100 characters. `name` stays the plugin's identity. |
+| `toolNamespace` | no | Prefix for the plugin's skills, knowledge, and subagents, such as `release:changelog`. Must be a valid identifier: letters, digits, `_`, and `$`, not starting with a digit. Defaults to the plugin name with other characters replaced by `_`. |
+| `toolOverrides` | no | Renames a tool (`name`) or sets its exposure (`exposure`: `programmatic`, `direct`, or `direct_and_programmatic`). Keys have the form `<server-or-connector-id>/<tool-name>`, such as `tracker/create_issue`. In the current version, overrides only change the tool catalog shown in `/plugins`, not the tools the agent sees. |
+
+These namespaces are reserved: `agent`, `agents`, `collaboration`, `file_system`, `process`, `self`, `skill`, `subagent`, and `vibe`. Vibe doesn't load a plugin whose namespace is reserved, and it doesn't load any of the plugins that share a namespace.
+
+<SectionTab as="h2" sectionId="components">What a plugin can ship</SectionTab>
+
+<SectionTab as="h3" variant="secondary" sectionId="skills">Skills</SectionTab>
+
+Place each skill in `skills/<skill-name>/SKILL.md`. The format is the same as for [standalone skills](/vibe/code/cli/skills#skill-format), and the `name` in the frontmatter must match the directory name.
+
+Vibe exposes each skill as `<namespace>:<skill-name>`. A user-invocable skill becomes the slash command `/<namespace>:<skill-name>`.
+
+<SectionTab as="h3" variant="secondary" sectionId="mcp-servers">MCP servers</SectionTab>
+
+Declare MCP servers in `mcp.json` at the plugin root:
+
+```json
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "release-notes": {
+      "type": "stdio",
+      "command": "./bin/release-notes-server",
+      "args": ["--cache", "${PLUGIN_DATA}/cache"],
+      "env": { "LOG_LEVEL": "info" }
+    },
+    "tracker": {
+      "type": "streamable-http",
+      "url": "https://mcp.example.com/mcp",
+      "headers": { "X-Team": "release" }
+    }
+  }
+}
+```
+
+The `$schema` must be exactly `https://agent-plugins.org/schemas/1.0.0/mcp.schema.json`, and `mcpServers` is the only other top-level key. If either rule fails, for example an `mcp.json` copied from a Claude Code `.mcp.json` without adding `$schema`, Vibe loads none of the file's servers.
+
+| Transport | Fields |
+|---|---|
+| `stdio` | `command` (required): a bare executable found on `PATH`, such as `node` or `uvx`, or a path inside the plugin that starts with `./`. `args`, `env`, and `cwd` are optional. |
+| `streamable-http` | `url` (required) and static `headers`. |
+
+Vibe doesn't support the `sse` transport in plugins. Keep these rules in mind:
+
+- `${PLUGIN_ROOT}` (the plugin directory) and `${PLUGIN_DATA}` (a writable data directory that Vibe creates for the plugin) expand in `args`, `env` values, and `cwd`, but not in `command`.
+- Vibe sets `PLUGIN_ROOT` and `PLUGIN_DATA` in the server's environment. Don't define them in `env`.
+- `cwd` must start with `./`, `${PLUGIN_ROOT}`, or `${PLUGIN_DATA}`. Without it, the server runs in the plugin directory.
+
+Plugin servers appear in `/mcp`, tagged with their plugin, and you sign in to them with `/mcp login <name>`. If an MCP server in your `config.toml` has the same name, Vibe disables the plugin's server and shows a warning, so the two never share credentials. See [MCP servers](/vibe/code/cli/mcp-servers).
+
+<SectionTab as="h3" variant="secondary" sectionId="knowledge">Knowledge</SectionTab>
+
+A knowledge folder holds reference material that the agent reads when it's relevant, such as policies, runbooks, or API notes. Place each folder in `ai.mistral.vibe/knowledge/<name>/`, with a `KNOWLEDGE.md` entry point and any other files the entry point refers to:
+
+```markdown
+---
+name: release-policy
+description: Versioning rules, release branches, and freeze windows for this team.
+display_name: Release policy
+---
+
+# Release policy
+
+- Follow semantic versioning.
+- Cut releases from `release/<major>.<minor>` branches.
+```
+
+| Field | Required | Details |
+|---|---|---|
+| `name` | yes | Must match the folder name. Lowercase letters, digits, and `-`, up to 64 characters. |
+| `description` | yes | 5 to 300 characters. The agent decides from it whether to read the folder. |
+| `display_name` | no | Up to 100 characters. |
+| `icon` | no | Up to 16 characters. |
+
+Vibe copies each folder into the plugin's data directory and lists it in the agent's context as a read-only folder named `<namespace>:<name>`, with its description and the path of its `KNOWLEDGE.md`. Vibe doesn't add the content itself to the context: the agent reads `KNOWLEDGE.md` when a folder is relevant to the task.
+
+A plugin can ship up to 100 knowledge folders. Each `KNOWLEDGE.md` is limited to 256 KB, and knowledge folders can't contain symbolic links.
+
+<SectionTab as="h3" variant="secondary" sectionId="agents">Subagents</SectionTab>
+
+Define subagents in `ai.mistral.vibe/agents/<name>.toml`, one file per subagent. The file name is a lowercase kebab-case name, and Vibe names the subagent `<namespace>:<name>`:
+
+```toml
+# ai.mistral.vibe/agents/release-checker.toml
+schema_version = 1
+agent_type = "subagent"
+display_name = "Release checker"
+description = "Checks that a branch is ready to release and reports blockers."
+safety = "safe"
+instructions = "Check the changelog, version numbers, and CI status. Don't modify files."
+enabled_tools = ["read_file", "grep", "bash"]
+
+[tools.bash]
+permission = "ask"
+```
+
+| Field | Required | Details |
+|---|---|---|
+| `schema_version` | yes | `1`. |
+| `agent_type` | yes | `"subagent"`. Plugins can't define user-selectable agents. |
+| `description` | yes | 1 to 300 characters. Tells the agent when to delegate to this subagent. |
+| `display_name` | no | Up to 100 characters. |
+| `safety` | no | `safe`, `neutral` (default), `destructive`, or `yolo`. |
+| `instructions` | no | Instructions for the subagent. |
+| `active_model` | no | Accepted, but subagents run on the session's model. |
+| `enabled_tools`, `disabled_tools` | no | Tool names, without duplicates. |
+| `[tools.<tool>]` | no | `permission`: `always`, `ask`, or `never`. Vibe ignores `allowlist` and `denylist` here, and treats `always` as `ask` when either list is set. |
+
+Plugin subagents follow the same rules as [custom subagents](/vibe/code/cli/agents#custom-subagents). A plugin can ship up to 128 subagent files of up to 64 KB each.
+
+<SectionTab as="h3" variant="secondary" sectionId="hooks">Hooks</SectionTab>
+
+A plugin can declare hooks in `ai.mistral.vibe/hooks.toml`, with the same fields as a [`hooks.toml` file](/vibe/code/cli/hooks#declare). Vibe prefixes each hook name with the plugin name, such as `release-tools:audit-bash`. A plugin can declare up to 128 hooks, in a file of up to 64 KB.
+
+:::warning
+In the current version, Vibe validates plugin hooks and lists them in `/plugins`, but **doesn't run them**. To enforce a hook, declare it in `./.vibe/hooks.toml` or `~/.vibe/hooks.toml`.
+:::
+
+<SectionTab as="h3" variant="secondary" sectionId="libraries">Libraries</SectionTab>
+
+Declare Python and Node libraries in `libraries.json` at the plugin root:
+
+```json
+{
+  "schemaVersion": 1,
+  "python": { "release_utils": "./python/release_utils" },
+  "node": { "@example/release-utils": "./node/release-utils" }
+}
+```
+
+Each key is the import name, and each value is a path inside the plugin that starts with `./`. A Python library is a package directory or a single `.py` file, and a Node library is a directory. Vibe copies the libraries to the plugin's data directory and adds them to `PYTHONPATH` and `NODE_PATH` for the commands the agent runs, so scripts in the plugin's skills can import them.
+
+Node libraries need Node.js on your machine. If two plugins declare the same import name, Vibe loads neither library.
+
+<SectionTab as="h3" variant="secondary" sectionId="connectors">Connectors</SectionTab>
+
+Declare the [connectors](/vibe/code/cli/connectors) and connector tools that the plugin relies on in `connectors.json` at the plugin root:
+
+```json
+{
+  "schemaVersion": 1,
+  "connectors": [
+    { "id": "github", "tools": ["list_issues", "create_issue"] }
+  ]
+}
+```
+
+A declaration doesn't connect anything. Vibe checks the declared connectors against your account and reports any that aren't available. Connect them as described in [Connectors](/vibe/code/cli/connectors).
+
+<SectionTab as="h2" sectionId="manage">Manage plugins in a session</SectionTab>
+
+| Command | Action |
+|---|---|
+| `/plugins` | Browse the plugins of the current session. Select one to see its author, version, location, scope, format, pinned digest, and components. Files that Vibe couldn't load, whether a whole plugin or a single component, appear under **Not loaded**, with the reason. Press `/` to search and `r` to reload. |
+| `/reload-plugins` | Read the plugin directories again, switch the session to what they contain now, and report the plugins that were added (`+`), removed (`-`), or updated (`~`). |
+
+`/reload` doesn't reload plugins. Both plugin commands run only while the agent is idle.
+
+<SectionTab as="h3" variant="secondary" sectionId="snapshot">Pinned plugins</SectionTab>
+
+When a session starts, Vibe **pins** the content of each plugin it loads. The session keeps using that content until you run `/reload-plugins`:
+
+- Editing, upgrading, or removing a plugin on disk doesn't change a running session. Run `/reload-plugins` to pick up the change, or start a new session.
+- A resumed session uses the plugin content it pinned, even if the plugin has changed or been removed since. In `/plugins`, a removed plugin shows `(uninstalled since pin)` as its location.
+- MCP servers and connectors aren't pinned: Vibe reconnects to them when a session starts, resumes, or reloads, so their tools can differ.
+
+<SectionTab as="h2" sectionId="trust">Trust and security</SectionTab>
+
+A plugin can start local MCP servers and add tools, instructions, and reference material to your sessions. Review a plugin the same way you review code before you install it.
+
+- **Project plugins** in `./.vibe/plugins/` load only when you trust the working directory. Vibe loads project plugins from directories added with `--add-dir` without asking, so add only directories you trust.
+- **User plugins** in `~/.vibe/plugins/` load in every session, in every project.
+- Plugin MCP servers follow the same rules as configured MCP servers. When your administrator sets [`enable_mcp = false`](/vibe/code/cli/admin-config#block-mcp), Vibe doesn't load them either.
+- Plugins don't change approvals. Tools from plugins go through the same [agents and per-tool permissions](/vibe/code/safety-approvals-permissions) as other tools.
+
+<SectionTab as="h2" sectionId="other-formats">Plugins for other agents</SectionTab>
+
+Vibe also loads plugins written for other coding agents. It detects the format from these markers:
+
+| Format | Marker | What Vibe loads |
+|---|---|---|
+| Claude Code | `.claude-plugin/plugin.json` | Skills and MCP servers |
+| Codex | `.codex-plugin/plugin.json` | Skills and MCP servers |
+| Kimi Code | `kimi.plugin.json` or `.kimi-plugin/plugin.json` | Skills and MCP servers |
+| OpenCode | `.opencode/` content or `opencode.json` | Skills and MCP servers declared in `opencode.json`. Vibe doesn't run executable OpenCode plugins or custom tools. |
+
+A `plugin.json` with the Agent Plugins 1.0 `$schema` takes precedence over these markers. If a directory has markers for more than one other format, Vibe doesn't load it. Write new plugins in the Agent Plugins 1.0 format.
+
+<SectionTab as="h2" sectionId="troubleshooting">Troubleshooting</SectionTab>
+
+**The plugin doesn't appear in `/plugins`.**
+The session started before you created the plugin, or the plugin is in a project that isn't trusted. Run `/reload-plugins`, and check that the working directory is [trusted](/vibe/code/safety-approvals-permissions#trusted-folders).
+
+**A file appears under Not loaded.**
+Vibe couldn't load that plugin or component, and shows the reason next to the file. Common causes for a whole plugin: a `$schema` other than the 1.0.0 URL, a `name` with uppercase letters or `--`, an unknown top-level field, a reserved namespace, two plugins with the same name in the same scope, or two plugins with the same namespace. Fix the cause, then run `/reload-plugins`.
+
+**Knowledge, subagents, or libraries are missing.**
+`plugin.json` has no `ai.mistral.vibe` extension, or the extension is invalid, for example because `schemaVersion` is missing. Add the extension and reload.
+
+**A subagent file is rejected.**
+Plugin subagent files use snake_case keys, such as `schema_version` and `agent_type`. Vibe rejects camelCase keys, such as `schemaVersion`, and any unknown key.
+
+**A plugin MCP server doesn't start.**
+Check `command` and `cwd`. `command` must be a bare executable name or start with `./`, and `cwd` must start with `./`, `${PLUGIN_ROOT}`, or `${PLUGIN_DATA}`, so absolute paths and `.` are rejected. Also check that `mcp.json` has the exact 1.0.0 `$schema` and only `mcpServers`, and that no MCP server in `config.toml` uses the same name.
+
+<SectionTab as="h2" sectionId="next-steps">Next steps</SectionTab>
+
+- Write the skills your plugin ships: [Skills](/vibe/code/cli/skills).
+- Configure and sign in to MCP servers: [MCP servers](/vibe/code/cli/mcp-servers).
+- Define subagents and their tools: [Agents](/vibe/code/cli/agents#custom-subagents).
+- Enforce policies with hooks: [Hooks](/vibe/code/cli/hooks).

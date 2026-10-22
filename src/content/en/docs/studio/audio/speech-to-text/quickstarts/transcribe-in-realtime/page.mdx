@@ -11,9 +11,35 @@ import { LinkCard, UsefullLinkContainer } from '@/components/common/link-card';
 
 # Quickstart: transcribe speech in realtime
 
+Stream live audio to the realtime transcription API and get a transcript with low latency. For offline transcription of prerecorded files, see [Transcribe an audio file](/studio/audio/speech-to-text/quickstarts/transcribe-a-file).
+
 <SectionTab as="h2" sectionId="get-an-api-key">Get an API key</SectionTab>
 
+First, you'll need a Mistral API key. If you don't have one, then go to [Studio](https://console.mistral.ai). Navigate to the [API keys section](https://console.mistral.ai/home?profile_dialog=api-keys) and create a new API key.
+
+Store your API key in the `MISTRAL_API_KEY` environment variable:
+
+```bash
+export MISTRAL_API_KEY="your-api-key"
+```
+
+<SectionTab as="h2" sectionId="install-the-sdk">Install the SDK</SectionTab>
+
+The realtime transcription client requires the `realtime` extra.
+
+```bash
+pip install "mistralai[realtime]"
+```
+
 <SectionTab as="h2" sectionId="connect-and-stream">Connect and stream</SectionTab>
+
+The realtime API uses a WebSocket connection. The SDK opens the connection, streams audio chunks to the server, and yields transcription events as they arrive. The example below reads a WAV file in 100 ms chunks and streams them at real-time pace, simulating a live microphone. For a real microphone input, replace `read_chunks` with your audio source.
+
+To follow along without a file of your own, download the sample recording:
+
+```bash
+curl -O https://docs.mistral.ai/audio/chat.wav
+```
 
 <Tabs groupId="code">
   <TabItem value="python" label="python" default>
@@ -31,7 +57,7 @@ from mistralai.client.models import (
     TranscriptionStreamTextDelta,
 )
 
-AUDIO_FILE = "support_call.wav"  # 16-bit mono PCM WAV
+AUDIO_FILE = "chat.wav"  # 16-bit mono PCM WAV
 
 async def read_chunks(path):
     with wave.open(path, "rb") as wav:
@@ -59,21 +85,17 @@ async def main():
 asyncio.run(main())
 ```
 
-{/* TESTED Oct 7 (stt agent, mistralai 3.0.0 with the realtime extra: pip install "mistralai[realtime]"): quickstart-transcribe-in-realtime/realtime_quickstart.py, 42 s run on the 39 s demo 01 call (support_call.wav) paced at real time, on the live interim ID voxtral-transcribe-realtime-3-0. voxtral-mini-transcribe-realtime-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-realtime-3 (and -3-0), to be renamed before launch. Tested on the interim alias. Until the rename, the final ID is refused at the WebSocket handshake (SDK raises RealtimeTranscriptionException "server rejected WebSocket connection: HTTP 403"). SCOPE CHANGE vs the skeleton: the script streams a WAV FILE in 100 ms chunks, not the microphone (per the Oct 7 test brief: no mic in the test environment, and a file run is reproducible). Update the intro and the "prepare, run, stop" note accordingly, or add a microphone variant once someone can test it. 24 kHz and 16 kHz pcm_s16le both work; the script reads the rate from the WAV header. Environment note: on uv/python.org Python builds on macOS, the WebSocket TLS handshake can fail with CERTIFICATE_VERIFY_FAILED until SSL_CERT_FILE points to a CA bundle (certifi). */}
-
   </TabItem>
 </Tabs>
 
 <SectionTab as="h2" sectionId="you-should-see">You should see</SectionTab>
 
-```json
-{"type": "session.created", "session": {"request_id": "ws-01a11613-b3a1-76af-bdfa-cb3c9984cc42", "model": "voxtral-mini-transcribe-realtime-3", "audio_format": {"encoding": "pcm_s16le", "sample_rate": 16000}, "target_streaming_delay_ms": null, "diarize": false, "context_bias": [], "language": null, "speaker_references": null, "turn_detection": null}}
-{"type": "session.updated", "session": {"request_id": "ws-01a11613-b3a1-76af-bdfa-cb3c9984cc42", "model": "voxtral-mini-transcribe-realtime-3", "audio_format": {"encoding": "pcm_s16le", "sample_rate": 24000}, "target_streaming_delay_ms": null, "diarize": false, "context_bias": [], "language": null, "speaker_references": null, "turn_detection": null}}
-{"type": "transcription.text.delta", "text": "Thanks"}
-{"type": "transcription.text.delta", "text": " for"}
-{"type": "transcription.text.delta", "text": " calling"}
-{"type": "transcription.text.delta", "text": " Harm"}
-{"type": "transcription.done", "model": "voxtral-mini-transcribe-realtime-3", "text": "Thanks for calling Harmattan Support. This is Jane. How can I help you today? [...]", "language": null, "segments": []}
+The script prints the transcript as it arrives, then the final transcript:
+
+```
+Transcribe what I'm about to say. Today, on July 15th, 2025, Mistral AI is announcing the new Voxtral models. Okay, and the transcription there and then write code to give the first n digits of the Fibonacci sequence.
+
+Final transcript: Transcribe what I'm about to say. Today, on July 15th, 2025, Mistral AI is announcing the new Voxtral models. Okay, and the transcription there and then write code to give the first n digits of the Fibonacci sequence.
 ```
 
 <SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
@@ -84,4 +106,3 @@ asyncio.run(main())
   <LinkCard href="/studio/audio/speech-to-text/diarize-speakers" title="Label speakers live" />
 </UsefullLinkContainer>
 
-{/* Skeleton — audio docs revamp (DOC-610). Verify at the end: 4 blocks, script runs as written, no lifecycle concepts embedded (they live in Realtime transcription). */}

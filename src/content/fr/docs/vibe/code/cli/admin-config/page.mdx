@@ -8,20 +8,28 @@ import { AppLink } from '@/components/common/app-link';
 
 # Configuration Admin
 
-La configuration administrateur, aussi appelée **configuration gérée**, permet aux administrateurs d'Organization et de Workspace de distribuer les paramètres de Vibe Code CLI à tous les utilisateurs. Vous la définissez une fois dans l'Admin Panel, puis la CLI l'applique aux utilisateurs de l'Organization ou du Workspace. Utilisez-la pour distribuer des modèles, des fournisseurs, des serveurs MCP et des politiques d'outils sans demander aux utilisateurs de modifier `config.toml`.
+La configuration administrateur, aussi appelée **configuration gérée**, permet aux administrateurs d'Organization et d'espace de travail de distribuer les paramètres de Vibe Code CLI et de l'extension VS Code à tous les utilisateurs. Vous la définissez une fois dans l'Admin Panel, puis les deux clients l'appliquent aux utilisateurs de l'Organization ou de l'espace de travail. Utilisez-la pour distribuer des modèles, des fournisseurs, des serveurs MCP et des politiques d'outils sans demander aux utilisateurs de modifier `config.toml`.
 
 :::info
-La configuration administrateur est un **mécanisme de distribution, pas un contrôle de sécurité**. Elle applique des paramètres par défaut et les affiche dans `/config`, mais les utilisateurs qui contrôlent leur environnement CLI local peuvent les contourner. N'utilisez pas la configuration administrateur pour restreindre l'accès aux outils ou aux modèles.
+La configuration administrateur est un **mécanisme de distribution, pas un contrôle de sécurité**. Elle applique des paramètres par défaut et les affiche dans `/config`, mais les utilisateurs qui contrôlent leur environnement CLI local peuvent les contourner. Utilisez-la pour définir des valeurs par défaut sûres, pas pour garantir des règles d'accès : tout ce que les utilisateurs ne doivent jamais atteindre nécessite aussi un contrôle côté serveur, comme une clé API ou des autorisations d'espace de travail.
+
+Quand la configuration administrateur ne peut pas être appliquée, par exemple parce qu'elle est invalide, les sessions s'exécutent plutôt avec la configuration locale de l'utilisateur. Voir [Ce que voient les utilisateurs](#user-experience).
 :::
 
-Contrairement à `config.toml`, la configuration administrateur ne se trouve pas sur la machine de l'utilisateur. La CLI la récupère en HTTP au démarrage, la conserve **uniquement en mémoire** et ne l'écrit jamais sur disque.
+Contrairement à `config.toml`, la configuration administrateur n'est pas modifiée sur la machine de l'utilisateur. La CLI la récupère en HTTP au démarrage d'une session et en conserve une copie dans `~/.vibe/managed_config_cache.json`, pour l'utiliser si la récupération suivante échoue. Elle n'écrit jamais la configuration administrateur dans `config.toml`.
 
 La configuration administrateur est disponible à deux niveaux :
 
-- **Niveau Organization** : configurez-la dans <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />. Elle s'applique à tous les utilisateurs de l'Organization.
-- **Niveau Workspace** : ouvrez <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />, sélectionnez un Workspace, puis ouvrez `Settings`. Cette configuration peut remplacer ou bloquer des paramètres définis au niveau de l'Organization.
+- **Niveau Organization** : configurez-la dans <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />. Elle s'applique aux utilisateurs de chaque espace de travail qui ne définit pas sa propre configuration.
+- **Niveau espace de travail** : ouvrez <AppLink href="https://admin.mistral.ai/organization/workspaces" path={["Admin Panel", "Administration", "Workspaces"]} />, sélectionnez un espace de travail, puis ouvrez `Settings`. Un espace de travail peut utiliser la configuration définie au niveau de l'Organization, la remplacer par la sienne ou désactiver la configuration administrateur pour ses utilisateurs.
 
-Le serveur fusionne les configurations de l'Organization et du Workspace. Le client reçoit une seule configuration résolue.
+Le serveur ne fusionne pas les deux configurations. Chaque utilisateur en reçoit une, choisie par son espace de travail :
+
+| Configuration au niveau de l'espace de travail | Ce que reçoivent les utilisateurs de l'espace de travail |
+|---|---|
+| Non définie, ou définie pour hériter | La configuration au niveau de l'Organization |
+| Activée | Uniquement la configuration au niveau de l'espace de travail. Les paramètres définis seulement au niveau de l'Organization ne s'appliquent pas. |
+| Désactivée | Aucune configuration administrateur, même quand l'Organization en a une |
 
 <SectionTab as="h2" sectionId="requirements">Versions minimales des clients</SectionTab>
 
@@ -36,13 +44,15 @@ Les versions antérieures ne demandent pas la configuration administrateur et n'
 
 <SectionTab as="h2" sectionId="how-it-works">Fonctionnement</SectionTab>
 
-1. Dans <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />, saisissez une configuration TOML sous `Vibe Code Clients managed config`.
-2. Au démarrage et après `/reload`, la CLI appelle l'endpoint de configuration gérée avec la clé API Mistral de l'utilisateur.
-3. Si la configuration administrateur est activée, ses valeurs sont prioritaires sur toutes les autres sources de configuration.
+1. Dans <AppLink href="https://admin.mistral.ai/vibe/preferences" path={["Admin Panel", "Vibe", "Preferences"]} />, ou dans les `Settings` d'un espace de travail, saisissez une configuration TOML sous `Vibe Code Clients managed config`.
+2. Au démarrage d'une session, la CLI appelle l'endpoint de configuration gérée avec la clé API Mistral de l'utilisateur et attend la réponse, quelques secondes au maximum. `/reload` la récupère à nouveau.
+3. Si la configuration administrateur est activée, ses valeurs ont priorité sur toutes les autres sources de configuration. La session les suit dès son premier message : agent de départ, connecteurs, serveurs MCP et outils.
 
 <SectionTab as="h2" sectionId="permissions">Autorisations</SectionTab>
 
 La gestion de la configuration administrateur nécessite l'autorisation de contrôle d'accès basé sur les rôles (RBAC) `manage_code_config` au niveau de l'Organization. Les administrateurs d'Organization peuvent déléguer cette gestion sans accorder un accès administrateur complet.
+
+Les administrateurs d'espace de travail peuvent gérer la configuration de leur propre espace de travail.
 
 <SectionTab as="h2" sectionId="enable">Activer la fonctionnalité</SectionTab>
 
@@ -82,6 +92,7 @@ La configuration Admin accepte la plupart des mêmes clés que [`config.toml`](/
 - Les serveurs MCP, et la possibilité même pour les utilisateurs d'utiliser des serveurs MCP.
 - La possibilité pour les utilisateurs d'approuver automatiquement tous les appels d'outils.
 - Connecteurs, ainsi que les outils, agents et skills activés ou désactivés.
+- L'agent de départ.
 - Les interrupteurs de télémétrie, de vérification des mises à jour et de notifications.
 
 ```toml
@@ -165,6 +176,54 @@ Avec `enable_mcp = false`, les clients Vibe Code :
 
 Les utilisateurs qui tentent l'une de ces actions voient un message indiquant que leur administrateur a désactivé les serveurs MCP. Les clients appliquent ce paramètre ; comme le reste de la configuration administrateur, il ne constitue pas une frontière de sécurité. Il nécessite Vibe Code CLI 3.0 ou une version ultérieure. Les [Connecteurs](/vibe/code/cli/connectors) disposent d'un paramètre distinct, `enable_connectors`.
 
+<SectionTab as="h2" sectionId="block-connectors">Bloquer les connecteurs</SectionTab>
+
+Pour bloquer tous les [connecteurs](/vibe/code/cli/connectors), y compris la recherche sur le Web intégrée, définissez `enable_connectors` sur `false` :
+
+```toml
+enable_connectors = false
+```
+
+Pour bloquer un connecteur, ajoutez une entrée `[[connectors]]` avec le nom du connecteur, tel qu'il apparaît dans `/connectors` :
+
+```toml
+[[connectors]]
+name = "web_search"
+disabled = true
+```
+
+Pour bloquer seulement certains outils d'un connecteur, listez-les dans le champ `disabled_tools` de l'entrée, sans le préfixe du connecteur :
+
+```toml
+[[connectors]]
+name = "web_search"
+disabled_tools = ["weather_search"]
+```
+
+Dans les clés de premier niveau `enabled_tools` et `disabled_tools`, et dans les blocs `[tools.<tool_name>]`, un outil de connecteur porte le nom `connector_<connector>_<tool>` :
+
+```toml
+disabled_tools = ["connector_web_search_*"]
+
+[tools.connector_web_search_weather_search]
+permission = "ask"
+```
+
+:::warning
+Les logs de session affichent les outils de connecteur sous la forme `connector_<connector>.<tool>`, avec un point, par exemple `connector_web_search.weather_search`. Les règles écrites avec le point ne correspondent à aucun outil. Utilisez la forme avec tiret bas, `connector_web_search_weather_search`.
+:::
+
+<SectionTab as="h2" sectionId="starting-agent">Définir l'agent de départ</SectionTab>
+
+Définissez `default_agent` pour choisir l'agent dans lequel chaque session démarre, et `enabled_agents` ou `disabled_agents` pour limiter les agents vers lesquels les utilisateurs peuvent basculer. Les deux listes acceptent des motifs de nom d'agent : noms exacts, globs ou expressions régulières précédées de `re:`.
+
+```toml
+default_agent = "ask"
+disabled_agents = ["auto-approve"]
+```
+
+Les sessions ne s'exécutent jamais dans un agent que la configuration administrateur exclut. Si un utilisateur en demande un, par exemple avec `--agent`, la session démarre dans `default_agent` à la place.
+
 <SectionTab as="h2" sectionId="block-auto-approve">Bloquer l'approbation automatique</SectionTab>
 
 Pour empêcher les utilisateurs de contourner les demandes d'approbation avec le mode d'approbation automatique, définissez `enable_auto_approve` sur `false` :
@@ -175,8 +234,8 @@ enable_auto_approve = false
 
 Avec `enable_auto_approve = false`, la CLI Vibe Code :
 
-- Masque l'agent `auto-approve` et tout agent personnalisé avec `safety = "yolo"`. Une session dont `--agent` ou `default_agent` désigne l'un d'eux ne démarre pas et indique que le mode d'approbation automatique est désactivé. Les utilisateurs doivent choisir un autre agent par défaut.
-- Ignore `--auto-approve` et `--yolo`, et affiche un avertissement indiquant que les demandes d'approbation restent actives.
+- Masque l'agent `auto-approve` et tout agent personnalisé ayant `safety = "yolo"`. Si le `--agent` ou le `default_agent` d'une session désigne l'un d'eux, elle démarre plutôt dans un autre agent, comme pour tout [agent que la configuration administrateur exclut](#starting-agent).
+- Ignore `--auto-approve` et `--yolo`, et affiche un avertissement indiquant que les demandes d'approbation restent actives. Il ignore aussi `bypass_tool_permissions = true`.
 
 Les [autorisations par outil](/vibe/code/safety-approvals-permissions#set-permissions) s'appliquent toujours : un outil défini sur `always` dans `[tools.<tool_name>]`, ou une commande de son `allowlist`, s'exécute toujours sans approbation. Comme le reste de la configuration administrateur, ce paramètre ne constitue pas une frontière de sécurité. Il nécessite Vibe Code CLI 3.0.1 ou une version ultérieure.
 
@@ -188,18 +247,17 @@ La configuration Admin ne contient jamais de secrets en clair. Les champs d’id
 
 Lorsque la configuration administrateur est active, les utilisateurs de Vibe Code CLI voient les éléments suivants :
 
-- Les paramètres gérés par l'administrateur sont en lecture seule dans `/config` : les utilisateurs ne peuvent ni les modifier ni les réinitialiser. Le panneau **OÙ IL EST DÉFINI** de l'éditeur de paramètres indique l'administrateur comme source.
+- Les paramètres gérés par l'administrateur sont en lecture seule dans `/config` : les utilisateurs ne peuvent pas les modifier ni les réinitialiser. Le panneau **Où c'est défini** de l'éditeur de paramètres indique l'administrateur comme source.
 - Il n'y a ni bannière de démarrage ni indicateur global.
-- La CLI récupère la configuration administrateur en arrière-plan au début de chaque session. Elle la conserve en mémoire et ne l'écrit jamais dans le fichier `config.toml` local.
-- Si une erreur réseau ou serveur empêche la récupération, la session continue sans configuration administrateur. La CLI journalise l'échec au niveau debug et n'affiche aucun avertissement.
+- Le démarrage d'une session attend la configuration administrateur, quelques secondes au maximum. La CLI n'écrit jamais la configuration administrateur dans le `config.toml` local.
+- Si la récupération échoue, la session utilise la dernière configuration administrateur reçue au cours des 7 derniers jours, ou s'exécute sans configuration administrateur.
+- `/reload` récupère à nouveau la configuration administrateur. Les modifications de l'agent de départ et des connecteurs s'appliquent à partir de la session suivante.
 - Si la CLI ne trouve pas de clé API Mistral, elle ignore la configuration administrateur.
-- Si la configuration administrateur est invalide, la CLI l'ignore et affiche : `Your administrator-managed configuration could not be applied: <reason>`.
+- Si la configuration administrateur ne peut pas être appliquée, la CLI tente la dernière configuration administrateur reçue, puis revient à la configuration locale de l'utilisateur, sans aucune configuration administrateur. Elle affiche : `Your administrator-managed configuration could not be applied: <reason>`. Cela arrive quand la configuration administrateur est invalide ou ne correspond pas à la configuration de l'utilisateur, par exemple une entrée `[[models]]` dont le `provider` n'est pas défini, ou un `system_prompt_id` que le projet de l'utilisateur ne fournit pas.
 
 <SectionTab as="h2" sectionId="disable">Arrêter d'appliquer la configuration administrateur</SectionTab>
 
-La désactivation de l'option masque uniquement l'interface d'administration. Les clients continuent de récupérer et d'appliquer la configuration enregistrée.
-
-Pour arrêter d'appliquer la configuration administrateur, **envoyez une configuration vide** avant de désactiver l'option. Cette opération empêche l'application d'une configuration obsolète aux sessions des utilisateurs.
+Pour arrêter d'appliquer la configuration administrateur, **soumettez une configuration vide**. Les utilisateurs qui ne peuvent pas atteindre l'endpoint de configuration gérée conservent la dernière configuration reçue pendant au maximum 7 jours.
 
 <SectionTab as="h2" sectionId="troubleshooting">Dépanner les déploiements dédiés et auto-hébergés</SectionTab>
 

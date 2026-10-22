@@ -38,8 +38,8 @@ Toutes les clés se trouvent à la racine de `config.toml` sauf indication contr
 | `enabled_tools` | array&lt;string&gt; |  | Liste d’autorisation de motifs de noms d’outils. Voir [Sécurité, approbations et permissions](/vibe/code/safety-approvals-permissions#tool-permissions) |
 | `disabled_tools` | array&lt;string&gt; |  | Liste d'exclusion de motifs de noms d'outils, appliquée après `enabled_tools` |
 | `enable_mcp` | boolean | `true` | Autorise les serveurs MCP. Si `false`, Vibe bloque l'ajout, la suppression et l'activation de serveurs MCP, la connexion à ces serveurs et le chargement de leurs outils, y compris pour les serveurs fournis par des plugins. Voir [Configuration administrateur](/vibe/code/cli/admin-config#block-mcp) |
-| `enable_connectors` | boolean | `true` | Autorise les [Connecteurs](/vibe/code/cli/connectors) |
-| `enable_auto_approve` | boolean | `true` | Autorise le mode d'approbation automatique. Si `false`, Vibe masque l'agent `auto-approve` et tout agent personnalisé avec `safety = "yolo"`, et ignore `--auto-approve` et `--yolo`. Les autorisations par outil s'appliquent toujours. Destiné à la [configuration administrateur](/vibe/code/cli/admin-config#block-auto-approve) |
+| `enable_connectors` | boolean | `true` | Autorise les [Connecteurs](/vibe/code/cli/connectors), y compris la Recherche sur le Web intégrée. Voir [Bloquer les connecteurs](/vibe/code/cli/admin-config#block-connectors) |
+| `enable_auto_approve` | boolean | `true` | Autorise le mode d'approbation automatique. Si `false`, Vibe masque l'agent `auto-approve` et tout agent personnalisé avec `safety = "yolo"`, et ignore `--auto-approve`, `--yolo` et `bypass_tool_permissions`. Les autorisations par outil s'appliquent toujours. Destiné à la [configuration administrateur](/vibe/code/cli/admin-config#block-auto-approve) |
 | `enable_subagents` | boolean | `true` | Permet à l'agent de déléguer du travail à des sous-agents. Voir [Les agents](/vibe/code/cli/agents#custom-subagents) |
 | `enable_background_processes` | boolean | `true` | Permet à l'agent d'exécuter des commandes en arrière-plan. Si `false`, les commandes s'exécutent au premier plan jusqu'à leur terme |
 | `enable_update_checks` | booléen | `true` | Vérifie une fois par jour si une nouvelle version est disponible et propose de l'installer |
@@ -147,12 +147,25 @@ La table `[mcp_servers.auth]` définit la manière dont Vibe s'authentifie aupr�
 | `api_key_header` | string | `"Authorization"` | `static` uniquement. Nom de l'en-tête dont la valeur est définie avec la clé API |
 | `api_key_format` | string | `"Bearer {token}"` | `static` uniquement. Chaîne de format pour la valeur de l'en-tête |
 | `scopes` | array&lt;string&gt; | Requis pour `oauth` | `oauth` uniquement. Portées OAuth à demander. Fournissez une liste vide pour accepter la valeur par défaut du serveur |
+| `client_id` | string |  | `oauth` uniquement. Identifiant d'un client public préenregistré, avec `http://127.0.0.1:<redirect_port>/callback` comme URI de redirection. Incompatible avec `client_metadata_url`. Sans l'un ni l'autre, Vibe enregistre un client de façon dynamique |
+| `client_metadata_url` | string |  | `oauth` uniquement. URL HTTPS d'un document de métadonnées client, avec un chemin autre que `/`. Le document doit lister `http://127.0.0.1:<redirect_port>/callback` dans `redirect_uris`. Utilisée uniquement si le serveur annonce `client_id_metadata_document_supported` ; sinon, Vibe enregistre un client de façon dynamique. Incompatible avec `client_id` |
+| `redirect_port` | integer | `47823` | `oauth` uniquement. Port local du callback de connexion, de `1024` à `65535`. Modifiez-le si le port `47823` est déjà utilisé |
 
 Vibe accepte encore `headers`, `api_key_env`, `api_key_header` et `api_key_format` au premier niveau de `[[mcp_servers]]` et les interprète comme une authentification statique.
 
+<SectionTab as="h2" sectionId="connectors">Connecteurs (`[[connectors]]`)</SectionTab>
+
+Une table `[[connectors]]` par [connecteur](/vibe/code/cli/connectors) à modifier. `/connectors` écrit ces entrées lorsque vous activez ou désactivez un connecteur ou un outil.
+
+| Clé | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `name` | string | Requis | Nom du connecteur, tel qu'il apparaît dans `/connectors` (par exemple, `web_search`) |
+| `disabled` | boolean | `false` | Masque tous les outils de ce connecteur |
+| `disabled_tools` | array&lt;string&gt; |  | Noms des outils de ce connecteur à masquer, sans le préfixe du connecteur |
+
 <SectionTab as="h2" sectionId="tool-permissions">Permissions par outil (`[tools.<tool_name>]`)</SectionTab>
 
-`<tool_name>` est un outil intégré (`read_file`, `bash`, etc.) ou un outil MCP nommé `{server_name}_{tool_name}`. Un bloc par outil.
+`<tool_name>` est un outil intégré (`read_file`, `bash`, etc.), un outil MCP nommé `{server_name}_{tool_name}` ou un outil de connecteur nommé `connector_{connector_name}_{tool_name}`. Un bloc par outil.
 
 | Clé | Type | Valeur par défaut | Description |
 |---|---|---|---|
@@ -170,9 +183,9 @@ Ces clés se trouvent dans `~/.vibe/agents/<name>.toml` ou `./.vibe/agents/<name
 | `display_name` | string |  | Libellé lisible par l’utilisateur |
 | `description` | string |  | Description en texte libre. Requise pour les sous-agents |
 | `instructions` | string |  | Texte du prompt écrit directement dans le fichier. Pour un agent, ajouté après le prompt système. Pour un sous-agent, remplace le prompt `system_prompt_id` |
-| `safety` | chaîne | `"neutral"` | Indication visuelle : `safe`, `neutral`, `destructive`, `smart` ou `yolo`. Modifie la couleur de la bordure de la zone de saisie ; n'applique aucune autorisation. `enable_auto_approve = false` masque les agents `yolo` |
-| `system_prompt_id` | chaîne |  | Désigne un fichier de prompt Markdown dans `./.vibe/prompts/` (dossiers de confiance uniquement) ou `~/.vibe/prompts/`, sans l'extension `.md` |
-| `active_model` | chaîne |  | Alias de modèle pour cet agent (même clé que la config globale) |
+| `safety` | string | `"neutral"` | Indication visuelle : `safe`, `neutral`, `destructive`, `smart` ou `yolo`. Modifie la couleur de la bordure de la zone de saisie ; n'applique aucune autorisation. `enable_auto_approve = false` masque les agents `yolo` |
+| `system_prompt_id` | string |  | Désigne un fichier de prompt Markdown dans `./.vibe/prompts/` (dossiers de confiance uniquement) ou `~/.vibe/prompts/`, sans l'extension `.md` |
+| `active_model` | string |  | Alias de modèle pour cet agent (même clé que la config globale) |
 | `enabled_tools` | array&lt;string&gt; |  | Liste d’autorisation d’outils pour cet agent |
 | `disabled_tools` | array&lt;string&gt; |  | Liste d’exclusion d’outils pour cet agent |
 

@@ -144,6 +144,7 @@ function getRawPrices(
 interface RowPrices {
   model: Model;
   isFree: boolean;
+  isSelfHosted: boolean;
   input?: SidePrice;
   cachedInput?: SidePrice;
   output?: SidePrice;
@@ -164,10 +165,10 @@ function PricingRow({
   currency: PricingCurrency;
   l: ReturnType<typeof useLingo>;
 }) {
-  const { model, isFree, input, cachedInput, output } = row;
+  const { model, isFree, isSelfHosted, input, cachedInput, output } = row;
   const factor = modeFactor(mode) * (regional ? REGIONAL_FACTOR : 1);
   const modelUrl = getModelUrl(model);
-  const onSale = !isFree && [input, cachedInput, output].some(
+  const onSale = !isFree && !isSelfHosted && [input, cachedInput, output].some(
     side => side?.originalPrice !== undefined
   );
 
@@ -207,6 +208,23 @@ function PricingRow({
         ) : (
           <span className="font-semibold text-foreground">{model.name}</span>
         )}
+        {isSelfHosted && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                size="xs"
+                tabIndex={0}
+                className="relative mt-1 flex align-middle font-mono uppercase text-[11px] cursor-help md:mt-0 md:ml-3 md:inline-flex"
+              >
+                {l.text('Self-hosted · Open weights', { context: 'Badge marking a model with no Mistral API endpoint, only downloadable open weights' })}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-left">
+              {l.text('No Mistral-hosted endpoint. Download the weights and run the model on your own infrastructure; inference cost depends on your setup.', { context: 'Tooltip explaining the self-hosted open-weights badge in the model pricing table' })}
+            </TooltipContent>
+          </Tooltip>
+        )}
         {onSale && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -225,25 +243,33 @@ function PricingRow({
           </Tooltip>
         )}
       </TableCell>
-      <TableCell
-        className={cn(
-          'p-2 font-mono text-xs 2xl:text-sm text-end',
-          isFree && 'text-primary-soft',
-        )}
-      >
-        {renderPrice(input)}
-      </TableCell>
-      <TableCell
-        className={cn(
-          'p-2 font-mono text-xs 2xl:text-sm text-end',
-          isFree && 'text-primary-soft',
-        )}
-      >
-        {cachedInput ? renderPrice(cachedInput) : renderPrice(input, CACHED_INPUT_FACTOR)}
-      </TableCell>
-      <TableCell className="p-2 font-mono text-xs 2xl:text-sm text-end">
-        {renderPrice(output)}
-      </TableCell>
+      {isSelfHosted ? (
+        <TableCell className="p-2 font-mono text-xs 2xl:text-sm text-end text-muted-foreground" colSpan={3}>
+          {l.text('Costs depend on your own infrastructure', { context: 'Note shown in place of price cells for self-hosted open-weights models in the pricing table' })}
+        </TableCell>
+      ) : (
+        <>
+          <TableCell
+            className={cn(
+              'p-2 font-mono text-xs 2xl:text-sm text-end',
+              isFree && 'text-primary-soft',
+            )}
+          >
+            {renderPrice(input)}
+          </TableCell>
+          <TableCell
+            className={cn(
+              'p-2 font-mono text-xs 2xl:text-sm text-end',
+              isFree && 'text-primary-soft',
+            )}
+          >
+            {cachedInput ? renderPrice(cachedInput) : renderPrice(input, CACHED_INPUT_FACTOR)}
+          </TableCell>
+          <TableCell className="p-2 font-mono text-xs 2xl:text-sm text-end">
+            {renderPrice(output)}
+          </TableCell>
+        </>
+      )}
     </TableRow>
   );
 }
@@ -258,9 +284,10 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
     .map(slug => findModelBySlug(slug))
     .filter((m): m is Model => Boolean(m))
     .map(model => {
+      const isSelfHosted = model.identifiers.apiNames.length === 0;
       const isFree = model.pricing.free;
-      const { input, cachedInput, output } = isFree ? {} : getRawPrices(model.pricing);
-      return { model, isFree, input, cachedInput, output };
+      const { input, cachedInput, output } = isFree || isSelfHosted ? {} : getRawPrices(model.pricing);
+      return { model, isFree, isSelfHosted, input, cachedInput, output };
     });
 
   if (rows.length === 0) {
@@ -279,7 +306,7 @@ export default function PricingTable({ slugs, className }: PricingTableProps) {
     denominators.size === 1 ? [...denominators][0] : undefined;
 
   const suffix = modeSuffix(mode, l);
-  const showCurrencyToggle = rows.some(row => !row.isFree);
+  const showCurrencyToggle = rows.some(row => !row.isFree && !row.isSelfHosted);
 
   return (
     <div className="flex flex-col gap-3">

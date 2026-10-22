@@ -107,7 +107,7 @@ type = "oauth"
 scopes = []
 ```
 
-Sign in with `/mcp login linear` from a session. An empty `scopes` list accepts the server's default scopes.
+Sign in with `/mcp login linear` from a session. An empty `scopes` list accepts the server's default scopes. See [Sign in to OAuth servers](#oauth-sign-in) for how sign-in works.
 
 </ExplorerTab>
 <ExplorerTab value="stdio" label="Local process (stdio)">
@@ -138,6 +138,26 @@ env = { "DEBUG" = "1", "LOG_LEVEL" = "info" }
 | `[mcp_servers.auth]` | Authentication for HTTP transports: `type = "static"` with `headers` or `api_key_env`, or `type = "oauth"` with `scopes`. |
 
 Vibe still accepts `headers`, `api_key_env`, `api_key_header`, and `api_key_format` directly in `[[mcp_servers]]`, and treats them as static authentication. Don't combine them with an `[mcp_servers.auth]` table. See the [configuration reference](/vibe/code/cli/configuration-reference#mcp-servers) for every field.
+
+<SectionTab as="h2" sectionId="oauth-sign-in">Sign in to OAuth servers</SectionTab>
+
+OAuth works with the `http` and `streamable-http` transports. `stdio` servers run locally and don't use OAuth.
+
+`vibe mcp add` starts the sign-in as soon as it adds an OAuth server, that is, an HTTP server added without `--header` or `--api-key-env`. `/mcp add` only adds OAuth servers and also starts the sign-in. If you skipped it with `--no-login`, or if Vibe reports that a server needs authentication, run `/mcp login <name>` from a session. `/mcp status` shows the sign-in state of each server.
+
+During sign-in, Vibe gives you the authorization URL and can open it in your browser. After you approve access, the browser redirects to `http://127.0.0.1:<redirect_port>/callback`, which is `http://127.0.0.1:47823/callback` by default. This address must reach the machine where Vibe runs. If Vibe runs on a remote machine over SSH, forward the callback port before you sign in, then open the URL in your local browser: `ssh -L 47823:127.0.0.1:47823 <host>`. Use your `redirect_port` instead of `47823` if you changed it.
+
+Vibe stores the tokens in your OS keyring, not in `config.toml`. `/mcp logout <name>` deletes them. If you change the server's `url`, `scopes`, `client_id`, or `client_metadata_url`, Vibe stops using the stored tokens, and you need to run `/mcp login <name>` again.
+
+These optional fields in `[mcp_servers.auth]` control the OAuth client:
+
+| Field | Purpose |
+|---|---|
+| `client_id` | Pre-registered public client ID. Register `http://127.0.0.1:47823/callback` as its redirect URI, with your `redirect_port` instead of `47823` if you changed it. Without `client_id` or `client_metadata_url`, Vibe registers a client with the server dynamically. |
+| `client_metadata_url` | HTTPS URL of a client metadata document, with a path other than `/`. The document must list `http://127.0.0.1:<redirect_port>/callback` in `redirect_uris`. Used only if the server advertises `client_id_metadata_document_supported`. Otherwise, Vibe registers a client dynamically. Can't be combined with `client_id`. |
+| `redirect_port` | Local port for the sign-in callback. Default: `47823`. Change it if `47823` is already in use on your machine. |
+
+In headless environments without an OS keyring, such as CI, Vibe can't store OAuth tokens. Use static authentication with `api_key_env` instead.
 
 <SectionTab as="h2" sectionId="permissions">Tool naming and permissions</SectionTab>
 

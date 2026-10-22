@@ -12,7 +12,7 @@ export const FEATURED_MODEL_NAMES: ModelSlug[] = [
 export const LATEST_MODEL_NAMES: ModelSlug[] = [
   'mistral-large-4-0',
   'zai-glm-5-3',
-  'mistral-medium-3-5-26-04',
+  'zai-glm-5-3-flash',
   'mistral-small-4-0-26-03',
   'voxtral-mini-transcribe-3-0',
   'ocr-4-1',
@@ -22,6 +22,7 @@ export const FEATURED_MODEL_NAMES_MODELS_PAGE: ModelSlug[] = [
   'mistral-large-4-0',
   'ocr-4-1',
   'zai-glm-5-3',
+  'zai-glm-5-3-flash',
   'mistral-small-4-0-26-03',
   'voxtral-mini-transcribe-3-0',
   'voxtral-mini-tts-3-0',

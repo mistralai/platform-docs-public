@@ -11,6 +11,14 @@ import { PRICING_TABLES } from '@/schema';
 import { getLingo } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
 import PricingTable from './_components/pricing-table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const ogImageUrl = getOGImageUrl({
   path: 'generic',
@@ -82,6 +90,39 @@ export default async function PricingPage({
           <PricingTable slugs={group.slugs} />
         </section>
       ))}
+
+      <section id="voice-agents" className="flex flex-col gap-6">
+        <SectionTab sectionId="voice-agents">Voice agents</SectionTab>
+        <HeadingSubtitle>
+          Pricing for the Voice Agents API, billed per minute of conversation.
+        </HeadingSubtitle>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="p-2">Model</TableHead>
+              <TableHead className="p-2 text-end">Price</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="p-2 font-mono text-xs 2xl:text-sm">
+                Mistral Small 4
+              </TableCell>
+              <TableCell className="p-2 font-mono text-xs 2xl:text-sm text-end">
+                $0.04/min
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="p-2 font-mono text-xs 2xl:text-sm">
+                Larger models
+              </TableCell>
+              <TableCell className="p-2 font-mono text-xs 2xl:text-sm text-end">
+                $0.08/min
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </section>
     </div>
   );
 }

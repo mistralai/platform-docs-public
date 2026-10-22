@@ -64,7 +64,9 @@ declare module "@lingo.dev/react" {
     "A state-of-the-art, open-weight, general-purpose multimodal model.": { context: "Short description of an AI model" };
     "A technique that improves factual accuracy by retrieving relevant documents from an external knowledge base and including them in the prompt context. Reduces hallucinations and enables models to answer from proprietary or up-to-date data.": { context: "Definition of the RAG glossary term" };
     "A third-party open weight text model from Z.ai with a 1M-token context window.": { context: "Short description of an AI model" };
+    "A third-party multimodal model from Z.ai with a 1M-token context window, optimized for agentic workflows and visual coding.": { context: "Short description of an AI model" };
     "A third-party open weight text model from Z.ai, hosted by Mistral for long-context coding and agentic workflows. The model is served without Mistral modifications.": { context: "Full description of an AI model" };
+    "Z.AI's GLM 5.3 Flash is a multimodal 320B-parameter (18B active) Mixture-of-Experts model. Built for developer agent workflows, visual coding, and complex tool-use tasks. The model is served without Mistral modifications.": { context: "Full description of an AI model" };
     "A time series foundation model for zero-shot forecasting with covariate support and probabilistic outputs.": { context: "Short description of an AI model" };
     "A tiny and efficient model offering best-in-class text and vision capabilities. ": { context: "Short description of an AI model" };
     "A visual lab to experiment with system prompts, user messages, and generation parameters (like Temperature and Top-P). Test prompts side-by-side across different Mistral models instantly.": { context: "Detailed description of the Playground feature" };
@@ -125,6 +127,9 @@ declare module "@lingo.dev/react" {
     "Sale price": { context: "Badge marking a model whose listed price is a temporary discount" };
     "Pricing currency": { context: "Accessible label for the USD/EUR price currency selector" };
     "Temporary sale price. The struck-through amount is the original price.": { context: "Tooltip explaining the sale price badge in the model pricing table" };
+    "Self-hosted · Open weights": { context: "Badge marking a model with no Mistral API endpoint, only downloadable open weights" };
+    "No Mistral-hosted endpoint. Download the weights and run the model on your own infrastructure; inference cost depends on your setup.": { context: "Tooltip explaining the self-hosted open-weights badge in the model pricing table" };
+    "Costs depend on your own infrastructure": { context: "Note shown in place of price cells for self-hosted open-weights models in the pricing table" };
     "Compare model capabilities": { context: "CTA heading for model comparison on models page" };
     "Use the model selection guide to match models to your task, latency, and cost targets.": { context: "CTA description for model comparison on models page" };
     "Compare models": { context: "CTA label linking to model selection guide" };
@@ -357,6 +362,7 @@ declare module "@lingo.dev/react" {
     "Regional Inference": { context: "Link text to the Regional Inference documentation" };
     "Regional availability": { context: "Heading for a GLM 5.3 regional availability callout on the model card" };
     "Send a request to the Chat Completions API with the `zai-glm-5-3` model name.": { context: "Intro for a GLM 5.3 curl onboarding example" };
+    "Send a request to the Chat Completions API with the `zai-glm-5-3-flash` model name.": { context: "Intro for a GLM 5.3 Flash curl onboarding example" };
     "Send a request to the Chat Completions API with the `zai-glm-5-2` model name.": { context: "Intro for a GLM 5.2 curl onboarding example" };
     "Use GLM 5.3": { context: "Heading for a GLM 5.3 curl onboarding example" };
     "Use GLM 5.2": { context: "Heading for a GLM 5.2 curl onboarding example" };
@@ -593,6 +599,8 @@ declare module "@lingo.dev/react" {
     "Our small multimodal reasoning model.": { context: "Short description of an AI model" };
     "Our small reasoning model released July 2025.": { context: "Full description of an AI model" | "Short description of an AI model" };
     "Our state-of-the-art semantic for extracting representation of code extracts": { context: "Full description of an AI model" | "Short description of an AI model" };
+    "A general-purpose text embedding model that turns sentences and paragraphs into vectors for retrieval, classification, and similarity search.": { context: "Full description of an AI model" };
+    "A general-purpose text embedding model for retrieval and similarity search.": { context: "Short description of an AI model" };
     "Our state-of-the-art text-to-speech model with zero-shot voice cloning and professional voice cloning. Supports 9 languages, streaming with ~90 ms time-to-first-audio, 5 output formats, 34 emotion tags, and 2 pace tags.": { context: "Full description of an AI model" };
     "Our state-of-the-art text-to-speech model with zero-shot voice cloning. Supports 9 languages, streaming with ~90ms time-to-first-audio, and no transcript required for voice prompts.": { context: "Full description of an AI model" };
     "Our team will review each application continuously, evaluating candidates based on the following criteria.": { context: "Explanation that ambassador applicants are evaluated against set criteria" };

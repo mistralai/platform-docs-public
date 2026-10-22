@@ -38,8 +38,8 @@ All keys live at the root of `config.toml` unless noted.
 | `enabled_tools` | array&lt;string&gt; |  | Allow-list of tool name patterns. See [Safety, approvals, and permissions](/vibe/code/safety-approvals-permissions#tool-permissions) |
 | `disabled_tools` | array&lt;string&gt; |  | Deny-list of tool name patterns, applied after `enabled_tools` |
 | `enable_mcp` | boolean | `true` | Allows MCP servers. When `false`, Vibe blocks adding, removing, enabling, signing in to, and loading tools from MCP servers, including servers provided by plugins. See [Admin config](/vibe/code/cli/admin-config#block-mcp) |
-| `enable_connectors` | boolean | `true` | Allows [connectors](/vibe/code/cli/connectors) |
-| `enable_auto_approve` | boolean | `true` | Allows the auto-approve mode. When `false`, Vibe hides the `auto-approve` agent and every custom agent with `safety = "yolo"`, and ignores `--auto-approve` and `--yolo`. Per-tool permissions still apply. Meant for [admin config](/vibe/code/cli/admin-config#block-auto-approve) |
+| `enable_connectors` | boolean | `true` | Allows [connectors](/vibe/code/cli/connectors), including the built-in web search. See [Block connectors](/vibe/code/cli/admin-config#block-connectors) |
+| `enable_auto_approve` | boolean | `true` | Allows the auto-approve mode. When `false`, Vibe hides the `auto-approve` agent and every custom agent with `safety = "yolo"`, and ignores `--auto-approve`, `--yolo`, and `bypass_tool_permissions`. Per-tool permissions still apply. Meant for [admin config](/vibe/code/cli/admin-config#block-auto-approve) |
 | `enable_subagents` | boolean | `true` | Lets the agent delegate work to subagents. See [Agents](/vibe/code/cli/agents#custom-subagents) |
 | `enable_background_processes` | boolean | `true` | Lets the agent run commands in the background. When `false`, commands run to completion in the foreground |
 | `enable_update_checks` | boolean | `true` | Checks once a day for a new release and offers to install it |
@@ -147,12 +147,25 @@ The `[mcp_servers.auth]` table sets how Vibe authenticates to an HTTP server:
 | `api_key_header` | string | `"Authorization"` | `static` only. Header name to set with the API key |
 | `api_key_format` | string | `"Bearer {token}"` | `static` only. Format string for the header value |
 | `scopes` | array&lt;string&gt; | Required for `oauth` | `oauth` only. OAuth scopes to request. Pass an empty list to accept the server's default |
+| `client_id` | string |  | `oauth` only. Pre-registered public client ID, with `http://127.0.0.1:<redirect_port>/callback` as its redirect URI. Can't be combined with `client_metadata_url`. Without either, Vibe registers a client dynamically |
+| `client_metadata_url` | string |  | `oauth` only. HTTPS URL of a client metadata document, with a path other than `/`. The document must list `http://127.0.0.1:<redirect_port>/callback` in `redirect_uris`. Used only if the server advertises `client_id_metadata_document_supported`; otherwise Vibe registers a client dynamically. Can't be combined with `client_id` |
+| `redirect_port` | integer | `47823` | `oauth` only. Local port for the sign-in callback, from `1024` to `65535`. Change it if `47823` is already in use |
 
 Vibe still accepts `headers`, `api_key_env`, `api_key_header`, and `api_key_format` at the top level of `[[mcp_servers]]` and treats them as static authentication.
 
+<SectionTab as="h2" sectionId="connectors">Connectors (`[[connectors]]`)</SectionTab>
+
+One `[[connectors]]` table per [connector](/vibe/code/cli/connectors) you want to change. `/connectors` writes these entries when you enable or disable a connector or tool.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `name` | string | Required | Connector name, as listed in `/connectors` (for example, `web_search`) |
+| `disabled` | boolean | `false` | Hides all tools from this connector |
+| `disabled_tools` | array&lt;string&gt; |  | Tool names, without the connector prefix, to hide from this connector |
+
 <SectionTab as="h2" sectionId="tool-permissions">Per-tool permissions (`[tools.<tool_name>]`)</SectionTab>
 
-`<tool_name>` is a built-in tool (`read_file`, `bash`, etc.) or an MCP tool named `{server_name}_{tool_name}`. One block per tool.
+`<tool_name>` is a built-in tool (`read_file`, `bash`, etc.), an MCP tool named `{server_name}_{tool_name}`, or a connector tool named `connector_{connector_name}_{tool_name}`. One block per tool.
 
 | Key | Type | Default | Description |
 |---|---|---|---|

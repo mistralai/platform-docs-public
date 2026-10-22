@@ -20,8 +20,6 @@ For why voices mispronounce rare words, and how this relates to context biasing 
 
 <CtaButton href="/api/endpoint/audio/speech#operation-speech_v1_audio_speech_post">API reference — POST /v1/audio/speech</CtaButton>
 
-{/* API CONTRACT — known since Sept 25 (Rakesh, Slack; Rakesh points to the same thread in his Sept 28 answers): a `phoneme_hints` field on POST /v1/audio/speech, an object that maps a word of the input to its list of phonemes, per request. Verified live on the 3-0-4 checkpoint (demo 00 phonemes and demo 03): accepted on the Voxtral 3 voices and on the older presets, multi-word keys accepted, and every phoneme validated against a closed list (a 422 enum error otherwise). RE-TESTED Oct 7 (checkpoint 3-0-5): the basic contract still works on gb_jane_neutral and voice_478; a symbol outside the list still returns 422 `enum` with the same 50 values. mistralai 3.1.0 (Oct 6) types the field as `phoneme_hints: Dict[str, List[IPAPhoneme]]` with the same 50 values; the tested example uses httpx because 3.1.0 was not installable here yet (see the TTS handoff). STILL OPEN — owner Rakesh: realtime endpoint support, a saved or reusable lexicon, how non-English words are handled, the maximum number of entries, case sensitivity, and whether the phoneme list is final. */}
-
 <SectionTab as="h2" sectionId="define-a-pronunciation">Define a pronunciation</SectionTab>
 
 In `phoneme_hints`, map a word of `input` to the list of phonemes to say it with. Each phoneme is one string of the list.
@@ -146,24 +144,3 @@ The API checks every phoneme of every hint, and rejects the whole request if one
   <LinkCard href="/studio/audio/text-to-speech/troubleshooting" title="Troubleshooting" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9):
-   - Contract: Rakesh, Sept 25 (Slack), phoneme_hints on POST /v1/audio/speech, per request; facts section of
-     features-subagents-brief.md (Oct 9).
-   - Code: examples/tts/custom-pronunciation/phoneme_hints.{sh,py}, ok on Oct 7 (first run and re-run with the
-     new key); STT reads back "I like tomato soup."
-   - Two-word key accepted: demos README finding 13 ("Le Chat", checkpoint 3-0-4). Accepted on Voxtral 2 presets
-     (gb_jane_neutral) and Voxtral 3 voices (voice_478): probe p3_features.py phon (Oct 7). Not stated on the page:
-     cloned voices weren't tested with hints.
-   - 50 phonemes and the 422: demos README finding 14 and probe p3_features.py phon_bad_symbol ("r" -> 422
-     enum, the message lists the same 50 values), mistralai 3.1.0 IPAPhoneme. Grouping (vowels, diphthongs,
-     consonants) is ours. The caution list follows from the closed list (r, ɡ, ˈ, ː, ʁ, nasal vowels absent);
-     "oʊ" as one entry is shown in the tested example; tʃ and dʒ are single values of the enum.
-   - "Reuse pronunciations" section of the skeleton removed: the contract is per request and no lexicon is
-     confirmed (Rakesh question kept in the Limits Draft). */}
-
-{/* Feature page (layer 4) — audio docs revamp (DOC-610). New page (Sept 24) from the Sept 23 all-hands
-   ("custom phonemes to force brand names and jargon"), confirmed by the PRD ("custom phoneme vocab") and the
-   launch page. Replaces the unsourced "bias-style context" fix that TTS troubleshooting suggested for
-   mispronounced names. Written Oct 9. Boundary: the concept Custom vocabulary owns why and when; this page
-   owns the field, the phoneme list, and the error. Verify at the end: list confirmed final, key matching
-   answered, before/after demo present, Python tab on the SDK, realtime support stated, limits on Limits. */}

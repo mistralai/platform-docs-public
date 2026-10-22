@@ -62,8 +62,6 @@ curl https://api.mistral.ai/v1/files \
   </TabItem>
 </Tabs>
 
-{/* TESTED Oct 7 (stt agent): each fragment is the differing line of a complete tested request — transcribe-files/input_file.sh, input_url.sh, input_file_id.sh (upload with purpose=audio, transcribe by file_id, then DELETE /v1/files/{id}). All three returned the same transcript on the live interim ID voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. */}
-
 :::tip
 Quand vous n'avez plus besoin d'un enregistrement téléchargé, supprimez-le avec `DELETE /v1/files/{file_id}`.
 :::
@@ -147,8 +145,6 @@ La réponse contient la transcription complète dans `text` :
 }
 ```
 
-{/* TESTED Oct 9 (neutral recapture): transcribe-files/transcribe.{sh,py} on customer_call.wav (examples/stt/fixtures/make_neutral_fixtures.py: neutral two-voice Northwind support call, 34.9 s, synthesized with voxtral-mini-tts-3-0 on the presets en_paul_neutral (agent) and gb_jane_neutral (customer), the presets listed in the Oct 9 key's workspace), the same recording as Diarize speakers, Bias context and vocabulary, Turn detection, and Realtime transcription, so readers follow one call across the section. Without context_bias, the product name "Quillara" comes out as "Quilliera" and the company "Alder Creek Design" as "Older Creek Design"; Bias context and vocabulary fixes both on the same file. Response captured on the interim alias voxtral-transcribe-3 (text cut with [...]), "model" shown with the documented ID (the field echoes the requested ID). voxtral-mini-transcribe-3-0 is the final ID (Rakesh, Oct 7); on Oct 9 it still returned 400 "Invalid model" (rename pending). Also ran on voxtral-small-transcribe-3-0 ("Quilara", order number spelled out). The Python tab prints the same fields, ordered by the SDK model. Replaces the Oct 7 capture on demo 01's call (internal names). Swap for Ben's P0 asset if preferred, and recapture. */}
-
 Les autres champs :
 
 - `segments` reste vide, sauf si vous demandez des [horodatages](#timestamps).
@@ -169,8 +165,6 @@ Ces champs modifient le résultat renvoyé. Envoyez-les sous forme de champs de 
 | `context_bias` | Des noms et des termes que le modèle doit orthographier correctement, ou une phrase qui décrit l'enregistrement. Répétez le champ une fois par entrée. [Vocabulaire personnalisé](/studio/audio/concepts/custom-vocabulary) explique quand il est utile. | [Biais de contexte et de vocabulaire](/studio/audio/speech-to-text/bias-context-and-vocabulary) |
 | `stream` | Définissez-le sur `true` pour recevoir la transcription par fragments sous forme d'événements envoyés par le serveur. | [Recevoir la réponse en streaming](#stream-the-response) |
 
-{/* Rows: field names and types from public/openapi.yaml (AudioTranscriptionRequest). timestamp_granularities: segment only, word returns 400 "Word-level segments are not enabled for this model" on both v3 offline models (Oct 7, timestamps_word.sh), CONFIRMED Rakesh Oct 9 (none or segment). diarize without segment: 422 (Oct 7). context_bias repeated as one multipart field per entry (Oct 7); the OpenAPI item pattern ^[^,\s]+$ forbids spaces but multi-word entries and sentences work (handoff-stt item 8). */}
-
 <SectionTab as="h3" variant="secondary" sectionId="pin-the-language">Définir la langue</SectionTab>
 
 Par défaut, le modèle détecte la langue de l'enregistrement. Si vous la connaissez à l'avance, transmettez-la dans `language` sous forme de code ISO 639-1 à deux lettres :
@@ -183,11 +177,7 @@ curl https://api.mistral.ai/v1/audio/transcriptions \
   -F language=fr
 ```
 
-{/* TESTED Oct 7 (stt agent): transcribe-files/pin_language.sh, on demo 02's French meeting (meeting_fr.wav, language pinned as in the demo). Accepted on the live interim ID voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. The response "language" field stays null even when language is set. An invalid code (language=zz) returns 422 "Invalid language alpha2 code" — not the 400 listing the model's valid codes described in RFC-555 section 5.2. */}
-
 Fixer la langue peut améliorer la précision. Omettez-la quand la langue peut varier d'un enregistrement à l'autre. Pour les langues prises en charge et leurs codes, voir [Langues](/studio/audio/specs-and-limits/languages).
-
-{/* "Can improve accuracy": API reference description of the language field ("Providing the language can boost accuracy."). No accuracy comparison was run. */}
 
 <SectionTab as="h2" sectionId="timestamps">Horodatages</SectionTab>
 
@@ -230,8 +220,6 @@ La réponse conserve le `text` complet et remplit `segments`. Les trois premiers
   ]
 }
 ```
-
-{/* TESTED Oct 9 (neutral recapture): transcribe-files/timestamps.sh on customer_call.wav, excerpt of the response on the interim alias voxtral-transcribe-3 (17 segments; also ran on voxtral-small-transcribe-3-0). start and end are in seconds; speaker_id is null without diarize (see Diarize speakers). Segment text keeps its leading space. No "score" field was returned, unlike the RFC-555 section 1.5 example (Oct 7 and Oct 9). */}
 
 Chaque segment contient :
 
@@ -322,8 +310,6 @@ event: transcription.done
 data: {"model":"voxtral-mini-transcribe-3","text":"Thanks for calling Northwind Support. [...]","language":null,"segments":[],"usage":{"prompt_audio_seconds":34,...},"finish_reason":null,"type":"transcription.done"}
 ```
 
-{/* TESTED Oct 9 (neutral recapture): transcribe-files/stream.{sh,py} on customer_call.wav, on the interim alias voxtral-transcribe-3 and on voxtral-small-transcribe-3-0. Event names are transcription.text.delta then transcription.done (the done event carries the full response plus "type"); no transcription.language event was emitted (Oct 7 and Oct 9). The text block is an abbreviated capture, "model" shown with the documented ID. The SDK yields events with .event (name) and .data (typed payload). */}
-
 Pour le consommer :
 
 1. Ajoutez le `text` de chaque événement `transcription.text.delta` à ce que vous affichez.
@@ -350,8 +336,6 @@ Ces erreurs proviennent d'un champ de la requête. Corrigez le champ, puis envoy
 Pour les problèmes liés à la transcription elle-même, comme un audio bruité, des locuteurs qui parlent en même temps ou des noms mal orthographiés, voir [Dépannage de la reconnaissance vocale](/studio/audio/speech-to-text/troubleshooting).
 :::
 
-{/* Errors: captured Oct 7 — word: out/probes/word_voxtral-transcribe-3.json (400, code 3051); diarize without segment: 422 (handoff-stt item 3); invalid language: out/probes/lang_xx_voxtral-transcribe-3.json (422, pydantic detail); context: handoff-stt item 8 (400, code 3059). */}
-
 <SectionTab as="h2" sectionId="going-further">Aller plus loin</SectionTab>
 
 <UsefullLinkContainer>
@@ -360,22 +344,3 @@ Pour les problèmes liés à la transcription elle-même, comme un audio bruité
   <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Dépannage" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9):
-   - Inputs file / file_url / file_id, one per request, purpose=audio upload, DELETE afterwards: Oct 7 tests
-     (transcribe-files/input_*.sh, results.csv), field names and file_url max length in public/openapi.yaml.
-   - Base request and response, language null, segments empty, usage: transcribe.{sh,py} (Oct 7; outputs recaptured Oct 9 on
-     the neutral customer_call.wav).
-   - Request fields: public/openapi.yaml (AudioTranscriptionRequest); segment only CONFIRMED Rakesh Oct 9;
-     diarize requires segment (422, Oct 7); context_bias one field per entry (Oct 7). temperature and verbatim
-     left out (Draft, Rakesh).
-   - Pin the language: pin_language.sh on a French meeting (Oct 7); "can improve accuracy" from the API reference
-     field description; invalid code 422 (probe lang_xx).
-   - Timestamps: timestamps.sh (Oct 7), word 400 (timestamps_word.sh), CONFIRMED Rakesh Oct 9.
-   - Streaming: stream.{sh,py} (Oct 7), events text.delta then done; language and segment events listed in the
-     OpenAPI schema but not observed ().
-   - Long audio: design spec only (RFC-555 section 1.2), so a Draft, no section, no figure.
-   - Common issues: probes and handoff-stt items 2, 3, 8, 9.
-   - "Why" content linked, not repeated: offline vs realtime and streaming vs realtime (concepts/offline-and-realtime,
-     concepts/latency#offline-requests); biasing (concepts/custom-vocabulary via Bias context and vocabulary). */}
-
-{/* Feature page — audio docs revamp (DOC-610). Reordered per skeleton review S07: input methods first (one decision, tabs), ONE request walkthrough with the base result before options and timestamps; Request fields trimmed to decision-relevant rows with a link to the reference; SSE as a mini consumption walkthrough. Written Oct 9 from the skeleton. Verify at the end: input tabs show only the differing part (no complete request in the tabs), no two complete requests for the same file, base response shown before segments, the sample clip + transcript demo is in place (Draft, Ben), API facts link to the reference, no realtime content, temperature/verbatim and long audio answered by Rakesh, response "language" still null on the launch model. */}

@@ -167,8 +167,6 @@ ws.on("message", (message) => {
 });
 ```
 
-{/* TESTED Oct 9 (TS tab): turn-detection/turn_detection.ts with the ws package 8.22 (the TS SDK 2.7.0 realtime client only sets audioFormat), Node 26, on the interim alias voxtral-transcribe-realtime-3: session.updated echoed the defaults 0.5 / 0.5 / 0.33 / 500 / 3000, turn.start, eager_end and resume pairs, turn.end threshold at 35.12 s, then the full text. The turn_detection line prints as a JavaScript object instead of a Python dict. */}
-
   </TabItem>
 </Tabs>
 
@@ -186,8 +184,6 @@ turn_detection: {'start_threshold': 0.5, 'eager_end_threshold': 0.5, 'end_thresh
  35.12s  turn.end  threshold
 text: Thanks for calling Northwind Support. This is Daniel. How can I help you today? [...]
 ```
-
-{/* TESTED Oct 9 (neutral recapture): turn-detection/turn_detection.py on customer_call.wav (neutral two-voice Northwind call, fixtures/make_neutral_fixtures.py, 34.9 s, 400 ms gaps between turns) on the interim alias voxtral-transcribe-realtime-3: session.updated echoed 0.5 / 0.5 / 0.33 / 500 / 3000; 16 turn.eager_end and 15 turn.resume, one pair at most pauses; a single turn.end at 35.12 s (end of file, end_reason threshold). The final ID voxtral-mini-transcribe-realtime-3-0 still gets HTTP 403 at the handshake (Oct 9). Earlier run, TESTED Oct 7 (stt agent), on demo 01's call (internal names, replaced): turn_detection.py on the live interim ID voxtral-transcribe-realtime-3-0 (voxtral-mini-transcribe-realtime-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-realtime-3 (and -3-0), to be renamed before launch. Tested on the interim alias. Until the rename, the final ID gets HTTP 403 at the handshake). An empty turn_detection object enables the feature: session.updated echoes the server values 0.5 / 0.5 / 0.33 / 500 / 3000, which are Rakesh's Default preset — this confirms the defaults. support_call.wav is demo 01's two-speaker call with 350 ms gaps between turns: Default only ends the turn at the end of the file (39.52 s), with eager_end / resume pairs at each pause, and the Aggressive values did the same (turn.end at 39.28 s). On round 1's clip (0.4 s gaps), Aggressive added a mid-call turn.end at 20.16 s that Default did not. Turn detection is meant for one live speaker: a recording with real pauses (Ben's demo) will show turn ends better than a dense two-voice call. Diarize + turn_detection: error event "Diarization is not compatible with turn detection." SDK gap: mistralai 3.0.0 cannot send turn_detection and yields turn events as UnknownRealtimeEvent, hence the raw websockets client. */}
 
 In this output:
 
@@ -215,7 +211,7 @@ Each arrow is an event, with the condition that sends it.
 The same order holds in every session:
 
 - A turn always opens with `turn.start`.
-- 
+-
 - A `turn.resume` cancels the eager end before it, and the turn goes on.
 - After `turn.end`, the next `turn.start` opens a new turn.
 
@@ -238,11 +234,9 @@ Turn events arrive in the same stream as the transcript events. Each one carries
 Wait for `turn.end` before doing anything you can't undo, such as sending a message or calling a tool that changes data. Eager ends are frequent: most pauses between sentences send one.
 :::
 
-{/* TESTED Oct 7 (stt agent): the event names on the wire are turn.start, turn.eager_end, turn.resume, turn.end (RFC-555 section 2.3), NOT transcription.turn.*. Payloads: {"type": "turn.start", "time_s": 0.0}; turn.eager_end and turn.resume carry time_s; turn.end carries time_s and end_reason ("threshold" observed; "timeout" per RFC, not reproduced). time_s is audio time in seconds from the start of the stream. */}
-
 <SectionTab as="h3" variant="secondary" sectionId="text-timing">The last words arrive after the turn event</SectionTab>
 
-The transcript runs behind the turn events. When `turn.end` arrives, the text of the last words of the turn can still be on its way: it comes in the following `transcription.text.delta` events. 
+The transcript runs behind the turn events. When `turn.end` arrives, the text of the last words of the turn can still be on its way: it comes in the following `transcription.text.delta` events.
 
 Text events carry no time, so you can't match them to a turn by timestamp. To build the full text of a turn:
 
@@ -276,8 +270,6 @@ Start from one of the [common configurations](#common-configurations), then chan
 The thresholds must keep their order, `start_threshold` at least `eager_end_threshold`, itself above `end_threshold`, and `end_timeout_ms` must be at least `min_silence_ms`. Otherwise the session returns an error.
 :::
 
-{/* SOURCE (Oct 9): Rakesh, "How to use end-of-turn detection" (via Gregory): the five fields, their defaults (0.5 / 0.5 / 0.33 / 500 / 3000, same as the server defaults echoed on Oct 7), the meaning of each, and the direction to move them. Passed in session.update as {"turn_detection": {...}}. Ordering rules TESTED Oct 7 (stt agent): start 0.5 / eager 0.3 / end 0.4 -> "Expected start_threshold >= eager_end_threshold > end_threshold"; min_silence_ms 800 with end_timeout_ms 500 -> "Expected end_timeout_ms to be greater than or equal to min_silence_ms"; both as realtime error events (code 3051). emit_probabilities is NOT accepted (extra_forbidden): no row for it. */}
-
 <SectionTab as="h2" sectionId="common-configurations">Common configurations</SectionTab>
 
 Two sets of values cover most applications. Pick the closest one, then tune individual settings from there.
@@ -305,9 +297,6 @@ There's no field that selects a configuration by name: send its values in `turn_
 }
 ```
 
-{/* TESTED Oct 7 (stt agent): probes/probe_turn2.py / probe_turn3.py, output out/probes/rt_turn_aggr_support.json: exactly this session.update (24 kHz, support_call.wav) on the interim alias voxtral-transcribe-realtime-3-0; session.updated echoed the five values; turn.end at 39.28 s. Same values at 16 kHz (rt_turn_aggr.json) added a mid-call turn.end at 20.16 s that Default didn't. turn_detection.preset is rejected (extra_forbidden): presets are documented values, not an API field.
-   SOURCE: Rakesh (Slack, Sept 28) — "Lets have a few presets like default, aggressive etc", with the Default and Aggressive values above. Default = server defaults echoed for an empty turn_detection object = SDK 0.5 defaults (settles R154: the RFC-555 example values 0.8 / 0.4 / 0.2 / 5600 are NOT the defaults and must not appear as such). Never port Cartesia's profiles. */}
-
 <SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
 
 <UsefullLinkContainer>
@@ -317,26 +306,3 @@ There's no field that selects a configuration by name: send its values in `turn_
   <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9):
-   - Enable, defaults echoed, event names and payloads, end_reason threshold: Oct 7 tests (turn-detection/turn_detection.py,
-     out/probes/rt_turn*.json), handoff-stt item 6.
-   - Late update rejected: out/probes/rt_late_update.json ("Session fields cannot be changed after audio has started.").
-   - Offline 400: out/probes/turn_offline_small.json. Diarize + turn_detection: out/probes/rt_turn_diar.json (code 3051).
-   - Event order: every run on Oct 7 (4 sessions, 5 turn.end, 47 eager_end/resume pairs), see .
-   - Text after turn.end: rt_turn_aggr.json, see . Lag size = streaming delay: RFC-555 2.3, .
-   - Settings meaning and direction: Rakesh, "How to use end-of-turn detection" (Oct 9, via Gregory).
-   - Presets: Rakesh (Sept 28); Aggressive JSON tested Oct 7.
-   - State diagram: public/img/audio_turn_state_machine.svg, conditions from the Tune thresholds table (Rakesh, Oct 9)
-     and the state machine of RFC-555 2.3. The Turns concept keeps the timeline of one turn (audio_turn_timeline.svg).
-   - No debug probability stream: turn_detection.emit_probabilities is rejected (extra_forbidden, out/probes/rt_turn_probs.json)
-     and no vad event was observed, so the page documents none. Ask Rakesh only if a debug stream is planned for launch.
-   - Tested code and output rerun on Oct 9 on the neutral customer_call.wav (fixtures/make_neutral_fixtures.py). The
-     Aggressive JSON block shows no file name or output and wasn't rerun (Oct 7 run on demo 01's call). */}
-
-{/* Feature page (layer 4) — audio docs revamp (DOC-610). Order per skeleton review S09: minimal enable path
-   first, state machine, then events WITH the text timing in the same section (never commit actions without it),
-   thresholds last as tuning, then named configurations. Boundary with the Turns concept: the concept owns the why
-   and the trade-off (no values); this page owns enabling, events, timing, values. Keep sectionId
-   "common-configurations": the Turns concept links to it. Verify at the end: enabling possible in one block,
-   timing explained before any commit guidance, presets table with CONFIRMED values only (Default, Aggressive),
-   third preset still a Draft until Rakesh answers. */}

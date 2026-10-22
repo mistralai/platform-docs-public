@@ -90,12 +90,8 @@ console.log(JSON.stringify(connection.session, null, 2));
 await connection.close();
 ```
 
-{/* TESTED Oct 9 (TS tab): transcribe-in-realtime/connect.ts, @mistralai/mistralai 2.7.0 on Node 26 (RealtimeTranscription from @mistralai/mistralai/extra/realtime; the Mistral client has no audio.realtime), on the interim alias voxtral-transcribe-realtime-3: connect() resolved after session.created; the session printed requestId, model voxtral-transcribe-realtime-3-0-1, audioFormat pcm_s16le 16000, targetStreamingDelayMs null. */}
-
   </TabItem>
 </Tabs>
-
-{/* TESTED Oct 7 (stt agent): transcribe-in-realtime/connect.py (mistralai 3.0.0), plus raw websockets with the same URL and header, on the live interim ID voxtral-transcribe-realtime-3-0. The SDK waits for session.created before returning; its session model only exposes request_id, model, audio_format, and target_streaming_delay_ms — the raw session.created also carries diarize, context_bias, language, speaker_references, and turn_detection (defaults: false, [], null, null, null; audio_format pcm_s16le at 16000 Hz). voxtral-mini-transcribe-realtime-3-0: RESOLVED Rakesh (Oct 7): final ID; the API serves it today as the interim alias voxtral-transcribe-realtime-3 (and -3-0), to be renamed before launch. Tested on the interim alias. Until the rename, the final ID is refused at the handshake with HTTP 403 and an empty body. Browser auth (ephemeral token as subprotocol, RFC-555 section 7.2) not tested. */}
 
 <SectionTab as="h2" sectionId="configure">Configure the session</SectionTab>
 
@@ -244,8 +240,6 @@ ws.on("message", (message) => {
 });
 ```
 
-{/* TESTED Oct 9 (TS tab): transcribe-in-realtime/session_config.ts with the ws package 8.22, Node 26, on the interim alias voxtral-transcribe-realtime-3: session.updated echoed delay 480, language en, and the four context_bias entries; the transcript reads Quillara and Alder Creek Design, same as the Python tab. */}
-
   </TabItem>
 </Tabs>
 
@@ -263,7 +257,6 @@ The settings are fixed once audio has started. A `session.update` sent after the
 | `target_streaming_delay_ms` | Integer | 480 ms (recommended starting point) | Trade speed for accuracy: any value from 80 to 1200, or 2400. See [Control latency](#control-latency). |
 | `language` | String, a two-letter ISO 639-1 code such as `"en"` | Not set | Pin the language of the audio. Leave it out and the model detects the language. See [Languages](/studio/audio/specs-and-limits/languages). |
 
-{/* TESTED Oct 9 (probe round, alias voxtral-transcribe-realtime-3-0, served as 3-0-1): fixtures/meeting_fr.wav (21 s) without language came back in correct French, identical to the run with language=fr (examples/stt/out/probes_oct9). One language tested. */}
 | `context_bias` | Array of strings | `[]` | Help the model spell names and terms. See [Bias context and vocabulary](/studio/audio/speech-to-text/bias-context-and-vocabulary#realtime). |
 | `diarize` | Boolean | `false` | Label each piece of text with its speaker. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers#realtime). |
 | `speaker_references` | Object: a name for each base64 audio clip | Not set | Name known speakers, up to 8 clips of 3 to 15 seconds. Requires `diarize`. See [Diarize speakers](/studio/audio/speech-to-text/diarize-speakers#speaker-references). |
@@ -272,8 +265,6 @@ The settings are fixed once audio has started. A `session.update` sent after the
 :::caution
 `diarize` and `turn_detection` can't be used in the same session: the session returns the error `Diarization is not compatible with turn detection.`
 :::
-
-{/* Fields, types, and defaults: raw session.created on Oct 7 (out/probes/rt_*.json): audio_format pcm_s16le 16000, target_streaming_delay_ms null, diarize false, context_bias [], language null, speaker_references null, turn_detection null. Each field accepted and echoed in session.updated in the Oct 7 probes (rt_lang, rt_bias, rt_delay123/2400, rt_diar, rt_refs, rt_turn). speaker_references shape {name: base64 WAV} from realtime_speaker_references.py. Limits 8 refs / 3-15 s: Rakesh, Oct 9. Invalid language "zz" -> "Invalid language alpha2 code" (rt_lang_bad). The "mono" in audio_format: the WAV fixtures are mono; stereo not tested. */}
 
 <SectionTab as="h2" sectionId="events">Events: receive updates and finish</SectionTab>
 
@@ -291,7 +282,7 @@ Everything the API sends arrives as a JSON message with a `type`. Read the `type
 
 <SectionTab as="h3" variant="secondary" sectionId="display-text">Show the text as it arrives</SectionTab>
 
-Each `transcription.text.delta` adds new text after the text already sent. A delta never corrects earlier text, so your application only appends: there's nothing to replace. 
+Each `transcription.text.delta` adds new text after the text already sent. A delta never corrects earlier text, so your application only appends: there's nothing to replace.
 
 - **Show** each delta as soon as it arrives. It's final when you receive it.
 - **Append** it as is. Deltas carry their own spaces and punctuation, such as `" for"` or `"."`, so don't add separators.
@@ -304,8 +295,6 @@ To show fast text first and replace it with more accurate text later, you need t
 <SectionTab as="h3" variant="secondary" sectionId="finish">Finish the session</SectionTab>
 
 When the audio stops, send `input_audio.end`. The API sends the last deltas, then `transcription.done` with the full transcript. Close the connection once you've received it.
-
-{/* Event list and fields: Oct 7 probes (out/probes/rt_*.json), all event types observed. transcription.done carried language null in every run, even with language "en" set (rt_lang), and usage.prompt_audio_seconds 3 whatever the audio length (probable bug, handoff-stt): neither is described on the page. Ask Rakesh about both. */}
 
 <SectionTab as="h2" sectionId="control-latency">Control latency</SectionTab>
 
@@ -339,8 +328,6 @@ Most issues come back as an `error` event with a message. These are the ones spe
 
 For other errors, see [Troubleshooting](/studio/audio/speech-to-text/troubleshooting).
 
-{/* Errors TESTED Oct 7 (out/probes): rt_late_update, rt_delay1300 (full message: "target_streaming_delay_ms must be one of the trained values: ['80-1200', '2400'] (got 1300)."), rt_turn_diar, rt_refs_nodiar, rt_lang_bad (pydantic validation message containing "Invalid language alpha2 code"). All arrive as {"type": "error", "error": {"message": ..., "code": 3051}}. Not listed: HTTP 403 with an empty body at the handshake, seen only with the final model ID before the rename (internal). The pace row comes from the Latency concept ("Measure from your application"); the tested scripts on this page send the file as fast as possible, which is fine for a transcript but not for timing. */}
-
 <SectionTab as="h2" sectionId="going-further">Going further</SectionTab>
 
 <UsefullLinkContainer>
@@ -350,14 +337,3 @@ For other errors, see [Troubleshooting](/studio/audio/speech-to-text/troubleshoo
   <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9): lifecycle and messages from the Oct 7 tests (connect.py, session_config.py, probes/probe_realtime.py:
-   session.update, input_audio.append {audio: base64 PCM}, input_audio.flush, input_audio.end); diagram
-   public/img/audio_realtime_session_lifecycle.svg. Delay range: rt_delay123, rt_delay1300, rt_delay2400. Append-only
-   deltas: 13 sessions, done.text == concatenated deltas. Dual delay: Voxtral 2 docs (deprecated page). Tested code
-   rerun on Oct 9 on the neutral customer_call.wav (fixtures/make_neutral_fixtures.py). */}
-
-{/* Feature page (layer 4) — audio docs revamp (DOC-610). Order per skeleton review S08: lifecycle before
-   connect/configure, so the mental model gives meaning to the messages. Boundary: options with their own page
-   (turn detection, diarization, context bias) get one row and a link, not a section. Verify at the end: lifecycle
-   visual and first, display/append/save guidance explicit, recommended delays from Rakesh only (never invented),
-   the "Events" heading and sectionId stable, live-specific common issues, no invented reconnection semantics. */}

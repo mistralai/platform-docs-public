@@ -93,8 +93,6 @@ Without bias: Thanks for calling Northwind Support. [...] I ordered two Quillier
 With bias:    Thanks for calling Northwind Support. [...] I ordered two Quillara headsets last week, [...] I also need an invoice for my company, Alder Creek Design. [...]
 ```
 
-{/* TESTED Oct 9 (neutral recapture): bias-context-and-vocabulary/keyphrases.sh and compare_bias.py on customer_call.wav (examples/stt/fixtures/make_neutral_fixtures.py: neutral two-voice Northwind support call, 34.9 s, synthesized with voxtral-mini-tts-3-0 on the presets en_paul_neutral (agent) and gb_jane_neutral (customer), the presets listed in the Oct 9 key's workspace), on the interim alias voxtral-transcribe-3 (output above, cut with [...] to the two changes; every fragment is verbatim) and on voxtral-small-transcribe-3-0 ("Quilara" -> "Quillara"; Small already gets "Alder Creek Design" right). The product name was chosen among five invented candidates (Quillara, Kaelix, Sonaveo, Tessaro, Brevia; fixtures/make_neutral_fixtures.py candidates, out/neutral_fixtures/bias_candidates.json): Quillara is the first that came out wrong without context and right with it, stable over three runs on the same audio ("Quilliera" without). "Alder Creek Design" -> "Older Creek Design" without context shows a multi-word keyphrase as one entry. "Northwind" and "Rotterdam" come out right either way. Without context, Mini also punctuates the product sentence differently ("last week. Order 4417. And"), hence the cut. The final ID voxtral-mini-transcribe-3-0 still returned 400 "Invalid model" on Oct 9 (rename pending, Rakesh Oct 7). Replaces the Oct 7 example on demo 01's call (internal names). For a stronger [demo], the round-1 jargon clip (stt/fixtures/standup.wav, internal names, not for the page) showed three fixes. */}
-
 <SectionTab as="h2" sectionId="free-form-context">Describe the recording</SectionTab>
 
 An entry can also be a sentence or a paragraph that describes the recording: what it's about, who speaks, and which names come up. Send it the same way as a keyphrase.
@@ -106,8 +104,6 @@ curl https://api.mistral.ai/v1/audio/transcriptions \
   -F file=@customer_call.wav \
   -F "context_bias=Support call for Northwind about an order of Quillara headsets shipped from the Rotterdam warehouse and invoiced to Alder Creek Design."
 ```
-
-{/* TESTED Oct 9 (neutral recapture): bias-context-and-vocabulary/free_form.sh. On customer_call.wav the single free-form sentence fixed "Quillara" and "Alder Creek Design" on the interim alias voxtral-transcribe-3 (and on Small Transcribe 3). Oct 7, on demo 01's call: the same approach fixed "Voxtral" on Mini and Small. Round 1, on the jargon clip, the same approach fixed "Voxtral" and "Kyutai" offline; "vLLM" casing only on Small Transcribe 3. In realtime (round 1, jargon clip), a free-form sentence ALONE fixed neither "Voxtral" (came out "Voxdraw") nor "Kyutai" ("QTAI"), while keyphrases fixed both — keyphrases were more reliable there. Worth a sentence in the prose: list critical terms as keyphrases, add the paragraph for context. */}
 
 :::tip
 List every term that must come out right as its own keyphrase. When the recording has a clear subject, add a description to the same list. In realtime sessions, a description alone might not fix a term that a keyphrase fixes.
@@ -126,8 +122,6 @@ In a realtime session, send `context_bias` as a JSON array of strings in `sessio
   }
 }
 ```
-
-{/* TESTED Oct 9 (neutral recapture): bias-context-and-vocabulary/realtime_bias.py sends exactly this session.update (sample_rate read from the WAV header) on customer_call.wav, on the interim alias voxtral-transcribe-realtime-3 (the final ID voxtral-mini-transcribe-realtime-3-0 gets HTTP 403 at the handshake, rename pending); transcript: "... I ordered two Quillara headsets last week. [...] an invoice for my company, Alder Creek Design." Without bias, the realtime model writes "Quilera" and "Older Creek Design" (turn_detection.py and realtime_speaker_references.py runs on the same file, Oct 9). The full script follows the same pattern as the speaker references script on Diarize speakers — add it here as a python tab if the page needs a runnable example. mistralai 3.0.0 cannot send context_bias in realtime (update_session only takes audio_format and target_streaming_delay_ms). */}
 
 The context applies to the whole session. After the first audio chunk, the session rejects any change to its fields with an `error` event.
 
@@ -168,29 +162,3 @@ When the audio and the context together go over the window, the request fails an
   <LinkCard href="/studio/audio/speech-to-text/troubleshooting" title="Troubleshooting" />
 </UsefullLinkContainer>
 
-{/* Sources (Oct 9):
-   - Request shapes: Oct 7 tests (stt agent), keyphrases.sh, compare_bias.py, free_form.sh, realtime_bias.py,
-     on voxtral-transcribe-3, voxtral-small-transcribe-3, and voxtral-transcribe-realtime-3-0. Offline: one
-     multipart field per entry ("context_bias[]" also works); the SDK takes a Python list. Realtime: JSON
-     list[str] in session.update.
-   - Characters: free-form sentences with spaces and periods (support call), and with commas (round 1
-     free_form.sh: "Weekly sync of the platform team: the vLLM scheduler, the Voxtral EAP review, and the
-     Kyutai benchmarks."), accepted offline and in realtime.
-   - Defaults: no context_bias offline unless sent; realtime session.created carries context_bias [] (Realtime
-     transcription, TESTED comment).
-   - Models: final IDs from RFC-618 (confirmed by Rakesh, Oct 9); context_bias tested on the interim Mini alias,
-     on Small Transcribe 3, and on the interim realtime alias.
-   - Session locked after the first audio chunk: realtime error "Session fields cannot be changed after audio has
-     started." (Realtime transcription, TESTED comment, Oct 7).
-   - SDK gap: handoff-stt.md (mistralai 3.0.0 update_session); voice agents stt.context_bias needs a Voxtral 3
-     realtime model (voice-agents-sdk-notes-2026-10-08.md, voice-agents/configuration Agent options).
-   - Context window and 400: handoff-stt.md item 8, stt-features-2026-10-08.md (no separate bias budget,
-     32,768 tokens shared with audio, 400 code 3059, no truncation).
-   - Voxtral 2 "up to 100 words or phrases": deprecated offline transcription, context biasing section. */}
-
-{/* Feature page (layer 4) — audio docs revamp (DOC-610). Written Oct 9 from the skeleton. Boundary:
-   the concept Custom vocabulary owns why names go wrong and which kind of context to choose; this page
-   owns the request shapes (offline and realtime), the tested examples, the entry format, and the
-   context-size limit and its error. Troubleshooting links here for wrong names and for the 400. Verify at
-   the end: example re-run with neutral names, before/after demo in place, OpenAPI pattern fixed, Rakesh
-   limits published or kept as Draft, SDK realtime gap closed or kept. */}

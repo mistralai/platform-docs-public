@@ -263,7 +263,7 @@ export interface ModelTemplate<
   tags?: ModelTag[];
   pricingLayout?: 'stacked';
   performanceMaxStars?: StarRating;
-  usageExample?: 'zai-glm-5-2' | 'zai-glm-5-3' | 'mistral-large-4-0';
+  usageExample?: 'zai-glm-5-2' | 'zai-glm-5-3' | 'zai-glm-5-3-flash' | 'mistral-large-4-0';
   weights: ModelWeight[];
   contextLength?: string | undefined | null;
   outputTokenLimit?: string | undefined | null;

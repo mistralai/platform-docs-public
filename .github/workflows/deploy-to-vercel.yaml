@@ -1,0 +1,91 @@
+# Deploys platform-docs-public to Vercel using prebuilt output.
+# Works around the GitHub IP restriction by building in GitHub Actions
+# and uploading the .vercel/output folder via `vercel deploy --prebuilt`.
+# Vercel never needs to access the GitHub repo.
+#
+# Required GitHub secrets:
+#   VERCEL_ACCESS_TOKEN - a Vercel personal or team access token
+#   VERCEL_ORG_ID - the Vercel team/org ID (also in .vercel/project.json)
+#   VERCEL_PROJECT_ID - the Vercel project ID (also in .vercel/project.json)
+
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: [ciclone, 2x8gi-x86]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          submodules: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10.26.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the docs
+        run: pnpm build:ci
+        env:
+          CI: true
+
+      - name: Install Vercel CLI
+        run: pnpm dlx vercel@latest --version
+
+      - name: Build Vercel output
+        run: pnpm dlx vercel@latest build --prod --yes
+        env:
+          VERCEL_ACCESS_TOKEN: ${{ secrets.VERCEL_ACCESS_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy prebuilt output (production)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          DEPLOY_URL=$(pnpm dlx vercel@latest deploy --prebuilt --prod --yes 2>&1 | tail -1)
+          echo "Deployed to: $DEPLOY_URL"
+        env:
+          VERCEL_ACCESS_TOKEN: ${{ secrets.VERCEL_ACCESS_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy prebuilt output (preview)
+        if: github.ref != 'refs/heads/main'
+        id: preview_deploy
+        run: |
+          DEPLOY_URL=$(pnpm dlx vercel@latest deploy --prebuilt --yes 2>&1 | tail -1)
+          echo "Deployed to: $DEPLOY_URL"
+          echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ACCESS_TOKEN: ${{ secrets.VERCEL_ACCESS_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment preview URL on PR
+        if: github.event_name == 'pull_request' && steps.preview_deploy.outputs.url
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const url = '${{ steps.preview_deploy.outputs.url }}';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Vercel preview deployed: ${url}`
+            });
